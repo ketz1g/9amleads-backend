@@ -17648,6 +17648,29 @@ function cleanLetterBodyForPrint(text) {
   return joined;
 }
 
+// Build the CLEAN A4 letter HTML: sender return address top-right, date, divider,
+// then the cleaned letter body (no recipient address — Stannp prints that in its
+// own envelope window). Used by both the live Stannp send path and the free admin
+// preview endpoint so they always match.
+function buildCleanLetterHtml(templateBody, senderName, senderAddr) {
+  var printBody = cleanLetterBodyForPrint(templateBody || '')
+    .replace(/\b0{4,}\s*\/\s*0{3,}\b/g, '') // "00000 / 0000" token residue
+    .replace(/\[?[a-zA-Z_]+(?:_[a-zA-Z_]+)*\]?/g, function(tok) { return /^\[[a-z_]+\]$/.test(tok) ? '' : tok; });
+  var todayLine = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  var letterHtml =
+    '<html><body style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;color:#1e293b">' +
+    '<table width="100%" cellpadding="0" cellspacing="0"><tr>' +
+    '<td width="50%" valign="top" style="font-size:10px;color:#334155">' +
+    (senderName ? senderName + '<br>' : '') + (senderAddr || '') +
+    '</td>' +
+    '<td width="50%" align="right" valign="top" style="font-size:10px;color:#334155">' + todayLine + '</td>' +
+    '</tr></table>' +
+    '<div style="border-top:2px solid #0ea5e9;margin:24px 0 20px"></div>' +
+    '<div style="font-size:11px;line-height:1.7;white-space:pre-wrap">' + (printBody || '').split('\n').join('<br>') + '</div>' +
+    '</body></html>';
+  return { html: letterHtml, body: printBody };
+}
+
 function cleanMailText(text) {
   if (!text) return '';
   var s = String(text);
@@ -18164,14 +18187,6 @@ async function sendDmCampaignInner(campaignId, customerId) {
         // like "00000 / 0000", and stray duplicated names — the letter should start
         // at the real product/services content. Stannp prints the recipient address
         // itself in the envelope window, so it must not appear in the letter.
-        var printBody = cleanLetterBodyForPrint(templateBody || '')
-          .replace(/\b0{4,}\s*\/\s*0{3,}\b/g, '')       // "00000 / 0000" token residue
-          .replace(/\[?[a-zA-Z_]+(?:_[a-zA-Z_]+)*\]?/g, function(tok) { return /^\[[a-z_]+\]$/.test(tok) ? '' : tok; }); // drop [placeholder] tokens
-        // Build a clean A4 letter. Stannp prints the RECIPIENT address itself in
-        // the envelope window, so we must NOT repeat it in the letter PDF. We only
-        // put the SENDER's return address (business profile) + a date line, then
-        // the letter body. This avoids the repeated-address duplication.
-        var returnAddr = (template && template.ai_generated_text) ? '' : '';
         // Look up the customer's business profile for the return address
         var bizP = null;
         try { bizP = db.prepare('SELECT * FROM customer_business_profiles WHERE customer_id = ?').get(customerId); } catch(e) {}
@@ -18181,24 +18196,13 @@ async function sendDmCampaignInner(campaignId, customerId) {
           senderAddr = [bizP.address_line1, bizP.address_line2, bizP.city, bizP.postcode].filter(Boolean).join(', ');
         }
         rcptWithPages.sender = { name: senderName, address: senderAddr };
-        var todayLine = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-        var letterHtml =
-          '<html><body style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;color:#1e293b">' +
-          '<table width="100%" cellpadding="0" cellspacing="0"><tr>' +
-          '<td width="50%" valign="top" style="font-size:10px;color:#334155">' +
-          (senderName ? senderName + '<br>' : '') + senderAddr +
-          '</td>' +
-          '<td width="50%" align="right" valign="top" style="font-size:10px;color:#334155">' + todayLine + '</td>' +
-          '</tr></table>' +
-          '<div style="border-top:2px solid #0ea5e9;margin:24px 0 20px"></div>' +
-          '<div style="font-size:11px;line-height:1.7">' + printBody + '</div>' +
-          '</body></html>';
-        rcptWithPages.pages = letterHtml
+        var _clean = buildCleanLetterHtml(templateBody || '', senderName, senderAddr);
+        rcptWithPages.pages = _clean.html
           .replace(/\[name\]/gi, rcpt.name || '')
           .replace(/\[address\]/gi, [rcpt.address_line1, rcpt.address_line2, rcpt.city, rcpt.postcode].filter(Boolean).join(', '))
           .replace(/\[company\]/gi, rcpt.company || rcpt.name || '');
         // The clean letter BODY (no sender/date) for the A4 PDF layout.
-        rcptWithPages.letter_body = printBody;
+        rcptWithPages.letter_body = _clean.body;
       }
       var pieceResult = await provider.sendMailpiece(mailType, rcptWithPages, pieceFiles, chosenFormat);
       if (pieceResult && pieceResult.success) {
@@ -20755,6 +20759,58 @@ app.get('/api/admin/customer-templates', adminAuth, (req, res) => {
     res.json({ success: true, email: em, customer_id: cust.id, default_template_id: settings ? settings.default_template_id : '', templates: tpls });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+// GET /api/admin/letter-preview?email=X&template_id=Y — generate the EXACT A4
+// letter PDF (via pdfkit) that Stannp would print, WITHOUT sending to Stannp or
+// charging anything. Free way to verify the letter content + layout before paying.
+app.get('/api/admin/letter-preview', adminAuth, async (req, res) => {
+  try {
+    var em = String(req.query.email || '').toLowerCase();
+    var dbT = getDb();
+    var cust = (dbT.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === em; });
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    var tpl = null;
+    if (req.query.template_id) tpl = (dbT.direct_mail_templates || []).find(function(t) { return t.customer_id === cust.id && t.id === req.query.template_id; });
+    if (!tpl) tpl = (dbT.direct_mail_templates || []).filter(function(t) { return t.customer_id === cust.id; }).sort(function(a,b){ return String(b.updated_at||'').localeCompare(String(a.updated_at||'')); })[0];
+    if (!tpl) return res.status(404).json({ error: 'No letter template for this customer' });
+    var templateBody = cleanMailText(tpl.ai_generated_text || '');
+    var bizP = (dbT.customer_business_profiles || []).find(function(b) { return b.customer_id === cust.id; }) || {};
+    var senderName = bizP.company_name || bizP.contact_name || '9amLeads';
+    var senderAddr = [bizP.address_line1, bizP.address_line2, bizP.city, bizP.postcode].filter(Boolean).join(', ');
+    var clean = buildCleanLetterHtml(templateBody, senderName, senderAddr);
+    var rcptMock = { name: bizP.contact_name || bizP.company_name || 'Homeowner', address_line1: bizP.address_line1 || '', address_line2: bizP.address_line2 || '', city: bizP.city || '', postcode: bizP.postcode || '', company: bizP.company_name || '' };
+    clean.html = clean.html
+      .replace(/\[name\]/gi, rcptMock.name)
+      .replace(/\[address\]/gi, [rcptMock.address_line1, rcptMock.address_line2, rcptMock.city, rcptMock.postcode].filter(Boolean).join(', '))
+      .replace(/\[company\]/gi, rcptMock.company || rcptMock.name);
+    try {
+      var pdfkit = require('pdfkit');
+      var PDFDocument = pdfkit;
+      var fontPath = path.join(__dirname, 'DejaVuSans.ttf');
+      var unicodeFont = false;
+      try { if (fs.existsSync(fontPath)) unicodeFont = true; } catch(e) {}
+      var buffers = [];
+      var doc = new PDFDocument({ size: 'A4', layout: 'portrait', margin: 50 });
+      if (unicodeFont) doc.registerFont('uni', fontPath);
+      doc.on('data', buffers.push.bind(buffers));
+      var done = new Promise(function(resolve, reject) { doc.on('end', resolve); doc.on('error', reject); });
+      var bodyFont = unicodeFont ? 'uni' : 'Helvetica';
+      doc.font(bodyFont).fontSize(10).text([senderName, senderAddr].filter(Boolean).join('\n'), 595 - 50 - 260, 50, { width: 260, align: 'right' });
+      doc.font(bodyFont).fontSize(8).text(new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }), 595 - 50 - 260, 80, { width: 260, align: 'right' });
+      doc.moveTo(50, 96).lineTo(595 - 50, 96).lineWidth(1).strokeColor('#0ea5e9').stroke();
+      doc.font(bodyFont).fontSize(10).text(clean.body, 50, 106, { width: 595 - 100, lineBreak: true, align: 'left' });
+      doc.end();
+      await done;
+      var buf = Buffer.concat(buffers);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline; filename="letter-preview.pdf"');
+      res.send(buf);
+      return;
+    } catch(pdfE) {
+      res.json({ success: true, note: 'pdfkit unavailable: ' + pdfE.message, body: clean.body, html: clean.html });
+    }
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/admin/test-report', adminAuth, (req, res) => {
   try {
     var dbT = getDb();
