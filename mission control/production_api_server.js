@@ -20275,10 +20275,11 @@ function runDeliveryTestReport() {
     })();
   });
 }
-// Every 30 minutes — automated delivery test + report
-cron.schedule('*/30 * * * *', () => {
-  runDeliveryTestReport();
-}, { timezone: 'Europe/London' });
+// Every 30 minutes — automated delivery test + report. DISABLED (testing paused;
+// standard 09:00 Mon-Fri delivery is the active schedule). Re-enable by uncommenting.
+// cron.schedule('*/30 * * * *', () => {
+//   runDeliveryTestReport();
+// }, { timezone: 'Europe/London' });
 
 // GET /api/admin/run-test — placeholder replaced below
 app.get('/api/admin/delivery-audit', adminAuth, (req, res) => {
