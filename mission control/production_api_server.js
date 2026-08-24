@@ -20248,6 +20248,22 @@ app.post('/api/admin/update-filters', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/admin/pool-sample?product=probate&n=20 — raw sample of a product's pool
+// (for diagnosing supply/address issues). Returns the actual stored fields.
+app.get('/api/admin/pool-sample', adminAuth, (req, res) => {
+  try {
+    var prod = String(req.query.product || 'moving');
+    var n = parseInt(req.query.n || '20', 10);
+    var fn = path.join(DATA_DIR, PRODUCT_LEAD_FILES[prod] ? PRODUCT_LEAD_FILES[prod].file : (prod + '-leads.json'));
+    var arr = [];
+    try { var raw = JSON.parse(fs.readFileSync(fn, 'utf-8')); if (Array.isArray(raw)) arr = raw; else if (raw && typeof raw === 'object') Object.keys(raw).forEach(function(k){ if (k.indexOf('_') !== 0 && Array.isArray(raw[k])) arr = arr.concat(raw[k]); }); } catch(e) {}
+    var out = arr.slice(0, n).map(function(l) {
+      return { name: l.name || l.deceasedName || '', address: (l.fullAddress || l.deceasedAddress || l.address || ''), postcode: l.postcode || '', street: l.street || '', city: l.city || '', town: l.town || '', county: l.county || '', url: l.url || '', firstVisibleDate: l.firstVisibleDate || l.updateDate || '', source: l.source || '', paf_done: !!l.paf_done, paf_failed: !!l.paf_failed };
+    });
+    res.json({ success: true, product: prod, file: fn, total: arr.length, sample: out });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== AUTOMATED BLOG CONTENT GENERATION (OpenAI) =====
 var BLOG_CATEGORIES = { moving: 'moving leads', probate: 'probate leads', newbusiness: 'new business leads (Companies House)', planning: 'planning permission leads', tenders: 'public sector tender opportunities', general: 'UK business leads' };
 var INDEXNOW_KEY = 'eff5ce1d06f4a9203c8710870a9bf024';
