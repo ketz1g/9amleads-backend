@@ -6919,9 +6919,11 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
     else { var backfillCutoff = new Date(Date.now() - 14 * 86400000).toISOString(); if (fv < backfillCutoff) continue; }
     if (cust.product === 'moving' && maxBedsF < 99 && (parseInt(l.bedrooms, 10) || 99) > maxBedsF) continue;
     var key = l.url || ('a:' + String(l.address || l.fullAddress || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30));
+    var addrKeyP = 'aa:' + String(l.fullAddress || l.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 28) + '|' + String(l.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     if (deliveredKeys[key] || seen[key] || _sharedSeen[key]) continue;
-    seen[key] = 1;
-    if (_sharedSeen !== seen) _sharedSeen[key] = 1;
+    if (addrKeyP.length > 5 && (seen[addrKeyP] || _sharedSeen[addrKeyP])) continue;
+    seen[key] = 1; seen[addrKeyP] = 1;
+    if (_sharedSeen !== seen) { _sharedSeen[key] = 1; if (addrKeyP.length > 5) _sharedSeen[addrKeyP] = 1; }
     candidates.push(l);
   }
   // SELECTION: maximise postcode variety so a customer never gets the same
@@ -6958,6 +6960,32 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
         if (usedPostcode[pk2] || pcSeen2[pk2]) continue;
         usedPostcode[pk2] = 1;
         selected.push(fl);
+      }
+    }
+  }
+  // PREVIEW REPLACEMENT (moving): leads PAF already failed (NO DOOR · REPLACED) are
+  // swapped at delivery for door-numbered alternatives. Simulate that here so the
+  // preview shows the FINAL deliverable (what customers actually receive), not the
+  // doomed leads.
+  if (cust.product === 'moving') {
+    for (var rpi = 0; rpi < selected.length; rpi++) {
+      var curLeadR = selected[rpi];
+      var curAddrR = curLeadR.fullAddress || curLeadR.address || '';
+      var curPcR = curLeadR.postcode || '';
+      if (hasUsablePremiseAddress(curAddrR, curPcR)) continue; // has a door — fine
+      if (curLeadR.paf_candidate && !curLeadR.paf_failed) continue; // gets a number at delivery — fine
+      for (var siR = 0; siR < interleaved.length; siR++) {
+        var repR = interleaved[siR];
+        if (selected.indexOf(repR) !== -1) continue;
+        var rAddrR = repR.fullAddress || repR.address || '';
+        var rPcR = repR.postcode || '';
+        if (!hasUsablePremiseAddress(rAddrR, rPcR)) continue;
+        var rKeyR = repR.url || ('a:' + String(rAddrR).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30));
+        var rAKeyR = 'aa:' + String(rAddrR).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 28) + '|' + String(rPcR).toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (_sharedSeen[rKeyR] || (rAKeyR.length > 5 && _sharedSeen[rAKeyR])) continue;
+        selected[rpi] = repR;
+        _sharedSeen[rKeyR] = 1; if (rAKeyR.length > 5) _sharedSeen[rAKeyR] = 1;
+        break;
       }
     }
   }
