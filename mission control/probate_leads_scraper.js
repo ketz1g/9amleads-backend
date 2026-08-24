@@ -224,7 +224,14 @@ function fetchGazetteDetail(noticeId) {
           const streetAddress = addr.streetAddress || '';
           const locality = addr.locality || '';
           const region = addr.region || '';
-          const postcode = addr.postalCode || addr.postcode || '';
+          // Apify sometimes captures the Gazette postcode LINK url (e.g.
+          // "https://www.thegazette.co.uk/id/postcode/M231LF") instead of the text.
+          // Extract the real code and normalise to a valid UK postcode.
+          let rawPc = String(addr.postalCode || addr.postcode || '');
+          const pcUrlMatch = rawPc.match(/\/postcode\/([A-Z0-9]+)/i);
+          if (pcUrlMatch) rawPc = pcUrlMatch[1];
+          const cleanPc = rawPc.toUpperCase().replace(/[^A-Z0-9]/g, '');
+          const postcode = /^[A-Z]{1,2}[0-9][A-Z0-9]?[0-9][A-Z]{2}$/.test(cleanPc) ? (cleanPc.slice(0, cleanPc.length - 3) + ' ' + cleanPc.slice(-3)) : rawPc;
           const fullName = [estateOf.firstName, estateOf.familyName].filter(Boolean).join(' ');
           const deceasedName = [estateOf.title, estateOf.firstName, estateOf.familyName].filter(Boolean).join(' ').trim() || fullName;
           const fullAddress = [streetAddress, locality, region, postcode].filter(Boolean).join(', ');

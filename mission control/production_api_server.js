@@ -7280,6 +7280,9 @@ async function runProbatePafPostScrape() {
     if ((l.paf_attempts || 0) >= 2) return;
     var addr = l.fullAddress || l.deceasedAddress || l.address || '';
     var pc = cleanUkPostcode(l.postcode || '').toUpperCase();
+    // Scraper bug: some addresses are stored as Gazette postcode URLs. Rebuild from
+    // the cleaned postcode so the lead is resolvable (postcode lookup returns the address).
+    if (/thegazette\.co\.uk|^https?:\/\//.test(addr) && pc) { addr = pc; l.address = pc; l.fullAddress = pc; l.deceasedAddress = pc; l.postcode = pc; }
     if (hasUsablePremiseAddress(addr, pc)) { l.paf_done = true; return; }
     if (!hasStreetName(addr) && !/[A-Za-z]{3,}/.test(addr.replace(/[0-9]/g,''))) return; // no street/town → not resolvable
     var d = pickFreshDate(l) || '';
@@ -7300,6 +7303,7 @@ async function runProbatePafPostScrape() {
     if (pi > 0) await new Promise(function(r) { setTimeout(r, 250); });
     var addr0 = l.fullAddress || l.deceasedAddress || l.address || '';
     var pc0 = cleanUkPostcode(l.postcode || '').toUpperCase();
+    if (/thegazette\.co\.uk|^https?:\/\//.test(addr0) && pc0) { addr0 = pc0; l.address = pc0; l.fullAddress = pc0; l.deceasedAddress = pc0; l.postcode = pc0; }
     var hint = l.doorNumberHint || '';
     try {
       var full = null;
