@@ -1,0 +1,13 @@
+{
+  "name": "9amleads-pnp-probate",
+  "version": "1.0.0",
+  "description": "Collect 'Probate & Trustee' notices from the UK Public Notice Portal and output them as structured probate leads for 9amLeads. Run twice daily (07:30 + 18:00 UK).",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "node src/main.js"
+  },
+  "dependencies": {
+    "apify": "^3.0.0",
+    "@crawlee/playwright": "^3.0.0"
+  }
+}
