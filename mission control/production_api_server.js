@@ -20273,18 +20273,19 @@ function runDeliveryTestReport() {
         var TEST_CAP = { moving: 5, probate: 2, newbusiness: 5, planning: 1, tenders: 1 };
         testCusts.forEach(function(c) { c.leads_per_day = TEST_CAP[c.product] || 1; });
         saveDb();
-        // CLEAN-SLATE TEST: remove ALL of today's test-account leads (delivered AND
-        // pending) so each 15-min run starts from a clean slate and delivers EXACTLY
-        // the promised count. A stale pending lead (delivered=0 from a prior run)
-        // would otherwise be picked up as the "primary lead", get delivered_at set
-        // THIS run, and make the report overcount (OVER 6/5) even though the email
-        // batch was correctly capped at 5. Real customers are never touched.
+        // CLEAN-SLATE TEST: delete ALL test-account leads (delivered AND pending)
+        // so each 15-min run starts from a truly empty slate. Pending leads from
+        // earlier runs (delivered=0) accumulate and get re-picked as the "primary
+        // lead" or top-up source, inflating the delivered count (OVER 6/5) even
+        // though the email batch was capped. Deleting every test-account lead each
+        // run guarantees the delivery starts empty and can only create the EXACT
+        // promised count. Real customers are never touched.
         var testIds = {};
         testCusts.forEach(function(c) { testIds[c.id] = true; });
         var clearedCount = 0;
         db.leads = (db.leads || []).filter(function(l) {
-          if (l.customer_id && testIds[l.customer_id] && l.delivered_at && l.delivered_at.indexOf(date) === 0) {
-            clearedCount++; return false; // drop today's test-account leads entirely
+          if (l.customer_id && testIds[l.customer_id]) {
+            clearedCount++; return false; // drop every test-account lead
           }
           return true;
         });
