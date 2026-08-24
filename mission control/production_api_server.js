@@ -20253,6 +20253,23 @@ function runDeliveryTestReport() {
         var TEST_CAP = { moving: 5, probate: 2, newbusiness: 5, planning: 1, tenders: 1 };
         testCusts.forEach(function(c) { c.leads_per_day = TEST_CAP[c.product] || 1; });
         saveDb();
+        // CLEAN-SLATE TEST: clear today's delivered leads for test accounts so each
+        // 15-min run delivers EXACTLY the promised count as a fresh batch. Without
+        // this, accumulated leads from earlier runs make the report show OVER and
+        // the founder can't verify "no more no less" per run. Only test-account
+        // leads are cleared — real customers are untouched.
+        var testIds = {};
+        testCusts.forEach(function(c) { testIds[c.id] = true; });
+        var clearedCount = 0;
+        db.leads = (db.leads || []).map(function(l) {
+          if (l.customer_id && testIds[l.customer_id] && l.delivered && l.delivered_at && l.delivered_at.indexOf(date) === 0) {
+            l.delivered = 0; l.delivered_at = ''; clearedCount++;
+          }
+          return l;
+        });
+        testCusts.forEach(function(c) { c.last_email_date = ''; });
+        saveDb();
+        console.log('[TEST] cleared ' + clearedCount + ' test-account delivered leads (clean-slate run)');
         // Mark the run start timestamp — leads delivered_at >= this are THIS run's
         // fresh deliveries (each run re-delivers the full quota under force).
         var runStart = new Date();
@@ -20359,18 +20376,18 @@ function runDeliveryTestReport() {
     })();
   });
 }
-// Every 30 minutes — automated delivery test + report. Delivers the full promised
-// quota to every test account (fresh leads + emails + dashboards each run) so the
-// founder can verify the system is bulletproof: exact count, door numbers, full
-// postcodes and real links on every lead. Emails the report to hello@9amleads.com.
-// Skips the 09:00–09:35 UK window so it never competes with the real Mon-Fri
-// 09:00 delivery (the delivery lock is global — whichever fires first wins).
-cron.schedule('*/30 * * * *', () => {
+// Every 15 minutes — automated delivery test + report. Each run delivers EXACTLY
+// the promised quota to every test account (clean-slate fresh leads + emails +
+// dashboards) so the founder can verify the system is bulletproof: exact count,
+// door numbers, full postcodes and real links on every lead. Emails the report
+// to hello@9amleads.com. Skips the 09:00–09:35 UK window so it never competes
+// with the real Mon-Fri 09:00 delivery (the delivery lock is global).
+cron.schedule('*/15 * * * *', () => {
   try {
     var ukNow = new Date().toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hour12: false });
     var ukMin = parseInt(ukNow.split(':')[0], 10) * 60 + parseInt(ukNow.split(':')[1], 10);
     if (ukMin >= 540 && ukMin <= 575) { console.log('[TEST-CRON] skipping (09:00 real-delivery window)'); return; }
-    console.log('[TEST-CRON] 30-min delivery test starting: ' + new Date().toISOString());
+    console.log('[TEST-CRON] 15-min delivery test starting: ' + new Date().toISOString());
     runDeliveryTestReport().then(function(r) { console.log('[TEST-CRON] done, issues=' + (r && r.issues)); });
   } catch(ce) { console.log('[TEST-CRON] scheduling error:', ce.message); }
 }, { timezone: 'Europe/London' });
