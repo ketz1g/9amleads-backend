@@ -6958,7 +6958,12 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
       if (hasUsablePremiseAddress(fAddr, fPc)) {
         var pk2 = String(fPc).toUpperCase().replace(/[^A-Z0-9]/g, '');
         if (usedPostcode[pk2] || pcSeen2[pk2]) continue;
+        var fKey = fl.url || ('a:' + String(fAddr).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30));
+        var fAKey = 'aa:' + propertyIdentityKey(fAddr, fPc);
+        // Respect global exclusivity: never take a lead another customer already has.
+        if (_sharedSeen[fKey] || (fAKey.length > 5 && _sharedSeen[fAKey])) continue;
         usedPostcode[pk2] = 1;
+        _sharedSeen[fKey] = 1; if (fAKey.length > 5) _sharedSeen[fAKey] = 1;
         selected.push(fl);
       }
     }
