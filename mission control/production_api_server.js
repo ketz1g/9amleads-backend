@@ -7244,7 +7244,7 @@ async function runProbatePafPostScrape() {
     if (l.paf_done && !l.paf_failed) return;
     if ((l.paf_attempts || 0) >= 2) return;
     var addr = l.fullAddress || l.deceasedAddress || l.address || '';
-    var pc = String(l.postcode || '').toUpperCase().trim();
+    var pc = cleanUkPostcode(l.postcode || '').toUpperCase();
     if (hasUsablePremiseAddress(addr, pc)) { l.paf_done = true; return; }
     if (!hasStreetName(addr) && !/[A-Za-z]{3,}/.test(addr.replace(/[0-9]/g,''))) return; // no street/town → not resolvable
     var d = pickFreshDate(l) || '';
@@ -7264,7 +7264,7 @@ async function runProbatePafPostScrape() {
     } catch(be) {}
     if (pi > 0) await new Promise(function(r) { setTimeout(r, 250); });
     var addr0 = l.fullAddress || l.deceasedAddress || l.address || '';
-    var pc0 = String(l.postcode || '').toUpperCase().trim();
+    var pc0 = cleanUkPostcode(l.postcode || '').toUpperCase();
     var hint = l.doorNumberHint || '';
     try {
       var full = null;
@@ -7380,6 +7380,19 @@ async function preVerifyMovingLeads() {
 // names ("ALL", "EAST", "KENT") which aren't changeable to a closer postcode.
 function isPostcodeAreaTarget(s) {
   return /^[A-Z]{1,2}([0-9]|$)/i.test(String(s || '').trim());
+}
+// Clean a raw postcode string to a valid UK postcode. Handles the Gazette scraper bug
+// where the postcode is stored as a URL ("https://www.thegazette.co.uk/id/postcode/M231LF")
+// by extracting the code after "/postcode/" and normalising spacing ("M231LF" -> "M23 1LF").
+function cleanUkPostcode(raw) {
+  var s = String(raw || '').trim();
+  var m = s.match(/\/postcode\/([A-Z0-9]+)/i);
+  if (m) s = m[1];
+  var clean = s.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?[0-9][A-Z]{2}$/.test(clean)) return s.trim();
+  var outward = clean.slice(0, clean.length - 3);
+  var inward = clean.slice(-3);
+  return outward + ' ' + inward;
 }
 // leads_paused can be stored as boolean true, number 1, or STRING "0"/"1". Treat
 // only true/1/'1' as paused — "0" is NOT paused (this bug silently skipped customers).
