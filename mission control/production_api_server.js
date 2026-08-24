@@ -17576,9 +17576,10 @@ function cleanLetterBodyForPrint(text) {
     var line = lines[i];
     if (!line) { if (out.length) out.push(''); continue; }
     var up = line.toUpperCase();
-    // START POINT: once we hit the product/services list heading, keep everything
-    // from here on (skip the greeting/address/marketing preamble above it).
-    if (!afterProductStart && /^(PLANNING|MOVING|PROBATE|NEW BUSINESS|PUBLIC SECTOR|OUR SERVICES|WHAT WE|HOW WE|WHY CHOOSE|ABOUT US|OUR PRODUCTS|5 TYPES|MORE THAN)/i.test(line)) {
+    // START POINT: once we hit the actual product/services list heading, keep
+    // everything from here on. "5 TYPES OF BUSINESS LEADS" is a header ABOVE the
+    // list and is dropped — the letter starts at PLANNING & CONSTRUCTION.
+    if (!afterProductStart && /^(PLANNING|MOVING|PROBATE|NEW BUSINESS|PUBLIC SECTOR|OUR SERVICES|WHAT WE|HOW WE|WHY CHOOSE|ABOUT US|OUR PRODUCTS)/i.test(line)) {
       afterProductStart = true;
     }
     if (!afterProductStart) {
@@ -17597,6 +17598,14 @@ function cleanLetterBodyForPrint(text) {
     out.push(line);
   }
   var joined = out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  // FINAL ADDRESS-BLOCK STRIP: remove any multi-line address block that leaked into
+  // the body (name line + street + town + postcode). Stannp prints the recipient
+  // address in the envelope window, so it must never appear in the letter body.
+  // Pattern: a 3-5 line block ending in a postcode or an all-caps town, starting
+  // with a name (possibly duplicated). Examples:
+  //   "Ket Mandalia\nKet Mandalia\n4 Farmborough Close\nHARROW\nHA1 3YG"
+  //   "John Smith\n10 High Street\nLEEDS"
+  joined = joined.replace(/(?:^|\n)(?:[A-Z][a-zA-Z'.\- ]{1,40}\n){1,2}(?:[A-Za-z0-9'.,\/\- ]{2,60}\n){1,3}(?:[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}|[A-Z]{2,}(?:\s[A-Z]{2,})*)\s*(?=\n|$)/gm, '\n').replace(/\n{3,}/g, '\n\n').trim();
   return joined;
 }
 
@@ -18110,6 +18119,15 @@ async function sendDmCampaignInner(campaignId, customerId) {
       // webhook for reconciling real delivery status.
       rcptWithPages.tags = '9amleads:' + String(rcpt.id).substring(0, 18) + (rcpt.lead_id ? ':' + String(rcpt.lead_id).substring(0, 18) : '');
       if (templateBody) {
+        // CLEAN the letter body for print BEFORE rendering: strip the marketing
+        // preamble (address block, "Dear...", "5 TYPES OF BUSINESS LEADS",
+        // "GET FRESH...", "MORE THAN JUST LEADS"), any unmerged placeholder tokens
+        // like "00000 / 0000", and stray duplicated names — the letter should start
+        // at the real product/services content. Stannp prints the recipient address
+        // itself in the envelope window, so it must not appear in the letter.
+        var printBody = cleanLetterBodyForPrint(templateBody || '')
+          .replace(/\b0{4,}\s*\/\s*0{3,}\b/g, '')       // "00000 / 0000" token residue
+          .replace(/\[?[a-zA-Z_]+(?:_[a-zA-Z_]+)*\]?/g, function(tok) { return /^\[[a-z_]+\]$/.test(tok) ? '' : tok; }); // drop [placeholder] tokens
         // Build a clean A4 letter. Stannp prints the RECIPIENT address itself in
         // the envelope window, so we must NOT repeat it in the letter PDF. We only
         // put the SENDER's return address (business profile) + a date line, then
@@ -18134,14 +18152,14 @@ async function sendDmCampaignInner(campaignId, customerId) {
           '<td width="50%" align="right" valign="top" style="font-size:10px;color:#334155">' + todayLine + '</td>' +
           '</tr></table>' +
           '<div style="border-top:2px solid #0ea5e9;margin:24px 0 20px"></div>' +
-          '<div style="font-size:11px;line-height:1.7">' + templateBody + '</div>' +
+          '<div style="font-size:11px;line-height:1.7">' + printBody + '</div>' +
           '</body></html>';
         rcptWithPages.pages = letterHtml
           .replace(/\[name\]/gi, rcpt.name || '')
           .replace(/\[address\]/gi, [rcpt.address_line1, rcpt.address_line2, rcpt.city, rcpt.postcode].filter(Boolean).join(', '))
           .replace(/\[company\]/gi, rcpt.company || rcpt.name || '');
         // The clean letter BODY (no sender/date) for the A4 PDF layout.
-        rcptWithPages.letter_body = cleanMailText(templateBody || '');
+        rcptWithPages.letter_body = printBody;
       }
       var pieceResult = await provider.sendMailpiece(mailType, rcptWithPages, pieceFiles, chosenFormat);
       if (pieceResult && pieceResult.success) {
