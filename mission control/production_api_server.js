@@ -748,6 +748,13 @@ function validatePostcodes(postcodes, customerPlan, customerProduct, customerId,
     errors.push('Your ' + customerPlan + ' plan allows ' + limitLabel + ' postcode area' + (maxLimit !== 1 ? 's' : '') + '. You selected ' + postcodes.length + '.');
   }
 
+  // MINIMUM 3 AREAS: every customer must choose at least 3 areas/postcodes so we can
+  // deliver a steady daily supply. They can choose as many as they like — no upper
+  // limit beyond their plan.
+  if (postcodes.length < 3) {
+    errors.push('Please choose at least 3 areas or postcodes so we can deliver a steady daily supply of leads. You can select as many as you like.');
+  }
+
   for (const pc of postcodes) {
     const upper = pc.toUpperCase().trim();
 
@@ -3576,10 +3583,25 @@ app.post('/api/auth/signup', async (req, res) => {
     // ukwide coverage so the delivery knows to skip area matching on the next run.
     var ukAreas = areas.some(function(a){ return /all.?uk|uk.?wide|nationwide|whole.?uk/i.test(String(a)); });
     if (ukAreas || String(coverage || '').toLowerCase() === 'ukwide') { areas = ['All UK']; coverage = 'ukwide'; }
-    else if (areas.length === 0) {
-      // Zero areas + no All of UK = nothing to deliver against. Block it so a
-      // customer never signs up with no coverage (matches the frontend check).
-      return res.status(400).json({ error: 'Please choose at least one area or county, or select All of UK.' });
+    else if (areas.length < 3) {
+      // MINIMUM 3 AREAS: every customer must pick at least 3 areas/postcodes so we
+      // can deliver a steady daily supply. No upper limit — they can choose as many
+      // as they like (their plan allows the max).
+      return res.status(400).json({ error: 'Please choose at least 3 areas or postcodes so we can deliver a steady daily supply of leads. You can select as many as you like (or choose All of UK).' });
+    }
+    // PROBATE USES AREAS (counties/regions), NOT postcodes — probate supply is
+    // national and sparse, so a single postcode area starves the customer. Enforce
+    // county/region selection at sign-up (min 3, as many as they like).
+    if (product === 'probate' && !(ukAreas || coverage === 'ukwide')) {
+      var probateRegionsS = ['East Midlands','East of England','London','North East','North West','South East','South West','West Midlands','Yorkshire and the Humber'];
+      var badPAreas = areas.filter(function(a) {
+        var k = String(a).toLowerCase().replace(/[\s-]+/g, '-');
+        return !COUNTY_POSTCODE_MAP[k] && probateRegionsS.indexOf(a) === -1;
+      });
+      if (badPAreas.length) {
+        return res.status(400).json({ error: 'For probate leads, choose UK counties or regions (e.g. Kent, Greater London, South West) — not single postcodes. Please pick at least 3 areas.' });
+      }
+      coverage = 'county';
     }
 
     // Validate product count by plan
@@ -5948,6 +5970,35 @@ app.put('/api/settings', authMiddleware, (req, res) => {
     const hasAllUK = target_areas.some(function(a){ return /all[\s-]?uk/i.test(String(a)); });
     if (hasAllUK) {
       db.prepare('UPDATE customers SET coverage = ?, target_areas = ? WHERE id = ?').run('ukwide', JSON.stringify(['All UK']), req.user.id);
+      res.json({ success: true });
+      return;
+    }
+    // PROBATE USES AREAS (counties/regions), NOT postcodes — probate supply is
+    // national so a county/region gives a steady daily flow, whereas a single
+    // postcode area starves the customer (probate is sparse). Enforce county/region
+    // selection and a minimum of 3 areas here (and on sign-up).
+    if (customer.product === 'probate') {
+      if (!Array.isArray(target_areas) || target_areas.length < 3) {
+        return res.status(400).json({ error: 'Please choose at least 3 areas (counties or regions) — you can select as many as you like.' });
+      }
+      var probateRegions = ['East Midlands','East of England','London','North East','North West','South East','South West','West Midlands','Yorkshire and the Humber'];
+      var badPAreas = target_areas.filter(function(a) {
+        var k = String(a).toLowerCase().replace(/[\s-]+/g, '-');
+        return !COUNTY_POSTCODE_MAP[k] && probateRegions.indexOf(a) === -1 && !isPostcodeAreaTarget(a);
+      });
+      if (badPAreas.length) {
+        return res.status(400).json({ error: '"' + badPAreas.join(', ') + '" is not a valid area. For probate, choose UK counties or regions from the list.' });
+      }
+      releasePostcodes(req.user.id);
+      db.prepare('UPDATE customers SET target_areas = ?, coverage = ? WHERE id = ?').run(JSON.stringify(target_areas), 'county', req.user.id);
+      try {
+        var pcSyncP = JSON.parse(customer.product_config || '{}');
+        var pcProdP = customer.product;
+        if (!pcSyncP[pcProdP]) pcSyncP[pcProdP] = {};
+        pcSyncP[pcProdP].target_areas = JSON.stringify(target_areas);
+        pcSyncP[pcProdP].coverage = 'county';
+        db.prepare('UPDATE customers SET product_config = ? WHERE id = ?').run(JSON.stringify(pcSyncP), req.user.id);
+      } catch(pcPErr) { console.log('[SETTINGS] probate product_config sync error:', pcPErr.message); }
       res.json({ success: true });
       return;
     }
