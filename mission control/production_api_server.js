@@ -10055,8 +10055,8 @@ cron.schedule('0 13 * * *', async () => {
 // scrape (07:15) and again after the 7:30 watchdog re-trigger (08:00), so the pool
 // holds full numbered addresses BEFORE the 9am delivery. The delivery then skips
 // paid PAF for pre-enriched leads (cost-neutral) and drops paf_failed ones early.
-cron.schedule('15 7 * * *', async () => {
-  try { await runMovingPafPostScrape(); await runProbatePafPostScrape(); } catch(e) { console.log('[PAF-POSTSCRAPE] 07:15 error: ' + e.message); }
+cron.schedule('45 6 * * *', async () => {
+  try { await runMovingPafPostScrape(); await runProbatePafPostScrape(); } catch(e) { console.log('[PAF-POSTSCRAPE] 06:45 error: ' + e.message); }
 }, { timezone: 'Europe/London' });
 cron.schedule('0 8 * * *', async () => {
   try { await runMovingPafPostScrape(); await runProbatePafPostScrape(); } catch(e) { console.log('[PAF-POSTSCRAPE] 08:00 error: ' + e.message); }
@@ -22144,6 +22144,18 @@ function syncCustomers(product) {
       saveDb();
     } catch(logErr) { console.log('[SCRAPER] Log error:', logErr.message); }
     console.log('[SCRAPER] Background scrape completed: ' + JSON.stringify(results));
+    // EARLY PAF PASS: run the door-number confirmation (moving + probate)
+    // immediately after the 06:00 scrape finishes, so the delivery preview in admin
+    // is accurate by ~06:30 instead of waiting for the 07:15 PAF cron. Door numbers
+    // are added as early as possible, giving the founder a long window to inspect
+    // and fix anything before the 09:00 send. Both passes are idempotent + budget-
+    // capped, so the later 07:15/08:00 crons just top up any remaining gaps.
+    try {
+      console.log('[SCRAPER] Running early PAF pass after scrape...');
+      await withTimeout(runMovingPafPostScrape(), 240000, 'early moving PAF');
+      await withTimeout(runProbatePafPostScrape(), 180000, 'early probate PAF');
+      console.log('[SCRAPER] Early PAF pass complete');
+    } catch(pafErr) { console.log('[SCRAPER] Early PAF pass error:', pafErr.message); }
   } catch (e) {
     console.log('[SCRAPER] Background scrape error: ' + e.message);
   }
