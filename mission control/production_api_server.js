@@ -14292,7 +14292,7 @@ _deliverDiag[cust.email].products = products;
           console.log('[DELIVERY-FINAL-CAP] ' + cust.email + ': hard-capped ' + custLeads.length + ' -> ' + totalDailyLimit + ' (never over-deliver)');
           custLeads = custLeads.slice(0, totalDailyLimit);
         }
-        for (var li = 0; li < custLeads.length; li++) { custLeads[li].delivered = 1; custLeads[li].delivered_at = new Date().toISOString(); if (testOnly && req.body && req.body.run_id) custLeads[li].delivery_run_id = req.body.run_id; }
+        for (var li = 0; li < custLeads.length; li++) { custLeads[li].delivered = 1; custLeads[li].delivered_at = new Date().toISOString(); custLeads[li].status = 'delivered'; if (testOnly && req.body && req.body.run_id) custLeads[li].delivery_run_id = req.body.run_id; }
         saveDb();
         delivered += custLeads.length;
         // GUARANTEE CHECK: never silently deliver less than promised. Log (and
