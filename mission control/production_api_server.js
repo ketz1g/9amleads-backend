@@ -7955,6 +7955,28 @@ app.post('/api/admin/set-customer-lead-total', adminAuth, async (req, res) => {
     // daily cap (no more). Repeated runs/churn may have delivered MORE than cap
     // distinct leads today — keep only the NEWEST cap leads, mark the rest removed.
     var dailyLimit = getPlanLimit(cust.product, cust.plan, cust.coverage) || 5;
+    // PER-DAY CAP (HISTORY TOO): each delivery day should hold at most the daily
+    // limit. Churn/backfills may have over-delivered on PAST days (e.g. 10 leads on
+    // Aug 21 when the cap is 5) — cap every day so the dashboard progression reads
+    // cleanly (5 / 10 / 20 / 20) instead of (5 / 15 / 25 / 25).
+    var _dayGroups = {};
+    (dbS.leads || []).forEach(function(l) {
+      if (l.customer_id !== cust.id || !l.delivered || !l.delivered_at) return;
+      var _d = l.delivered_at.substring(0, 10);
+      if (!_dayGroups[_d]) _dayGroups[_d] = [];
+      _dayGroups[_d].push(l);
+    });
+    var _perDayRemoved = 0;
+    Object.keys(_dayGroups).forEach(function(_d) {
+      if (_d === today) return; // today handled below
+      var group = _dayGroups[_d].sort(function(a, b) { return String(b.delivered_at).localeCompare(String(a.delivered_at)); });
+      if (group.length > dailyLimit) {
+        var _keep = {};
+        group.slice(0, dailyLimit).forEach(function(l) { _keep[l.id] = true; });
+        dbS.leads = (dbS.leads || []).filter(function(l) { if (_keep[l.id]) return true; if (l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.substring(0, 10) === _d) { _perDayRemoved++; return false; } return true; });
+      }
+    });
+    if (_perDayRemoved) console.log('[SET-TOTAL] capped past delivery days for ' + email + ' (removed ' + _perDayRemoved + ' over-cap lead(s))');
     var todayDelivered = (dbS.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0; });
     if (todayDelivered.length > dailyLimit) {
       var byNewest = todayDelivered.slice().sort(function(a, b) { return String(b.delivered_at).localeCompare(String(a.delivered_at)); });
