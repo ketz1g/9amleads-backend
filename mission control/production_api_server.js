@@ -8113,14 +8113,22 @@ app.post('/api/admin/set-customer-lead-total', adminAuth, async (req, res) => {
       (dbS.leads || []).forEach(function(l) { if (l.customer_id === cust.id && l.delivered && l.delivered_at) { var _d = l.delivered_at.substring(0, 10); existingByDay[_d] = (existingByDay[_d] || 0) + 1; } });
       var trialStart = new Date();
       try { var _te = new Date(cust.trial_ends); trialStart = new Date(_te.getTime() - 6 * 86400000); } catch(e) {}
+      // DELIVERY DAYS ONLY (Mon-Fri): leads are delivered Monday-Friday at 9am, so a
+      // backfilled lead must be stamped on a WEEKDAY, never a weekend. Otherwise the
+      // per-day breakdown shows "Sunday: 5" which looks wrong even though the total is
+      // correct. The LAST delivery day of the trial (the 5th weekday) is where All
+      // Time reaches 25.
       var _slotDates = [];
       var _dd = new Date(trialStart);
       var _endD = new Date();
       while (_dd <= _endD) {
-        var _ds = _dd.toISOString().substring(0, 10);
-        var _cap = 5;
-        var _cur = existingByDay[_ds] || 0;
-        while (_cur < _cap && _slotDates.length < need) { _slotDates.push(_ds); _cur++; }
+        var _dw = _dd.getUTCDay();
+        if (_dw !== 0 && _dw !== 6) {
+          var _ds = _dd.toISOString().substring(0, 10);
+          var _cap = 5;
+          var _cur = existingByDay[_ds] || 0;
+          while (_cur < _cap && _slotDates.length < need) { _slotDates.push(_ds); _cur++; }
+        }
         _dd.setDate(_dd.getDate() + 1);
       }
       var _slotIdx = 0;
