@@ -24025,15 +24025,31 @@ app.post('/api/admin/restore-customers', adminAuth, (req, res) => {
     var restored = 0, skipped = 0;
     (bk.customers || []).forEach(function(c) {
       if (emails.indexOf(String(c.email || '').toLowerCase()) === -1) return;
-      if ((db.customers || []).some(function(x) { return x.id === c.id || String(x.email || '').toLowerCase() === String(c.email || '').toLowerCase(); })) { skipped++; return; }
+      var existing = (db.customers || []).find(function(x) { return x.id === c.id || String(x.email || '').toLowerCase() === String(c.email || '').toLowerCase(); });
+      if (existing) { skipped++; return; }
       db.customers.push(c); restored++;
     });
     var ids = (bk.customers || []).filter(function(c) { return emails.indexOf(String(c.email || '').toLowerCase()) !== -1; }).map(function(c) { return c.id; });
+    // MERGE BACKUP LEADS for existing customers: historical leads that the live DB
+    // no longer has (e.g. deleted by a destructive admin cleanup / force-replace
+    // reset) are re-added so every customer keeps their full lead history since
+    // signup. The customer's CURRENT batch (delivered today) is preserved — a lead
+    // already present (same id) is never duplicated, and backup leads marked
+    // 'removed' are restored as their ORIGINAL delivered state so they re-appear.
     var leadAdded = 0;
+    var todayStr = new Date().toISOString().split('T')[0];
     (bk.leads || []).forEach(function(l) {
       if (ids.indexOf(l.customer_id) === -1) return;
       if ((db.leads || []).some(function(x) { return x.id === l.id; })) return;
-      db.leads.push(l); leadAdded++;
+      // Restore HISTORICAL leads only (delivered before today). Today's batch is
+      // handled separately and must stay at the exact promised count — the backup's
+      // today-leads may reflect an over-delivered/duplicate state, so never merge
+      // them back in (it would re-inflate "leads today").
+      if (l.delivered && l.delivered_at && l.delivered_at.indexOf(todayStr) === 0) return;
+      var nl = Object.assign({}, l);
+      if (nl.status === 'removed' && nl.delivered) nl.status = 'delivered';
+      if (!nl.delivered && nl.delivered_at) { nl.delivered = 1; if (!nl.status) nl.status = 'delivered'; }
+      db.leads.push(nl); leadAdded++;
     });
     saveDb();
     res.json({ success: true, restored_customers: restored, skipped: skipped, restored_leads: leadAdded });
