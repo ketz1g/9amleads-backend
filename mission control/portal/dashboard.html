@@ -1740,6 +1740,9 @@ function loadActivity() {
   }
   function render() {
     var live = leadsList.filter(isLiveLead);
+    // DEDUPE by URL/address so churned duplicates never inflate the activity counts.
+    var _seenAct = {};
+    live = live.filter(function(l){ var d=null; try{ d=JSON.parse(l.data||'{}'); }catch(e){} var u=String(d.url||'').split('#')[0].split('?')[0].replace(/\/+$/,'').toLowerCase(); var a=String(d.fullAddress||d.address||'').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,28); var pc=String(d.postcode||'').toUpperCase().replace(/[^A-Z0-9]/g,''); var k=u||(a+'|'+pc); if(!k) return true; if(_seenAct[k]) return false; _seenAct[k]=true; return true; });
     var todayN = live.filter(function(l){ return (l.delivered_at||'').startsWith(todayStr); }).length;
     var weekN = live.filter(function(l){ return (l.delivered_at||'') >= weekStart; }).length;
     var monthN = live.filter(function(l){ return (l.delivered_at||'').startsWith(monthStr); }).length;
@@ -1837,6 +1840,10 @@ document.querySelectorAll('.modal').forEach(function(m){
         return true;
       }
       var live = leads.filter(isLiveLead);
+      // DEDUPE live leads by URL/address so repeated/churned deliveries never inflate
+      // the KPI counts (a duplicate "33 Devon Street" row must count once).
+      var _seenLive = {};
+      live = live.filter(function(l){ var d=null; try{ d=JSON.parse(l.data||'{}'); }catch(e){} var u=String(d.url||'').split('#')[0].split('?')[0].replace(/\/+$/,'').toLowerCase(); var a=String(d.fullAddress||d.address||'').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,28); var pc=String(d.postcode||'').toUpperCase().replace(/[^A-Z0-9]/g,''); var k=u||(a+'|'+pc); if(!k) return true; if(_seenLive[k]) return false; _seenLive[k]=true; return true; });
       var today = new Date().toISOString().split('T')[0];
       var wStart = new Date(Date.now() - 6 * 86400000).toISOString().split('T')[0]; // last 7 days
       var tl = live.filter(function(l){ return (l.delivered_at || '').startsWith(today); });
