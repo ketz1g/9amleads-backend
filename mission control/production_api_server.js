@@ -5725,7 +5725,13 @@ app.get('/api/leads', authMiddleware, (req, res) => {
   });
 
     res.json(visible
-    .filter(function(l) { return leadHasUsableAddress(l, customer ? customer.product : l.product); })
+    // Only filter PENDING leads by address completeness. DELIVERED leads are the
+    // customer's real history (they were emailed + confirmed) and must ALWAYS show
+    // on the dashboard — even older ones scraped before full postcodes were
+    // standardised ("36 Cambridge Road, Kingston Upon Thames, Surrey" with no
+    // postcode still counts toward Today/Week/Month/All-Time). The address filter
+    // exists to hide incomplete PENDING leads, never delivered history.
+    .filter(function(l) { return l.delivered || leadHasUsableAddress(l, customer ? customer.product : l.product); })
     // DEDUPE by URL/address+postcode: repeated/churned deliveries can leave duplicate
     // rows for the same property (same URL, or same street+number+postcode from
     // multiple scrapes). The customer must see each UNIQUE lead once, and the
