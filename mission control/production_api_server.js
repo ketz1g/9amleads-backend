@@ -12891,6 +12891,10 @@ _deliverDiag[cust.email].products = products;
       products.forEach(function(p) {
         var pool = (db.leads || []).filter(function(l) {
           if (l.customer_id !== cust.id || l.delivered !== 0 || l.product !== p) return false;
+          // NEVER re-deliver a rejected/blocked lead (founder-flagged wrong/commercial/
+          // out-of-area). The lead may exist as delivered=0 rows in the DB even after
+          // being blocked — filter by the data flags so it can never be picked up again.
+          try { var _pd = JSON.parse(l.data || '{}'); if (_pd.rejected || _pd.blocked || _pd.blocked_by_admin) return false; } catch(_pe) {}
           if (!isLeadFresh24(l)) return false;
           if (!leadPassesFilters((l && typeof l.data === 'string' && l.data) ? JSON.parse(l.data) : (l || {}))) return false;
           if (!notDeliveredBefore(l)) return false;
@@ -12903,6 +12907,7 @@ _deliverDiag[cust.email].products = products;
         // the customer's chosen areas (closest first) so the promise is always met.
         var globalPool = (db.leads || []).filter(function(l) {
           if (l.delivered !== 0 || l.product !== p) return false;
+          try { var _gd = JSON.parse(l.data || '{}'); if (_gd.rejected || _gd.blocked || _gd.blocked_by_admin) return false; } catch(_ge) {}
           if (p === 'moving' ? !isLeadFresh24(l, freshCutoff48) : !isLeadFresh24(l)) return false;
           if (!leadPassesFilters((l && typeof l.data === 'string' && l.data) ? JSON.parse(l.data) : (l || {}))) return false;
           if (!notDeliveredBefore(l)) return false;
@@ -14216,7 +14221,12 @@ _deliverDiag[cust.email].products = products;
         // Runs AFTER the final Postcoder number-confirmation pass so the email
         // reflects the CONFIRMED door-numbered addresses, never the pre-confirmation
         // street-only addresses.
-        if (!alreadyEmailedToday || forceFull) {
+        // SILENT MODE (no_email): admin operations (replace-leads/block-pool-lead
+        // resets) must NOT email the customer — the founder does not want customers
+        // notified of internal lead corrections. The leads are updated in the
+        // dashboard, but no email goes out.
+        var _noEmail = !!(req.body && req.body.no_email);
+        if ((!alreadyEmailedToday || forceFull) && !_noEmail) {
           // Queue the email for bounded-parallel sending (so 1000 customers'
           // emails all go out within a few minutes instead of 30-60 min
           // sequentially). Persist last_email_date immediately so a crash can
@@ -21094,16 +21104,22 @@ app.post('/api/admin/replace-leads', adminAuth, async (req, res) => {
       }
       return l;
     });
-    cust.last_email_date = ''; // allow re-email
+    // SILENT BY DEFAULT: admin lead corrections (replace-leads / reset_all) must NOT
+    // notify the customer by email — the founder does not want customers to know
+    // about internal lead updates. Only send if `email: true` is explicitly passed.
+    var sendEmail = !!(req.body && req.body.email === true);
+    cust.last_email_date = sendEmail ? '' : cust.last_email_date; // don't clear if silent
     saveDb();
-    // 2) Re-deliver replacements (force fills the gap, respects filters/exclusivity)
-    var deliv = await httpCallLocal('POST', '/api/admin/deliver', { customer_email: em, force: true });
-    // 3) Re-email the corrected batch
+    // 2) Re-deliver replacements (force fills the gap, respects filters/exclusivity).
+    //    Silent mode passes no_email so the customer's dashboard updates WITHOUT an
+    //    email notification.
+    var deliv = await httpCallLocal('POST', '/api/admin/deliver', { customer_email: em, force: true, no_email: !sendEmail });
+    // 3) Re-email the corrected batch ONLY when explicitly requested (email:true).
     var db2 = getDb();
     var cust2 = (db2.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === em; });
     var todayLeads = (db2.leads || []).filter(function(l) { return l.customer_id === cust2.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0; });
     var emailSent = false;
-    if (todayLeads.length > 0) {
+    if (sendEmail && todayLeads.length > 0) {
       try {
         var subj = '9amLeads \u2022 Your Daily Opportunities on ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
         await sendBrevoEmail({ email: cust2.email, name: cust2.company || 'Customer' }, subj, generateLeadEmailHTML(cust2, todayLeads));
@@ -21112,7 +21128,7 @@ app.post('/api/admin/replace-leads', adminAuth, async (req, res) => {
         emailSent = true;
       } catch(emErr) { console.log('[REPLACE] re-email failed:', emErr.message); }
     }
-    res.json({ success: true, email: em, removed: removed, delivered_now: todayLeads.length, email_sent: emailSent, deliver: deliv });
+    res.json({ success: true, email: em, removed: removed, delivered_now: todayLeads.length, email_sent: emailSent, silent: !sendEmail, deliver: deliv });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
