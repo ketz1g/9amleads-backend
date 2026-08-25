@@ -12832,9 +12832,13 @@ _deliverDiag[cust.email].products = products;
       // NO SPLIT EMAILS: if this customer already received their daily email (a
       // watchdog/manual re-run), top up the missing leads in the DB but NEVER send
       // a second partial email. All promised leads go out in ONE email.
-      var alreadyEmailedToday = (db.leads || []).some(function(l) {
-        return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.startsWith(today);
-      }) || (cust.last_email_date === today);
+      // "Already emailed today" = an email was ACTUALLY sent today (last_email_date).
+      // IMPORTANT: a pre-9am top-up/test lead delivered today must NOT suppress the
+      // 9am email — the customer's daily EMAIL is the promise, and it goes out once
+      // per day regardless of when the first lead arrived. (The delivered-lead check
+      // was wrongly blocking the email: a single early lead made alreadyEmailedToday
+      // true and the 9am email was skipped while leads were topped up silently.)
+      var alreadyEmailedToday = (cust.last_email_date === today);
       if (totalNeeded === 0) {
         console.log('[DELIVERY] ' + cust.email + ' already received ' + alreadyDeliveredToday + ' today (promise=' + totalDailyLimit + ') — skipping (exact-count)');
         continue;
@@ -20987,6 +20991,32 @@ app.post('/api/admin/set-areas', adminAuth, (req, res) => {
     cust.coverage = coverage;
     saveDb();
     res.json({ success: true, email: em, coverage: coverage, areas: clean });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/send-customer-email — (re)send a real customer's daily delivery
+// email NOW using today's delivered leads. Used when a 9am email was suppressed
+// (e.g. a pre-9am top-up lead blocked it). Only sends if there are delivered leads
+// today and last_email_date != today (no duplicate).
+app.post('/api/admin/send-customer-email', adminAuth, async (req, res) => {
+  try {
+    var em = String((req.body && req.body.email) || '').toLowerCase();
+    if (!em) return res.status(400).json({ error: 'email required' });
+    var dbE = getDb();
+    var cust = (dbE.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === em; });
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    var today = new Date().toISOString().split('T')[0];
+    var todayLeads = (dbE.leads || []).filter(function(l) {
+      return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0;
+    });
+    if (todayLeads.length === 0) return res.json({ error: 'No delivered leads today for ' + em });
+    if (cust.last_email_date === today) return res.json({ error: em + ' was already emailed today — not sending duplicate' });
+    var subject = '9amLeads \u2022 Your Daily Opportunities on ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+    var html = generateLeadEmailHTML(cust, todayLeads);
+    await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, subject, html);
+    cust.last_email_date = today;
+    saveDb();
+    res.json({ success: true, email: em, sent: todayLeads.length + ' leads in email' });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
