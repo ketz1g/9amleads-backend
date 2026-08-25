@@ -23419,7 +23419,8 @@ app.get('/api/admin/backup', adminAuth, (req, res) => {
   try {
     var list = [];
     try { fs.mkdirSync(BACKUP_DIR, { recursive: true }); list = fs.readdirSync(BACKUP_DIR).filter(function(f) { return f.startsWith('database-') && f.endsWith('.json'); }).sort(); } catch(e) {}
-    res.json({ success: true, repo: BACKUP_GITHUB_REPO, local_backups: list.length, latest: list.length ? list[list.length - 1] : 'none', db_size_bytes: fs.existsSync(DB_FILE) ? fs.statSync(DB_FILE).size : 0 });
+    var sized = list.map(function(f) { var sz = 0; try { sz = fs.statSync(path.join(BACKUP_DIR, f)).size; } catch(e) {} return { file: f, size: sz }; });
+    res.json({ success: true, repo: BACKUP_GITHUB_REPO, local_backups: list.length, latest: list.length ? list[list.length - 1] : 'none', db_size_bytes: fs.existsSync(DB_FILE) ? fs.statSync(DB_FILE).size : 0, backups: sized });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 // POST /api/admin/postcoder/enrich-pool — one-time verification: re-enrich door-less
