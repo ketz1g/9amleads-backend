@@ -5962,7 +5962,8 @@ const REGION_TO_POSTCODE_AREAS = {
   'west-england': ['BA','BH','BS','DT','EX','GL','PL','SN','SP','TA','TQ','TR'],
   'north-england': ['BB','BD','BL','CH','CW','DH','DL','DN','FY','HD','HG','HU','HX','L','LA','LD','LS','M','NE','OL','PR','S','SK','SR','ST','TF','TS','WA','WF','WN','YO'],
   'scotland': ['AB','DD','DG','EH','FK','G','HS','IV','KA','KW','KY','ML','PA','PH','TD','ZE'],
-  'northern-ireland': ['BT']
+  'northern-ireland': ['BT'],
+  'wales': ['CF','LD','LL','NP','SA','SY']
 };
 app.put('/api/areas/update', authMiddleware, (req, res) => {
   try {
