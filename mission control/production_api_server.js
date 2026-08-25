@@ -1041,23 +1041,49 @@ async function runFullBackup() {
   } catch(e) { console.log('[BACKUP] Full backup error:', e.message); return null; }
 }
 
-// AUTO-RESTORE: if database.json is missing or corrupt, restore from the newest
-// local backup (or fetch the newest from the GitHub backup repo as a last resort).
+// AUTO-RESTORE: if database.json is missing, corrupt, OR valid-but-stale (0 customers
+// while backups have customers — a deploy reset the ephemeral disk), restore from the
+// NEWEST backup that actually CONTAINS customers. Picking the newest file blindly is
+// dangerous: a corrupt/small backup (0 customers) would be restored over good data.
 function restoreDbFromBackup() {
   try {
+    var curCust = -1;
     if (fs.existsSync(DB_FILE)) {
-      try { JSON.parse(fs.readFileSync(DB_FILE, 'utf-8')); return false; } catch(e) {}
+      try { var _cur = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8')); curCust = (_cur && _cur.customers) ? _cur.customers.length : -1; } catch(e) { curCust = -1; }
     }
-    console.log('[BACKUP] database.json missing/corrupt — restoring from newest backup...');
+    var needsRestore = false;
+    if (!fs.existsSync(DB_FILE)) needsRestore = true;
+    else if (curCust < 0) needsRestore = true;
+    else if (curCust === 0) {
+      // Valid-but-empty: only restore if a backup has MORE customers (avoid restoring
+      // a fresh legitimately-empty DB over a good backup, but DO restore a wiped DB).
+      needsRestore = true;
+    }
+    if (!needsRestore) return false;
+    console.log('[BACKUP] database.json missing/corrupt/empty (customers=' + curCust + ') — restoring from newest good backup...');
     var candidates = [];
-    try { fs.mkdirSync(BACKUP_DIR, { recursive: true }); candidates = fs.readdirSync(BACKUP_DIR).filter(function(f) { return f.startsWith('database-') && f.endsWith('.json'); }).sort(); } catch(e) {}
-    if (candidates.length) {
-      var newest = path.join(BACKUP_DIR, candidates[candidates.length - 1]);
-      fs.copyFileSync(newest, DB_FILE);
+    try { fs.mkdirSync(BACKUP_DIR, { recursive: true }); candidates = fs.readdirSync(BACKUP_DIR).filter(function(f) { return f.startsWith('database-') && f.endsWith('.json') && f.indexOf('CORRUPT') === -1; }).sort(); } catch(e) {}
+    var _good = null;
+    for (var _ci = candidates.length - 1; _ci >= 0; _ci--) {
+      try {
+        var _b = JSON.parse(fs.readFileSync(path.join(BACKUP_DIR, candidates[_ci]), 'utf-8'));
+        if (_b && _b.customers && _b.customers.length > 0 && _b.customers.length > curCust) { _good = candidates[_ci]; break; }
+      } catch(e) {}
+    }
+    if (!_good && curCust === 0) {
+      // No backup beats an empty DB — take any non-empty backup.
+      for (var _ci2 = candidates.length - 1; _ci2 >= 0; _ci2--) {
+        try { var _b2 = JSON.parse(fs.readFileSync(path.join(BACKUP_DIR, candidates[_ci2]), 'utf-8')); if (_b2 && _b2.customers && _b2.customers.length > 0) { _good = candidates[_ci2]; break; } } catch(e) {}
+      }
+    }
+    if (_good) {
+      var gpath = path.join(BACKUP_DIR, _good);
+      fs.copyFileSync(gpath, DB_FILE);
       _dbData = null; getDb();
-      console.log('[BACKUP] Restored from local backup: ' + newest);
+      console.log('[BACKUP] Restored from good backup: ' + _good);
       return true;
     }
+    if (curCust >= 0) return false; // DB is valid, just small — keep it
     console.log('[BACKUP] No local backup found — data may be lost.');
     return false;
   } catch(e) { console.log('[BACKUP] Restore error:', e.message); return false; }
