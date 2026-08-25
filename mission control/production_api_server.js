@@ -13194,8 +13194,12 @@ _deliverDiag[cust.email].products = products;
                       // STRIP UNCONFIRMED FLAT NUMBER FIRST: portals default flat
                       // displayAddress to "Flat 1, <building>" - never mail to a guessed
                       // flat. Keep the building-level address (accurate for Print & Post).
+                      // NORMALISE MOVING ADDRESS: start at the door/flat number + street
+                      // (drop leading building/company/court names) so every delivered
+                      // moving lead prints "55 Victoria Street", not "King House, 55 Victoria St".
                                             if (poolLeadData.address) {
                         poolLeadData.address = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(poolLeadData.address)));
+                        if (r2prod === 'moving') poolLeadData.address = normaliseMovingAddress(poolLeadData.address);
                         poolLeadData.fullAddress = poolLeadData.address;
                       }
                       }
