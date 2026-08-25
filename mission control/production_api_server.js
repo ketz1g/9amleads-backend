@@ -7083,7 +7083,65 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
   var pool = loadProductPool(cust.product);
   var maxBedsF = 99;
   try { var f2P = JSON.parse(cust.biz_field2 || '{}'); var fPP = f2P.moving || f2P; maxBedsF = parseInt(fPP['f-maxbeds'] || fPP['f-bed-max'] || fPP.maxBedrooms) || 99; } catch(e) { maxBedsF = 99; }
+  // CUSTOMER FILTERS (same parsing as the 9am delivery) so the preview applies the
+  // same planning/newbusiness/tenders/moving filters the customer chose at signup.
+  var custLeadFilters = { minBedrooms: 0, maxBedrooms: 99, maxPrice: 0, propertyType: '', appTypes: [], industries: [], minContractVal: 0, keywords: '' };
+  try { var _lfP = JSON.parse(cust.biz_field2 || '{}'); var _lfFlat = _lfP[cust.product] || _lfP;
+    custLeadFilters.maxBedrooms = parseInt(_lfFlat['f-maxbeds'] || _lfFlat['f-bed-max'] || _lfFlat.maxBedrooms) || 99;
+    custLeadFilters.maxPrice = parseInt(_lfFlat['f-maxprice'] || _lfFlat.maxPrice) || 0;
+    custLeadFilters.propertyType = String(_lfFlat['f-proptype'] || _lfFlat['f-type'] || _lfFlat.propertyType || '').toLowerCase();
+    custLeadFilters.appTypes = (Array.isArray(_lfFlat['f-app-type']) ? _lfFlat['f-app-type'] : (_lfFlat['f-app-type'] ? [_lfFlat['f-app-type']] : []));
+    custLeadFilters.industries = (Array.isArray(_lfFlat['f-industries']) ? _lfFlat['f-industries'] : (_lfFlat['f-industries'] ? [_lfFlat['f-industries']] : []));
+    custLeadFilters.minContractVal = parseInt(_lfFlat['f-min-val'] || _lfFlat.minContractValue) || 0;
+    custLeadFilters.keywords = String(_lfFlat['f-keywords'] || _lfFlat.keywords || '').toLowerCase();
+  } catch(e) {}
   var interleaved = interleavePoolByAreas(pool, areas);
+  // Preview copy of leadPassesFilters (mirrors the delivery's filter application).
+  function previewLeadPassesFilters(ld2) {
+    try {
+      if (cust.product === 'moving') {
+        var b = parseInt(ld2.bedrooms) || 0;
+        if (custLeadFilters.maxBedrooms < 99 && b > custLeadFilters.maxBedrooms) return false;
+      }
+      if (cust.product === 'planning' && custLeadFilters.appTypes && custLeadFilters.appTypes.length) {
+        var at = String(ld2.applicationType || ld2.proposal || ld2.type || ld2.category || '').toLowerCase();
+        var appOk = custLeadFilters.appTypes.some(function(t) {
+          var tt = String(t || '').toLowerCase();
+          if (!tt) return true;
+          return at.indexOf(tt) !== -1 || tt.indexOf(at) !== -1;
+        });
+        if (!appOk) return false;
+      }
+      if (cust.product === 'newbusiness' && custLeadFilters.industries && custLeadFilters.industries.length) {
+        var sic = String(ld2.sicCode || ld2.sic || '');
+        var nm = String(ld2.name || ld2.companyName || '').toLowerCase();
+        var indOk = custLeadFilters.industries.some(function(ind) {
+          var i0 = String(ind || '').toLowerCase();
+          if (!i0) return true;
+          if (/^8[89]\d{2}$/.test(sic)) return i0 === 'tech & software' || i0 === 'tech' || i0 === 'software';
+          if (/^(4[0-9]{3}|2[0-9]{3})/.test(sic)) return i0 === 'construction';
+          if (/^(4[6-9]\d{2}|47\d{2})/.test(sic)) return i0 === 'retail';
+          if (/^(5[56]\d{2}|56\d{2})/.test(sic)) return i0 === 'hospitality';
+          if (/^(8[6-8]\d{2}|87\d{2}|88\d{2})/.test(sic)) return i0 === 'healthcare';
+          if (/^([69]\d{2}|70\d{2})/.test(sic)) return i0 === 'professional services';
+          if (/^6[45]\d{2}/.test(sic)) return i0 === 'financial';
+          if (/^(59|60|62|63)\d{2}/.test(sic)) return i0 === 'creative';
+          return /(tech|software|digital|it |cyber|ai |data|cloud|saas|app)/.test(nm) ? (i0.indexOf('tech') !== -1) : false;
+        });
+        if (!indOk) return false;
+      }
+      if (cust.product === 'tenders') {
+        var cv = parseFloat(String(ld2.contractValue || ld2.contractValueLabel || '0').replace(/[^0-9.]/g, '')) || 0;
+        if (custLeadFilters.minContractVal > 0 && cv > 0 && cv < custLeadFilters.minContractVal) return false;
+        if (custLeadFilters.keywords) {
+          var kwText = (String(ld2.title || '') + ' ' + String(ld2.description || '') + ' ' + String(ld2.cpvCode || '') + ' ' + String(ld2.procurementType || '')).toLowerCase();
+          var kwList = custLeadFilters.keywords.split(',').map(function(k){ return k.trim(); }).filter(Boolean);
+          if (kwList.length && !kwList.some(function(k){ return kwText.indexOf(k.toLowerCase()) !== -1; })) return false;
+        }
+      }
+      return true;
+    } catch(e) { return true; }
+  }
   var candidates = [];
   var seen = {};
   var _sharedSeen = sharedSeen || {};
@@ -7118,6 +7176,10 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
     if (cust.product === 'moving') { if (fv < (movingFallback48 ? freshCutoff48p : freshCutoff)) continue; }
     else { var backfillCutoff = new Date(Date.now() - 14 * 86400000).toISOString(); if (fv < backfillCutoff) continue; }
     if (cust.product === 'moving' && maxBedsF < 99 && (parseInt(l.bedrooms, 10) || 99) > maxBedsF) continue;
+    // APPLY THE CUSTOMER'S SIGNUP FILTERS in the preview too (mirrors the 9am
+    // delivery exactly): planning app-type, newbusiness industry, tenders
+    // min-value/keywords. So the preview a customer sees matches what they get.
+    if (!previewLeadPassesFilters(l)) continue;
     var key = l.url || ('a:' + String(l.address || l.fullAddress || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30));
     var addrKeyP = 'aa:' + propertyIdentityKey(l.fullAddress || l.address || '', l.postcode || '');
     if (deliveredKeys[key] || seen[key] || _sharedSeen[key]) continue;
