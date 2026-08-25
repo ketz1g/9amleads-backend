@@ -638,6 +638,16 @@ function updateCompetitionNote() {
   if (!note) return;
   var prod = getSelectedLeadTypes()[0];
   if (!prod) { note.style.display = 'none'; return; }
+  // SIMPLE SHARING NOTE for tenders/probate (shared public opportunities) - no
+  // competition-count fetch or "Before you sign up" message.
+  if (prod === 'tenders' || prod === 'probate') {
+    note.innerHTML = 'Leads are shared - other subscribers may receive the same ' + (prod === 'probate' ? 'probate' : 'tender') + ' leads. That is normal (buyers often get 2-3 quotes). You can still sign up today.';
+    note.style.display = 'block';
+    note.style.background = 'rgba(14,165,233,0.08)';
+    note.style.border = '1px solid rgba(14,165,233,0.2)';
+    note.style.color = '#0ea5e9';
+    return;
+  }
   var areas = signupPostcodes.concat(specCounties).filter(function(a){ return !/all.?uk|uk.?wide|nationwide|whole.?uk/i.test(String(a)); });
   var allUk = signupPostcodes.some(function(a){ return /all.?uk|uk.?wide|nationwide|whole.?uk/i.test(String(a)); });
   if (prod === 'tenders' && !allUk) return; // tenders is always UK-wide; show once areas are set or all-uk
@@ -656,17 +666,6 @@ function updateCompetitionNote() {
     })
     .catch(function(){ note.style.display = 'none'; });
 }
-
-// ===== FILTER SYSTEM =====
-var filterDefs = {
-  moving: [{ id:'f-bed-min', label:'Min Bedrooms', type:'select', opts:['Any','1','2','3','4','5','6','7','8','9','10+'] }, { id:'f-bed-max', label:'Max Bedrooms', type:'select', opts:['Any','1','2','3','4','5','6','7','8','9','10+'] } ],
-  probate: [{ id:'f-est-min', label:'Min Estate Value', type:'select', opts:['Any','£25k','£50k','£100k','£250k','£500k','£1M'] }],
-  newbusiness: [{ id:'f-sector', label:'Industries', type:'checkboxes', opts:['Construction','Professional Services','Retail','Hospitality','Healthcare','Transport & Logistics','Technology','Financial','Manufacturing','Other'] }],
-  planning: [{ id:'f-app-type', label:'Application Types', type:'checkboxes', opts:['Householder','Full Planning','Outline Planning','Listed Building','Change of Use','Lawful Development','Permitted Development','Prior Approval','Advertisement Consent'] }],
-  tenders: [{ id:'f-min-val', label:'Min Contract Value', type:'select', opts:['Any','£10k','£50k','£100k','£250k','£500k','£1M','£2M','£5M','£10M'] }, { id:'f-keywords', label:'Additional Keywords', type:'text', placeholder:'construction, IT, healthcare...' }]
-};
-var filterNames = { moving: 'Moving', probate: 'Probate', newbusiness: 'New Business', planning: 'Planning', tenders: 'Tenders' };
-var filterColors = { moving:'#ff6b35', probate:'#a855f7', newbusiness:'#06b6d4', planning:'#10b981', tenders:'#6366f1' };
 
 function renderSignupFilters() {
   var container = document.getElementById('s-filters-container');
@@ -776,19 +775,14 @@ function checkSignupOverlap() {
   checked.forEach(function(ch) { prods.push(ch.value); });
   var relevant = prods.filter(function(p) { return p === 'tenders' || p === 'probate'; });
   if (!relevant.length) { note.style.display = 'none'; return; }
-  var prod = relevant[0];
-  fetch('/api/auth/signup-overlap?product=' + encodeURIComponent(prod) + '&areas=' + encodeURIComponent(JSON.stringify(signupPostcodes)))
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-      if (d.count > 0) {
-        note.style.display = 'block';
-        note.style.background = 'rgba(245,158,11,0.12)';
-        note.style.border = '1px solid rgba(245,158,11,0.35)';
-        note.style.color = '#92400e';
-        note.innerHTML = '<strong>Heads up:</strong> ' + d.note + (prod === 'tenders' ? ' in the tenders sector' : '') + '. Those accounts may receive some of the same leads (that is normal - buyers often get 2-3 quotes). You can still sign up today.';
-      } else { note.style.display = 'none'; }
-    })
-    .catch(function() { note.style.display = 'none'; });
+  // SIMPLE SHARING NOTE: tenders & probate leads are public opportunities shared
+  // with other subscribers. Show a plain, honest one-liner — no competition
+  // count, no "Heads up: N other accounts" scare message.
+  note.style.display = 'block';
+  note.style.background = 'rgba(14,165,233,0.08)';
+  note.style.border = '1px solid rgba(14,165,233,0.2)';
+  note.style.color = '#0ea5e9';
+  note.innerHTML = 'Leads are shared - other subscribers may receive the same ' + (relevant[0] === 'probate' ? 'probate' : 'tender') + ' leads. That is normal (buyers often get 2-3 quotes). You can still sign up today.';
 }
 
 function onLeadTypeChange() {
