@@ -1247,6 +1247,16 @@ function showSignup() { document.getElementById('signup-form').style.display='bl
   }
   showFormByHash();
   window.addEventListener('hashchange', showFormByHash);
+  // BELT-AND-BRACES: re-apply the hash view once the DOM is fully ready and again on
+  // load, so a "#login" / "#signup" hash ALWAYS lands on the right form even if the
+  // inline run happened before the elements were ready or the browser cached an old
+  // copy. Also listen for hashchange (covers in-page hash updates).
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', showFormByHash);
+  } else {
+    setTimeout(showFormByHash, 0);
+  }
+  window.addEventListener('load', function() { setTimeout(showFormByHash, 50); });
   var params = new URLSearchParams(window.location.search);
   var refParam = params.get('ref');
   if (refParam) {
