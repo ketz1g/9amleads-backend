@@ -925,25 +925,25 @@ function loadDb() {
   }
   try {
     var _parsed = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
-    // VALID-BUT-WIPED GUARD: a valid JSON DB with ZERO customers while recent
-    // backups contain customers means the ephemeral disk was reset (a deploy/restart
-    // overwrote it with an empty/partial state). Silently keeping an empty DB looks
-    // like a wiped business — auto-restore from the newest backup that HAS data.
-    if (_parsed && (!_parsed.customers || _parsed.customers.length === 0)) {
-      var _cand = [];
-      try { fs.mkdirSync(BACKUP_DIR, { recursive: true }); _cand = fs.readdirSync(BACKUP_DIR).filter(function(f) { return f.startsWith('database-') && f.endsWith('.json'); }).sort(); } catch(e) {}
-      var _good = null;
-      for (var _ci = _cand.length - 1; _ci >= 0; _ci--) {
-        try {
-          var _b = JSON.parse(fs.readFileSync(path.join(BACKUP_DIR, _cand[_ci]), 'utf-8'));
-          if (_b && _b.customers && _b.customers.length > 0) { _good = _cand[_ci]; break; }
-        } catch(e) {}
-      }
-      if (_good) {
-        console.log('[DB] DB file valid but has 0 customers — restoring from backup: ' + _good);
-        fs.copyFileSync(path.join(BACKUP_DIR, _good), DB_FILE);
-        return JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
-      }
+    // VALID-BUT-WIPED GUARD: if the DB file looks stale (far fewer customers than
+    // the newest backup), the ephemeral disk was reset during a deploy (a committed
+    // database.json with test data overwrote the live business data). Silently
+    // keeping a stale DB looks like a wiped business — auto-restore from the newest
+    // backup that has MORE customers (real data) than the current file.
+    var _cand = [];
+    try { fs.mkdirSync(BACKUP_DIR, { recursive: true }); _cand = fs.readdirSync(BACKUP_DIR).filter(function(f) { return f.startsWith('database-') && f.endsWith('.json'); }).sort(); } catch(e) {}
+    var _curCust = (_parsed && _parsed.customers) ? _parsed.customers.length : 0;
+    var _good = null;
+    for (var _ci = _cand.length - 1; _ci >= 0; _ci--) {
+      try {
+        var _b = JSON.parse(fs.readFileSync(path.join(BACKUP_DIR, _cand[_ci]), 'utf-8'));
+        if (_b && _b.customers && _b.customers.length > _curCust) { _good = _cand[_ci]; break; }
+      } catch(e) {}
+    }
+    if (_good) {
+      console.log('[DB] DB file stale (' + _curCust + ' customers vs backup ' + _good + ' with more) — restoring');
+      fs.copyFileSync(path.join(BACKUP_DIR, _good), DB_FILE);
+      return JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
     }
     return _parsed;
   }
@@ -8131,7 +8131,17 @@ app.post('/api/admin/set-customer-lead-total', adminAuth, async (req, res) => {
         if (usedKeys[key]) continue;
         usedKeys[key] = 1;
         var dS = { address: pl.address || pl.fullAddress || '', fullAddress: pl.fullAddress || pl.address || '', postcode: pl.postcode || '', url: pl.url || '', street: pl.street || '', building_number: pl.building_number || '', source: pl.source || '', firstVisibleDate: pl.firstVisibleDate || nowIso, scrapedAt: nowIso };
-        var _slotDate = (_slotDates[_slotIdx] !== undefined) ? _slotDates[_slotIdx] : nowIso.substring(0, 10); _slotIdx++;
+        // NEVER stamp backfill leads as TODAY — that inflates "Leads Today" past the
+        // cap. Use the oldest delivery day in the customer's history as fallback so
+        // the total grows without touching today's exact-5 batch.
+        var _slotDate;
+        if (_slotDates[_slotIdx] !== undefined) { _slotDate = _slotDates[_slotIdx]; }
+        else {
+          var _oldestDeliv = null;
+          (dbS.leads || []).forEach(function(_l) { if (_l.customer_id === cust.id && _l.delivered && _l.delivered_at) { if (!_oldestDeliv || _l.delivered_at < _oldestDeliv) _oldestDeliv = _l.delivered_at; } });
+          _slotDate = _oldestDeliv ? _oldestDeliv.substring(0, 10) : today;
+        }
+        _slotIdx++;
         var _delivAt = _slotDate + 'T09:00:00.000Z';
         dbS.leads.push({ id: uuidv4(), customer_id: cust.id, product: cust.product, data: JSON.stringify(dS), status: 'delivered', delivered: 1, created_at: nowIso, delivered_at: _delivAt, release_at: nowIso.split('T')[0] + 'T09:00:00.000Z' });
         added++;
