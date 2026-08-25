@@ -10772,10 +10772,15 @@ cron.schedule('15 9 * * 1-5', async () => {
     console.log('[VERIFY-9AM] ' + vToday + ': ' + vIssues.length + ' customer(s) short - auto top-up + alerting owner');
     for (var vi = 0; vi < vIssues.length; vi++) {
       try {
+        // Capture the email in a block-scoped const so the async request callbacks
+        // (which run AFTER the loop) reference the CORRECT customer, not the final
+        // loop value of `vi` (which points past the array -> vIssues[vi] is undefined
+        // -> the "Cannot read properties of undefined (reading 'email')" crash).
+        const vEmail = vIssues[vi].email;
         const http = require('http');
-        var vb = JSON.stringify({ customer_email: vIssues[vi].email, force: true });
-        var vreq = http.request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!'), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(vb) } }, function(vres) { var b=''; vres.on('data', function(ch){ b+=ch; }); vres.on('end', function(){ console.log('[VERIFY-9AM] top-up ' + vIssues[vi].email + ' -> ' + b.substring(0, 80)); }); });
-        vreq.on('error', function(e){ console.log('[VERIFY-9AM] top-up error for ' + vIssues[vi].email + ': ' + e.message); });
+        var vb = JSON.stringify({ customer_email: vEmail, force: true });
+        var vreq = http.request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!'), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(vb) } }, function(vres) { var b=''; vres.on('data', function(ch){ b+=ch; }); vres.on('end', function(){ console.log('[VERIFY-9AM] top-up ' + vEmail + ' -> ' + b.substring(0, 80)); }); });
+        vreq.on('error', function(e){ console.log('[VERIFY-9AM] top-up error for ' + vEmail + ': ' + e.message); });
         vreq.write(vb); vreq.end();
       } catch(vt) { console.log('[VERIFY-9AM] top-up call error: ' + vt.message); }
     }
