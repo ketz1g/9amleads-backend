@@ -493,6 +493,10 @@ function loadProductPool(prod) {
   arr = arr.filter(function(l) { return !/zoopla/i.test(String(l.source || '')); });
   arr = arr.filter(function(l) { return !hasBadUnitCode(l.address || l.fullAddress || ''); });
   arr = arr.filter(function(l) { return !isPlaceholderLead(l); });
+  // NEVER deliver a pool lead that has been REJECTED/blocked (wrong/commercial/
+  // out-of-area lead the founder flagged). These are removed from the deliverable
+  // pool permanently so a re-delivery can't pick them up again.
+  arr = arr.filter(function(l) { return !(l.rejected || l.blocked || l.blocked_by_admin); });
   arr = arr.map(function(l) {
     if (l && l.address) {
       l.address = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(l.address)));
@@ -4786,6 +4790,49 @@ app.post('/api/admin/remove-leads-created-on', adminAuth, (req, res) => {
     });
     saveDb();
     res.json({ success: true, email: email, date: date, removed: removed });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/block-pool-lead — permanently block a moving-pool lead by URL so
+// it is NEVER delivered to any customer again (commercial / wrong-address /
+// out-of-area leads the founder flagged). Marks the pool entry rejected + removes
+// any already-delivered instance from customers. Body: { url, reason? }
+app.post('/api/admin/block-pool-lead', adminAuth, (req, res) => {
+  try {
+    var targetUrl = String((req.body && req.body.url) || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
+    var reason = (req.body && req.body.reason) || 'blocked by admin';
+    if (!targetUrl) return res.status(400).json({ error: 'url required' });
+    var dbB = getDb();
+    var blockedNow = 0;
+    // Mark matching leads rejected in the moving pool files
+    ['moving-leads.json', 'moving-leads-fresh.json'].forEach(function(pf) {
+      try {
+        var fp = path.join(DATA_DIR, pf);
+        var poolArr = JSON.parse(fs.readFileSync(fp, 'utf-8'));
+        if (!Array.isArray(poolArr)) return;
+        var changed = false;
+        poolArr.forEach(function(l) {
+          var lu = String(l.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
+          if (lu === targetUrl) { l.rejected = true; l.rejected_at = new Date().toISOString(); l.reject_reason = reason; blockedNow++; changed = true; }
+        });
+        if (changed) fs.writeFileSync(fp, JSON.stringify(poolArr, null, 2));
+      } catch(e) {}
+    });
+    // Also remove any already-delivered instance from customers (so it leaves today's
+    // batches and a replacement is sent on the next delivery).
+    var removedLeads = 0;
+    dbB.leads = (dbB.leads || []).map(function(l) {
+      var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
+      var lu = String(d.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
+      if (lu === targetUrl) {
+        if (l.delivered) { removedLeads++; l.delivered = 0; l.delivered_at = null; l.status = 'removed'; }
+        d.rejected = true; d.reject_reason = reason;
+        l.data = JSON.stringify(d);
+      }
+      return l;
+    });
+    saveDb();
+    res.json({ success: true, blocked_in_pool: blockedNow, removed_from_customers: removedLeads, url: targetUrl, reason: reason });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
