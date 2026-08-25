@@ -923,7 +923,30 @@ function loadDb() {
   if (!fs.existsSync(DB_FILE) || (function(){ try { JSON.parse(fs.readFileSync(DB_FILE, 'utf-8')); return false; } catch(e) { return true; } })()) {
     try { restoreDbFromBackup(); } catch(e) { console.log('[DB] Restore attempt failed:', e.message); }
   }
-  try { return JSON.parse(fs.readFileSync(DB_FILE, 'utf-8')); }
+  try {
+    var _parsed = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
+    // VALID-BUT-WIPED GUARD: a valid JSON DB with ZERO customers while recent
+    // backups contain customers means the ephemeral disk was reset (a deploy/restart
+    // overwrote it with an empty/partial state). Silently keeping an empty DB looks
+    // like a wiped business — auto-restore from the newest backup that HAS data.
+    if (_parsed && (!_parsed.customers || _parsed.customers.length === 0)) {
+      var _cand = [];
+      try { fs.mkdirSync(BACKUP_DIR, { recursive: true }); _cand = fs.readdirSync(BACKUP_DIR).filter(function(f) { return f.startsWith('database-') && f.endsWith('.json'); }).sort(); } catch(e) {}
+      var _good = null;
+      for (var _ci = _cand.length - 1; _ci >= 0; _ci--) {
+        try {
+          var _b = JSON.parse(fs.readFileSync(path.join(BACKUP_DIR, _cand[_ci]), 'utf-8'));
+          if (_b && _b.customers && _b.customers.length > 0) { _good = _cand[_ci]; break; }
+        } catch(e) {}
+      }
+      if (_good) {
+        console.log('[DB] DB file valid but has 0 customers — restoring from backup: ' + _good);
+        fs.copyFileSync(path.join(BACKUP_DIR, _good), DB_FILE);
+        return JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
+      }
+    }
+    return _parsed;
+  }
   catch { return { customers: [], leads: [], deliveries: [], scraper_logs: [], subscriptions: [], blog_posts: [], customer_business_profiles: [], direct_mail_templates: [], direct_mail_campaigns: [], direct_mail_materials: [], direct_mail_recipients: [], direct_mail_automation_settings: [], direct_mail_orders: [], direct_mail_provider_logs: [], direct_mail_status_history: [], direct_mail_test_logs: [], payments: [], pageviews: [] }; }
 }
 function saveDb() {
