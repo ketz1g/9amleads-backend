@@ -24329,9 +24329,9 @@ app.post('/api/admin/restore-full-db', adminAuth, (req, res) => {
       fs.writeFileSync(corruptFile, JSON.stringify(getDb(), null, 2));
       console.log('[RESTORE] Saved pre-restore (possibly corrupt) state to ' + corruptFile);
     } catch(be) { console.log('[RESTORE] pre-restore backup error:', be.message); }
-    // Replace the whole DB with the backup content.
+    // Replace the whole DB with the backup content. Set _dbData directly so getDb()
+    // returns the restored data (getDb only reads DB_FILE when _dbData is null).
     _dbData = bk;
-    _dbData = null; getDb();
     saveDb();
     var afterCust = (getDb().customers || []).length;
     var afterLeads = (getDb().leads || []).length;
