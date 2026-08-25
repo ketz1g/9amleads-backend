@@ -20855,6 +20855,26 @@ app.get('/api/admin/letter-preview', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/set-areas — set a customer's target areas + coverage (admin).
+// Used to align test accounts (e.g. newbusiness from postcode areas to counties)
+// without needing the customer's JWT.
+app.post('/api/admin/set-areas', adminAuth, (req, res) => {
+  try {
+    var em = String((req.body && req.body.email) || '').toLowerCase();
+    var areas = (req.body && req.body.areas) || [];
+    var coverage = String((req.body && req.body.coverage) || 'county');
+    if (!em) return res.status(400).json({ error: 'email required' });
+    var dbA = getDb();
+    var cust = (dbA.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === em; });
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    var clean = (Array.isArray(areas) ? areas : []).map(function(a) { return String(a).toLowerCase().trim().replace(/\s+/g, '-'); }).filter(Boolean);
+    cust.target_areas = JSON.stringify(clean);
+    cust.coverage = coverage;
+    saveDb();
+    res.json({ success: true, email: em, coverage: coverage, areas: clean });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/admin/test-report', adminAuth, (req, res) => {
   try {
     var dbT = getDb();
