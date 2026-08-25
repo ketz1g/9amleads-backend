@@ -602,7 +602,7 @@ function updatePostcodeLimit() {
    var areaLabel = document.getElementById('s-area-label');
    if (areaLabel) {
      if (limit >= 999) areaLabel.textContent = isCountyBased() ? '(unlimited counties/areas — add as many as you need)' : '(unlimited postcode areas — add the areas you cover or choose All UK)';
-     else areaLabel.textContent = isCountyBased() ? (getSelectedLeadTypes().(getSelectedLeadTypes().indexOf('tenders') !== -1 || getSelectedLeadTypes().indexOf('probate') !== -1) ? '(select at least 2 counties/areas)' : '(select at least 3 counties/areas)') : '(choose at least 3 postcode areas — e.g. HA, EN, SW, B, CM)';
+     else areaLabel.textContent = isCountyBased() ? (getSelectedLeadTypes().indexOf('tenders') !== -1 || getSelectedLeadTypes().indexOf('probate') !== -1 ? '(select at least 2 counties/areas)' : '(select at least 3 counties/areas)') : '(choose at least 3 postcode areas — e.g. HA, EN, SW, B, CM)';
    }
    renderSignupPostcodes();
    onLeadTypeChange();
