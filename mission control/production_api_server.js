@@ -7102,6 +7102,11 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
       if (cust.product === 'moving') {
         var b = parseInt(ld2.bedrooms) || 0;
         if (custLeadFilters.maxBedrooms < 99 && b > custLeadFilters.maxBedrooms) return false;
+        // COMMERCIAL FILTER (mirror delivery): residential-only must not get commercial.
+        var _mt2 = 'both';
+        try { var _pc3 = JSON.parse(cust.product_config || '{}'); _mt2 = (_pc3.moving && _pc3.moving.moving_type) || cust.moving_type || 'both'; } catch(e) {}
+        if (_mt2 === 'residential' && isCommercialLead(ld2)) return false;
+        if (_mt2 === 'commercial' && !isCommercialLead(ld2)) return false;
       }
       if (cust.product === 'planning' && custLeadFilters.appTypes && custLeadFilters.appTypes.length) {
         var at = String(ld2.applicationType || ld2.proposal || ld2.type || ld2.category || '').toLowerCase();
@@ -12533,6 +12538,13 @@ _deliverDiag[cust.email].products = products;
             // and extra filters shrink the deliverable pool and break the 5/day promise.
             var b = parseInt(ld2.bedrooms) || 0;
             if (custLeadFilters.maxBedrooms < 99 && b > custLeadFilters.maxBedrooms) return false;
+            // COMMERCIAL FILTER: only accept leads matching the customer's moving_type
+            // (residential/commercial/both). A residential-only customer must never
+            // receive a commercial property (cafe/shop/office/unit etc).
+            var _mt = 'both';
+            try { var _pc2 = JSON.parse(cust.product_config || '{}'); _mt = (_pc2.moving && _pc2.moving.moving_type) || cust.moving_type || 'both'; } catch(e) {}
+            if (_mt === 'residential' && isCommercialLead(ld2)) return false;
+            if (_mt === 'commercial' && !isCommercialLead(ld2)) return false;
           }
           if (cust.product === 'planning' && custLeadFilters.appTypes && custLeadFilters.appTypes.length) {
             // PLANNING: customer chose specific application types (Householder, Full
@@ -13148,6 +13160,16 @@ _deliverDiag[cust.email].products = products;
               for (var sa2 = 0; sa2 < sortedAreas2.length; sa2++) {
                 var areaLead2 = findLeadForProductAndArea(r2prod, sortedAreas2[sa2], r2pool, pickedIds);
                 if (areaLead2) {
+                  // GLOBAL EXCLUSIVITY: a lead already delivered or assigned to ANY
+                  // customer this run must NOT be reassigned to another customer —
+                  // overlapping-area customers should never receive the same property.
+                  try {
+                    var _ald = JSON.parse(areaLead2.data || '{}');
+                    var _alU = String(_ald.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
+                    var _alKey = _alU ? 'u:' + _alU : ('a:' + String(_ald.fullAddress || _ald.deceasedAddress || _ald.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30));
+                    if (_inRunSeen && _inRunSeen[_alKey]) continue;
+                    if (_inRunSeen) _inRunSeen[_alKey] = true;
+                  } catch(eu) {}
                   // If this lead was pre-assigned to another customer (global fallback),
                   // reassign it to this customer so it delivers correctly.
                   if (areaLead2.customer_id !== cust.id) {
