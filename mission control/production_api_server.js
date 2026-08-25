@@ -7976,6 +7976,24 @@ app.post('/api/admin/set-customer-lead-total', adminAuth, async (req, res) => {
       var nowIso = new Date().toISOString();
       var freshCutoff = getFreshCutoffIso();
       var need = target - currentAfterTrims;
+      // BACKFILL DATES: stamp backfilled leads across the customer's PAST delivery
+      // days (5/day, oldest first) so "Leads Today" stays at exactly the daily cap
+      // and the total reaches the cumulative target. Never stamp all as today.
+      var existingByDay = {};
+      (dbS.leads || []).forEach(function(l) { if (l.customer_id === cust.id && l.delivered && l.delivered_at) { var _d = l.delivered_at.substring(0, 10); existingByDay[_d] = (existingByDay[_d] || 0) + 1; } });
+      var trialStart = new Date();
+      try { var _te = new Date(cust.trial_ends); trialStart = new Date(_te.getTime() - 6 * 86400000); } catch(e) {}
+      var _slotDates = [];
+      var _dd = new Date(trialStart);
+      var _endD = new Date();
+      while (_dd <= _endD) {
+        var _ds = _dd.toISOString().substring(0, 10);
+        var _cap = 5;
+        var _cur = existingByDay[_ds] || 0;
+        while (_cur < _cap && _slotDates.length < need) { _slotDates.push(_ds); _cur++; }
+        _dd.setDate(_dd.getDate() + 1);
+      }
+      var _slotIdx = 0;
       for (var si = 0; si < interleaved.length && added < need; si++) {
         var pl = interleaved[si];
         try {
@@ -7991,7 +8009,9 @@ app.post('/api/admin/set-customer-lead-total', adminAuth, async (req, res) => {
         if (usedKeys[key]) continue;
         usedKeys[key] = 1;
         var dS = { address: pl.address || pl.fullAddress || '', fullAddress: pl.fullAddress || pl.address || '', postcode: pl.postcode || '', url: pl.url || '', street: pl.street || '', building_number: pl.building_number || '', source: pl.source || '', firstVisibleDate: pl.firstVisibleDate || nowIso, scrapedAt: nowIso };
-        dbS.leads.push({ id: uuidv4(), customer_id: cust.id, product: cust.product, data: JSON.stringify(dS), status: 'delivered', delivered: 1, created_at: nowIso, delivered_at: nowIso, release_at: nowIso.split('T')[0] + 'T09:00:00.000Z' });
+        var _slotDate = (_slotDates[_slotIdx] !== undefined) ? _slotDates[_slotIdx] : nowIso.substring(0, 10); _slotIdx++;
+        var _delivAt = _slotDate + 'T09:00:00.000Z';
+        dbS.leads.push({ id: uuidv4(), customer_id: cust.id, product: cust.product, data: JSON.stringify(dS), status: 'delivered', delivered: 1, created_at: nowIso, delivered_at: _delivAt, release_at: nowIso.split('T')[0] + 'T09:00:00.000Z' });
         added++;
       }
     }
