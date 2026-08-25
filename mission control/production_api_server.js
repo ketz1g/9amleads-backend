@@ -7925,12 +7925,11 @@ app.post('/api/admin/set-customer-lead-total', adminAuth, async (req, res) => {
       // Trim the OLDEST historical delivered leads first (never today's batch).
       var excess = currentTotal - target;
       var sorted = delivered.slice().sort(function(a, b) { return String(a.delivered_at).localeCompare(String(b.delivered_at)); });
-      dbS.leads = (dbS.leads || []).map(function(l) {
-        if (excess > 0 && l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) !== 0) {
-          var keep = sorted.shift();
-          if (keep && keep.id === l.id) { l.delivered = 0; l.delivered_at = null; l.status = 'removed'; excess--; removed++; }
-        }
-        return l;
+      var _excessIds = {};
+      for (var _xi = 0; _xi < Math.min(excess, sorted.length); _xi++) _excessIds[sorted[_xi].id] = true;
+      dbS.leads = (dbS.leads || []).filter(function(l) {
+        if (_excessIds[l.id]) { removed++; return false; }
+        return true;
       });
     }
     // TODAY-CAP: the customer's "leads today" dashboard KPI must show EXACTLY the
@@ -7943,11 +7942,13 @@ app.post('/api/admin/set-customer-lead-total', adminAuth, async (req, res) => {
       var keepIds = {};
       byNewest.slice(0, dailyLimit).forEach(function(l) { keepIds[l.id] = true; });
       var trimmed = 0;
-      dbS.leads = (dbS.leads || []).map(function(l) {
-        if (l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0 && !keepIds[l.id]) { l.delivered = 0; l.delivered_at = null; l.status = 'removed'; trimmed++; }
-        return l;
+      // DELETE the excess today-leads entirely (never mark removed - a removed row
+      // still shows in the customer's /api/leads as pending and re-inflates counts).
+      dbS.leads = (dbS.leads || []).filter(function(l) {
+        if (l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0 && !keepIds[l.id]) { trimmed++; return false; }
+        return true;
       });
-      if (trimmed) console.log('[SET-TOTAL] trimmed ' + trimmed + ' excess today-lead(s) for ' + email + ' (cap ' + dailyLimit + ')');
+      if (trimmed) console.log('[SET-TOTAL] deleted ' + trimmed + ' excess today-lead(s) for ' + email + ' (cap ' + dailyLimit + ')');
     }
     // UNDER target: backfill from the pool with valid in-area door-numbered leads.
     var currentAfterTrims = (dbS.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered; }).length;
@@ -7958,7 +7959,7 @@ app.post('/api/admin/set-customer-lead-total', adminAuth, async (req, res) => {
       var pool = loadProductPool(cust.product);
       var interleaved = interleavePoolByAreas(pool, areas);
       var usedKeys = {};
-      (dbS.leads || []).forEach(function(l) { if (l.customer_id === cust.id && l.delivered) { try { var du = JSON.parse(l.data || '{}').url || ''; if (du) usedKeys['u:' + du] = 1; var da = JSON.parse(l.data || '{}').fullAddress || JSON.parse(l.data || '{}').address || ''; var dp = JSON.parse(l.data || '{}').postcode || ''; if (da && dp) usedKeys['a:' + String(da).toLowerCase().replace(/\s+/g,' ').trim() + '|' + String(dp).toUpperCase().replace(/\s+/g,' ').trim()] = 1; } catch(e) {} } });
+      (dbS.leads || []).forEach(function(l) { if (l.customer_id === cust.id) { try { var dd = JSON.parse(l.data || '{}'); var du = dd.url || ''; if (du) usedKeys['u:' + du] = 1; var da = dd.fullAddress || dd.address || ''; var dp = dd.postcode || ''; if (da && dp) usedKeys['a:' + String(da).toLowerCase().replace(/\s+/g,' ').trim() + '|' + String(dp).toUpperCase().replace(/\s+/g,' ').trim()] = 1; } catch(e) {} } });
       var nowIso = new Date().toISOString();
       var freshCutoff = getFreshCutoffIso();
       var need = target - currentAfterTrims;
