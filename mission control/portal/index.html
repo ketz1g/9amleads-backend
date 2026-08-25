@@ -134,6 +134,23 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 </style>
 </head>
 <body>
+<script>
+// BULLETPROOF hash->form mapping, independent of the main script (which may be
+// delayed/error). Runs immediately: if the URL has #login show the login form,
+// if #signup (or no hash) show the signup form. Defined BEFORE the forms in the
+// DOM and re-applied on every hashchange so Sign In / Sign Up always land right.
+function __showByHash() {
+  var h = window.location.hash;
+  var sf = document.getElementById('signup-form');
+  var lf = document.getElementById('login-form');
+  if (!sf || !lf) return;
+  if (h === '#login') { sf.style.display = 'none'; lf.style.display = 'block'; }
+  else { sf.style.display = 'block'; lf.style.display = 'none'; }
+}
+document.addEventListener('DOMContentLoaded', __showByHash);
+window.addEventListener('hashchange', __showByHash);
+__showByHash();
+</script>
 <div style="position:fixed;top:16px;left:24px;z-index:10">
 <a href="/" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;color:#8890a8;font-size:12px;font-weight:600;text-decoration:none;border-radius:8px;background:rgba(14,165,233,0.03);border:1px solid rgba(14,165,233,0.08)"><i class="fas fa-arrow-left" style="font-size:10px"></i> 9amLeads</a>
 </div>
