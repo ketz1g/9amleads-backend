@@ -14172,6 +14172,31 @@ _deliverDiag[cust.email].products = products;
             console.log('[DELIVERY] Final PAF pass: ' + cust.email + ' confirmed ' + custLeads.length + '/' + totalDailyLimit + ' moving leads');
           } catch(pafErr) { console.log('[DELIVERY] Final PAF pass outer error:', pafErr.message); }
         }
+        // MOVING FINAL ADDRESS NORMALISE: ALWAYS run last (after PAF enrich + town
+        // backfill) so EVERY delivered moving lead shows the door/flat number +
+        // street first — never a leading building/company/court name. This applies
+        // regardless of where the lead came from (existing DB row, pool, PAF, town
+        // backfill). "Childrens House Nursery School, 92 Bruce Road" -> "92 Bruce Road".
+        if (cust.product === 'moving' && Array.isArray(custLeads) && custLeads.length) {
+          var _normAny = false;
+          for (var _ni = 0; _ni < custLeads.length; _ni++) {
+            try {
+              var _nd = JSON.parse(custLeads[_ni].data || '{}');
+              if (_nd.fullAddress || _nd.address) {
+                var _nBefore = String(_nd.fullAddress || _nd.address);
+                if (_nd.address) _nd.address = normaliseMovingAddress(_nd.address) || _nd.address;
+                if (_nd.fullAddress) _nd.fullAddress = normaliseMovingAddress(_nd.fullAddress) || _nd.fullAddress;
+                if (_nd.fullAddress && _nd.address && !_nd.fullAddress.toLowerCase().includes(_nd.address.split(',')[0].toLowerCase())) {
+                  _nd.fullAddress = _nd.address;
+                }
+                var _nAfter = String(_nd.fullAddress || _nd.address);
+                if (_nAfter !== _nBefore) _normAny = true;
+              }
+              custLeads[_ni].data = JSON.stringify(_nd);
+            } catch(_ne) {}
+          }
+          if (_normAny) { try { saveDb(); } catch(_ns) {} }
+        }
         // BULLETPROOF FINAL HARD-CAP: under NO circumstances may a customer receive
         // more than their promised daily quota in one email/batch. Every top-up,
         // fill, quality-review, PAF and guarantee pass above can re-grow custLeads,
