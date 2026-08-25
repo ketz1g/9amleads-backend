@@ -7972,6 +7972,18 @@ app.post('/api/admin/set-customer-lead-total', adminAuth, async (req, res) => {
     var cust = (dbS.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
     if (!cust) return res.status(404).json({ error: 'Customer not found' });
     var today = new Date().toISOString().split('T')[0];
+    // DELETE REJECTED/BLOCKED delivered rows: a rejected lead (out-of-area/wrong/
+    // commercial flagged by the founder) is NOT valid history — it was hidden from
+    // the customer's /api/leads, so it must not count toward the total either.
+    // Otherwise the dashboard counts a "20" that includes 4 invisible rejects.
+    var _rejRemoved = 0;
+    dbS.leads = (dbS.leads || []).filter(function(l) {
+      if (l.customer_id !== cust.id) return true;
+      var _dr = {}; try { _dr = JSON.parse(l.data || '{}'); } catch(e) {}
+      if (_dr.rejected || _dr.blocked || _dr.blocked_by_admin) { _rejRemoved++; return false; }
+      return true;
+    });
+    if (_rejRemoved) console.log('[SET-TOTAL] removed ' + _rejRemoved + ' rejected/blocked lead row(s) for ' + email);
     var custLeads = (dbS.leads || []).filter(function(l) { return l.customer_id === cust.id; });
     var delivered = custLeads.filter(function(l) { return l.delivered && l.delivered_at && l.delivered_at.indexOf(today) !== 0; });
     var deliveredToday = custLeads.filter(function(l) { return l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0; });
@@ -8015,6 +8027,28 @@ app.post('/api/admin/set-customer-lead-total', adminAuth, async (req, res) => {
     });
     if (_perDayRemoved) console.log('[SET-TOTAL] capped past delivery days for ' + email + ' (removed ' + _perDayRemoved + ' over-cap lead(s))');
     var todayDelivered = (dbS.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0; });
+    // DEDUPE TODAY first: keep only the NEWEST row per unique URL/address+postcode so
+    // a duplicate "19 Alexandra Drive" row (same listing re-delivered) never counts
+    // twice toward "Leads Today".
+    if (todayDelivered.length > 1) {
+      var _todaySeen = {};
+      var _todayKeep = {};
+      todayDelivered.slice().sort(function(a, b) { return String(b.delivered_at).localeCompare(String(a.delivered_at)); }).forEach(function(l) {
+        var _dD = {}; try { _dD = JSON.parse(l.data || '{}'); } catch(e) {}
+        var _du = String(_dD.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
+        var _k = _du || ('a:' + String(_dD.fullAddress || _dD.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 28) + '|' + String(_dD.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, ''));
+        if (!_k || _todaySeen[_k]) return;
+        _todaySeen[_k] = true;
+        _todayKeep[l.id] = true;
+      });
+      var _dupRemoved = 0;
+      dbS.leads = (dbS.leads || []).filter(function(l) {
+        if (l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0 && !_todayKeep[l.id]) { _dupRemoved++; return false; }
+        return true;
+      });
+      if (_dupRemoved) console.log('[SET-TOTAL] deduped ' + _dupRemoved + ' duplicate today-lead(s) for ' + email);
+    }
+    todayDelivered = (dbS.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0; });
     if (todayDelivered.length > dailyLimit) {
       var byNewest = todayDelivered.slice().sort(function(a, b) { return String(b.delivered_at).localeCompare(String(a.delivered_at)); });
       var keepIds = {};
