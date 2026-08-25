@@ -20989,19 +20989,22 @@ app.post('/api/admin/replace-leads', adminAuth, async (req, res) => {
   try {
     var em = String((req.body && req.body.email) || '').toLowerCase();
     var urlsToRemove = (req.body && Array.isArray(req.body.urls) ? req.body.urls : []).map(function(u){ return String(u).trim(); }).filter(Boolean);
+    var resetAll = !!(req.body && req.body.reset_all); // clear ALL today's delivered leads first
     if (!em) return res.status(400).json({ error: 'email required' });
-    if (!urlsToRemove.length) return res.status(400).json({ error: 'urls required' });
+    if (!resetAll && !urlsToRemove.length) return res.status(400).json({ error: 'urls required (or reset_all:true)' });
     var dbR = getDb();
     var cust = (dbR.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === em; });
     if (!cust) return res.status(404).json({ error: 'Customer not found' });
     var today = new Date().toISOString().split('T')[0];
     var removed = 0;
-    // 1) Remove the bad delivered leads (mark as removed so they never show again)
+    // 1) Remove bad delivered leads (mark as removed so they never show again).
+    //    reset_all clears EVERY delivered lead today so the customer starts fresh.
     dbR.leads = (dbR.leads || []).map(function(l) {
       if (l.customer_id !== cust.id) return l;
+      if (!(l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0)) return l;
       var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
       var lu = String(d.url || '').split('#')[0].split('?')[0].replace(/\/+$/,'');
-      if (l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0 && urlsToRemove.some(function(u){ var un = String(u).split('#')[0].split('?')[0].replace(/\/+$/,''); return un === lu; })) {
+      if (resetAll || urlsToRemove.some(function(u){ var un = String(u).split('#')[0].split('?')[0].replace(/\/+$/,''); return un === lu; })) {
         removed++;
         l.delivered = 0; l.delivered_at = null; l.status = 'removed';
       }
