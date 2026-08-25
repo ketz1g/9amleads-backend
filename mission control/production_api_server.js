@@ -7502,6 +7502,17 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
     }
     return { address: c.address || c.fullAddress || c.deceasedAddress || '', postcode: pc, url: c.url || '', county: c.county || '', source: c.source || '', has_door_number: hasDoor, paf_candidate: pafCandidate, paf_failed: pafFailed, in_area: inArea };
   });
+  // HARD DISTANCE GATE (moving): regardless of how a lead was selected (in-area match,
+  // fallback, preview replacement), an out-of-area moving lead MUST be within a
+  // reasonable radius of the customer's chosen areas. A Croydon removals firm should
+  // never be offered a Glasgow/Edinburgh/Dundee property. Anything beyond the cap is
+  // dropped entirely (the customer is shown fewer leads rather than useless far ones).
+  if (cust.product === 'moving') {
+    out = out.filter(function(o) {
+      if (o.in_area) return true;
+      return isFallbackLeadAcceptable(o.postcode || '', areas);
+    });
+  }
   var fallbackCount = out.filter(function(o) { return !o.in_area; }).length;
   var fallbackNote = fallbackCount ? (fallbackCount + ' lead' + (fallbackCount > 1 ? 's' : '') + ' from closest postcode' + (fallbackCount > 1 ? 's' : '') + ' (your chosen areas were short this morning)') : '';
   return { email: cust.email, company: cust.company || '', product: cust.product, plan: cust.plan, areas: areas, promised: limit, count: out.length, leads: out, fallback_count: fallbackCount, fallback_note: fallbackNote, error: out.length < limit ? 'supply low in ' + areas.join(', ') : '' };
@@ -14583,6 +14594,18 @@ _deliverDiag[cust.email].products = products;
         // so clamp to EXACTLY totalDailyLimit here — before the email is built and
         // before delivered is marked. "No more no less" is the #1 promise; a 6th
         // lead must never reach the mailbox or the delivered ledger.
+        // HARD DISTANCE GATE (moving): drop ANY out-of-area moving lead beyond the
+        // max fallback radius — a Croydon removals firm must never be emailed a
+        // Glasgow/Edinburgh/Dundee property. Far-away leads are worse than a
+        // shortfall (useless to a local mover), so they are removed here and the
+        // customer is emailed only the genuinely-close leads.
+        if (cust.product === 'moving' && custAreas && custAreas.length > 0 && !/all.?uk|uk.?wide|nationwide|whole.?uk/i.test(custAreas.join(' '))) {
+          var _beforeDist = custLeads.length;
+          custLeads = custLeads.filter(function(_cl) {
+            try { var _cd = JSON.parse(_cl.data || '{}'); var _cPc = _cd.postcode || _cd.address || _cl.postcode || ''; var _cArea = extractPostcodeArea(_cPc); if (!_cArea) return false; var _in = custAreas.some(function(_a) { return extractPostcodeArea(_a) === _cArea; }); if (_in) return true; return isFallbackLeadAcceptable(_cPc, custAreas); } catch(e) { return false; }
+          });
+          if (custLeads.length !== _beforeDist) console.log('[DELIVERY-DIST] ' + cust.email + ': dropped ' + (_beforeDist - custLeads.length) + ' far out-of-area lead(s) (kept ' + custLeads.length + ')');
+        }
         if (custLeads.length > totalDailyLimit) {
           console.log('[DELIVERY-FINAL-CAP] ' + cust.email + ': hard-capped ' + custLeads.length + ' -> ' + totalDailyLimit + ' (never over-deliver) prod=' + cust.product + ' plan=' + cust.plan + ' cov=' + primCoverage + ' lpd=' + cust.leads_per_day);
           if (_deliverDiag[cust.email]) _deliverDiag[cust.email].final_cap = custLeads.length + '->' + totalDailyLimit;
