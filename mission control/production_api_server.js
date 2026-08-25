@@ -5726,6 +5726,19 @@ app.get('/api/leads', authMiddleware, (req, res) => {
 
     res.json(visible
     .filter(function(l) { return leadHasUsableAddress(l, customer ? customer.product : l.product); })
+    // DEDUPE by URL/address+postcode: repeated/churned deliveries can leave duplicate
+    // rows for the same property (same URL, or same street+number+postcode from
+    // multiple scrapes). The customer must see each UNIQUE lead once, and the
+    // dashboard KPIs (today/week/month) must never be inflated by duplicates.
+    .filter(function(l, idx, arr) {
+      var _k = (function() { try { var d = JSON.parse(l.data || '{}'); var u = String(d.url || '').split('#')[0].split('?')[0].replace(/\/+$/,'').toLowerCase().trim(); if (u) return 'u:' + u; var a = String(d.fullAddress || d.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 28); var pc = String(d.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); return 'a:' + a + '|' + pc; } catch(e) { return ''; } })();
+      if (!_k) return true;
+      for (var _j = 0; _j < idx; _j++) {
+        var _other = (function() { try { var d2 = JSON.parse(arr[_j].data || '{}'); var u2 = String(d2.url || '').split('#')[0].split('?')[0].replace(/\/+$/,'').toLowerCase().trim(); if (u2) return 'u:' + u2; var a2 = String(d2.fullAddress || d2.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 28); var pc2 = String(d2.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); return 'a:' + a2 + '|' + pc2; } catch(e) { return ''; } })();
+        if (_other && _other === _k) return false;
+      }
+      return true;
+    })
     .map(l => {
     const parsed = JSON.parse(l.data || '{}');
     if (customer && customer.product === 'moving') {
