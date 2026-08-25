@@ -10426,19 +10426,21 @@ cron.schedule('0 9 * * 1-5', async () => {
 // production is untouched unless the test is explicitly enabled. The exact-count
 // engine ensures: first run of the day delivers the promised number, later runs
 // deliver 0 (no more, no less). Set TEST_DELIVERY_CRON=false to stop.
-cron.schedule('*/10 * * * *', async () => {
-  if (String(process.env.TEST_DELIVERY_CRON || 'false').toLowerCase() !== 'true') return;
-  console.log('[TEST-DELIVERY-CRON] Fired at ' + new Date().toISOString());
-  try {
-    const httpT = require('http');
-    var bT = JSON.stringify({ test_only: true });
-    var rT = httpT.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!'), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bT) } }, function(s) {
-      var rb = ''; s.on('data', function(d) { rb += d; }); s.on('end', function() { console.log('[TEST-DELIVERY-CRON] done:', rb.substring(0, 250)); });
-    });
-    rT.on('error', function(e) { console.log('[TEST-DELIVERY-CRON] error:', e.message); });
-    rT.write(bT); rT.end();
-  } catch(e) { console.log('[TEST-DELIVERY-CRON] exception:', e.message); }
-}, { timezone: 'Europe/London' });
+// SUPERSEDED by the 15-min test cron below (which also monitors hello@9amleads.com).
+// Disabled to avoid two overlapping test crons.
+// cron.schedule('*/10 * * * *', async () => {
+//   if (String(process.env.TEST_DELIVERY_CRON || 'false').toLowerCase() !== 'true') return;
+//   console.log('[TEST-DELIVERY-CRON] Fired at ' + new Date().toISOString());
+//   try {
+//     const httpT = require('http');
+//     var bT = JSON.stringify({ test_only: true });
+//     var rT = httpT.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!'), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bT) } }, function(s) {
+//       var rb = ''; s.on('data', function(d) { rb += d; }); s.on('end', function() { console.log('[TEST-DELIVERY-CRON] done:', rb.substring(0, 250)); });
+//     });
+//     rT.on('error', function(e) { console.log('[TEST-DELIVERY-CRON] error:', e.message); });
+//     rT.write(bT); rT.end();
+//   } catch(e) { console.log('[TEST-DELIVERY-CRON] exception:', e.message); }
+// }, { timezone: 'Europe/London' });
 
 
 // STALE-POOL MONITOR: 07:45 UK (after the 6am scrape, 75min before delivery) — if any
@@ -20920,7 +20922,10 @@ function runDeliveryTestReport() {
 // bulletproof: exact count, door numbers, full postcodes and real links. Emails
 // the report to hello@9amleads.com. The real Mon-Fri 09:00 delivery is unaffected.
 cron.schedule('*/15 * * * *', () => {
-  if (String(process.env.TEST_DELIVERY_CRON || 'false').toLowerCase() !== 'true') return;
+  // ALWAYS ON: this cron only ever delivers to test.* accounts + hello@9amleads.com
+  // (the founder's monitoring account) — never to other real customers — so it is
+  // safe to run continuously. Each run verifies the full delivery pipeline (exact
+  // count, door numbers, full postcodes, real links, dashboard + email timing).
   try {
     var ukNow = new Date().toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hour12: false });
     var ukMin = parseInt(ukNow.split(':')[0], 10) * 60 + parseInt(ukNow.split(':')[1], 10);
