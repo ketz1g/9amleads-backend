@@ -20920,10 +20920,16 @@ function runDeliveryTestReport() {
         // this run delivers with a unique delivery_run_id. Together these make the
         // report 100% reliable: the DB is empty before the run, so everything tagged
         // with runId IS this run's exact delivery (no accumulation, no races, no
-        // carried-over pending leads inflating counts). The founder's real account
-        // is untouched — its leads persist and are topped up normally.
+        // carried-over pending leads inflating counts).
+        // The FOUNDER monitor account is ALSO clean-slated each run: because a force
+        // delivery ignores the daily cap, keeping its old leads would accumulate its
+        // "leads today" dashboard count past the 5/day promise. Clean-slate keeps it
+        // at EXACTLY 5 fresh leads every run. Its real 9am email already went out —
+        // the test run is SILENT (no_email) so it never emails the founder a second
+        // daily batch; the founder reads the test-report email instead.
         var _testIds = {};
-        testCusts.forEach(function(c) { if (!/^test\./.test(String(c.email || ''))) return; _testIds[c.id] = true; });
+        var _monitorId = founderAcct ? founderAcct.id : null;
+        testCusts.forEach(function(c) { if (!/^test\./.test(String(c.email || '')) && c.id !== _monitorId) return; _testIds[c.id] = true; });
         db.leads = (db.leads || []).filter(function(l) { return !(l.customer_id && _testIds[l.customer_id]); });
         testCusts.forEach(function(c) { if (/^test\./.test(String(c.email || ''))) c.last_email_date = ''; });
         saveDb();
@@ -20933,11 +20939,12 @@ function runDeliveryTestReport() {
         var runStart = new Date();
         // run the real delivery on test accounts (force + test_only, emails enabled)
         var delivRes = await httpCallLocal('POST', '/api/admin/deliver', { test_only: true, force: true, run_id: runId });
-        // ALSO deliver to the founder's real account (targeted, force, emails enabled)
-        // so its dashboard + email are verified every 15-min run. Uses a fresh run_id
-        // tag so its leads are counted in the same report window.
+        // ALSO deliver to the founder's real account (targeted, force, SILENT) so its
+        // dashboard shows exactly 5 fresh leads every 15-min run. no_email:true because
+        // the founder's real 9am email already went out — this is an internal monitor
+        // re-delivery, NOT a second customer email. The founder reads the test report.
         var founderRunId = 'mon-' + date + '-' + Date.now().toString(36);
-        var founderDeliv = await httpCallLocal('POST', '/api/admin/deliver', { customer_email: MONITOR_EMAIL, force: true, run_id: founderRunId });
+        var founderDeliv = await httpCallLocal('POST', '/api/admin/deliver', { customer_email: MONITOR_EMAIL, force: true, run_id: founderRunId, no_email: true });
         // 3) build the report from leads delivered THIS run. Each 30-min test run
         // re-delivers the FULL quota (force), so this run's leads = those with
         // delivered_at >= runStart. This is accurate because forceFull re-delivers
