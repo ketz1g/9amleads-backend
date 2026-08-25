@@ -12455,6 +12455,12 @@ _deliverDiag[cust.email].products = products;
         custLeadFilters.maxBedrooms = parseInt(lfFlat['f-maxbeds'] || lfFlat['f-bed-max'] || lfFlat.maxBedrooms) || 99;
         custLeadFilters.maxPrice = parseInt(lfFlat['f-maxprice'] || lfFlat.maxPrice) || 0;
         custLeadFilters.propertyType = String(lfFlat['f-proptype'] || lfFlat['f-type'] || lfFlat.propertyType || '').toLowerCase();
+        // SPECIALIST FILTERS (planning/newbusiness/tenders): applied in the delivery
+        // so the leads a customer receives respect the filters they chose at signup.
+        custLeadFilters.appTypes = (Array.isArray(lfFlat['f-app-type']) ? lfFlat['f-app-type'] : (lfFlat['f-app-type'] ? [lfFlat['f-app-type']] : []));
+        custLeadFilters.industries = (Array.isArray(lfFlat['f-industries']) ? lfFlat['f-industries'] : (lfFlat['f-industries'] ? [lfFlat['f-industries']] : []));
+        custLeadFilters.minContractVal = parseInt(lfFlat['f-min-val'] || lfFlat.minContractValue) || 0;
+        custLeadFilters.keywords = String(lfFlat['f-keywords'] || lfFlat.keywords || '').toLowerCase();
       } catch(e) {}
       function leadPassesFilters(ld2) {
         try {
@@ -12465,6 +12471,50 @@ _deliverDiag[cust.email].products = products;
             // and extra filters shrink the deliverable pool and break the 5/day promise.
             var b = parseInt(ld2.bedrooms) || 0;
             if (custLeadFilters.maxBedrooms < 99 && b > custLeadFilters.maxBedrooms) return false;
+          }
+          if (cust.product === 'planning' && custLeadFilters.appTypes && custLeadFilters.appTypes.length) {
+            // PLANNING: customer chose specific application types (Householder, Full
+            // Planning, Listed Building, etc.). Match against the lead's applicationType
+            // / proposal text. If the lead has no type we can read, keep it (don't
+            // under-deliver); only reject when a type is clearly different.
+            var at = String(ld2.applicationType || ld2.proposal || ld2.type || ld2.category || '').toLowerCase();
+            var appOk = custLeadFilters.appTypes.some(function(t) {
+              var tt = String(t || '').toLowerCase();
+              if (!tt) return true;
+              return at.indexOf(tt) !== -1 || tt.indexOf(at) !== -1 || (tt === 'full planning' && /full planning/i.test(at)) || (tt === 'householder' && /householder/i.test(at)) || (tt === 'listed building' && /listed building/i.test(at)) || (tt === 'change of use' && /change of use/i.test(at));
+            });
+            if (!appOk) return false;
+          }
+          if (cust.product === 'newbusiness' && custLeadFilters.industries && custLeadFilters.industries.length) {
+            // NEWBUSINESS: customer chose industries (Tech, Construction, Retail, etc.).
+            // Match by SIC code -> industry classification, plus company name keywords.
+            var sic = String(ld2.sicCode || ld2.sic || ld2.companyNumber || '');
+            var nm = String(ld2.name || ld2.companyName || '').toLowerCase();
+            var indOk = custLeadFilters.industries.some(function(ind) {
+              var i0 = String(ind || '').toLowerCase();
+              if (!i0) return true;
+              // SIC ranges -> broad industry
+              if (/^8[89]\d{2}$/.test(sic)) return i0 === 'tech & software' || i0 === 'tech' || i0 === 'software';
+              if (/^(4[0-9]{3}|2[0-9]{3})/.test(sic)) return i0 === 'construction';
+              if (/^(4[6-9]\d{2}|47\d{2})/.test(sic)) return i0 === 'retail';
+              if (/^(5[56]\d{2}|56\d{2})/.test(sic)) return i0 === 'hospitality';
+              if (/^(8[6-8]\d{2}|87\d{2}|88\d{2})/.test(sic)) return i0 === 'healthcare';
+              if (/^([69]\d{2}|70\d{2})/.test(sic)) return i0 === 'professional services';
+              if (/^6[45]\d{2}/.test(sic)) return i0 === 'financial';
+              if (/^(59|60|62|63)\d{2}/.test(sic)) return i0 === 'creative';
+              return /(tech|software|digital|it |cyber|ai |data|cloud|saas|app)/.test(nm) ? (i0.indexOf('tech') !== -1) : false;
+            });
+            if (!indOk) return false;
+          }
+          if (cust.product === 'tenders') {
+            // TENDERS: min contract value + keyword filter.
+            var cv = parseFloat(String(ld2.contractValue || ld2.contractValueLabel || '0').replace(/[^0-9.]/g, '')) || 0;
+            if (custLeadFilters.minContractVal > 0 && cv > 0 && cv < custLeadFilters.minContractVal) return false;
+            if (custLeadFilters.keywords) {
+              var kwText = (String(ld2.title || '') + ' ' + String(ld2.description || '') + ' ' + String(ld2.cpvCode || '') + ' ' + String(ld2.procurementType || '')).toLowerCase();
+              var kwList = custLeadFilters.keywords.split(',').map(function(k){ return k.trim(); }).filter(Boolean);
+              if (kwList.length && !kwList.some(function(k){ return kwText.indexOf(k.toLowerCase()) !== -1; })) return false;
+            }
           }
           return true;
         } catch(e) { return true; }
