@@ -410,6 +410,10 @@ function interleavePoolByAreas(poolArr, custAreas) {
     if (areasAreCounties) {
       for (var i = 0; i < custAreas.length; i++) {
         var c = String(custAreas[i] || '').toLowerCase().replace(/[\s-]+/g, '-');
+        // BROAD-REGION match: a customer who chose "South England" accepts any lead
+        // whose postcode area is in that region.
+        var regPcs = REGION_TO_POSTCODE_AREAS[c];
+        if (regPcs && regPcs.indexOf(pcCode) >= 0) return c;
         if (COUNTY_POSTCODE_MAP[c] && COUNTY_POSTCODE_MAP[c].indexOf(pcCode) >= 0) return c;
       }
       return '__none__';
@@ -728,6 +732,10 @@ function expandedAreaFallback(areas) {
   if (usesCounties) {
     (areas || []).forEach(function(a) {
       var c = String(a).toLowerCase().replace(/[\s-]+/g, '-');
+      // BROAD-REGION choice (e.g. "South England", "Scotland"): expand to every
+      // postcode area in that region. Gives whole-region coverage for tenders etc.
+      var regAreas = REGION_TO_POSTCODE_AREAS[c];
+      if (regAreas) { regAreas.forEach(function(pc) { if (!map[pc]) { map[pc] = 1; result.push(pc); } }); }
       (COUNTY_POSTCODE_MAP[c] || []).forEach(function(pc) { if (!map[pc]) { map[pc] = 1; result.push(pc); } });
     });
     // ALSO include every other county's postcode areas as a broad fallback, so an
@@ -5943,7 +5951,19 @@ app.put('/api/postcodes/update', authMiddleware, (req, res) => {
 // Used by tenders (and other county/region products) which select counties or
 // regions rather than postcode-area codes. Stores target_areas + coverage so the
 // distributor/delivery match on county/region names.
-const KNOWN_COUNTIES = ['bedfordshire','berkshire','bristol','buckinghamshire','cambridgeshire','cheshire','city-of-london','cornwall','cumbria','derbyshire','devon','dorset','durham','east-sussex','essex','gloucestershire','greater-london','greater-manchester','hampshire','herefordshire','hertfordshire','isle-of-wight','kent','lancashire','leicestershire','lincolnshire','merseyside','norfolk','north-yorkshire','northamptonshire','northumberland','nottinghamshire','oxfordshire','rutland','shropshire','somerset','south-yorkshire','staffordshire','suffolk','surrey','tyne-and-wear','warwickshire','west-midlands','west-sussex','west-yorkshire','wiltshire','worcestershire','east-midlands','east-of-england','london','north-east','north-west','south-east','south-west','west-midlands-region','yorkshire','yorkshire-and-the-humber','wales','scotland','all-uk','ukwide','all uk'];
+const KNOWN_COUNTIES = ['bedfordshire','berkshire','bristol','buckinghamshire','cambridgeshire','cheshire','city-of-london','cornwall','cumbria','derbyshire','devon','dorset','durham','east-sussex','essex','gloucestershire','greater-london','greater-manchester','hampshire','herefordshire','hertfordshire','isle-of-wight','kent','lancashire','leicestershire','lincolnshire','merseyside','norfolk','north-yorkshire','northamptonshire','northumberland','nottinghamshire','oxfordshire','rutland','shropshire','somerset','south-yorkshire','staffordshire','suffolk','surrey','tyne-and-wear','warwickshire','west-midlands','west-sussex','west-yorkshire','wiltshire','worcestershire','east-midlands','east-of-england','london','north-east','north-west','south-east','south-west','west-midlands-region','yorkshire','yorkshire-and-the-humber','wales','scotland','all-uk','ukwide','all uk','south-england','west-england','north-england','northern-ireland'];
+// BROAD UK REGIONS -> postcode AREA codes. Lets a customer choose a whole region
+// (e.g. "South England") instead of specific counties — ideal for tenders (which
+// are national opportunities) and gives much better coverage than town-level
+// counties. Used by area validation + delivery matching.
+const REGION_TO_POSTCODE_AREAS = {
+  'south-england': ['AL','BA','BH','BN','BR','BS','CB','CM','CO','CR','CT','DA','DT','E','EC','EN','EX','GL','GU','HA','HP','IG','IP','KT','LU','ME','MK','N','NE','NR','NW','OX','PE','PO','RG','RH','RM','SE','SG','SL','SM','SN','SO','SP','SS','SW','TQ','TN','TR','TW','UB','W','WC','WD'],
+  'east-of-england': ['AL','CB','CM','CO','EN','HP','IG','IP','LU','MK','NR','PE','RM','SG','SS','WD'],
+  'west-england': ['BA','BH','BS','DT','EX','GL','PL','SN','SP','TA','TQ','TR'],
+  'north-england': ['BB','BD','BL','CH','CW','DH','DL','DN','FY','HD','HG','HU','HX','L','LA','LD','LS','M','NE','OL','PR','S','SK','SR','ST','TF','TS','WA','WF','WN','YO'],
+  'scotland': ['AB','DD','DG','EH','FK','G','HS','IV','KA','KW','KY','ML','PA','PH','TD','ZE'],
+  'northern-ireland': ['BT']
+};
 app.put('/api/areas/update', authMiddleware, (req, res) => {
   try {
     var { areas, coverage } = req.body;
@@ -12861,6 +12881,11 @@ _deliverDiag[cust.email].products = products;
                         // so a multi-county customer gets leads from every county they picked.
                         for (var _cc = 0; _cc < custAreas.length; _cc++) {
                           var areaLower = String(custAreas[_cc] || '').toLowerCase().replace(/[\s-]+/g, '-');
+                          // BROAD-REGION match ("south-england", "scotland", ...): the
+                          // customer chose a whole region, so accept any lead whose
+                          // postcode area is in that region.
+                          var _regPcs = REGION_TO_POSTCODE_AREAS[areaLower];
+                          if (_regPcs && _regPcs.indexOf(areaOfPoolLead) >= 0) { custAreaHit = true; break; }
                           if ((countyPostcodes[areaLower] || []).indexOf(areaOfPoolLead) >= 0) { custAreaHit = true; break; }
                         }
                       } else {

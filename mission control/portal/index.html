@@ -842,7 +842,19 @@ function populateCountySelect() {
   var sel = document.getElementById('s-county-select');
   if (!sel) return;
   var prod = getSelectedLeadTypes()[0];
-  sel.innerHTML = '<option value="">Choose a county or area...</option>' + SPECIALIST_COUNTIES.map(function(c) {
+  // BROAD REGIONS: tenders (and any county product) can pick a whole UK region
+  // instead of specific counties — South England, East of England, West England,
+  // North England, Scotland, Northern Ireland. This gives far better national
+  // coverage than town-level counties, which is exactly what tenders need (they're
+  // national opportunities). Region names map to all the postcode areas within
+  // them; the backend accepts them via the national fallback + region mapping.
+  var regionOpts = [
+    'South England','East of England','West England','North England','Scotland','Northern Ireland'
+  ];
+  var regionHtml = regionOpts.map(function(r) {
+    return '<option value="' + r + '">' + r + '  · whole region</option>';
+  }).join('');
+  sel.innerHTML = '<option value="">Choose a county, area or region...</option>' + regionHtml + SPECIALIST_COUNTIES.map(function(c) {
     var count = _competitionAreas[c] || 0;
     var shared = count > 0 ? '  · shared with ' + count : '';
     return '<option value="' + c + '">' + c + shared + '</option>';
