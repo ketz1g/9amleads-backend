@@ -399,6 +399,21 @@ function postcodeAreaLetters(code) {
   var m = String(code || '').match(/^([A-Z]{1,2})[0-9]/i);
   return m ? m[1].toUpperCase() : String(code || '').replace(/[^A-Z]/gi, '').toUpperCase().slice(0, 2);
 }
+// MAX OUT-OF-AREA FALLBACK DISTANCE (km): when a customer's chosen areas run short
+// (e.g. a London removals customer in SW/SE/E/NW/AL), the delivery may pull fallback
+// leads from OUTSIDE their areas to meet the promised count. Those fallback leads
+// must be GENUINELY NEARBY — a removals company in Croydon does not move a family
+// from Glasgow. Leads whose postcode area is further than this from ANY chosen area
+// are REJECTED (the customer gets fewer leads today rather than a useless one from
+// the other end of the country). Tenders/probate (national opportunities) and
+// "All UK" customers are exempt.
+var MAX_FALLBACK_KM = 80;
+function isFallbackLeadAcceptable(leadPc, custAreas) {
+  var joined = (custAreas || []).join(' ');
+  if (/all.?uk|uk.?wide|nationwide|whole.?uk/i.test(joined)) return true;
+  var km = leadClosestKm(leadPc, custAreas);
+  return km <= MAX_FALLBACK_KM;
+}
 function haversineKm(lat1, lng1, lat2, lng2) {
   var R = 6371, dLat = (lat2 - lat1) * Math.PI / 180, dLng = (lng2 - lng1) * Math.PI / 180;
   var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
@@ -7410,7 +7425,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
   if (selected.length < limit && cust.product === 'moving') {
     var pcSeen2 = {};
     candidates.forEach(function(c) { var k = String(c.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); if (k) pcSeen2[k] = 1; });
-    var fallbackPool = interleaved.slice().sort(function(a, b) {
+    var fallbackPool = interleaved.slice().filter(function(c2) { return isFallbackLeadAcceptable(c2.postcode || c2.address || c2.fullAddress || '', areas); }).sort(function(a, b) {
       var da = leadClosestKm(a.postcode || a.address || a.fullAddress || '', areas);
       var db = leadClosestKm(b.postcode || b.address || b.fullAddress || '', areas);
       return da - db;
@@ -13402,6 +13417,12 @@ _deliverDiag[cust.email].products = products;
             // postcode, then freshest) — take it in that order, never re-sorted.
             if (r2pool.length === 0) {
               r2pool = (availGlobalByProd[r2prod] || []).filter(function(l) { return pickedIds.indexOf(l.id) === -1; });
+              // DISTANCE CAP: only allow out-of-area global-pool leads that are close
+              // enough (moving). Far-away fallback (Glasgow for a London customer) is
+              // worse than a shortfall — the lead is useless to a local removals firm.
+              if (r2prod === 'moving' && custAreas.length > 0 && !/all.?uk|uk.?wide|nationwide|whole.?uk/i.test(custAreas.join(' '))) {
+                r2pool = r2pool.filter(function(_gl) { try { var _gd = JSON.parse(_gl.data || '{}'); return isFallbackLeadAcceptable(_gd.postcode || '', custAreas); } catch(e) { return false; } });
+              }
             }
             // POOL-FILE FALLBACK: still short and no undelivered DB leads for this
             // product+area? Load fresh leads from the scrape pool file (which holds
@@ -13481,6 +13502,12 @@ _deliverDiag[cust.email].products = products;
                     // closest postcode via the sort above) so the promised count is
                     // always met — never deliver a shortfall when supply exists nearby.
                     if (!custAreaHit && r2prod !== 'moving') continue;
+                    // DISTANCE CAP: out-of-area fallback leads must be within a
+                    // reasonable radius of the customer's chosen areas. A Croydon
+                    // removals firm must NEVER receive a Glasgow/Edinburgh/Dundee lead
+                    // just because London supply ran out — reject anything beyond
+                    // MAX_FALLBACK_KM and let the customer be short instead.
+                    if (!custAreaHit && r2prod === 'moving' && !isFallbackLeadAcceptable(rl.postcode || rl.address || rl.location || rl.name || '', custAreas)) continue;
                     var poolKey = (rl.postcode||rl.address||rl.id||rl.url||'');
                     if (existingKeys[poolKey]) continue;
                     // Never re-create a property already delivered to this customer
