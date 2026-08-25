@@ -5762,6 +5762,41 @@ app.get('/api/leads', authMiddleware, (req, res) => {
   }));
 });
 
+// TEMP DIAGNOSTIC: admin-authenticated mirror of /api/leads for a given email, so the
+// exact customer-facing response can be inspected (counts, delivered_at, status).
+app.get('/api/admin/debug-customer-leads', adminAuth, (req, res) => {
+  try {
+    var em = String((req.query && req.query.email) || '').toLowerCase().trim();
+    if (!em) return res.status(400).json({ error: 'email required' });
+    var cust = db.prepare('SELECT * FROM customers WHERE email = ?').get(em);
+    if (!cust) return res.status(404).json({ error: 'customer not found' });
+    var leads = db.prepare('SELECT * FROM leads WHERE customer_id = ? ORDER BY created_at DESC LIMIT 50').all(cust.id);
+    var nowIso = new Date().toISOString();
+    var visible = leads.filter(function(l) {
+      var d0 = {}; try { d0 = JSON.parse(l.data || '{}'); } catch(e) {}
+      if (d0.rejected) return false;
+      if (l.status === 'removed') return false;
+      if (l.delivered || l.delivered_at) return true;
+      return !(l.release_at && l.release_at > nowIso);
+    });
+    var today = new Date().toISOString().split('T')[0];
+    var month = today.substring(0, 7);
+    var weekStart = new Date(Date.now() - 6 * 86400000).toISOString().split('T')[0];
+    var dlv = visible.filter(function(l) { return l.delivered; });
+    res.json({
+      customer_id: cust.id, plan: cust.plan, product: cust.product, trial_ends: cust.trial_ends,
+      total_rows: leads.length, visible_rows: visible.length,
+      delivered_rows: dlv.length,
+      today_delivered: dlv.filter(function(l){ return (l.delivered_at||'').startsWith(today); }).length,
+      week_delivered: dlv.filter(function(l){ return (l.delivered_at||'') >= weekStart; }).length,
+      month_delivered: dlv.filter(function(l){ return (l.delivered_at||'').startsWith(month); }).length,
+      unique_today: dlv.filter(function(l){ return (l.delivered_at||'').startsWith(today); }).map(function(l){ try{ var d=JSON.parse(l.data||'{}'); return d.url || d.fullAddress; }catch(e){ return l.id; } }).filter(function(v,i,a){ return a.indexOf(v) === i; }).length,
+      sample: dlv.slice(0, 5).map(function(l){ return { delivered_at: l.delivered_at, status: l.status, delivered: l.delivered, address: (function(){ try{ return JSON.parse(l.data||'{}').fullAddress; }catch(e){ return ''; } })() }; })
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+
 // GET /api/leads/today
 
 
