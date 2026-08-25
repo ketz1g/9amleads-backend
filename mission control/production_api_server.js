@@ -12945,6 +12945,22 @@ _deliverDiag[cust.email].products = products;
       // promised quota with fresh leads, emails + dashboards updating each time.
       var forceFull = (req.body && req.body.force === true) && (onlyEmail || testOnly);
       totalNeeded = forceFull ? totalDailyLimit : Math.max(0, totalNeeded - alreadyDeliveredToday);
+      // FORCE = REPLACE, NOT ADD, FOR REAL CUSTOMERS: a force delivery to a REAL
+      // (non-test) customer must REPLACE today's already-delivered leads, never
+      // accumulate on top of them. Otherwise repeated force runs (or a test-cron
+      // monitoring a real account) inflate the customer's "leads today" dashboard
+      // count past their promised quota (e.g. 10+ when the promise is 5). Reset
+      // today's delivered leads first so the force run delivers EXACTLY the cap.
+      if (forceFull && alreadyDeliveredToday > 0 && !/^test\./.test(String(cust.email || '').toLowerCase())) {
+        var _fReset = 0;
+        db.leads = (db.leads || []).map(function(_fl) {
+          if (_fl.customer_id !== cust.id || !_fl.delivered || !_fl.delivered_at || _fl.delivered_at.indexOf(today) !== 0) return _fl;
+          _fl.delivered = 0; _fl.delivered_at = null; _fl.status = 'removed';
+          _fReset++;
+          return _fl;
+        });
+        if (_fReset) { console.log('[DELIVERY] force-replace: reset ' + _fReset + ' already-delivered-today lead(s) for ' + cust.email + ' so force re-delivers exactly ' + totalDailyLimit); try { saveDb(); } catch(_fs) {} }
+      }
       // NO SPLIT EMAILS: if this customer already received their daily email (a
       // watchdog/manual re-run), top up the missing leads in the DB but NEVER send
       // a second partial email. All promised leads go out in ONE email.
