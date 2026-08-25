@@ -24307,6 +24307,37 @@ app.post('/api/admin/restore-customers', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/restore-full-db — restore the ENTIRE database from a backup file
+// (customers + leads + everything). For disaster recovery when database.json gets
+// corrupted/truncated (e.g. a failed write shrank it to a few KB). Body:
+// { backup_file: 'database-....json' }
+app.post('/api/admin/restore-full-db', adminAuth, (req, res) => {
+  try {
+    var file = String((req.body && req.body.backup_file) || '').replace(/[^\w\-.]/g, '');
+    if (!file) return res.status(400).json({ error: 'backup_file required' });
+    var p = path.join(BACKUP_DIR, file);
+    if (!fs.existsSync(p)) return res.status(404).json({ error: 'Backup file not found: ' + file });
+    var bk = JSON.parse(fs.readFileSync(p, 'utf-8'));
+    if (!bk || typeof bk !== 'object') return res.status(500).json({ error: 'Backup is not a valid DB object' });
+    var beforeCust = (getDb().customers || []).length;
+    var beforeLeads = (getDb().leads || []).length;
+    // Also back up the current (corrupt) state first so we never lose the last state.
+    try {
+      var stamp = new Date().toISOString().replace(/[:T]/g, '-').substring(0, 19);
+      var corruptFile = path.join(BACKUP_DIR, 'database-CORRUPT-BEFORE-RESTORE-' + stamp + '.json');
+      fs.writeFileSync(corruptFile, JSON.stringify(getDb(), null, 2));
+      console.log('[RESTORE] Saved pre-restore (possibly corrupt) state to ' + corruptFile);
+    } catch(be) { console.log('[RESTORE] pre-restore backup error:', be.message); }
+    // Replace the whole DB with the backup content.
+    _dbData = bk;
+    _dbData = null; getDb();
+    saveDb();
+    var afterCust = (getDb().customers || []).length;
+    var afterLeads = (getDb().leads || []).length;
+    res.json({ success: true, file: file, customers_before: beforeCust, customers_after: afterCust, leads_before: beforeLeads, leads_after: afterLeads });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/purge-demo — remove demo migration accounts only (keeps real signups)
 app.post('/api/admin/purge-demo', adminAuth, (req, res) => {
   try {
