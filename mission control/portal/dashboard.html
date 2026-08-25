@@ -1734,15 +1734,17 @@ function loadActivity() {
   var done = 0;
   function isLiveLead(l){
     if (!l.delivered) return false;
-    var d = null; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
+    var d = (typeof l.data === 'string') ? null : l.data;
+    try { if (typeof l.data === 'string') d = JSON.parse(l.data); } catch(e) {}
     if (l.rejected || (d && d.rejected)) return false;
     return true;
   }
   function render() {
     var live = leadsList.filter(isLiveLead);
     // DEDUPE by URL/address so churned duplicates never inflate the activity counts.
+    // NOTE: /api/leads returns data as an already-parsed OBJECT, so guard both types.
     var _seenAct = {};
-    live = live.filter(function(l){ var d=null; try{ d=JSON.parse(l.data||'{}'); }catch(e){} var u=String(d.url||'').split('#')[0].split('?')[0].replace(/\/+$/,'').toLowerCase(); var a=String(d.fullAddress||d.address||'').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,28); var pc=String(d.postcode||'').toUpperCase().replace(/[^A-Z0-9]/g,''); var k=u||(a+'|'+pc); if(!k) return true; if(_seenAct[k]) return false; _seenAct[k]=true; return true; });
+    live = live.filter(function(l){ var d=(typeof l.data==='string')?null:l.data; try{ if(typeof l.data==='string') d=JSON.parse(l.data); }catch(e){} var u=String(d&&d.url||'').split('#')[0].split('?')[0].replace(/\/+$/,'').toLowerCase(); var a=String(d&&d.fullAddress||d&&d.address||'').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,28); var pc=String(d&&d.postcode||'').toUpperCase().replace(/[^A-Z0-9]/g,''); var k=u||(a+'|'+pc); if(!k) return true; if(_seenAct[k]) return false; _seenAct[k]=true; return true; });
     var todayN = live.filter(function(l){ return (l.delivered_at||'').startsWith(todayStr); }).length;
     var weekN = live.filter(function(l){ return (l.delivered_at||'') >= weekStart; }).length;
     var monthN = live.filter(function(l){ return (l.delivered_at||'').startsWith(monthStr); }).length;
@@ -1835,15 +1837,17 @@ document.querySelectorAll('.modal').forEach(function(m){
       // "This Week" to the total) and counted rejected/pending leads in "Today".
       function isLiveLead(l){
         if (!l.delivered) return false;
-        var d = null; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
+        var d = (typeof l.data === 'string') ? null : l.data;
+        try { if (typeof l.data === 'string') d = JSON.parse(l.data); } catch(e) {}
         if (l.rejected || (d && d.rejected)) return false;
         return true;
       }
       var live = leads.filter(isLiveLead);
       // DEDUPE live leads by URL/address so repeated/churned deliveries never inflate
       // the KPI counts (a duplicate "33 Devon Street" row must count once).
+      // NOTE: /api/leads returns data as an already-parsed OBJECT, so guard both types.
       var _seenLive = {};
-      live = live.filter(function(l){ var d=null; try{ d=JSON.parse(l.data||'{}'); }catch(e){} var u=String(d.url||'').split('#')[0].split('?')[0].replace(/\/+$/,'').toLowerCase(); var a=String(d.fullAddress||d.address||'').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,28); var pc=String(d.postcode||'').toUpperCase().replace(/[^A-Z0-9]/g,''); var k=u||(a+'|'+pc); if(!k) return true; if(_seenLive[k]) return false; _seenLive[k]=true; return true; });
+      live = live.filter(function(l){ var d=(typeof l.data==='string')?null:l.data; try{ if(typeof l.data==='string') d=JSON.parse(l.data); }catch(e){} var u=String(d&&d.url||'').split('#')[0].split('?')[0].replace(/\/+$/,'').toLowerCase(); var a=String(d&&d.fullAddress||d&&d.address||'').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,28); var pc=String(d&&d.postcode||'').toUpperCase().replace(/[^A-Z0-9]/g,''); var k=u||(a+'|'+pc); if(!k) return true; if(_seenLive[k]) return false; _seenLive[k]=true; return true; });
       var today = new Date().toISOString().split('T')[0];
       var wStart = new Date(Date.now() - 6 * 86400000).toISOString().split('T')[0]; // last 7 days
       var tl = live.filter(function(l){ return (l.delivered_at || '').startsWith(today); });
