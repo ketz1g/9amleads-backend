@@ -842,12 +842,10 @@ function populateCountySelect() {
   var sel = document.getElementById('s-county-select');
   if (!sel) return;
   var prod = getSelectedLeadTypes()[0];
-  // BROAD REGIONS: tenders (and any county product) can pick a whole UK region
-  // instead of specific counties — South England, East of England, West England,
-  // North England, Scotland, Northern Ireland. This gives far better national
-  // coverage than town-level counties, which is exactly what tenders need (they're
-  // national opportunities). Region names map to all the postcode areas within
-  // them; the backend accepts them via the national fallback + region mapping.
+  // TENDERS: ONLY the 6 broad UK regions (+ All UK) — no individual counties.
+  // Tenders are national opportunities, so a whole region (or All UK) gives the
+  // customer the widest possible coverage instead of town/county-level limits.
+  // Other county products (planning/probate/newbusiness) keep counties + regions.
   var regionOpts = [
     'South England','East of England','West England','North England','Scotland','Northern Ireland'
   ];
@@ -855,14 +853,16 @@ function populateCountySelect() {
     return '<option value="' + r + '">' + r + '  · whole region</option>';
   }).join('');
   var minSpan = document.getElementById('s-county-min'); if (minSpan) minSpan.textContent = prod === 'tenders' ? '2' : '3';
-  sel.innerHTML = '<option value="">Choose a county, area or region...</option>' + regionHtml + SPECIALIST_COUNTIES.map(function(c) {
-    var count = _competitionAreas[c] || 0;
-    var shared = count > 0 ? '  · shared with ' + count : '';
-    return '<option value="' + c + '">' + c + shared + '</option>';
-  }).join('') + '<option value="all-uk">All UK</option>';
+  if (prod === 'tenders') {
+    sel.innerHTML = '<option value="">Choose a region...</option>' + regionHtml + '<option value="all-uk">All UK</option>';
+  } else {
+    sel.innerHTML = '<option value="">Choose a county, area or region...</option>' + regionHtml + SPECIALIST_COUNTIES.map(function(c) {
+      var count = _competitionAreas[c] || 0;
+      var shared = count > 0 ? '  · shared with ' + count : '';
+      return '<option value="' + c + '">' + c + shared + '</option>';
+    }).join('') + '<option value="all-uk">All UK</option>';
+  }
 }
-// For tenders: fetch per-area competition counts + annotate the county picker and
-// show the shared-agreement checkbox. Called when the product/areas change.
 function updateTenderCompetition() {
   var prod = getSelectedLeadTypes()[0];
   var shareRow = document.getElementById('s-tender-share-row');
