@@ -7900,6 +7900,76 @@ app.post('/api/admin/purge-bad-leads', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/set-customer-lead-total — set a customer's TOTAL DELIVERED count
+// to exactly { target } (5/day × delivery days since signup). Used to fix dashboard
+// totals that drifted (over-delivered by churn, or under-delivered by supply gaps):
+//   - OVER target: marks the OLDEST delivered leads as removed (keeps today's batch)
+//   - UNDER target: backfills fresh valid in-area door-numbered leads as delivered
+// Body: { email, target }  (target = the correct cumulative count the dashboard
+// should show, e.g. 25 for a Day-5 moving customer)
+app.post('/api/admin/set-customer-lead-total', adminAuth, async (req, res) => {
+  try {
+    var email = String((req.body && req.body.email) || '').toLowerCase().trim();
+    var target = parseInt((req.body && req.body.target), 10);
+    if (!email || isNaN(target) || target < 0) return res.status(400).json({ error: 'email and target (integer) required' });
+    var dbS = getDb();
+    var cust = (dbS.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    var today = new Date().toISOString().split('T')[0];
+    var custLeads = (dbS.leads || []).filter(function(l) { return l.customer_id === cust.id; });
+    var delivered = custLeads.filter(function(l) { return l.delivered && l.delivered_at && l.delivered_at.indexOf(today) !== 0; });
+    var deliveredToday = custLeads.filter(function(l) { return l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0; });
+    var currentTotal = delivered.length + deliveredToday.length;
+    var removed = 0, added = 0;
+    if (currentTotal > target) {
+      // Trim the OLDEST historical delivered leads first (never today's batch).
+      var excess = currentTotal - target;
+      var sorted = delivered.slice().sort(function(a, b) { return String(a.delivered_at).localeCompare(String(b.delivered_at)); });
+      dbS.leads = (dbS.leads || []).map(function(l) {
+        if (excess > 0 && l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) !== 0) {
+          var keep = sorted.shift();
+          if (keep && keep.id === l.id) { l.delivered = 0; l.delivered_at = null; l.status = 'removed'; excess--; removed++; }
+        }
+        return l;
+      });
+    }
+    // UNDER target: backfill from the pool with valid in-area door-numbered leads.
+    if (currentTotal < target) {
+      var areas = [];
+      try { areas = JSON.parse(cust.target_areas || '[]'); } catch(e) { areas = []; }
+      if (!areas.length) { try { var cfgS = JSON.parse(cust.product_config || '{}'); areas = (cfgS[cust.product] && cfgS[cust.product].target_areas) ? JSON.parse(cfgS[cust.product].target_areas) : []; } catch(e2) { areas = []; } }
+      var pool = loadProductPool(cust.product);
+      var interleaved = interleavePoolByAreas(pool, areas);
+      var usedKeys = {};
+      (dbS.leads || []).forEach(function(l) { if (l.customer_id === cust.id && l.delivered) { try { var du = JSON.parse(l.data || '{}').url || ''; if (du) usedKeys['u:' + du] = 1; } catch(e) {} } });
+      var nowIso = new Date().toISOString();
+      var freshCutoff = getFreshCutoffIso();
+      var need = target - currentTotal;
+      for (var si = 0; si < interleaved.length && added < need; si++) {
+        var pl = interleaved[si];
+        try {
+          if (cust.product === 'moving') { var vr2 = validateMovingLead({ fullAddress: pl.fullAddress || pl.address || '', postcode: pl.postcode || '', url: pl.url || '' }); if (vr2) continue; }
+        } catch(e) { continue; }
+        var pcArea = extractPostcodeArea(pl.postcode || pl.address || pl.fullAddress || '');
+        var matched = false;
+        if (cust.product === 'moving') matched = areas.indexOf(pcArea) !== -1;
+        else { var countyMatch = areas.some(function(a) { return String(a).toLowerCase().replace(/[\s-]+/g,'-') === String(pl.county || '').toLowerCase().replace(/[\s-]+/g,'-'); }); matched = countyMatch; }
+        if (!matched) continue;
+        var fv = pickFreshDate(pl); if (!fv) continue;
+        var key = pl.url || ('a:' + String(pl.address || pl.fullAddress || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30));
+        if (usedKeys[key]) continue;
+        usedKeys[key] = 1;
+        var dS = { address: pl.address || pl.fullAddress || '', fullAddress: pl.fullAddress || pl.address || '', postcode: pl.postcode || '', url: pl.url || '', street: pl.street || '', building_number: pl.building_number || '', source: pl.source || '', firstVisibleDate: pl.firstVisibleDate || nowIso, scrapedAt: nowIso };
+        dbS.leads.push({ id: uuidv4(), customer_id: cust.id, product: cust.product, data: JSON.stringify(dS), status: 'delivered', delivered: 1, created_at: nowIso, delivered_at: nowIso, release_at: nowIso.split('T')[0] + 'T09:00:00.000Z' });
+        added++;
+      }
+    }
+    saveDb();
+    var final = (dbS.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered; }).length;
+    res.json({ success: true, email: email, target: target, current_before: currentTotal, removed: removed, added: added, final_delivered: final });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/purge-pending — remove ALL a customer's PENDING (not-yet-delivered)
 // leads so the dashboard shows only their real DELIVERED history + today's batch.
 // Pending rows accumulate as junk from force re-deliveries / failed gate passes /
