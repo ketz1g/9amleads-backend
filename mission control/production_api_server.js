@@ -5716,6 +5716,10 @@ app.get('/api/leads', authMiddleware, (req, res) => {
     // Hide rejected leads from the customer dashboard (they're queued for replacement).
     var d0 = {}; try { d0 = JSON.parse(l.data || '{}'); } catch(e) {}
     if (d0.rejected) return false;
+    // Hide REMOVED leads (reset by admin replace-leads / force-replace, or blocked).
+    // A reset marks today's leads delivered=0 + status='removed' so a force re-delivery
+    // REPLACES them — the customer must only ever see their CURRENT, correct batch.
+    if (l.status === 'removed') return false;
     if (l.delivered || l.delivered_at) return true;
     return !(l.release_at && l.release_at > nowIso);
   });
@@ -6967,7 +6971,7 @@ app.get('/api/admin/customer-dashboard', adminAuth, (req, res) => {
     var db4 = getDb();
     var cust = (db4.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
     if (!cust) return res.status(404).json({ error: 'Customer not found' });
-    var leads = (db4.leads || []).filter(function(l) { return l.customer_id === cust.id; }).sort(function(a, b) { return String(b.delivered_at || b.created_at || '').localeCompare(String(a.delivered_at || a.created_at || '')); });
+    var leads = (db4.leads || []).filter(function(l) { return l.customer_id === cust.id && l.status !== 'removed'; }).sort(function(a, b) { return String(b.delivered_at || b.created_at || '').localeCompare(String(a.delivered_at || a.created_at || '')); });
     var rows = leads.map(function(l) {
       var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
       var addr = d.fullAddress || d.address || d.deceasedAddress || '';
