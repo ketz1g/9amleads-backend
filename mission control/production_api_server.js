@@ -226,6 +226,31 @@ function stripPartialPostcode(addr) {
   return String(addr || '').replace(/,\s*[A-Z]{1,2}[0-9][A-Z0-9]?\s*$/i, '').replace(/\s{2,}/g, ' ').trim();
 }
 
+// MOVING-LEAD ADDRESS NORMALISER: a moving lead's printable address must start
+// with the DOOR/FLAT NUMBER + STREET (the mail address), not a building/company
+// name. Scrapers often prepend "Aitchison Raffety, King House,", "Western Court,"
+// or "Court ..." building names. Rules:
+//   1) If a numbered street exists in the address ("55 Victoria Street"),
+//      return the address STARTING at that street+number (drop the leading
+//      building/company name). A "Court/Close" name with no number is dropped;
+//      the numbered street is used instead.
+//   2) Keep flat/apartment numbers ("Flat 1, ...", "Flat A, ...").
+//   3) If there's no numbered street (bare building name), keep the address as-is.
+function normaliseMovingAddress(addr) {
+  var a = String(addr || '').trim();
+  if (!a) return '';
+  // 1) Numbered street: number + optional letter + street word (Road/Street/
+  //    Avenue/Lane/Drive/Close/Court/Terrace/Way/Hill/Place/Mews/Grove/Gardens/
+  //    Crescent/Row/Park/Square/Green/View/Gate/End/Field/Path/...).
+  var numStreet = a.match(/(?:^|,\s*)((?:\bFlat\s*[0-9A-Za-z]+\b\s*,?\s*)?\d{1,5}[A-Za-z]?(?:[-\u2013]\d{1,5}[A-Za-z]?)?\s+[A-Z][A-Za-z'-]*(?:\s+[A-Z][A-Za-z'-]*){0,2}\s+(?:Road|Street|Avenue|Lane|Drive|Close|Court|Crescent|Gardens|Grove|Terrace|Way|Walk|Hill|Place|Mews|Rise|Row|Park|Square|Green|Broadway|Path|View|Gate|End|Field|Fields|High\s?Street|St|Rd|Ave|Ln|Dr|Ct|Tce|Gdns|Gv|Cl|Cres|Mws|Rse|Pk|Sq|Bdwy))\b/i);
+  // Prefer a numbered street that is NOT just "Court"/"Close" without a number.
+  if (numStreet) return numStreet[1].replace(/\s*,\s*/g, ', ').trim();
+  // 2) Flat/apartment numbered prefix (no street found): keep flat part + rest.
+  if (/^(?:Flat|Apartment|Unit|Maisonette|Penthouse|Room)\s*[0-9A-Za-z]+/i.test(a)) return a;
+  // 3) No numbered street — return the address unchanged.
+  return a;
+}
+
 // FINAL AUTO-REVIEW for a moving lead. Returns '' if the lead is complete and
 // mail-ready, otherwise the reason it failed. EVERY moving lead must pass ALL of
 // these before it can be emailed to a customer:
@@ -499,8 +524,14 @@ function loadProductPool(prod) {
   arr = arr.filter(function(l) { return !(l.rejected || l.blocked || l.blocked_by_admin); });
   arr = arr.map(function(l) {
     if (l && l.address) {
-      l.address = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(l.address)));
-      if (l.fullAddress) l.fullAddress = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(l.fullAddress)));
+      var _cleanAddr = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(l.address)));
+      if (prod === 'moving') _cleanAddr = normaliseMovingAddress(_cleanAddr);
+      l.address = _cleanAddr;
+      if (l.fullAddress) {
+        var _cleanFull = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(l.fullAddress)));
+        if (prod === 'moving') _cleanFull = normaliseMovingAddress(_cleanFull);
+        l.fullAddress = _cleanFull;
+      }
     }
     return l;
   });
@@ -12448,8 +12479,14 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       // ("London, Wales", "Battersea, Scotland").
       arr = arr.map(function(l) {
         if (l && l.address) {
-          l.address = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(l.address)));
-          if (l.fullAddress) l.fullAddress = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(l.fullAddress)));
+          var _c1 = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(l.address)));
+          if (prod === 'moving') _c1 = normaliseMovingAddress(_c1);
+          l.address = _c1;
+          if (l.fullAddress) {
+            var _c2 = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(l.fullAddress)));
+            if (prod === 'moving') _c2 = normaliseMovingAddress(_c2);
+            l.fullAddress = _c2;
+          }
         }
         return l;
       });
