@@ -7900,6 +7900,26 @@ app.post('/api/admin/purge-bad-leads', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/purge-pending — remove ALL a customer's PENDING (not-yet-delivered)
+// leads so the dashboard shows only their real DELIVERED history + today's batch.
+// Pending rows accumulate as junk from force re-deliveries / failed gate passes /
+// out-of-area fallbacks and inflate the dashboard "total" count. Delivered leads
+// (the customer's real history since signup) are untouched. Body: { email }
+app.post('/api/admin/purge-pending', adminAuth, (req, res) => {
+  try {
+    var email = String((req.body && req.body.email) || '').toLowerCase().trim();
+    if (!email) return res.status(400).json({ error: 'email required' });
+    var dbPP = getDb();
+    var cust = (dbPP.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    var beforePending = (dbPP.leads || []).filter(function(l) { return l.customer_id === cust.id && !l.delivered; }).length;
+    dbPP.leads = (dbPP.leads || []).filter(function(l) { return !(l.customer_id === cust.id && !l.delivered); });
+    saveDb();
+    var afterTotal = (dbPP.leads || []).filter(function(l) { return l.customer_id === cust.id; }).length;
+    res.json({ success: true, email: email, removed_pending: beforePending, remaining_total: afterTotal });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/dedupe-leads - remove duplicate leads per customer (same
 // normalized address+postcode, or same URL) keeping the first. Applies to all
 // products. Returns how many duplicates were removed.
