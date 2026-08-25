@@ -20758,6 +20758,13 @@ function runDeliveryTestReport() {
         var date = new Date().toISOString().split('T')[0];
         var testCusts = (db.customers || []).filter(function(c) { return /^test\./.test(String(c.email || '').toLowerCase()); });
         if (!testCusts.length) { _testReportLock = false; _testReportLockAt = 0; resolve({ ok: false, reason: 'no test accounts' }); return; }
+        // FOUNDER MONITORING ACCOUNT: hello@9amleads.com is the founder's own account —
+        // include it in the 15-min test runs so its dashboard + email + leads are
+        // verified every run alongside the test accounts (it is a REAL customer, so it
+        // is NOT clean-slated; it gets a targeted force delivery instead).
+        var MONITOR_EMAIL = 'hello@9amleads.com';
+        var founderAcct = (db.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === MONITOR_EMAIL; });
+        if (founderAcct && testCusts.indexOf(founderAcct) === -1) testCusts.push(founderAcct);
         // NORMAL CAPS: keep each test account at its real plan cap so the 9am
         // delivery caps correctly. The deliver endpoint's test/force mode
         // re-delivers the FULL quota each run regardless, so every 30-min run
@@ -20770,18 +20777,24 @@ function runDeliveryTestReport() {
         // this run delivers with a unique delivery_run_id. Together these make the
         // report 100% reliable: the DB is empty before the run, so everything tagged
         // with runId IS this run's exact delivery (no accumulation, no races, no
-        // carried-over pending leads inflating counts). Real customers untouched.
+        // carried-over pending leads inflating counts). The founder's real account
+        // is untouched — its leads persist and are topped up normally.
         var _testIds = {};
-        testCusts.forEach(function(c) { _testIds[c.id] = true; });
+        testCusts.forEach(function(c) { if (!/^test\./.test(String(c.email || ''))) return; _testIds[c.id] = true; });
         db.leads = (db.leads || []).filter(function(l) { return !(l.customer_id && _testIds[l.customer_id]); });
-        testCusts.forEach(function(c) { c.last_email_date = ''; });
+        testCusts.forEach(function(c) { if (/^test\./.test(String(c.email || ''))) c.last_email_date = ''; });
         saveDb();
         var runId = 'test-' + date + '-' + Date.now().toString(36);
-        console.log('[TEST] clean-slate run ' + runId + ' (' + testCusts.length + ' test accounts, all test leads cleared)');
+        console.log('[TEST] clean-slate run ' + runId + ' (' + testCusts.length + ' monitored accounts incl. ' + MONITOR_EMAIL + ', all test leads cleared)');
         // Mark the run start timestamp (also kept for the report's timing info).
         var runStart = new Date();
         // run the real delivery on test accounts (force + test_only, emails enabled)
         var delivRes = await httpCallLocal('POST', '/api/admin/deliver', { test_only: true, force: true, run_id: runId });
+        // ALSO deliver to the founder's real account (targeted, force, emails enabled)
+        // so its dashboard + email are verified every 15-min run. Uses a fresh run_id
+        // tag so its leads are counted in the same report window.
+        var founderRunId = 'mon-' + date + '-' + Date.now().toString(36);
+        var founderDeliv = await httpCallLocal('POST', '/api/admin/deliver', { customer_email: MONITOR_EMAIL, force: true, run_id: founderRunId });
         // 3) build the report from leads delivered THIS run. Each 30-min test run
         // re-delivers the FULL quota (force), so this run's leads = those with
         // delivered_at >= runStart. This is accurate because forceFull re-delivers
@@ -20808,7 +20821,7 @@ function runDeliveryTestReport() {
             if (l.delivered_at.indexOf(date) !== 0) return; // not delivered today
             try { var dd = JSON.parse(l.data || '{}'); if (dd.rejected) return; } catch(e) {}
             todayTotal.push(l);
-            if (l.delivery_run_id === runId) thisRun.push(l);
+            if (l.delivery_run_id === runId || (c.email === MONITOR_EMAIL && l.delivery_run_id === founderRunId)) thisRun.push(l);
           });
           // AUTHORITATIVE COUNT OVERRIDE: the deliver response's per_customer map
           // records the EXACT number of leads the deliver emailed to this customer
@@ -20916,6 +20929,53 @@ cron.schedule('*/15 * * * *', () => {
     runDeliveryTestReport().then(function(r) { console.log('[TEST-CRON] done, issues=' + (r && r.issues)); });
   } catch(ce) { console.log('[TEST-CRON] scheduling error:', ce.message); }
 }, { timezone: 'Europe/London' });
+
+// POST /api/admin/replace-leads — remove bad delivered leads (commercial/duplicate/
+// out-of-area) from a customer and re-deliver fresh replacements from their areas,
+// then re-email the corrected batch. Body: { email, urls: ["...","..."] }
+app.post('/api/admin/replace-leads', adminAuth, async (req, res) => {
+  try {
+    var em = String((req.body && req.body.email) || '').toLowerCase();
+    var urlsToRemove = (req.body && Array.isArray(req.body.urls) ? req.body.urls : []).map(function(u){ return String(u).trim(); }).filter(Boolean);
+    if (!em) return res.status(400).json({ error: 'email required' });
+    if (!urlsToRemove.length) return res.status(400).json({ error: 'urls required' });
+    var dbR = getDb();
+    var cust = (dbR.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === em; });
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    var today = new Date().toISOString().split('T')[0];
+    var removed = 0;
+    // 1) Remove the bad delivered leads (mark as removed so they never show again)
+    dbR.leads = (dbR.leads || []).map(function(l) {
+      if (l.customer_id !== cust.id) return l;
+      var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
+      var lu = String(d.url || '').split('#')[0].split('?')[0].replace(/\/+$/,'');
+      if (l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0 && urlsToRemove.some(function(u){ var un = String(u).split('#')[0].split('?')[0].replace(/\/+$/,''); return un === lu; })) {
+        removed++;
+        l.delivered = 0; l.delivered_at = null; l.status = 'removed';
+      }
+      return l;
+    });
+    cust.last_email_date = ''; // allow re-email
+    saveDb();
+    // 2) Re-deliver replacements (force fills the gap, respects filters/exclusivity)
+    var deliv = await httpCallLocal('POST', '/api/admin/deliver', { customer_email: em, force: true });
+    // 3) Re-email the corrected batch
+    var db2 = getDb();
+    var cust2 = (db2.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === em; });
+    var todayLeads = (db2.leads || []).filter(function(l) { return l.customer_id === cust2.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0; });
+    var emailSent = false;
+    if (todayLeads.length > 0) {
+      try {
+        var subj = '9amLeads \u2022 Your Daily Opportunities on ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        await sendBrevoEmail({ email: cust2.email, name: cust2.company || 'Customer' }, subj, generateLeadEmailHTML(cust2, todayLeads));
+        cust2.last_email_date = today;
+        saveDb();
+        emailSent = true;
+      } catch(emErr) { console.log('[REPLACE] re-email failed:', emErr.message); }
+    }
+    res.json({ success: true, email: em, removed: removed, delivered_now: todayLeads.length, email_sent: emailSent, deliver: deliv });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 
 // GET /api/admin/customer-templates?email=X — dump a customer's letter templates so
 // the exact ai_generated_text that flows into the Stannp letter can be inspected.
