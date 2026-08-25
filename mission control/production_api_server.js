@@ -7430,6 +7430,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
       var db = leadClosestKm(b.postcode || b.address || b.fullAddress || '', areas);
       return da - db;
     });
+    console.log('[PREVIEW-FB] ' + cust.email + ' selected=' + selected.length + ' limit=' + limit + ' candidates=' + candidates.length + ' fallbackPool(after distance cap)=' + fallbackPool.length + ' interleaved=' + interleaved.length + ' areas=' + areas.join(','));
     for (var fbi = 0; fbi < fallbackPool.length && selected.length < limit; fbi++) {
       var fl = fallbackPool[fbi];
       var fAddr = fl.fullAddress || fl.address || fl.deceasedAddress || '';
