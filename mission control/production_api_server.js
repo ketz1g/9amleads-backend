@@ -12475,6 +12475,10 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       // leftover seed file with "Tender 0"/"Buyer"/"Works" rows). Filter them at
       // pool-load so every delivery pass only ever sees real leads.
       arr = arr.filter(function(l) { return !isPlaceholderLead(l); });
+      // NEVER deliver a pool lead that has been REJECTED/blocked (wrong/commercial/
+      // out-of-area lead the founder flagged). These are removed from the deliverable
+      // pool permanently so a re-delivery can't pick them up again.
+      arr = arr.filter(function(l) { return !(l.rejected || l.blocked || l.blocked_by_admin); });
       // NORMALIZE FLAT ADDRESSES: strip the portal default "Flat 1" prefix from
       // every moving pool lead so ALL customers (any source/path) get the accurate
       // building-level address, not a guessed flat. Also strip wrong region tags
