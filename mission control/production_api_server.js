@@ -950,7 +950,15 @@ function loadDb() {
   catch { return { customers: [], leads: [], deliveries: [], scraper_logs: [], subscriptions: [], blog_posts: [], customer_business_profiles: [], direct_mail_templates: [], direct_mail_campaigns: [], direct_mail_materials: [], direct_mail_recipients: [], direct_mail_automation_settings: [], direct_mail_orders: [], direct_mail_provider_logs: [], direct_mail_status_history: [], direct_mail_test_logs: [], payments: [], pageviews: [] }; }
 }
 function saveDb() {
-  try { fs.writeFileSync(DB_FILE, JSON.stringify(_dbData, null, 2)); } catch(e) { console.error('[DB] Save error:', e.message); }
+  try {
+    // ATOMIC WRITE: write to a temp file then rename over database.json so a
+    // concurrent saveDb() (deliver route + test cron + manual calls racing) or a
+    // mid-write crash can NEVER leave a truncated/corrupt database.json. This is
+    // the root-cause fix for the recurring "database shrank to a few KB" corruption.
+    var tmp = DB_FILE + '.tmp';
+    fs.writeFileSync(tmp, JSON.stringify(_dbData, null, 2));
+    fs.renameSync(tmp, DB_FILE);
+  } catch(e) { console.error('[DB] Save error:', e.message); }
 }
 
 // ===== AUTOMATED DATABASE BACKUP (bulletproofing) =====
