@@ -13744,6 +13744,16 @@ _deliverDiag[cust.email].products = products;
                 // return a bare street (e.g. "Park Road") that would lose a good
                 // "Flat 12, Eaton Mansions" address and cause the gate to drop it.
                 ld.fullAddress = (hasNum || !ld.fullAddress) ? e3Addr : ld.fullAddress;
+                // MOVING NORMALISE AFTER PAF: Postcoder returns the OFFICIAL PAF
+                // address which can carry a leading building/court/company name
+                // ("Flat 1, St. Catharines Court, 19 Alexandra Drive"). The customer
+                // must see the door/flat number + street first, so normalise AFTER
+                // PAF enrichment too — this is the exact address that gets emailed.
+                if (l.product === 'moving') {
+                  ld.address = normaliseMovingAddress(ld.address || '') || ld.address;
+                  ld.fullAddress = normaliseMovingAddress(ld.fullAddress || '') || ld.fullAddress;
+                  e3Addr = ld.fullAddress || ld.address || e3Addr;
+                }
                 l.data = JSON.stringify(ld);
               }
             });
