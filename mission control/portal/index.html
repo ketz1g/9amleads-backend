@@ -141,7 +141,7 @@ h1{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <div class="card">
 <div class="center">
 <div class="logo"><div class="icon">9</div>9am<span>Leads</span></div>
-<h1>Start Your <span style="color:#0ea5e9">Free Trial</span></h1>
+<h1 id="hero-title">Start Your <span style="color:#0ea5e9">Free Trial</span></h1>
 <p class="sub" id="page-subtitle">Fill in your business details once and we'll create ready-to-use marketing materials for you. 7-day free trial required. Cancel anytime.</p>
 <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-bottom:12px">
 <span style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.15);border-radius:100px;font-size:11px;font-weight:600;color:#0ea5e9">Campaign Packs</span>
@@ -1231,8 +1231,20 @@ function doLogin() {
     }).catch(function() { error.style.display = 'block'; });
 }
 
-function showLogin() { document.getElementById('signup-form').style.display='none'; document.getElementById('login-form').style.display='block'; }
-function showSignup() { document.getElementById('signup-form').style.display='block'; document.getElementById('login-form').style.display='none'; }
+function showLogin() { document.getElementById('signup-form').style.display='none'; document.getElementById('login-form').style.display='block'; setHeroView('login'); }
+function showSignup() { document.getElementById('signup-form').style.display='block'; document.getElementById('login-form').style.display='none'; setHeroView('signup'); }
+function setHeroView(v) {
+  var t = document.getElementById('hero-title');
+  var s = document.getElementById('page-subtitle');
+  if (!t) return;
+  if (v === 'login') {
+    t.innerHTML = 'Welcome <span style="color:#0ea5e9">Back</span>';
+    if (s) s.textContent = 'Sign in to your account to view today\'s opportunities and your dashboard.';
+  } else {
+    t.innerHTML = 'Start Your <span style="color:#0ea5e9">Free Trial</span>';
+    if (s) s.textContent = 'Fill in your business details once and we\'ll create ready-to-use marketing materials for you. 7-day free trial required. Cancel anytime.';
+  }
+}
 
 // Check for verification success/error from redirect
 (function() {
