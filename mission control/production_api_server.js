@@ -21369,14 +21369,15 @@ function runDeliveryTestReport() {
           var inArea = leads.filter(function(l) {
             var la = String(l.area || '').match(/^([A-Z]{1,2})[0-9]/i); la = la ? la[1].toUpperCase() : String(l.area || '').toUpperCase();
             return areas.some(function(a) {
+              // Same logic as the REAL delivery: city/county targets resolve through
+              // COUNTY_POSTCODE_MAP (birmingham->[B], greater-london->[E,EC,...]);
+              // postcode-prefix targets match directly. This stops FALSE "out-of-area"
+              // flags for county/city-based customers.
+              var aLower = String(a).toLowerCase().replace(/[\s-]+/g, '-');
+              if (COUNTY_POSTCODE_MAP[aLower]) { return (COUNTY_POSTCODE_MAP[aLower] || []).indexOf(la) !== -1; }
               var aa = String(a).match(/^([A-Z]{1,2})[0-9]/i);
-              if (aa) { aa = aa[1].toUpperCase(); return aa === la; }
-              // COUNTY/SHORT-NAME target: match the lead's full area/county against
-              // the target (e.g. target "Yorkshire" vs lead "Yorkshire"), OR the lead's
-              // area name contains the target's first word. This stops FALSE
-              // "out-of-area" flags for county-based customers (Yorkshire, Fife, etc.)
-              // where the lead IS in the chosen county but the postcode-prefix compare
-              // can't match a county name.
+              if (aa) { return aa[1].toUpperCase() === la; }
+              // Plain county/area name target: match against the lead's area/county text.
               var laFull = String(l.area || '').toUpperCase();
               var aNorm = String(a).toUpperCase().replace(/[\s-]+/g, '');
               var firstWord = aNorm.match(/^[A-Z]+/); firstWord = firstWord ? firstWord[0] : '';
