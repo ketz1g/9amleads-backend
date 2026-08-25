@@ -602,7 +602,7 @@ function updatePostcodeLimit() {
    var areaLabel = document.getElementById('s-area-label');
    if (areaLabel) {
      if (limit >= 999) areaLabel.textContent = isCountyBased() ? '(unlimited counties/areas — add as many as you need)' : '(unlimited postcode areas — add the areas you cover or choose All UK)';
-     else areaLabel.textContent = isCountyBased() ? (getSelectedLeadTypes().indexOf('tenders') !== -1 ? '(select at least 2 counties/areas)' : '(select at least 3 counties/areas)') : '(choose at least 3 postcode areas — e.g. HA, EN, SW, B, CM)';
+     else areaLabel.textContent = isCountyBased() ? (getSelectedLeadTypes().(getSelectedLeadTypes().indexOf('tenders') !== -1 || getSelectedLeadTypes().indexOf('probate') !== -1) ? '(select at least 2 counties/areas)' : '(select at least 3 counties/areas)') : '(choose at least 3 postcode areas — e.g. HA, EN, SW, B, CM)';
    }
    renderSignupPostcodes();
    onLeadTypeChange();
@@ -852,8 +852,8 @@ function populateCountySelect() {
   var regionHtml = regionOpts.map(function(r) {
     return '<option value="' + r + '">' + r + '  · whole region</option>';
   }).join('');
-  var minSpan = document.getElementById('s-county-min'); if (minSpan) minSpan.textContent = prod === 'tenders' ? '2' : '3';
-  if (prod === 'tenders') {
+  var minSpan = document.getElementById('s-county-min'); if (minSpan) minSpan.textContent = (prod === 'tenders' || prod === 'probate') ? '2' : '3';
+  if (prod === 'tenders' || prod === 'probate') {
     sel.innerHTML = '<option value="">Choose a region...</option>' + regionHtml + '<option value="all-uk">All UK</option>';
   } else {
     sel.innerHTML = '<option value="">Choose a county, area or region...</option>' + regionHtml + SPECIALIST_COUNTIES.map(function(c) {
@@ -961,7 +961,7 @@ function updateCoverageOptions() {
       areaSel.innerHTML = document.getElementById('postcode-area-selector') ? document.getElementById('postcode-area-selector').innerHTML : '';
     } else if (selectedCoverage === 'county') {
       areaSel.style.display = 'block';
-      var isTendersCov = getSelectedLeadTypes().indexOf('tenders') !== -1;
+      var isTendersCov = getSelectedLeadTypes().indexOf('tenders') !== -1 || getSelectedLeadTypes().indexOf('probate') !== -1;
       if (isTendersCov) {
         // TENDERS: only the 6 broad UK regions + All UK (national opportunities, widest coverage).
         areaSel.innerHTML = '<div style="margin-top:6px"><label style="font-size:11px;color:#8890a8;display:block;margin-bottom:4px">Select a region or choose All UK</label><select id="county-select" style="width:100%;padding:8px 10px;background:#1e2030;border:1px solid #2a2d42;border-radius:6px;font-size:12px;color:#e2e8f0;font-family:inherit;outline:none" onchange="if(this.value==\'all-uk\'){document.querySelector(\'#coverage-options input[value=\\\'ukwide\\\']\')?.click()}"><option value="">Choose a region...</option><option value="south-england">South England</option><option value="east-of-england">East of England</option><option value="west-england">West England</option><option value="north-england">North England</option><option value="scotland">Scotland</option><option value="northern-ireland">Northern Ireland</option><option value="all-uk" style="font-weight:700;color:#0ea5e9">All UK</option></select><div style="font-size:10px;color:#5c6480;margin-top:4px">Tenders are national opportunities - pick a whole region (or All UK) for maximum coverage.</div></div>';
@@ -1133,7 +1133,7 @@ function doSignup() {
   // Enforce a minimum of counties/areas when county coverage is used
   // (planning/probate/tenders/new business). TENDERS need only 2 areas (they are
   // national opportunities); other county products need 3. All UK bypasses it.
-  var countyMin = getSelectedLeadTypes().indexOf('tenders') !== -1 ? 2 : 3;
+  var countyMin = (getSelectedLeadTypes().indexOf('tenders') !== -1 || getSelectedLeadTypes().indexOf('probate') !== -1) ? 2 : 3;
   if (selectedCoverage === 'county' && targetAreas.length > 0 && targetAreas.length < countyMin) {
     document.getElementById('signup-error').textContent = 'Please select at least ' + countyMin + ' counties/areas (or choose All UK)';
     document.getElementById('signup-error').style.display = 'block'; button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false; return;
@@ -1160,7 +1160,7 @@ var pLimit = getPostcodeAreaLimit();
   }
   // Enforce the county/area minimum (3) for planning/probate/tenders on
   // free/starter. these products use counties/areas, not postcodes.
-  var countyMin2 = getSelectedLeadTypes().indexOf('tenders') !== -1 ? 2 : 3;
+  var countyMin2 = (getSelectedLeadTypes().indexOf('tenders') !== -1 || getSelectedLeadTypes().indexOf('probate') !== -1) ? 2 : 3;
   if (isCountyBased() && selectedCoverage !== 'ukwide' && targetAreas.length < countyMin2 && getPostcodeAreaLimit() < 999) {
     document.getElementById('signup-error').textContent = 'Planning, Probate and Tenders use counties/areas. Please select at least 3 ' + areaLabelText() + ' (you selected ' + targetAreas.length + ').';
     document.getElementById('signup-error').style.display = 'block'; button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false; return;
