@@ -10711,6 +10711,7 @@ cron.schedule('0 11 * * 1-5', async () => {
 // Delivery runs Mon-Fri at 09:00 UK time (handles BST/GMT automatically via timezone).
 var __deliveryFireCount = 0;
 var _deliveryLock = false;
+var _deliveryLockAt = 0;
 var _testReportLock = false;
 var _testReportLockAt = 0;
 var __lastDeliveryFire = '';
@@ -12669,11 +12670,22 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
   // emails = complaints). The DB exact-count guards the lead count, but this
   // guards the EMAIL. If a run is already in progress, we skip silently — the
   // in-flight run handles everything.
+  // SELF-HEAL: if the lock has been held > 15 minutes it is STALE (a crashed/hung
+  // run never released it — e.g. a Postcoder call that didn't time out). Override
+  // it so the next real delivery (especially the 09:00 cron) can never be blocked
+  // permanently. A normal delivery completes well under 15 min.
   if (_deliveryLock) {
-    console.log('[DELIVERY] Skipped: another delivery run already in progress');
-    return res.status(200).json({ success: true, skipped: true, message: 'Another delivery run is already in progress' });
+    var _lockAge = Date.now() - (_deliveryLockAt || 0);
+    if (_lockAge > 15 * 60 * 1000) {
+      console.log('[DELIVERY] Stale delivery lock (' + Math.round(_lockAge / 1000) + 's) — releasing and continuing');
+      _deliveryLock = false;
+    } else {
+      console.log('[DELIVERY] Skipped: another delivery run already in progress');
+      return res.status(200).json({ success: true, skipped: true, message: 'Another delivery run is already in progress' });
+    }
   }
   _deliveryLock = true;
+  _deliveryLockAt = Date.now();
   try {
     var delivered = 0, errors = 0, lastErr = '';
     var _deliverDiag = {};
@@ -14599,8 +14611,9 @@ _deliverDiag[cust.email].products = products;
       console.log('[DELIVERY-AUDIT] ' + today + ': ' + delivered + ' leads, ' + errors + ' errors');
     } catch(auditErr) { console.log('[DELIVERY-AUDIT] error:', auditErr.message); }
     _deliveryLock = false;
+    _deliveryLockAt = 0;
     res.json({ success: true, customers_processed: customers.length, leads_delivered: delivered, errors: errors, lastError: lastErr, diag: _deliverDiag || null, per_customer: Object.keys(_deliverDiag || {}).reduce(function(acc, ek) { var dv = _deliverDiag[ek]; var m = String((dv && dv.final_len) || '').match(/^(\d+)/); acc[ek] = { delivered: m ? parseInt(m[1], 10) : -1, totalDailyLimit: dv && dv.totalDailyLimit, products: (dv && dv.products) || [] }; return acc; }, {}) });
-  } catch(e) { _deliveryLock = false; res.status(500).json({ error: e.message }); }
+  } catch(e) { _deliveryLock = false; _deliveryLockAt = 0; res.status(500).json({ error: e.message }); }
 });
 
 // ===== STRIPE PAYMENTS =====
