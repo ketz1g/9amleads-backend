@@ -6,3 +6,17 @@ data/videos/
 data/uploads/
 .env
 .git/
+
+data/database.json
+data/moving-leads.json
+data/probate-leads.json
+data/newbusiness-leads.json
+data/planning-leads.json
+data/tenders-leads.json
+data/backups/
+data/postcode-assignments.json
+data/postcoder-cache.json
+data/postcoder-usage.json
+data/scraper-usage.json
+data/seen-planning-apps.json
+data/last-email-*.html
