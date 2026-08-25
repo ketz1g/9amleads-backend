@@ -7933,18 +7933,35 @@ app.post('/api/admin/set-customer-lead-total', adminAuth, async (req, res) => {
         return l;
       });
     }
+    // TODAY-CAP: the customer's "leads today" dashboard KPI must show EXACTLY the
+    // daily cap (no more). Repeated runs/churn may have delivered MORE than cap
+    // distinct leads today — keep only the NEWEST cap leads, mark the rest removed.
+    var dailyLimit = getPlanLimit(cust.product, cust.plan, cust.coverage) || 5;
+    var todayDelivered = (dbS.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0; });
+    if (todayDelivered.length > dailyLimit) {
+      var byNewest = todayDelivered.slice().sort(function(a, b) { return String(b.delivered_at).localeCompare(String(a.delivered_at)); });
+      var keepIds = {};
+      byNewest.slice(0, dailyLimit).forEach(function(l) { keepIds[l.id] = true; });
+      var trimmed = 0;
+      dbS.leads = (dbS.leads || []).map(function(l) {
+        if (l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0 && !keepIds[l.id]) { l.delivered = 0; l.delivered_at = null; l.status = 'removed'; trimmed++; }
+        return l;
+      });
+      if (trimmed) console.log('[SET-TOTAL] trimmed ' + trimmed + ' excess today-lead(s) for ' + email + ' (cap ' + dailyLimit + ')');
+    }
     // UNDER target: backfill from the pool with valid in-area door-numbered leads.
-    if (currentTotal < target) {
+    var currentAfterTrims = (dbS.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered; }).length;
+    if (currentAfterTrims < target) {
       var areas = [];
       try { areas = JSON.parse(cust.target_areas || '[]'); } catch(e) { areas = []; }
       if (!areas.length) { try { var cfgS = JSON.parse(cust.product_config || '{}'); areas = (cfgS[cust.product] && cfgS[cust.product].target_areas) ? JSON.parse(cfgS[cust.product].target_areas) : []; } catch(e2) { areas = []; } }
       var pool = loadProductPool(cust.product);
       var interleaved = interleavePoolByAreas(pool, areas);
       var usedKeys = {};
-      (dbS.leads || []).forEach(function(l) { if (l.customer_id === cust.id && l.delivered) { try { var du = JSON.parse(l.data || '{}').url || ''; if (du) usedKeys['u:' + du] = 1; } catch(e) {} } });
+      (dbS.leads || []).forEach(function(l) { if (l.customer_id === cust.id && l.delivered) { try { var du = JSON.parse(l.data || '{}').url || ''; if (du) usedKeys['u:' + du] = 1; var da = JSON.parse(l.data || '{}').fullAddress || JSON.parse(l.data || '{}').address || ''; var dp = JSON.parse(l.data || '{}').postcode || ''; if (da && dp) usedKeys['a:' + String(da).toLowerCase().replace(/\s+/g,' ').trim() + '|' + String(dp).toUpperCase().replace(/\s+/g,' ').trim()] = 1; } catch(e) {} } });
       var nowIso = new Date().toISOString();
       var freshCutoff = getFreshCutoffIso();
-      var need = target - currentTotal;
+      var need = target - currentAfterTrims;
       for (var si = 0; si < interleaved.length && added < need; si++) {
         var pl = interleaved[si];
         try {
