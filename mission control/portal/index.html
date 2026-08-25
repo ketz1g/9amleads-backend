@@ -667,6 +667,15 @@ function updateCompetitionNote() {
     .catch(function(){ note.style.display = 'none'; });
 }
 
+var filterDefs = {
+  moving: [{ id:'f-bed-min', label:'Min Bedrooms', type:'select', opts:['Any','1','2','3','4','5','6','7','8','9','10+'] }, { id:'f-bed-max', label:'Max Bedrooms', type:'select', opts:['Any','1','2','3','4','5','6','7','8','9','10+'] }, { id:'f-prop-type', label:'Property Type', type:'select', opts:['Any','House','Flat','Bungalow','Maisonette','Townhouse'] }, { id:'f-max-price', label:'Max Property Value', type:'select', opts:['Any','£100k','£200k','£350k','£500k','£750k','£1M','£2M','£3M','£5M','£10M'] } ],
+  probate: [],
+  newbusiness: [{ id:'f-industries', label:'Industries', type:'checkboxes', opts:['Tech & Software','Construction','Retail','Hospitality','Healthcare','Professional Services','Financial','Creative'] }],
+  planning: [{ id:'f-app-type', label:'Application Types', type:'checkboxes', opts:['Householder','Full Planning','Outline Planning','Listed Building','Change of Use','Lawful Development','Permitted Development','Prior Approval','Advertisement Consent'] }],
+  tenders: [{ id:'f-min-val', label:'Min Contract Value', type:'select', opts:['Any','£10k','£50k','£100k','£250k','£500k','£1M','£2M','£5M','£10M'] }, { id:'f-keywords', label:'Keywords', type:'text', placeholder:'construction, IT, healthcare...' }]
+};
+var filterNames = { moving: 'Moving', probate: 'Probate', newbusiness: 'New Business', planning: 'Planning', tenders: 'Tenders' };
+var filterColors = { moving:'#ff6b35', probate:'#a855f7', newbusiness:'#06b6d4', planning:'#10b981', tenders:'#6366f1' };
 function renderSignupFilters() {
   var container = document.getElementById('s-filters-container');
   var checked = document.querySelectorAll('#s-products-container input[type=checkbox]:checked');
