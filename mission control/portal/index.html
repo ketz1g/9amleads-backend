@@ -1237,8 +1237,13 @@ function showSignup() { document.getElementById('signup-form').style.display='bl
 // Check for verification success/error from redirect
 (function() {
   function showFormByHash() {
-    if (window.location.hash === '#signup') showSignup();
-    if (window.location.hash === '#login') showLogin();
+    if (window.location.hash === '#signup') { showSignup(); return; }
+    if (window.location.hash === '#login') { showLogin(); return; }
+    // DEFAULT VIEW: no hash = show the SIGNUP form (the main CTA). The login form
+    // stays hidden until "Already have an account? Sign In" is clicked. Without this,
+    // both forms are display:none and the page looks broken (blank) with a dead
+    // Sign In button.
+    showSignup();
   }
   showFormByHash();
   window.addEventListener('hashchange', showFormByHash);
