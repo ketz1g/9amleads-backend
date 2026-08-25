@@ -522,19 +522,21 @@ function loadProductPool(prod) {
   // out-of-area lead the founder flagged). These are removed from the deliverable
   // pool permanently so a re-delivery can't pick them up again.
   arr = arr.filter(function(l) { return !(l.rejected || l.blocked || l.blocked_by_admin); });
-  arr = arr.map(function(l) {
-    if (l && l.address) {
-      var _cleanAddr = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(l.address)));
-      if (prod === 'moving') _cleanAddr = normaliseMovingAddress(_cleanAddr);
-      l.address = _cleanAddr;
-      if (l.fullAddress) {
-        var _cleanFull = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(l.fullAddress)));
-        if (prod === 'moving') _cleanFull = normaliseMovingAddress(_cleanFull);
-        l.fullAddress = _cleanFull;
-      }
-    }
-    return l;
-  });
+      arr = arr.map(function(l) {
+        if (l && (l.address || l.fullAddress)) {
+          if (l.address) {
+            var _c1 = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(l.address)));
+            if (prod === 'moving') _c1 = normaliseMovingAddress(_c1);
+            l.address = _c1;
+          }
+          if (l.fullAddress) {
+            var _c2 = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(l.fullAddress)));
+            if (prod === 'moving') _c2 = normaliseMovingAddress(_c2);
+            l.fullAddress = _c2;
+          }
+        }
+        return l;
+      });
   // DEDUPE: the pool accumulates the same property/listing multiple times
   // (Rightmove + OnTheMarket + re-scrapes create duplicate entries with
   // different ids). Dedupe by normalized URL, falling back to normalized
@@ -12477,23 +12479,25 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       // every moving pool lead so ALL customers (any source/path) get the accurate
       // building-level address, not a guessed flat. Also strip wrong region tags
       // ("London, Wales", "Battersea, Scotland").
-      arr = arr.map(function(l) {
-        if (l && l.address) {
-          var _c1 = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(l.address)));
-          if (prod === 'moving') _c1 = normaliseMovingAddress(_c1);
-          l.address = _c1;
-          if (l.fullAddress) {
-            var _c2 = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(l.fullAddress)));
-            if (prod === 'moving') _c2 = normaliseMovingAddress(_c2);
-            l.fullAddress = _c2;
-          }
-        }
-        return l;
-      });
-      // DEDUPE: the pool accumulates the same property/listing multiple times
-      // (Rightmove + OnTheMarket + re-scrapes create duplicate entries with
-      // different ids). Dedupe by normalized URL, falling back to normalized
-      // address + postcode, so a customer NEVER receives the same lead twice.
+  arr = arr.map(function(l) {
+    if (l && (l.address || l.fullAddress)) {
+      if (l.address) {
+        var _c1 = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(l.address)));
+        if (prod === 'moving') _c1 = normaliseMovingAddress(_c1);
+        l.address = _c1;
+      }
+      if (l.fullAddress) {
+        var _c2 = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(l.fullAddress)));
+        if (prod === 'moving') _c2 = normaliseMovingAddress(_c2);
+        l.fullAddress = _c2;
+      }
+    }
+    return l;
+  });
+  // DEDUPE: the pool accumulates the same property/listing multiple times
+  // (Rightmove + OnTheMarket + re-scrapes create duplicate entries with
+  // different ids). Dedupe by normalized URL, falling back to normalized
+  // address + postcode, so a customer NEVER receives the same lead twice.
       var seenPoolD = {};
       arr = arr.filter(function(l) {
         var u = String(l.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
