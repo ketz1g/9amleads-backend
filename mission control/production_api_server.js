@@ -20941,15 +20941,13 @@ function runDeliveryTestReport() {
         // report 100% reliable: the DB is empty before the run, so everything tagged
         // with runId IS this run's exact delivery (no accumulation, no races, no
         // carried-over pending leads inflating counts).
-        // The FOUNDER monitor account is ALSO clean-slated each run: because a force
-        // delivery ignores the daily cap, keeping its old leads would accumulate its
-        // "leads today" dashboard count past the 5/day promise. Clean-slate keeps it
-        // at EXACTLY 5 fresh leads every run. Its real 9am email already went out —
-        // the test run is SILENT (no_email) so it never emails the founder a second
-        // daily batch; the founder reads the test-report email instead.
+        // The founder MONITOR account is NOT clean-slated: it is a real customer and
+        // must KEEP its full lead history since signup. Its today-count stays at
+        // exactly 5 because the force-replace delivery (see deliver) replaces today's
+        // batch instead of accumulating, and the founder delivery is SILENT (no_email)
+        // so it never emails a second daily batch — the founder reads the report email.
         var _testIds = {};
-        var _monitorId = founderAcct ? founderAcct.id : null;
-        testCusts.forEach(function(c) { if (!/^test\./.test(String(c.email || '')) && c.id !== _monitorId) return; _testIds[c.id] = true; });
+        testCusts.forEach(function(c) { if (!/^test\./.test(String(c.email || ''))) return; _testIds[c.id] = true; });
         db.leads = (db.leads || []).filter(function(l) { return !(l.customer_id && _testIds[l.customer_id]); });
         testCusts.forEach(function(c) { if (/^test\./.test(String(c.email || ''))) c.last_email_date = ''; });
         saveDb();
