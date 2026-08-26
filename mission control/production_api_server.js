@@ -13330,6 +13330,25 @@ _deliverDiag[cust.email].products = products;
       // true and the 9am email was skipped while leads were topped up silently.)
       var alreadyEmailedToday = (cust.last_email_date === today);
       if (totalNeeded === 0) {
+        // SKIP-COUNT BUT STILL EMAIL: a customer may already be at their daily
+        // quota because leads were delivered EARLIER today by a pre-9am path
+        // (scrape-time delivery / early PAF / top-up) — but if those leads were
+        // never EMAILED, the customer sees them in the dashboard and never gets
+        // the daily email. That's a broken promise ("leads arrive + email at 9am").
+        // So when already at quota but NOT yet emailed, still send the email with
+        // today's already-delivered leads.
+        if (!alreadyEmailedToday) {
+          var skipEmailLeads = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0; });
+          if (skipEmailLeads.length > 0) {
+            console.log('[DELIVERY] ' + cust.email + ': at quota (' + alreadyDeliveredToday + '/day) but NOT yet emailed — sending email with today\'s ' + skipEmailLeads.length + ' lead(s)');
+            custLeads = skipEmailLeads;
+            try { cust.last_email_date = today; } catch(leErr2) {}
+            var skSubj = '9amLeads \u2022 Your Daily Opportunities on ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+            emailQueue.push({ email: cust.email, name: cust.company || 'Customer', subject: skSubj, html: generateLeadEmailHTML(cust, skipEmailLeads) });
+            saveDb();
+            continue;
+          }
+        }
         console.log('[DELIVERY] ' + cust.email + ' already received ' + alreadyDeliveredToday + ' today (promise=' + totalDailyLimit + ') — skipping (exact-count)');
         continue;
       }
