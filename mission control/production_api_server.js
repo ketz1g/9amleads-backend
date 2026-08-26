@@ -12593,20 +12593,21 @@ app.post('/api/admin/direct-scrape', adminAuth, async (req, res) => {
 // (with url + address), so we can see exactly what numbered supply exists.
 app.get('/api/admin/pool-leads', adminAuth, (req, res) => {
   try {
+    var prod = req.query.product || 'moving';
     var areas = String(req.query.areas || '').toUpperCase().split(',').filter(Boolean);
     var limit = parseInt(req.query.limit || '100', 10);
-    var pool = loadProductPool('moving');
+    var pool = loadProductPool(prod);
     var out = pool.filter(function(l) {
-      var pc = String(l.postcode || l.address || l.fullAddress || '');
+      var pc = String(l.postcode || l.address || l.fullAddress || l.deceasedAddress || '');
       var a = extractPostcodeArea(pc);
       return a && areas.indexOf(a) !== -1;
     }).map(function(l) {
-      var a = String(l.fullAddress || l.address || '');
+      var a = String(l.fullAddress || l.address || l.deceasedAddress || '');
       var numbered = /^\s*\d+[A-Za-z]?[\s,]/.test(a) || /\b(?:flat|apartment|unit|suite|maisonette|penthouse|room)\s*\d/i.test(a);
       return { address: a, postcode: l.postcode, url: l.url, source: l.source, commercial: !!l.commercial, numbered: numbered, fresh: (l.firstVisibleDate || l.scrapedAt || '') >= new Date(Date.now() - 48 * 3600000).toISOString() };
     });
     out.sort(function(a, b) { return (b.numbered ? 1 : 0) - (a.numbered ? 1 : 0); });
-    res.json({ success: true, areas: areas, total: out.length, numbered: out.filter(function(l) { return l.numbered; }).length, leads: out.slice(0, limit) });
+    res.json({ success: true, product: prod, areas: areas, total: out.length, numbered: out.filter(function(l) { return l.numbered; }).length, leads: out.slice(0, limit) });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
