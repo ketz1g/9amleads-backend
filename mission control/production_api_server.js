@@ -11230,6 +11230,47 @@ cron.schedule('20 9 * * 1-5', async () => {
 }, { timezone: 'Europe/London' });
 cron.schedule('30 10 * * 1-5', async () => { await resendFailedEmails(); }, { timezone: 'Europe/London' });
 cron.schedule('0 15 * * 1-5', async () => { await resendFailedEmails(); }, { timezone: 'Europe/London' });
+
+// ===== DEPLOY-FAILURE MONITOR =====
+// Every 15 minutes, query Render's API for the latest deploy of this service. If
+// the newest deploy FAILED (update_failed / build_failed) while the founder's code
+// changed, email an ALERT so a failed deploy is caught and fixed automatically —
+// the founder should never have to manually report a deploy error. Runs only when
+// RENDER_API_KEY + RENDER_SERVICE_ID are set.
+cron.schedule('*/15 * * * *', async () => {
+  try {
+    var rKey = process.env.RENDER_API_KEY || '';
+    var rSvc = process.env.RENDER_SERVICE_ID || '';
+    if (!rKey || !rSvc) return;
+    var commit = '';
+    try { commit = (process.env.RENDER_GIT_COMMIT || process.env.SOURCE_VERSION || '').substring(0, 7); } catch(e) {}
+    var deploys = await new Promise(function(resolve) {
+      try {
+        var dreq = require('https').request({ hostname: 'api.render.com', path: '/v1/services/' + rSvc + '/deploys?limit=1', method: 'GET', headers: { 'Authorization': 'Bearer ' + rKey, 'Accept': 'application/json' }, timeout: 20000 }, function(dres) {
+          var b = ''; dres.on('data', function(c) { b += c; }); dres.on('end', function() { try { resolve(JSON.parse(b)); } catch(e) { resolve([]); } });
+        });
+        dreq.on('error', function() { resolve([]); }); dreq.end();
+      } catch(e) { resolve([]); }
+    });
+    var latest = deploys && deploys[0] && deploys[0].deploy;
+    if (!latest) return;
+    var st = String(latest.status || '');
+    var failed = (st === 'update_failed' || st === 'build_failed' || st === 'failed' || st === 'canceled');
+    if (!failed) return;
+    var dDb = getDb();
+    if (!dDb.deploy_alert) dDb.deploy_alert = { last_id: '', count: 0 };
+    var alertKey = latest.id || latest.commit_id || String(latest.createdAt || '');
+    if (dDb.deploy_alert.last_id === alertKey) return; // already alerted for this deploy
+    dDb.deploy_alert.last_id = alertKey;
+    dDb.deploy_alert.count = (dDb.deploy_alert.count || 0) + 1;
+    dDb.deploy_alert.at = new Date().toISOString();
+    saveDb();
+    var commitShort = latest.commit_id ? String(latest.commit_id).substring(0, 7) : '';
+    var body = '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:16px"><h2 style="color:#f87171;margin:0 0 8px">⚠ 9amLeads deploy FAILED</h2><p style="font-size:14px;line-height:1.6;color:#cbd5e1">The latest deploy did not complete successfully:</p><ul style="font-size:13px;color:#e2e8f0;line-height:1.7;margin:8px 0"><li><b>Status:</b> ' + st + '</li><li><b>Commit:</b> ' + (commitShort || 'unknown') + '</li><li><b>Time:</b> ' + new Date(latest.createdAt || Date.now()).toLocaleString('en-GB', { timeZone: 'Europe/London' }) + '</li></ul><p style="font-size:13px;color:#94a3b8;line-height:1.6">The running server is still on the previous working deploy — customers are unaffected, but new changes are not live. Please retry the deploy or investigate.</p></div>';
+    sendBrevoEmail({ email: process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com', name: '9amLeads Admin' }, '⚠ 9amLeads deploy failed — ' + commitShort, body);
+    console.log('[DEPLOY-MONITOR] Alerted: deploy ' + st + ' (' + commitShort + ')');
+  } catch(e) { console.log('[DEPLOY-MONITOR] error:', e.message); }
+}, { timezone: 'Europe/London' });
 async function resendFailedEmails() {
   try {
     var feDb = getDb();
