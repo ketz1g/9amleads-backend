@@ -22109,7 +22109,7 @@ app.post('/api/admin/send-delivery-report', adminAuth, async (req, res) => {
     await runDailyDeliveryReport();
     res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
-});essed
+});
 // (e.g. a pre-9am top-up lead blocked it). Only sends if there are delivered leads
 // today and last_email_date != today (no duplicate).
 app.post('/api/admin/send-customer-email', adminAuth, async (req, res) => {
