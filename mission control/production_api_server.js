@@ -10989,7 +10989,7 @@ cron.schedule('58 8 * * 1-5', async () => {
 // product's fresh (48h) supply has dropped dangerously low (a sign the scrapes have
 // been failing), auto-scrape it and alert the founder. Catches silent multi-day scrape
 // failures early enough to re-scrape well before 9am (not at 08:15, which left no time).
-cron.schedule('45 7 * * 1-5', async () => {
+cron.schedule('45 6 * * 1-5', async () => {
   try {
     var sp = getPoolSupply();
     var spThresholds = { moving: 60, probate: 20, newbusiness: 60, planning: 20, tenders: 10 };
@@ -11009,7 +11009,7 @@ cron.schedule('45 7 * * 1-5', async () => {
           spReq.on('error', function(){}); spReq.write(spBody); spReq.end();
         } catch(se) {}
       });
-      sendAdminAlert('⚠ Low lead supply — auto-scraping', '<div style="font-size:13px;color:#e2e8f0;line-height:1.7">The 07:45 monitor found low fresh supply (possible multi-day scrape failure):<br><ul style="margin:4px 0;padding-left:18px">' + spLow.map(function(l){ return '<li>' + l + '</li>'; }).join('') + '</ul><br>An automatic re-scrape has been triggered for each. There is plenty of time before the 09:00 delivery.</div>');
+      sendAdminAlert('⚠ Low lead supply — auto-scraping', '<div style="font-size:13px;color:#e2e8f0;line-height:1.7">The 06:45 monitor found low fresh supply (possible multi-day scrape failure):<br><ul style="margin:4px 0;padding-left:18px">' + spLow.map(function(l){ return '<li>' + l + '</li>'; }).join('') + '</ul><br>An automatic re-scrape has been triggered for each. There is plenty of time before the 09:00 delivery.</div>');
     } else {
       console.log('[STALE-POOL] All products have healthy supply');
     }
