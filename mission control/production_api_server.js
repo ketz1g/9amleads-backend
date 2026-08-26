@@ -22064,7 +22064,14 @@ app.post('/api/admin/send-status-email-samples', adminAuth, async (req, res) => 
     res.json({ success: true, sent_to: to });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
-// email NOW using today's delivered leads. Used when a 9am email was suppressed
+// POST /api/admin/send-delivery-report — manually trigger the 07:00 morning
+// delivery report email (self-heals supply first, then emails readiness).
+app.post('/api/admin/send-delivery-report', adminAuth, async (req, res) => {
+  try {
+    await runDailyDeliveryReport();
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});essed
 // (e.g. a pre-9am top-up lead blocked it). Only sends if there are delivered leads
 // today and last_email_date != today (no duplicate).
 app.post('/api/admin/send-customer-email', adminAuth, async (req, res) => {
