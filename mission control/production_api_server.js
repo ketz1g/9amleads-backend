@@ -10805,29 +10805,6 @@ cron.schedule('15 6 * * 1-5', async () => {
 // PRE-DAWN SUPPLY CHECK (03:00 UK): catch an empty pool from the previous day
 // BEFORE the 6am scrape, so there's no dead period. If a product's pool is empty
 // (e.g. yesterday's scrape failed and nothing was kept), re-scrape it overnight.
-cron.schedule('0 3 * * 1-5', async () => {
-  try {
-    var sp3 = getPoolSupply();
-    var th3 = { moving: 10, probate: 5, newbusiness: 10, planning: 5, tenders: 3 };
-    var low3 = [];
-    Object.keys(th3).forEach(function(prod) {
-      var fresh = sp3 && sp3[prod] ? (sp3[prod].fresh_48h || 0) : 0;
-      if (fresh < th3[prod]) low3.push(prod);
-    });
-    if (low3.length) {
-      console.log('[03:00 SUPPLY] Pool near-empty overnight: ' + low3.join(', ') + ' — re-scraping now');
-      low3.forEach(function(prod) {
-        try {
-          var sb3 = JSON.stringify({ product: prod, force: true });
-          var sreq3 = require('http').request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!') + '', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(sb3) } }, function(sres3) { sres3.resume(); });
-          sreq3.on('error', function(){}); sreq3.write(sb3); sreq3.end();
-        } catch(se3) {}
-      });
-    } else {
-      console.log('[03:00 SUPPLY] Pool has supply — no overnight re-scrape needed');
-    }
-  } catch(e) { console.log('[03:00 SUPPLY] error:', e.message); }
-}, { timezone: 'Europe/London' });
 // PRE-DELIVERY VERIFICATION (08:30): before the 9am delivery, verify the EXACT
 // leads each moving customer is about to receive have door numbers + full addresses
 // in the pool, PAF-enriching any that don't. The 9am job then just sends them.
