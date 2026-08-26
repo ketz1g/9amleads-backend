@@ -21701,7 +21701,7 @@ app.post('/api/admin/send-customer-email', adminAuth, async (req, res) => {
       return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0;
     });
     if (todayLeads.length === 0) return res.json({ error: 'No delivered leads today for ' + em });
-    if (cust.last_email_date === today) return res.json({ error: em + ' was already emailed today — not sending duplicate' });
+    if (cust.last_email_date === today && !(req.body && req.body.force)) return res.json({ error: em + ' was already emailed today — not sending duplicate' });
     var subject = '9amLeads \u2022 Your Daily Opportunities on ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
     var html = generateLeadEmailHTML(cust, todayLeads);
     await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, subject, html);
