@@ -13581,10 +13581,12 @@ _deliverDiag[cust.email].products = products;
                         custAreaHit = custAreas.some(function(a){ return extractPostcodeArea(a) === areaOfPoolLead; });
                       }
                     } else { custAreaHit = true; }
-                    // NATIONAL FALLBACK for tenders/probate: these are national
-                    // opportunities, so accept them even if no county matched (strict
-                    // county matching under-delivers). Other products stay strict.
-                    if (!custAreaHit && (r2prod === 'tenders' || r2prod === 'probate')) custAreaHit = true;
+                    // NATIONAL/CLOSEST-AREA FALLBACK for tenders/probate (national
+                    // opportunities): accept them even if no county matched (strict
+                    // county matching under-delivers). Newbusiness/planning also get
+                    // the closest-area fallback so a customer is NEVER delivered 0
+                    // just because their chosen counties had no fresh leads today.
+                    if (!custAreaHit && (r2prod === 'tenders' || r2prod === 'probate' || r2prod === 'newbusiness' || r2prod === 'planning')) custAreaHit = true;
                     // MOVING CLOSEST-POSTCODE FALLBACK: when a moving customer's own
                     // areas are short, accept leads from OUTSIDE their areas (ranked by
                     // closest postcode via the sort above) so the promised count is
