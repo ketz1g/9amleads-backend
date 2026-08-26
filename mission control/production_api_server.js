@@ -11074,6 +11074,70 @@ function buildAdminStyleEmail(bodyHtml) {
 // re-send within minutes — the 9am promise must survive single-send failures.
 cron.schedule('2 9 * * 1-5', async () => { try { await resendFailedEmails(); } catch(e) {} }, { timezone: 'Europe/London' });
 cron.schedule('10 9 * * 1-5', async () => { try { await resendFailedEmails(); } catch(e) {} }, { timezone: 'Europe/London' });
+// 09:10 STATUS NOTIFY — if any active customer did NOT receive their daily lead
+// email today (delivery hiccuped), tell them NOW (reassuring: leads are on the way,
+// nothing to worry about) so they're never left wondering. Once the leads actually
+// arrive (delivered), a follow-up confirms "sorted". This keeps the 9am promise
+// even during an incident — the customer always knows their leads are coming.
+cron.schedule('10 9 * * 1-5', async () => {
+  try {
+    var sDb = getDb();
+    var todayS = new Date().toISOString().split('T')[0];
+    var sCusts = (sDb.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && !isLeadsPaused(c); });
+    var sNotified = {};
+    try { if (sDb.notify_status && sDb.notify_status[todayS]) sNotified = sDb.notify_status[todayS]; } catch(e) {}
+    for (var sci = 0; sci < sCusts.length; sci++) {
+      var sc = sCusts[sci];
+      var sKey = sc.id || sc.email;
+      if (sNotified[sKey] === 'notified' || sNotified[sKey] === 'sorted') continue; // already handled
+      try {
+        var gotEmail = (sc.last_email_date === todayS);
+        var gotLeads = (sDb.leads || []).some(function(l) { return l.customer_id === sc.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(todayS) === 0; });
+        if (gotEmail && gotLeads) { sNotified[sKey] = 'sorted'; continue; }
+        if (!gotEmail) {
+          // customer is missing their daily email right now — reassure them.
+          await sendBrevoEmail({ email: sc.email, name: sc.company || 'Customer' },
+            'Your 9amLeads are on their way 🚚',
+            '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:16px"><h2 style="color:#38bdf8;margin:0 0 8px">Your leads are on their way ✨</h2><p style="font-size:15px;line-height:1.6;color:#cbd5e1">Just a quick heads-up — today\'s fresh opportunities are still being delivered to your dashboard and inbox. They\'ll be with you very shortly.</p><p style="font-size:15px;line-height:1.6;color:#cbd5e1">No action needed — everything is being handled and your leads will arrive today as usual. 😊</p><p style="font-size:13px;color:#94a3b8;margin:16px 0 0">— The 9amLeads Team</p></div>');
+          sNotified[sKey] = 'notified';
+          console.log('[09:10 STATUS] Delay notice sent to ' + sc.email);
+        }
+      } catch(sErr) { console.log('[09:10 STATUS] notify error for ' + sc.email + ': ' + sErr.message); }
+    }
+    if (!sDb.notify_status) sDb.notify_status = {};
+    sDb.notify_status[todayS] = sNotified;
+    saveDb();
+  } catch(e) { console.log('[09:10 STATUS] error:', e.message); }
+}, { timezone: 'Europe/London' });
+// 09:20 SORTED CONFIRM — for customers we told "on their way", once their leads
+// actually arrive send a short "all sorted" confirmation so they know it's fixed.
+cron.schedule('20 9 * * 1-5', async () => {
+  try {
+    var cDb = getDb();
+    var todayC = new Date().toISOString().split('T')[0];
+    var cNotified = {};
+    try { if (cDb.notify_status && cDb.notify_status[todayC]) cNotified = cDb.notify_status[todayC]; } catch(e) {}
+    var cCusts = (cDb.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && !isLeadsPaused(c); });
+    for (var cci = 0; cci < cCusts.length; cci++) {
+      var cc = cCusts[cci];
+      var cKey = cc.id || cc.email;
+      if (cNotified[cKey] !== 'notified') continue; // only follow up if we told them
+      try {
+        var cGot = (cDb.leads || []).some(function(l) { return l.customer_id === cc.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(todayC) === 0; });
+        if (cGot) {
+          await sendBrevoEmail({ email: cc.email, name: cc.company || 'Customer' },
+            'All sorted — your leads have arrived ✅',
+            '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:16px"><h2 style="color:#34d399;margin:0 0 8px">All sorted ✅</h2><p style="font-size:15px;line-height:1.6;color:#cbd5e1">Your fresh opportunities have arrived — check your dashboard and inbox. Thanks for your patience! 🙏</p><p style="font-size:13px;color:#94a3b8;margin:16px 0 0">— The 9amLeads Team</p></div>');
+          cNotified[cKey] = 'sorted';
+          console.log('[09:20 STATUS] Sorted confirmation sent to ' + cc.email);
+        }
+      } catch(cErr) { console.log('[09:20 STATUS] confirm error for ' + cc.email + ': ' + cErr.message); }
+    }
+    if (!cDb.notify_status) cDb.notify_status = {};
+    cDb.notify_status[todayC] = cNotified;
+    saveDb();
+  } catch(e) { console.log('[09:20 STATUS] error:', e.message); }
+}, { timezone: 'Europe/London' });
 cron.schedule('30 10 * * 1-5', async () => { await resendFailedEmails(); }, { timezone: 'Europe/London' });
 cron.schedule('0 15 * * 1-5', async () => { await resendFailedEmails(); }, { timezone: 'Europe/London' });
 async function resendFailedEmails() {
@@ -11099,7 +11163,7 @@ async function resendFailedEmails() {
 // delivery) — preview EVERY real customer and log a loud warning if any would
 // shortfall at 9am, so the admin can deep-scrape the affected areas or top up
 // before customers are due their leads.
-cron.schedule('45 7 * * 1-5', async () => {
+cron.schedule('30 6 * * 1-5', async () => {
   try {
     var rdDb = getDb();
     var rdCusts = (rdDb.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && !isLeadsPaused(c); });
@@ -11116,7 +11180,7 @@ cron.schedule('45 7 * * 1-5', async () => {
       console.log('[READINESS] ⚠ ' + rdShort.length + ' customer(s) would SHORTFALL at 9am: ' + rdShort.join(' | '));
       // ALERT the founder so the shortfall is seen BEFORE the 9am delivery (the
       // auto-scrape below also runs, but the admin gets a heads-up).
-      try { sendAdminAlert('⚠ ' + rdShort.length + ' customer(s) may shortfall at 9am', '<div style="font-size:13px;color:#e2e8f0;line-height:1.7">The 07:45 readiness check found ' + rdShort.length + ' customer(s) that may not get their full daily count at 9am:<br><br><ul style="margin:0;padding-left:18px">' + rdShort.map(function(s2){ return '<li>' + s2 + '</li>'; }).join('') + '</ul><br>An automatic re-scrape has been triggered for the affected products. Check /api/admin/readiness after 08:30.</div>'); } catch(aE2) { console.log('[READINESS] alert err:', aE2.message); }
+      try { sendAdminAlert('⚠ ' + rdShort.length + ' customer(s) may shortfall at 9am', '<div style="font-size:13px;color:#e2e8f0;line-height:1.7">The 06:30 readiness check found ' + rdShort.length + ' customer(s) that may not get their full daily count at 9am:<br><br><ul style="margin:0;padding-left:18px">' + rdShort.map(function(s2){ return '<li>' + s2 + '</li>'; }).join('') + '</ul><br>An automatic re-scrape has been triggered for the affected products.</div>'); } catch(aE2) { console.log('[READINESS] alert err:', aE2.message); }
       // AUTO-REMEDIATE: trigger the FREE scrapes for the affected products so the
       // pool is refreshed before the 9am delivery (OTM/Companies House/funeral/
       // tenders/PLOTA are all no-cost). The delivery's guaranteed-fill fallback is
