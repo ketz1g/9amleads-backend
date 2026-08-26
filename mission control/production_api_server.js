@@ -23488,6 +23488,48 @@ function syncCustomers(product) {
           } catch(fpe) { console.log('[SCRAPER] Probate pool firm-prune error:', fpe.message); }
         }
         leads = merged.filter(isPoolLeadFresh).slice(0, 5000);
+        // SELF-HEALING SUPPLY FLOOR: if the fresh-48h pool is below a per-product
+        // minimum, fill the gap with the most-recent previous-day leads (up to 72h
+        // old) so a quiet scrape can NEVER silently starve a product's customers.
+        // Staging: 24h fresh -> 48h fallback -> 72h emergency floor (non-moving only;
+        // moving stays strictly 24h-primary/48h-fallback per the customer promise).
+        // This is the "intelligent self-healing" guarantee: when today's sources
+        // yield little, we reuse yesterday's verified leads rather than deliver a
+        // shortfall or nothing.
+        var floorMin = { moving: 0, probate: 20, newbusiness: 40, planning: 15, tenders: 10 };
+        var floorHrs = { moving: 0, probate: 72, newbusiness: 72, planning: 72, tenders: 72 };
+        if (product !== 'moving') {
+          var floorNeed = floorMin[product] || 20;
+          var cur48 = leads.length;
+          if (cur48 < floorNeed) {
+            var cutoff72 = new Date(Date.now() - (floorHrs[product] || 72) * 3600000).toISOString();
+            var floorPick = [];
+            var floorSeen = {};
+            (leads || []).forEach(function(l) { var k = l.id || l.title || l.address || ''; if (k) floorSeen[k] = 1; });
+            // previous-day leads, newest first, up to the floorNeed gap.
+            var prevSorted = (prevPool || []).slice().sort(function(a, b) {
+              var da = pickFreshDate(a) || a.scrapedAt || ''; var db = pickFreshDate(b) || b.scrapedAt || '';
+              return String(db).localeCompare(String(da));
+            });
+            for (var _fp2 = 0; _fp2 < prevSorted.length && cur48 + floorPick.length < floorNeed; _fp2++) {
+              var pl2 = prevSorted[_fp2];
+              var k2 = pl2.id || pl2.title || pl2.address || '';
+              if (k2 && floorSeen[k2]) continue;
+              if (product === 'probate') {
+                var _ps3 = String(pl2.source || '').toLowerCase();
+                if (_ps3.indexOf('rightmove') !== -1 || _ps3.indexOf('onthemarket') !== -1 || _ps3.indexOf('zoopla') !== -1 || (pl2.url && /rightmove|onthemarket|zoopla/i.test(pl2.url))) continue;
+              }
+              var fd2 = pickFreshDate(pl2) || pl2.scrapedAt || '';
+              if (!fd2 || fd2 < cutoff72) continue; // emergency floor = up to 72h old
+              if (k2) floorSeen[k2] = 1;
+              floorPick.push(pl2);
+            }
+            if (floorPick.length) {
+              leads = leads.concat(floorPick);
+              console.log('[SCRAPER] ' + product + ' supply floor: fresh=' + cur48 + ' below min ' + floorNeed + ' — kept ' + floorPick.length + ' recent previous-day lead(s) (now ' + leads.length + ')');
+            }
+          }
+        }
         // CENTRAL PROPERTY STORE: record each property id once and preserve its
         // first_seen_at across runs (never reset when a property reappears). Attach
         // first_seen_at/last_seen_at to each pool lead so freshness is always judged
