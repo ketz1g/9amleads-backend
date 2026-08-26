@@ -400,14 +400,16 @@ function postcodeAreaLetters(code) {
   return m ? m[1].toUpperCase() : String(code || '').replace(/[^A-Z]/gi, '').toUpperCase().slice(0, 2);
 }
 // MAX OUT-OF-AREA FALLBACK DISTANCE (km): when a customer's chosen areas run short
-// (e.g. a London removals customer in SW/SE/E/NW/AL), the delivery may pull fallback
+// (e.g. a London removals customer in SW/SE/E/NW/AL), the delivery pulls fallback
 // leads from OUTSIDE their areas to meet the promised count. Those fallback leads
-// must be GENUINELY NEARBY — the very next postcode areas over, nothing more. A
-// removals company in Croydon does not move a family from Glasgow, or even Reading.
-// Leads whose postcode area is further than this from ANY chosen area are REJECTED
-// (the customer gets fewer leads today rather than a useless one from far away).
-// Tenders/probate (national opportunities) and "All UK" customers are exempt.
-var MAX_FALLBACK_KM = 5;
+// must be GENUINELY NEARBY — the immediately-adjacent postcode areas, nothing more.
+// A 25km radius covers true neighbours (a Croydon customer gets Sutton/Twickenham/
+// Bromley/Kent, ~6-20km) but blocks anything cross-country (Reading 45km, Glasgow
+// 500km, Birmingham 160km). A removals company in Croydon does not move a family
+// from Birmingham. Leads beyond this are REJECTED (the customer gets fewer leads
+// today rather than a useless one from far away). Tenders/probate (national
+// opportunities) and "All UK" customers are exempt.
+var MAX_FALLBACK_KM = 25;
 function isFallbackLeadAcceptable(leadPc, custAreas) {
   var joined = (custAreas || []).join(' ');
   if (/all.?uk|uk.?wide|nationwide|whole.?uk/i.test(joined)) return true;
