@@ -14035,6 +14035,15 @@ _deliverDiag[cust.email].products = products;
             if (l.paf_failed || ld.paf_failed) return false;
             return isProperty && ld.postcode && !hasPremiseNumber(addr, ld.postcode);
           });
+          // TEST-MODE CREDIT SAVER: the 15-min test cron runs ~96x/day on 25 test
+          // accounts. Postcoder/Propalt are PAID per lookup — enriching test leads
+          // burns real money for zero customer value. Test deliveries SKIP all paid
+          // address resolution (the door-number gate still verifies what's already
+          // in the data, and real customers get full PAF at 9am).
+          if (testOnly && needPc.length > 0) {
+            console.log('[DELIVERY] Test-only run: skipping ' + needPc.length + ' Postcoder/Propalt lookup(s) to save paid credits');
+            needPc = [];
+          }
           // ===== DELIVERY-TIME PROPALT RESOLUTION (cheap, batched by postcode) =====
           // Resolves the exact door number + UPRN for the leads ACTUALLY being
           // delivered, using Propalt get-properties batched by postcode (6 credits /
