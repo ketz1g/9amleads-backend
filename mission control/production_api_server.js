@@ -21488,15 +21488,22 @@ function runDeliveryTestReport() {
           if (repDb.test_reports.length > 48) repDb.test_reports = repDb.test_reports.slice(-48);
           saveDb();
         } catch(repErr) { console.log('[TEST] report persist error:', repErr.message); }
-        // 4) email the report (reliably — no undefined vars, always try; failures
-        // go to the failed-email queue so the catch-up cron re-sends them).
+        // 4) email the report ONLY when there are ISSUES (reliably — no undefined
+        // vars, always try; failures go to the failed-email queue so the catch-up
+        // cron re-sends them). When everything delivers cleanly (0 issues) we do
+        // NOT email — otherwise the founder's inbox gets flooded with a "all OK"
+        // report every 15 minutes. You only hear about the runs that need action.
         try {
-          var html = '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:24px;max-width:680px;margin:0 auto"><h2 style="font-family:Outfit,sans-serif;color:#0ea5e9">9amLeads delivery test</h2><p style="font-size:12px;color:#94a3b8">' + new Date().toISOString() + ' · ' + testCusts.length + ' test accounts · run measured ' + Math.round((Date.now() - runStart.getTime()) / 1000) + 's</p><pre style="font-size:11px;color:#e2e8f0;white-space:pre-wrap;line-height:1.6">' + escHtml(report) + '</pre>' + (issues.length ? '<p style="color:#f87171;font-weight:700">' + issues.length + ' issue(s): ' + escHtml(issues.join('; ')) + '</p>' : '<p style="color:#34d399;font-weight:700">All ' + testCusts.length + ' test accounts delivered their full promised quota with door numbers, full postcodes and real links</p>') + '</div>';
-          var subj = '9amLeads delivery test (' + new Date().toLocaleString('en-GB', { timeZone: 'Europe/London' }) + ') - ' + (issues.length ? issues.length + ' issue(s)' : 'all ' + testCusts.length + ' OK');
-          sendBrevoEmail({ email: 'hello@9amleads.com', name: '9amLeads Owner' }, subj, html).then(function() { console.log('[TEST] report email sent'); }).catch(function(em) {
-            console.log('[TEST] report email error:', em.message);
-            try { var feDb = getDb(); if (!feDb.failed_emails) feDb.failed_emails = []; feDb.failed_emails.push({ email: 'hello@9amleads.com', name: '9amLeads Owner', subject: subj, html: html, at: new Date().toISOString(), attempts: 1 }); if (feDb.failed_emails.length > 200) feDb.failed_emails.splice(0, feDb.failed_emails.length - 200); saveDb(); } catch(fe) { console.log('[TEST] report failed-email queue error:', fe.message); }
-          });
+          if (issues.length > 0) {
+            var html = '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:24px;max-width:680px;margin:0 auto"><h2 style="font-family:Outfit,sans-serif;color:#0ea5e9">9amLeads delivery test</h2><p style="font-size:12px;color:#94a3b8">' + new Date().toISOString() + ' · ' + testCusts.length + ' test accounts · run measured ' + Math.round((Date.now() - runStart.getTime()) / 1000) + 's</p><pre style="font-size:11px;color:#e2e8f0;white-space:pre-wrap;line-height:1.6">' + escHtml(report) + '</pre>' + '<p style="color:#f87171;font-weight:700">' + issues.length + ' issue(s): ' + escHtml(issues.join('; ')) + '</p>' + '</div>';
+            var subj = '9amLeads delivery test (' + new Date().toLocaleString('en-GB', { timeZone: 'Europe/London' }) + ') - ' + issues.length + ' issue(s)';
+            sendBrevoEmail({ email: 'hello@9amleads.com', name: '9amLeads Owner' }, subj, html).then(function() { console.log('[TEST] report email sent'); }).catch(function(em) {
+              console.log('[TEST] report email error:', em.message);
+              try { var feDb = getDb(); if (!feDb.failed_emails) feDb.failed_emails = []; feDb.failed_emails.push({ email: 'hello@9amleads.com', name: '9amLeads Owner', subject: subj, html: html, at: new Date().toISOString(), attempts: 1 }); if (feDb.failed_emails.length > 200) feDb.failed_emails.splice(0, feDb.failed_emails.length - 200); saveDb(); } catch(fe) { console.log('[TEST] report failed-email queue error:', fe.message); }
+            });
+          } else {
+            console.log('[TEST] ' + testCusts.length + ' test accounts all OK (' + Math.round((Date.now() - runStart.getTime()) / 1000) + 's) — no report email (all clean)');
+          }
         } catch(emErr) { console.log('[TEST] report email exception:', emErr.message); }
         resolve({ ok: true, issues: issues.length, report: report });
       } catch(e) { console.log('[TEST] report error:', e.message); resolve({ ok: false, error: e.message }); }
