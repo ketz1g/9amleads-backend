@@ -13165,11 +13165,6 @@ _deliverDiag[cust.email].products = products;
       var freshCutoffNow = getFreshCutoffIso();
       var fresh24CutoffNow = new Date(Date.now() - 24 * 3600000).toISOString();
       var freshCutoff48 = new Date(Date.now() - 48 * 3600000).toISOString();
-      // PROBATE FRESHNESS: a probate grant is published ~2-4 weeks AFTER death, so
-      // probate leads must NOT be gated by a 24h/48h cutoff like moving properties.
-      // A 30-day window keeps them deliverable (recent estates) while still dropping
-      // ancient notices. Without this the whole probate pool was rejected as "stale".
-      var freshCutoffProbate = new Date(Date.now() - 30 * 24 * 3600000).toISOString();
       function isLeadFresh24(l, cut) {
         try {
           var ld2 = JSON.parse(l.data || '{}');
@@ -13273,7 +13268,7 @@ _deliverDiag[cust.email].products = products;
         var globalPool = (db.leads || []).filter(function(l) {
           if (l.delivered !== 0 || l.product !== p) return false;
           try { var _gd = JSON.parse(l.data || '{}'); if (_gd.rejected || _gd.blocked || _gd.blocked_by_admin) return false; } catch(_ge) {}
-          if (p === 'moving' ? !isLeadFresh24(l, freshCutoff48) : (p === 'probate' ? !isLeadFresh24(l, freshCutoffProbate) : !isLeadFresh24(l))) return false;
+          if (p === 'moving' ? !isLeadFresh24(l, freshCutoff48) : !isLeadFresh24(l, freshCutoff48)) return false;
           if (!leadPassesFilters((l && typeof l.data === 'string' && l.data) ? JSON.parse(l.data) : (l || {}))) return false;
           if (!notDeliveredBefore(l)) return false;
           return true;
@@ -13499,7 +13494,7 @@ _deliverDiag[cust.email].products = products;
                     // allows 24-48h leads as a FALLBACK (exact areas first, then closest
                     // postcodes), so the promised count is met even in quiet areas.
                     var rlD = pickFreshDate(rl);
-                    var poolCutoff = cust.product === 'moving' ? freshCutoff48 : (cust.product === 'probate' ? freshCutoffProbate : freshCutoffNow);
+                    var poolCutoff = freshCutoff48;
                     if (!rlD || rlD < poolCutoff) continue;
                      // DASHBOARD FILTERS: respect the customer bedroom/price/type filters.
                      if (!leadPassesFilters(rl)) continue;
