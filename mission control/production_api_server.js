@@ -11061,10 +11061,17 @@ async function runDailyDeliveryReport() {
         var rc = rCusts[ri];
         var rp = await deliveryPreviewForCustomer(rc);
         var rPromised = parseInt(rc.leads_per_day, 10) > 0 ? parseInt(rc.leads_per_day, 10) : (getPlanLimit(rc.product, rc.plan, rc.coverage) || 5);
-        var ok = rp.count >= rPromised;
-        var row = { email: rc.email, product: rc.product, count: rp.count, promised: rPromised, areas: (rp.areas || []).join(', '), ok: ok };
+        // ACCOUNT FOR ALREADY-DELIVERED-TODAY: if a customer has already received
+        // their full quota earlier today (e.g. a re-run/test), the preview shows 0
+        // NEW leads — that's NOT a shortfall, they already have their count. Only
+        // flag as short if today's delivered + preview < promised.
+        var todayR2 = new Date().toISOString().split('T')[0];
+        var rDeliveredToday = (rDb.leads || []).filter(function(l) { return l.customer_id === rc.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(todayR2) === 0 && (function(){ try { return !JSON.parse(l.data||'{}').rejected; } catch(e){ return true; } })(); }).length;
+        var rAvailable = rp.count + Math.max(0, rDeliveredToday);
+        var ok = rAvailable >= rPromised;
+        var row = { email: rc.email, product: rc.product, count: rp.count, promised: rPromised, delivered_today: rDeliveredToday, areas: (rp.areas || []).join(', '), ok: ok };
         rRows.push(row);
-        if (!ok) rShort.push(rc.email + ' (' + rc.product + '): ' + rp.count + '/' + rPromised + ' in ' + (rp.areas || []).join(','));
+        if (!ok) rShort.push(rc.email + ' (' + rc.product + '): ' + rAvailable + '/' + rPromised + ' (preview ' + rp.count + ' + already ' + rDeliveredToday + ') in ' + (rp.areas || []).join(','));
       } catch(re2) {}
     }
     // ---- 3) BUILD + EMAIL THE REPORT ----
