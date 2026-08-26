@@ -10768,6 +10768,60 @@ cron.schedule('5 6 * * *', async () => {
 cron.schedule('30 6 * * *', async () => {
   try { await runMovingPafPostScrape(); await runProbatePafPostScrape(); } catch(e) { console.log('[PAF-POSTSCRAPE] 06:30 error: ' + e.message); }
 }, { timezone: 'Europe/London' });
+// EARLY SUPPLY CHECK + AUTO RE-SCRAPE (06:15 UK): right after the 06:00 scrape,
+// verify every product's pool has enough fresh-48h supply. If any is below its
+// minimum, auto re-trigger a scrape for it so the 9am delivery always has leads.
+// This is the tight self-healing loop: 06:00 scrape -> 06:15 check -> re-scrape
+// if low -> 07:45 final check -> 08:58 delivery (completes by 09:00).
+cron.schedule('15 6 * * 1-5', async () => {
+  try {
+    var sp2 = getPoolSupply();
+    var th2 = { moving: 40, probate: 20, newbusiness: 40, planning: 15, tenders: 10 };
+    var low2 = [];
+    Object.keys(th2).forEach(function(prod) {
+      var fresh = sp2 && sp2[prod] ? (sp2[prod].fresh_48h || 0) : 0;
+      if (fresh < th2[prod]) low2.push(prod);
+    });
+    if (low2.length) {
+      console.log('[06:15 SUPPLY] Low supply before 9am: ' + low2.join(', ') + ' — auto re-scraping');
+      low2.forEach(function(prod) {
+        try {
+          var sb = JSON.stringify({ product: prod, force: true });
+          var sreq = require('http').request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!') + '', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(sb) } }, function(sres) { sres.resume(); });
+          sreq.on('error', function(){}); sreq.write(sb); sreq.end();
+        } catch(se) {}
+      });
+    } else {
+      console.log('[06:15 SUPPLY] All products have fresh supply (no re-scrape needed)');
+    }
+  } catch(e) { console.log('[06:15 SUPPLY] error:', e.message); }
+}, { timezone: 'Europe/London' });
+// PRE-DAWN SUPPLY CHECK (03:00 UK): catch an empty pool from the previous day
+// BEFORE the 6am scrape, so there's no dead period. If a product's pool is empty
+// (e.g. yesterday's scrape failed and nothing was kept), re-scrape it overnight.
+cron.schedule('0 3 * * 1-5', async () => {
+  try {
+    var sp3 = getPoolSupply();
+    var th3 = { moving: 10, probate: 5, newbusiness: 10, planning: 5, tenders: 3 };
+    var low3 = [];
+    Object.keys(th3).forEach(function(prod) {
+      var fresh = sp3 && sp3[prod] ? (sp3[prod].fresh_48h || 0) : 0;
+      if (fresh < th3[prod]) low3.push(prod);
+    });
+    if (low3.length) {
+      console.log('[03:00 SUPPLY] Pool near-empty overnight: ' + low3.join(', ') + ' — re-scraping now');
+      low3.forEach(function(prod) {
+        try {
+          var sb3 = JSON.stringify({ product: prod, force: true });
+          var sreq3 = require('http').request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!') + '', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(sb3) } }, function(sres3) { sres3.resume(); });
+          sreq3.on('error', function(){}); sreq3.write(sb3); sreq3.end();
+        } catch(se3) {}
+      });
+    } else {
+      console.log('[03:00 SUPPLY] Pool has supply — no overnight re-scrape needed');
+    }
+  } catch(e) { console.log('[03:00 SUPPLY] error:', e.message); }
+}, { timezone: 'Europe/London' });
 // PRE-DELIVERY VERIFICATION (08:30): before the 9am delivery, verify the EXACT
 // leads each moving customer is about to receive have door numbers + full addresses
 // in the pool, PAF-enriching any that don't. The 9am job then just sends them.
@@ -10831,9 +10885,9 @@ cron.schedule('30 7 * * *', async () => {
     } catch(sw3) { console.log('[SCRAPE-WATCHDOG] alert error:', sw3.message); }
   } catch(e) { console.log('[SCRAPE-WATCHDOG] error:', e.message); }
 }, { timezone: 'Europe/London' });
-// DELIVERY BACKSTOP (09:30 UK Mon-Fri) — if the 09:00 cron AND 09:02 watchdog both
+// DELIVERY BACKSTOP (09:05 UK Mon-Fri) — if the 08:58 cron AND 09:01 watchdog both
 // missed (deploy/restart/race), run the delivery so customers never miss a day.
-cron.schedule('30 9 * * 1-5', async () => {
+cron.schedule('5 9 * * 1-5', async () => {
   try {
     var todayStr = new Date().toISOString().split('T')[0];
     if (__lastDeliveryDate === todayStr) return; // already fired today
@@ -10867,11 +10921,14 @@ var _testReportLockAt = 0;
 var __lastDeliveryFire = '';
 var __lastDeliveryDate = ''; // YYYY-MM-DD of the most recent delivery fire (daily watchdog)
 // ===== DELIVERY CRON: Mon-Fri 09:00 UK ===== (timezone: Europe/London)
-cron.schedule('0 9 * * 1-5', async () => {
+cron.schedule('58 8 * * 1-5', async () => {
   __deliveryFireCount++;
   __lastDeliveryFire = new Date().toISOString();
   __lastDeliveryDate = new Date().toISOString().split('T')[0];
-  console.log('[09:00 UK] Running delivery...');
+  // TIGHT 9AM DELIVERY: start at 08:58 UK so every customer's email is in their
+  // inbox AT 9:00 (the promise), not at 9:00+. The delivery takes ~1-2 min for all
+  // customers, so starting 2 minutes early means emails land at/just before 9:00.
+  console.log('[08:58 UK] Running delivery (completes by 09:00)...');
   try {
     // PARTNER COMMISSION ENGINE: run once daily (creates pending commissions for
     // qualifying affiliate/sales-partner referrals + clears approved ones).
@@ -10885,13 +10942,17 @@ cron.schedule('0 9 * * 1-5', async () => {
     const http = require('http');
     var body = JSON.stringify({});
     var req = http.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!') + '', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
-      var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { console.log('[09:00 UK] Delivery done:', b.substring(0, 200)); });
+      var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { console.log('[08:58 UK] Delivery done:', b.substring(0, 200)); });
     });
-    req.on('error', function(e) { console.log('[09:00 UK] Delivery request error:', e.message); });
+    req.on('error', function(e) { console.log('[08:58 UK] Delivery request error:', e.message); });
     req.write(body); req.end();
     // Run Print & Post after delivery
-    try { await runAutoSend(); } catch(ase) { console.log('[09:00 UK] Print & Post error:', ase.message); }
-  } catch(e) { console.log('[09:00 UK] Delivery error:', e.message); }
+    try { await runAutoSend(); } catch(ase) { console.log('[08:58 UK] Print & Post error:', ase.message); }
+    // INSTANT FAILED-EMAIL RESEND: any email that failed during this delivery is
+    // re-sent IMMEDIATELY (not hours later), so a customer whose email hiccuped at
+    // 9:00 gets it within seconds — the 9am promise must survive single-send failures.
+    try { await resendFailedEmails(); } catch(rfE) { console.log('[08:58 UK] Instant resend error:', rfE.message); }
+  } catch(e) { console.log('[08:58 UK] Delivery error:', e.message); }
 }, {
   timezone: 'Europe/London'
 });
@@ -11009,6 +11070,10 @@ function buildAdminStyleEmail(bodyHtml) {
 // FAILED-EMAIL CATCH-UP: re-send delivery emails that failed at 9am (after the
 // initial 4 retries). Runs at 10:30 + 15:00 UK so a customer never permanently
 // misses their lead notification. Clears the queue on success.
+// TIGHT RESEND (09:02 + 09:10 UK): catch any delivery email that failed at 9am and
+// re-send within minutes — the 9am promise must survive single-send failures.
+cron.schedule('2 9 * * 1-5', async () => { try { await resendFailedEmails(); } catch(e) {} }, { timezone: 'Europe/London' });
+cron.schedule('10 9 * * 1-5', async () => { try { await resendFailedEmails(); } catch(e) {} }, { timezone: 'Europe/London' });
 cron.schedule('30 10 * * 1-5', async () => { await resendFailedEmails(); }, { timezone: 'Europe/London' });
 cron.schedule('0 15 * * 1-5', async () => { await resendFailedEmails(); }, { timezone: 'Europe/London' });
 async function resendFailedEmails() {
@@ -11126,7 +11191,7 @@ cron.schedule('30 9 * * 1-5', async () => {
 // DELIVERY WATCHDOG: Mon-Fri 09:35 UK — if the 09:00 delivery cron missed (deploy,
 // crash, race), re-trigger it so customers still get their daily leads. Checks the
 // date the delivery actually fired rather than a lifetime counter.
-cron.schedule('2 9 * * 1-5', async () => {
+cron.schedule('1 9 * * 1-5', async () => {
   try {
     var todayStr = new Date().toISOString().split('T')[0];
     if (__lastDeliveryDate === todayStr) return; // already fired today
