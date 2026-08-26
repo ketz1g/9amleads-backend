@@ -85,7 +85,7 @@ tbody tr:hover td{background:#f8fafc}
 <div class="logo">9am<span>Leads</span></div>
 <div id="versionTag" style="text-align:center;color:#94a3b8;font-size:11px;margin:-4px 0 8px">Admin</div>
 <p style="color:#64748b;font-size:13px;margin:8px 0">Enter the admin password to continue</p>
-<input type="password" id="adminPass" placeholder="Admin password" onkeydown="if(event.key==='Enter')adminLogin()">
+<input type="password" id="adminPass" placeholder="Admin password" onkeydown="if(event.key==='Enter')adminLogin()"><label style="font-size:12px;color:#64748b;margin-top:6px;display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" onchange="document.getElementById('adminPass').type = this.checked ? 'text' : 'password'"> View Password</label>
 <div id="loginError" class="error">Incorrect password</div>
 <button class="btn btn-primary" onclick="adminLogin()" style="width:100%;justify-content:center;padding:12px;font-size:14px"><i class="fas fa-lock"></i> Sign In</button>
 </div>

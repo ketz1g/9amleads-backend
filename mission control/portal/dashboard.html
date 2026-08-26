@@ -547,7 +547,7 @@ document.addEventListener('DOMContentLoaded', function(){
 <div style="margin-bottom:12px"><label class="label">Contact Name</label><input type="text" class="input" id="settings-name" placeholder="Your full name"></div>
 <div style="margin-bottom:12px"><label class="label">Email</label><input type="text" class="input" id="settings-email" disabled style="background:#f8fafc;color:var(--muted)"></div>
 <div style="margin-bottom:12px"><label class="label">Phone Number</label><input type="text" class="input" id="settings-phone" placeholder="e.g. 020 1234 5678"></div>
-<div style="margin-bottom:12px"><label class="label">Change Password</label><input type="password" class="input" id="settings-password" placeholder="Leave blank to keep current"></div>
+<div style="margin-bottom:12px"><label class="label">Change Password</label><input type="password" class="input" id="settings-password" placeholder="Leave blank to keep current"><label style="font-size:11px;color:#8890a8;margin-top:4px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" onchange="document.getElementById('settings-password').type = this.checked ? 'text' : 'password'"> View Password</label></div>
 </div>
 
 <div id="tab-areas" style="display:none">

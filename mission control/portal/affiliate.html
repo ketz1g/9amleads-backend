@@ -190,7 +190,7 @@ tr:last-child td{border-bottom:none}
 <h1>Affiliate sign in</h1>
 <p>Track your referrals, leads and earnings.</p>
 <div class="fg"><label>Email</label><input type="email" id="a-email" placeholder="you@partner.com"></div>
-<div class="fg"><label>Password</label><input type="password" id="a-pass" placeholder="Your affiliate password"></div>
+<div class="fg"><label>Password</label><input type="password" id="a-pass" placeholder="Your affiliate password"><label style="font-size:11px;color:#8890a8;font-weight:400;margin-top:3px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" onchange="document.getElementById('a-pass').type = this.checked ? 'text' : 'password'"> View Password</label></div>
 <button class="btn" onclick="login()">Sign in</button>
 <div class="err" id="login-err"></div>
 <p style="font-size:11px;color:#6b7280;margin-top:16px;text-align:center">Not an affiliate yet? <a href="#" onclick="showRegister();return false">Apply to become an affiliate</a></p>
@@ -202,7 +202,7 @@ tr:last-child td{border-bottom:none}
 <p>Earn <b style="color:#34d399">£25</b> for every customer who signs up with your name or code and pays for their first package. Works for every lead type.</p>
 <div class="fg"><label>Full name</label><input type="text" id="r-name" placeholder="Your name"></div>
 <div class="fg"><label>Email</label><input type="email" id="r-email" placeholder="you@partner.com"></div>
-<div class="fg"><label>Password</label><input type="password" id="r-pass" placeholder="Min 8 characters"></div>
+<div class="fg"><label>Password</label><input type="password" id="r-pass" placeholder="Min 8 characters"><label style="font-size:11px;color:#8890a8;font-weight:400;margin-top:3px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" onchange="document.getElementById('r-pass').type = this.checked ? 'text' : 'password'"> View Password</label></div>
 <div class="fg"><label>Your referral code <span class="muted">(optional — we'll make one for you)</span></label><input type="text" id="r-code" placeholder="e.g. JAMES24"></div>
 <button class="btn" onclick="register()">Apply</button>
 <div class="err" id="register-err"></div>
