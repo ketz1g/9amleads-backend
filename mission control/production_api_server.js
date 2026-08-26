@@ -21445,6 +21445,7 @@ function runDeliveryTestReport() {
         var PLAN = { moving: 5, probate: 2, newbusiness: 5, planning: 1, tenders: 1 };
         var lines = [];
         var issues = [];
+        var rows = []; // structured rows for the HTML report email
         var dbAfter = getDb();
         for (var i = 0; i < testCusts.length; i++) {
           var c = testCusts[i];
@@ -21552,6 +21553,7 @@ function runDeliveryTestReport() {
           if (leads.length === 0) flags.push('NO-LEADS');
           lines.push(c.email + ' [' + c.product + '] delivered ' + leads.length + '/' + promised + ' (door ' + door + ', PC ' + fullPc + ', link ' + realLink + ', in ' + inArea + ', 24h ' + fresh24 + ', 48h ' + fresh48 + ') ' + (flags.length ? '!! ' + flags.join(' ') : 'OK'));
           if (flags.length) issues.push(c.email + ': ' + flags.join(' '));
+          rows.push({ email: c.email, product: c.product, delivered: leads.length, promised: promised, door: door, fullPc: fullPc, realLink: realLink, inArea: inArea, fresh24: fresh24, fresh48: fresh48, flags: flags });
         }
         var report = lines.join('\n');
         console.log('[TEST] Delivery test report:\n' + report);
@@ -21571,7 +21573,23 @@ function runDeliveryTestReport() {
         // report every 15 minutes. You only hear about the runs that need action.
         try {
           if (issues.length > 0) {
-            var html = '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:24px;max-width:680px;margin:0 auto"><h2 style="font-family:Outfit,sans-serif;color:#0ea5e9">9amLeads delivery test</h2><p style="font-size:12px;color:#94a3b8">' + new Date().toISOString() + ' · ' + testCusts.length + ' test accounts · run measured ' + Math.round((Date.now() - runStart.getTime()) / 1000) + 's</p><pre style="font-size:11px;color:#e2e8f0;white-space:pre-wrap;line-height:1.6">' + escHtml(report) + '</pre>' + '<p style="color:#f87171;font-weight:700">' + issues.length + ' issue(s): ' + escHtml(issues.join('; ')) + '</p>' + '</div>';
+            var _prodColors = { moving: '#0ea5e9', probate: '#8b5cf6', newbusiness: '#10b981', planning: '#f59e0b', tenders: '#ec4899' };
+            var _rowHtml = rows.map(function(r) {
+              var ok = r.flags.length === 0;
+              var badge = ok ? '<span style="display:inline-block;background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:800">OK</span>' : '<span style="display:inline-block;background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:800">' + escHtml(r.flags.join(' · ')) + '</span>';
+              var prodC = _prodColors[r.product] || '#64748b';
+              var barPct = r.promised ? Math.round((r.delivered / r.promised) * 100) : 0;
+              var barColor = r.delivered >= r.promised ? '#10b981' : '#f59e0b';
+              return '<tr style="border-bottom:1px solid #1e293b"><td style="padding:12px 14px;vertical-align:top;white-space:nowrap"><span style="display:inline-block;background:' + prodC + '22;color:' + prodC + ';border-radius:5px;padding:2px 8px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px">' + r.product + '</span></td><td style="padding:12px 14px;vertical-align:top;font-size:12px;color:#e2e8f0;font-weight:600">' + escHtml(r.email) + '</td><td style="padding:12px 14px;vertical-align:top"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:15px;font-weight:800;color:#f1f5f9">' + r.delivered + '<span style="color:#64748b;font-weight:600">/' + r.promised + '</span></span><span style="display:inline-block;width:46px;height:6px;background:#1e293b;border-radius:3px;overflow:hidden"><span style="display:block;height:100%;width:' + Math.min(100, barPct) + '%;background:' + barColor + ';border-radius:3px"></span></span></div><div style="font-size:10px;color:#64748b;margin-top:4px">door ' + r.door + ' · PC ' + r.fullPc + ' · link ' + r.realLink + ' · in-area ' + r.inArea + ' · 24h ' + r.fresh24 + ' · 48h ' + r.fresh48 + '</div></td><td style="padding:12px 14px;vertical-align:top;text-align:right;white-space:nowrap">' + badge + '</td></tr>';
+            }).join('');
+            var html = '<div style="font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:24px;max-width:700px;margin:0 auto">' +
+              '<div style="background:linear-gradient(135deg,#0f172a,#1e293b);border-radius:14px 14px 0 0;padding:20px 24px;border-bottom:3px solid #0ea5e9"><h2 style="font-family:Outfit,Arial,sans-serif;color:#38bdf8;font-size:20px;font-weight:900;margin:0">9amLeads delivery test</h2><p style="font-size:11px;color:#94a3b8;margin:6px 0 0">' + new Date().toLocaleString('en-GB', { timeZone: 'Europe/London', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) + ' UK · ' + testCusts.length + ' test accounts · run ' + Math.round((Date.now() - runStart.getTime()) / 1000) + 's</p></div>' +
+              '<div style="background:#0f111a;padding:20px 24px;border-radius:0 0 14px 14px">' +
+              '<div style="display:flex;align-items:center;gap:12px;margin-bottom:18px"><span style="display:inline-flex;align-items:center;justify-content:center;min-width:56px;height:56px;border-radius:50%;background:rgba(239,68,68,0.15);border:2px solid #ef4444;color:#f87171;font-size:24px;font-weight:900">' + issues.length + '</span><div><div style="font-size:15px;font-weight:800;color:#f87171">' + issues.length + ' issue' + (issues.length === 1 ? '' : 's') + ' need attention</div><div style="font-size:11px;color:#94a3b8;margin-top:2px">' + (testCusts.length - rows.filter(function(r){ return r.flags.length === 0; }).length) + ' of ' + testCusts.length + ' test accounts failed checks</div></div></div>' +
+              '<table style="width:100%;border-collapse:collapse;background:#12141e;border:1px solid #1e293b;border-radius:10px;overflow:hidden"><thead><tr style="background:#1a1d29"><th style="padding:10px 14px;text-align:left;font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.8px">Product</th><th style="padding:10px 14px;text-align:left;font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.8px">Test account</th><th style="padding:10px 14px;text-align:left;font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.8px">Delivered</th><th style="padding:10px 14px;text-align:right;font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.8px">Status</th></tr></thead><tbody>' + _rowHtml + '</tbody></table>' +
+              '<div style="margin-top:16px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:12px 16px;font-size:12px;color:#fca5a5;line-height:1.6"><strong style="color:#f87171">What needs fixing:</strong><br>' + escHtml(issues.join('<br>')) + '</div>' +
+              '<p style="font-size:10px;color:#64748b;margin-top:14px;line-height:1.5">Test run delivers to test accounts only — real customers are never touched. Door = door/flat number, PC = full postcode, link = real source URL, 24h/48h = lead age. Leads must be max 24h in chosen areas (48h only as fallback).</p>' +
+              '</div></div>';
             var subj = '9amLeads delivery test (' + new Date().toLocaleString('en-GB', { timeZone: 'Europe/London' }) + ') - ' + issues.length + ' issue(s)';
             sendBrevoEmail({ email: 'hello@9amleads.com', name: '9amLeads Owner' }, subj, html).then(function() { console.log('[TEST] report email sent'); }).catch(function(em) {
               console.log('[TEST] report email error:', em.message);
