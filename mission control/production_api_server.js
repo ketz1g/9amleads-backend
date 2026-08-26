@@ -13571,21 +13571,18 @@ _deliverDiag[cust.email].products = products;
       // promised quota with fresh leads, emails + dashboards updating each time.
       var forceFull = (req.body && req.body.force === true) && (onlyEmail || testOnly);
       totalNeeded = forceFull ? totalDailyLimit : Math.max(0, totalNeeded - alreadyDeliveredToday);
-      // FORCE = REPLACE, NOT ADD, FOR REAL CUSTOMERS: a force delivery to a REAL
-      // (non-test) customer must REPLACE today's already-delivered leads, never
-      // accumulate on top of them. Otherwise repeated force runs (or a test-cron
-      // monitoring a real account) inflate the customer's "leads today" dashboard
-      // count past their promised quota (e.g. 10+ when the promise is 5). Reset
-      // today's delivered leads first so the force run delivers EXACTLY the cap.
-      if (forceFull && alreadyDeliveredToday > 0 && !/^test\./.test(String(cust.email || '').toLowerCase())) {
-        var _fReset = 0;
-        db.leads = (db.leads || []).map(function(_fl) {
-          if (_fl.customer_id !== cust.id || !_fl.delivered || !_fl.delivered_at || _fl.delivered_at.indexOf(today) !== 0) return _fl;
-          _fl.delivered = 0; _fl.delivered_at = null; _fl.status = 'removed';
-          _fReset++;
-          return _fl;
-        });
-        if (_fReset) { console.log('[DELIVERY] force-replace: reset ' + _fReset + ' already-delivered-today lead(s) for ' + cust.email + ' so force re-delivers exactly ' + totalDailyLimit); try { saveDb(); } catch(_fs) {} }
+      // FORCE = FILL-UP TO CAP, NEVER WIPE, FOR REAL CUSTOMERS: a force delivery to a
+      // REAL (non-test) customer must ADD fresh leads up to the daily cap WITHOUT
+      // deleting the leads already delivered + emailed at 9am. Deleting them (the old
+      // "force = replace" behaviour) made the dashboard show fewer leads than the
+      // customer was emailed — a broken promise. Test accounts are clean-slated
+      // separately by the test cron, so force here just tops up toward the cap.
+      if (forceFull && !/^test\./.test(String(cust.email || '').toLowerCase()) && alreadyDeliveredToday < totalDailyLimit) {
+        totalNeeded = totalDailyLimit - alreadyDeliveredToday;
+        console.log('[DELIVERY] force fill-up: ' + cust.email + ' has ' + alreadyDeliveredToday + '/day delivered (kept) — adding ' + totalNeeded + ' to reach ' + totalDailyLimit);
+      } else if (forceFull && !/^test\./.test(String(cust.email || '').toLowerCase()) && alreadyDeliveredToday >= totalDailyLimit) {
+        totalNeeded = 0;
+        console.log('[DELIVERY] force: ' + cust.email + ' already at ' + alreadyDeliveredToday + '/' + totalDailyLimit + ' today — nothing to add');
       }
       // NO SPLIT EMAILS: if this customer already received their daily email (a
       // watchdog/manual re-run), top up the missing leads in the DB but NEVER send
