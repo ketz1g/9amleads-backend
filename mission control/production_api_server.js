@@ -7392,8 +7392,10 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
     if (!matched) continue;
     var fv = pickFreshDate(l);
     if (!fv) continue;
-    if (cust.product === 'moving') { if (fv < (movingFallback48 ? freshCutoff48p : freshCutoff)) continue; }
-    else { var backfillCutoff = new Date(Date.now() - 14 * 86400000).toISOString(); if (fv < backfillCutoff) continue; }
+    // 24h PRIMARY, 48h FALLBACK (uniform, ALL products): the customer promise is
+    // "fresh leads 24-48h max old". Primary pass = 24h in chosen areas; the
+    // fallback pass below relaxes to 48h (moving: closest-postcode). Nothing older.
+    if (fv < freshCutoff) continue;
     if (cust.product === 'moving' && maxBedsF < 99 && (parseInt(l.bedrooms, 10) || 99) > maxBedsF) continue;
     // APPLY THE CUSTOMER'S SIGNUP FILTERS in the preview too (mirrors the 9am
     // delivery exactly): planning app-type, newbusiness industry, tenders
@@ -7422,9 +7424,10 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
     if (selected.indexOf(c) === -1) selected.push(c);
   });
   // CLOSEST-POSTCODE FALLBACK (moving): if the customer's exact areas are still
-  // short of the promised count, pull additional pool leads from OUTSIDE their
-  // areas ranked by closest postcode (24-48h old allowed) — mirrors the delivery.
-  if (selected.length < limit && cust.product === 'moving') {
+  // 48h FALLBACK (all products): if the 24h in-area supply is short of the promised
+  // count, pull additional pool leads up to 48h old (moving: closest-postcode
+  // ranking; non-moving: in-area first). Mirrors the delivery's 24h->48h passes.
+  if (selected.length < limit) {
     var pcSeen2 = {};
     candidates.forEach(function(c) { var k = String(c.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); if (k) pcSeen2[k] = 1; });
     var fallbackPool = interleaved.slice().filter(function(c2) { return isFallbackLeadAcceptable(c2.postcode || c2.address || c2.fullAddress || '', areas); }).sort(function(a, b) {
@@ -7437,6 +7440,10 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
       var fl = fallbackPool[fbi];
       var fAddr = fl.fullAddress || fl.address || fl.deceasedAddress || '';
       var fPc = fl.postcode || '';
+      // 48h FALLBACK FRESHNESS: the primary pass was 24h; this fallback tier may
+      // take leads up to 48h old (never older) to fill a short promised count.
+      var fFv = pickFreshDate(fl);
+      if (!fFv || fFv < freshCutoff48p) continue;
       if (mailOK(fAddr, fPc)) {
         var pk2 = String(fPc).toUpperCase().replace(/[^A-Z0-9]/g, '');
         if (usedPostcode[pk2] || pcSeen2[pk2]) continue;
@@ -8402,8 +8409,8 @@ app.post('/api/admin/refresh-pending-leads', adminAuth, (req, res) => {
         if (!matched) continue;
         var fv = pickFreshDate(l);
         if (!fv) continue;
-        if (cust.product === 'moving') { if (fv < freshCutoff) continue; }
-        else { var bf = new Date(Date.now() - 14 * 86400000).toISOString(); if (fv < bf) continue; }
+        // 24h PRIMARY (48h handled by the fallback pass): uniform across ALL products.
+        if (fv < freshCutoff) continue;
         var key = l.url || ('a:' + String(l.address || l.fullAddress || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0,30));
         if (deliveredKeys[key] || seen[key]) continue;
         seen[key] = 1;
@@ -8472,8 +8479,8 @@ app.post('/api/admin/replace-pending-lead', adminAuth, (req, res) => {
       if (!matched) continue;
       var fv = pickFreshDate(l);
       if (!fv) continue;
-      if (product === 'moving') { if (fv < freshCutoff) continue; }
-      else { var bf = new Date(Date.now() - 14 * 86400000).toISOString(); if (fv < bf) continue; }
+      // 24h PRIMARY (48h fallback handled separately): uniform across ALL products.
+      if (fv < freshCutoff) continue;
       if (product === 'moving') {
         var reason = validateMovingLead({ fullAddress: l.fullAddress || l.address || '', postcode: l.postcode || '', url: l.url || '' });
         if (reason) continue;
