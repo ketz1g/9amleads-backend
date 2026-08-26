@@ -21546,11 +21546,12 @@ function runDeliveryTestReport() {
 // bulletproof: exact count, door numbers, full postcodes and real links. Emails
 // the report to hello@9amleads.com. The real Mon-Fri 09:00 delivery is unaffected.
 cron.schedule('*/15 * * * *', () => {
-  // ALWAYS ON: this cron only ever delivers to test.* accounts + hello@9amleads.com
-  // (the founder's monitoring account) — never to other real customers — so it is
-  // safe to run continuously. Each run verifies the full delivery pipeline (exact
-  // count, door numbers, full postcodes, real links, dashboard + email timing).
+  // GATED by TEST_DELIVERY_CRON=true — set it to false (or unset) to STOP the
+  // 15-min test cron entirely. It only ever delivers to test.* accounts +
+  // hello@9amleads.com (never real customers), but it does consume Postcoder/CPU
+  // so the founder can disable it when monitoring isn't wanted.
   try {
+    if (String(process.env.TEST_DELIVERY_CRON || 'false').toLowerCase() !== 'true') { console.log('[TEST-CRON] disabled (TEST_DELIVERY_CRON != true)'); return; }
     var ukNow = new Date().toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hour12: false });
     var ukMin = parseInt(ukNow.split(':')[0], 10) * 60 + parseInt(ukNow.split(':')[1], 10);
     if (ukMin >= 540 && ukMin <= 575) { console.log('[TEST-CRON] skipping (09:00 real-delivery window)'); return; }
