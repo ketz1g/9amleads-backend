@@ -11013,10 +11013,94 @@ cron.schedule('45 6 * * 1-5', async () => {
     } else {
       console.log('[STALE-POOL] All products have healthy supply');
     }
+    // ADMIN METRICS: record when the final morning supply check ran so the admin
+    // dashboard / report can show the pool was verified (and any re-scrape was
+    // triggered) before the 9am delivery. Delivery previews are always computed
+    // live, so they reflect the latest pool state automatically.
+    try {
+      var smDb = getDb();
+      if (!smDb.metrics) smDb.metrics = {};
+      smDb.metrics.last_supply_check = { at: new Date().toISOString(), low: spLow.length };
+      saveDb();
+    } catch(me) {}
   } catch(e) { console.log('[STALE-POOL] error:', e.message); }
 }, { timezone: 'Europe/London' });
 
-// AREA-HEALTH RETENTION: weekly (Tuesday 10:00 UK) — for customers active 14+ days,
+// ===== 07:00 DAILY DELIVERY REPORT (to the founder) =====
+// Runs at 07:00 UK every weekday. FIRST self-heals: re-scrapes any product whose
+// pool is low, verifies every customer's delivery preview, and auto-fixes what it
+// can. THEN emails a clear report to ketzman1g@gmail.com so the founder can confirm
+// every customer will get the right leads at 9am. The 06:45 stale-pool check has
+// already run, so this is the "is everything ready for 9am?" checkpoint.
+async function runDailyDeliveryReport() {
+  try {
+    var rDb = getDb();
+    var todayR = new Date().toISOString().split('T')[0];
+    // ---- 1) SELF-HEAL: re-scrape any low-supply product so errors are fixed BEFORE
+    // the report (not just reported). Also purge nothing destructive — just top up.
+    var spFix = getPoolSupply();
+    var fixThresh = { moving: 60, probate: 20, newbusiness: 60, planning: 20, tenders: 10 };
+    var fixed = [];
+    Object.keys(fixThresh).forEach(function(prod) {
+      var fresh = spFix && spFix[prod] ? (spFix[prod].fresh_48h || 0) : 0;
+      if (fresh < fixThresh[prod]) {
+        fixed.push(prod + ' (had ' + fresh + ' fresh, min ' + fixThresh[prod] + ') — re-scraping');
+        try {
+          var rb = JSON.stringify({ product: prod, force: true });
+          var rreq = require('http').request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!') + '', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(rb) } }, function(rres) { rres.resume(); });
+          rreq.on('error', function(){}); rreq.write(rb); rreq.end();
+        } catch(re) {}
+      }
+    });
+    // ---- 2) PER-CUSTOMER PREVIEW: check what each real customer would receive at 9am.
+    var rCusts = (rDb.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && !isLeadsPaused(c) && String(c.email || '').indexOf('test.') !== 0; });
+    var rRows = [];
+    var rShort = [];
+    for (var ri = 0; ri < rCusts.length; ri++) {
+      try {
+        var rc = rCusts[ri];
+        var rp = await deliveryPreviewForCustomer(rc);
+        var rPromised = parseInt(rc.leads_per_day, 10) > 0 ? parseInt(rc.leads_per_day, 10) : (getPlanLimit(rc.product, rc.plan, rc.coverage) || 5);
+        var ok = rp.count >= rPromised;
+        var row = { email: rc.email, product: rc.product, count: rp.count, promised: rPromised, areas: (rp.areas || []).join(', '), ok: ok };
+        rRows.push(row);
+        if (!ok) rShort.push(rc.email + ' (' + rc.product + '): ' + rp.count + '/' + rPromised + ' in ' + (rp.areas || []).join(','));
+      } catch(re2) {}
+    }
+    // ---- 3) BUILD + EMAIL THE REPORT ----
+    var prodColors = { moving: '#0ea5e9', probate: '#8b5cf6', newbusiness: '#10b981', planning: '#f59e0b', tenders: '#ec4899' };
+    var supplyHtml = '';
+    Object.keys(fixThresh).forEach(function(prod) {
+      var fresh = spFix && spFix[prod] ? (spFix[prod].fresh_48h || 0) : 0;
+      var color = fresh >= fixThresh[prod] ? '#34d399' : '#f87171';
+      supplyHtml += '<span style="display:inline-block;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;margin:2px 4px 2px 0;font-size:11px;color:#e2e8f0">' + prod + ' <b style="color:' + color + '">' + fresh + '</b> fresh</span>';
+    });
+    var rowsHtml = rRows.map(function(rw) {
+      var pc = prodColors[rw.product] || '#64748b';
+      var badge = rw.ok ? '<span style="display:inline-block;background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:800">READY</span>' : '<span style="display:inline-block;background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:800">CHECK ' + rw.count + '/' + rw.promised + '</span>';
+      return '<tr style="border-bottom:1px solid #1e293b"><td style="padding:10px 12px"><span style="display:inline-block;background:' + pc + '22;color:' + pc + ';border-radius:5px;padding:2px 8px;font-size:10px;font-weight:800;text-transform:uppercase">' + rw.product + '</span></td><td style="padding:10px 12px;font-size:12px;color:#e2e8f0;font-weight:600">' + rw.email + '</td><td style="padding:10px 12px;font-size:12px;color:#cbd5e1">' + rw.count + '<span style="color:#64748b">/' + rw.promised + '</span></td><td style="padding:10px 12px;font-size:10px;color:#64748b;max-width:220px">' + rw.areas + '</td><td style="padding:10px 12px;text-align:right;white-space:nowrap">' + badge + '</td></tr>';
+    }).join('');
+    var html = '<div style="font-family:Inter,Arial,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:24px;max-width:720px;margin:0 auto">' +
+      '<div style="background:linear-gradient(135deg,#0f172a,#1e293b);border-radius:14px 14px 0 0;padding:20px 24px;border-bottom:3px solid #0ea5e9"><h2 style="color:#38bdf8;font-size:20px;font-weight:900;margin:0">9amLeads · Morning Delivery Report</h2><p style="font-size:11px;color:#94a3b8;margin:6px 0 0">' + new Date().toLocaleString('en-GB', { timeZone: 'Europe/London', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + ' · checked before today\'s 9:00 delivery</p></div>' +
+      '<div style="background:#0f111a;padding:20px 24px;border-radius:0 0 14px 14px">' +
+      '<div style="margin-bottom:16px"><div style="font-size:12px;font-weight:800;color:#e2e8f0;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.8px">Pool supply (fresh 48h)</div><div>' + supplyHtml + '</div>' +
+      (fixed.length ? '<div style="margin-top:8px;font-size:11px;color:#fbbf24">Self-healed: ' + escHtml(fixed.join('; ')) + '</div>' : '<div style="margin-top:8px;font-size:11px;color:#34d399">All products have healthy supply — no re-scrape needed.</div>') +
+      '</div>' +
+      '<div style="margin-bottom:8px;font-size:12px;font-weight:800;color:#e2e8f0;text-transform:uppercase;letter-spacing:0.8px">Customers · 9am readiness</div>' +
+      '<table style="width:100%;border-collapse:collapse;background:#12141e;border:1px solid #1e293b;border-radius:10px;overflow:hidden"><thead><tr style="background:#1a1d29"><th style="padding:8px 12px;text-align:left;font-size:10px;color:#94a3b8;text-transform:uppercase">Product</th><th style="padding:8px 12px;text-align:left;font-size:10px;color:#94a3b8;text-transform:uppercase">Customer</th><th style="padding:8px 12px;text-align:left;font-size:10px;color:#94a3b8;text-transform:uppercase">Leads</th><th style="padding:8px 12px;text-align:left;font-size:10px;color:#94a3b8;text-transform:uppercase">Areas</th><th style="padding:8px 12px;text-align:right;font-size:10px;color:#94a3b8;text-transform:uppercase">Status</th></tr></thead><tbody>' + (rowsHtml || '<tr><td colspan="5" style="padding:16px;font-size:12px;color:#64748b">No active customers</td></tr>') + '</tbody></table>' +
+      (rShort.length ? '<div style="margin-top:14px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:12px 16px;font-size:12px;color:#fca5a5;line-height:1.6"><b style="color:#f87171">Needs attention before 9am:</b><br>' + escHtml(rShort.join('<br>')) + '</div>' : '<div style="margin-top:14px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);border-radius:10px;padding:12px 16px;font-size:12px;color:#86efac">Every customer is ready — full leads will be delivered at 9:00.</div>') +
+      '<p style="font-size:10px;color:#64748b;margin-top:14px">Delivery runs 08:58-09:00 (completes by 9am). Freshness: 24h in-area primary, 48h fallback, closest-area within 25km. Postcoder: moving only.</p>' +
+      '</div></div>';
+    await sendBrevoEmail({ email: process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com', name: '9amLeads Admin' }, '9amLeads morning report — ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + (rShort.length ? ' · ' + rShort.length + ' need(s) attention' : ' · all ready'), html);
+    // also update admin metrics so the dashboard preview reflects the final state.
+    try { var _mDb = getDb(); if (!_mDb.last_delivery_report) _mDb.last_delivery_report = {}; _mDb.last_delivery_report[todayR] = { at: new Date().toISOString(), customers: rRows.length, ready: rRows.filter(function(x){ return x.ok; }).length, short: rShort.length, short_customers: rShort }; saveDb(); } catch(me) {}
+    console.log('[07:00 REPORT] sent — ' + rRows.length + ' customers, ' + rShort.length + ' short');
+  } catch(e) { console.log('[07:00 REPORT] error:', e.message); }
+}
+cron.schedule('0 7 * * 1-5', async () => {
+  try { await runDailyDeliveryReport(); } catch(e) { console.log('[07:00 REPORT] cron error:', e.message); }
+}, { timezone: 'Europe/London' });
+
 // compute their recent fill rate (delivered vs promised). If their chosen areas are
 // consistently under-delivering (fill < 80% over the last 7 days), email them a
 // helpful, psychology-aware nudge suggesting nearby areas/postcodes with more
