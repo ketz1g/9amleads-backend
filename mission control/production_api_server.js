@@ -13185,12 +13185,12 @@ _deliverDiag[cust.email].products = products;
           // freshness or old listings slip through as "fresh".
           var fv = pickFreshDate(ld2);
           if (!fv) return false;
-          // BACKFILL: moving stays strict (48h fresh). Other products (probate/
-          // planning/newbusiness/tenders) may backfill with leads up to 14 days old
-          // when needed, so the exact daily count is ALWAYS met (their national
-          // supply is small/spread - e.g. ~27 probate grants/day UK-wide). The pool
-          // is iterated fresh-first, so this only fills gaps - never preferred.
-          var backfillCutoff = cut || (cust.product === 'moving' ? freshCutoffNow : new Date(Date.now() - 14 * 86400000).toISOString());
+          // 24h PRIMARY, 48h FALLBACK (uniform across ALL products): the customer
+          // promise is "fresh leads 24-48h max old". Leads are iterated fresh-first
+          // (24h) and 48h only fills gaps — never older. The `cut` param (when the
+          // caller passes freshCutoff48) marks the 48h fallback pass; otherwise the
+          // default is the 24h primary window.
+          var backfillCutoff = cut || freshCutoffNow;
           return fv >= backfillCutoff;
         } catch(e) { return false; }
       }
@@ -13488,14 +13488,17 @@ _deliverDiag[cust.email].products = products;
                   // one customer was blocked from filling a different customer).
                   (db.leads || []).forEach(function(l){ if(l.product===r2prod && l.customer_id === cust.id){ try{var ld=JSON.parse(l.data||'{}'); var k=(ld.postcode||ld.address||ld.id||ld.url||''); existingKeys[k]=1; }catch(e){} } });
                   var createdFromPool = [];
-                  for (var pf=0; pf<poolArr.length && createdFromPool.length < totalNeeded; pf++) {
-                    var rl = poolArr[pf];
-                    // FRESH-ONLY: never create a lead from a stale pool entry. Moving
-                    // allows 24-48h leads as a FALLBACK (exact areas first, then closest
-                    // postcodes), so the promised count is met even in quiet areas.
-                    var rlD = pickFreshDate(rl);
-                    var poolCutoff = freshCutoff48;
-                    if (!rlD || rlD < poolCutoff) continue;
+                  // FRESHNESS: 24h leads in the customer's areas are the PRIMARY
+                  // source; 48h leads are only the FALLBACK when the 24h supply in
+                  // their chosen areas runs short. Pass 1 = 24h only; if the promised
+                  // quota isn't met after scanning the whole pool, pass 2 = 48h.
+                  for (var _fp = 1; _fp <= 2 && createdFromPool.length < totalNeeded; _fp++) {
+                    var _cut2 = _fp === 1 ? freshCutoffNow : freshCutoff48;
+                    if (_fp === 2) console.log('[DELIVERY] ' + cust.email + ': 24h supply short (' + createdFromPool.length + '/' + totalNeeded + ') - falling back to 48h leads');
+                    for (var pf=0; pf<poolArr.length && createdFromPool.length < totalNeeded; pf++) {
+                      var rl = poolArr[pf];
+                      var rlD = pickFreshDate(rl);
+                      if (!rlD || rlD < _cut2) continue;
                      // DASHBOARD FILTERS: respect the customer bedroom/price/type filters.
                      if (!leadPassesFilters(rl)) continue;
                     var areaOfPoolLead = extractPostcodeArea(rl.postcode || rl.address || rl.location || rl.name || '');
@@ -13661,6 +13664,7 @@ _deliverDiag[cust.email].products = products;
                     if (addrKeyRun) _inRunSeen[addrKeyRun] = true;
                     createdFromPool.push(newLead);
                   }
+                  } // end _fp freshness passes (24h -> 48h fallback)
                   if (createdFromPool.length > 0) {
                     r2pool = createdFromPool.filter(function(l) { return pickedIds.indexOf(l.id) === -1; });
                     console.log('[DELIVERY] Pool-file fallback for ' + cust.email + ' ' + r2prod + ': created ' + createdFromPool.length + ' pool leads, r2pool=' + r2pool.length);
