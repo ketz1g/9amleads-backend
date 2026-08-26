@@ -8064,15 +8064,25 @@ app.post('/api/admin/purge-probate-pool', adminAuth, (req, res) => {
     var arr = [];
     try { arr = JSON.parse(fs.readFileSync(pfPath, 'utf-8')); if (!Array.isArray(arr)) arr = []; } catch(e) { arr = []; }
     var before = arr.length;
+    var removedList = [];
     arr = arr.filter(function(l) {
       var s = String(l.source || '').toLowerCase();
-      if (s.indexOf('rightmove') !== -1 || s.indexOf('onthemarket') !== -1 || s.indexOf('zoopla') !== -1) return false;
-      if (l.url && /rightmove|onthemarket|zoopla/i.test(l.url)) return false;
+      var u = String(l.url || '');
+      var n = String(l.name || l.deceasedName || l.title || '').toLowerCase();
+      var isPropertyListing = /rightmove|onthemarket|zoopla/i.test(u) || s.indexOf('rightmove') !== -1 || s.indexOf('onthemarket') !== -1 || s.indexOf('zoopla') !== -1;
+      // A REAL probate lead has a deceased person (name) AND an address AND came
+      // from a probate source (Gazette/Gov/PnP). A property listing has no
+      // deceased person - just a street address + portal URL.
+      var hasDeceased = String(l.deceasedName || l.name || '').trim().length > 0 && (l.deceasedAddress || l.address || '');
+      if (isPropertyListing || (!hasDeceased && (l.deceasedAddress || l.address))) {
+        removedList.push(n || l.address || u);
+        return false;
+      }
       return true;
     });
     fs.mkdirSync(DATA_DIR, { recursive: true });
     fs.writeFileSync(pfPath, JSON.stringify(arr, null, 2));
-    res.json({ success: true, probate_pool_before: before, probate_pool_after: arr.length, removed: before - arr.length });
+    res.json({ success: true, probate_pool_before: before, probate_pool_after: arr.length, removed: before - arr.length, removed_samples: removedList.slice(0, 5) });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
