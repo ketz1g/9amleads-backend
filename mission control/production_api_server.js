@@ -23357,10 +23357,26 @@ function syncCustomers(product) {
         }
         var seenIds = new Set();
         var merged = [];
-        (leads || []).forEach(function(l) { var k = l.id || l.title || l.address || ''; if (k && !seenIds.has(k)) { seenIds.add(k); merged.push(l); } });
+        (leads || []).forEach(function(l) {
+          if (product === 'probate') {
+            var _ps2 = String(l.source || '').toLowerCase();
+            if (_ps2.indexOf('rightmove') !== -1 || _ps2.indexOf('onthemarket') !== -1 || _ps2.indexOf('zoopla') !== -1 || (l.url && /rightmove|onthemarket|zoopla/i.test(l.url))) return;
+          }
+          var k = l.id || l.title || l.address || ''; if (k && !seenIds.has(k)) { seenIds.add(k); merged.push(l); }
+        });
         prevPool.forEach(function(l) {
           var k = l.id || l.title || l.address || '';
-          if (k && !seenIds.has(k) && isPoolLeadFresh(l)) { seenIds.add(k); merged.push(l); }
+          // PROBATE POOL SOURCE GUARD: never carry over non-probate property leads
+          // (Rightmove/OnTheMarket/Zoopla = moving supply) into the probate pool.
+          // A contaminated prevPool would otherwise keep delivering house listings
+          // as "probate" leads. Real probate sources are Gazette / Gov.uk / PnP.
+          if (k && !seenIds.has(k) && isPoolLeadFresh(l)) {
+            if (product === 'probate') {
+              var _ps = String(l.source || '').toLowerCase();
+              if (_ps.indexOf('rightmove') !== -1 || _ps.indexOf('onthemarket') !== -1 || _ps.indexOf('zoopla') !== -1 || (l.url && /rightmove|onthemarket|zoopla/i.test(l.url))) return;
+            }
+            seenIds.add(k); merged.push(l);
+          }
         });
         // PROBATE FIRM PRUNE: never let company/solicitor notices sit in the probate
         // pool (they are not deceased-person leads and can never be a valid probate
