@@ -8053,6 +8053,29 @@ app.post('/api/admin/purge-bad-leads', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/purge-probate-pool — remove ALL non-probate (Rightmove /
+// OnTheMarket / Zoopla property-listing) leads from the probate pool file. A
+// contaminated probate pool delivers house listings as "probate" leads (or none
+// at all, since they're filtered at delivery). Real probate leads come from the
+// Gazette / Gov.uk / PnP only.
+app.post('/api/admin/purge-probate-pool', adminAuth, (req, res) => {
+  try {
+    var pfPath = path.join(DATA_DIR, 'probate-leads.json');
+    var arr = [];
+    try { arr = JSON.parse(fs.readFileSync(pfPath, 'utf-8')); if (!Array.isArray(arr)) arr = []; } catch(e) { arr = []; }
+    var before = arr.length;
+    arr = arr.filter(function(l) {
+      var s = String(l.source || '').toLowerCase();
+      if (s.indexOf('rightmove') !== -1 || s.indexOf('onthemarket') !== -1 || s.indexOf('zoopla') !== -1) return false;
+      if (l.url && /rightmove|onthemarket|zoopla/i.test(l.url)) return false;
+      return true;
+    });
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    fs.writeFileSync(pfPath, JSON.stringify(arr, null, 2));
+    res.json({ success: true, probate_pool_before: before, probate_pool_after: arr.length, removed: before - arr.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/set-customer-lead-total — set a customer's TOTAL DELIVERED count
 // to exactly { target } (5/day × delivery days since signup). Used to fix dashboard
 // totals that drifted (over-delivered by churn, or under-delivered by supply gaps):
