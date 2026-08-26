@@ -940,23 +940,25 @@ function loadDb() {
   }
   try {
     var _parsed = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
-    // VALID-BUT-WIPED GUARD: if the DB file looks stale (far fewer customers than
-    // the newest backup), the ephemeral disk was reset during a deploy (a committed
-    // database.json with test data overwrote the live business data). Silently
-    // keeping a stale DB looks like a wiped business — auto-restore from the newest
-    // backup that has MORE customers (real data) than the current file.
-    var _cand = [];
-    try { fs.mkdirSync(BACKUP_DIR, { recursive: true }); _cand = fs.readdirSync(BACKUP_DIR).filter(function(f) { return f.startsWith('database-') && f.endsWith('.json'); }).sort(); } catch(e) {}
+    // VALID-BUT-WIPED GUARD: only auto-restore when the live DB is EMPTY or
+    // NEAR-EMPTY (0-2 customers) while a backup clearly has real customers. This
+    // catches a deploy/reset that wiped the DB, but does NOT revert a legitimately
+    // smaller live DB (e.g. after account cleanup / trial expiry) back to an old
+    // backup — that was the bug that kept "losing" recent deliveries. Never restore
+    // a healthy-looking DB (3+ customers) even if a backup has more.
     var _curCust = (_parsed && _parsed.customers) ? _parsed.customers.length : 0;
+    if (_curCust >= 3) return _parsed; // healthy — keep it
+    var _cand = [];
+    try { fs.mkdirSync(BACKUP_DIR, { recursive: true }); _cand = fs.readdirSync(BACKUP_DIR).filter(function(f) { return f.startsWith('database-') && f.endsWith('.json') && f.indexOf('CORRUPT') === -1; }).sort(); } catch(e) {}
     var _good = null;
     for (var _ci = _cand.length - 1; _ci >= 0; _ci--) {
       try {
         var _b = JSON.parse(fs.readFileSync(path.join(BACKUP_DIR, _cand[_ci]), 'utf-8'));
-        if (_b && _b.customers && _b.customers.length > _curCust) { _good = _cand[_ci]; break; }
+        if (_b && _b.customers && _b.customers.length > 3 && _b.customers.length > _curCust) { _good = _cand[_ci]; break; }
       } catch(e) {}
     }
     if (_good) {
-      console.log('[DB] DB file stale (' + _curCust + ' customers vs backup ' + _good + ' with more) — restoring');
+      console.log('[DB] DB file near-empty (' + _curCust + ' customers) — restoring from good backup ' + _good);
       fs.copyFileSync(path.join(BACKUP_DIR, _good), DB_FILE);
       return JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
     }
@@ -14644,29 +14646,30 @@ _deliverDiag[cust.email].products = products;
         // dashboard, but no email goes out.
         var _noEmail = !!(req.body && req.body.no_email);
         if ((!alreadyEmailedToday || forceFull) && !_noEmail) {
-          // Queue the email for bounded-parallel sending (so 1000 customers'
-          // emails all go out within a few minutes instead of 30-60 min
-          // sequentially). Persist last_email_date immediately so a crash can
-          // never cause a duplicate.
+          // EMAIL FIRST, THEN DASHBOARD: send this customer's email IMMEDIATELY
+          // (before marking delivered / saveDb below) so the email hits the inbox
+          // BEFORE the dashboard shows the leads — and both happen inside the same
+          // 09:00 run. The 9am promise is "email + dashboard together at 9am", and
+          // email-first guarantees the customer never sees dashboard leads without
+          // the matching email. Persist last_email_date so a crash can't duplicate.
           try { cust.last_email_date = today; } catch(leErr) {}
-          emailQueue.push({ email: cust.email, name: cust.company || 'Customer', subject: '9amLeads \u2022 Your Daily Opportunities for ' + (cust.coverage ? (COVERAGE_LABELS[cust.coverage] || cust.coverage) : 'your area') + ' on ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }), html: generateLeadEmailHTML(cust, custLeads) });
-          // Flush in parallel batches of 15 to keep Brevo well under rate limits
-          // while ensuring all emails go out promptly.
-          if (emailQueue.length >= 15) {
-            var batchNow = emailQueue.splice(0, emailQueue.length);
-            await             Promise.all(batchNow.map(function(m) { return sendBrevoEmail({ email: m.email, name: m.name }, m.subject, m.html).catch(function(e) {
-              console.log('[DELIVERY] Email failed ' + m.email + ': ' + e.message);
-              // SELF-HEAL: queue the failed delivery email so a catch-up cron can
-              // re-send it — the customer's leads are in-dashboard but they'd
-              // otherwise never know they arrived.
-              try {
-                var _feDb = getDb();
-                if (!_feDb.failed_emails) _feDb.failed_emails = [];
-                _feDb.failed_emails.push({ email: m.email, name: m.name, subject: m.subject, html: m.html, at: new Date().toISOString(), attempts: 1 });
-                if (_feDb.failed_emails.length > 200) _feDb.failed_emails.splice(0, _feDb.failed_emails.length - 200);
-                saveDb();
-              } catch(fe) { console.log('[DELIVERY] failed-email queue error:', fe.message); }
-            }); }));
+          var _emailHtml = generateLeadEmailHTML(cust, custLeads);
+          var _emailSubj = '9amLeads \u2022 Your Daily Opportunities for ' + (cust.coverage ? (COVERAGE_LABELS[cust.coverage] || cust.coverage) : 'your area') + ' on ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+          // Send synchronously for this customer (email first), so by the time the
+          // dashboard is updated below the email is already out. Failed sends go to
+          // the failed-email queue for the catch-up cron.
+          try {
+            await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, _emailSubj, _emailHtml);
+            console.log('[DELIVERY] Email sent to ' + cust.email + ' (' + custLeads.length + ' leads)');
+          } catch(sendErr) {
+            console.log('[DELIVERY] Email failed ' + cust.email + ': ' + sendErr.message);
+            try {
+              var _feDb = getDb();
+              if (!_feDb.failed_emails) _feDb.failed_emails = [];
+              _feDb.failed_emails.push({ email: cust.email, name: cust.company || 'Customer', subject: _emailSubj, html: _emailHtml, at: new Date().toISOString(), attempts: 1 });
+              if (_feDb.failed_emails.length > 200) _feDb.failed_emails.splice(0, _feDb.failed_emails.length - 200);
+              saveDb();
+            } catch(fe2) { console.log('[DELIVERY] failed-email queue error:', fe2.message); }
           }
         } else {
           console.log('[DELIVERY] ' + cust.email + ': already emailed today — topping up ' + custLeads.length + ' leads silently (no second email)');
