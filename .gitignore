@@ -27,3 +27,9 @@ yarn-error.log*
 # Logs
 *.log
 
+
+9amwebsite/hero-video.mp4
+9amwebsite/Screenshots*/
+*.mp4
+*.mov
+*.zip
