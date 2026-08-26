@@ -445,7 +445,7 @@ function interleavePoolByAreas(poolArr, custAreas) {
   var areasAreCounties = custAreas.some(function(a){ return !/^[A-Z]{1,3}$/i.test(a); });
   var buckets = {};
   var bucketOf = function(rl) {
-    var pcCode = extractPostcodeArea(rl.postcode || rl.address || rl.location || rl.name || '');
+    var pcCode = extractPostcodeArea(rl.postcode || rl.address || rl.location || rl.name || rl.deceasedAddress || rl.fullAddress || '');
     if (!pcCode) return '__none__';
     if (areasAreCounties) {
       for (var i = 0; i < custAreas.length; i++) {
@@ -7372,7 +7372,11 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
   var candCap = Math.max(limit * 4, 30);
   for (var i = 0; i < interleaved.length && candidates.length < candCap; i++) {
     var l = interleaved[i];
-    var pcArea = extractPostcodeArea(l.postcode || l.address || l.fullAddress || '');
+    // Probate leads store the deceased's address in deceasedAddress (e.g. "Flat 3
+    // Enfield Court, Garside Street, Hyde, SK14 5GU"). Pull the postcode from ANY
+    // address field so county/postcode matching works — without this, probate leads
+    // with the postcode only inside deceasedAddress were never county-matched.
+    var pcArea = extractPostcodeArea(l.postcode || l.address || l.fullAddress || l.deceasedAddress || '');
     var matched = false;
     var ukwide = /all.?uk|uk.?wide|nationwide|whole.?uk/i.test((areas||[]).join(' '));
     if (cust.product === 'moving') {
@@ -13508,7 +13512,7 @@ _deliverDiag[cust.email].products = products;
                       if (!rlD || rlD < _cut2) continue;
                      // DASHBOARD FILTERS: respect the customer bedroom/price/type filters.
                      if (!leadPassesFilters(rl)) continue;
-                    var areaOfPoolLead = extractPostcodeArea(rl.postcode || rl.address || rl.location || rl.name || '');
+                    var areaOfPoolLead = extractPostcodeArea(rl.postcode || rl.address || rl.location || rl.name || rl.deceasedAddress || rl.fullAddress || '');
                     // Tenders/probate are national-fallback products: their leads often
                     // carry no postcode (tenders are opportunities, probate gazette
                     // notices may lack an address). Allow them through so they can be
