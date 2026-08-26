@@ -7648,6 +7648,12 @@ async function runMovingPafPostScrape() {
 // the scrape so probate customers get door-complete, mailable addresses. Budget
 // reserve is shared with delivery (never starve the 9am exact-count guarantee).
 async function runProbatePafPostScrape() {
+  // PROBATE POST-SCRAPE PAF DISABLED: Postcoder is MOVING-ONLY (the user has no real
+  // probate customers, so PAF credits on probate are wasted). Probate leads deliver
+  // with whatever door/postcode their source already carries. Re-enable later if a
+  // paid probate customer needs door-complete addresses.
+  console.log('[PAF-PROBATE] Postcoder is moving-only — probate post-scrape PAF skipped (no credits spent)');
+  return { enriched: 0, failed: 0 };
   if (!(process.env.POSTCODER_ENABLED === 'true' || process.env.POSTCODER_ENABLED === '1') || !process.env.POSTCODER_API_KEY) {
     console.log('[PAF-PROBATE] Postcoder disabled — skipping'); return { enriched: 0, failed: 0 };
   }
@@ -11126,8 +11132,8 @@ cron.schedule('20 9 * * 1-5', async () => {
         var cGot = (cDb.leads || []).some(function(l) { return l.customer_id === cc.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(todayC) === 0; });
         if (cGot) {
           await sendBrevoEmail({ email: cc.email, name: cc.company || 'Customer' },
-            'All sorted — your leads have arrived ✅',
-            '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:16px"><h2 style="color:#34d399;margin:0 0 8px">All sorted ✅</h2><p style="font-size:15px;line-height:1.6;color:#cbd5e1">Your fresh opportunities have arrived — check your dashboard and inbox. Thanks for your patience! 🙏</p><p style="font-size:13px;color:#94a3b8;margin:16px 0 0">— The 9amLeads Team</p></div>');
+            'All sorted — your leads are here ✅',
+            '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:16px"><h2 style="color:#34d399;margin:0 0 8px">All sorted ✅</h2><p style="font-size:15px;line-height:1.6;color:#cbd5e1">We\'ve resolved the technical issue and your fresh leads are now in your dashboard and inbox.</p><p style="font-size:15px;line-height:1.6;color:#cbd5e1">Thank you for your patience — everything is working normally again. 🙏</p><p style="font-size:13px;color:#94a3b8;margin:16px 0 0">— The 9amLeads Team</p></div>');
           cNotified[cKey] = 'sorted';
           console.log('[09:20 STATUS] Sorted confirmation sent to ' + cc.email);
         }
@@ -14213,10 +14219,13 @@ _deliverDiag[cust.email].products = products;
             var ld = null; try { ld = JSON.parse(l.data || ''); } catch(e) { ld = null; }
             if (!ld || typeof ld !== 'object') ld = { postcode: l.postcode || '', address: l.address || l.fullAddress || '', fullAddress: l.fullAddress || l.address || '' };
             var addr = ld.fullAddress || ld.address || ld.deceasedAddress || '';
-            // Only PAF-enrich property products (moving/probate) — business products
-            // have company addresses, not house numbers, and would waste Postcoder
-            // credits (and get dropped) if run through the address pipeline.
-            var isProperty = l.product === 'moving' || l.product === 'probate';
+            // POSTCODER = MOVING ONLY. Probate/newbusiness/planning/tenders are NOT
+            // run through Postcoder — the user has no real probate customers yet, so
+            // spending paid PAF credits on probate is wasted. Probate leads deliver
+            // with whatever door number/postcode their source already carries (the
+            // door-number gate still applies, but no paid lookups). Moving keeps full
+            // PAF because removals firms NEED exact door numbers.
+            var isProperty = l.product === 'moving';
             // Skip leads the post-scrape PAF pass already tried and failed — never
             // re-pay for a lead PAF has already rejected (it's dropped by the gate).
             if (l.paf_failed || ld.paf_failed) return false;
@@ -21957,7 +21966,20 @@ app.post('/api/admin/send-test-email', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/send-customer-email — (re)send a real customer's daily delivery
+// POST /api/admin/send-status-email-samples — send sample copies of the two
+// customer status emails (the 09:10 "on their way" delay notice and the 09:20
+// "all sorted" confirmation) so the founder can review the wording/design.
+// Body: { email } (defaults to hello@9amleads.com)
+app.post('/api/admin/send-status-email-samples', adminAuth, async (req, res) => {
+  try {
+    var to = String((req.body && req.body.email) || 'hello@9amleads.com').trim();
+    var delayHtml = '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:16px"><h2 style="color:#38bdf8;margin:0 0 8px">Your leads are on their way ✨</h2><p style="font-size:15px;line-height:1.6;color:#cbd5e1">Just a quick heads-up — today\'s fresh opportunities are still being delivered to your dashboard and inbox. They\'ll be with you very shortly.</p><p style="font-size:15px;line-height:1.6;color:#cbd5e1">No action needed — everything is being handled and your leads will arrive today as usual. 😊</p><p style="font-size:13px;color:#94a3b8;margin:16px 0 0">— The 9amLeads Team</p></div>';
+    var sortedHtml = '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:16px"><h2 style="color:#34d399;margin:0 0 8px">All sorted ✅</h2><p style="font-size:15px;line-height:1.6;color:#cbd5e1">We\'ve resolved the technical issue and your fresh leads are now in your dashboard and inbox.</p><p style="font-size:15px;line-height:1.6;color:#cbd5e1">Thank you for your patience — everything is working normally again. 🙏</p><p style="font-size:13px;color:#94a3b8;margin:16px 0 0">— The 9amLeads Team</p></div>';
+    await sendBrevoEmail({ email: to, name: '9amLeads Owner' }, 'SAMPLE — Leads on their way (09:10 delay notice)', delayHtml);
+    await sendBrevoEmail({ email: to, name: '9amLeads Owner' }, 'SAMPLE — All sorted (09:20 confirmation)', sortedHtml);
+    res.json({ success: true, sent_to: to });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 // email NOW using today's delivered leads. Used when a 9am email was suppressed
 // (e.g. a pre-9am top-up lead blocked it). Only sends if there are delivered leads
 // today and last_email_date != today (no duplicate).
