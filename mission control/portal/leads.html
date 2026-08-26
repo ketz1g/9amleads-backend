@@ -867,6 +867,19 @@ function doLogout() {
 }
 var _token = '';
 (function(){
+  // MAGIC LINK SUPPORT: an email button may open leads.html?token=...&email=...
+  // (a short-lived JWT minted for the customer). Store it as the session so the
+  // customer lands DIRECTLY on their leads page without signing in.
+  try {
+    var _qp = new URLSearchParams(window.location.search);
+    var _urlToken = _qp.get('token');
+    if (_urlToken) {
+      var _urlEmail = _qp.get('email') || '';
+      var _sessData = { token: _urlToken, clientId: _urlEmail, email: _urlEmail, name: _urlEmail, plan: 'free_trial', product: 'moving', products: ['moving'] };
+      try { localStorage.setItem('mld_portal_session', JSON.stringify(_sessData)); } catch(e) {}
+      try { history.replaceState(null, '', window.location.pathname); } catch(e) {}
+    }
+  } catch(e) {}
   var sd = localStorage.getItem('mld_portal_session');
   if (!sd) { window.location.href = '/portal/'; return; }
   var sess = JSON.parse(sd);

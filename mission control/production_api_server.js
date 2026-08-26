@@ -17740,6 +17740,16 @@ function generateLeadEmailHTML(customer, leads) {
     : productName === 'planning' ? 'Planning application details'
     : 'Tender opportunity details';
   const dashboardUrl = 'https://www.9amleads.com/portal/dashboard.html';
+  // MAGIC LINK: mint a short-lived JWT for THIS customer so the email's buttons
+  // (View on Dashboard / Print & Post them all) open the customer's dashboard or
+  // leads page DIRECTLY — no sign-in required. The link identifies the customer by
+  // email (token is signed with JWT_SECRET), so it always opens the RIGHT account.
+  // Expires in 24h (matches the daily email cadence) — a stale email link just
+  // redirects to normal login.
+  var _magicToken = '';
+  try { _magicToken = jwt.sign({ id: customer.id, email: customer.email, product: customer.product }, JWT_SECRET, { expiresIn: '24h' }); } catch(te) {}
+  var _magicLeadsUrl = 'https://www.9amleads.com/portal/leads.html?token=' + encodeURIComponent(_magicToken) + '&email=' + encodeURIComponent(customer.email || '');
+  var _magicDashUrl = 'https://www.9amleads.com/portal/dashboard.html?token=' + encodeURIComponent(_magicToken) + '&email=' + encodeURIComponent(customer.email || '');
   let body = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"><style>@media only screen and (max-width:480px){.card{padding:12px!important}.inner{padding:12px 14px!important}.chips span{font-size:10px!important;white-space:normal!important;word-break:break-word!important}.lead-card{margin-bottom:16px!important}.btn-group{display:block!important}.btn-group a{display:block!important;margin-bottom:6px!important}.resp-flex{display:block!important}.resp-flex a{display:block!important;margin-bottom:6px!important}}</style></head><body style="margin:0;padding:0;background-color:#f1f5f9;font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;color:#1e293b">';
   body += '<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f1f5f9"><tr><td align="center" style="padding:24px 16px">';
   body += '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">';
@@ -17926,17 +17936,17 @@ function generateLeadEmailHTML(customer, leads) {
     if (leadProduct === 'planning') {
       var searchQ = (d.council || d.city || '') + ' planning application ' + (d.applicationRef || d.address || '');
       actionLinks.push({ url: 'https://www.google.com/search?q=' + encodeURIComponent(searchQ), label: 'Search Planning Portal' });
-      if (d.estimatedValue) actionLinks.push({ url: dashboardUrl, label: 'View on Dashboard' });
+      if (d.estimatedValue) actionLinks.push({ url: _magicDashUrl, label: 'View on Dashboard' });
     } else if (leadProduct === 'moving') {
       if (d.url) actionLinks.push({ url: d.url, label: 'Check Out This Property' });
       else actionLinks.push({ url: 'https://www.rightmove.co.uk/property-for-sale/search.html?searchLocation=' + encodeURIComponent(d.postcode || d.city || ''), label: 'Search Similar' });
-      actionLinks.push({ url: dashboardUrl, label: 'View on Dashboard' });
+      actionLinks.push({ url: _magicDashUrl, label: 'View on Dashboard' });
     } else if (leadProduct === 'newbusiness') {
       if (d.companyNumber && !d.generated) actionLinks.push({ url: 'https://find-and-update.company-information.service.gov.uk/company/' + d.companyNumber, label: 'View on Companies House' });
       if (d.name) actionLinks.push({ url: 'https://www.google.com/search?q=' + encodeURIComponent(d.name + ' contact email phone'), label: 'Find Contact Details' });
     } else if (leadProduct === 'probate') {
       if (d.noticeUrl) actionLinks.push({ url: d.noticeUrl, label: 'View on UK Gazette' }); else actionLinks.push({ url: 'https://www.gov.uk/government/publications/how-to-search-for-probate-records', label: 'Search Probate Records' });
-      actionLinks.push({ url: dashboardUrl, label: 'View on Dashboard' });
+      actionLinks.push({ url: _magicDashUrl, label: 'View on Dashboard' });
     } else if (leadProduct === 'tenders') {
       // Tenders are applied for ONLINE — the Apply Online button is the primary action
       var tendApplyUrl = d.applyLink || d.pcsUrl || d.tenderUrl || d.portalUrl || d.url || (d.tenderNoticeId ? 'https://www.contractsfinder.service.gov.uk/notice/' + d.tenderNoticeId : '');
@@ -17969,7 +17979,7 @@ function generateLeadEmailHTML(customer, leads) {
   // customer can print & post every lead (bulk) from their leads page.
   body += '<tr><td style="background:#ffffff;padding:2px 28px 2px">' +
     '<div style="text-align:center;padding:16px 0">' +
-    '<a href="https://www.9amleads.com/portal/leads.html" style="display:inline-block;padding:15px 36px;background-color:#0ea5e9;background-image:linear-gradient(135deg,#0ea5e9,#2563eb);color:#ffffff;text-decoration:none;border-radius:50px;font-weight:800;font-size:15px">🖨️ Print &amp; Post them all</a>' +
+    '<a href="' + _magicLeadsUrl + '" style="display:inline-block;padding:15px 36px;background-color:#0ea5e9;background-image:linear-gradient(135deg,#0ea5e9,#2563eb);color:#ffffff;text-decoration:none;border-radius:50px;font-weight:800;font-size:15px">🖨️ Print &amp; Post them all</a>' +
     '<div style="font-size:11px;color:#64748b;margin-top:9px">Send a letter or flyer to every lead in one click</div>' +
     '</div></td></tr>';
 
@@ -17996,8 +18006,8 @@ function generateLeadEmailHTML(customer, leads) {
     '<tr><td style="padding:6px 0;vertical-align:top;width:22px;color:#0ea5e9;font-weight:900;font-size:12px">3.</td>' +
     '<td style="padding:6px 0;font-size:12px;color:#1e293b;line-height:1.6;vertical-align:top;word-break:break-word"><strong>Upload your flyer + intro letter</strong> &mdash; add your flyer (front &amp; back) and a short intro letter once in <strong>Print &amp; Post</strong> settings. They\'re used for every mailing, so your business always arrives looking professional.</td></tr>' +
     '</table>' +
-    '<div style="margin-top:10px"><a href="' + dashboardUrl + '" style="display:inline-block;margin-right:6px;margin-bottom:6px;padding:8px 18px;background-color:#0ea5e9;background-image:linear-gradient(135deg,#0ea5e9,#2563eb);color:#ffffff;text-decoration:none;border-radius:50px;font-size:12px;font-weight:700">Open My Leads</a>' +
-    '<a href="' + dashboardUrl + '?page=direct-mail" style="display:inline-block;padding:8px 18px;background:#ffffff;border:1px solid #2563eb;color:#2563eb;text-decoration:none;border-radius:50px;font-size:12px;font-weight:700">Print &amp; Post</a></div>' +
+    '<div style="margin-top:10px"><a href="' + _magicLeadsUrl + '" style="display:inline-block;margin-right:6px;margin-bottom:6px;padding:8px 18px;background-color:#0ea5e9;background-image:linear-gradient(135deg,#0ea5e9,#2563eb);color:#ffffff;text-decoration:none;border-radius:50px;font-size:12px;font-weight:700">Open My Leads</a>' +
+    '<a href="' + _magicLeadsUrl + '" style="display:inline-block;padding:8px 18px;background:#ffffff;border:1px solid #2563eb;color:#2563eb;text-decoration:none;border-radius:50px;font-size:12px;font-weight:700">Print &amp; Post</a></div>' +
     '</div></td></tr>';
 
   // QUICK WIN TIPS — product-specific conversion advice (kept short, actionable)
@@ -18018,12 +18028,12 @@ function generateLeadEmailHTML(customer, leads) {
   body += '<tr><td style="background-color:#0f172a;background-image:linear-gradient(135deg,#0f172a,#1e293b);padding:22px 30px 20px;border-radius:0 0 16px 16px;text-align:center;border-top:1px solid #0ea5e9">';
   body += '<div style="font-family:Outfit,Arial,Helvetica,sans-serif;font-size:17px;font-weight:900;color:#38bdf8;text-align:center;margin-bottom:12px"><span style="display:inline-block;width:26px;height:26px;border-radius:8px;text-align:center;line-height:26px;font-size:13px;background-color:#0ea5e9;background-image:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;margin-right:6px;vertical-align:middle;font-family:Outfit,Arial,sans-serif">9</span><span style="vertical-align:middle">9amLeads</span></div>';
   var pricingLink = customer.product === 'planning' ? 'https://www.9amleads.com/planningleads' : customer.product === 'moving' ? 'https://www.9amleads.com/movingleadsdaily' : customer.product === 'probate' ? 'https://www.9amleads.com/probateleads' : customer.product === 'newbusiness' ? 'https://www.9amleads.com/newbusinessalert' : customer.product === 'tenders' ? 'https://www.9amleads.com/tenders' : 'https://www.9amleads.com/pricing';
-  body += '<div style="margin-bottom:12px"><a href="' + dashboardUrl + '" style="display:inline-block;padding:12px 36px;background-color:' + accent + ';background-image:linear-gradient(135deg,' + accent + ',rgba(99,102,241,0.6));color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:13px;letter-spacing:0.8px">VIEW DASHBOARD</a></div>';
+  body += '<div style="margin-bottom:12px"><a href="' + _magicDashUrl + '" style="display:inline-block;padding:12px 36px;background-color:' + accent + ';background-image:linear-gradient(135deg,' + accent + ',rgba(99,102,241,0.6));color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:13px;letter-spacing:0.8px">VIEW DASHBOARD</a></div>';
   body += '<a href="' + pricingLink + '" style="display:inline-block;padding:10px 30px;border:1px solid rgba(255,255,255,0.25);color:#ffffff;text-decoration:none;border-radius:50px;font-weight:600;font-size:12px">View ' + (customer.product ? getLeadTypeRule(customer.product).name : 'Pricing') + '</a>';
   body += '<p style="color:#cbd5e1;font-size:11px;margin:14px 0 0"><a href="mailto:hello@9amleads.com?subject=Lead%20Issue" style="color:#ffffff;text-decoration:underline">Lead issue? Contact us &rarr;</a></p>';
   body += '<table cellpadding="0" cellspacing="0" align="center" style="margin:14px 0 12px"><tr>';
   body += '<td style="padding:0 5px"><a href="' + PUBLIC_URL + '" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.08);line-height:30px;text-align:center;text-decoration:none"><span style="color:rgba(255,255,255,0.9);font-size:12px">\uD83C\uDF10</span></a></td>';
-  body += '<td style="padding:0 5px"><a href="' + dashboardUrl + '" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.08);line-height:30px;text-align:center;text-decoration:none"><span style="color:rgba(255,255,255,0.9);font-size:12px">\uD83D\uDCC8</span></a></td>';
+  body += '<td style="padding:0 5px"><a href="' + _magicDashUrl + '" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.08);line-height:30px;text-align:center;text-decoration:none"><span style="color:rgba(255,255,255,0.9);font-size:12px">\uD83D\uDCC8</span></a></td>';
   body += '<td style="padding:0 5px"><a href="https://www.facebook.com/share/1SBwDAUuxh/" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.08);line-height:30px;text-align:center;text-decoration:none"><span style="color:#ffffff;font-size:11px;font-weight:700">fb</span></a></td>';
   body += '<td style="padding:0 5px"><a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.08);line-height:30px;text-align:center;text-decoration:none"><span style="color:#ffffff;font-size:11px;font-weight:700">tt</span></a></td>';
   body += '<td style="padding:0 5px"><a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.08);line-height:30px;text-align:center;text-decoration:none"><span style="color:#ffffff;font-size:11px;font-weight:700">ig</span></a></td>';
