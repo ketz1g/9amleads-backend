@@ -154,6 +154,11 @@ function connect(apiKey) {
         try {
           var event = JSON.parse(line);
           if (!event.resource_kind || !event.resource_id) continue;
+          // DIAGNOSTIC (temp): log the event type + resource_kind so we can see what
+          // the /companies stream actually delivers (is it 'incorporated' or something else?).
+          if (state.eventsToday <= 30 || (state.eventsToday % 50 === 0)) {
+            console.log('[STREAM-DIAG] kind=' + event.resource_kind + ' type=' + (event.event ? event.event.type : 'none') + ' id=' + event.resource_id + ' t=' + (event.event ? event.event.timepoint : ''));
+          }
 
           var companyNumber = event.resource_id;
           var tp = event.event ? event.event.timepoint : null;
