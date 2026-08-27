@@ -11072,6 +11072,22 @@ async function runDailyDeliveryReport() {
   try {
     var rDb = getDb();
     var todayR = new Date().toISOString().split('T')[0];
+    // ONCE-PER-DAY GUARD: never email the morning report more than once a day.
+    // The 07:00 cron, the boot catch-up, and manual triggers all call this — without
+    // a guard, a deploy restart between 7-9am fires a duplicate report every time.
+    // Persisted in the DB so it survives restarts. Pass { force: true } to override.
+    var _forceReport = !!(global.__FORCE_REPORT_FLAG__ || (typeof req !== 'undefined' && req.body && req.body.force));
+    try {
+      if (!rDb.last_delivery_report) rDb.last_delivery_report = {};
+      if (rDb.last_delivery_report[todayR] && !_forceReport) {
+        console.log('[07:00 REPORT] Already emailed today (' + todayR + ') — skipping duplicate');
+        return { skipped: true, reason: 'already-emailed-today' };
+      }
+      // Mark "in progress" so a second caller (boot catch-up racing the cron) can't
+      // both send. Only flipped to status 'sent' after a successful email.
+      rDb.last_delivery_report[todayR] = { at: new Date().toISOString(), status: 'in-progress' };
+      saveDb();
+    } catch(e) {}
     // ---- 1) SELF-HEAL: re-scrape any low-supply product so errors are fixed BEFORE
     // the report (not just reported). Also purge nothing destructive — just top up.
     var spFix = getPoolSupply();
@@ -11136,7 +11152,7 @@ async function runDailyDeliveryReport() {
       '</div></div>';
     await sendBrevoEmail({ email: process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com', name: '9amLeads Admin' }, '9amLeads morning report — ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + (rShort.length ? ' · ' + rShort.length + ' need(s) attention' : ' · all ready'), html);
     // also update admin metrics so the dashboard preview reflects the final state.
-    try { var _mDb = getDb(); if (!_mDb.last_delivery_report) _mDb.last_delivery_report = {}; _mDb.last_delivery_report[todayR] = { at: new Date().toISOString(), customers: rRows.length, ready: rRows.filter(function(x){ return x.ok; }).length, short: rShort.length, short_customers: rShort }; saveDb(); } catch(me) {}
+    try { var _mDb = getDb(); if (!_mDb.last_delivery_report) _mDb.last_delivery_report = {}; _mDb.last_delivery_report[todayR] = { at: new Date().toISOString(), status: 'sent', customers: rRows.length, ready: rRows.filter(function(x){ return x.ok; }).length, short: rShort.length, short_customers: rShort }; saveDb(); } catch(me) {}
     console.log('[07:00 REPORT] sent — ' + rRows.length + ' customers, ' + rShort.length + ' short');
   } catch(e) { console.log('[07:00 REPORT] error:', e.message); }
 }
