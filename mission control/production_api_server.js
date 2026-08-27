@@ -3572,7 +3572,14 @@ app.use('/planningleads', express.static(path.join(ROOT_DIR, 'planningleads')));
 app.use('/tenders', express.static(path.join(ROOT_DIR, 'tenders')));
 app.use('/assets', express.static(path.join(ROOT_DIR, 'assets')));
 app.use('/css', express.static(path.join(ROOT_DIR, 'css')));
-app.use(express.static(FRONTEND_DIR, { index: 'index.html', setHeaders: function(res, path) { if (/\.html?$/.test(path)) res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate'); } }));
+app.use(express.static(FRONTEND_DIR, { index: 'index.html', setHeaders: function(res, path) {
+  if (/\.html?$/.test(path)) res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  // Long browser cache for static media (video/images) so repeat visitors DON'T
+  // re-download them from Render every visit — the homepage hero video (7.9MB) was
+  // being fetched each page load, burning the 25GB/month bandwidth cap. One month
+  // cache = one download per visitor, then served from their browser.
+  if (/\.(mp4|webm|png|jpg|jpeg|webp|gif|svg|css|js|woff2?|ttf)$/i.test(path)) res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
+  } }));
 
 // ===== DYNAMIC SITEMAP ===== (serves fresh sitemap with all blog posts; must be before SPA fallback)
 app.get('/sitemap.xml', (req, res) => {
