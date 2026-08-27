@@ -38,6 +38,7 @@ var state = {
 };
 
 var recentCompanies = [];
+var eventTypeLog = []; // diagnostic: last event types seen (kind:type)
 
 function loadTimepoint() {
   try { return JSON.parse(fs.readFileSync(TIMEPOINT_FILE, 'utf-8')); } catch(e) { return null; }
@@ -159,6 +160,8 @@ function connect(apiKey) {
           if (state.eventsToday <= 30 || (state.eventsToday % 50 === 0)) {
             console.log('[STREAM-DIAG] kind=' + event.resource_kind + ' type=' + (event.event ? event.event.type : 'none') + ' id=' + event.resource_id + ' t=' + (event.event ? event.event.timepoint : ''));
           }
+          eventTypeLog.push((event.resource_kind || '?') + ':' + (event.event ? event.event.type : 'none'));
+          if (eventTypeLog.length > 20) eventTypeLog.shift();
 
           var companyNumber = event.resource_id;
           var tp = event.event ? event.event.timepoint : null;
@@ -300,7 +303,8 @@ function getStatus() {
     reconnects: state.reconnects,
     lag: state.lag,
     lastError: state.lastError,
-    workerActive: state.workerActive
+    workerActive: state.workerActive,
+    recentEventTypes: eventTypeLog.slice(-10)
   };
 }
 
