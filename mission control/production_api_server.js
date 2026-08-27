@@ -7582,10 +7582,11 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
   // never be offered a Glasgow/Edinburgh/Dundee property. Anything beyond the cap is
   // dropped entirely (the customer is shown fewer leads rather than useless far ones).
   // FINAL VALIDATION (moving) — MIRRORS THE DELIVERY EXACTLY: the 9am delivery runs
-  // validateMovingLead + a doorless check (hasPremiseNumber) on every lead and DROPS
-  // any that fail. The preview MUST apply the same checks so the previewed count
-  // EXACTLY matches what will actually be delivered — no over-reporting.
+  // validateMovingLead + a doorless check (hasPremiseNumber) + property-identity dedup
+  // on every lead and DROPS any that fail. The preview MUST apply the same checks so
+  // the previewed count EXACTLY matches what will actually be delivered — no over-reporting.
   if (cust.product === 'moving') {
+    var _prevSeen = {};
     out = out.filter(function(o) {
       if (!o.in_area && !isFallbackLeadAcceptable(o.postcode || '', areas)) return false;
       var _vd = { fullAddress: o.address || '', address: o.address || '', postcode: o.postcode || '', url: o.url || '' };
@@ -7595,6 +7596,8 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
       // (Uses hasUsablePremiseAddress directly — it's module-level; the delivery's
       // local hasPremiseNumber is a thin wrapper around it.)
       try { if (!hasUsablePremiseAddress(o.address || '', o.postcode || '')) return false; } catch(e) { return false; }
+      // Property-identity dedup — the delivery drops duplicate properties.
+      try { var _k = propertyIdentityKey(o.address || '', o.postcode || ''); if (_k && _prevSeen[_k]) return false; if (_k) _prevSeen[_k] = 1; } catch(e) {}
       return true;
     });
   }
