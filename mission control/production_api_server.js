@@ -3649,6 +3649,9 @@ app.get(/^\/(?!api\/).*$/, (req, res) => {
       // Block serving sensitive files
       const ext = path.extname(p).toLowerCase();
       if (ext === '.json' || ext === '.md' || ext === '.env' || ext === '.py' || path.basename(p) === 'node_modules') continue;
+      // Long browser cache for static media (video/images/css/js) served via the SPA
+      // fallback — repeat visitors don't re-download the 7.9MB hero video every visit.
+      if (/\.(mp4|webm|png|jpg|jpeg|webp|gif|svg|css|js|woff2?|ttf)$/i.test(p)) res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
       res.sendFile(p); return;
     }
   }
