@@ -39,17 +39,7 @@
 
 # Legacy single-product sub-sites now live under the main 9amLeads brand
 [[redirects]]
-  from = "/movingleadsdaily"
-  to = "/who-we-serve/"
-  status = 301
-  force = true
-[[redirects]]
   from = "/movingleadsdaily/*"
-  to = "/who-we-serve/"
-  status = 301
-  force = true
-[[redirects]]
-  from = "/probateleads"
   to = "/who-we-serve/"
   status = 301
   force = true
@@ -59,27 +49,12 @@
   status = 301
   force = true
 [[redirects]]
-  from = "/newbusinessalert"
-  to = "/who-we-serve/"
-  status = 301
-  force = true
-[[redirects]]
   from = "/newbusinessalert/*"
   to = "/who-we-serve/"
   status = 301
   force = true
 [[redirects]]
-  from = "/planningleads"
-  to = "/who-we-serve/"
-  status = 301
-  force = true
-[[redirects]]
   from = "/planningleads/*"
-  to = "/who-we-serve/"
-  status = 301
-  force = true
-[[redirects]]
-  from = "/tenders"
   to = "/who-we-serve/"
   status = 301
   force = true
