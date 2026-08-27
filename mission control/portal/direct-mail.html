@@ -1166,6 +1166,33 @@ function flyerEditorReset(){
   _flyerEditor.rx=(w-_flyerEditor.rw)/2; _flyerEditor.ry=(h-_flyerEditor.rh)/2;
   flyerEditorDraw();
 }
+// One-click auto-fit: sizes the flyer so it fills the page correctly with NO
+// content cut off. Front fills the whole page; the back fills the area below the
+// white address zone (so the design never overlaps the recipient's address box).
+function flyerEditorAutoFit(){
+  var ed=_flyerEditor;
+  if(!ed.img || !ed.loaded) return;
+  var w=ed.pageW, h=ed.pageH;
+  var iw=ed.img.width, ih=ed.img.height;
+  var targetW=w, targetH=h;
+  if(ed.matType==='flyer_back'){
+    // Back: usable area starts below the address zone (28%) and runs to the bottom.
+    var zonePx=ed.zoneH||Math.round(h*0.28);
+    targetH = h - zonePx;
+  }
+  // "Contain" fit: the whole design fits inside the target area (nothing cropped),
+  // then center it. For the back we centre within the usable area below the zone.
+  var baseF=Math.min(targetW/iw, targetH/ih);
+  ed.rw=Math.round(iw*baseF); ed.rh=Math.round(ih*baseF);
+  if(ed.matType==='flyer_back'){
+    ed.rx=Math.round((w-ed.rw)/2);
+    ed.ry=Math.round(zonePx + (targetH-ed.rh)/2);
+  } else {
+    ed.rx=Math.round((w-ed.rw)/2);
+    ed.ry=Math.round((h-ed.rh)/2);
+  }
+  flyerEditorDraw();
+}
 function flyerEditorPoint(cx,cy){
   var c=_flyerEditor.canvas, r=c.getBoundingClientRect();
   return { x:(cx-r.left)*(c.width/r.width), y:(cy-r.top)*(c.height/r.height) };
@@ -1266,27 +1293,33 @@ function flyerEditorDraw(){
     var pts=[{x:dx,y:dy},{x:dx+dw,y:dy},{x:dx,y:dy+dh},{x:dx+dw,y:dy+dh},{x:dx+dw/2,y:dy},{x:dx+dw/2,y:dy+dh},{x:dx,y:dy+dh/2},{x:dx+dw,y:dy+dh/2}];
     ctx.fillStyle='#0369a1'; ctx.strokeStyle='#0c4a6e'; ctx.lineWidth=2;
     pts.forEach(function(p){ ctx.beginPath(); ctx.rect(p.x-hw/2,p.y-hw/2,hw,hw); ctx.fill(); ctx.stroke(); });
-    // GREEN "IN LINE" indicator: flyer is correctly positioned when it fills the
-    // whole page (front: all 4 edges; back: below the address zone, full width).
-    // Shows a solid green line around the design + a status label under the canvas.
+    // GREEN "IN LINE" indicator at the BLEED LINE (page edge). The customer sees
+    // a green line around the page when the flyer fills it correctly, so they
+    // know it will print edge-to-edge with nothing trimmed and nothing cut off.
     var pageX1=ox+s5, pageY1=oy+s5, pageX2=ox+pw-s5, pageY2=oy+ph-s5;
     var zoneBottom = (ed.matType==='flyer_back') ? oy+ed.zoneH : oy;
     var touchesTop    = (dy+s5) <= zoneBottom + s5 && ed.matType!=='flyer_back';
     var touchesBottom = (dy+dh+s5) >= pageY2;
     var touchesLeft   = (dx+s5) <= pageX1;
     var touchesRight  = (dx+dw+s5) >= pageX2;
-    // On the back the design must start BELOW the address zone and reach the bottom.
     var backOK = (ed.matType==='flyer_back') ? (dy >= zoneBottom - s5 && touchesBottom) : true;
     var inLine = touchesLeft && touchesRight && touchesBottom && (ed.matType==='flyer_back' ? backOK : touchesTop);
     if(inLine){
-      ctx.strokeStyle='#22c55e'; ctx.lineWidth=3; ctx.setLineDash([]);
-      ctx.strokeRect(dx,dy,dw,dh);
-      ctx.fillStyle='#22c55e'; ctx.font='bold 13px Arial'; ctx.textAlign='center';
-      ctx.fillText('✓ IN LINE — fills the page correctly', ox+pw/2, oy-10);
+      // GREEN line along the bleed edge (the outer print boundary)
+      ctx.strokeStyle='#22c55e'; ctx.lineWidth=4; ctx.setLineDash([]);
+      ctx.strokeRect(ox,oy,pw,ph);
+      // inner dashed green (safe-area guide tint)
+      ctx.strokeStyle='rgba(34,197,94,0.5)'; ctx.setLineDash([4,4]); ctx.lineWidth=1;
+      ctx.strokeRect(ox+s5,oy+s5,pw-s5*2,ph-s5*2); ctx.setLineDash([]);
+      ctx.fillStyle='#22c55e'; ctx.font='bold 14px Arial'; ctx.textAlign='center';
+      ctx.fillText('✓ IN LINE — nothing cut off', ox+pw/2, oy-14);
       ctx.textAlign='left';
     } else {
-      ctx.strokeStyle='#ef4444'; ctx.lineWidth=2; ctx.setLineDash([4,4]);
-      ctx.strokeRect(dx,dy,dw,dh); ctx.setLineDash([]);
+      ctx.strokeStyle='#ef4444'; ctx.lineWidth=3; ctx.setLineDash([6,4]);
+      ctx.strokeRect(ox,oy,pw,ph); ctx.setLineDash([]);
+      ctx.fillStyle='#ef4444'; ctx.font='bold 12px Arial'; ctx.textAlign='center';
+      ctx.fillText('⚠ Adjust — flyer doesn\'t fill the page yet', ox+pw/2, oy-14);
+      ctx.textAlign='left';
     }
   }
   // ADDRESS ZONE (BACK only: top 28%, labelled in mm)
@@ -1358,8 +1391,11 @@ function saveFlyerEditor(){
     <button onclick="closeFlyerEditor()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#64748b">✕</button>
   </div>
   <p style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px">
-    <b>You control the final print.</b> <b style="color:#1d4ed8">Keep your flyer INSIDE the blue dashed lines</b> — that's the safe area, so nothing important (logos, phone numbers, your call to action) gets trimmed or covered at the edges. <b>Drag</b> the image to move it, <b>drag any blue square (handle)</b> to stretch it up/down or left/right, and use the zoom buttons / scroll wheel to scale. Position your design until it fills the page the way you want. The <b>blue box at the top of the Back</b> is the white address area where Royal Mail prints the recipient's address — keep it plain and don't drag your design into it. When it looks right, click <b>Save</b>.
+    <b>You control the final print.</b> <b style="color:#16a34a">When the GREEN line appears around the page, your flyer is perfectly fitted</b> — nothing gets cut off and it prints edge-to-edge. <b style="color:#1d4ed8">Keep important content inside the blue dashed lines</b> (the safe area). Easiest: click <b>"Fit to Page (one click)"</b> below and it sizes the flyer for you. You can then <b>drag</b> to nudge it, <b>drag a blue square</b> to stretch, or use <b>+ / −</b> to scale. On the <b>Back</b>, the design stays below the blue address box (the white area for the recipient's address). When it looks right, click <b>Save</b>.
   </p>
+  <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:9px 12px;margin-bottom:12px;font-size:12px;color:#166534;line-height:1.6">
+    <b><i class="fas fa-circle-check" style="color:#16a34a;margin-right:4px"></i>Green line = ready.</b> Once the flyer fills the page, a <b>green line</b> appears around the print area and the label says <b>"✓ IN LINE — nothing cut off"</b>. If it shows <b>red</b>, click <b>Fit to Page</b> to resize it automatically, or drag the handles until it turns green.
+  </div>
   <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:9px 12px;margin-bottom:12px;font-size:12px;color:#1e3a8a;line-height:1.6">
     <b><i class="fas fa-bullseye" style="color:#2563eb;margin-right:4px"></i>Blue lines = your safe area.</b> Keep all important content within the <b>blue dashed border</b> around the page. Content outside it may be trimmed or sit too close to the edge to print cleanly. If your flyer is too small or too large, use the handles or <b>Reset View</b> to adjust it until it fits nicely inside the blue lines.
   </div>
@@ -1371,6 +1407,10 @@ function saveFlyerEditor(){
     <span style="font-size:12px;color:var(--text2)" id="flyer-editor-zoomlabel">100%</span>
     <button class="btn btn-outline btn-sm" onclick="flyerEditorZoom(1)"><i class="fas fa-plus"></i></button>
     <button class="btn btn-outline btn-sm" onclick="flyerEditorReset()" style="margin-left:8px"><i class="fas fa-sync-alt"></i> Reset View</button>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center;justify-content:center;margin-top:10px;flex-wrap:wrap;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:8px 12px">
+    <button class="btn btn-primary btn-sm" onclick="flyerEditorAutoFit()" style="background:linear-gradient(135deg,#16a34a,#15803d);border:none;color:#fff;font-weight:800"><i class="fas fa-arrows-to-circle"></i> Fit to Page (one click)</button>
+    <div style="font-size:11px;color:#15803d;line-height:1.5">Automatically sizes your flyer to fit the whole page — nothing gets cut off, and it sits right up to the green line.</div>
   </div>
   <div style="display:flex;gap:10px;align-items:center;justify-content:center;margin-top:12px;flex-wrap:wrap;background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:8px 10px">
     <div style="font-size:11px;color:var(--text2);font-weight:700;letter-spacing:.3px">POSITION (mm)</div>
