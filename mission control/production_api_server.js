@@ -12532,6 +12532,43 @@ app.post('/api/admin/trial-charge/run', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// // // TRIAL GOODWILL EMAIL (one-off gesture): explains the extension. Sends an 8am
+// email to the customers whose trials we extended after a technical issue, so
+// they know their trial was continued as a goodwill gesture and their 9am
+// deliveries are still coming. Runs Mon-Fri at 08:00 UK, once per customer/day.
+cron.schedule('0 8 * * 1-5', async () => {
+  try {
+    var gwFile = path.join(DATA_DIR, 'goodwill-email-log.json');
+    var gwLog = {};
+    try { gwLog = JSON.parse(fs.readFileSync(gwFile, 'utf-8')); } catch(e) {}
+    var todayGw = new Date().toISOString().split('T')[0];
+    var gwCandidates = [
+      { email: 'info@afsremovals.com', name: 'AFS Removals' },
+      { email: 'oathxxx@gmail.com', name: 'there' },
+      { email: 'abbashussnain144@gmail.com', name: 'there' }
+    ];
+    for (var gi = 0; gi < gwCandidates.length; gi++) {
+      var gc = gwCandidates[gi];
+      if (gwLog[gc.email] === todayGw) continue;
+      var html = '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px">'
+        + '<div style="font-size:20px;font-weight:800;color:#0f172a;margin-bottom:8px">Good news from 9amLeads</div>'
+        + '<p style="font-size:14px;color:#334155;line-height:1.7">Hi ' + (gc.name || 'there') + ',</p>'
+        + '<p style="font-size:14px;color:#334155;line-height:1.7">We hit a small technical issue with a few accounts over the past day, and as a <b>gesture of goodwill</b> we have <b>extended your free trial</b> so there is no interruption to your leads.</p>'
+        + '<p style="font-size:14px;color:#334155;line-height:1.7">Your fresh 9am delivery is still scheduled as normal for this morning, and you will keep receiving your daily leads on us.</p>'
+        + '<p style="font-size:14px;color:#334155;line-height:1.7">No action needed — just log in to your dashboard at 9am as usual.</p>'
+        + '<p style="font-size:14px;color:#334155;line-height:1.7">If anything ever looks off, reply to this email and we will sort it right away.</p>'
+        + '<p style="font-size:13px;color:#64748b;line-height:1.6;margin-top:16px">Kind regards,<br>The 9amLeads team<br><a href="https://9amleads.com" style="color:#0ea5e9">9amleads.com</a></p>'
+        + '</div>';
+      try {
+        await sendBrevoEmail({ email: gc.email, name: gc.name }, 'Your 9amLeads trial has been extended', html);
+        gwLog[gc.email] = todayGw;
+        console.log('[GOODWILL] Sent trial-extension email to ' + gc.email);
+      } catch(ge) { console.log('[GOODWILL] Failed to email ' + gc.email + ': ' + ge.message); }
+    }
+    fs.writeFileSync(gwFile, JSON.stringify(gwLog));
+  } catch(gwe) { console.log('[GOODWILL] cron error:', gwe.message); }
+});
+
 // REPEAT MAILING CRON — dispatches scheduled follow-up campaigns (paid repeat
 // series) to Stannp on their due date. Runs daily at 07:00 UTC (08:00 UK).
 cron.schedule('0 7 * * *', async () => {
