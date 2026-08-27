@@ -382,9 +382,9 @@ footer a:hover{color:var(--text)}
 
 <!-- HERO VIDEO -->
 <div style="max-width:720px;margin:24px auto 0;border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.5)">
-<video controls muted playsinline preload="metadata" poster="" style="width:100%;display:block;background:#0f172a">
+<video controls muted autoplay playsinline preload="metadata" poster="" style="width:100%;display:block;background:#0f172a">
 <source src="/hero-video.mp4" type="video/mp4">
-</video>
+</video><script>try{var _hv=document.querySelector("video");if(_hv){_hv.muted=true;var _p=_hv.play();if(_p&&_p.catch)_p.catch(function(){});}}catch(e){}document.addEventListener("scroll",function(){var _v2=document.querySelector("video");if(_v2&&_v2.paused){try{_v2.muted=true;_v2.play();}catch(e){}}},{once:true});</script>
 </div>
 
 <div class="hero-stats">
@@ -1775,4 +1775,7 @@ document.addEventListener('DOMContentLoaded', function(){
 </div>
 <style>@media(max-width:768px){.msticky{display:block!important}.hero{padding-bottom:80px!important}}</style>
 </body></html>
+
+
+
 
