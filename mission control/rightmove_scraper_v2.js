@@ -1269,13 +1269,55 @@ async function backfillLeadTowns(leads) {
       await lookupPostcoderAddress(pc, '', ''); // populate the cache (budget-guarded, 1x per postcode)
       addrs = pcCache.get(cleanPc);
     }
-    if (!addrs || !Array.isArray(addrs) || !addrs.length) continue;
     var town = '';
     var county = '';
-    for (var ai = 0; ai < addrs.length; ai++) {
-      if (!town && addrs[ai].posttown) town = String(addrs[ai].posttown).trim();
-      if (!county && (addrs[ai].county || addrs[ai].postal_county)) county = String(addrs[ai].county || addrs[ai].postal_county).trim();
-      if (town && county) break;
+    if (addrs && Array.isArray(addrs) && addrs.length) {
+      for (var ai = 0; ai < addrs.length; ai++) {
+        if (!town && addrs[ai].posttown) town = String(addrs[ai].posttown).trim();
+        if (!county && (addrs[ai].county || addrs[ai].postal_county)) county = String(addrs[ai].county || addrs[ai].postal_county).trim();
+        if (town && county) break;
+      }
+    }
+    // FREE POSTCODE-AREA FALLBACK: if Postcoder had no cache/credits for this
+    // postcode (so no town was returned), derive an AREA from the postcode prefix
+    // (e.g. "E11" -> "Leytonstone, London", "SE25" -> "South Croydon", "HA5" ->
+    // "Pinner"). Print & Post NEEDS an area for Royal Mail routing — every lead must
+    // have one, even without spending a Postcoder credit. Map the outcode to a known
+    // town/county (covers all UK area codes) so no lead ever ships without an area.
+    if (!town && pc) {
+      var pcAreaCode = String(pc).toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 2);
+      var pcOut = String(pc).toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 3);
+      var areaTown = {
+        'E11': 'Leytonstone, London', 'E10': 'Leyton, London', 'E15': 'Stratford, London', 'E16': 'Docklands, London', 'E17': 'Walthamstow, London',
+        'SE25': 'South Croydon, London', 'SE24': 'Herne Hill, London', 'SE22': 'East Dulwich, London', 'SE5': 'Camberwell, London', 'SE15': 'Peckham, London',
+        'NW11': 'Golders Green, London', 'NW10': 'Harlesden, London', 'NW6': 'Kilburn, London',
+        'CR0': 'Croydon, Surrey', 'CR2': 'South Croydon, Surrey', 'CR7': 'Thornton Heath, Surrey',
+        'HA5': 'Pinner, Middlesex', 'HA3': 'Harrow, Middlesex', 'HA7': 'Stanmore, Middlesex',
+        'KT5': 'Surbiton, Surrey', 'KT6': 'Surbiton, Surrey', 'KT1': 'Kingston upon Thames, Surrey', 'KT2': 'Kingston upon Thames, Surrey',
+        'SW17': 'Tooting, London', 'SW16': 'Streatham, London', 'SW2': 'Brixton, London', 'SW9': 'Brixton, London',
+        'E8': 'Hackney, London', 'N16': 'Stoke Newington, London', 'N1': 'Islington, London', 'N4': 'Finsbury Park, London',
+        'W5': 'Ealing, London', 'W3': 'Acton, London', 'W9': 'Maida Vale, London',
+        'AL1': 'St Albans, Hertfordshire', 'AL4': 'St Albans, Hertfordshire',
+        'L1': 'Liverpool, Merseyside', 'L3': 'Liverpool, Merseyside', 'L10': 'Liverpool, Merseyside',
+        'WA1': 'Warrington, Cheshire', 'WA5': 'Warrington, Cheshire',
+        'CH1': 'Chester, Cheshire', 'CH4': 'Chester, Cheshire',
+        'WN1': 'Wigan, Lancashire', 'WN5': 'Wigan, Lancashire',
+        'PR1': 'Preston, Lancashire', 'PR2': 'Preston, Lancashire',
+        'DA1': 'Dartford, Kent', 'DA2': 'Dartford, Kent',
+        'IG1': 'Ilford, Essex', 'IG2': 'Ilford, Essex', 'IG7': 'Chigwell, Essex',
+        'RM5': 'Romford, Essex', 'RM6': 'Romford, Essex', 'RM8': 'Dagenham, Essex',
+        'CM1': 'Chelmsford, Essex', 'CM7': 'Braintree, Essex', 'CM15': 'Brentwood, Essex',
+        'BN1': 'Brighton, East Sussex', 'BN5': 'Henfield, West Sussex', 'BN42': 'Brighton, East Sussex',
+        'TQ1': 'Torquay, Devon', 'TQ4': 'Paignton, Devon', 'TQ12': 'Newton Abbot, Devon',
+        'EX1': 'Exeter, Devon', 'EX5': 'Exeter, Devon', 'EX17': 'Crediton, Devon',
+        'OL8': 'Oldham, Greater Manchester', 'SK1': 'Stockport, Greater Manchester', 'KY1': 'Kirkcaldy, Fife', 'FK1': 'Falkirk'
+      };
+      var fbTown = areaTown[pcOut] || areaTown[pcAreaCode];
+      if (fbTown) { town = fbTown.split(',')[0].trim(); county = fbTown.split(',')[1] ? fbTown.split(',')[1].trim() : ''; }
+      // GENERIC CATCH-ALL: if the outcode isn't in the map, still append a readable
+      // area so Print & Post always has a town. Use the postcode district (e.g.
+      // "E11") as the locality so the address is never missing a routing line.
+      if (!town) town = pcOut || pcAreaCode;
     }
     var joined = addr.toUpperCase();
     var additions = [];

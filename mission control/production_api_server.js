@@ -10977,14 +10977,13 @@ var _testReportLockAt = 0;
 var __lastDeliveryFire = '';
 var __lastDeliveryDate = ''; // YYYY-MM-DD of the most recent delivery fire (daily watchdog)
 // ===== DELIVERY CRON: Mon-Fri 09:00 UK ===== (timezone: Europe/London)
-cron.schedule('58 8 * * 1-5', async () => {
+cron.schedule('0 9 * * 1-5', async () => {
   __deliveryFireCount++;
   __lastDeliveryFire = new Date().toISOString();
   __lastDeliveryDate = new Date().toISOString().split('T')[0];
-  // TIGHT 9AM DELIVERY: start at 08:58 UK so every customer's email is in their
-  // inbox AT 9:00 (the promise), not at 9:00+. The delivery takes ~1-2 min for all
-  // customers, so starting 2 minutes early means emails land at/just before 9:00.
-  console.log('[08:58 UK] Running delivery (completes by 09:00)...');
+  // EXACT 9AM DELIVERY: fire at 09:00:00 UK so leads land in the inbox AT 9am (the
+  // promise). The run processes all customers; each email goes out in order.
+  console.log('[09:00 UK] Running delivery...');
   try {
     // PARTNER COMMISSION ENGINE: run once daily (creates pending commissions for
     // qualifying affiliate/sales-partner referrals + clears approved ones).
@@ -13926,12 +13925,17 @@ _deliverDiag[cust.email].products = products;
                         custAreaHit = custAreas.some(function(a){ return extractPostcodeArea(a) === areaOfPoolLead; });
                       }
                     } else { custAreaHit = true; }
-                    // NATIONAL/CLOSEST-AREA FALLBACK for tenders/probate (national
-                    // opportunities): accept them even if no county matched (strict
-                    // county matching under-delivers). Newbusiness/planning also get
-                    // the closest-area fallback so a customer is NEVER delivered 0
-                    // just because their chosen counties had no fresh leads today.
-                    if (!custAreaHit && (r2prod === 'tenders' || r2prod === 'probate' || r2prod === 'newbusiness' || r2prod === 'planning')) custAreaHit = true;
+                    // FALLBACK for tenders (national opportunities — no location, so
+                    // accept anywhere). Probate/newbusiness/planning use the CLOSEST-AREA
+                    // fallback: accept only if the lead's postcode is within MAX_FALLBACK_KM
+                    // of a chosen area (like moving). A probate customer in Somerset must
+                    // NEVER get a Pinner (HA5, ~250km) lead just because their county had
+                    // no fresh grants — the fallback is CLOSEST areas, not national.
+                    if (!custAreaHit && r2prod === 'tenders') custAreaHit = true;
+                    if (!custAreaHit && (r2prod === 'probate' || r2prod === 'newbusiness' || r2prod === 'planning')) {
+                      var _nbPc = rl.postcode || rl.address || rl.deceasedAddress || rl.fullAddress || rl.location || rl.name || '';
+                      custAreaHit = isFallbackLeadAcceptable(_nbPc, custAreas);
+                    }
                     // MOVING CLOSEST-POSTCODE FALLBACK: when a moving customer's own
                     // areas are short, accept leads from OUTSIDE their areas (ranked by
                     // closest postcode via the sort above) so the promised count is
