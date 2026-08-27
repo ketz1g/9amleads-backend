@@ -7582,14 +7582,18 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
   // never be offered a Glasgow/Edinburgh/Dundee property. Anything beyond the cap is
   // dropped entirely (the customer is shown fewer leads rather than useless far ones).
   // FINAL VALIDATION (moving) — MIRRORS THE DELIVERY EXACTLY: the 9am delivery runs
-  // validateMovingLead on every lead and DROPS any that fail (no door number, incomplete
-  // address, missing link, etc.). The preview MUST apply the same check so the previewed
-  // count EXACTLY matches what will actually be delivered — no over-reporting.
+  // validateMovingLead + a doorless check (hasPremiseNumber) on every lead and DROPS
+  // any that fail. The preview MUST apply the same checks so the previewed count
+  // EXACTLY matches what will actually be delivered — no over-reporting.
   if (cust.product === 'moving') {
     out = out.filter(function(o) {
       if (!o.in_area && !isFallbackLeadAcceptable(o.postcode || '', areas)) return false;
       var _vd = { fullAddress: o.address || '', address: o.address || '', postcode: o.postcode || '', url: o.url || '' };
-      return validateMovingLead(_vd) === '';
+      if (validateMovingLead(_vd) !== '') return false;
+      // Doorless check — the delivery's final hard gate drops any moving lead whose
+      // address has no door/flat number or named premise. Preview must too.
+      if (!hasPremiseNumber(o.address || '', o.postcode || '')) return false;
+      return true;
     });
   }
   var fallbackCount = out.filter(function(o) { return !o.in_area; }).length;
