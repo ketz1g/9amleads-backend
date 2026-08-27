@@ -19,9 +19,10 @@ function relatedPosts(p, max) {
   var other = CURATED_POSTS.filter(function(x) { return x.slug !== p.slug && x.category !== p.category; });
   var picks = same.concat(other).slice(0, max || 3);
   if (!picks.length) return '';
-  return '<h2>Related Guides</h2>' + picks.map(function(x) {
-    return '<p style="margin:10px 0"><a href="https://9amleads.com/blog/' + x.slug + '" style="color:#0ea5e9;font-weight:600;text-decoration:none">' + esc(x.title) + '</a></p>';
-  }).join('');
+  return '<h2>Related Guides</h2><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin:18px 0">' + picks.map(function(x) {
+    var c = CAT_COLOR[x.category] || '#0ea5e9';
+    return '<a href="https://9amleads.com/blog/' + x.slug + '" style="text-decoration:none;color:inherit;border:1px solid #1a1a1a;border-radius:12px;overflow:hidden;background:rgba(255,255,255,.02);transition:border-color .2s" onmouseover="this.style.borderColor=' + "'" + c + "'" + '" onmouseout="this.style.borderColor=' + "'#1a1a1a'" + '"><img src="https://9amleads.com/blog/img/' + x.slug + '.png" alt="' + esc(x.title) + '" loading="lazy" style="width:100%;height:110px;object-fit:cover;border-radius:0;display:block"><div style="padding:12px;font-size:13px;font-weight:600;color:#e2e8f0;line-height:1.4">' + esc(x.title) + '</div></a>';
+  }).join('') + '</div>';
 }
 
 function buildPostHTML(p) {
@@ -34,7 +35,7 @@ function buildPostHTML(p) {
   var body = '';
   for (var i = 0; i < p.sections.length; i++) {
     var s = p.sections[i];
-    body += '<h2>' + esc(s.h) + '</h2>';
+    body += '<div class="section-block"><h2 style="margin-top:0">' + esc(s.h) + '</h2>';
     for (var j = 0; j < s.body.length; j++) {
       var part = s.body[j];
       if (part.ul) {
@@ -47,11 +48,12 @@ function buildPostHTML(p) {
         body += '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:14px">' + rows + '</table></div>';
       } else if (part.cta) {
         var href = part.href || pageUrl;
-        body += '<p style="margin:28px 0;text-align:center"><a href="' + href + '" style="display:inline-block;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:700;box-shadow:0 4px 20px rgba(14,165,233,.3)">' + esc(part.cta) + '</a></p>';
+        body += '<p style="margin:22px 0;text-align:center"><a href="' + href + '" style="display:inline-block;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:700;box-shadow:0 4px 20px rgba(14,165,233,.3)">' + esc(part.cta) + '</a></p>';
       } else {
         body += '<p>' + part + '</p>';
       }
     }
+    body += '</div>';
   }
 
   var faqJson = '';
@@ -101,14 +103,19 @@ function buildPostHTML(p) {
     '<link rel="canonical" href="' + canonical + '">' +
     articleJson + faqJson +
     '<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">' +
-    '<style>body{font-family:Inter,sans-serif;background:#000;color:#ccc;max-width:800px;margin:0 auto;padding:24px;line-height:1.8}h1,h2,h3{font-family:Outfit,sans-serif;color:#fff}h1{font-size:30px;font-weight:800;line-height:1.25}h2{font-size:22px;font-weight:700;margin-top:36px}p{color:#ccc;font-size:16px}a{color:#0ea5e9}ul{color:#ccc}table{border:1px solid #262626}th,td{border:1px solid #262626;padding:10px;text-align:left}th{background:#0d0d0d;color:#fff}strong{color:#fff}img{max-width:100%;height:auto;border-radius:12px}</style>' +
-    '</head><body><h1>' + esc(p.title) + '</h1>' +
-    '<p style="color:#888;font-size:14px;margin-top:-8px">' + esc(p.categoryLabel || '') + ' &middot; ' + esc(p.date) + ' &middot; ' + p.reading_time + '</p>' +
+    '<style>body{font-family:Inter,sans-serif;background:#000;color:#ccc;margin:0;padding:0;line-height:1.8;overflow-x:hidden}h1,h2,h3{font-family:Outfit,sans-serif;color:#fff;letter-spacing:-.3px}h1{font-size:34px;font-weight:800;line-height:1.2;margin:0 0 12px}h2{font-size:24px;font-weight:700;margin-top:44px}h3{font-size:18px}p{color:#cbd5e1;font-size:16px}a{color:#0ea5e9}.wrap{max-width:820px;margin:0 auto;padding:0 24px 60px}.topnav{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 24px;border-bottom:1px solid #1a1a1a;background:#0a0a0a;position:sticky;top:0;z-index:50}.brand{display:flex;align-items:center;gap:8px;font-family:Outfit,sans-serif;font-weight:800;font-size:18px;color:#fff;text-decoration:none}.brand .mark{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,#0ea5e9,#2563eb);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff}.backlink{color:#94a3b8;text-decoration:none;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}.backlink:hover{color:#fff}.heroimg{width:100%;height:auto;border-radius:16px;border:1px solid #1a1a1a;display:block;margin:24px 0 8px}.meta{color:#888;font-size:14px;margin:14px 0 0}.section-block{border:1px solid #1a1a1a;border-radius:14px;padding:22px 24px;margin:26px 0;background:rgba(255,255,255,.02)}ul{color:#cbd5e1}table{border:1px solid #262626}th,td{border:1px solid #262626;padding:10px;text-align:left}th{background:#0d0d0d;color:#fff}strong{color:#fff}img{max-width:100%;height:auto;border-radius:12px}@media(max-width:600px){h1{font-size:26px}h2{font-size:20px}.wrap{padding:0 16px 40px}}</style>' +
+    '</head><body>' +
+    '<div class="topnav"><a class="brand" href="https://9amleads.com"><span class="mark">9</span>9am<span style="color:#0ea5e9">Leads</span></a><a class="backlink" href="https://9amleads.com/blog"><i style="font-style:normal;font-size:12px">&#8592;</i> All Guides</a></div>' +
+    '<div class="wrap">' +
+    '<img class="heroimg" src="' + heroImg + '" alt="' + esc(p.title) + '" width="1200" height="630" loading="eager">' +
+    '<p class="meta" style="text-transform:uppercase;letter-spacing:1px;font-size:12px;font-weight:700;color:' + color + '">' + esc(p.categoryLabel || '') + '</p>' +
+    '<h1>' + esc(p.title) + '</h1>' +
+    '<p style="color:#888;font-size:14px;margin-top:-6px">' + esc(p.date) + ' &middot; ' + p.reading_time + '</p>' +
     '<p style="font-size:17px;color:#ddd">' + esc(p.description) + '</p>' +
-    '<img src="' + heroImg + '" alt="' + esc(p.title) + '" width="1200" height="630" loading="lazy" style="width:100%;height:auto;border-radius:14px;margin:8px 0 20px">' +
     body + finalCta + related + faqSection +
-    '<hr style="border:none;border-top:1px solid #222;margin:36px 0">' +
-    '<div style="font-size:13px;color:#666"><strong style="color:#aaa">About 9amLeads</strong> — We deliver fresh, exclusive UK business leads every morning at 9am across moving, probate, new business, planning permission and public sector tender opportunities. <a href="https://9amleads.com" style="color:#0ea5e9">Visit 9amLeads.com</a> to start your free 7-day trial. <a href="https://9amleads.com/pricing/" style="color:#0ea5e9">See pricing</a> · <a href="https://9amleads.com/how-it-works/" style="color:#0ea5e9">How it works</a>.</div>' +
+    '<hr style="border:none;border-top:1px solid #222;margin:40px 0">' +
+    '<div style="font-size:13px;color:#666"><strong style="color:#aaa">About 9amLeads</strong> — We deliver fresh UK business leads every morning at 9am across moving, probate, new business, planning permission and public sector tender opportunities. <a href="https://9amleads.com" style="color:#0ea5e9">Visit 9amLeads.com</a> to start your free 7-day trial. <a href="https://9amleads.com/pricing/" style="color:#0ea5e9">See pricing</a> · <a href="https://9amleads.com/how-it-works/" style="color:#0ea5e9">How it works</a>.</div>' +
+    '</div>' +
     '</body></html>';
 }
 
@@ -866,84 +873,90 @@ var CURATED_POSTS = [
       ]}
     ]
   },
-  {
+    {
     slug: 'removals-quote-cost-uk',
-    title: 'How Much Does a Removals Quote Cost in the UK? A 2026 Price Guide',
-    description: 'What UK removal companies actually charge in 2026 — price ranges by property size and distance, what the quote includes, the extras that surprise people, and how to get a fair price.',
+    title: 'Removal Quote Benchmarks: How to Price Moving Leads and Win the Job',
+    description: 'The UK market-rate benchmarks for removal quotes by property size and distance, and how to use them to price moving leads fast, win the job and protect your margin.',
     category: 'moving', product_name: 'Moving Leads', categoryLabel: 'Moving Leads',
-    keywords: ['how much do removals cost UK', 'removal quote price', 'removal company prices', 'cost of moving house UK', 'removals price guide'],
+    keywords: ['removal quote benchmarks', 'price moving leads', 'removal company pricing', 'UK removal rates', 'win removal jobs'],
     date: '2026-09-05', reading_time: '8 min read',
     faqs: [
-      { q: 'How much does a local house move cost in the UK?', a: 'For a typical 3-bedroom house moved within the same area, expect roughly £450–£950 in 2026. A one-bed flat is usually £200–£500, and a four-bed house £700–£1,500. London and the South East sit at the top of each range.' },
-      { q: 'Why are removals quotes so different between companies?', a: 'Quotes differ because the inputs differ: crew size, van size, travel distance, packing materials, parking and access, and insurance levels. A company quoting significantly lower may be excluding things like VAT, parking permits or insurance — always compare what is included, not just the number.' },
-      { q: 'What adds extra to a removal quote?', a: 'Common extras include parking permits, meter feeding, long carrying distances, stairs, packing materials and packing/unpacking services, disconnecting appliances, and short-notice or weekend moves. Ask for a written list of what is and is not included.' },
-      { q: 'How do I get an accurate removal quote?', a: 'Give the company an accurate picture of the property — number of bedrooms, amount of furniture, access constraints and the move date. A video walkthrough or photos let a good company quote accurately without an in-person visit.' }
+      { q: 'What should I quote for a 3-bedroom house move?', a: 'The UK benchmark for a local 3-bed house move is roughly £450 to £950 in 2026. Your quote should sit within this range unless access, stairs, parking or distance justify more. Quoting within the benchmark range means homeowners won\'t dismiss you before you have a chance to sell your value.' },
+      { q: 'Why are removal quotes so different between companies?', a: 'Because the inputs differ: crew size, van size, travel distance, packing materials, parking and access, and insurance levels. When you see a competitor quoting far lower, they are usually covering less — fewer crew, no VAT, no permits. Benchmark against scope, not just the headline number.' },
+      { q: 'How do I price a moving lead quickly?', a: 'Build a pricing matrix by property size and distance so you can quote a fresh moving lead in minutes. Add extras (parking permits, packing, stairs, disconnection) as line items. Speed matters: the first removal company to quote a moving lead usually wins it.' },
+      { q: 'How do I win moving leads without slashing my price?', a: 'Quote within benchmark range, respond fast, and sell the difference: guaranteed crew, itemised scope, insurance, and clear communication. Homeowners getting three similar-priced quotes usually pick the most professional and responsive company, not the cheapest.' }
     ],
     sections: [
-      { h: 'What the market really charges in 2026', body: [
-        'Removal pricing in the UK is driven by property size, distance and time of year, and the ranges are fairly predictable. Use the table below as a starting point, then remember that London and the South East sit at the top of every range while northern regions sit at the bottom.',
+      { h: 'Know the market before you quote', body: [
+        'When a fresh moving lead lands, the homeowner is usually collecting two or three quotes. If yours is wildly outside the market range, you are out before you have a chance to explain why. Knowing the 2026 UK benchmarks lets you price every moving lead fast and credibly.',
         { table: [['Move type', 'Typical 2026 price'], ['1-bed flat, local move', '£200 – £500'], ['2-bed house, local move', '£350 – £700'], ['3-bed house, local move', '£450 – £950'], ['4-bed house, local move', '£700 – £1,500'], ['3-bed house, long-distance', '£1,000 – £1,800'], ['Packing service (per crew)', '£200 – £400 extra']] },
-        'These are guide prices for a midweek move. Fridays, weekends and the summer peak season command a premium, and demand for short-notice dates can push prices up.',
-        { cta: 'See what moving leads could bring your removal business — start your free trial.' }
-      ]},
-      { h: 'Why no two quotes are the same', body: [
-        'A removal quote is built from the same inputs every time: crew hours, van size, mileage, materials and overheads. But companies estimate them differently. One firm assumes a two-man crew for a full day; another quotes a three-man crew for half a day. One includes parking permits and VAT; another adds them later.',
-        'When quotes differ by hundreds of pounds, the difference is almost always scope, not greed. Compare line by line: crew size, hours, what is packed, what is covered, and what happens if the move overruns.',
-        { ul: ['Number of crew and vans included', 'Hours of work covered before overtime', 'Packing materials and labour included', 'Parking permits, fees and VAT included', 'Insurance level and excess', 'Travel and mileage included', 'Policy for stairs, lifts and access'] }
-      ]},
+        'London and the South East sit at the top of each range; northern regions at the bottom. Fridays, weekends and summer peak command a premium. Use these numbers as the anchor for every quote you send.',
+        { cta: 'Get fresh moving leads in your postcode areas every morning at 9am — start your free trial.' }
+      ] },
+      { h: 'Build a pricing matrix so you can quote in minutes', body: [
+        'The removal companies that win the most moving leads are the ones that quote fastest. A pricing matrix turns a 20-minute estimate into a 2-minute one.',
+        { ul: ['Base price by property size (1-2 bed, 3 bed, 4+ bed)', 'Distance bands: local, regional, long-distance, international', 'Crew and van configuration per band', 'Standard extras list with prices (packing, permits, stairs)', 'Peak-season and weekend uplift', 'Minimum job price to protect margin'] },
+        'With a matrix, every fresh moving lead gets a credible, consistent quote that is within market range and profitable — and it goes out the same day.',
+        { cta: 'See how moving leads fit your quote pipeline — start your free trial.' }
+      ] },
       { h: 'The extras that catch people out', body: [
-        'The biggest source of quoted-vs-actual pain is extras that were never mentioned. Parking permits for the van, meter feeding, carrying furniture from a third-floor flat with no lift, packing materials, and disconnecting appliances can each add £50–£200.',
-        'Before you sign, ask for everything that could add a pound to be listed in writing. A reputable company itemises these upfront; a vague quote is a red flag that extras will appear later.',
-        { cta: 'Learn how removal companies price winning quotes — start your free trial.' }
-      ]},
-      { h: 'How to get an accurate quote in one call', body: [
-        'An accurate quote starts with accurate information. Prepare: number of bedrooms and rooms, approximate furniture, any large items (pianos, hot tubs, safes), access details (parking, stairs, lift), the move date, and the distance. A short video walkthrough lets a good company quote confidently without a visit.',
-        'Then compare apples with apples — ask each company for the same scope in writing. The goal is not the lowest number; it is a price you can rely on on the day.'
-      ]},
-      { h: 'When to book to get the best price', body: [
-        'Midweek moves outside the school holidays and summer peak are cheaper and easier to book. If you can move on a Tuesday or Wednesday in late autumn or winter, you will pay less and have more availability. For peak dates, book four to six weeks ahead and lock in the price.',
-        'A written quote that fixes the price and scope — signed before the day — protects you from surprises and protects the company from scope creep. That is what a fair removals price looks like on both sides.'
-      ]}
+        'The biggest source of quoted-vs-actual pain is extras that were never itemised. Parking permits, meter feeding, carrying from a third-floor flat with no lift, packing materials, and disconnecting appliances each add £50 to £200.',
+        'When you list these as clear line items on every quote, two things happen: the homeowner understands the true scope, and you stop absorbing costs that should be charged. An itemised quote also looks more professional than a vague one.',
+        { cta: 'Learn how removal companies win with moving leads — start your free trial.' }
+      ] },
+      { h: 'Quote moving leads before your competitors', body: [
+        'A moving lead is most valuable in the first few hours. The homeowner is actively comparing companies, and the first firm to send a warm, itemised, on-market quote usually controls the conversation. Later callers end up competing on price.',
+        'Make a fast quote your standard operating procedure: alert on the 9am delivery, review the property details, apply your matrix, and send the quote the same morning. Speed is a competitive weapon you control.',
+        { cta: 'Delivered every morning at 9am — start your free trial.' }
+      ] },
+      { h: 'Protect your margin while winning the job', body: [
+        'Winning every moving lead at rock-bottom prices is not a strategy — it is a race to zero. Price within the benchmark range, sell your value (guaranteed crew, insurance, communication), and walk away politely from leads that cannot be profitable.',
+        'Track your win rate and average job value in a simple sheet. Over time you will see which areas and property types are profitable, so you can target your postcode areas and adjust your matrix.',
+        { cta: 'Start your free week of moving leads today.' }
+      ] }
     ]
   },
-  {
+    {
     slug: 'probate-solicitor-fees-guide',
-    title: 'How Much Do Probate Solicitors Charge? A Fees Guide for Executors',
-    description: 'What UK probate solicitors charge in 2026 — hourly rates, percentage-based fees, fixed fees and disbursements, plus how to read a quote so you are not surprised.',
+    title: 'Probate Fee Benchmarks for Solicitors: Pricing Instructions to Win and Stay Profitable',
+    description: 'How UK solicitors price probate instructions in 2026 — hourly, fixed and percentage models, fee benchmarks, and how to quote probate leads to win the instruction profitably.',
     category: 'probate', product_name: 'Probate Leads', categoryLabel: 'Probate Leads',
-    keywords: ['probate solicitor fees', 'how much does probate cost', 'probate fees UK', 'probate solicitor costs', 'executor legal fees'],
-    date: '2026-09-04', reading_time: '8 min read',
+    keywords: ['probate fee benchmarks', 'probate solicitor pricing', 'price probate instructions', 'win probate leads', 'probate fees for solicitors'],
+    date: '2026-09-05', reading_time: '8 min read',
     faqs: [
-      { q: 'How much does a probate solicitor cost in the UK?', a: 'In 2026, expect roughly £2,000–£6,000 plus disbursements for a typical estate. Small or simple estates may be handled for under £2,000, while complex or high-value estates with IHT work can cost £6,000+. Some firms offer fixed fees for straightforward administrations.' },
-      { q: 'How do probate solicitors charge?', a: 'Three common models: a fixed fee for a defined scope, an hourly rate (typically £150–£300 an hour), or a percentage of the estate value (commonly 1–3%). Percentage fees are less common and can be poor value on large estates — always ask for a breakdown.' },
-      { q: 'What are probate disbursements?', a: 'Disbursements are costs paid to third parties — the probate court fee, advertising fees for the London Gazette and local papers, professional valuations, land registry fees and bankruptcy searches. These are passed on at cost and can add several hundred pounds.' },
-      { q: 'Can I do probate without a solicitor?', a: 'Yes — personal representatives can apply for a grant themselves using the Gov.uk probate service, which is free. Many families use a solicitor only for complex estates, IHT advice or property sales. Compare the fee against the hours it will save you.' }
+      { q: 'How do solicitors charge for probate?', a: 'The three common models are percentage of the estate value, fixed fees, and hourly rates. Percentage fees are easiest to quote from a probate lead but can undersell large estates; fixed fees win instructions but need careful scoping; hourly rates suit complex estates but carry uncertainty for the client.' },
+      { q: 'How should I price a probate lead?', a: 'Assess the estate value from the grant data, choose a model that fits the complexity, and quote within market range. Speed and clarity win probate instructions — the firm that quotes first with a transparent, itemised fee usually gets the work.' },
+      { q: 'What is a typical probate fee in the UK?', a: 'Fixed-fee probate work typically runs a few hundred to a couple of thousand pounds depending on complexity; percentage models often sit around 1-3% of the estate value; hourly rates vary by region and seniority. Always state disbursements separately.' },
+      { q: 'How do I win probate leads against competitors?', a: 'Contact the executors within the first 48 hours of the grant, quote clearly and quickly, and lead with empathy. Executors are choosing between several firms — the one that is fast, clear and human wins the instruction.' }
     ],
     sections: [
-      { h: 'What probate actually costs in 2026', body: [
-        'Probate fees vary with the size and complexity of the estate, but the 2026 ranges are reasonably predictable. The figures below are for solicitor-managed estate administration and exclude disbursements unless stated:',
-        { table: [['Estate complexity', 'Typical legal fees'], ['Simple, low-value estate', '£1,500 – £3,000'], ['Typical estate with property', '£3,000 – £5,500'], ['Complex estate (IHT, trusts)', '£6,000 – £12,000'], ['Disbursements (court, adverts, searches)', '£500 – £1,000 extra']] },
-        'The largest single task is usually dealing with the property sale, which is often billed separately from the core administration.',
-        { cta: 'Find out how solicitors win probate instructions — start your free trial.' }
-      ]},
-      { h: 'The three ways solicitors charge', body: [
-        'Before comparing fees, make sure you are comparing like with like. The three charging models are:',
-        { ul: ['Fixed fee — a set price for a defined scope, safest for a straightforward estate', 'Hourly rate — typically £150–£300 per hour, flexible but open-ended', 'Percentage of estate value — commonly 1–3%, simple but often poor value on large estates'] },
-        'Always ask for a written breakdown of what is included, what is billed separately, and an estimate of total cost. A firm that refuses to estimate is a warning sign.'
-      ]},
-      { h: 'Disbursements: the costs that add up', body: [
-        'Disbursements are not the solicitor\'s fee — they are costs passed through at cost. The main ones are the probate court fee (fixed for applications), the compulsory advertisements in the London Gazette and a local newspaper, valuations, land registry fees and bankruptcy searches.',
-        'These typically add £500–£1,000 to the total. Make sure your quote states whether disbursements are included or separate, and ask for receipts.',
-        { cta: 'Build a probate pipeline for your firm — start your free trial.' }
-      ]},
-      { h: 'How to read a probate quote', body: [
-        'A transparent quote names the fee model, the scope, and the disbursements. Ask four questions: what exactly is included (grant application, estate administration, property sale, IHT forms?), what is billed separately, what the realistic total estimate is, and what happens if the estate turns out to be complex.',
-        'The cheapest headline number can be the most expensive outcome if the scope is narrow and everything else is an extra. Value comes from clarity and reliability, not the lowest estimate.'
-      ]},
-      { h: 'Compare the cost of DIY vs professional help', body: [
-        'Applying for probate yourself through Gov.uk is free and many executors manage straightforward estates fine. The case for a solicitor is time, confidence and avoiding costly errors — mistakes in IHT or asset collection can cost far more than the fee.',
-        'For a typical estate with a property, most families find the fee worthwhile for the certainty alone. For a simple estate with modest assets, a fixed-fee small-estate service can be excellent value. Choose based on complexity, not default.'
-      ]}
+      { h: 'The fee models and when each wins', body: [
+        'There are three standard ways to charge for probate, and each suits different estates. Your choice affects both your win rate on probate leads and your profitability.',
+        { table: [['Model', 'How it works', 'Best for'], ['Percentage', '1-3% of estate value', 'Quick quotes on simple estates'], ['Fixed fee', 'Set price for defined scope', 'Winning competitive instructions'], ['Hourly', 'Time spent, recorded', 'Complex or disputed estates']] },
+        'Many firms blend them: a fixed fee for straightforward administration plus hourly for anything out of scope. Clarity is what wins instructions.',
+        { cta: 'Get fresh probate leads in your counties every morning at 9am — start your free trial.' }
+      ] },
+      { h: 'Benchmark your prices to the market', body: [
+        'Executors often shop around. If your quote is far outside the local market, you lose the instruction before you can explain your value. Benchmark your fixed fees and percentage rates against your region and estate sizes.',
+        'Publish or state your pricing model clearly in your first contact. Transparency is a differentiator in a service where families are anxious about cost.',
+        { cta: 'See what probate leads could do for your practice — start your free trial.' }
+      ] },
+      { h: 'Price probate leads fast and clearly', body: [
+        'A probate lead is most valuable in the first 48 hours after the grant is applied for. Executors are gathering quotes, and the firm that responds first with a clear, itemised fee usually wins the instruction.',
+        'Build a simple scoping checklist: estate value, assets (property, shares, bank), whether it is straightforward or complex, and any likely disputes. From that, apply your fee model and send the quote the same day.',
+        { cta: 'Fresh probate grants delivered daily — start your free trial.' }
+      ] },
+      { h: 'State disbursements separately', body: [
+        'Executors are often surprised by disbursements — court fees, Land Registry, searches, insurance, and valuation costs. If these are buried, the client feels misled later. List them separately so the total is transparent and defensible.',
+        { ul: ['Court application fee', 'Land Registry fees', 'Copies of the grant', 'Property valuation', 'Bankruptcy search', 'Insurance premium', 'Postage and administration'] },
+        'A transparent fee breakdown builds trust — and trust wins probate instructions.',
+        { cta: 'Start your free week of probate leads.' }
+      ] },
+      { h: 'Track win rate and profitability', body: [
+        'Track how many probate leads you quote, how many you win, and the average fee per instruction. Over time you will see which estate sizes and counties are most profitable, so you can target your probate lead areas and refine your pricing.',
+        'One probate instruction typically covers a lead subscription many times over. Profitability is about winning the right instructions at the right price.',
+        { cta: 'Delivered every morning at 9am — start your free trial.' }
+      ] }
     ]
   },
   {
@@ -986,45 +999,47 @@ var CURATED_POSTS = [
       ]}
     ]
   },
-  {
+    {
     slug: 'loft-conversion-planning-permission',
-    title: 'Do I Need Planning Permission for a Loft Conversion? A 2026 Guide',
-    description: 'When a loft conversion needs planning permission and when it falls under permitted development — with the rules, conditions, building regs and the trades who should be contacted first.',
-    category: 'planning', product_name: 'Planning Permission Leads', categoryLabel: 'Planning Permission Leads',
-    keywords: ['loft conversion planning permission', 'do I need permission for loft conversion', 'permitted development loft', 'loft conversion regulations UK', 'loft conversion rules'],
-    date: '2026-09-02', reading_time: '8 min read',
+    title: 'Loft Conversion Leads: How Builders Win High-Value Projects First',
+    description: 'When loft conversions need planning permission, and how builders use planning leads to spot high-value loft projects before competitors and win the job.',
+    category: 'planning', product_name: 'Planning Leads', categoryLabel: 'Planning Permission Leads',
+    keywords: ['loft conversion leads', 'loft conversion planning permission', 'win loft conversion projects', 'planning leads for builders', 'loft conversion builders'],
+    date: '2026-09-05', reading_time: '8 min read',
     faqs: [
-      { q: 'Do I need planning permission for a loft conversion?', a: 'Often not. Most loft conversions fall under permitted development rights, provided they stay within the volume, height and other limits. But permissions can be removed by a prior approval or a condition on the house, so always check your specific situation.' },
-      { q: 'What are the permitted development rules for loft conversions?', a: 'The rules limit the additional volume to 40 cubic metres for terraced houses and 50 cubic metres for detached or semi-detached houses, require the extension to be set back from the eaves, and restrict rear extensions above the ridge line. Materials must match and the house must not be in a protected area.' },
-      { q: 'Do I always need building regulations?', a: 'Yes — planning permission and building regulations are separate. A loft conversion almost always needs building regulations approval for structural work, insulation, fire safety, escape routes and window sizing, even when no planning permission is needed.' },
-      { q: 'When does a loft conversion need planning permission?', a: 'If it exceeds the permitted development volume limits, adds a balcony, raised platform or veranda, is in a conservation area or on designated land, or if permitted development rights have been removed for the property.' }
+      { q: 'Do I need planning permission for a loft conversion?', a: 'Many loft conversions are permitted development, but size, dormer windows, and position relative to the ridge can trigger planning permission. The planning application itself is your lead signal — it means the homeowner is committed and ready to spend.' },
+      { q: 'How do I find loft conversion projects?', a: 'Use planning leads to see loft conversion applications in your council areas the day they appear. The homeowner is actively planning the build — the builder who quotes first usually wins.' },
+      { q: 'Who wins loft conversion work?', a: 'Speed and relevance. The builder who contacts the applicant with a clear, specific quote on the day the application appears wins an outsized share of the work. Later competitors end up chasing.' },
+      { q: 'What is a loft conversion worth to a builder?', a: 'Loft conversions are high-value projects. A single conversion can cover a planning leads subscription many times over — which is why targeting them is so profitable.' }
     ],
     sections: [
-      { h: 'The short answer', body: [
-        'For most UK homes, a loft conversion is covered by permitted development rights and does not need a planning application. But there are limits, exceptions and the ever-important separate requirement of building regulations.',
-        'The phrase "permitted development" means you can proceed without a planning application — it does not mean you can skip approvals entirely. Building regulations approval is still required for the structural and safety work.',
-        { cta: 'Spot high-value projects before competitors — start your free planning leads trial.' }
-      ]},
-      { h: 'The permitted development limits for lofts', body: [
-        'The key limits for a loft conversion under permitted development are:',
-        { ul: ['Additional volume: up to 40m³ for terraced houses, 50m³ for detached or semi-detached houses', 'The loft must be set back from the original eaves (typically 20cm)', 'No part above the ridge line of the original roof', 'Materials must be of a similar appearance', 'The house must not be in a conservation area or other protected land', 'Permitted development rights must not have been removed for the property'] },
-        'Exceed any of these and a full planning application is required.'
-      ]},
-      { h: 'When you definitely need planning permission', body: [
-        'Planning permission is required if: the conversion exceeds the volume limits, it includes a balcony, raised platform or veranda, it changes the roof shape significantly, or the property is a listed building, in a conservation area, or on designated land such as an Area of Outstanding Natural Beauty.',
-        'A quick check with your local planning portal or a planning consultant removes the guesswork — and a pre-application opinion from the council can confirm whether your loft needs permission before you spend on design.',
-        { cta: 'Get planning leads matched to your trade — start your free trial.' }
-      ]},
-      { h: 'Building regulations are non-negotiable', body: [
-        'Planning permission and building regulations are separate approvals. A loft conversion almost always needs building regulations approval for:',
-        { ul: ['Structural work — floor joists, beams, roof structure', 'Insulation and thermal performance', 'Fire safety, smoke alarms and escape windows', 'Staircase design and headroom', 'Glazing and window standards'] },
-        'Building control must approve the design before work starts and inspect the work as it progresses. Skipping it risks a future buyer\'s mortgage and the property being flagged on the land registry.'
-      ]},
-      { h: 'Who homeowners should contact first', body: [
-        'Before any loft conversion, a homeowner should speak to a structural engineer or architect to confirm the design, then an approved building control body. A builder with loft experience can advise on feasibility and cost — typically £35,000–£60,000 for a standard conversion.',
-        'For builders and tradespeople, a planning application in the pipeline for an extension or conversion is a strong buying signal. Homeowners who have started the process are ready to spend, and the firm that contacts them early wins the project.',
-        { cta: 'Win loft and extension projects from fresh planning leads — start your free trial.' }
-      ]}
+      { h: 'Every loft application is a committed buyer', body: [
+        'When a loft conversion application appears, the homeowner has already decided to spend. Architects, engineers and builders are in motion, and budgets are set. This is a serious, funded project — exactly the kind of lead a builder wants.',
+        'Planning leads surface these applications in your council areas the day they are published. Speed turns them into jobs.',
+        { cta: 'Get fresh planning leads in your areas every morning at 9am — start your free trial.' }
+      ] },
+      { h: 'When a loft conversion needs planning permission', body: [
+        'Many loft conversions are permitted development, but planning permission is triggered when: the dormer or roof extension exceeds the permitted size, it is positioned at the front of the house, or it sits too close to the ridge.',
+        { ul: ['Dormer beyond the permitted volume or height', 'Front-facing or side-facing dormers in some cases', 'Extensions above the highest part of the existing roof', 'Conservation areas and listed buildings', 'Flats and maisonettes (different rules)'] },
+        'The presence of an application means the project is real and funded — the strongest signal you can get.',
+        { cta: 'See what planning leads could do for your business — start your free trial.' }
+      ] },
+      { h: 'Spot the high-value projects', body: [
+        'Not all loft applications are equal. Read the application to judge value: the size and type of conversion, whether it includes structural work, bathrooms, and the property location.',
+        { table: [['Signal', 'What it means'], ['Full conversion with bathroom', 'Higher value, more trades'], ['Dormer extension', 'Structural work, more spend'], ['Conservation area', 'Specialist finishes, premium pricing'], ['Large property, high-value area', 'Larger budget']] },
+        'Prioritise the applications that justify your best quote.',
+        { cta: 'Start your free week of planning leads.' }
+      ] },
+      { h: 'Quote first, win the job', body: [
+        'The builder who contacts the applicant on the day the application appears, with a specific quote for their project, wins an outsized share of the work. Later competitors end up competing on price.',
+        'Use the planning lead details — the property address and proposed works — to tailor your outreach. A message that references their specific loft conversion gets a far better response than a generic pitch.',
+        { cta: 'Delivered every morning at 9am — start your free trial.' }
+      ] },
+      { h: 'Build a steady pipeline of conversions', body: [
+        'Track every loft application you quote, win and complete. Over time you will see which council areas and project types are most profitable, so you can focus your planning lead areas.',
+        'A single loft conversion typically covers a planning leads subscription many times over. Consistency plus speed turns planning leads into a predictable pipeline.',
+        { cta: 'Fresh planning applications delivered daily — start your free trial.' }
+      ] }
     ]
   },
   {
@@ -1147,124 +1162,132 @@ var CURATED_POSTS = [
       ]}
     ]
   },
-  {
+    {
     slug: 'probate-vs-administration-guide',
-    title: 'Probate vs Estate Administration: What Executors Need to Know',
-    description: 'The difference between getting probate (the court grant) and administering the estate (everything after it) — explained in plain English for executors, with what each step involves.',
+    title: 'Probate vs Estate Administration: How Solicitors Sell the Full Service',
+    description: 'The difference between probate and estate administration, and how solicitors use a probate lead to win the full instruction — from the grant to completion.',
     category: 'probate', product_name: 'Probate Leads', categoryLabel: 'Probate Leads',
-    keywords: ['probate vs administration', 'estate administration explained', 'what does an executor do', 'probate explained UK', 'executor duties'],
-    date: '2026-09-07', reading_time: '7 min read', publish_delay_days: 2,
+    keywords: ['probate vs administration', 'probate and estate administration', 'win probate instructions', 'probate leads for solicitors', 'estate administration services'],
+    date: '2026-09-05', reading_time: '7 min read',
     faqs: [
-      { q: 'What is the difference between probate and estate administration?', a: 'Probate is the legal grant from the court that lets you deal with the estate. Estate administration is everything that happens after — collecting assets, paying debts and tax, distributing to beneficiaries and dealing with the property. Probate is one step in the wider job.' },
-      { q: 'Does every estate need probate?', a: 'No. Small estates, jointly-owned assets passing to a spouse, or estates held in trust may not need a grant. A probate specialist can confirm whether your estate requires one before you spend time or money.' },
-      { q: 'What are the executor\'s duties?', a: 'An executor must protect the estate\'s assets, collect everything the deceased owned, pay debts and taxes (including inheritance tax), deal with any property sale, and distribute the remainder to beneficiaries in line with the will.' },
-      { q: 'How long does estate administration take?', a: 'Typically six to twelve months for a straightforward estate with a property, and longer where inheritance tax or complex assets are involved. The grant itself usually takes a few weeks to a few months once the application is made.' }
+      { q: 'What is the difference between probate and estate administration?', a: 'Probate is the legal grant from the court that gives authority to deal with the estate. Estate administration is the whole job that follows: collecting assets, paying debts and tax, and distributing to beneficiaries. Most clients need both, which is why winning the probate lead opens the door to the full instruction.' },
+      { q: 'Why should I offer estate administration as well as probate?', a: 'The administration work is where most of the fee sits. The grant is the entry point; the administration is the profitable, repeatable work. Positioning the full service from the first contact wins bigger instructions.' },
+      { q: 'How do I win the full probate instruction?', a: 'Contact executors within the first 48 hours of the grant, explain the whole journey (grant plus administration) in plain language, and quote the full service. Executors choose the firm that makes the process feel manageable.' },
+      { q: 'When might an estate not need a grant?', a: 'Small estates, jointly-owned assets passing by survivorship, or where the estate is below the threshold may not need a grant. Recognising this early positions you as an expert and lets you offer the right level of help.' }
     ],
     sections: [
-      { h: 'Two jobs, one phrase', body: [
-        '"Probate" is often used to mean the whole process, but there are really two distinct jobs. Probate is the court grant — the legal authority to act. Estate administration is the months of work that follow: collecting, valuing, paying, selling and distributing. Executors carry out both, and understanding the difference is the first step to managing either well.',
-        'For a family dealing with an estate, the difference matters because it shapes who does what and what it costs. A solicitor may charge separately for the grant application and the administration.',
-        { cta: 'Get probate leads from the official register — start your free trial.' }
-      ]},
-      { h: 'What probate (the grant) involves', body: [
-        'The grant of probate is the court document confirming the will is valid and the executors are authorised. Getting it involves submitting the will, the death certificate, an inventory of the estate\'s value, and an inheritance tax account where needed.',
-        'The court checks the paperwork and issues the grant. From that point the executors can access bank accounts, sell property and deal with investments. Without the grant, most institutions will not release assets.',
-        { ul: ['Complete the IHT form and calculate any inheritance tax', 'Gather valuations of property, savings and shares', 'Submit the probate application with the will and death certificate', 'Pay any inheritance tax due (even before the grant is issued)', 'Wait for the grant before dealing with most institutions'] }
-      ]},
+      { h: 'Two jobs, one instruction', body: [
+        'Executors hear "probate" and assume it is one job. In practice there are two: getting the grant of probate, and then administering the estate — collecting assets, paying debts and tax, and distributing to beneficiaries. The administration is usually where the real work (and fee) sits.',
+        'When you explain this clearly on a fresh probate lead, you position yourself as the firm that handles the whole journey — and you win the larger instruction.',
+        { cta: 'Get fresh probate leads in your counties every morning at 9am — start your free trial.' }
+      ] },
+      { h: 'What the grant involves', body: [
+        'The grant of probate is the court document giving authority to deal with the estate. It requires the will (if any), an inheritance tax account where needed, and the application to the Probate Registry.',
+        'A probate lead tells you a grant has been applied for — which means the estate is in motion and the executors need help now. That is the perfect moment to offer the full service.',
+        { cta: 'See what probate leads could do for your practice — start your free trial.' }
+      ] },
       { h: 'What estate administration involves', body: [
-        'Administration is the bigger job. The executor must register the death with relevant bodies, close or transfer accounts, sell or transfer property, collect debts owed to the estate, pay the deceased\'s debts and taxes, and prepare estate accounts.',
-        'Only then comes distribution: passing the remaining assets to beneficiaries, obtaining receipts, and confirming the estate can be closed. Each step has deadlines, and getting tax or distribution wrong carries personal liability for the executor.',
-        { cta: 'See how solicitors manage estates end to end — start your free probate leads trial.' }
-      ]},
-      { h: 'When you might not need a grant', body: [
-        'Not every estate needs probate. If the estate is small, if assets were held jointly and pass automatically to the survivor, or if everything passes under a trust or nomination, a grant may not be required.',
-        'Banks have their own thresholds and rules, so the practical answer depends on the institutions involved. A quick check with the bank or a probate professional settles it without wasted effort.',
-        { ul: ['Small estates below the bank\'s threshold', 'Jointly-owned property and accounts passing to the survivor', 'Assets in trust or paid under nomination', 'Estates where everything is already distributed'] }
-      ]},
-      { h: 'Get the process right from day one', body: [
-        'The estates that run smoothly are the ones planned properly from the start: a clear inventory, a realistic timeline, and one person accountable for each step. Whether the family does it themselves or appoints a professional, the same discipline applies.',
-        'For solicitors and probate specialists, a newly published grant is the signal that a family has just entered this process — and the executor who needs help is usually open to a respectful, well-timed introduction.'
-      ]}
+        'Once the grant is issued, the real work begins: valuing and collecting assets, selling property, settling debts and inheritance tax, preparing estate accounts, and distributing to beneficiaries.',
+        { ul: ['Identify and value all assets', 'Collect bank balances, shares and property', 'Sell or transfer assets as required', 'Settle debts and inheritance tax', 'Prepare estate accounts', 'Distribute to beneficiaries and close the estate'] },
+        'Every one of these is a service you can offer — and each one justifies part of the fee.',
+        { cta: 'Start your free week of probate leads.' }
+      ] },
+      { h: 'Win the full instruction from the first contact', body: [
+        'On a fresh probate lead, the winning move is to explain the whole journey in plain English and quote the full service — grant plus administration. Executors are overwhelmed; the firm that makes it feel manageable wins the instruction.',
+        'Lead with empathy, be transparent about fees, and offer a clear next step. Speed matters: contact within the first 48 hours while the executors are still choosing.',
+        { cta: 'Fresh probate grants delivered daily — start your free trial.' }
+      ] },
+      { h: 'Position yourself as the expert', body: [
+        'Recognising when a grant is needed — and when it is not — marks you as the expert. Small estates, jointly-owned assets passing by survivorship, and estates below threshold may not need a grant, and advising on that early builds trust.',
+        'Track your probate win rate and average fee. A steady pipeline of fresh grants, converted into full instructions, is how probate practices grow predictably.',
+        { cta: 'Delivered every morning at 9am — start your free trial.' }
+      ] }
     ]
   },
-  {
+    {
     slug: 'what-new-company-needs-first-month',
-    title: 'What a New Company Needs in Its First Month: A Founder\'s Checklist',
-    description: 'The practical list of everything a newly registered UK company must set up in its first month — from bank accounts and accounting to insurance, tax, website and compliance.',
+    title: 'What New Companies Buy in Their First Month: The B2B Supplier Opportunity',
+    description: 'The services every newly-registered UK company needs in its first month — and how B2B suppliers use new business leads to win them as clients first.',
     category: 'newbusiness', product_name: 'New Business Leads', categoryLabel: 'New Business Leads',
-    keywords: ['new company checklist', 'startup first month UK', 'new business setup UK', 'what new companies need', 'Companies House after incorporation'],
-    date: '2026-09-08', reading_time: '8 min read', publish_delay_days: 3,
+    keywords: ['services for new companies', 'sell to new businesses', 'new business leads B2B', 'what new companies buy', 'win new company clients'],
+    date: '2026-09-05', reading_time: '8 min read',
     faqs: [
-      { q: 'What is the most urgent thing after incorporating?', a: 'Setting up a business bank account and registering for any tax you need (VAT if applicable, and PAYE if you have staff). These have practical deadlines and every other step depends on them.' },
-      { q: 'When is the first filing deadline?', a: 'Your first confirmation statement is due within a year of incorporation, and accounts are due nine months after your first accounting reference date. Pay attention from day one — penalties for late filings are automatic.' },
-      { q: 'Does a new company need insurance?', a: 'Some insurance is legally required (employers\' liability if you have staff) and some is sensible protection (public liability, professional indemnity, directors\' and officers\'). Check what applies to your sector before trading.' },
-      { q: 'What can I do myself and what needs a professional?', a: 'You can handle admin, a website and bookkeeping discipline yourself. Accounting, tax and compliance are where a professional pays for itself — mistakes cost more than the fees.' }
+      { q: 'What services do new companies buy first?', a: 'In the first month most new companies buy accounting and bookkeeping, a registered office and virtual address, business bank account, insurance, a website and email, and often IT setup and compliance. These are the services B2B suppliers can pitch.' },
+      { q: 'Why are new business leads valuable?', a: 'A new company is still choosing its suppliers. Contact them in their first days and you have a chance to become their provider from day one — a relationship that typically lasts for years.' },
+      { q: 'How do I win new company clients?', a: 'Be first and be helpful. Send a clear onboarding offer within hours of the registration appearing, explain what they need in their first 30 days, and follow up. Founders are overwhelmed — the supplier who simplifies things wins.' },
+      { q: 'Which new companies should I target?', a: 'Use SIC codes and company type filters to target the industries you serve. A company selling professional services, construction or retail each needs different suppliers — target the ones that fit your offering.' }
     ],
     sections: [
-      { h: 'The first month sets the tone', body: [
-        'The weeks after incorporation are when a business is most fragile and most busy. Directors are juggling setup, first sales and a mountain of admin. Getting the essentials done early avoids penalties, stress and costly rework.',
-        'This checklist covers the first month in the order it matters. Tick off each item and the company starts on a solid foundation.',
-        { cta: 'See what B2B services new companies are buying — start your free trial.' }
-      ]},
-      { h: 'Week one: the legal essentials', body: [
-        'Start with the foundations: open a business bank account (separating company and personal money from day one), register for Corporation Tax with HMRC (you normally get a letter with your UTR), and set up your registered office and Companies House correspondence.',
-        'If you employ anyone from the start, register as an employer for PAYE. If your turnover will exceed the VAT threshold, register for VAT when you expect to cross it.',
-        { ul: ['Business bank account', 'Corporation Tax registration with HMRC', 'VAT registration if required', 'PAYE registration if you employ staff', 'Registered office and digital correspondence confirmed'] }
-      ]},
-      { h: 'Week two: structure and safety', body: [
-        'Now the business basics: a simple accounting method (a spreadsheet or accounting software from day one), any licences or permissions your sector needs, and insurance. Employers\' liability is legally required with staff; public liability and professional indemnity protect your reputation.',
-        'Set up a business phone, email and domain so customers and suppliers deal with a business identity, not a personal one.',
-        { ul: ['Accounting method and bookkeeping habit', 'Sector licences and permissions', 'Insurance (liability, professional indemnity as needed)', 'Business email and phone', 'Domain and website in progress'] }
-      ]},
-      { h: 'Weeks three to four: presence and process', body: [
-        'Build the basics customers will judge you on: a website or professional profile, clear terms and a simple invoicing process. Set up a bookkeeping routine (set aside time weekly) so your first accounts are painless.',
-        'Decide who helps with what. Most founders handle admin and selling; an accountant manages tax and compliance. The professional advice is almost always worth the fee when it prevents a penalty or a missed claim.',
-        { cta: 'Win new company clients with daily business leads — start your free trial.' }
-      ]},
-      { h: 'Mark your first filing deadlines', body: [
-        'Put the dates in your calendar now: your confirmation statement is due within a year of incorporation, and your first accounts nine months after the accounting reference date. HMRC deadlines for Corporation Tax and any VAT follow from your registration.',
-        'Late filings trigger automatic penalties, so set reminders early. A company that treats deadlines as non-negotiable from month one is a company that grows.'
-      ]}
+      { h: 'The first month is the window', body: [
+        'A new company is a buyer in a hurry. In its first month it needs accounts, a bank account, insurance, a website, email, IT, and compliance. The suppliers who contact it in those first days usually keep it as a client for years.',
+        'New business leads are the map: they tell you which companies just registered, in which industries, and where. Act on the day and you win the onboarding.',
+        { cta: 'Get fresh new business leads every morning at 9am — start your free trial.' }
+      ] },
+      { h: 'The services every new company buys', body: [
+        'Build your offer around the first-month essentials. These are the purchases every new LTD makes, and the services B2B suppliers can win.',
+        { table: [['Service', 'Why they need it', 'Who sells it'], ['Accounting & bookkeeping', 'Filing, tax, payroll', 'Accountants, bookkeepers'], ['Registered office & virtual address', 'Legal requirement, privacy', 'Formation agents, virtual offices'], ['Business bank account', 'Separate finances', 'Banks, fintechs'], ['Insurance', 'Employers\' & public liability', 'Brokers'], ['Website & email', 'Presence and credibility', 'Web designers, hosting'], ['IT setup & security', 'Tools to work', 'IT support, cyber firms'], ['Compliance & GDPR', 'Stay legal', 'Consultants']] },
+        'Pick the services that fit your business and lead with the ones a founder needs most urgently.',
+        { cta: 'See what new business leads could do for you — start your free trial.' }
+      ] },
+      { h: 'Be the helpful first contact', body: [
+        'Founders are overwhelmed and making decisions fast. The supplier who simplifies things wins the account. Lead with a clear "here is what to sort in your first 30 days" message — it positions you as the expert and makes saying yes easy.',
+        'Speed is everything. A new business lead is most valuable in the first hours and days, before the founder has chosen their providers.',
+        { cta: 'Fresh new company registrations delivered daily — start your free trial.' }
+      ] },
+      { h: 'Filter to the right industries', body: [
+        'Not every new company fits your service. Use SIC codes and company type filters to target the industries you serve, so every lead is a genuine prospect, not a lottery ticket.',
+        { ul: ['Filter by SIC code or industry', 'Target your region or nationwide', 'Exclude company types you do not serve', 'Track win rate by industry to refine targeting'] },
+        'Focused targeting means your team only acts on leads that convert.',
+        { cta: 'Start your free week of new business leads.' }
+      ] },
+      { h: 'One client pays for the year', body: [
+        'A single onboarding — an accounting client, a website build, an insurance policy — typically covers a new business lead subscription many times over. The rest is profit.',
+        'Track how many leads you contact, quote and win. Over time the numbers show which industries and regions produce your best clients, so you can focus your daily pipeline.',
+        { cta: 'Delivered every morning at 9am — start your free trial.' }
+      ] }
     ]
   },
-  {
+    {
     slug: 'rear-extension-planning-permission',
-    title: 'Do I Need Planning Permission for a Rear Extension? A 2026 Guide',
-    description: 'When rear extensions are permitted development and when they need planning permission — with the size limits, neighbour conditions and building regs every homeowner should know.',
-    category: 'planning', product_name: 'Planning Permission Leads', categoryLabel: 'Planning Permission Leads',
-    keywords: ['rear extension planning permission', 'permitted development rear extension', 'single storey extension rules', 'two storey extension permission', 'extension building regs'],
-    date: '2026-09-09', reading_time: '8 min read', publish_delay_days: 4,
+    title: 'Rear Extension Leads: How Builders Win Projects Before Competitors',
+    description: 'When rear extensions need planning permission, and how builders use planning leads to spot and win rear extension projects first.',
+    category: 'planning', product_name: 'Planning Leads', categoryLabel: 'Planning Permission Leads',
+    keywords: ['rear extension leads', 'rear extension planning permission', 'win extension projects', 'planning leads for builders', 'extension builders'],
+    date: '2026-09-05', reading_time: '8 min read',
     faqs: [
-      { q: 'Do I need planning permission for a single-storey rear extension?', a: 'Often not — single-storey rear extensions are usually permitted development if they stay within the limits: no more than 3m deep on a terraced house or 4m on a detached/semi-detached house, and within 4m of the rear wall in height. But always check your specific property.' },
-      { q: 'What is the permitted development size limit for a rear extension?', a: 'The maximum depth is 3m for a terraced house and 4m for detached and semi-detached houses. A single-storey extension must not be higher than 4m or extend beyond the rear wall by more than those depths. Two-storey extensions have tighter rules.' },
-      { q: 'Do two-storey rear extensions need planning permission?', a: 'Usually yes. A two-storey rear extension is permitted development only if it is within the depth limits, is more than 7m from the rear boundary, and the roof pitch matches the existing roof — in practice most two-storey extensions need an application.' },
-      { q: 'Do I need building regulations as well?', a: 'Yes. Planning permission and building regulations are separate. A rear extension almost always needs building regulations approval for foundations, structural work, insulation, glazing, drainage and fire safety.' }
+      { q: 'Do I need planning permission for a rear extension?', a: 'Many rear extensions are permitted development, but size limits, single vs two-storey, and distance to boundaries trigger planning permission. The application itself is the lead signal — the homeowner is committed and ready to build.' },
+      { q: 'How do I find rear extension projects?', a: 'Use planning leads to see rear extension applications in your council areas the day they appear. Contact the applicant with a specific quote and you are ahead of every competitor who finds out later.' },
+      { q: 'Who wins rear extension work?', a: 'Speed and specificity. The builder who references the actual project and quotes on the day the application appears wins. Generic outreach and slow response lose to focused, fast quotes.' },
+      { q: 'What is a rear extension worth to a builder?', a: 'Rear extensions are substantial jobs. A single project can cover a planning leads subscription many times over, which is why targeting them is so profitable.' }
     ],
     sections: [
-      { h: 'The short answer', body: [
-        'A single-storey rear extension on a UK house is usually permitted development and needs no planning application — provided it stays within the size limits. Two-storey rear extensions are a different story and generally need planning permission.',
-        'The rules are technical, and local conditions can remove permitted development rights entirely. Always confirm your specific situation before spending on design work.',
-        { cta: 'Spot extension projects before competitors — start your free planning leads trial.' }
-      ]},
-      { h: 'The permitted development limits for rear extensions', body: [
-        'The size limits are the crux of the rules. For a single-storey rear extension under permitted development:',
-        { ul: ['Maximum depth: 3m for a terraced house, 4m for a detached or semi-detached house', 'Maximum height: 4m at the eaves of the extension', 'Must not extend beyond the rear wall of the original house by more than the depth limit', 'Must not be within the boundary setback the rules require for two-storey work', 'Materials must be of a similar appearance to the existing house'] },
-        'Extensions on the side of the house have separate, stricter rules, and conservation areas or listed status removes the rights entirely.'
-      ]},
+      { h: 'Every rear extension application is a project', body: [
+        'A rear extension application means a homeowner is about to spend real money on their home. The project is defined, the budget is forming, and the trades will be chosen soon. Planning leads surface these applications the day they appear.',
+        'The builder who acts first controls the conversation. Speed is your competitive edge.',
+        { cta: 'Get fresh planning leads in your areas every morning at 9am — start your free trial.' }
+      ] },
       { h: 'When a rear extension needs planning permission', body: [
-        'You will need planning permission if the extension exceeds the depth or height limits, it covers more than half the garden, it is on the side where the rules apply differently, or the property is in a conservation area, is listed, or has had permitted development rights removed.',
-        'Two-storey rear extensions are generally not permitted development unless they are well within the limits and meet strict conditions on roof pitch and boundary distance. For most two-storey projects, assume an application is required.',
-        { cta: 'Win rear-extension projects from fresh planning leads — start your free trial.' }
-      ]},
-      { h: 'Neighbour consultation and party wall matters', body: [
-        'Some larger permitted development extensions need a neighbour consultation scheme (prior approval). Separate from planning, the Party Wall Act may require a party wall agreement when work affects a shared wall or boundary.',
-        'Building regulations approval is always required for the structure itself — foundations, walls, roof, insulation, glazing, drainage and fire safety. A building control body must approve the design and inspect the work.',
-        { ul: ['Check prior approval / neighbour consultation requirements', 'Confirm party wall arrangements with neighbours', 'Secure building regulations approval for the structure', 'Get the extension designed to comply from the start'] }
-      ]},
-      { h: 'Get the design right before you build', body: [
-        'The cheapest way to comply is to design within the rules from the start — an architect or structural engineer who knows the permitted development limits saves you an application you did not need. Where permission is required, a good planning consultant makes the application smooth.',
-        'For builders and tradespeople, a rear-extension planning application in the pipeline is a strong signal of a homeowner ready to spend. Contact them early with knowledge of the rules and you win the project before competitors quote.'
-      ]}
+        'Many rear extensions are permitted development, but planning permission is triggered by size, storeys, and boundary distance.',
+        { ul: ['Extensions beyond permitted development size limits', 'Two-storey rear extensions (stricter rules)', 'Within certain distances of the boundary', 'Conservation areas and listed buildings', 'Flats and maisonettes'] },
+        'An application means the project is real and funded — the strongest lead signal for a builder.',
+        { cta: 'See what planning leads could do for your business — start your free trial.' }
+      ] },
+      { h: 'Judge the project value from the application', body: [
+        'Read the application to estimate value: single vs two-storey, floor area, glazing, and property location. A two-storey rear extension in a good area is a premium project.',
+        { table: [['Signal', 'What it means'], ['Two-storey rear extension', 'Larger job, more trades'], ['Large floor area', 'Bigger budget'], ['High-value location', 'Premium pricing'], ['Conservation area', 'Specialist finishes']] },
+        'Prioritise the applications that justify your best quote.',
+        { cta: 'Start your free week of planning leads.' }
+      ] },
+      { h: 'Contact applicants on day one', body: [
+        'The builder who contacts the applicant on the day the application appears — with a specific quote for their project — wins an outsized share of the work.',
+        'Reference the actual proposal in your outreach. "I saw your two-storey rear extension application" gets a response; a generic "we do extensions" does not. Send a tailored quote and a clear next step.',
+        { cta: 'Delivered every morning at 9am — start your free trial.' }
+      ] },
+      { h: 'A predictable pipeline of extension work', body: [
+        'Track every rear extension you quote, win and complete. Over time you will see which council areas and project types are most profitable, so you can focus your planning lead areas.',
+        'A single rear extension typically covers a planning leads subscription many times over. Consistency plus speed turns planning leads into a steady pipeline.',
+        { cta: 'Fresh planning applications delivered daily — start your free trial.' }
+      ] }
     ]
   },
   {
