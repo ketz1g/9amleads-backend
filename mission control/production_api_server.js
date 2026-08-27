@@ -19359,9 +19359,12 @@ async function sendDmCampaignInner(campaignId, customerId) {
         }
         rcptWithPages.sender = { name: senderName, address: senderAddr };
         var _clean = buildCleanLetterHtml(templateBody || '', senderName, senderAddr);
+        // Do NOT insert the recipient address into the letter body — Stannp prints
+        // the recipient name + address itself in the envelope window. Inserting it
+        // here makes the address appear TWICE on the printed letter.
         rcptWithPages.pages = _clean.html
           .replace(/\[name\]/gi, rcpt.name || '')
-          .replace(/\[address\]/gi, [rcpt.address_line1, rcpt.address_line2, rcpt.city, rcpt.postcode].filter(Boolean).join(', '))
+          .replace(/\[address\]/gi, '')
           .replace(/\[company\]/gi, rcpt.company || rcpt.name || '');
         // The clean letter BODY (no sender/date) for the A4 PDF layout.
         rcptWithPages.letter_body = _clean.body;
@@ -22084,9 +22087,13 @@ app.get('/api/admin/letter-preview', adminAuth, async (req, res) => {
     var senderAddr = [bizP.address_line1, bizP.address_line2, bizP.city, bizP.postcode].filter(Boolean).join(', ');
     var clean = buildCleanLetterHtml(templateBody, senderName, senderAddr);
     var rcptMock = { name: bizP.contact_name || bizP.company_name || 'Homeowner', address_line1: bizP.address_line1 || '', address_line2: bizP.address_line2 || '', city: bizP.city || '', postcode: bizP.postcode || '', company: bizP.company_name || '' };
+    // NOTE: do NOT insert the recipient address into the letter body. Stannp prints
+    // the recipient name + address itself in the envelope window (top of the page),
+    // so adding it here makes the address appear TWICE on the printed letter. The
+    // preview + actual send both keep the body address-free — Stannp owns the address.
     clean.html = clean.html
       .replace(/\[name\]/gi, rcptMock.name)
-      .replace(/\[address\]/gi, [rcptMock.address_line1, rcptMock.address_line2, rcptMock.city, rcptMock.postcode].filter(Boolean).join(', '))
+      .replace(/\[address\]/gi, '')
       .replace(/\[company\]/gi, rcptMock.company || rcptMock.name);
     try {
       var pdfkit = require('pdfkit');
