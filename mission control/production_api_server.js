@@ -4201,6 +4201,61 @@ app.post('/api/affiliate/login', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/affiliate/forgot-password — send a reset link to the affiliate (mirrors
+// the customer forgot-password flow). The affiliate account is found by email, a
+// reset token is stored on the affiliate record, and a reset link is emailed.
+app.post('/api/affiliate/forgot-password', async (req, res) => {
+  try {
+    var email = String((req.body && req.body.email) || '').toLowerCase().trim();
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+    var affs = getDb();
+    var aff = (affs.affiliates || []).find(function(a) { return String(a.email || '').toLowerCase() === email; });
+    // Always return success to prevent email enumeration
+    if (!aff) return res.json({ message: 'If that email exists, a reset link has been sent.' });
+    var resetToken = require('crypto').randomBytes(32).toString('hex');
+    var resetExpires = new Date(Date.now() + 3600000).toISOString(); // 1 hour
+    aff.reset_token = resetToken;
+    aff.reset_expires = resetExpires;
+    saveDb();
+    var resetUrl = PUBLIC_URL.replace(/\/+$/, '') + '/portal/affiliate-reset-password.html?token=' + resetToken;
+    try {
+      await sendBrevoEmail(
+        { email: aff.email, name: aff.name || 'Affiliate' },
+        'Reset your 9amLeads affiliate password',
+        '<div style="font-family:Inter,Arial,Helvetica,sans-serif;background:#f1f5f9;color:#1e293b;padding:28px 20px"><div style="max-width:600px;margin:0 auto"><table width="100%" cellpadding="0" cellspacing="0"><tbody>' + buildEmailHeader() + '<tr><td style="background:#ffffff;padding:28px 30px;color:#1e293b;text-align:center"><h2 style="font-size:20px;font-weight:800;color:#0f172a;margin:0 0 12px;text-align:center">Affiliate Password Reset</h2><p style="font-size:14px;color:#475569;line-height:1.7;margin:0 0 16px;text-align:center">Click the button below to reset your affiliate account password. This link expires in 1 hour.</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 16px"><a href="' + resetUrl + '" style="display:inline-block;padding:12px 32px;background-color:#0ea5e9;background-image:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;text-decoration:none;border-radius:50px;font-size:14px;font-weight:700">Reset Password</a></td></tr></table><p style="font-size:13px;color:#64748b;line-height:1.6;margin:0;text-align:center">If you did not request this, please ignore this email.</p></td></tr>' + buildEmailFooter() + '</tbody></table></div></div>'
+      );
+    } catch (e) {
+      console.log('[AFF PASSWORD] Reset email failed:', e.message, '- Token stored for manual reset:', resetToken);
+    }
+    res.json({ message: 'If that email exists, a reset link has been sent.', reset_url: resetUrl });
+  } catch (e) {
+    console.error('Affiliate forgot password error:', e);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/affiliate/reset-password — reset the affiliate's password with the token
+app.post('/api/affiliate/reset-password', async (req, res) => {
+  try {
+    var { token, password } = req.body;
+    if (!token || !password) return res.status(400).json({ error: 'Token and password are required' });
+    if (String(password).length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    var affs2 = getDb();
+    var aff = (affs2.affiliates || []).find(function(a) { return a.reset_token === token; });
+    if (!aff) return res.status(400).json({ error: 'Invalid or expired reset token' });
+    var expires = new Date(aff.reset_expires);
+    if (new Date() > expires) return res.status(400).json({ error: 'Reset token has expired. Please request a new one.' });
+    aff.password_hash = await bcrypt.hash(String(password), 10);
+    aff.reset_token = null;
+    aff.reset_expires = null;
+    saveDb();
+    res.json({ success: true, message: 'Password reset successfully. You can now sign in.' });
+  } catch (e) {
+    console.error('Affiliate reset password error:', e);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // GET /api/affiliate/dashboard — the affiliate's earnings dashboard: referrals by
 // lead type, earnings split (pending / due / paid), and payout history. Works for
 // every lead type — moving, probate, planning, new business, tenders.
