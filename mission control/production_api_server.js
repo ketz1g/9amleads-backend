@@ -11143,6 +11143,21 @@ async function runDailyDeliveryReport() {
 cron.schedule('0 7 * * 1-5', async () => {
   try { await runDailyDeliveryReport(); } catch(e) { console.log('[07:00 REPORT] cron error:', e.message); }
 }, { timezone: 'Europe/London' });
+// MISSED-REPORT CATCH-UP: if the server boots/restarts between 07:00 and 09:00 on a
+// weekday (a deploy during the 07:00 window skips the cron), fire the report ~90s
+// after boot so the founder never misses the morning readiness email. Suppressed
+// after 09:00 (delivery has run) or on non-weekdays.
+setTimeout(function() {
+  try {
+    var _ukH = parseInt(new Date().toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', hour12: false }), 10);
+    var _ukDow = new Date().toLocaleDateString('en-GB', { timeZone: 'Europe/London', weekday: 'short' }).toLowerCase();
+    var _wkd = !(_ukDow === 'sat' || _ukDow === 'sun');
+    if (_wkd && _ukH >= 7 && _ukH < 9) {
+      console.log('[07:00 REPORT] Server booted during report window — firing missed report');
+      runDailyDeliveryReport().then(function() { console.log('[07:00 REPORT] catch-up report sent'); }).catch(function(e) { console.log('[07:00 REPORT] catch-up error:', e.message); });
+    }
+  } catch(e) { console.log('[07:00 REPORT] catch-up scheduler error:', e.message); }
+}, 90000);
 
 // compute their recent fill rate (delivered vs promised). If their chosen areas are
 // consistently under-delivering (fill < 80% over the last 7 days), email them a
