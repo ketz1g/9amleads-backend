@@ -1,0 +1,156 @@
+<!DOCTYPE html><html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Integrations — HubSpot, Salesforce, Pipedrive, Brevo &amp; Webhooks | 9amLeads</title>
+<meta name="description" content="9amLeads integrates with the tools you already use — HubSpot, Salesforce, Pipedrive, Brevo, Zapier and custom webhooks. Export your leads automatically into your CRM.">
+<meta property="og:title" content="Integrations | 9amLeads">
+<meta property="og:description" content="Export 9amLeads opportunities straight into HubSpot, Salesforce, Pipedrive, Brevo or your own system via webhooks.">
+<meta property="og:url" content="https://9amleads.com/integrations/">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://9amleads.com/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://9amleads.com/integrations/">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+:root{--accent:#0ea5e9;--accent-subtle:rgba(14,165,233,0.12);--accent-glow:rgba(14,165,233,0.3);--bg:#050505;--bg-card:#0a0a0a;--border:#1a1a1a;--text:#f5f5f5;--text2:#999;--muted:#666;--ff-h:'Outfit',sans-serif;--ff-b:'Inter',sans-serif;--max-w:1140px}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--ff-b);color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;overflow-x:hidden;line-height:1.6}
+.container{max-width:var(--max-w);margin:0 auto;padding:0 24px;position:relative;z-index:2}
+nav{position:fixed;top:0;left:0;right:0;height:68px;z-index:200;background:rgba(11,15,26,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:100%;max-width:var(--max-w);margin:0 auto;padding:0 24px}
+.logo{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:900;font-family:var(--ff-h);letter-spacing:-.5px;text-decoration:none;color:var(--text)}
+.logo span{color:var(--accent)}
+.logo-mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800}
+.nav-links{display:flex;align-items:center;gap:4px}
+.nav-links a{padding:8px 14px;font-size:14px;font-weight:500;color:var(--text2);border-radius:6px;transition:.2s;text-decoration:none}
+.nav-links a:hover{color:var(--text);background:rgba(255,255,255,.04)}
+.nav-links .btn-nav{padding:9px 20px;background:linear-gradient(135deg,var(--accent),#0284c7);color:#fff!important;font-weight:600;border-radius:8px}
+.hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:6px;z-index:101}
+.hamburger span{width:24px;height:2.5px;background:var(--text);border-radius:2px;transition:.3s}
+.hamburger.active span:nth-child(1){transform:rotate(45deg) translate(5px,5px)}
+.hamburger.active span:nth-child(2){opacity:0}
+.hamburger.active span:nth-child(3){transform:rotate(-45deg) translate(5px,-5px)}
+.mobile-menu{position:fixed;top:0;right:-100%;width:100%;max-width:300px;height:100vh;background:rgba(0,0,0,0.97);border-left:1px solid var(--border);padding:80px 28px 32px;z-index:100;transition:.3s;overflow-y:auto}
+.mobile-menu.open{right:0}
+.mobile-menu a{display:block;color:var(--text2);text-decoration:none;font-size:16px;padding:14px 0;border-bottom:1px solid var(--border)}
+.mobile-menu a:hover{color:var(--text)}
+.mobile-menu .btn-mobile{display:block;margin-top:20px;padding:14px;background:linear-gradient(135deg,var(--accent),#0284c7);color:#fff!important;text-align:center;border-radius:8px;font-weight:600;border-bottom:none}
+.mobile-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99;opacity:0;pointer-events:none;transition:.3s}
+.mobile-overlay.show{opacity:1;pointer-events:auto}
+@media(max-width:768px){.hamburger{display:flex}.nav-links a{display:none}}
+.hero{min-height:45vh;display:flex;align-items:center;padding-top:120px;position:relative;overflow:hidden;text-align:center}
+.hero h1{font-size:clamp(32px,4vw,52px);font-weight:900;font-family:var(--ff-h);letter-spacing:-1.5px;line-height:1.1;margin-bottom:16px}
+.hero p{color:var(--text2);font-size:16px;max-width:650px;margin:0 auto 24px;line-height:1.7}
+.gradient{background:linear-gradient(135deg,var(--accent),#22d3ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.btn-pill{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;border-radius:50px;background:var(--accent);color:#fff!important;font-weight:700;font-size:15px;border:none;cursor:pointer;transition:.25s;font-family:var(--ff-b);text-decoration:none}
+.btn-pill:hover{transform:translateY(-2px);box-shadow:0 8px 30px var(--accent-glow)}
+.btn-pill-outline{background:transparent;border:1.5px solid var(--border);color:var(--text)!important}
+.btn-pill-outline:hover{background:var(--accent-subtle);border-color:var(--accent);box-shadow:none}
+.section{padding:70px 0;position:relative}
+.section-kicker{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:12px;text-align:center}
+.section-title{font-size:clamp(24px,3vw,36px);font-weight:800;text-align:center;letter-spacing:-1px;line-height:1.15;font-family:var(--ff-h);margin-bottom:14px}
+.section-sub{text-align:center;color:var(--text2);font-size:15px;max-width:620px;margin:0 auto 36px;line-height:1.7}
+.integ-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px;max-width:1100px;margin:0 auto}
+.integ-card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:26px 24px;transition:.25s}
+.integ-card:hover{transform:translateY(-3px);border-color:var(--accent)}
+.integ-card .icn{width:50px;height:50px;border-radius:12px;background:var(--accent-subtle);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:14px}
+.integ-card h3{font-size:16px;font-weight:700;font-family:var(--ff-h);margin-bottom:6px}
+.integ-card p{font-size:13px;color:var(--text2);line-height:1.7}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);color:#22c55e;margin-top:10px;text-transform:uppercase;letter-spacing:.5px}
+.how-steps{max-width:760px;margin:0 auto}
+.step{display:flex;gap:18px;padding:20px 0;border-bottom:1px solid var(--border)}
+.step:last-child{border-bottom:none}
+.step-num{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0}
+.step h4{font-size:15px;font-weight:700;margin-bottom:4px}
+.step p{font-size:14px;color:var(--text2);line-height:1.7}
+.s-grid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(14,165,233,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(14,165,233,0.06) 1px,transparent 1px);background-size:60px 60px}
+.s-bg{position:absolute;inset:0;pointer-events:none;background-size:cover;background-position:center;opacity:.15}
+.s-orb{position:absolute;pointer-events:none;border-radius:50%;filter:blur(100px);opacity:.12}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-30px)}}
+footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px;margin-top:40px}
+.footer-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr 1fr;gap:28px;max-width:var(--max-w);margin:0 auto;padding:0 24px}
+@media(max-width:820px){.footer-grid{grid-template-columns:1fr 1fr}}
+.footer-grid h4{font-size:13px;font-weight:700;color:var(--text);margin-bottom:14px;text-transform:uppercase;letter-spacing:1px}
+.footer-grid a{display:block;color:var(--muted);font-size:13px;padding:5px 0;transition:.2s;text-decoration:none}
+.footer-grid a:hover{color:var(--accent)}
+.footer-bottom{text-align:center;padding:20px 24px 0;font-size:12px;color:var(--muted);border-top:1px solid var(--border);margin-top:32px;max-width:var(--max-w);margin-left:auto;margin-right:auto}
+</style>
+</head><body>
+<div id="siteHeader"></div>
+
+<section class="hero">
+<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1400&q=80')"></div>
+<div class="s-grid"></div>
+<div class="s-orb" style="width:500px;height:500px;background:var(--accent);top:-200px;right:-100px;animation:float 8s ease-in-out infinite"></div>
+<div class="s-orb" style="width:400px;height:400px;background:#06b6d4;bottom:-150px;left:-100px;animation:float 10s ease-in-out infinite reverse"></div>
+<div class="container">
+<div class="section-kicker" style="color:#38bdf8">Integrations</div>
+<h1>Your Leads, <span class="gradient">Straight Into Your CRM</span></h1>
+<p>9amLeads plugs into the tools you already use. Push opportunities automatically into HubSpot, Salesforce, Pipedrive, Brevo, Zapier or your own system via webhooks — no manual entry, no copy-paste.</p>
+<div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap">
+<a href="/portal/#signup" class="btn-pill"><i class="fas fa-gift"></i> Start Free Trial</a>
+<a href="#how" class="btn-pill btn-pill-outline"><i class="fas fa-plug"></i> How It Works</a>
+</div>
+</div>
+</section>
+
+<section class="section">
+<div class="container">
+<div class="section-kicker">Native &amp; Open Integrations</div>
+<h2 class="section-title">Work With Your Stack, Not Against It</h2>
+<p class="section-sub">Every export includes the full opportunity — address, contact details, source link, score, property type and more — formatted for your CRM.</p>
+<div class="integ-grid">
+<div class="integ-card"><div class="icn"><i class="fab fa-hubspot"></i></div><h3>HubSpot</h3><p>Push new opportunities as HubSpot contacts/deals automatically. Map to your pipelines and assign to team members. Included on Pro and above.</p><span class="badge">Native export</span></div>
+<div class="integ-card"><div class="icn"><i class="fab fa-salesforce"></i></div><h3>Salesforce</h3><p>Import opportunities as Salesforce leads with custom fields for lead type, score and source. Works with standard and custom objects.</p><span class="badge">Native export</span></div>
+<div class="integ-card"><div class="icn"><i class="fas fa-bullseye"></i></div><h3>Pipedrive</h3><p>Create Pipedrive deals from every 9amLeads opportunity, pre-populated with contact details and your lead type label. Set the stage and owner automatically.</p><span class="badge">Native export</span></div>
+<div class="integ-card"><div class="icn"><i class="fas fa-envelope"></i></div><h3>Brevo</h3><p>Sync contacts into Brevo (formerly Sendinblue) to trigger nurture sequences automatically the moment a fresh opportunity lands.</p><span class="badge">Native export</span></div>
+<div class="integ-card"><div class="icn"><i class="fas fa-bolt"></i></div><h3>Zapier</h3><p>Connect 9amLeads to 5,000+ apps. Trigger a Zap for every new opportunity — send to Google Sheets, Notion, Slack, Mailchimp and more.</p><span class="badge">Webhook</span></div>
+<div class="integ-card"><div class="icn"><i class="fas fa-code"></i></div><h3>Custom Webhooks</h3><p>Get a POST request to any URL for every new opportunity. Ideal for developers who want full control over routing and processing.</p><span class="badge">Webhook</span></div>
+<div class="integ-card"><div class="icn"><i class="fas fa-file-csv"></i></div><h3>CSV / Excel Export</h3><p>Export any lead type or date range to CSV or Excel in one click. Import into any CRM, spreadsheet or database that accepts standard formats.</p><span class="badge">All plans</span></div>
+<div class="integ-card"><div class="icn"><i class="fas fa-satellite-dish"></i></div><h3>Stannp (Print &amp; Post)</h3><p>Send letters and flyers through our Print &amp; Post integration — your templates, our printing, Royal Mail first-class delivery, tracked live.</p><span class="badge">Add-on</span></div>
+</div>
+</div>
+</section>
+
+<section class="section" style="background:var(--bg-card);border-top:1px solid var(--border);border-bottom:1px solid var(--border)" id="how">
+<div class="container">
+<div class="section-kicker">Simple by design</div>
+<h2 class="section-title">How Integrations Work</h2>
+<div class="how-steps">
+<div class="step"><div class="step-num">1</div><div><h4>Choose your export</h4><p>Pick the integration you use from your dashboard settings — or copy your webhook URL.</p></div></div>
+<div class="step"><div class="step-num">2</div><div><h4>Map the fields once</h4><p>Match 9amLeads fields (name, address, postcode, lead type, score, source) to your CRM fields. Set it once and forget it.</p></div></div>
+<div class="step"><div class="step-num">3</div><div><h4>Automatic at 9am</h4><p>Every morning when your fresh opportunities are delivered, they're pushed to your connected apps automatically.</p></div></div>
+<div class="step"><div class="step-num">4</div><div><h4>Manage everything in one place</h4><p>Track, score, follow up and log outcomes in your dashboard — or keep working entirely inside your existing CRM.</p></div></div>
+</div>
+</div>
+</section>
+
+<section class="section" style="text-align:center">
+<div class="container">
+<h2 class="section-title">See It With Your Own Leads</h2>
+<p class="section-sub">Start free on any lead type, connect your CRM, and watch the first delivery land at 9am tomorrow.</p>
+<a href="/portal/#signup" class="btn-pill" style="font-size:16px;padding:16px 40px"><i class="fas fa-gift"></i> Start Your Free Trial</a>
+</div>
+</section>
+
+<div id="siteFooter"></div>
+
+<script>
+function toggleMobile(){document.getElementById('mobileMenu').classList.toggle('open');document.getElementById('mobileOverlay').classList.toggle('show');document.getElementById('hamBtn').classList.toggle('active')}
+var headerHTML = '<!-- SITE HEADER -->\n<nav><div class="nav-inner">\n<a href="/" class="logo"><div class="logo-mark">9</div>9am<span>Leads</span></a>\n<div class="nav-links">\n<a href="/">Home</a>\n<a href="/who-we-serve/">Lead Types</a>\n<a href="/pricing/">Pricing</a>\n<a href="/how-it-works/">How It Works</a>\n<a href="/integrations/">Integrations</a>\n<a href="/blog/">Blog</a>\n<a href="/help/">Help Centre</a>\n<a href="/contact/">Contact</a>\n<a href="/portal/#signup" class="btn-nav"><i class="fas fa-gift"></i> Start Free Trial</a>\n<a href="/portal/" style="font-size:13px;font-weight:600;color:var(--text2);text-decoration:none;padding:8px 14px">Sign In</a>\n</div>\n<button class="hamburger" id="hamBtn" onclick="toggleMobile()" aria-label="Menu"><span></span><span></span><span></span></button>\n</div></nav>\n<div class="mobile-overlay" id="mobileOverlay" onclick="toggleMobile()"></div>\n<div class="mobile-menu" id="mobileMenu">\n<a href="/" onclick="toggleMobile()">Home</a>\n<a href="/who-we-serve/" onclick="toggleMobile()">Lead Types</a>\n<a href="/pricing/" onclick="toggleMobile()">Pricing</a>\n<a href="/how-it-works/" onclick="toggleMobile()">How It Works</a>\n<a href="/integrations/" onclick="toggleMobile()">Integrations</a>\n<a href="/testimonials/" onclick="toggleMobile()">Testimonials</a>\n<a href="/blog/" onclick="toggleMobile()">Blog</a>\n<a href="/help/" onclick="toggleMobile()">Help Centre</a>\n<a href="/faq/" onclick="toggleMobile()">FAQ</a>\n<a href="/contact/" onclick="toggleMobile()">Contact</a>\n<a href="/portal/#signup" class="btn-mobile" onclick="toggleMobile()"><i class="fas fa-gift"></i> Start Free Trial</a>\n</div>\n';
+var footerHTML = '<!-- SITE FOOTER -->\n<footer>\n<div class="container">\n<div class="footer-grid">\n<div>\n<div style="display:flex;align-items:center;gap:10px;font-size:18px;font-weight:800;font-family:var(--ff-h);margin-bottom:12px"><div class="logo-mark" style="width:32px;height:32px">9</div>9am<span style="color:var(--accent)">Leads</span></div>\n<p style="font-size:13px;color:var(--text2);line-height:1.8;max-width:320px">Opportunity intelligence platform delivering fresh UK business opportunities daily at 9am — with opportunity scoring, marketing templates, lead management, Print &amp; Post and CRM exports.</p>\n<div style="display:flex;gap:8px;margin-top:14px">\n<a href="https://www.facebook.com/share/1SBwDAUuxh/?mibextid=wwXIfr" target="_blank" aria-label="Facebook" style="width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);color:#8890a8;display:inline-flex;align-items:center;justify-content:center;text-decoration:none"><i class="fab fa-facebook-f"></i></a>\n<a href="https://www.tiktok.com/@9amleads.com" target="_blank" aria-label="TikTok" style="width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);color:#8890a8;display:inline-flex;align-items:center;justify-content:center;text-decoration:none"><i class="fab fa-tiktok"></i></a>\n<a href="https://www.instagram.com/9amleads/" target="_blank" aria-label="Instagram" style="width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);color:#8890a8;display:inline-flex;align-items:center;justify-content:center;text-decoration:none"><i class="fab fa-instagram"></i></a>\n</div>\n</div>\n<div>\n<h4>Lead Types</h4>\n<a href="/movingleadsdaily/">Moving Leads</a>\n<a href="/probateleads/">Probate Leads</a>\n<a href="/newbusinessalert/">New Business Alerts</a>\n<a href="/planningleads/">Planning Permission</a>\n<a href="/tenders/">Public Tenders</a>\n</div>\n<div>\n<h4>Company</h4>\n<a href="/about-us/">About Us</a>\n<a href="/testimonials/">Testimonials</a>\n<a href="/careers/">Careers</a>\n<a href="/founder/">Meet the Founder</a>\n<a href="/blog/">Blog</a>\n</div>\n<div>\n<h4>Product</h4>\n<a href="/pricing/">Pricing &amp; Plans</a>\n<a href="/how-it-works/">How It Works</a>\n<a href="/integrations/">Integrations</a>\n<a href="/api-docs/">API &amp; Webhooks</a>\n<a href="/status/">System Status</a>\n<a href="/security/">Security</a>\n<a href="/compare/">Why 9amLeads</a>\n</div>\n<div>\n<h4>Support</h4>\n<a href="/help/">Help Centre</a>\n<a href="/faq/">FAQ</a>\n<a href="/contact/">Contact Us</a>\n<a href="/terms.html">Terms of Service</a>\n<a href="/privacy.html">Privacy Policy</a>\n<a href="/gdpr/">GDPR &amp; Data Protection</a>\n<a href="mailto:hello@9amleads.com">hello@9amleads.com</a>\n</div>\n</div>\n<div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:24px;padding:16px;border:1px solid rgba(14,165,233,0.12);border-radius:12px;background:rgba(14,165,233,0.04)">\n<span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--text2)"><i class="fas fa-envelope" style="color:var(--accent)"></i> Royal Mail Print &amp; Post partner</span>\n<span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--text2)"><i class="fas fa-building-columns" style="color:var(--accent)"></i> Official Gov.uk &amp; Companies House data</span>\n<span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--text2)"><i class="fas fa-shield-halved" style="color:var(--accent)"></i> GDPR compliant</span>\n<span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--text2)"><i class="fas fa-lock" style="color:var(--accent)"></i> SSL secured</span>\n</div>\n<div class="footer-bottom">&copy; 2026 9am Leads Ltd &middot; Made in the UK &middot; All rights reserved. <span style="display:block;margin-top:4px">9am Leads Ltd, Company No. 17402522 · 66 Paul Street, London EC2A 4NA</span></div>\n</div>\n</footer>\n';
+document.addEventListener('DOMContentLoaded',function(){
+  var h=document.getElementById('siteHeader');if(h)h.innerHTML=headerHTML;
+  var f=document.getElementById('siteFooter');if(f)f.innerHTML=footerHTML;
+  var links=document.querySelectorAll('a[href*="/portal/"]');for(var i=0;i<links.length;i++)(function(a){a.addEventListener('click',function(){trackEvent('trial_cta_clicked',{placement:'integrations'})})})(links[i]);
+});
+</script>
+<script src="/chat.js"></script>
+<script src="/enhancements.js"></script>
+<script>
+function getAid(){try{if(window.__aid)return window.__aid;var v=localStorage.getItem('9am_aid');if(!v){v='u'+Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem('9am_aid',v)}window.__aid=v;return v}catch(e){return 'u'+Date.now().toString(36)}}
+function trackEvent(event,props){try{if(typeof props!=='object'||props===null)props={};fetch('/api/analytics/event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event:event,uid:getAid(),props:props})}).catch(function(){})}catch(e){}}
+</script>
+</body></html>
