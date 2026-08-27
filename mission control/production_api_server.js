@@ -12532,24 +12532,26 @@ app.post('/api/admin/trial-charge/run', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// // // TRIAL GOODWILL EMAIL (one-off gesture): explains the extension. Sends an 8am
+// // // // TRIAL GOODWILL EMAIL (ONE-OFF): explains the extension. Sends a single 8am
 // email to the customers whose trials we extended after a technical issue, so
 // they know their trial was continued as a goodwill gesture and their 9am
-// deliveries are still coming. Runs Mon-Fri at 08:00 UK, once per customer/day.
-cron.schedule('0 8 * * 1-5', async () => {
+// deliveries are still coming. Sends ONCE TOTAL per customer — after all are
+// sent, the timer is cleared so it never repeats.
+var _goodwillTimer = cron.schedule('0 8 * * *', async () => {
   try {
     var gwFile = path.join(DATA_DIR, 'goodwill-email-log.json');
     var gwLog = {};
     try { gwLog = JSON.parse(fs.readFileSync(gwFile, 'utf-8')); } catch(e) {}
-    var todayGw = new Date().toISOString().split('T')[0];
     var gwCandidates = [
       { email: 'info@afsremovals.com', name: 'AFS Removals' },
       { email: 'oathxxx@gmail.com', name: 'there' },
       { email: 'abbashussnain144@gmail.com', name: 'there' }
     ];
+    var allSent = true;
     for (var gi = 0; gi < gwCandidates.length; gi++) {
       var gc = gwCandidates[gi];
-      if (gwLog[gc.email] === todayGw) continue;
+      if (gwLog[gc.email] && gwLog[gc.email] === 'sent') continue;
+      allSent = false;
       var html = '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px">'
         + '<div style="font-size:20px;font-weight:800;color:#0f172a;margin-bottom:8px">Good news from 9amLeads</div>'
         + '<p style="font-size:14px;color:#334155;line-height:1.7">Hi ' + (gc.name || 'there') + ',</p>'
@@ -12561,11 +12563,15 @@ cron.schedule('0 8 * * 1-5', async () => {
         + '</div>';
       try {
         await sendBrevoEmail({ email: gc.email, name: gc.name }, 'Your 9amLeads trial has been extended', html);
-        gwLog[gc.email] = todayGw;
+        gwLog[gc.email] = 'sent';
         console.log('[GOODWILL] Sent trial-extension email to ' + gc.email);
       } catch(ge) { console.log('[GOODWILL] Failed to email ' + gc.email + ': ' + ge.message); }
     }
     fs.writeFileSync(gwFile, JSON.stringify(gwLog));
+    if (allSent) {
+      console.log('[GOODWILL] All extension emails sent — stopping the one-off timer.');
+      try { _goodwillTimer.stop(); } catch(e) {}
+    }
   } catch(gwe) { console.log('[GOODWILL] cron error:', gwe.message); }
 });
 
