@@ -3645,6 +3645,10 @@ app.get(/^\/(?!api\/).*$/, (req, res) => {
       res.sendFile(p); return;
     }
   }
+  // AFFILIATES: /affiliates and /affiliate are public pages served from the portal.
+  if (req.path === '/affiliates' || req.path === '/affiliate') {
+    return res.redirect('/portal/affiliate.html');
+  }
   res.sendFile(path.join(FRONTEND_DIR, 'index.html'));
 });
 
