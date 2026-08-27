@@ -1,4 +1,4 @@
-# Local Netlify folder
+﻿# Local Netlify folder
 .netlify
 
 # OS files
@@ -28,8 +28,10 @@ yarn-error.log*
 *.log
 
 
-9amwebsite/hero-video.mp4
+
 9amwebsite/Screenshots*/
-*.mp4
+
 *.mov
 *.zip
+
+
