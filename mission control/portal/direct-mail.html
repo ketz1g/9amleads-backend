@@ -165,16 +165,19 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 <p style="font-size:11px;color:#0369a1;background:#eff6ff;border:1px solid #bae6fd;border-radius:8px;padding:8px 10px;margin-bottom:10px"><i class="fas fa-edit" style="margin-right:4px"></i><b>Tip:</b> Your back design is automatically positioned below the address zone so nothing is cut off. If you'd like to tweak it, click <b>Edit</b> on the <b>Back. Print-Ready</b> preview above — drag to move and stretch the handles to taste. The preview updates as you adjust it.</p>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
   <div style="border:1px solid var(--border);border-radius:10px;padding:8px;background:#fff;text-align:center">
-    <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:8px">Front. Print-Ready <span id="fp-front-label" style="font-weight:400;color:var(--muted)"></span> <button id="fp-front-edit" onclick="fpEditFront()" style="display:none;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;color:var(--accent);border:1px solid var(--border);background:#fff;cursor:pointer"><i class="fas fa-crop-alt"></i> Edit</button></div>
-    <img id="fp-front-img" alt="Final print preview (front, full design)" style="max-width:100%;max-height:260px;border-radius:6px;border:1px solid #334155">
+    <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:8px">Front. Print-Ready <span style="color:var(--success);font-weight:400">(full design)</span> <span id="fp-front-label" style="font-weight:400;color:var(--muted)"></span> <button id="fp-front-edit" onclick="fpEditFront()" style="display:none;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;color:var(--accent);border:1px solid var(--border);background:#fff;cursor:pointer"><i class="fas fa-crop-alt"></i> Edit</button></div>
+    <div style="position:relative;display:inline-block;max-width:100%">
+      <img id="fp-front-img" alt="Final print preview (front, full design)" style="max-width:100%;max-height:260px;border-radius:6px;border:1px solid #334155;display:block">
+    </div>
     <div id="fp-front-specs" style="font-size:10px;color:var(--text2);margin-top:6px;line-height:1.5"></div>
     <a class="btn btn-primary btn-sm" style="display:flex;justify-content:center;font-size:11px;margin-top:8px;color:#fff" id="fp-download-final" target="_blank" rel="noopener"><i class="fas fa-download"></i> Download Print-Ready Version</a>
     <a class="btn btn-outline btn-sm" style="display:flex;justify-content:center;font-size:11px;margin-top:6px" id="fp-download-orig" target="_blank" rel="noopener"><i class="fas fa-file-image"></i> Download My Original</a>
   </div>
   <div style="border:1px solid var(--border);border-radius:10px;padding:8px;background:#fff;text-align:center">
-    <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:8px">Back. Print-Ready <span style="color:var(--success);font-weight:400">(address zone at top)</span> <button id="fp-back-edit" onclick="fpEditBack()" style="display:none;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;color:var(--accent);border:1px solid var(--border);background:#fff;cursor:pointer"><i class="fas fa-crop-alt"></i> Edit</button></div>
-    <div style="border:2px solid #0c4a6e;border-radius:6px;padding:2px;display:inline-block">
-      <img id="fp-back-img" alt="Final print preview (back, address zone top)" style="max-width:100%;max-height:250px;border-radius:4px;display:block">
+    <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:8px">Back. Print-Ready <span style="color:var(--success);font-weight:400">(address area at top)</span> <button id="fp-back-edit" onclick="fpEditBack()" style="display:none;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;color:var(--accent);border:1px solid var(--border);background:#fff;cursor:pointer"><i class="fas fa-crop-alt"></i> Edit</button></div>
+    <div style="position:relative;display:inline-block;max-width:100%;border:2px solid #0c4a6e;border-radius:6px;padding:0">
+      <img id="fp-back-img" alt="Final print preview (back, white address zone top)" style="max-width:100%;max-height:250px;border-radius:4px;display:block">
+      <div id="fp-address-tag" style="position:absolute;top:8px;left:50%;transform:translateX(-50%);background:#fff;border:2px dashed #0c4a6e;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:800;color:#0c4a6e;white-space:nowrap;z-index:5"><i class="fas fa-envelope" style="margin-right:4px"></i>ADDRESS AREA (white)</div>
     </div>
     <div style="font-size:10px;color:var(--muted);margin-top:6px" id="fp-back-name"></div>
     <a class="btn btn-outline btn-sm" style="display:flex;justify-content:center;font-size:11px;margin-top:8px" id="fp-download-back" target="_blank" rel="noopener"><i class="fas fa-download"></i> Download My Back</a>
@@ -190,9 +193,11 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
   <div style="padding:10px 12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;font-size:11px;color:#1e40af;line-height:1.7">
     <b style="color:var(--text)"><i class="fas fa-crop-alt" style="color:var(--accent);margin-right:4px"></i> How to use Edit / Position</b><br>
     Click <b>Edit / Position</b> on your saved flyer to open the editor:<br>
+    • <b>Keep everything inside the BLUE dashed lines</b> — that's the safe print area<br>
     • <b>Drag the flyer</b> to move it around the page<br>
     • <b>Drag any blue square (handle)</b> to stretch it up/down or left/right<br>
     • Use <b>+ / − / scroll wheel</b> to scale the whole design<br>
+    • On the <b>Back</b>, don't drag your design into the <b>blue address box at the top</b> — it stays white for the recipient's address<br>
     • Click <b>Save Positioned Flyer</b> when it looks right<br>
     The print matches exactly what you position. you're in full control.
   </div>
@@ -1312,10 +1317,10 @@ function saveFlyerEditor(){
     <button onclick="closeFlyerEditor()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#64748b">✕</button>
   </div>
   <p style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px">
-    <b>You control the final print.</b> <b>Drag</b> the image to move it, <b>drag any blue square (handle)</b> to stretch it up/down or left/right, and use the zoom buttons / scroll wheel to scale. Position your design until it fills the page the way you want. The <b>bottom strip</b> is where your recipient's address is printed (Royal Mail requirement). keep it plain. When it looks right, click <b>Save</b>. Because you position it yourself, the print matches exactly what you see.
+    <b>You control the final print.</b> <b style="color:#1d4ed8">Keep your flyer INSIDE the blue dashed lines</b> — that's the safe area, so nothing important (logos, phone numbers, your call to action) gets trimmed or covered at the edges. <b>Drag</b> the image to move it, <b>drag any blue square (handle)</b> to stretch it up/down or left/right, and use the zoom buttons / scroll wheel to scale. Position your design until it fills the page the way you want. The <b>blue box at the top of the Back</b> is the white address area where Royal Mail prints the recipient's address — keep it plain and don't drag your design into it. When it looks right, click <b>Save</b>.
   </p>
   <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:9px 12px;margin-bottom:12px;font-size:12px;color:#1e3a8a;line-height:1.6">
-    <b><i class="fas fa-eye" style="color:#2563eb;margin-right:4px"></i>Can't see your flyer?</b> Press the <b>Reset View</b> button below to bring your design back into view. You can then adjust your flyer's <b>size</b> so it fits within the required print area.
+    <b><i class="fas fa-bullseye" style="color:#2563eb;margin-right:4px"></i>Blue lines = your safe area.</b> Keep all important content within the <b>blue dashed border</b> around the page. Content outside it may be trimmed or sit too close to the edge to print cleanly. If your flyer is too small or too large, use the handles or <b>Reset View</b> to adjust it until it fits nicely inside the blue lines.
   </div>
   <div style="border:1px solid var(--border);border-radius:10px;padding:10px;background:#f8fafc;text-align:center;position:relative;overflow:hidden;height:440px" id="flyer-editor-stage">
     <canvas id="flyer-editor-canvas" style="max-width:100%;max-height:100%;cursor:grab;touch-action:none"></canvas>
