@@ -1739,7 +1739,8 @@ setTimeout(function(){var e=document.getElementById('liveProof'),t=document.getE
 </div>
 <script>
 if(localStorage.getItem('cookies_accepted')) document.getElementById('cookieConsent').style.display='none';
-// Theme toggle ,  light mode default (base CSS is light)
+// Theme toggle — DARK mode default (matches the portal + brand). Base CSS is light,
+// but we apply .dark unless the visitor explicitly saved 'light'.
 document.documentElement.classList.remove('dark');
 function toggleTheme() {
   var root = document.documentElement;
@@ -1750,7 +1751,10 @@ function toggleTheme() {
 }
 // Set initial icon
 document.addEventListener('DOMContentLoaded', function() {
-  if (localStorage.getItem('theme') === 'dark') document.documentElement.classList.add('dark');
+  // DARK BY DEFAULT: apply .dark unless the visitor explicitly saved 'light'.
+  var savedTheme = localStorage.getItem('theme');
+  if (savedTheme === 'dark') document.documentElement.classList.add('dark');
+  else if (savedTheme !== 'light') document.documentElement.classList.add('dark');
   var isDark = document.documentElement.classList.contains('dark');
   document.getElementById('themeToggle').innerHTML = isDark ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
 });
