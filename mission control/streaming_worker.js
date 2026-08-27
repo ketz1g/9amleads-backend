@@ -68,7 +68,11 @@ function extractPostcodeArea(pc) {
 
 function fetchCompanyProfile(companyNumber, apiKey) {
   return new Promise((resolve) => {
-    var req = https.get({ hostname: 'api.company-information.service.gov.uk', path: '/company/' + encodeURIComponent(companyNumber), headers: { 'Authorization': 'Basic ' + Buffer.from(apiKey + ':').toString('base64') }, timeout: 15000 }, (res) => {
+    // Company profile comes from the REST API, which uses the REST key
+    // (COMPANIES_HOUSE_API_KEY) — NOT the stream key. The stream key only works on
+    // stream.companieshouse.gov.uk; using it here 401s and drops every company.
+    var restKey = process.env.COMPANIES_HOUSE_API_KEY || apiKey;
+    var req = https.get({ hostname: 'api.company-information.service.gov.uk', path: '/company/' + encodeURIComponent(companyNumber), headers: { 'Authorization': 'Basic ' + Buffer.from(restKey + ':').toString('base64') }, timeout: 15000 }, (res) => {
       var body = '';
       res.on('data', (c) => body += c);
       res.on('end', () => {
