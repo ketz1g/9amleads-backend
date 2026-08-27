@@ -224,6 +224,27 @@ footer a:hover{color:var(--primary)}
 </div>
 </div>
 </section>
+<!-- PERFECT FOR YOU BANNER -->
+<div id="perfectForBanner" style="display:none;position:relative;padding:28px 24px;border-top:1px solid var(--border);background:linear-gradient(135deg,rgba(14,165,233,0.10),rgba(99,102,241,0.06))">
+<div style="max-width:1100px;margin:0 auto;position:relative;z-index:2">
+<button onclick="dismissPerfectFor()" style="position:absolute;top:-8px;right:-8px;width:30px;height:30px;border-radius:50%;border:1px solid var(--border);background:var(--bg-card);color:var(--text2);cursor:pointer;font-size:13px;line-height:1" aria-label="Close">&times;</button>
+<div style="display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap">
+<div id="pfIcon" style="width:56px;height:56px;border-radius:16px;background:rgba(14,165,233,0.14);color:var(--accent,#0ea5e9);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0"><i class="fas fa-star"></i></div>
+<div style="flex:1;min-width:260px">
+<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent,#0ea5e9);margin-bottom:6px">Perfect for your business</div>
+<h2 id="pfTitle" style="font-size:22px;font-weight:800;font-family:var(--ff-h,var(--ff-head));margin:0 0 8px;color:var(--text,#fff);line-height:1.2"></h2>
+<p id="pfPitch" style="font-size:14px;color:var(--text2,#999);line-height:1.7;margin:0 0 18px;max-width:760px"></p>
+<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+<a id="pfCta" href="/portal/#signup" class="btn btn-primary btn-lg" style="width:auto;text-decoration:none"><i class="fas fa-gift"></i> Start Free — 1 Week of Leads</a>
+<a id="pfCta2" href="/pricing/" class="btn btn-lg" style="width:auto;text-decoration:none;background:transparent;border:1.5px solid var(--border);color:var(--text,#fff)"><i class="fas fa-pound-sign"></i> See Plans</a>
+<a href="/who-we-serve/" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--text2);text-decoration:none"><i class="fas fa-arrow-left" style="font-size:11px"></i> Back to all lead types</a>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+
 <!-- PRINT & POST · AUTO SEND · LIVE TRACKING -->
 <section class="section" style="position:relative;overflow:hidden;padding:52px 0;background:var(--bg2,var(--bg-alt));border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
 <div class="s-grid"></div>
@@ -1026,6 +1047,199 @@ Builders earn £5,000-£50,000 per project. One extension project alone pays for
 <script>
 function toggleMobile(){document.getElementById("mobileMenu").classList.toggle("open");document.getElementById("mobileOverlay").classList.toggle("show");document.getElementById("hamBtn").classList.toggle("active")}
 function toggleFaq(el){el.parentElement.classList.toggle("open")}
+</script>
+
+<script>
+// Perfect-for-you banner data for 9amLeads lead-type pages.
+// Each entry key = business slug (lowercase, hyphenated). value = { icon, title, pitch }
+// The pitch tells the business owner why THIS lead type works for them.
+// A "default" key per lead type covers businesses not listed individually.
+window.PERFECT_FOR = {
+  moving: {
+    default: { icon: 'fa-truck', title: 'This lead is made for businesses like yours', pitch: 'Every SSTC property means a household that is about to move — and moving households buy services fast. These fresh, door-numbered opportunities arrive at 9am so you contact the homeowner first, before competitors. Try it free for a week and see the quality for yourself.' },
+    'removal-companies': { icon: 'fa-truck', title: 'You move homes — these leads find the homes for you', pitch: 'A property goes Sold Subject to Contract and the homeowner suddenly needs a removal company. These fresh SSTC opportunities arrive at 9am with the full address — so you contact them before any competitor. One booking covers your subscription many times over.' },
+    'man-van-companies': { icon: 'fa-van-shuttle', title: 'Small moves, big demand — these leads find them', pitch: 'Man & van jobs come from people who need a fast, simple move. Every SSTC property is a potential same-week job. Get the address and move date at 9am and quote before the big firms even call.' },
+    'house-clearance': { icon: 'fa-trash', title: 'Moving out means clearing out — you belong here', pitch: 'People selling a home almost always have unwanted goods to clear — sheds, garages, lofts, entire houses. These SSTC leads tell you exactly who is moving and where, so you can offer clearance while they pack. A perfect match for your service.' },
+    'storage-companies': { icon: 'fa-warehouse', title: 'Moves create storage demand — get in early', pitch: 'Between two homes, most families need storage. These leads tell you who is moving in your area at 9am, so you can offer short-term or long-term storage before they book elsewhere.' },
+    'self-storage-facilities': { icon: 'fa-boxes-stacked', title: 'Movers need space — these leads are your customers', pitch: 'Every move is a potential storage customer. With these fresh SSTC leads you know exactly who is relocating nearby, and you can pitch storage as part of the move. Quote first, win first.' },
+    'packing-services': { icon: 'fa-box', title: 'Nobody enjoys packing — they will pay you to', pitch: 'Packing is the most outsourced part of any move. These leads deliver people in your area who are about to move, so you can offer a packing service before the removal company locks them in.' },
+    'end-of-tenancy-cleaners': { icon: 'fa-sparkles', title: 'Sellers need a spotless finish — you provide it', pitch: 'Anyone selling a home needs it spotless for completion. These fresh SSTC leads are homeowners who will need a deep, end-of-tenancy-style clean. Contact them at 9am and be their cleaner.' },
+    'carpet-cleaners': { icon: 'fa-broom', title: 'Movers need carpets cleaned — often twice', pitch: 'Sellers clean carpets before completion; buyers clean them again on the way in. Each SSTC lead is a potential job at both ends. Fresh daily leads mean you are first to offer.' },
+    'cleaning-companies': { icon: 'fa-spray-can', title: 'Every move needs a clean — these are your clients', pitch: 'From post-removal cleans to new-home deep cleans, movers are constant customers. These leads deliver the addresses of people moving in your area every morning.' },
+    'interior-designers': { icon: 'fa-palette', title: 'New homes need new looks — these are your clients', pitch: 'People who just bought a home are the most likely to spend on design, decorating and furnishing. These SSTC leads give you the homeowners who are about to transform their new space.' },
+    'furniture-companies': { icon: 'fa-couch', title: 'New homes need furnishing — you supply it', pitch: 'Move-in season is furniture season. Every SSTC lead is a household about to spend on sofas, beds and storage. Be the furniture company they think of first.' },
+    'appliance-retailers': { icon: 'fa-kitchen-set', title: 'New kitchens mean new appliances', pitch: 'People moving into a new home often upgrade white goods. These leads tell you who is moving where, so you can offer delivery, installation and finance before rivals.' },
+    'handyman-services': { icon: 'fa-tools', title: 'New homeowners always need a handyman', pitch: 'Every new home has a to-do list — shelves, fittings, small repairs, odd jobs. These fresh SSTC leads are homeowners who will need exactly what you do. Be first to offer.' },
+    'broadband-telecom': { icon: 'fa-wifi', title: 'Every new home needs a connection', pitch: 'Moving home means switching broadband, TV and phone. These leads tell you who is moving in your area, so you can offer a fast, simple switch before your competitors.' },
+    'utility-switching': { icon: 'fa-bolt', title: 'New address, new energy deal', pitch: 'People moving home need new energy, water and broadband at their new address. These leads let you contact them at 9am with a switch offer before they auto-renew with their current provider.' },
+    'home-insurance-brokers': { icon: 'fa-shield-halved', title: 'New homes need new cover', pitch: 'Selling and buying a home means reviewing buildings and contents insurance. These fresh leads are homeowners who will need a quote — contact them first.' },
+    'locksmiths': { icon: 'fa-key', title: 'New home, new locks — classic job', pitch: 'Most new homeowners change the locks on day one. These SSTC leads tell you who has just moved in, so you can offer a rekey or new locks before they search online.' },
+    'security-companies': { icon: 'fa-lock', title: 'New homes need security setups', pitch: 'People moving into a new home frequently add alarms, cameras and smart locks. These leads give you the addresses of new homeowners in your area every morning.' },
+    'cctv-alarm-installers': { icon: 'fa-video', title: 'New homes, new security installs', pitch: 'Every new homeowner is a potential CCTV or alarm install. With fresh SSTC leads you know exactly who is moving in, so you can offer a survey before anyone else.' },
+    'pet-livestock-transport': { icon: 'fa-dog', title: 'Moves need pet transport too', pitch: 'Families moving home often need help moving pets — especially on longer or international relocations. These leads tell you who is moving, so you can offer pet transport as part of the plan.' },
+    'vehicle-shipping': { icon: 'fa-car', title: 'Relocations often need vehicle transport', pitch: 'On longer moves, families need their cars shipped. These SSTC leads include movers who may need vehicle transport — offer it alongside the removal.' },
+    'furniture-assembly-services': { icon: 'fa-screwdriver-wrench', title: 'Flat-pack day, every move', pitch: 'Nobody enjoys flat-pack assembly after a move. These leads are households about to move who will want everything put together — offer your assembly service first.' },
+    'appliance-installation-delivery': { icon: 'fa-plug', title: 'New appliances need installing', pitch: 'Washing machines, cookers and fridges need installing at the new home. These fresh leads tell you who is moving, so you can offer installation as part of the move-in.' },
+    'property-deep-cleaning': { icon: 'fa-sparkles', title: 'Deep cleans for move-in day', pitch: 'New homeowners want a deep clean before they unpack. Every SSTC lead is a household that will need exactly that. Contact them at 9am and book the clean.' },
+    'mattress-bed-removal': { icon: 'fa-bed', title: 'Beds need moving or disposing', pitch: 'Movers often need old beds collected or new beds delivered and set up. These leads give you the households moving in your area who will need bed services.' },
+    'plant-tree-moving-services': { icon: 'fa-seedling', title: 'Gardeners love moving these leads', pitch: 'People moving often want their plants, trees and garden features relocated. These SSTC leads tell you who is moving and where, so you can offer your services.' },
+    'office-relocation': { icon: 'fa-building', title: 'Business moves are bigger jobs', pitch: 'Office and business relocations are high-value removals. These leads include moving signals that can surface commercial moves — contact early and land the contract.' },
+    'international-removal': { icon: 'fa-plane', title: 'Long-distance and overseas moves', pitch: 'Families moving abroad or across the country need specialist removal companies. These leads surface exactly those moving situations so you can quote before others.' },
+    'specialist-piano-movers': { icon: 'fa-music', title: 'Specialist items, specialist movers', pitch: 'Pianos, antiques and fragile items need specialist handling. Every move is a potential specialist job — these leads tell you who is moving so you can offer your expertise.' },
+    'commercial-removals': { icon: 'fa-industry', title: 'Commercial moves, steady revenue', pitch: 'Offices, shops and warehouses relocate too. These moving leads can surface commercial moves — contact early with a commercial removal quote and win the contract.' }
+  },
+  probate: {
+    default: { icon: 'fa-scale-balanced', title: 'This lead is made for businesses like yours', pitch: 'Every probate grant means a family managing an estate — and estates need legal, financial, property and practical services. These fresh grant leads arrive at 9am with executor and estate details, so you contact the family first. Try it free for a week.' },
+    'probate-solicitors': { icon: 'fa-scale-balanced', title: 'Probate work, fresh from the register', pitch: 'New grants mean new probate instructions. These leads deliver grants in your chosen counties at 9am — with executor details where available — so you contact families before competitors and win the instruction.' },
+    'will-writers': { icon: 'fa-file-signature', title: 'Every grant is a future will client', pitch: 'Families dealing with an estate often realise they need wills, LPAs and estate planning. These fresh probate leads let you reach them at the right moment and grow your practice.' },
+    'private-client-solicitors': { icon: 'fa-scale-balanced', title: 'Private client work, on tap', pitch: 'Grants of probate are the gateway to private client work — wills, trusts, LPAs, estate administration. These leads deliver new grants daily so your pipeline is never empty.' },
+    'estate-administration': { icon: 'fa-file-contract', title: 'Estate administration clients daily', pitch: 'Every grant is someone who needs the estate administered. These fresh leads tell you who has just been granted probate, so you can offer your administration service first.' },
+    'inheritance-tax-advisers': { icon: 'fa-money-bill-trend-up', title: 'IHT planning starts at the grant', pitch: 'Grants mean estates, and estates mean inheritance tax questions. These probate leads surface the families who may need IHT planning and advice — contact them early.' },
+    'accountants': { icon: 'fa-calculator', title: 'Estates need accountants too', pitch: 'Executors need accounts, valuations and tax returns for the estate. These fresh grant leads deliver the families who will need exactly that — offer your services first.' },
+    'financial-advisers': { icon: 'fa-chart-line', title: 'Estate assets need managing', pitch: 'Inheritance often means investment and pension decisions. These probate leads reach the beneficiaries at the right time to offer financial advice and planning.' },
+    'probate-genealogists': { icon: 'fa-family', title: 'Heir tracing starts with the grant', pitch: 'Every grant is a potential heir-tracing case — especially when there are no obvious beneficiaries. These fresh leads give you the estates where families may need tracing.' },
+    'heir-tracing-companies': { icon: 'fa-magnifying-glass', title: 'Find heirs, win instructions', pitch: 'New grants, especially intestate ones, need beneficiary tracing. These leads deliver the cases where your service is essential — contact the estate at 9am.' },
+    'estate-agents': { icon: 'fa-house', title: 'Probate properties need selling', pitch: 'Many estates include a property to sell. These fresh probate leads tell you who has just been granted probate in your area, so you can offer a probate valuation and win the instruction.' },
+    'property-auctioneers': { icon: 'fa-gavel', title: 'Estates are often sold at auction', pitch: 'Probate properties are classic auction stock. These leads surface estates in your area so you can offer a fast, unconditional sale through auction.' },
+    'cash-house-buyers': { icon: 'fa-money-bill', title: 'Fast probate property sales', pitch: 'Families often want the estate property sold quickly. These fresh probate leads let you contact executors first and offer a fast, hassle-free cash purchase.' },
+    'chartered-surveyors': { icon: 'fa-ruler-combined', title: 'Probate valuations on demand', pitch: 'Estates need valuations for IHT and for sale. These probate leads deliver families who will need a surveyor — contact them early and win the instruction.' },
+    'house-clearance': { icon: 'fa-trash', title: 'Estate clearances are big jobs', pitch: 'After a death, homes need clearing — contents, furniture, everything. These fresh probate leads tell you which families in your area need clearance. A natural fit for your service.' },
+    'removal-companies': { icon: 'fa-truck', title: 'Estate removals and relocations', pitch: 'Clearing a home, moving belongings, redistributing to family — estates need removals. These probate leads give you the families who will need your service.' },
+    'antique-dealers': { icon: 'fa-landmark', title: 'Estate contents have value', pitch: 'Estates often contain antiques, collectables and valuables. These probate leads let you offer a contents valuation and purchase while the family is sorting the home.' },
+    'jewellery-valuers': { icon: 'fa-gem', title: 'Jewellery and valuables valuation', pitch: 'Families need jewellery and valuables valued for the estate. These fresh probate leads deliver the families who will need exactly that.' },
+    'empty-property-management': { icon: 'fa-house-crack', title: 'Empty homes need care', pitch: 'After a death, a property often sits empty — needing security, maintenance and management. These probate leads give you the empty homes in your area to offer your service.' },
+    'inheritance-cash-advances': { icon: 'fa-hand-holding-dollar', title: 'Cash advances for waiting executors', pitch: 'Executors often need funds before the estate settles. These fresh probate leads reach families who may need a cash advance against the inheritance.' },
+    'downsizing-rightsizing-consultants': { icon: 'fa-arrows-left-right', title: 'Downsizing after loss', pitch: 'Families often downsize after a death. These probate leads surface the households who will need downsizing help — decluttering, selling, moving and setting up a new home.' },
+    'vehicle-buying-disposal': { icon: 'fa-car', title: 'Estate vehicles need selling', pitch: 'Estates often include a car that needs selling or collecting. These probate leads let you offer a fast, fair vehicle purchase to the executors.' },
+    'unoccupied-home-insurance': { icon: 'fa-shield-halved', title: 'Empty homes need insurance', pitch: 'Empty probate properties need specialist insurance. These fresh leads give you the unoccupied homes in your area to quote on.' },
+    'executor-services': { icon: 'fa-user-tie', title: 'Professional executors, always in demand', pitch: 'Many executors prefer to hand the job to a professional. These probate leads deliver the families who will pay for executor services — contact them first.' }
+  },
+  newbusiness: {
+    default: { icon: 'fa-building-columns', title: 'This lead is made for businesses like yours', pitch: 'Every new company registration is a business that needs suppliers — accountants, websites, insurance, IT, marketing and more. These fresh registration leads arrive at 9am so you contact them in their first days, before competitors. Try it free for a week.' },
+    'accountants': { icon: 'fa-calculator', title: 'Every new company needs an accountant', pitch: 'New LTDs need an accountant from day one — for filing, tax and payroll. These fresh registration leads deliver companies in their first days, when they are still choosing who to work with. Win the onboarding.' },
+    'bookkeepers': { icon: 'fa-book', title: 'New companies need bookkeeping', pitch: 'Fresh registrations mean fresh bookkeeping clients. These leads deliver new businesses before they have settled on a provider — offer a simple monthly package and win them for years.' },
+    'tax-advisers': { icon: 'fa-file-invoice-dollar', title: 'New businesses, tax questions', pitch: 'New company owners need tax advice immediately. These fresh leads deliver them at the moment they are setting up, when advice matters most.' },
+    'payroll-companies': { icon: 'fa-users-gear', title: 'New employers need payroll', pitch: 'Once a new company hires staff, they need payroll. These registration leads let you contact new businesses early and offer payroll when the time comes.' },
+    'business-consultants': { icon: 'fa-chess', title: 'New founders need guidance', pitch: 'New business owners often hire consultants for strategy, setup and growth. These fresh registration leads deliver founders in their first days — offer your expertise first.' },
+    'commercial-finance-brokers': { icon: 'fa-hand-holding-dollar', title: 'New companies need funding', pitch: 'Startups need finance — loans, overdrafts, invoice finance. These leads deliver new companies at the moment they are looking for capital.' },
+    'insurance-brokers': { icon: 'fa-shield-halved', title: 'New businesses need insurance', pitch: 'Employer liability, public liability, contents — every new company needs cover. These fresh registration leads let you quote before competitors.' },
+    'web-designers': { icon: 'fa-code', title: 'Every new company needs a website', pitch: 'A new business needs a website in its first month. These fresh leads deliver companies that are actively looking — contact them before someone else builds their site.' },
+    'web-developers': { icon: 'fa-laptop-code', title: 'New companies, new builds', pitch: 'New businesses need websites, apps and online systems. These registration leads give you fresh prospects before they have chosen a developer.' },
+    'it-support': { icon: 'fa-screwdriver-wrench', title: 'New companies need IT setup', pitch: 'Laptops, email, cloud, support — new companies need IT from day one. These leads deliver them at the perfect time to offer a managed IT package.' },
+    'cybersecurity': { icon: 'fa-shield', title: 'Security from day one', pitch: 'New businesses are common cyber targets. These fresh registration leads let you offer security setup and monitoring before they are compromised.' },
+    'cloud-services': { icon: 'fa-cloud', title: 'New companies go straight to cloud', pitch: 'New businesses run on cloud — storage, backup, collaboration. These leads deliver companies ready to buy cloud services in their first days.' },
+    'marketing-agencies': { icon: 'fa-bullhorn', title: 'New companies need marketing', pitch: 'A new business needs customers — which means marketing. These fresh registration leads deliver companies ready to spend on marketing in their first months.' },
+    'seo-agencies': { icon: 'fa-magnifying-glass-chart', title: 'New websites need SEO', pitch: 'New companies building websites need SEO from day one to rank before competitors. These leads give you fresh prospects at the perfect time.' },
+    'recruitment-agencies': { icon: 'fa-user-plus', title: 'New companies start hiring', pitch: 'Growing new companies need staff. These registration leads let you contact early and be their recruiter as they scale.' },
+    'hr-consultants': { icon: 'fa-users', title: 'New employers need HR', pitch: 'Contracts, policies, onboarding — new companies need HR help. These fresh leads deliver employers ready for HR support.' },
+    'employment-law-solicitors': { icon: 'fa-gavel', title: 'New employers need employment law', pitch: 'Hiring means contracts and compliance. These registration leads deliver new employers who will need employment law advice.' },
+    'serviced-office-providers': { icon: 'fa-building', title: 'New companies need office space', pitch: 'Many new businesses start in serviced or virtual offices. These fresh leads deliver companies looking for space and an address.' },
+    'virtual-office-providers': { icon: 'fa-envelope-open', title: 'A registered address for new companies', pitch: 'New companies need a registered office and mail handling. These registration leads deliver businesses that need exactly what you offer.' },
+    'coworking-spaces': { icon: 'fa-users-line', title: 'New businesses need space to work', pitch: 'Founders often work from coworking spaces. These fresh leads deliver new companies looking for workspace.' },
+    'business-energy-brokers': { icon: 'fa-bolt', title: 'New companies need energy deals', pitch: 'A new business needs gas, electricity and broadband at its new premises. These registration leads let you offer a switch before they auto-renew.' },
+    'company-formation-agents': { icon: 'fa-file-contract', title: 'Formation and beyond', pitch: 'New company owners need formation, registered office and compliance. These fresh leads deliver companies at the moment they are setting up.' },
+    'registered-office-virtual-address': { icon: 'fa-map-pin', title: 'A professional address, instantly', pitch: 'New companies need a registered office and virtual address. These leads deliver them in their first days, when they are choosing a provider.' },
+    'domain-web-hosting': { icon: 'fa-globe', title: 'New companies need a domain', pitch: 'Every new business needs a domain, email and hosting. These fresh registration leads deliver companies ready to buy online essentials.' },
+    'ecommerce-platforms': { icon: 'fa-cart-shopping', title: 'New retailers go online', pitch: 'Many new companies are e-commerce businesses needing a store. These leads deliver them at the perfect time to offer your platform.' },
+    'gdpr-compliance-consultants': { icon: 'fa-shield-halved', title: 'Compliance from day one', pitch: 'New companies need GDPR compliance, privacy policies and data handling. These fresh leads deliver businesses that need your help immediately.' },
+    'call-answering-virtual-assistants': { icon: 'fa-headset', title: 'New companies need a front desk', pitch: 'New businesses can’t always answer the phone. These registration leads deliver companies that will need call answering and VA support.' },
+    'translation-services': { icon: 'fa-language', title: 'New companies go international', pitch: 'New businesses serving global customers need translation. These fresh leads deliver companies ready to expand.' }
+  },
+  planning: {
+    default: { icon: 'fa-draw-polygon', title: 'This lead is made for businesses like yours', pitch: 'Every planning application means a homeowner or developer about to spend on construction. These fresh application leads arrive at 9am with the applicant and project details, so you quote before competitors. Try it free for a week.' },
+    'general-builders': { icon: 'fa-hammer', title: 'Every application is a build', pitch: 'A planning application means someone wants work done — extension, conversion, renovation. These fresh leads give you the project before competitors, so you quote first and win the job.' },
+    'extension-specialists': { icon: 'fa-house-chimney', title: 'Extensions are your bread and butter', pitch: 'Rear extensions and side extensions are the most common applications. These leads deliver the exact projects you want to quote on, every morning at 9am.' },
+    'loft-conversion-companies': { icon: 'fa-house-chimney-window', title: 'Loft conversions, fresh daily', pitch: 'Loft conversion applications mean committed homeowners with real budgets. These fresh leads tell you who is converting in your area — quote before other trades.' },
+    'architects': { icon: 'fa-compass-drafting', title: 'Projects need design first', pitch: 'Before anyone builds, they need design. Planning applications signal upcoming projects — contact applicants early and offer your architectural services.' },
+    'structural-engineers': { icon: 'fa-drafting-compass', title: 'Every extension needs engineering', pitch: 'Extensions and conversions need structural calculations and drawings. These fresh planning leads deliver the projects that will need exactly that.' },
+    'electricians': { icon: 'fa-plug', title: 'Every build needs electrics', pitch: 'Extensions, conversions and renovations all need electrical work. These planning leads tell you who is building in your area, so you can quote the electrics early.' },
+    'plumbers': { icon: 'fa-faucet-drip', title: 'Bathrooms and kitchens need plumbers', pitch: 'Planning applications for kitchens and bathrooms mean plumbing work. These fresh leads deliver those projects so you quote first.' },
+    'roofers': { icon: 'fa-house-roof', title: 'Roof work starts with a project', pitch: 'Extensions and conversions often involve roof work. These planning leads tell you which projects in your area will need a roofer.' },
+    'kitchen-fitters': { icon: 'fa-kitchen-set', title: 'New kitchens from planning to fitting', pitch: 'Planning applications for kitchen extensions and renovations mean new kitchens. These leads deliver those homeowners at the right time.' },
+    'bathroom-fitters': { icon: 'fa-bath', title: 'Bathrooms from planning to fitting', pitch: 'A planning application for a bathroom renovation means work for you. These fresh leads tell you who is renovating in your area.' },
+    'landscapers': { icon: 'fa-seedling', title: 'Garden projects from planning', pitch: 'Planning applications include landscaping, extensions and outbuildings that mean garden work. These leads deliver those projects so you quote early.' },
+    'driveway-paving': { icon: 'fa-road', title: 'Driveways from planning applications', pitch: 'Planning applications for driveways, parking and paving are common. These fresh leads tell you who is improving their property in your area.' },
+    'solar-panel-installers': { icon: 'fa-sun', title: 'Solar needs planning sometimes', pitch: 'Solar and renewable installations often need planning consent. These leads surface those projects so you can offer your install before competitors.' },
+    'heat-pump-installers': { icon: 'fa-temperature-half', title: 'Heat pumps from planning', pitch: 'Heat pump installations frequently appear in planning applications. These fresh leads deliver those homeowners ready to install.' },
+    'groundworks': { icon: 'fa-shovel', title: 'Every build starts with groundworks', pitch: 'Extensions and new builds need foundations and groundworks. These planning leads tell you which projects in your area are starting — quote the groundworks first.' },
+    'scaffolding-companies': { icon: 'fa-people-roof', title: 'Every build needs scaffold', pitch: 'Extensions and renovations mean scaffolding. These fresh planning leads deliver the projects that will need your scaffold — contact them early.' },
+    'basement-conversion-specialists': { icon: 'fa-house-chimney-crack', title: 'Basements are big projects', pitch: 'Basement conversion applications are high-value projects. These leads tell you who is planning one in your area so you can quote before others.' },
+    'tree-surgeons-arboriculture': { icon: 'fa-tree', title: 'Trees in planning applications', pitch: 'Planning applications often involve tree works — TPOs, removals, pruning. These fresh leads deliver projects that will need an arboriculturist.' },
+    'fire-safety-compartmentation': { icon: 'fa-fire-extinguisher', title: 'Builds need fire safety', pitch: 'Extensions and conversions need fire safety and compartmentation work. These planning leads tell you who is building, so you can offer compliance.' },
+    'interior-designers': { icon: 'fa-palette', title: 'Projects need interiors', pitch: 'A planning application often leads to a full interior project. These fresh leads deliver homeowners ready to spend on design.' },
+    'property-developers': { icon: 'fa-building', title: 'Developers live on planning leads', pitch: 'Planning applications signal development opportunities. These fresh leads tell you what is being approved in your area before others find out.' }
+  },
+  tenders: {
+    default: { icon: 'fa-file-contract', title: 'This lead is made for businesses like yours', pitch: 'Public sector contracts are won by the first to respond with the right bid. These tender leads deliver matched opportunities at 9am with bid summaries, so you respond before the crowd. Try it free for a week.' },
+    'it-services': { icon: 'fa-computer', title: 'Public sector buys IT constantly', pitch: 'Councils, NHS and schools buy IT services, software and support every week. These tender leads match the opportunities to your services so you respond first.' },
+    'cyber-security': { icon: 'fa-shield', title: 'Public bodies need cyber security', pitch: 'Cyber security tenders are frequent and well-funded. These leads deliver the matched opportunities at 9am so you bid before competitors.' },
+    'construction': { icon: 'fa-hammer', title: 'Public construction contracts', pitch: 'Councils and government bodies let construction contracts regularly. These tender leads surface the ones matching your trade and region.' },
+    'cleaning': { icon: 'fa-sparkles', title: 'Cleaning contracts are steady', pitch: 'Schools, offices and civic buildings need cleaners on contract. These tender leads deliver matched cleaning opportunities so you respond early.' },
+    'facilities-management': { icon: 'fa-building-gear', title: 'FM contracts are recurring', pitch: 'Facilities management is one of the biggest public tender categories. These leads surface the contracts matching your services.' },
+    'healthcare': { icon: 'fa-heart-pulse', title: 'Healthcare tenders are abundant', pitch: 'NHS and health bodies let healthcare supply and service tenders constantly. These leads deliver the matched ones so you bid early.' },
+    'training': { icon: 'fa-chalkboard-user', title: 'Public bodies need training', pitch: 'Councils and agencies let training contracts regularly. These tender leads match the opportunities to your courses so you respond first.' },
+    'landscaping-grounds-maintenance': { icon: 'fa-tree', title: 'Grounds maintenance contracts', pitch: 'Public bodies need grounds and landscape maintenance. These leads deliver matched tenders so you bid before the crowd.' },
+    'utilities-energy-management': { icon: 'fa-bolt', title: 'Energy contracts for public bodies', pitch: 'Public sector energy and utility contracts are regular and valuable. These tender leads surface the ones matching your services.' },
+    'recycling-environmental-services': { icon: 'fa-recycle', title: 'Environmental contracts', pitch: 'Councils let recycling and environmental service contracts frequently. These leads deliver the matched opportunities at 9am.' },
+    'social-care-services': { icon: 'fa-hands-holding-child', title: 'Care contracts are always needed', pitch: 'Social care and support services are a huge tender category. These fresh leads match the opportunities to your services.' }
+  }
+};
+
+</script>
+<script>
+// Perfect-for-you banner: reads ?b=business-slug from URL, shows tailored copy.
+(function () {
+  function getLeadTypeFromBody() {
+    var t = (document.title || '').toLowerCase();
+    if (t.indexOf('probate') > -1) return 'probate';
+    if (t.indexOf('new business') > -1 || t.indexOf('b2b') > -1) return 'newbusiness';
+    if (t.indexOf('planning') > -1) return 'planning';
+    if (t.indexOf('tender') > -1) return 'tenders';
+    return 'moving';
+  }
+  function slugify(name) {
+    return (name || '')
+      .toLowerCase()
+      .replace(/&amp;/g, 'and')
+      .replace(/&/g, 'and')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .replace(/-+/g, '-');
+  }
+  function showBanner(leadType, data) {
+    var banner = document.getElementById('perfectForBanner');
+    if (!banner || !data) return;
+    var icon = document.getElementById('pfIcon');
+    var title = document.getElementById('pfTitle');
+    var pitch = document.getElementById('pfPitch');
+    var cta = document.getElementById('pfCta');
+    var cta2 = document.getElementById('pfCta2');
+    if (icon) icon.innerHTML = '<i class="fas ' + (data.icon || 'fa-star') + '"></i>';
+    if (title) title.textContent = data.title || '';
+    if (pitch) pitch.textContent = data.pitch || '';
+    if (cta) cta.setAttribute('href', '/portal/#signup?lead=' + leadType);
+    if (cta2) cta2.setAttribute('href', '/pricing/?lead=' + leadType);
+    banner.style.display = 'block';
+    try { banner.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) { banner.scrollIntoView(); }
+  }
+  window.dismissPerfectFor = function () {
+    var banner = document.getElementById('perfectForBanner');
+    if (banner) banner.style.display = 'none';
+  };
+  document.addEventListener('DOMContentLoaded', function () {
+    try {
+      var leadType = getLeadTypeFromBody();
+      var params = new URLSearchParams(window.location.search);
+      var b = params.get('b');
+      if (!b || !window.PERFECT_FOR || !window.PERFECT_FOR[leadType]) return;
+      var db = window.PERFECT_FOR[leadType];
+      var slug = slugify(b);
+      var data = db[b] || db[slug] || db[slug.replace(/-and-/g, '-')] || db['default'];
+      if (data) showBanner(leadType, data);
+    } catch (e) {}
+  });
+})();
+
 </script>
 </body>
 </html>
