@@ -1494,19 +1494,38 @@ class StannpProvider extends DirectMailProvider {
       // This matches what Stannp actually prints and what the customer must see.
       var zonePct = 0.28;
       if (isBack) {
-        // The recipient address zone goes at the TOP of the back. We overlay a
-        // white band across the top 28% of the image WITHOUT re-scaling the design
-        // below — so:
-        //   - a FRESH upload (raw design filling the page) gets the white top zone
-        //   - an EDITOR-saved back (already has the zone) keeps it exactly as-is
-        // In both cases the design below the white zone is untouched and in line.
-        var bandH = Math.round(h * zonePct);
-        var whiteBand = await sharp({ create: { width: w, height: bandH, channels: 3, background: { r: 255, g: 255, b: 255 } } }).png().toBuffer();
-        var outBuf = await sharp(inputBuf)
-          .rotate()
-          .composite([{ input: whiteBand, gravity: 'north' }])
-          .png()
-          .toBuffer();
+        // Detect whether the back design ALREADY has the white address zone baked
+        // into its top (editor-saved). If so, show it as-is (design already sits
+        // below the zone). Fresh uploads get the address-zone-aware layout applied
+        // so the preview matches exactly what prints (bottom never cut off).
+        var hasBaked = false;
+        try {
+          var probeY = Math.round(h * (zonePct / 2));
+          var probeBand = await sharp(inputBuf).rotate().extract({ left: 0, top: probeY, width: Math.round(w * 0.9), height: 1 }).raw().toBuffer();
+          var samples = 0, nearWhite = 0;
+          for (var si = 0; si + 2 < probeBand.length; si += 3) {
+            samples++;
+            if (probeBand[si] > 242 && probeBand[si + 1] > 242 && probeBand[si + 2] > 242) nearWhite++;
+          }
+          if (samples > 0 && (nearWhite / samples) > 0.85) hasBaked = true;
+        } catch (e) {}
+        var designTop = Math.round(h * zonePct);
+        var bottomMargin = Math.round(h * 0.04);
+        var designH = h - designTop - bottomMargin;        var outBuf;
+        if (hasBaked) {
+          // Editor-saved back already has the zone baked in — show full-bleed.
+          outBuf = await sharp(inputBuf).rotate().png().toBuffer();
+        } else {
+          var scaled = await sharp(inputBuf)
+            .rotate()
+            .resize({ width: w, height: designH, fit: 'contain', position: 'centre', background: { r: 255, g: 255, b: 255 } })
+            .png()
+            .toBuffer();
+          outBuf = await sharp({ create: { width: w, height: h, channels: 3, background: { r: 255, g: 255, b: 255 } } })
+            .composite([{ input: scaled, top: designTop, left: 0 }])
+            .png()
+            .toBuffer();
+        }
         // Dark trim rectangle around the whole canvas (clear max print edge)
         outBuf = await sharp(outBuf).composite([
           { input: await sharp({ create: { width: w, height: 3, channels: 3, background: { r: 20, g: 30, b: 45 } } }).png().toBuffer(), top: 0, left: 0 },
@@ -1820,12 +1839,12 @@ async sendMailpiece(mailType, recipient, files, format) {
         var prepErr = '';
         try {
           if (front && front.file_data) {
-            var fp = await this.prepareA5Artwork(front, fw, fh);
+            var fp = await this.prepareA5Artwork(front, fw, fh, false);
             if (fp.error) { prepErr = fp.error; }
             else if (fp.ok && fp.file) { front = fp.file; }
           }
           if (!prepErr && back && back.file_data) {
-            var bp = await this.prepareA5Artwork(back, fw, fh);
+            var bp = await this.prepareA5Artwork(back, fw, fh, true);
             if (bp.error) { prepErr = bp.error; }
             else if (bp.ok && bp.file) { back = bp.file; }
           }
@@ -1919,7 +1938,7 @@ async sendMailpiece(mailType, recipient, files, format) {
   // template so the design fills the whole card, then bake a white address
   // clearzone band at the bottom (matches Stannp's native clearzone=true overlay
   // so the recipient address has a dedicated space).
-  async prepareA5Artwork(file, targetW, targetH) {
+  async prepareA5Artwork(file, targetW, targetH, isBack) {
     try {
       if (!file || !file.file_data) return { error: 'No file to prepare', file: file };
       var dataUri = String(file.file_data);
@@ -1943,32 +1962,67 @@ async sendMailpiece(mailType, recipient, files, format) {
         console.log('[STANNP] Artwork rejected for ' + (file.name || 'flyer') + ': ' + msg);
         return { error: msg, file: file, spec: spec };
       }
-      // Use 'contain' (fit whole image, pad with white) so NOTHING is ever
-      // cropped — the generated flyer's bottom content must never be cut off.
-      // 'cover' previously cropped the bottom when the artwork ratio differed
-      // slightly from the target, which users saw as a cut-off flyer.
-      var aspectRatio = meta.width / meta.height;
-      var targetRatio = A5_W / A5_H;
-      var ratioDelta = Math.abs(aspectRatio - targetRatio) / targetRatio;
-      var fitMode = ratioDelta > 0.03 ? 'contain' : 'contain';
+      // If this is the BACK, check whether the uploaded image ALREADY has a white
+      // address zone baked into its top (the in-app "Edit / Position" editor saves
+      // backs that way — it whites out the top 28%). If it does, the design is
+      // already laid out below the zone and must be passed through full-bleed
+      // (we must NOT squish it into the zone area again). Fresh uploads have no
+      // baked zone and get the address-zone-aware layout applied here.
+      var hasBakedZone = false;
+      if (isBack) {
+        try {
+          var zoneFracCheck = 0.28;
+          var probeY = Math.round((meta.height || A5_H) * (zoneFracCheck / 2));
+          var probeBand = await sharp(inputBuf).rotate().extract({ left: 0, top: probeY, width: Math.round((meta.width || A5_W) * 0.9), height: 1 }).raw().toBuffer();
+          var samples = 0, nearWhite = 0;
+          for (var si = 0; si + 2 < probeBand.length; si += 3) {
+            samples++;
+            if (probeBand[si] > 242 && probeBand[si + 1] > 242 && probeBand[si + 2] > 242) nearWhite++;
+          }
+          if (samples > 0 && (nearWhite / samples) > 0.85) hasBakedZone = true;
+        } catch (zoneProbeErr) { console.log('[STANNP] zone probe failed:', zoneProbeErr.message); }
+      }
+      // The recipient address zone occupies the TOP 28% of the BACK (Stannp's
+      // native clearzone). If we sent the back design full-bleed (filling the
+      // whole A5), the design would effectively get covered at the top and its
+      // bottom would run past the printable area — customers received flyers with
+      // the bottom content cut off. Fix: for the BACK, scale the design to fit
+      // INSIDE the printable area BELOW the address zone (bottom ~68%), keeping
+      // a safe white bottom margin so nothing is ever cut. The FRONT stays
+      // full-bleed edge-to-edge. Editor-saved backs (zone already baked) pass
+      // through unchanged.
       var outBuf;
-      // Compress to JPEG (quality 82) — Stannp's API rejects large base64 bodies.
-      // A 300 DPI A5 PNG can be 6-8MB (too big as form-encoded), but the same image
-      // as a quality-82 JPEG is ~200-400KB — visually identical for print and well
-      // within Stannp's upload limits.
-      // IMPORTANT: We do NOT bake a white address zone into the artwork here.
-      // Stannp prints the recipient address on the BACK of the postcard via
-      // clearzone=true (its own template defines the placement). If we baked a
-      // white band into the front, the address would appear on the wrong side.
-      // The front/back images are sent as-is (full-bleed design); the white zone
-      // is shown only in the preview, not baked into the sent file.
-      outBuf = await sharp(inputBuf)
-        .rotate()
-        .resize({ width: A5_W, height: A5_H, fit: 'contain', position: 'attention', background: { r: 255, g: 255, b: 255 } })
-        .extend({ top: 0, bottom: 0, left: 0, right: 0, background: { r: 255, g: 255, b: 255 } })
-        .jpeg({ quality: 82 })
-        .toBuffer();
-      console.log('[STANNP] Prepared full-bleed artwork for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> ' + A5_W + 'x' + A5_H + ', fit=' + fitMode + ')');
+      if (isBack && !hasBakedZone) {
+        // Address zone = top 28%. Printable design area = from just below the
+        // zone down to a ~4% bottom safety margin, so the design sits clearly
+        // within the page and the bottom line is never clipped.
+        var zoneFrac = 0.28;        // top address zone (matches Stannp clearzone)
+        var bottomMarginFrac = 0.04; // safe white margin at the very bottom
+        var designTop = Math.round(A5_H * zoneFrac);                  // y where design area starts
+        var designBottom = Math.round(A5_H * (1 - bottomMarginFrac)); // y where design area ends
+        var designH = designBottom - designTop;
+        // Fit the whole design (contain, no crop) into that design area, padded
+        // with white, then place it below the zone on a full A5 white canvas.
+        var scaled = await sharp(inputBuf)
+          .rotate()
+          .resize({ width: A5_W, height: designH, fit: 'contain', position: 'centre', background: { r: 255, g: 255, b: 255 } })
+          .jpeg({ quality: 82 })
+          .toBuffer();
+        outBuf = await sharp({ create: { width: A5_W, height: A5_H, channels: 3, background: { r: 255, g: 255, b: 255 } } })
+          .composite([{ input: scaled, top: Math.round(designTop), left: 0 }])
+          .jpeg({ quality: 82 })
+          .toBuffer();
+        console.log('[STANNP] Prepared BACK artwork for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> design area ' + A5_W + 'x' + Math.round(designH) + ' below top zone, bottom margin kept)');
+      } else {
+        // FRONT, or BACK that already has its baked zone: full-bleed, edge-to-edge — never crop.
+        outBuf = await sharp(inputBuf)
+          .rotate()
+          .resize({ width: A5_W, height: A5_H, fit: 'contain', position: 'attention', background: { r: 255, g: 255, b: 255 } })
+          .extend({ top: 0, bottom: 0, left: 0, right: 0, background: { r: 255, g: 255, b: 255 } })
+          .jpeg({ quality: 82 })
+          .toBuffer();
+        console.log('[STANNP] Prepared FRONT/full-bleed artwork for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> ' + A5_W + 'x' + A5_H + ', fit=contain' + (isBack && hasBakedZone ? ', baked zone detected' : '') + ')');
+      }
       return { ok: true, file: { name: file.name, file_data: outBuf.toString('base64'), file_type: 'image/jpeg' }, spec: spec };
     } catch(e) {
       console.log('[STANNP] Artwork prep failed for ' + (file.name || '?') + ': ' + e.message);
@@ -19674,7 +19728,10 @@ app.get('/api/direct-mail/materials/:id/final-print', authQueryOrHeader, async (
     var provider = getDirectMailProvider();
     // prepareA5Artwork validates + upscales + bakes the address zone on the front
     // (exactly what the real send does). zone=0 keeps the original design.
-    var prep = await provider.prepareA5Artwork(mat, fw, fh);
+    // The BACK material gets the address-zone-aware layout (design fits below the
+    // top zone, bottom margin kept) so the preview matches what actually prints.
+    var isBackMat = mat.type === 'flyer_back';
+    var prep = await provider.prepareA5Artwork(mat, fw, fh, isBackMat);
     if (prep.error) return res.status(400).json({ error: prep.error });
     var file = prep.file;
     var dataUri = String(file.file_data);
