@@ -167,7 +167,8 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
   <div style="border:1px solid var(--border);border-radius:10px;padding:8px;background:#fff;text-align:center">
     <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:8px">Front. Print-Ready <span style="color:var(--success);font-weight:400">(full design)</span> <span id="fp-front-label" style="font-weight:400;color:var(--muted)"></span> <button id="fp-front-edit" onclick="fpEditFront()" style="display:none;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;color:var(--accent);border:1px solid var(--border);background:#fff;cursor:pointer"><i class="fas fa-crop-alt"></i> Edit</button></div>
     <div style="position:relative;display:inline-block;max-width:100%">
-      <img id="fp-front-img" alt="Final print preview (front, full design)" style="max-width:100%;max-height:260px;border-radius:6px;border:1px solid #334155;display:block">
+      <img id="fp-front-img" alt="Final print preview (front, full design)" style="max-width:100%;max-height:260px;border-radius:6px;border:3px solid #22c55e;display:block">
+      <div id="fp-front-inline" style="position:absolute;top:6px;left:6px;background:rgba(34,197,94,.95);color:#fff;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:800;z-index:5"><i class="fas fa-check"></i> IN LINE</div>
     </div>
     <div id="fp-front-specs" style="font-size:10px;color:var(--text2);margin-top:6px;line-height:1.5"></div>
     <a class="btn btn-primary btn-sm" style="display:flex;justify-content:center;font-size:11px;margin-top:8px;color:#fff" id="fp-download-final" target="_blank" rel="noopener"><i class="fas fa-download"></i> Download Print-Ready Version</a>
@@ -175,15 +176,16 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
   </div>
   <div style="border:1px solid var(--border);border-radius:10px;padding:8px;background:#fff;text-align:center">
     <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:8px">Back. Print-Ready <span style="color:var(--success);font-weight:400">(address area at top)</span> <button id="fp-back-edit" onclick="fpEditBack()" style="display:none;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;color:var(--accent);border:1px solid var(--border);background:#fff;cursor:pointer"><i class="fas fa-crop-alt"></i> Edit</button></div>
-    <div style="position:relative;display:inline-block;max-width:100%;border:2px solid #0c4a6e;border-radius:6px;padding:0">
+    <div style="position:relative;display:inline-block;max-width:100%;border:3px solid #22c55e;border-radius:6px;padding:0">
       <img id="fp-back-img" alt="Final print preview (back, white address zone top)" style="max-width:100%;max-height:250px;border-radius:4px;display:block">
-      <div id="fp-address-tag" style="position:absolute;top:8px;left:50%;transform:translateX(-50%);background:#fff;border:2px dashed #0c4a6e;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:800;color:#0c4a6e;white-space:nowrap;z-index:5"><i class="fas fa-envelope" style="margin-right:4px"></i>ADDRESS AREA (white)</div>
+      <div id="fp-back-inline" style="position:absolute;top:8px;left:50%;transform:translateX(-50%);background:#fff;border:2px dashed #0c4a6e;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:800;color:#0c4a6e;white-space:nowrap;z-index:5"><i class="fas fa-envelope" style="margin-right:4px"></i>ADDRESS AREA (white)</div>
     </div>
     <div style="font-size:10px;color:var(--muted);margin-top:6px" id="fp-back-name"></div>
+    <div id="fp-back-status" style="font-size:11px;font-weight:700;color:#16a34a;margin-top:4px"><i class="fas fa-check"></i> IN LINE — fits below the address area</div>
     <a class="btn btn-outline btn-sm" style="display:flex;justify-content:center;font-size:11px;margin-top:8px" id="fp-download-back" target="_blank" rel="noopener"><i class="fas fa-download"></i> Download My Back</a>
   </div>
 </div>
-<div style="font-size:10px;color:var(--muted);margin-top:10px">Download Print-Ready = exactly what we send to print (white address zone on the top of the back). Download My Original = your uploaded design, untouched.</div>
+<div style="font-size:10px;color:var(--muted);margin-top:10px">Green border = your design is IN LINE (fills the page correctly, nothing trimmed). Download Print-Ready = exactly what we send to print (white address zone on the top of the back). Download My Original = your uploaded design, untouched.</div>
 </div>
 
 <!-- Design tips + how the white space works -->
@@ -907,8 +909,18 @@ function loadMaterials(){
 // Load + show the FINAL PRINT preview (front with whited-out address zone, back)
 // and wire the download buttons. Uses the /api/direct-mail/setup response which
 // returns preview_zone_url (whited out) + preview_url (original) + format spec.
-function loadFinalPrintPreview(){
-  var box=document.getElementById('final-print-preview');
+function markInLine(side, ok){
+  // Green border + 'IN LINE' badge when the print preview has rendered correctly
+  // (design fills the page / fits below the address area). Red if the image failed.
+  ok = (ok === undefined) ? true : ok;
+  var img=document.getElementById('fp-'+(side==='back'?'back':'front')+'-img');
+  var badge=document.getElementById('fp-'+(side==='back'?'back':'front')+'-inline');
+  if(img){ img.style.borderColor = ok ? '#22c55e' : '#ef4444'; img.style.borderWidth='3px'; }
+  if(badge){ badge.style.display = ok ? 'block' : 'none'; }
+  var status=document.getElementById('fp-'+(side==='back'?'back':'front')+'-status');
+  if(status){ status.style.color = ok ? '#16a34a' : '#dc2626'; }
+}
+function loadFinalPrintPreview(){  var box=document.getElementById('final-print-preview');
   if(!box)return;
   api('GET','/api/direct-mail/setup',null,function(err,d){
     if(!d||!d.success)return;
@@ -928,6 +940,8 @@ function loadFinalPrintPreview(){
       // version (final-print reads the current material, no-store, inline).
       var fmtParam2=(d.format&&d.format.id)||'flyer_a5_portrait';
       frontImg.src='/api/direct-mail/materials/'+d.flyer_front.id+'/final-print'+tokq+'&format='+encodeURIComponent(fmtParam2);
+      frontImg.onload=function(){ markInLine('front'); };
+      frontImg.onerror=function(){ markInLine('front',false); };
       if(document.getElementById('fp-front-label'))document.getElementById('fp-front-label').textContent=d.flyer_front.name||'';
     }
     // Front Edit button: open the flyer editor for the front material.
@@ -953,6 +967,8 @@ function loadFinalPrintPreview(){
     var dlBack=document.getElementById('fp-download-back');
     if(backImg&&d.flyer_back&&d.flyer_back.preview_url){
       backImg.src='/api/direct-mail/materials/'+d.flyer_back.id+'/preview-zone'+tokq;
+      backImg.onload=function(){ markInLine('back'); };
+      backImg.onerror=function(){ markInLine('back',false); };
       if(document.getElementById('fp-back-name'))document.getElementById('fp-back-name').textContent=d.flyer_back.name||'';
       if(dlBack){dlBack.href='/api/direct-mail/materials/'+d.flyer_back.id+'/preview-zone'+tokq; dlBack.download=d.flyer_back.name||'leaflet-back'; dlBack.style.display='flex';}
     } else {
@@ -1250,6 +1266,28 @@ function flyerEditorDraw(){
     var pts=[{x:dx,y:dy},{x:dx+dw,y:dy},{x:dx,y:dy+dh},{x:dx+dw,y:dy+dh},{x:dx+dw/2,y:dy},{x:dx+dw/2,y:dy+dh},{x:dx,y:dy+dh/2},{x:dx+dw,y:dy+dh/2}];
     ctx.fillStyle='#0369a1'; ctx.strokeStyle='#0c4a6e'; ctx.lineWidth=2;
     pts.forEach(function(p){ ctx.beginPath(); ctx.rect(p.x-hw/2,p.y-hw/2,hw,hw); ctx.fill(); ctx.stroke(); });
+    // GREEN "IN LINE" indicator: flyer is correctly positioned when it fills the
+    // whole page (front: all 4 edges; back: below the address zone, full width).
+    // Shows a solid green line around the design + a status label under the canvas.
+    var pageX1=ox+s5, pageY1=oy+s5, pageX2=ox+pw-s5, pageY2=oy+ph-s5;
+    var zoneBottom = (ed.matType==='flyer_back') ? oy+ed.zoneH : oy;
+    var touchesTop    = (dy+s5) <= zoneBottom + s5 && ed.matType!=='flyer_back';
+    var touchesBottom = (dy+dh+s5) >= pageY2;
+    var touchesLeft   = (dx+s5) <= pageX1;
+    var touchesRight  = (dx+dw+s5) >= pageX2;
+    // On the back the design must start BELOW the address zone and reach the bottom.
+    var backOK = (ed.matType==='flyer_back') ? (dy >= zoneBottom - s5 && touchesBottom) : true;
+    var inLine = touchesLeft && touchesRight && touchesBottom && (ed.matType==='flyer_back' ? backOK : touchesTop);
+    if(inLine){
+      ctx.strokeStyle='#22c55e'; ctx.lineWidth=3; ctx.setLineDash([]);
+      ctx.strokeRect(dx,dy,dw,dh);
+      ctx.fillStyle='#22c55e'; ctx.font='bold 13px Arial'; ctx.textAlign='center';
+      ctx.fillText('✓ IN LINE — fills the page correctly', ox+pw/2, oy-10);
+      ctx.textAlign='left';
+    } else {
+      ctx.strokeStyle='#ef4444'; ctx.lineWidth=2; ctx.setLineDash([4,4]);
+      ctx.strokeRect(dx,dy,dw,dh); ctx.setLineDash([]);
+    }
   }
   // ADDRESS ZONE (BACK only: top 28%, labelled in mm)
   if(ed.matType==='flyer_back'){
