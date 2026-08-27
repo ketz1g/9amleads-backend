@@ -1358,6 +1358,212 @@ class DirectMailProvider {
   async getProofOfPosting(providerCampaignId) { throw new Error('getProofOfPosting not implemented'); }
   async cancelCampaign(providerCampaignId) { throw new Error('cancelCampaign not implemented'); }
   async handleWebhook(payload) { throw new Error('handleWebhook not implemented'); }
+
+
+  async validateArtworkSpec(file, targetW, targetH) {
+    var out = { ok: false, errors: [], warnings: [], width: 0, height: 0, dpi: 0, aspect: 0, target_aspect: (targetW || 1819) / (targetH || 2551) };
+    try {
+      if (!file || !file.file_data) { out.errors.push('No file provided.'); return out; }
+      var dataUri = String(file.file_data);
+      var base64 = dataUri.indexOf(',') !== -1 ? dataUri.split(',')[1] : dataUri;
+      if (!base64) { out.errors.push('Empty file data.'); return out; }
+      var sharp = require('sharp');
+      var inputBuf = Buffer.from(base64, 'base64');
+      var meta = await sharp(inputBuf).metadata();
+      if (!meta || !meta.width || !meta.height) { out.errors.push('Could not read image dimensions — is this a valid image or PDF?'); return out; }
+      out.width = meta.width; out.height = meta.height;
+      out.aspect = meta.width / meta.height;
+      var fmt = (meta.format || '');
+      var isPdf = fmt === 'pdf';
+      // PDFs are vector and scale perfectly — accept them, no DPI/aspect concerns.
+      if (isPdf) { out.ok = true; return out; }
+      if (['png','jpeg','jpg','webp'].indexOf(fmt) === -1) { out.errors.push('Unsupported file type (' + fmt + '). Use PNG, JPG, or PDF.'); return out; }
+      // Effective DPI when printed at the target size (in inches at 300dpi).
+      // A5-PORT = 1819x2551px @ 300dpi. dpi = px / (targetPx/300).
+      var targetWmm = (targetW || 1819), targetHmm = (targetH || 2551);
+      var dpiW = meta.width / (targetWmm / 300);
+      var dpiH = meta.height / (targetHmm / 300);
+      out.dpi = Math.min(dpiW, dpiH);
+      // Aspect-ratio tolerance: within 5% is fine (we fill edge-to-edge).
+      var ratio = out.aspect / out.target_aspect;
+      if (ratio < 0.95 || ratio > 1.05) {
+        out.errors.push('Your image is ' + meta.width + 'x' + meta.height + ' (' + out.aspect.toFixed(2) + ' ratio) but the ' + 'selected format needs ' + Math.round(targetWmm) + 'x' + Math.round(targetHmm) + ' (ratio ' + out.target_aspect.toFixed(2) + '). It will be cropped to fit, which can cut off your design. Please design on the correct template or choose the matching format.');
+        return out;
+      }
+      // Resolution check
+      if (out.dpi < 150) {
+        out.warnings.push('Image is low resolution (~' + Math.round(out.dpi) + ' DPI). It may print soft/blurry. For crisp results upload at 300 DPI.');
+      }
+      out.ok = true;
+      return out;
+    } catch(e) {
+      out.errors.push('Could not validate file: ' + (e.message || 'unknown error'));
+      return out;
+    }
+  }
+
+  async prepareA5Artwork(file, targetW, targetH, isBack) {
+    try {
+      if (!file || !file.file_data) return { error: 'No file to prepare', file: file };
+      var dataUri = String(file.file_data);
+      var base64 = dataUri.indexOf(',') !== -1 ? dataUri.split(',')[1] : dataUri;
+      if (!base64) return { error: 'Empty file data', file: file };
+      var sharp = require('sharp');
+      var inputBuf = Buffer.from(base64, 'base64');
+      var meta = await sharp(inputBuf).metadata();
+      // PDFs are vector — Stannp handles at full quality; pass through unchanged.
+      var fmt = (meta.format || '');
+      if (fmt === 'pdf') return { ok: true, file: file };
+      if (['png', 'jpeg', 'jpg', 'webp'].indexOf(fmt) === -1) {
+        return { error: 'Unsupported file type: ' + fmt + '. Use PNG, JPG or PDF.', file: file };
+      }
+      var A5_W = targetW || 1819, A5_H = targetH || 2551; // default A5-PORT
+      // Validate aspect ratio BEFORE resizing — if it doesn't match, warn loudly
+      // and return an error so we never send a cropped/broken print.
+      var spec = await this.validateArtworkSpec(file, A5_W, A5_H);
+      if (!spec.ok) {
+        var msg = (spec.errors && spec.errors.length) ? spec.errors.join(' ') : 'Artwork does not meet the print spec for this format.';
+        console.log('[STANNP] Artwork rejected for ' + (file.name || 'flyer') + ': ' + msg);
+        return { error: msg, file: file, spec: spec };
+      }
+      // If this is the BACK, check whether the uploaded image ALREADY has a white
+      // address zone baked into its top (the in-app "Edit / Position" editor saves
+      // backs that way — it whites out the top 28%). If it does, the design is
+      // already laid out below the zone and must be passed through full-bleed
+      // (we must NOT squish it into the zone area again). Fresh uploads have no
+      // baked zone and get the address-zone-aware layout applied here.
+      var hasBakedZone = false;
+      if (isBack) {
+        try {
+          var zoneFracCheck = 0.28;
+          var probeY = Math.round((meta.height || A5_H) * (zoneFracCheck / 2));
+          var probeBand = await sharp(inputBuf).rotate().extract({ left: 0, top: probeY, width: Math.round((meta.width || A5_W) * 0.9), height: 1 }).raw().toBuffer();
+          var samples = 0, nearWhite = 0;
+          for (var si = 0; si + 2 < probeBand.length; si += 3) {
+            samples++;
+            if (probeBand[si] > 242 && probeBand[si + 1] > 242 && probeBand[si + 2] > 242) nearWhite++;
+          }
+          if (samples > 0 && (nearWhite / samples) > 0.85) hasBakedZone = true;
+        } catch (zoneProbeErr) { console.log('[STANNP] zone probe failed:', zoneProbeErr.message); }
+      }
+      // The recipient address zone occupies the TOP 28% of the BACK (Stannp's
+      // native clearzone). If we sent the back design full-bleed (filling the
+      // whole A5), the design would effectively get covered at the top and its
+      // bottom would run past the printable area — customers received flyers with
+      // the bottom content cut off. Fix: for the BACK, scale the design to fit
+      // INSIDE the printable area BELOW the address zone (bottom ~68%), keeping
+      // a safe white bottom margin so nothing is ever cut. The FRONT stays
+      // full-bleed edge-to-edge. Editor-saved backs (zone already baked) pass
+      // through unchanged.
+      var outBuf;
+      if (isBack && !hasBakedZone) {
+        // Address zone = top 28%. Printable design area = from just below the
+        // zone down to a ~4% bottom safety margin, so the design sits clearly
+        // within the page and the bottom line is never clipped.
+        var zoneFrac = 0.28;        // top address zone (matches Stannp clearzone)
+        var bottomMarginFrac = 0.04; // safe white margin at the very bottom
+        var designTop = Math.round(A5_H * zoneFrac);                  // y where design area starts
+        var designBottom = Math.round(A5_H * (1 - bottomMarginFrac)); // y where design area ends
+        var designH = designBottom - designTop;
+        // Fit the whole design (contain, no crop) into that design area, padded
+        // with white, then place it below the zone on a full A5 white canvas.
+        var scaled = await sharp(inputBuf)
+          .rotate()
+          .resize({ width: A5_W, height: designH, fit: 'contain', position: 'centre', background: { r: 255, g: 255, b: 255 } })
+          .jpeg({ quality: 82 })
+          .toBuffer();
+        outBuf = await sharp({ create: { width: A5_W, height: A5_H, channels: 3, background: { r: 255, g: 255, b: 255 } } })
+          .composite([{ input: scaled, top: Math.round(designTop), left: 0 }])
+          .jpeg({ quality: 82 })
+          .toBuffer();
+        console.log('[STANNP] Prepared BACK artwork for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> design area ' + A5_W + 'x' + Math.round(designH) + ' below top zone, bottom margin kept)');
+      } else {
+        // FRONT, or BACK that already has its baked zone: full-bleed, edge-to-edge — never crop.
+        outBuf = await sharp(inputBuf)
+          .rotate()
+          .resize({ width: A5_W, height: A5_H, fit: 'contain', position: 'attention', background: { r: 255, g: 255, b: 255 } })
+          .extend({ top: 0, bottom: 0, left: 0, right: 0, background: { r: 255, g: 255, b: 255 } })
+          .jpeg({ quality: 82 })
+          .toBuffer();
+        console.log('[STANNP] Prepared FRONT/full-bleed artwork for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> ' + A5_W + 'x' + A5_H + ', fit=contain' + (isBack && hasBakedZone ? ', baked zone detected' : '') + ')');
+      }
+      return { ok: true, file: { name: file.name, file_data: outBuf.toString('base64'), file_type: 'image/jpeg' }, spec: spec };
+    } catch(e) {
+      console.log('[STANNP] Artwork prep failed for ' + (file.name || '?') + ': ' + e.message);
+      return { error: 'Could not process this file: ' + (e.message || 'unknown error'), file: file };
+    }
+  }
+
+  async compositeAddressZonePreview(base64Image, isBack) {
+    try {
+      if (!base64Image) return base64Image;
+      var sharp = require('sharp');
+      var inputBuf = Buffer.from(base64Image, 'base64');
+      var meta = await sharp(inputBuf).metadata();
+      var w = meta.width, h = meta.height;
+      if (!w || !h) return base64Image;
+      // Stannp A5 postcard: the recipient ADDRESS is printed on the BACK at the
+      // TOP (in the clear zone). So:
+      //   - For the BACK: reserve the TOP 28% as a white address zone, design fills
+      //     the bottom 72%.
+      //   - For the FRONT: show the full design edge-to-edge (no address zone).
+      // This matches what Stannp actually prints and what the customer must see.
+      var zonePct = 0.28;
+      if (isBack) {
+        // Detect whether the back design ALREADY has the white address zone baked
+        // into its top (editor-saved). If so, show it as-is (design already sits
+        // below the zone). Fresh uploads get the address-zone-aware layout applied
+        // so the preview matches exactly what prints (bottom never cut off).
+        var hasBaked = false;
+        try {
+          var probeY = Math.round(h * (zonePct / 2));
+          var probeBand = await sharp(inputBuf).rotate().extract({ left: 0, top: probeY, width: Math.round(w * 0.9), height: 1 }).raw().toBuffer();
+          var samples = 0, nearWhite = 0;
+          for (var si = 0; si + 2 < probeBand.length; si += 3) {
+            samples++;
+            if (probeBand[si] > 242 && probeBand[si + 1] > 242 && probeBand[si + 2] > 242) nearWhite++;
+          }
+          if (samples > 0 && (nearWhite / samples) > 0.85) hasBaked = true;
+        } catch (e) {}
+        var designTop = Math.round(h * zonePct);
+        var bottomMargin = Math.round(h * 0.04);
+        var designH = h - designTop - bottomMargin;        var outBuf;
+        if (hasBaked) {
+          // Editor-saved back already has the zone baked in — show full-bleed.
+          outBuf = await sharp(inputBuf).rotate().png().toBuffer();
+        } else {
+          var scaled = await sharp(inputBuf)
+            .rotate()
+            .resize({ width: w, height: designH, fit: 'contain', position: 'centre', background: { r: 255, g: 255, b: 255 } })
+            .png()
+            .toBuffer();
+          outBuf = await sharp({ create: { width: w, height: h, channels: 3, background: { r: 255, g: 255, b: 255 } } })
+            .composite([{ input: scaled, top: designTop, left: 0 }])
+            .png()
+            .toBuffer();
+        }
+        // Dark trim rectangle around the whole canvas (clear max print edge)
+        outBuf = await sharp(outBuf).composite([
+          { input: await sharp({ create: { width: w, height: 3, channels: 3, background: { r: 20, g: 30, b: 45 } } }).png().toBuffer(), top: 0, left: 0 },
+          { input: await sharp({ create: { width: w, height: 3, channels: 3, background: { r: 20, g: 30, b: 45 } } }).png().toBuffer(), top: h-3, left: 0 },
+          { input: await sharp({ create: { width: 3, height: h, channels: 3, background: { r: 20, g: 30, b: 45 } } }).png().toBuffer(), top: 0, left: 0 },
+          { input: await sharp({ create: { width: 3, height: h, channels: 3, background: { r: 20, g: 30, b: 45 } } }).png().toBuffer(), top: 0, left: w-3 }
+        ]).png().toBuffer();
+        return outBuf.toString('base64');
+      } else {
+        // FRONT: full design, edge-to-edge (address not printed here)
+        var fullBuf = await sharp(inputBuf)
+          .rotate()
+          .resize({ width: w, height: h, fit: 'cover', position: 'attention', background: { r: 255, g: 255, b: 255 } })
+          .png()
+          .toBuffer();
+        return fullBuf.toString('base64');
+      }
+    } catch(e) {
+      console.log('[STANNP] compositeAddressZonePreview failed:', e.message);
+      return base64Image;
+    }
+  }
 }
 
 class MockDirectMailProvider extends DirectMailProvider {
@@ -1478,76 +1684,7 @@ class StannpProvider extends DirectMailProvider {
   // `clearzone` will overlay the white address block at print time. Only used for
   // preview, never sent, and never modifies the real artwork. Built purely from
   // solid rects (sharp's SVG <text>/dashed strokes are unreliable).
-  async compositeAddressZonePreview(base64Image, isBack) {
-    try {
-      if (!base64Image) return base64Image;
-      var sharp = require('sharp');
-      var inputBuf = Buffer.from(base64Image, 'base64');
-      var meta = await sharp(inputBuf).metadata();
-      var w = meta.width, h = meta.height;
-      if (!w || !h) return base64Image;
-      // Stannp A5 postcard: the recipient ADDRESS is printed on the BACK at the
-      // TOP (in the clear zone). So:
-      //   - For the BACK: reserve the TOP 28% as a white address zone, design fills
-      //     the bottom 72%.
-      //   - For the FRONT: show the full design edge-to-edge (no address zone).
-      // This matches what Stannp actually prints and what the customer must see.
-      var zonePct = 0.28;
-      if (isBack) {
-        // Detect whether the back design ALREADY has the white address zone baked
-        // into its top (editor-saved). If so, show it as-is (design already sits
-        // below the zone). Fresh uploads get the address-zone-aware layout applied
-        // so the preview matches exactly what prints (bottom never cut off).
-        var hasBaked = false;
-        try {
-          var probeY = Math.round(h * (zonePct / 2));
-          var probeBand = await sharp(inputBuf).rotate().extract({ left: 0, top: probeY, width: Math.round(w * 0.9), height: 1 }).raw().toBuffer();
-          var samples = 0, nearWhite = 0;
-          for (var si = 0; si + 2 < probeBand.length; si += 3) {
-            samples++;
-            if (probeBand[si] > 242 && probeBand[si + 1] > 242 && probeBand[si + 2] > 242) nearWhite++;
-          }
-          if (samples > 0 && (nearWhite / samples) > 0.85) hasBaked = true;
-        } catch (e) {}
-        var designTop = Math.round(h * zonePct);
-        var bottomMargin = Math.round(h * 0.04);
-        var designH = h - designTop - bottomMargin;        var outBuf;
-        if (hasBaked) {
-          // Editor-saved back already has the zone baked in — show full-bleed.
-          outBuf = await sharp(inputBuf).rotate().png().toBuffer();
-        } else {
-          var scaled = await sharp(inputBuf)
-            .rotate()
-            .resize({ width: w, height: designH, fit: 'contain', position: 'centre', background: { r: 255, g: 255, b: 255 } })
-            .png()
-            .toBuffer();
-          outBuf = await sharp({ create: { width: w, height: h, channels: 3, background: { r: 255, g: 255, b: 255 } } })
-            .composite([{ input: scaled, top: designTop, left: 0 }])
-            .png()
-            .toBuffer();
-        }
-        // Dark trim rectangle around the whole canvas (clear max print edge)
-        outBuf = await sharp(outBuf).composite([
-          { input: await sharp({ create: { width: w, height: 3, channels: 3, background: { r: 20, g: 30, b: 45 } } }).png().toBuffer(), top: 0, left: 0 },
-          { input: await sharp({ create: { width: w, height: 3, channels: 3, background: { r: 20, g: 30, b: 45 } } }).png().toBuffer(), top: h-3, left: 0 },
-          { input: await sharp({ create: { width: 3, height: h, channels: 3, background: { r: 20, g: 30, b: 45 } } }).png().toBuffer(), top: 0, left: 0 },
-          { input: await sharp({ create: { width: 3, height: h, channels: 3, background: { r: 20, g: 30, b: 45 } } }).png().toBuffer(), top: 0, left: w-3 }
-        ]).png().toBuffer();
-        return outBuf.toString('base64');
-      } else {
-        // FRONT: full design, edge-to-edge (address not printed here)
-        var fullBuf = await sharp(inputBuf)
-          .rotate()
-          .resize({ width: w, height: h, fit: 'cover', position: 'attention', background: { r: 255, g: 255, b: 255 } })
-          .png()
-          .toBuffer();
-        return fullBuf.toString('base64');
-      }
-    } catch(e) {
-      console.log('[STANNP] compositeAddressZonePreview failed:', e.message);
-      return base64Image;
-    }
-  }
+
 
   stannpRequest(endpoint, params, method) {
     return new Promise(function(resolve, reject) {
@@ -1888,47 +2025,7 @@ async sendMailpiece(mailType, recipient, files, format) {
   // This runs BEFORE any send so a customer never pays for a flyer that will
   // print incorrectly (wrong aspect / too low resolution). 'ok' is false only
   // when the file can't be printed at all; warnings flag quality/risk items.
-  async validateArtworkSpec(file, targetW, targetH) {
-    var out = { ok: false, errors: [], warnings: [], width: 0, height: 0, dpi: 0, aspect: 0, target_aspect: (targetW || 1819) / (targetH || 2551) };
-    try {
-      if (!file || !file.file_data) { out.errors.push('No file provided.'); return out; }
-      var dataUri = String(file.file_data);
-      var base64 = dataUri.indexOf(',') !== -1 ? dataUri.split(',')[1] : dataUri;
-      if (!base64) { out.errors.push('Empty file data.'); return out; }
-      var sharp = require('sharp');
-      var inputBuf = Buffer.from(base64, 'base64');
-      var meta = await sharp(inputBuf).metadata();
-      if (!meta || !meta.width || !meta.height) { out.errors.push('Could not read image dimensions — is this a valid image or PDF?'); return out; }
-      out.width = meta.width; out.height = meta.height;
-      out.aspect = meta.width / meta.height;
-      var fmt = (meta.format || '');
-      var isPdf = fmt === 'pdf';
-      // PDFs are vector and scale perfectly — accept them, no DPI/aspect concerns.
-      if (isPdf) { out.ok = true; return out; }
-      if (['png','jpeg','jpg','webp'].indexOf(fmt) === -1) { out.errors.push('Unsupported file type (' + fmt + '). Use PNG, JPG, or PDF.'); return out; }
-      // Effective DPI when printed at the target size (in inches at 300dpi).
-      // A5-PORT = 1819x2551px @ 300dpi. dpi = px / (targetPx/300).
-      var targetWmm = (targetW || 1819), targetHmm = (targetH || 2551);
-      var dpiW = meta.width / (targetWmm / 300);
-      var dpiH = meta.height / (targetHmm / 300);
-      out.dpi = Math.min(dpiW, dpiH);
-      // Aspect-ratio tolerance: within 5% is fine (we fill edge-to-edge).
-      var ratio = out.aspect / out.target_aspect;
-      if (ratio < 0.95 || ratio > 1.05) {
-        out.errors.push('Your image is ' + meta.width + 'x' + meta.height + ' (' + out.aspect.toFixed(2) + ' ratio) but the ' + 'selected format needs ' + Math.round(targetWmm) + 'x' + Math.round(targetHmm) + ' (ratio ' + out.target_aspect.toFixed(2) + '). It will be cropped to fit, which can cut off your design. Please design on the correct template or choose the matching format.');
-        return out;
-      }
-      // Resolution check
-      if (out.dpi < 150) {
-        out.warnings.push('Image is low resolution (~' + Math.round(out.dpi) + ' DPI). It may print soft/blurry. For crisp results upload at 300 DPI.');
-      }
-      out.ok = true;
-      return out;
-    } catch(e) {
-      out.errors.push('Could not validate file: ' + (e.message || 'unknown error'));
-      return out;
-    }
-  }
+
 
   // PREPARE FULL-BLEED ARTWORK for Stannp postcards at the requested format size.
   // Stannp templates are 300 DPI (A5 Portrait = 1819 x 2551, A5 Landscape = 2551 x
@@ -1938,97 +2035,7 @@ async sendMailpiece(mailType, recipient, files, format) {
   // template so the design fills the whole card, then bake a white address
   // clearzone band at the bottom (matches Stannp's native clearzone=true overlay
   // so the recipient address has a dedicated space).
-  async prepareA5Artwork(file, targetW, targetH, isBack) {
-    try {
-      if (!file || !file.file_data) return { error: 'No file to prepare', file: file };
-      var dataUri = String(file.file_data);
-      var base64 = dataUri.indexOf(',') !== -1 ? dataUri.split(',')[1] : dataUri;
-      if (!base64) return { error: 'Empty file data', file: file };
-      var sharp = require('sharp');
-      var inputBuf = Buffer.from(base64, 'base64');
-      var meta = await sharp(inputBuf).metadata();
-      // PDFs are vector — Stannp handles at full quality; pass through unchanged.
-      var fmt = (meta.format || '');
-      if (fmt === 'pdf') return { ok: true, file: file };
-      if (['png', 'jpeg', 'jpg', 'webp'].indexOf(fmt) === -1) {
-        return { error: 'Unsupported file type: ' + fmt + '. Use PNG, JPG or PDF.', file: file };
-      }
-      var A5_W = targetW || 1819, A5_H = targetH || 2551; // default A5-PORT
-      // Validate aspect ratio BEFORE resizing — if it doesn't match, warn loudly
-      // and return an error so we never send a cropped/broken print.
-      var spec = await this.validateArtworkSpec(file, A5_W, A5_H);
-      if (!spec.ok) {
-        var msg = (spec.errors && spec.errors.length) ? spec.errors.join(' ') : 'Artwork does not meet the print spec for this format.';
-        console.log('[STANNP] Artwork rejected for ' + (file.name || 'flyer') + ': ' + msg);
-        return { error: msg, file: file, spec: spec };
-      }
-      // If this is the BACK, check whether the uploaded image ALREADY has a white
-      // address zone baked into its top (the in-app "Edit / Position" editor saves
-      // backs that way — it whites out the top 28%). If it does, the design is
-      // already laid out below the zone and must be passed through full-bleed
-      // (we must NOT squish it into the zone area again). Fresh uploads have no
-      // baked zone and get the address-zone-aware layout applied here.
-      var hasBakedZone = false;
-      if (isBack) {
-        try {
-          var zoneFracCheck = 0.28;
-          var probeY = Math.round((meta.height || A5_H) * (zoneFracCheck / 2));
-          var probeBand = await sharp(inputBuf).rotate().extract({ left: 0, top: probeY, width: Math.round((meta.width || A5_W) * 0.9), height: 1 }).raw().toBuffer();
-          var samples = 0, nearWhite = 0;
-          for (var si = 0; si + 2 < probeBand.length; si += 3) {
-            samples++;
-            if (probeBand[si] > 242 && probeBand[si + 1] > 242 && probeBand[si + 2] > 242) nearWhite++;
-          }
-          if (samples > 0 && (nearWhite / samples) > 0.85) hasBakedZone = true;
-        } catch (zoneProbeErr) { console.log('[STANNP] zone probe failed:', zoneProbeErr.message); }
-      }
-      // The recipient address zone occupies the TOP 28% of the BACK (Stannp's
-      // native clearzone). If we sent the back design full-bleed (filling the
-      // whole A5), the design would effectively get covered at the top and its
-      // bottom would run past the printable area — customers received flyers with
-      // the bottom content cut off. Fix: for the BACK, scale the design to fit
-      // INSIDE the printable area BELOW the address zone (bottom ~68%), keeping
-      // a safe white bottom margin so nothing is ever cut. The FRONT stays
-      // full-bleed edge-to-edge. Editor-saved backs (zone already baked) pass
-      // through unchanged.
-      var outBuf;
-      if (isBack && !hasBakedZone) {
-        // Address zone = top 28%. Printable design area = from just below the
-        // zone down to a ~4% bottom safety margin, so the design sits clearly
-        // within the page and the bottom line is never clipped.
-        var zoneFrac = 0.28;        // top address zone (matches Stannp clearzone)
-        var bottomMarginFrac = 0.04; // safe white margin at the very bottom
-        var designTop = Math.round(A5_H * zoneFrac);                  // y where design area starts
-        var designBottom = Math.round(A5_H * (1 - bottomMarginFrac)); // y where design area ends
-        var designH = designBottom - designTop;
-        // Fit the whole design (contain, no crop) into that design area, padded
-        // with white, then place it below the zone on a full A5 white canvas.
-        var scaled = await sharp(inputBuf)
-          .rotate()
-          .resize({ width: A5_W, height: designH, fit: 'contain', position: 'centre', background: { r: 255, g: 255, b: 255 } })
-          .jpeg({ quality: 82 })
-          .toBuffer();
-        outBuf = await sharp({ create: { width: A5_W, height: A5_H, channels: 3, background: { r: 255, g: 255, b: 255 } } })
-          .composite([{ input: scaled, top: Math.round(designTop), left: 0 }])
-          .jpeg({ quality: 82 })
-          .toBuffer();
-        console.log('[STANNP] Prepared BACK artwork for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> design area ' + A5_W + 'x' + Math.round(designH) + ' below top zone, bottom margin kept)');
-      } else {
-        // FRONT, or BACK that already has its baked zone: full-bleed, edge-to-edge — never crop.
-        outBuf = await sharp(inputBuf)
-          .rotate()
-          .resize({ width: A5_W, height: A5_H, fit: 'contain', position: 'attention', background: { r: 255, g: 255, b: 255 } })
-          .extend({ top: 0, bottom: 0, left: 0, right: 0, background: { r: 255, g: 255, b: 255 } })
-          .jpeg({ quality: 82 })
-          .toBuffer();
-        console.log('[STANNP] Prepared FRONT/full-bleed artwork for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> ' + A5_W + 'x' + A5_H + ', fit=contain' + (isBack && hasBakedZone ? ', baked zone detected' : '') + ')');
-      }
-      return { ok: true, file: { name: file.name, file_data: outBuf.toString('base64'), file_type: 'image/jpeg' }, spec: spec };
-    } catch(e) {
-      console.log('[STANNP] Artwork prep failed for ' + (file.name || '?') + ': ' + e.message);
-      return { error: 'Could not process this file: ' + (e.message || 'unknown error'), file: file };
-    }
-  }
+
 
   async addRecipients(campaignId, recipients) {
     if (!recipients || recipients.length === 0) return { success: true, added: 0 };
