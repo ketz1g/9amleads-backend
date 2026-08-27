@@ -22996,32 +22996,41 @@ function syncCustomers(product) {
             var cutoff48hMs = new Date(getFreshCutoffIso(nowMs)).getTime();
             function chParseDate(ds) { if (!ds) return 0; var t = Date.parse(ds); return isNaN(t) ? 0 : t; }
             function chDateStr(ms) { return new Date(ms).toISOString().split('T')[0]; }
-            function chFetchAdvancedPage(fromDate, startIndex, size, cb) {
-              var url = '/advanced-search/companies?incorporated_from=' + fromDate + '&size=' + (size || 250) + '&start_index=' + (startIndex || 0) + '&company_status=active';
+            function chFetchAdvancedPage(qTerm, startIndex, size, cb) {
+              // Standard Companies House search (the advanced-search endpoint 405s on
+              // this key/tier). `qTerm` is the search term (alphabet sweep). The
+              // response includes date_of_creation + address; we filter by date
+              // client-side in chFetchAll because /search/companies doesn't support
+              // incorporated_from.
+              var url = '/search/companies?company_status=active&size=' + (size || 250) + '&start_index=' + (startIndex || 0) + '&q=' + encodeURIComponent(qTerm || 'a');
               var req = require('https').request({ hostname: 'api.company-information.service.gov.uk', path: url, method: 'GET', headers: { 'Authorization': 'Basic ' + Buffer.from(chKeySimple + ':').toString('base64'), 'Accept': 'application/json', 'User-Agent': '9amLeads/1.0' } }, function(res) {
                 var body = ''; res.on('data', function(c) { body += c; });
                 res.on('end', function() {
-                  try { var d = JSON.parse(body); cb({ items: d.items || [], hits: d.hits || 0 }); } catch(e) { cb({ items: [], hits: 0 }); }
+                  try { var d = JSON.parse(body); cb({ items: d.items || [], hits: d.total_results || 0 }); } catch(e) { cb({ items: [], hits: 0 }); }
                 });
               });
               req.on('error', function() { cb({ items: [], hits: 0 }); });
               req.setTimeout(15000, function() { req.destroy(); cb({ items: [], hits: 0 }); });
               req.end();
             }
-            // Fetch ALL companies incorporated since 24h ago via pagination
-            // (Companies House registers ~1,500 UK companies/day; the old single-page
-            // fetch only captured 250 — the pool cap kept it hidden. Paginate so we
-            // capture the full daily supply for growth.)
+            // Fetch companies via standard search and filter by incorporation date
+            // client-side. NOTE: Companies House standard search sorts by name
+            // relevance and does NOT reliably return newly-incorporated companies on
+            // this API tier (advanced-search/stream endpoints need a premium token).
+            // This is best-effort: it captures any fresh companies that DO appear in
+            // the search results. For reliable daily new-company supply, the
+            // streaming_worker needs a valid CH Stream token (currently 401).
             async function chFetchAll(fromDate) {
-              var all = []; var hits = 0;
-              var page = await new Promise(function(resolve) { chFetchAdvancedPage(fromDate, 0, 250, resolve); });
-              all = all.concat(page.items); hits = page.hits;
-              var pages = Math.ceil(hits / 250);
-              for (var pi = 1; pi < pages && pi < 40; pi++) {
-                var next = await new Promise(function(resolve) { chFetchAdvancedPage(fromDate, pi * 250, 250, resolve); });
-                if (!next.items || next.items.length === 0) break;
-                all = all.concat(next.items);
-                if (all.length >= hits) break;
+              var all = []; var seenNum = {};
+              var qTerms = ['limited', 'ltd', 'services', 'consulting', 'design', 'property', 'trading', 'group', 'solutions', 'london'];
+              for (var li2 = 0; li2 < qTerms.length && all.length < 4000; li2++) {
+                var ql = qTerms[li2];
+                try {
+                  var page0 = await new Promise(function(resolve) { chFetchAdvancedPage(ql, 0, 250, resolve); });
+                  if (page0.items && page0.items.length) {
+                    page0.items.forEach(function(it) { if (it.company_number && !seenNum[it.company_number]) { seenNum[it.company_number] = 1; all.push(it); } });
+                  }
+                } catch(e) {}
               }
               return all;
             }
@@ -23038,12 +23047,14 @@ function syncCustomers(product) {
               nbSeen[c.company_number] = true;
               return c.company_status === 'active';
             }).map(function(c) {
+              // Standard search returns: title, address {postal_code,...}, address_snippet,
+              // date_of_creation. Advanced search returned company_name + registered_office_address.
+              var chCompanyName = c.title || c.company_name || c.companyName || '';
               var chAddress = c.address_snippet || (c.registered_office_address ? [c.registered_office_address.address_line_1, c.registered_office_address.address_line_2, c.registered_office_address.locality, c.registered_office_address.region, c.registered_office_address.postal_code].filter(Boolean).join(', ') : '');
-              // Extract postcode from the address (Companies House provides it in
-              // registered_office_address.postal_code; the snippet also ends with it).
-              var chPostcode = (c.registered_office_address && c.registered_office_address.postal_code) || '';
+              // Extract postcode (standard search: address.postal_code; advanced: registered_office_address.postal_code).
+              var chPostcode = (c.address && c.address.postal_code) || (c.registered_office_address && c.registered_office_address.postal_code) || '';
               if (!chPostcode) { var pcM = String(chAddress).match(/\b[A-Z]{1,2}\d{1,2}[A-Z]?\s?\d[A-Z]{2}\b/i); if (pcM) chPostcode = pcM[0].toUpperCase(); }
-              return { id: 'CH_NB_' + c.company_number, name: c.company_name.trim(), companyNumber: c.company_number, companyName: c.company_name.trim(), address: chAddress, postcode: chPostcode, incorporationDate: c.date_of_creation || '', sicCode: (c.sic_codes || []).join(', ') || '', source: 'Companies House API', scrapedAt: new Date().toISOString() };
+              return { id: 'CH_NB_' + c.company_number, name: chCompanyName, companyNumber: c.company_number, companyName: chCompanyName, address: chAddress, postcode: chPostcode, incorporationDate: c.date_of_creation || '', sicCode: (c.sic_codes || []).join(', ') || '', source: 'Companies House API', scrapedAt: new Date().toISOString() };
             });
             // Strict: keep only those incorporated within 24h, else fallback to 48h.
             // We keep BOTH so the pool holds a richer supply — customers get the
@@ -23787,7 +23798,16 @@ function syncCustomers(product) {
         // window (covers a source being slow/flaky today).
         var poolFreshCutoff = getFreshCutoffIso();
         function isPoolLeadFresh(l) {
-          var d = l.scrapedAt || l.firstVisibleDate || l.updateDate || l.incorporationDate || l.publishedDate || l.receivedDate || l.createdAt || l.created_at || '';
+          // NEWBUSINESS: freshness = INCORPORATION date (the real "new business"
+          // signal), NOT scrapedAt. Companies House returns companies incorporated
+          // in the window; a lead scraped today but incorporated 3 days ago is NOT a
+          // fresh new-business lead. Other products use scrapedAt/first-visible.
+          var d;
+          if (product === 'newbusiness') {
+            d = l.incorporationDate || l.date_of_creation || l.scrapedAt || '';
+          } else {
+            d = l.scrapedAt || l.firstVisibleDate || l.updateDate || l.incorporationDate || l.publishedDate || l.receivedDate || l.createdAt || l.created_at || '';
+          }
           return !!d && d >= poolFreshCutoff;
         }
         var seenIds = new Set();
