@@ -26414,8 +26414,9 @@ app.get('/api/admin/platform-health', adminAuth, async (req, res) => {
     // 9. Website (check main URL)
     try {
       var websiteCheck = await new Promise(function(resolve) {
-        var http = require('http');
-        var req = http.get(process.env.PUBLIC_URL || 'http://localhost:' + PORT, function(r) { resolve({ statusCode: r.statusCode }); });
+        var siteUrl = process.env.PUBLIC_URL || ('http://localhost:' + PORT);
+        var httpMod = /^https:/i.test(String(siteUrl)) ? require('https') : require('http');
+        var req = httpMod.get(siteUrl, function(r) { resolve({ statusCode: r.statusCode }); });
         req.on('error', function(e) { resolve({ error: e.message }); }); req.setTimeout(5000, function() { req.destroy(); resolve({ error: 'Timeout' }); });
       });
       results.website = { status: websiteCheck && websiteCheck.statusCode ? 'healthy' : 'warning', last_ok: new Date().toISOString(), error: websiteCheck && websiteCheck.error ? websiteCheck.error : null };
@@ -27363,6 +27364,42 @@ try {
   var streamWorker = require('./streaming_worker');
   streamWorker.start(chKeyStream);
   console.log('[BOOT] Stream: Companies House live stream worker started');
+
+  // STREAM DRAIN: every 2 minutes, pull companies queued by the streaming worker
+  // and add them to the newbusiness pool (leads table, customer_id='scraper').
+  // The /companies stream delivers company-profile:changed events; the worker
+  // fetches each profile and queues only genuinely fresh companies (date_of_creation
+  // within the cutoff). This drain is what actually turns queued companies into
+  // deliverable leads — without it the queue just sits in a file.
+  var _streamDrainTimer = setInterval(function() {
+    try {
+      var sw = require('./streaming_worker');
+      var companies = sw.getRecentCompanies();
+      if (!companies || !companies.length) return;
+      var inserted = 0, skipped = 0;
+      var pool = [];
+      try { pool = db.prepare("SELECT data FROM leads WHERE product = 'newbusiness' AND customer_id = 'scraper'").all().map(function(r){ var d={}; try{d=JSON.parse(r.data||'{}');}catch(e){} return d.companyNumber || d.company_number || ''; }); } catch(e) {}
+      var seen = {};
+      pool.forEach(function(n){ if (n) seen[n] = 1; });
+      for (var i = 0; i < companies.length; i++) {
+        var co = companies[i];
+        var num = co.companyNumber || co.company_number || '';
+        if (!num || seen[num]) { skipped++; continue; }
+        seen[num] = 1;
+        var coDate = co.incorporationDate || '';
+        var cutoff = new Date(Date.now() - 48 * 3600000).toISOString().split('T')[0];
+        if (coDate && coDate < cutoff) { skipped++; continue; }
+        try {
+          db.prepare("INSERT INTO leads (id, customer_id, product, data, status, created_at) VALUES (?, 'scraper', 'newbusiness', ?, 'new', datetime('now'))")
+            .run(uuidv4(), JSON.stringify(co));
+          inserted++;
+        } catch(ie) { skipped++; }
+      }
+      if (inserted > 0) console.log('[STREAM-DRAIN] Added ' + inserted + ' stream companies to newbusiness pool (skipped ' + skipped + ')');
+    } catch(e) { console.log('[STREAM-DRAIN] error:', e.message); }
+  }, 120000);
+  if (_streamDrainTimer.unref) _streamDrainTimer.unref();
+
 } catch(se) { console.log('[BOOT] Stream worker error: ' + se.message); }
   console.log('  GET  /api/auth/verify-email - Verify email address');
   console.log('  POST /api/auth/login    - Sign in');

@@ -19,6 +19,7 @@ const TIMEPOINT_FILE = path.join(DATA_DIR, 'stream-timepoint.json');
 const SEEN_FILE = path.join(DATA_DIR, 'stream-seen-companies.json');
 const QUEUE_FILE = path.join(DATA_DIR, 'stream-queue.json');
 const LAG_WARN_SECONDS = 300; // Alert if no event for 5 minutes
+const MAX_PROFILE_FETCHES_PER_MIN = 40; // Companies House REST rate-limit guard per minute
 
 // Worker state
 var state = {
@@ -164,13 +165,30 @@ function connect(apiKey) {
           var tp = event.event ? event.event.timepoint : null;
           if (tp) saveTimepoint(tp);
 
-          // Only process incorporated events
-          if (!event.event || event.event.type !== 'incorporated') continue;
-
+          // The /companies stream delivers company-profile:changed events (event.type
+          // is always "changed"), NOT "incorporated". New companies appear here too —
+          // we detect them by fetching the profile and checking date_of_creation is
+          // fresh (within the cutoff). To avoid hammering the REST API for every
+          // update to existing companies, we:
+          //   1. skip companies already in the seen-set (dedup),
+          //   2. rate-limit profile fetches (MAX_PROFILE_FETCHES_PER_MIN),
+          //   3. drop any profile whose date_of_creation is older than the cutoff.
           var seen = loadSeenCompanies();
           if (seen.has(companyNumber)) { state.duplicates++; continue; }
           seen.add(companyNumber);
           saveSeenCompanies(seen);
+
+          // Rate guard: only fetch N profiles per minute (Companies House REST limit).
+          var nowMs = Date.now();
+          if (state._profileWindow && nowMs - state._profileWindow.start > 60000) {
+            state._profileWindow = { start: nowMs, count: 0 };
+          }
+          if (!state._profileWindow) state._profileWindow = { start: nowMs, count: 0 };
+          if (state._profileWindow.count >= MAX_PROFILE_FETCHES_PER_MIN) {
+            state.stale++; // treat as skipped this window (will be deduped as seen)
+            continue;
+          }
+          state._profileWindow.count++;
 
           state.companiesToday++;
 
