@@ -7592,7 +7592,9 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
       if (validateMovingLead(_vd) !== '') return false;
       // Doorless check — the delivery's final hard gate drops any moving lead whose
       // address has no door/flat number or named premise. Preview must too.
-      if (!hasPremiseNumber(o.address || '', o.postcode || '')) return false;
+      // (Uses hasUsablePremiseAddress directly — it's module-level; the delivery's
+      // local hasPremiseNumber is a thin wrapper around it.)
+      try { if (!hasUsablePremiseAddress(o.address || '', o.postcode || '')) return false; } catch(e) { return false; }
       return true;
     });
   }
