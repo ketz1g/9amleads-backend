@@ -1481,9 +1481,7 @@ class DirectMailProvider {
         // FRONT, or BACK that already has its baked zone: full-bleed, edge-to-edge — never crop.
         outBuf = await sharp(inputBuf)
           .rotate()
-          .resize({ width: A5_W, height: A5_H, fit: 'contain', position: 'attention', background: { r: 255, g: 255, b: 255 } })
-          .extend({ top: 0, bottom: 0, left: 0, right: 0, background: { r: 255, g: 255, b: 255 } })
-          .jpeg({ quality: 82 })
+          .resize({ width: A5_W, height: A5_H, fit: 'cover', position: 'attention', background: { r: 255, g: 255, b: 255 } }).jpeg({ quality: 82 })
           .toBuffer();
         console.log('[STANNP] Prepared FRONT/full-bleed artwork for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> ' + A5_W + 'x' + A5_H + ', fit=contain' + (isBack && hasBakedZone ? ', baked zone detected' : '') + ')');
       }

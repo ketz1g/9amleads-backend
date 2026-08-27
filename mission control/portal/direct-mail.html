@@ -1142,7 +1142,10 @@ function closeFlyerEditor(){ document.getElementById('flyer-editor-modal').style
 function flyerEditorReset(){
   var w=_flyerEditor.pageW, h=_flyerEditor.pageH;
   var iw=_flyerEditor.img? _flyerEditor.img.width:1, ih=_flyerEditor.img? _flyerEditor.img.height:1;
-  var baseF=Math.min(w/iw,h/ih);
+  // Default to COVER fit (fill the whole page edge-to-edge, crop any tiny excess)
+  // so the design starts "within the blue lines" / full-bleed. Customers can then
+  // drag/stretch if they prefer a different crop.
+  var baseF=Math.max(w/iw,h/ih);
   _flyerEditor.rw=iw*baseF; _flyerEditor.rh=ih*baseF;
   _flyerEditor.rx=(w-_flyerEditor.rw)/2; _flyerEditor.ry=(h-_flyerEditor.rh)/2;
   flyerEditorDraw();
