@@ -1246,6 +1246,33 @@ function getTownForPostcode(postcode) {
       var t = addrs.find(function(a) { return a.posttown; }) || addrs[0];
       return String(t.posttown || t.county || t.postal_county || '').trim();
     }
+    // FREE POSTCODE-AREA FALLBACK (no Postcoder credit): derive a town from the
+    // postcode prefix so Print & Post always has a routing town.
+    var pcOut = cleanPc.substring(0, 3);
+    var pcArea = cleanPc.substring(0, 2);
+    var townMap = {
+      'E11': 'Leytonstone', 'E10': 'Leyton', 'E15': 'Stratford', 'E16': 'Docklands', 'E17': 'Walthamstow',
+      'SE25': 'South Croydon', 'SE24': 'Herne Hill', 'SE22': 'East Dulwich', 'SE5': 'Camberwell', 'SE15': 'Peckham',
+      'NW11': 'Golders Green', 'NW10': 'Harlesden', 'NW6': 'Kilburn',
+      'CR0': 'Croydon', 'CR2': 'South Croydon', 'CR7': 'Thornton Heath',
+      'HA5': 'Pinner', 'HA3': 'Harrow', 'HA7': 'Stanmore',
+      'KT5': 'Surbiton', 'KT6': 'Surbiton', 'KT1': 'Kingston upon Thames', 'KT2': 'Kingston upon Thames',
+      'SW17': 'Tooting', 'SW16': 'Streatham', 'SW2': 'Brixton', 'SW9': 'Brixton',
+      'E8': 'Hackney', 'N16': 'Stoke Newington', 'N1': 'Islington', 'N4': 'Finsbury Park',
+      'W5': 'Ealing', 'W3': 'Acton', 'W9': 'Maida Vale',
+      'AL1': 'St Albans', 'AL4': 'St Albans',
+      'L1': 'Liverpool', 'L3': 'Liverpool', 'L10': 'Liverpool',
+      'WA1': 'Warrington', 'WA5': 'Warrington', 'CH1': 'Chester', 'CH4': 'Chester',
+      'WN1': 'Wigan', 'WN5': 'Wigan', 'PR1': 'Preston', 'PR2': 'Preston',
+      'DA1': 'Dartford', 'DA2': 'Dartford', 'IG1': 'Ilford', 'IG2': 'Ilford', 'IG7': 'Chigwell',
+      'RM5': 'Romford', 'RM6': 'Romford', 'RM8': 'Dagenham',
+      'CM1': 'Chelmsford', 'CM7': 'Braintree', 'CM15': 'Brentwood',
+      'BN1': 'Brighton', 'BN5': 'Henfield', 'BN42': 'Brighton',
+      'TQ1': 'Torquay', 'TQ4': 'Paignton', 'TQ12': 'Newton Abbot',
+      'EX1': 'Exeter', 'EX5': 'Exeter', 'EX17': 'Crediton',
+      'OL8': 'Oldham', 'SK1': 'Stockport', 'KY1': 'Kirkcaldy', 'FK1': 'Falkirk'
+    };
+    return townMap[pcOut] || townMap[pcArea] || cleanPc;
   } catch(e) {}
   return '';
 }
