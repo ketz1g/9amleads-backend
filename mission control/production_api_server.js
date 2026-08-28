@@ -11054,29 +11054,27 @@ cron.schedule('0 9 * * 1-5', async () => {
   // promise). The run processes all customers; each email goes out in order.
   console.log('[09:00 UK] Running delivery...');
   try {
-    // PARTNER COMMISSION ENGINE: run once daily (creates pending commissions for
-    // qualifying affiliate/sales-partner referrals + clears approved ones).
-    try { var _pj = runPartnerJobs(); console.log('[PARTNER] commission job:', JSON.stringify(_pj)); } catch(pjErr) { console.log('[PARTNER] commission job error:', pjErr.message); }
-    // AFFILIATE PAYOUTS: transition referrals that have reached their month + are
-    // still active from "pending" to "due" (ready to be paid £25).
-    try { var _affPaid = processAffiliatePayouts(); if (_affPaid) console.log('[AFFILIATE] ' + _affPaid + ' payout(s) became due'); } catch(ape) { console.log('[AFFILIATE] Payout check error:', ape.message); }
-    // TEMP DAILY-CAP OVERRIDES (goodwill top-ups like "5 free leads today"):
-    // revert any that have expired back to the customer's normal plan limit.
-    try { var _capRev = revertExpiredCapOverrides(); if (_capRev) console.log('[CAP-OVERRIDE] reverted ' + _capRev + ' expired cap override(s)'); } catch(crE) { console.log('[CAP-OVERRIDE] revert error:', crE.message); }
+    // DELIVERY FIRST: fire the 9am emails immediately so leads land at 09:00:00.
+    // (Partner/affiliate/cap jobs run AFTER delivery below so they never delay the
+    // 9am promise — they added ~30s of pre-delivery work previously.)
     const http = require('http');
     var body = JSON.stringify({});
     var req = http.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!') + '', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
-      var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { console.log('[08:58 UK] Delivery done:', b.substring(0, 200)); });
+      var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { console.log('[09:00 UK] Delivery done:', b.substring(0, 200)); });
     });
-    req.on('error', function(e) { console.log('[08:58 UK] Delivery request error:', e.message); });
+    req.on('error', function(e) { console.log('[09:00 UK] Delivery request error:', e.message); });
     req.write(body); req.end();
     // Run Print & Post after delivery
-    try { await runAutoSend(); } catch(ase) { console.log('[08:58 UK] Print & Post error:', ase.message); }
+    try { await runAutoSend(); } catch(ase) { console.log('[09:00 UK] Print & Post error:', ase.message); }
     // INSTANT FAILED-EMAIL RESEND: any email that failed during this delivery is
     // re-sent IMMEDIATELY (not hours later), so a customer whose email hiccuped at
     // 9:00 gets it within seconds — the 9am promise must survive single-send failures.
-    try { await resendFailedEmails(); } catch(rfE) { console.log('[08:58 UK] Instant resend error:', rfE.message); }
-  } catch(e) { console.log('[08:58 UK] Delivery error:', e.message); }
+    try { await resendFailedEmails(); } catch(rfE) { console.log('[09:00 UK] Instant resend error:', rfE.message); }
+    // POST-DELIVERY JOBS (no longer delay the 9am emails):
+    try { var _pj = runPartnerJobs(); console.log('[PARTNER] commission job:', JSON.stringify(_pj)); } catch(pjErr) { console.log('[PARTNER] commission job error:', pjErr.message); }
+    try { var _affPaid = processAffiliatePayouts(); if (_affPaid) console.log('[AFFILIATE] ' + _affPaid + ' payout(s) became due'); } catch(ape) { console.log('[AFFILIATE] Payout check error:', ape.message); }
+    try { var _capRev = revertExpiredCapOverrides(); if (_capRev) console.log('[CAP-OVERRIDE] reverted ' + _capRev + ' expired cap override(s)'); } catch(crE) { console.log('[CAP-OVERRIDE] revert error:', crE.message); }
+  } catch(e) { console.log('[09:00 UK] Delivery error:', e.message); }
 }, {
   timezone: 'Europe/London'
 });
