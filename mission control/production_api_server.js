@@ -11060,7 +11060,7 @@ cron.schedule('0 9 * * 1-5', async () => {
     const http = require('http');
     var body = JSON.stringify({});
     var req = http.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!') + '', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
-      var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { console.log('[09:00 UK] Delivery done:', b.substring(0, 200)); });
+      var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() {      var dLog = b.substring(0, 200);      console.log('[09:00 UK] Delivery done:', dLog);      try { setTimeout(function() { sendDeliveryCompleteReport(); }, 1000); } catch(repE) { console.log('[09:00 UK] Post-delivery report error:', repE.message); }    });
     });
     req.on('error', function(e) { console.log('[09:00 UK] Delivery request error:', e.message); });
     req.write(body); req.end();
@@ -11148,6 +11148,38 @@ cron.schedule('45 6 * * 1-5', async () => {
 // can. THEN emails a clear report to ketzman1g@gmail.com so the founder can confirm
 // every customer will get the right leads at 9am. The 06:45 stale-pool check has
 // already run, so this is the "is everything ready for 9am?" checkpoint.
+async function sendDeliveryCompleteReport() {
+  // POST-DELIVERY SUMMARY for the founder: sent the moment the 9am leads go out.
+  // Shows per-customer delivered counts (email + dashboard) and any errors, so the
+  // founder knows delivery succeeded without logging into the dashboard.
+  try {
+    var rDb = getDb();
+    var todayS = new Date().toISOString().split('T')[0];
+    var custs = (rDb.customers || []).filter(function(c2) { return c2.plan && c2.plan !== 'cancelled' && String(c2.email || '').indexOf('test.') !== 0; });
+    var rows = [];
+    var totalDelivered = 0;
+    custs.forEach(function(c2) {
+      var prod = c2.product || 'moving';
+      var lds = (rDb.leads || []).filter(function(l2) { return l2.customer_id === c2.id && l2.delivered_at && String(l2.delivered_at).indexOf(todayS) === 0; });
+      if (lds.length) {
+        totalDelivered += lds.length;
+        rows.push({ email: c2.email, company: c2.company || '', product: prod, count: lds.length });
+      }
+    });
+    var html = '<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px">'
+      + '<div style="font-size:20px;font-weight:800;color:#0f172a;margin-bottom:6px">9am delivery complete — ' + todayS + '</div>'
+      + '<p style="font-size:13px;color:#64748b;margin:0 0 16px">' + rows.length + ' customer(s) · ' + totalDelivered + ' leads delivered to email + dashboard.</p>'
+      + '<table style="width:100%;border-collapse:collapse;font-size:13px">'
+      + '<tr style="background:#eef2f7"><th style="text-align:left;padding:8px;color:#334155">Customer</th><th style="text-align:left;padding:8px;color:#334155">Product</th><th style="text-align:right;padding:8px;color:#334155">Leads</th></tr>';
+    rows.forEach(function(r) {
+      html += '<tr style="border-bottom:1px solid #e2e8f0"><td style="padding:8px;color:#0f172a;font-weight:600">' + r.company + ' <span style="color:#94a3b8;font-weight:400">(' + r.email + ')</span></td><td style="padding:8px;color:#475569">' + r.product + '</td><td style="padding:8px;text-align:right;color:#16a34a;font-weight:700">' + r.count + '</td></tr>';
+    });
+    html += '</table><p style="font-size:11px;color:#94a3b8;margin-top:16px">Next delivery: next weekday at 9:00 UK. No action needed unless a row is missing.</p></div>';
+    await sendBrevoEmail({ email: process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com', name: '9amLeads Admin' }, '9amLeads delivery complete — ' + todayS + ' (' + totalDelivered + ' leads)', html);
+    console.log('[POST-DELIVERY-REPORT] Sent delivery summary (' + rows.length + ' customers, ' + totalDelivered + ' leads)');
+  } catch(e) { console.log('[POST-DELIVERY-REPORT] error:', e.message); }
+}
+
 async function runDailyDeliveryReport() {
   try {
     var rDb = getDb();
