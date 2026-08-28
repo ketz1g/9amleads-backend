@@ -7643,7 +7643,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
     } else {
       inArea = areas.some(function(a) { return extractPostcodeArea(a) === leadArea; });
     }
-    return { address: c.address || c.fullAddress || c.deceasedAddress || '', postcode: pc, url: c.url || '', county: c.county || '', source: c.source || '', has_door_number: hasDoor, paf_candidate: pafCandidate, paf_failed: pafFailed, in_area: inArea };
+    return { address: c.address || c.fullAddress || c.deceasedAddress || '', postcode: pc, url: c.url || '', county: c.county || '', source: c.source || '', has_door_number: hasDoor, paf_candidate: pafCandidate, paf_failed: pafFailed, in_area: inArea, name: c.name || c.companyName || c.company_name || '', company_number: c.companyNumber || c.company_number || '', incorporation_date: c.incorporationDate || c.date_of_creation || '', sic_code: c.sicCode || (Array.isArray(c.sic_codes) ? c.sic_codes.join(', ') : (c.sic_codes || '')), verified_link: (c.url || (c.companyNumber ? 'https://find-and-update.company-information.service.gov.uk/company/' + c.companyNumber : '')) };
   });
   // HARD DISTANCE GATE (moving): regardless of how a lead was selected (in-area match,
   // fallback, preview replacement), an out-of-area moving lead MUST be within a

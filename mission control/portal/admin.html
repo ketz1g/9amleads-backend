@@ -335,7 +335,7 @@ function openDeliveryPreview() {
             var pcRe = new RegExp('\\s*' + pcDisp.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*$', 'i');
             if (!pcRe.test(dispAddr)) dispAddr = dispAddr ? dispAddr + ', ' + pcDisp : pcDisp;
           }
-          var needsDoor = cx.product === 'moving' || cx.product === 'probate';
+          var needsDoor = cx.product === 'moving' || cx.product === 'probate' || cx.product === 'newbusiness';
           var badge = '';
           if (needsDoor) {
             badge = l.has_door_number ? '<span style="background:#dcfce7;color:#15803d;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:600;margin-left:4px">DOOR ✓</span>' : (l.paf_failed ? '<span style="background:#fee2e2;color:#b91c1c;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:600;margin-left:4px">NO DOOR · REPLACED</span>' : (l.paf_candidate ? '<span style="background:#fef3c7;color:#b45309;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:600;margin-left:4px">+DOOR AT DELIVERY (PAF)</span>' : '<span style="background:#fee2e2;color:#b91c1c;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:600;margin-left:4px">NO DOOR</span>'));
@@ -343,7 +343,18 @@ function openDeliveryPreview() {
           if (cx.areas && cx.areas.length && l.in_area === false) {
             badge += '<span style="background:#f1f5f9;color:#64748b;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:600;margin-left:4px">OUT OF AREA</span>';
           }
-          html += '<div style="font-size:12px;color:#334155;padding-left:12px;border-left:3px solid #0ea5e9;margin-bottom:4px">' + (dispAddr || '-') + badge + (l.url ? ' <a href="' + l.url + '" target="_blank" style="color:#2563eb">link</a>' : '') + '</div>';
+          // Business products (newbusiness/planning/tenders) show the company/app name
+          // + a verification link; moving/probate show the address.
+          var namePart = '';
+          if (l.name) namePart = '<div style="font-weight:700;color:#0f172a;font-size:12.5px;margin-bottom:1px">' + l.name + '</div>';
+          var linkPart = '';
+          var linkUrl = l.verified_link || l.url || '';
+          if (linkUrl) linkPart = ' <a href="' + linkUrl + '" target="_blank" style="color:#2563eb;font-size:11px;font-weight:600">verify ↗</a>';
+          if (cx.product === 'newbusiness' && l.incorporation_date) {
+            linkPart += ' <span style="color:#64748b;font-size:10px">incorporated ' + l.incorporation_date + '</span>';
+          }
+          var dispTitle = dispAddr || l.name || '-';
+          html += '<div style="font-size:12px;color:#334155;padding-left:12px;border-left:3px solid #0ea5e9;margin-bottom:4px">' + namePart + (namePart ? '<div style="color:#475569">' + dispAddr + '</div>' : dispTitle) + badge + linkPart + '</div>';
         });
         if (!(cx.leads || []).length) html += '<div style="font-size:11px;color:#b45309;padding-left:12px">No leads in pool for these areas right now (will top up after the 6am scrape).</div>';
         html += '</div>';
