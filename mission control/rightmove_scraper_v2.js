@@ -1253,6 +1253,7 @@ function getTownForPostcode(postcode) {
     var townMap = {
       'E11': 'Leytonstone', 'E10': 'Leyton', 'E15': 'Stratford', 'E16': 'Docklands', 'E17': 'Walthamstow',
       'SE25': 'South Croydon', 'SE24': 'Herne Hill', 'SE22': 'East Dulwich', 'SE5': 'Camberwell', 'SE15': 'Peckham',
+      'SE4': 'Lewisham', 'SE12': 'Lewisham', 'SE6': 'Catford', 'SE13': 'Lewisham', 'SE23': 'Forest Hill', 'SE14': 'New Cross', 'SE8': 'Deptford', 'SE26': 'Sydenham', 'SE20': 'Penge', 'SE21': 'Dulwich', 'SE27': 'West Norwood', 'SE1': 'Southwark', 'SE10': 'Greenwich', 'SE16': 'Rotherhithe', 'SE18': 'Woolwich', 'SE28': 'Thamesmead',
       'NW11': 'Golders Green', 'NW10': 'Harlesden', 'NW6': 'Kilburn',
       'CR0': 'Croydon', 'CR2': 'South Croydon', 'CR7': 'Thornton Heath',
       'HA5': 'Pinner', 'HA3': 'Harrow', 'HA7': 'Stanmore',

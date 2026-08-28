@@ -18367,6 +18367,14 @@ function generateLeadEmailHTML(customer, leads) {
 
     // Details as badge chips
     var chips = [];
+    // AREA/TOWN CHIP: derive the neighbourhood/town from the postcode (free map +
+    // cached Postcoder) so moving emails always show "Lewisham", "Brixton", etc.
+    var areaChip = '';
+    try {
+      var _rmTown = require('./rightmove_scraper_v2');
+      areaChip = _rmTown.getTownForPostcode(postcode || d.postcode || '') || d.town || d.city || '';
+    } catch(e) { areaChip = d.town || d.city || ''; }
+    if (areaChip) chips.push({ icon: '\uD83D\uDCCD', text: areaChip });
     if (postcode) chips.push({ icon: '\uD83D\uDCCD', text: postcode });
     if (address && address.length > 10 && leadProduct !== 'moving') chips.push({ icon: '\uD83C\uDFE2', text: address.substring(0, 55) });
     if (d.city && leadProduct !== 'moving') chips.push({ icon: '\uD83C\uDFD9\uFE0F', text: d.city });
