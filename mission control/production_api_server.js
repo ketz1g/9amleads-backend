@@ -27403,21 +27403,26 @@ try {
   console.log('[BOOT] Stream: Companies House live stream worker started');
 
   // STREAM DRAIN: every 2 minutes, pull companies queued by the streaming worker
-  // and add them to the newbusiness pool (leads table, customer_id='scraper').
-  // The /companies stream delivers company-profile:changed events; the worker
-  // fetches each profile and queues only genuinely fresh companies (date_of_creation
-  // within the cutoff). This drain is what actually turns queued companies into
-  // deliverable leads — without it the queue just sits in a file.
+  // and merge them into the NEWBUSINESS POOL FILE (newbusiness-leads.json) — the
+  // SAME file the delivery/preview read via loadProductPool/getDeliveryPool.
+  // (Previously this wrote to the DB leads table with customer_id='scraper', which
+  // the delivery never reads — so stream companies never became deliverable and the
+  // new business pool sat at 0. This is the fix.)
   var _streamDrainTimer = setInterval(function() {
     try {
       var sw = require('./streaming_worker');
       var companies = sw.getRecentCompanies();
       if (!companies || !companies.length) return;
-      var inserted = 0, skipped = 0;
+      var nbFile = path.join(DATA_DIR, PRODUCT_LEAD_FILES.newbusiness ? PRODUCT_LEAD_FILES.newbusiness.file : 'newbusiness-leads.json');
       var pool = [];
-      try { pool = db.prepare("SELECT data FROM leads WHERE product = 'newbusiness' AND customer_id = 'scraper'").all().map(function(r){ var d={}; try{d=JSON.parse(r.data||'{}');}catch(e){} return d.companyNumber || d.company_number || ''; }); } catch(e) {}
+      try {
+        var rawPool = JSON.parse(fs.readFileSync(nbFile, 'utf-8'));
+        if (Array.isArray(rawPool)) pool = rawPool;
+        else if (rawPool && typeof rawPool === 'object') Object.keys(rawPool).forEach(function(k){ if (k.indexOf('_') !== 0 && Array.isArray(rawPool[k])) pool = pool.concat(rawPool[k]); });
+      } catch(e) { pool = []; }
       var seen = {};
-      pool.forEach(function(n){ if (n) seen[n] = 1; });
+      pool.forEach(function(l){ var n = l.companyNumber || l.company_number || ''; if (n) seen[n] = 1; });
+      var added = 0, skipped = 0;
       for (var i = 0; i < companies.length; i++) {
         var co = companies[i];
         var num = co.companyNumber || co.company_number || '';
@@ -27426,13 +27431,14 @@ try {
         var coDate = co.incorporationDate || '';
         var cutoff = new Date(Date.now() - 48 * 3600000).toISOString().split('T')[0];
         if (coDate && coDate < cutoff) { skipped++; continue; }
-        try {
-          db.prepare("INSERT INTO leads (id, customer_id, product, data, status, created_at) VALUES (?, 'scraper', 'newbusiness', ?, 'new', datetime('now'))")
-            .run(uuidv4(), JSON.stringify(co));
-          inserted++;
-        } catch(ie) { skipped++; }
+        if (!co.address || !co.postcode) { skipped++; continue; }
+        pool.push(co);
+        added++;
       }
-      if (inserted > 0) console.log('[STREAM-DRAIN] Added ' + inserted + ' stream companies to newbusiness pool (skipped ' + skipped + ')');
+      if (added > 0) {
+        fs.writeFileSync(nbFile, JSON.stringify(pool, null, 2));
+        console.log('[STREAM-DRAIN] Added ' + added + ' stream companies to newbusiness pool file (skipped ' + skipped + ', total ' + pool.length + ')');
+      }
     } catch(e) { console.log('[STREAM-DRAIN] error:', e.message); }
   }, 120000);
   if (_streamDrainTimer.unref) _streamDrainTimer.unref();
