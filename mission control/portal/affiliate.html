@@ -772,6 +772,7 @@ function go(t){
   ['overview','leads','tools','playbook','refs','rewards','payouts'].forEach(function(v){document.getElementById('view-'+v).style.display=(v===t)?'block':'none';});
   if(t==='tools'&&!RES)loadResources();
   if(t==='leads'&&!LEADS)loadLeads();
+  if(t==='payouts')loadPayouts();
 }
 
 function init(){
@@ -948,13 +949,30 @@ function renderRefs(refs){
   });
   h+='</tbody></table>';w.innerHTML=h;
 }
-function renderPayouts(p){
+function renderPayouts(p, totals){
   var w=document.getElementById('payouts-wrap');
-  if(p&&p.length){
-    var h='<table><thead><tr><th>Date</th><th>Referrals</th><th>Amount</th><th>Status</th></tr></thead><tbody>';
-    p.forEach(function(p){h+='<tr><td>'+fmtDate(p.date)+'</td><td>'+p.referrals+'</td><td><b style="color:#34d399">£'+p.amount+'</b></td><td>'+badge(p.status||'paid')+'</td></tr>';});
-    h+='</tbody></table>';w.innerHTML=h;
+  if(!p||!p.length){ w.innerHTML='<div class="empty">No payouts yet. Your commission payouts and wheel wins will appear here.</div>'; return; }
+  var h='';
+  if(totals){
+    h+='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">'+
+      '<div style="background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.25);border-radius:10px;padding:10px 14px"><div style="font-size:11px;color:#94a3b8">Total paid out</div><div style="font-size:18px;font-weight:800;color:#34d399">£'+(totals.paid||0)+'</div></div>'+
+      '<div style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);border-radius:10px;padding:10px 14px"><div style="font-size:11px;color:#94a3b8">Pending / clearing</div><div style="font-size:18px;font-weight:800;color:#fbbf24">£'+(totals.pending||0)+'</div></div>'+
+      '<div style="background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.25);border-radius:10px;padding:10px 14px"><div style="font-size:11px;color:#94a3b8">Lifetime</div><div style="font-size:18px;font-weight:800;color:#0ea5e9">£'+(totals.lifetime||0)+'</div></div>'+
+      '</div>';
   }
+  h+='<table><thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Status</th></tr></thead><tbody>';
+  p.forEach(function(x){
+    var kindIcon = x.kind==='wheel' ? '🎡' : x.kind==='commission' ? '£' : '💰';
+    var kindLabel = x.kind==='wheel' ? 'Wheel win' : x.kind==='commission' ? 'Commission' : 'Payout';
+    h+='<tr><td>'+fmtDate(x.date)+'</td><td>'+kindIcon+' '+kindLabel+'<div class="muted">'+esc(x.note||'')+'</div></td><td><b style="color:#34d399">£'+x.amount+'</b></td><td>'+badge(x.status||'paid')+'</td></tr>';
+  });
+  h+='</tbody></table>';w.innerHTML=h;
+}
+function loadPayouts(){
+  api('GET','/affiliate/payouts').then(function(d){
+    if(!d.success)return;
+    renderPayouts(d.payouts, d.totals);
+  }).catch(function(){});
 }
 /* ---- REWARD WHEEL ---- */
 var _wheel=null,_wheelSpinIdx=0,_wheelAnim=null;

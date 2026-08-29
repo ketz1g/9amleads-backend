@@ -3335,7 +3335,24 @@ function affiliateWheelClawback(dbc, aff) {
   if (!aff) return;
   var retained = countAffiliateRetained(dbc, aff);
   var consumed = Math.floor(retained / 50);
-  if ((aff.wheel_spins || 0) > consumed) {
+  var hadSpins = aff.wheel_spins || 0;
+  if (hadSpins > consumed) {
+    // Reverse the prizes won on the spins that are no longer earned. The retained
+    // count dropped (a counted customer refunded), so those wheel wins are clawed
+    // back: the spin is revoked, its prize is reversed from the balance, and the
+    // history entry is marked 'reversed'.
+    var history = aff.wheel_history || [];
+    for (var i = consumed; i < hadSpins; i++) {
+      var h = history[i];
+      if (h && h.status === 'paid') {
+        h.status = 'reversed';
+        h.reversed_at = new Date().toISOString();
+        // Reverse the credit as a negative balance adjustment (kept for audit).
+        aff.payouts = aff.payouts || [];
+        aff.payouts.push({ id: uuidv4(), amount: -1 * Number(h.prize || 0), status: 'reversed', date: new Date().toISOString(), method: 'wheel', reference: 'wheel-clawback', note: 'Reversed: customer refunded after spin won £' + (h.prize || 0) });
+        console.log('[WHEEL] Reversed prize £' + h.prize + ' for ' + aff.email);
+      }
+    }
     aff.wheel_spins = consumed;
     aff.wheel_clawback_at = new Date().toISOString();
     console.log('[WHEEL] Clawback for ' + aff.email + ': spins now ' + consumed + ' (retained ' + retained + ')');
@@ -4669,10 +4686,14 @@ app.post('/api/affiliate/register', async (req, res) => {
     } catch(eW) {}
     // Alert the owner so they know a new affiliate joined.
     try {
+      var _appScore = (application && application.score && application.score.total) || 'n/a';
+      var _appVoice = (application && application.voice && application.voice.audio) ? 'yes' : 'no';
       var adminHtml = '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto">' +
         '<h1 style="font-family:Outfit,sans-serif;color:#0ea5e9;margin:0 0 10px">New affiliate application</h1>' +
         '<p style="color:#ccc;line-height:1.7"><strong style="color:#fff">' + escHtml(String(name).trim()) + '</strong> (' + escHtml(em) + ') applied with code <strong style="color:#0ea5e9">' + escHtml(code2) + '</strong>.</p>' +
+        '<p style="color:#ccc;line-height:1.7">Application score: <strong style="color:' + (Number(_appScore) >= 55 ? '#34d399' : '#fbbf24') + '">' + _appScore + '/100</strong>. Voice test: <strong style="color:#fff">' + _appVoice + '</strong>.</p>' +
         '<p style="color:#ccc;line-height:1.7">Status: <strong style="color:#fff">' + (AFFILIATE_AUTO_ACTIVATE ? 'active (auto)' : 'pending') + '</strong>.' + (AFFILIATE_AUTO_ACTIVATE ? '' : ' Review and activate them from the admin dashboard when ready.') + '</p>' +
+        '<p style="color:#ccc;line-height:1.7">Review at <a href="https://9amleads.com/portal/admin.html" style="color:#0ea5e9">admin dashboard &rarr; Affiliates</a> (listen to the voice test before approving).</p>' +
         '<p style="color:#888;font-size:13px;margin-top:24px">Admin: ' + (AFFILIATE_AUTO_ACTIVATE ? 'no action needed' : 'activate via Admin &rarr; Affiliates') + '</p>' +
         '</div>';
       sendBrevoEmail({ email: 'hello@9amleads.com', name: '9amLeads Owner' }, 'New affiliate application: ' + String(name).trim(), adminHtml).catch(function() {});
@@ -4834,6 +4855,43 @@ app.get('/api/affiliate/dashboard', affiliateAuth, (req, res) => {
     });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+
+// GET /api/affiliate/payouts — the affiliate's payout history (commission payouts
+// and reward-wheel wins), newest first.
+app.get('/api/affiliate/payouts', affiliateAuth, (req, res) => {
+  try {
+    var aff = req.affiliate;
+    var dbc = getDb();
+    var rows = [];
+    // 1) Reward wheel wins (credited to balance immediately)
+    (aff.wheel_history || []).forEach(function(h) {
+      rows.push({ id: h.id || ('wheel-' + h.at), kind: 'wheel', amount: Number(h.prize || 0), date: h.at, status: h.status || 'paid', note: h.note || ('Wheel of Fortune win (Tier ' + h.tier + ')') });
+    });
+    // 2) Commission payouts (paid partner commissions)
+    var comms = (dbc.partner_commissions || []).filter(function(cm) { return cm.partner_id === aff.id && cm.status === 'paid'; });
+    comms.forEach(function(cm) {
+      rows.push({ id: cm.id, kind: 'commission', amount: Number(cm.commission_amount || 0), date: cm.paid_at || cm.updated_at || cm.created_at, status: 'paid', note: 'Commission payout' });
+    });
+    // 3) Manual payouts recorded on the affiliate (bank transfer etc)
+    (aff.payouts || []).forEach(function(p2) {
+      if (p2.reference === 'wheel' || p2.method === 'wheel') return; // already covered above
+      rows.push({ id: p2.id || ('payout-' + p2.date), kind: 'payout', amount: Number(p2.amount || 0), date: p2.date, status: p2.status || 'paid', note: p2.note || 'Payout' });
+    });
+    rows.sort(function(a,b){ return String(b.date||'').localeCompare(String(a.date||'')); });
+    // Totals
+    var totals = { paid: 0, pending: 0, lifetime: 0 };
+    (dbc.partner_commissions || []).forEach(function(cm) {
+      if (cm.partner_id !== aff.id) return;
+      var amt = Number(cm.commission_amount || 0);
+      totals.lifetime += amt;
+      if (cm.status === 'paid') totals.paid += amt;
+      else if (cm.status === 'approved' || cm.status === 'pending') totals.pending += amt;
+    });
+    (aff.wheel_history || []).forEach(function(h){ totals.lifetime += Number(h.prize || 0); totals.paid += Number(h.prize || 0); });
+    res.json({ success: true, payouts: rows, totals: totals });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+// POST /api/affiliate/wheel/spin — (kept here for clarity; defined with the wheel routes).
 
 // GET /api/affiliate/wheel — the affiliate reward wheel state + spin history.
 app.get('/api/affiliate/wheel', affiliateAuth, (req, res) => {
