@@ -4567,13 +4567,37 @@ app.get('/api/affiliate/dashboard', affiliateAuth, (req, res) => {
     });
     referralRows.sort(function(a, b) { return String(b.signed_up).localeCompare(String(a.signed_up)); });
     var payouts = (dbc.partner_payouts || []).filter(function(p) { return p.partner_id === aff.id; });
+    // Payout progress toward the min-threshold (approved + paid commissions so far).
+    var minPayout = Number(partnerConfig().affiliate_min_payout) || 50;
+    var approvedTotal = cleared + paid;
+    var payoutProgress = Math.min(100, Math.round((approvedTotal / minPayout) * 100));
+    var nextPayoutAt = null;
+    if (approvedTotal >= minPayout) {
+      nextPayoutAt = new Date(Date.now()).toISOString();
+    }
+    // Pipeline breakdown by referral status.
+    var pipeline = { referral_pending: 0, earning: 0, approved: 0, paid: 0 };
+    referralRows.forEach(function(r) {
+      if (pipeline[r.status] !== undefined) pipeline[r.status]++;
+      else pipeline.referral_pending++;
+    });
+    // Per-product earnings (approved+paid).
+    var byProductEarnings = {};
+    referralRows.forEach(function(r) {
+      if (!byProductEarnings[r.product]) byProductEarnings[r.product] = 0;
+      byProductEarnings[r.product] += Number(r.monthly_earned || 0);
+    });
+    var affRate = Number(aff.commission_amount) || rate;
     res.json({
       success: true,
-      affiliate: { id: aff.id, name: aff.name, code: aff.code, email: aff.email },
-      rates: { per_referral: rate, recurring_monthly: rate, recurring: true, customer_trial_days: 14 },
+      affiliate: { id: aff.id, name: aff.name, code: aff.code, email: aff.email, association: aff.association || '', commission_amount: affRate },
+      rates: { per_referral: affRate, recurring_monthly: affRate, recurring: false, customer_trial_days: 14 },
       totals: { referrals: refs.length, this_month: thisMonth, pending: pending, cleared: cleared, paid: paid, lifetime: lifetime },
       earnings: { this_month: thisMonth, pending: pending, cleared: cleared, paid: paid, lifetime: lifetime },
+      payout: { threshold: minPayout, approved_total: approvedTotal, progress_pct: payoutProgress, next_payout_at: nextPayoutAt },
       by_product: byProduct,
+      by_product_earnings: byProductEarnings,
+      pipeline: pipeline,
       referrals: referralRows,
       payouts: payouts
     });
@@ -4737,8 +4761,9 @@ app.get('/api/admin/affiliates', adminAuth, (req, res) => {
       refs.forEach(function(c) { var st = c.affiliate_payout_status || 'referral_pending'; if (counts[st] !== undefined) counts[st]++; });
       return {
         id: a.id, name: a.name, code: a.code, email: a.email, status: a.status, payout_rate: rate,
+        association: a.association || '', commission_amount: a.commission_amount || null,
         created_at: a.created_at, counts: counts,
-        earnings_pending: counts.pending * rate, earnings_due: counts.due * rate, earnings_paid: counts.paid * rate,
+        earnings_pending: counts.pending * (a.commission_amount || rate), earnings_due: counts.due * (a.commission_amount || rate), earnings_paid: counts.paid * (a.commission_amount || rate),
         payout_history: a.payouts || []
       };
     });

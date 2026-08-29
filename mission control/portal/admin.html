@@ -274,9 +274,12 @@ tbody tr:hover td{background:#f8fafc}
 <div class="card" style="margin-bottom:16px">
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
 <div style="font-size:14px;font-weight:700;font-family:'Outfit',sans-serif"><i class="fas fa-handshake" style="color:#0ea5e9;margin-right:6px"></i> Affiliate Program</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<button class="btn btn-outline btn-sm" onclick="runAffAutoPayout()" title="Pay all approved commissions meeting the £50 minimum"><i class="fas fa-money-check-alt"></i> Run auto-payout</button>
+<button class="btn btn-outline btn-sm" onclick="runAffAutomation()" title="Send pending nurture/reactivation emails now"><i class="fas fa-paper-plane"></i> Run automation</button>
 <button class="btn btn-primary btn-sm" onclick="createAffiliateForm()"><i class="fas fa-plus"></i> Add Affiliate</button>
 </div>
-<p style="font-size:12.5px;color:#475569;margin:0 0 10px">Referrals use an affiliate's name or code at signup → customer gets a <b>14-day trial</b> → affiliate earns <b>£25</b> once the customer pays their first invoice for a Starter/Pro/Enterprise package, paid the month after signup.</p>
+<p style="font-size:12.5px;color:#475569;margin:0 0 10px">Referrals use an affiliate's name or code at signup → customer gets a <b>14-day trial</b> → affiliate earns <b>£25</b> once the customer pays their <b>second</b> invoice for a Starter/Pro/Enterprise package. Approved commissions auto-pay monthly when they reach the £50 minimum. Associations earn £30 (25 + £5 bonus).</p>
 <div class="table-wrap" id="affiliateTableWrap"><div class="loading">Loading affiliates...</div></div>
 </div>
 </div>
@@ -588,11 +591,15 @@ function loadAffiliates() {
     .then(function(d) {
       if (!d.success || !d.affiliates) { wrap.innerHTML = '<div class="empty">Could not load affiliates.</div>'; return; }
       if (!d.affiliates.length) { wrap.innerHTML = '<div class="empty">No affiliates yet. Click "Add Affiliate" to create one.</div>'; return; }
-      var h = '<table><thead><tr><th>Affiliate</th><th>Code</th><th>Status</th><th>Referrals</th><th>Pending</th><th>Ready to pay</th><th>Paid</th><th>Actions</th></tr></thead><tbody>';
+      var h = '<table><thead><tr><th>Affiliate</th><th>Code</th><th>Status</th><th>Association</th><th>Rate</th><th>Referrals</th><th>Pending</th><th>Ready to pay</th><th>Paid</th><th>Actions</th></tr></thead><tbody>';
       d.affiliates.forEach(function(a) {
         var st = a.status === 'pending' ? '<span class="badge badge-warn">Pending</span>' : a.status === 'paused' ? '<span class="badge">Paused</span>' : '<span class="badge badge-ok">Active</span>';
+        var assoc = a.association || '-';
+        var rate = (a.commission_amount || 25);
         h += '<tr><td><b>' + esc(a.name) + '</b><div style="font-size:11px;color:#64748b">' + esc(a.email) + '</div></td>' +
           '<td><code>' + esc(a.code) + '</code></td><td>' + st + '</td>' +
+          '<td>' + esc(assoc) + ' <button class="btn btn-outline btn-sm" style="margin-left:2px" onclick="setAffAssociation(\'' + a.id + '\',\'' + esc(a.association || '') + '\')" title="Set a trade association"><i class="fas fa-tag"></i></button></td>' +
+          '<td style="font-weight:600">£' + rate + '</td>' +
           '<td>' + a.counts.referrals + '</td><td>£' + a.earnings_pending + ' (' + a.counts.pending + ')</td>' +
           '<td style="color:#16a34a;font-weight:600">£' + a.earnings_due + ' (' + a.counts.due + ')</td>' +
           '<td>£' + a.earnings_paid + ' (' + a.counts.paid + ')</td>' +
@@ -632,6 +639,27 @@ function payAffiliate(id, name) {
   fetch(API + '/api/admin/affiliates/pay', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: JSON.stringify({ affiliate_id: id }) })
     .then(function(r) { return r.json(); })
     .then(function(d) { alert('Paid £' + d.amount_paid + ' to ' + d.affiliate + ' (' + d.paid_referrals + ' referral' + (d.paid_referrals === 1 ? '' : 's') + ').'); loadAffiliates(); })
+    .catch(function(e) { alert('Error: ' + e.message); });
+}
+function setAffAssociation(id, current) {
+  var assoc = prompt('Trade association name (e.g. BAR - British Association of Removers). Leave blank to clear. Their commission becomes £30 (25 + 5 bonus).', current || '');
+  if (assoc === null) return;
+  fetch(API + '/api/admin/affiliates/' + id + '/association', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: JSON.stringify({ association: assoc }) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) { if (d.success) { alert('Association set for ' + d.affiliate.name + '. Rate: £' + d.affiliate.commission_amount); loadAffiliates(); } else alert(d.error || 'Could not set association'); })
+    .catch(function(e) { alert('Error: ' + e.message); });
+}
+function runAffAutoPayout() {
+  if (!confirm('Run the monthly auto-payout now? This pays all APPROVED commissions that meet the £50 minimum for each affiliate.')) return;
+  fetch(API + '/api/admin/affiliate/run-auto-payout', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: '{}' })
+    .then(function(r) { return r.json(); })
+    .then(function(d) { alert('Auto-payout complete: ' + (d.result.commissions_paid || 0) + ' commission(s) marked paid.'); loadAffiliates(); })
+    .catch(function(e) { alert('Error: ' + e.message); });
+}
+function runAffAutomation() {
+  fetch(API + '/api/admin/affiliate/run-automation', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: '{}' })
+    .then(function(r) { return r.json(); })
+    .then(function(d) { alert('Affiliate automation complete: nurture=' + (d.result.nurture.nurture_sent||0) + ', reactivation=' + (d.result.reactivation.reactivation_sent||0)); })
     .catch(function(e) { alert('Error: ' + e.message); });
 }
 function viewAffiliateDashboard(id) {

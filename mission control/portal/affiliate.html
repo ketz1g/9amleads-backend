@@ -174,6 +174,36 @@ tr:last-child td{border-bottom:none}
 .tl-item:before{content:'';position:absolute;left:-22px;top:5px;width:12px;height:12px;border-radius:50%;background:#0ea5e9;border:2px solid #0b0d14}
 .tl-item .d{font-size:11px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:.4px}
 .tl-item .a{font-size:12.5px;color:#c6cfdd;line-height:1.55;margin-top:2px}
+/* payout progress */
+.payout-card{background:linear-gradient(135deg,rgba(52,211,153,.10),rgba(14,165,233,.04));border:1px solid rgba(52,211,153,.3);border-radius:14px;padding:18px;margin-bottom:22px}
+.payout-card .p-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.payout-card .p-head .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px}
+.payout-card .p-head .val{font-size:20px;font-weight:800;color:#34d399}
+.payout-card .bar{height:12px;background:#0b0d14;border:1px solid #1e2030;border-radius:8px;overflow:hidden}
+.payout-card .bar .fill{height:100%;background:linear-gradient(90deg,#10b981,#0ea5e9);border-radius:8px;transition:width .5s ease}
+.payout-card .p-sub{font-size:12px;color:#94a3b8;margin-top:10px;line-height:1.5}
+/* pipeline */
+.pipe{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px}
+@media(max-width:700px){.pipe{grid-template-columns:repeat(2,1fr)}}
+.pipe .step{background:rgba(255,255,255,.045);border:1px solid #1e2030;border-radius:12px;padding:14px;text-align:center}
+.pipe .step .n{font-size:24px;font-weight:800;color:#f1f5f9}
+.pipe .step .l{font-size:11px;color:#94a3b8;margin-top:4px;line-height:1.4}
+.pipe .step.s1{border-color:rgba(148,163,184,.3)}.pipe .step.s1 .n{color:#94a3b8}
+.pipe .step.s2{border-color:rgba(14,165,233,.4)}.pipe .step.s2 .n{color:#0ea5e9}
+.pipe .step.s3{border-color:rgba(251,191,36,.4)}.pipe .step.s3 .n{color:#fbbf24}
+.pipe .step.s4{border-color:rgba(52,211,153,.4)}.pipe .step.s4 .n{color:#34d399}
+/* product earnings */
+.prod-earn{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px}
+.prod-earn .pe{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border:1px solid #1e2030;border-radius:10px;padding:8px 12px;font-size:12px;color:#cbd5e1}
+.prod-earn .pe b{color:#34d399;font-weight:800}
+/* QR + refresh */
+.qr-wrap{display:flex;align-items:center;gap:14px;margin-top:12px;flex-wrap:wrap}
+.qr-wrap img{width:96px;height:96px;border-radius:10px;border:1px solid rgba(14,165,233,.3);background:#fff}
+.qr-wrap .qr-note{font-size:11.5px;color:#94a3b8;line-height:1.5;max-width:280px}
+.refresh-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#34d399;margin-right:5px;animation:pulse 1.6s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+/* stat pill */
+.stat-pill{display:inline-flex;align-items:center;gap:8px;background:rgba(14,165,233,.10);border:1px solid rgba(14,165,233,.3);border-radius:50px;padding:6px 13px;font-size:11.5px;color:#38bdf8;font-weight:700}
 </style>
 </head>
 <body>
@@ -224,6 +254,10 @@ tr:last-child td{border-bottom:none}
 <button class="btn-mini" onclick="share('x')">X</button>
 <button class="btn-mini" onclick="share('mail')">Email</button>
 </div>
+<div class="qr-wrap">
+<img id="qr-img" alt="Share link QR code" style="display:none">
+<div class="qr-note">Show this QR code to a business owner — they scan it, sign up with your code, and you get the £25 once they pay their second invoice.</div>
+</div>
 </div>
 
 <div class="tabs">
@@ -237,19 +271,30 @@ tr:last-child td{border-bottom:none}
 
 <!-- OVERVIEW -->
 <section id="view-overview">
+<div class="payout-card">
+<div class="p-head"><div><div class="lbl">Your next payout</div><div class="val" id="c-next-payout">£0</div></div><div class="lbl" id="c-payout-pct">0% of £50</div></div>
+<div class="bar"><div class="fill" id="c-payout-bar" style="width:0%"></div></div>
+<div class="p-sub" id="c-payout-sub">Commissions are paid once your approved earnings reach the £50 minimum, on the monthly cycle.</div>
+</div>
 <div class="cards">
 <div class="card"><div class="lbl">Referrals</div><div class="val" id="c-refs">0</div><div class="sub">customers who signed up with your code</div></div>
 <div class="card blue"><div class="lbl">This month</div><div class="val" id="c-month">£0</div><div class="sub">earnings so far this month</div></div>
-<div class="card amber"><div class="lbl">Pending</div><div class="val" id="c-pending">£0</div><div class="sub">clearing · pays after ~30 days</div></div>
+<div class="card amber"><div class="lbl">Pending</div><div class="val" id="c-pending">£0</div><div class="sub">clearing · pays after qualifying</div></div>
 <div class="card green"><div class="lbl">Lifetime</div><div class="val" id="c-lifetime">£0</div><div class="sub">total earned all-time</div></div>
+</div>
+<div class="pipe">
+<div class="step s1"><div class="n" id="pp-0">0</div><div class="l">Signed up</div></div>
+<div class="step s2"><div class="n" id="pp-1">0</div><div class="l">Earning (paying)</div></div>
+<div class="step s3"><div class="n" id="pp-2">0</div><div class="l">Cleared (ready to pay)</div></div>
+<div class="step s4"><div class="n" id="pp-3">0</div><div class="l">Paid</div></div>
 </div>
 <div class="grid two">
 <div class="panel"><h2>How it works</h2>
 <ol class="howto" style="padding-left:18px">
 <li><b>Share your code</b> — give your name or code to anyone starting with 9amLeads.</li>
 <li><b>They get a 14-day free trial</b> — instead of the standard 7 days, used at signup for any lead type.</li>
-<li><b>You earn £25 per sign-up</b> — paid once, when a customer who used your code pays their first package.</li>
-<li><b>Paid after qualifying</b> — your £25 clears after ~30 days and is paid out on the monthly cycle.</li>
+<li><b>You earn £25 per sign-up</b> — paid once, when a customer who used your code pays their second invoice.</li>
+<li><b>Paid after qualifying</b> — your £25 clears after the qualifying period and is paid out on the monthly cycle.</li>
 </ol>
 <p style="font-size:12px;color:#94a3b8;margin-top:14px">Tip: open the <a href="#" onclick="go('tools');return false" style="color:#0ea5e9">Tools tab</a> for phone scripts, emails, SMS and social posts for every lead type — ready to copy and use.</p>
 </div>
@@ -257,6 +302,7 @@ tr:last-child td{border-bottom:none}
 <p style="font-size:12px;color:#0ea5e9;margin-top:10px"><a href="#" onclick="go('leads');return false">View all leads →</a></p>
 </div>
 </div>
+<div class="panel" style="margin-top:20px"><h2>Earnings by lead type <span class="hint">approved + paid</span></h2><div class="prod-earn" id="prod-earn"><div class="muted">No earnings yet.</div></div></div>
 </section>
 
 <!-- LEADS INBOX -->
@@ -429,7 +475,12 @@ function fmtDate(iso){if(!iso)return '-';try{return new Date(iso).toLocaleDateSt
 function copyText(txt,btn){var b=btn||document.querySelector('.code button');navigator.clipboard.writeText(txt).then(function(){var o=b.textContent;b.textContent='Copied!';setTimeout(function(){b.textContent=o;},1300);});}
 function copyCode(){copyText(document.getElementById('a-code').textContent);}
 var shareUrl='';
-function setLink(code){shareUrl='https://9amleads.com/r/'+encodeURIComponent(code);var el=document.getElementById('a-link');if(el)el.textContent=shareUrl;}
+function setLink(code){
+  shareUrl='https://9amleads.com/r/'+encodeURIComponent(code);
+  var el=document.getElementById('a-link');if(el)el.textContent=shareUrl;
+  var qr=document.getElementById('qr-img');
+  if(qr){ qr.src='https://api.qrserver.com/v1/create-qr-code/?size=96x96&data='+encodeURIComponent(shareUrl); qr.style.display='block'; }
+}
 function copyLink(){copyText(shareUrl,document.querySelectorAll('.code button')[1]);}
 function share(ch){
   var u=encodeURIComponent(shareUrl),t=encodeURIComponent('Get 14 days of FREE UK business leads delivered every morning at 9am with my code \u2014 try 9amLeads!');
@@ -492,11 +543,27 @@ function init(){
     document.getElementById('c-month').textContent='£'+d.earnings.this_month;
     document.getElementById('c-pending').textContent='£'+d.earnings.pending;
     document.getElementById('c-lifetime').textContent='£'+d.earnings.lifetime;
+    renderPayoutProgress(d.payout, d.affiliate);
+    renderPipeline(d.pipeline);
+    renderProdEarnings(d.by_product_earnings, d.earnings.lifetime);
     renderRecent(d.referrals.slice(0,5));
     renderRefs(d.referrals);
     renderPayouts(d.payouts);
   }).catch(function(){});
   loadLeads();
+  // Auto-refresh the dashboard every 90s so earnings/payout progress stay live.
+  clearInterval(window._affRefresh);
+  window._affRefresh=setInterval(function(){
+    if(!TOKEN)return;
+    api('GET','/affiliate/dashboard').then(function(d){
+      if(!d.success)return;
+      if(d.totals){document.getElementById('c-refs').textContent=d.totals.referrals;document.getElementById('c-month').textContent='£'+d.earnings.this_month;document.getElementById('c-pending').textContent='£'+d.earnings.pending;document.getElementById('c-lifetime').textContent='£'+d.earnings.lifetime;}
+      if(d.payout)renderPayoutProgress(d.payout,d.affiliate);
+      if(d.pipeline)renderPipeline(d.pipeline);
+      if(d.by_product_earnings)renderProdEarnings(d.by_product_earnings,d.earnings.lifetime);
+      if(d.referrals){renderRecent(d.referrals.slice(0,5));renderRefs(d.referrals);}
+    }).catch(function(){});
+  },90000);
 }
 
 function renderRecent(list){
@@ -605,10 +672,38 @@ function renderRefs(refs){
 function renderPayouts(p){
   var w=document.getElementById('payouts-wrap');
   if(p&&p.length){
-    var h='<table><thead><tr><th>Date</th><th>Referrals</th><th>Amount</th></tr></thead><tbody>';
-    p.forEach(function(p){h+='<tr><td>'+fmtDate(p.date)+'</td><td>'+p.referrals+'</td><td><b style="color:#34d399">£'+p.amount+'</b></td></tr>';});
+    var h='<table><thead><tr><th>Date</th><th>Referrals</th><th>Amount</th><th>Status</th></tr></thead><tbody>';
+    p.forEach(function(p){h+='<tr><td>'+fmtDate(p.date)+'</td><td>'+p.referrals+'</td><td><b style="color:#34d399">£'+p.amount+'</b></td><td>'+badge(p.status||'paid')+'</td></tr>';});
     h+='</tbody></table>';w.innerHTML=h;
   }
+}
+function renderPayoutProgress(payout, aff){
+  var th = (payout && payout.threshold) || 50;
+  var tot = (payout && payout.approved_total) || 0;
+  var pct = (payout && payout.progress_pct) || 0;
+  var rate = (aff && aff.commission_amount) || 25;
+  document.getElementById('c-next-payout').textContent='£'+tot.toFixed(0);
+  document.getElementById('c-payout-pct').textContent=pct+'% of £'+th;
+  document.getElementById('c-payout-bar').style.width=pct+'%';
+  var sub=document.getElementById('c-payout-sub');
+  if(pct>=100){ sub.innerHTML='<b style="color:#34d399">Ready to pay!</b> Your approved earnings have reached the £'+th+' minimum. Payouts run on the monthly cycle.'; }
+  else { sub.innerHTML='Commissions are paid once your approved earnings reach the £'+th+' minimum, on the monthly cycle. Each qualifying sign-up earns you £'+rate+'.'; }
+}
+function renderPipeline(pl){
+  var order=['referral_pending','earning','approved','paid'];
+  order.forEach(function(k,i){
+    var el=document.getElementById('pp-'+i);
+    if(el) el.textContent=(pl&&pl[k]!==undefined)?pl[k]:0;
+  });
+}
+function renderProdEarnings(byProd, lifetime){
+  var w=document.getElementById('prod-earn');
+  var keys=Object.keys(byProd||{});
+  if(!keys.length){ w.innerHTML='<div class="muted">No earnings yet — share your code to get started.</div>'; return; }
+  var h='';
+  var names={moving:'Moving',probate:'Probate',newbusiness:'New Business',planning:'Planning',tenders:'Tenders',general:'General'};
+  keys.forEach(function(k){ h+='<div class="pe">'+(EMOJI[k]||'📈')+' '+esc(names[k]||k)+' <b>£'+(byProd[k]||0).toFixed(0)+'</b></div>'; });
+  w.innerHTML=h;
 }
 function openHelp(){document.getElementById('help-modal').classList.add('open');}
 function closeHelp(){document.getElementById('help-modal').classList.remove('open');}
