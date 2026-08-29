@@ -204,6 +204,22 @@ tr:last-child td{border-bottom:none}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 /* stat pill */
 .stat-pill{display:inline-flex;align-items:center;gap:8px;background:rgba(14,165,233,.10);border:1px solid rgba(14,165,233,.3);border-radius:50px;padding:6px 13px;font-size:11.5px;color:#38bdf8;font-weight:700}
+/* playbook checklist */
+.pb-track{background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.3);border-radius:14px;padding:16px 18px;margin-bottom:18px}
+.pb-track .pb-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.pb-track .pb-head b{font-size:13.5px;color:#f1f5f9}
+.pb-track .pb-head .pb-pct{font-size:12px;font-weight:800;color:#34d399}
+.pb-track .bar{height:8px;background:#0b0d14;border:1px solid #1e2030;border-radius:6px;overflow:hidden}
+.pb-track .bar .fill{height:100%;background:linear-gradient(90deg,#10b981,#34d399);border-radius:6px;transition:width .4s ease}
+.pb-ck{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.045);border:1px solid #1e2030;border-radius:10px;padding:11px 14px;margin-bottom:8px;cursor:pointer;transition:.15s}
+.pb-ck:hover{border-color:rgba(52,211,153,.4)}
+.pb-ck .cb{width:18px;height:18px;border-radius:6px;border:2px solid #475569;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;transition:.15s}
+.pb-ck.done .cb{background:#10b981;border-color:#10b981}
+.pb-ck.done .pb-t{color:#6b7280;text-decoration:line-through}
+.pb-ck .pb-t{flex:1;font-size:12.5px;color:#e2e8f0;line-height:1.5}
+.pb-ck .pb-btn{font-size:10.5px;color:#0ea5e9;background:rgba(14,165,233,.12);border:1px solid rgba(14,165,233,.3);border-radius:6px;padding:4px 9px;font-weight:700;cursor:pointer}
+.pb-ck .pb-btn:hover{background:rgba(14,165,233,.24)}
+.pb-tpl{background:#0b0d14;border:1px solid #1e2030;border-radius:10px;padding:11px 13px;margin-bottom:8px;font-size:12px;color:#c6cfdd;line-height:1.6;white-space:pre-wrap}
 </style>
 </head>
 <body>
@@ -234,7 +250,7 @@ tr:last-child td{border-bottom:none}
 <div class="fg"><label>Full name</label><input type="text" id="r-name" placeholder="Your name"></div>
 <div class="fg"><label>Email</label><input type="email" id="r-email" placeholder="you@partner.com"></div>
 <div class="fg"><label>Password</label><div style="position:relative"><input type="password" id="r-pass" placeholder="Min 8 characters" style="padding-right:34px"><span onclick="var p=document.getElementById('r-pass');p.type=p.type==='password'?'text':'password';this.textContent=p.type==='password'?'\uD83D\uDC41':'Hide'" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:11px;color:#8890a8;cursor:pointer;user-select:none;font-weight:600">&#128065;</span></div></div>
-<div class="fg"><label>Your referral code <span class="muted">(optional — we'll make one for you)</span></label><input type="text" id="r-code" placeholder="e.g. JAMES24"></div>
+<div class="fg"><label>Your referral code <span class="muted">(optional. We'll make one for you)</span></label><input type="text" id="r-code" placeholder="e.g. JAMES24"></div>
 <button class="btn" onclick="register()">Apply</button>
 <div class="err" id="register-err"></div>
 <p style="font-size:11px;color:#6b7280;margin-top:16px;text-align:center"><a href="#" onclick="showLogin();return false">Back to sign in</a></p>
@@ -256,7 +272,7 @@ tr:last-child td{border-bottom:none}
 </div>
 <div class="qr-wrap">
 <img id="qr-img" alt="Share link QR code" style="display:none">
-<div class="qr-note">Show this QR code to a business owner — they scan it, sign up with your code, and you get the £25 once they pay their second invoice.</div>
+<div class="qr-note">Show this QR code to a business owner. They scan it, sign up with your code, and you get the £25 once they pay their second invoice.</div>
 </div>
 </div>
 
@@ -279,7 +295,7 @@ tr:last-child td{border-bottom:none}
 <div class="cards">
 <div class="card"><div class="lbl">Referrals</div><div class="val" id="c-refs">0</div><div class="sub">customers who signed up with your code</div></div>
 <div class="card blue"><div class="lbl">This month</div><div class="val" id="c-month">£0</div><div class="sub">earnings so far this month</div></div>
-<div class="card amber"><div class="lbl">Pending</div><div class="val" id="c-pending">£0</div><div class="sub">clearing · pays after qualifying</div></div>
+<div class="card amber"><div class="lbl">Pending</div><div class="val" id="c-pending">£0</div><div class="sub">clearing, pays after qualifying</div></div>
 <div class="card green"><div class="lbl">Lifetime</div><div class="val" id="c-lifetime">£0</div><div class="sub">total earned all-time</div></div>
 </div>
 <div class="pipe">
@@ -291,12 +307,12 @@ tr:last-child td{border-bottom:none}
 <div class="grid two">
 <div class="panel"><h2>How it works</h2>
 <ol class="howto" style="padding-left:18px">
-<li><b>Share your code</b> — give your name or code to anyone starting with 9amLeads.</li>
-<li><b>They get a 14-day free trial</b> — instead of the standard 7 days, used at signup for any lead type.</li>
-<li><b>You earn £25 per sign-up</b> — paid once, when a customer who used your code pays their second invoice.</li>
-<li><b>Paid after qualifying</b> — your £25 clears after the qualifying period and is paid out on the monthly cycle.</li>
+<li><b>Share your code</b>. Give your name or code to anyone starting with 9amLeads.</li>
+<li><b>They get a 14-day free trial</b>. Instead of the standard 7 days, used at signup for any lead type.</li>
+<li><b>You earn £25 per sign-up</b>. Paid once, when a customer who used your code pays their second invoice.</li>
+<li><b>Paid after qualifying</b>. Your £25 clears after the qualifying period and is paid out on the monthly cycle.</li>
 </ol>
-<p style="font-size:12px;color:#94a3b8;margin-top:14px">Tip: open the <a href="#" onclick="go('tools');return false" style="color:#0ea5e9">Tools tab</a> for phone scripts, emails, SMS and social posts for every lead type — ready to copy and use.</p>
+<p style="font-size:12px;color:#94a3b8;margin-top:14px">Tip: open the <a href="#" onclick="go('tools');return false" style="color:#0ea5e9">Tools tab</a> for phone scripts, emails, SMS and social posts for every lead type. Ready to copy and use.</p>
 </div>
 <div class="panel"><h2>Recent leads <span class="hint">your inbox</span></h2><div id="recent-leads"></div>
 <p style="font-size:12px;color:#0ea5e9;margin-top:10px"><a href="#" onclick="go('leads');return false">View all leads →</a></p>
@@ -309,7 +325,7 @@ tr:last-child td{border-bottom:none}
 <section id="view-leads" style="display:none">
 <div class="panel">
 <div class="leadhead">
-<h2>Leads <span class="hint">your CRM — referrals + your own leads, with comments &amp; reminders</span></h2>
+<h2>Leads <span class="hint">your CRM. Referrals + your own leads, with comments &amp; reminders</span></h2>
 <button class="btn-mini" onclick="toggleAddLead()">+ Add lead</button>
 </div>
 <div class="lead-form" id="lead-form" style="display:none">
@@ -340,40 +356,64 @@ tr:last-child td{border-bottom:none}
 <section id="view-playbook" style="display:none">
 <div class="panel" style="margin-bottom:16px">
 <h2>Conversion playbook</h2>
-<p style="font-size:12.5px;color:#94a3b8;margin-bottom:6px">Proven steps to turn every referral into a paying customer — and get them to their first paid package so your <b style="color:#e2e8f0">£25 sign-up commission</b> clears. Everything here is tailored to how 9amLeads works.</p>
+<p style="font-size:12.5px;color:#94a3b8;margin-bottom:6px">Proven steps to turn every referral into a paying customer. And get them to their first paid package so your <b style="color:#e2e8f0">£25 sign-up commission</b> clears. Everything here is tailored to how 9amLeads works.</p>
+</div>
+<div class="pb-track">
+<div class="pb-head"><div><b>Your referral checklist</b> <span style="font-size:11px;color:#94a3b8">tick each step as you complete it</span></div><div class="pb-pct" id="pb-pct">0%</div></div>
+<div class="bar"><div class="fill" id="pb-bar" style="width:0%"></div></div>
+</div>
+<div class="panel" style="margin-bottom:16px">
+<h2>Quick message templates <span class="hint">copy, paste, send</span></h2>
+<div class="pb-tpl" id="tpl-welcome">Hi [name], just checking in about your 9amLeads trial. Your first leads land tomorrow at 9am, so look out for them in your inbox. Happy to answer any questions!</div>
+<button class="btn-mini" onclick="copyPb('tpl-welcome')">Copy welcome message</button>
+<div class="pb-tpl" id="tpl-checkin" style="margin-top:12px">Hi [name], how did your first batch of leads look this morning? If any stand out, the key is to call the homeowner quickly. Want me to help you pick which to call first?</div>
+<button class="btn-mini" onclick="copyPb('tpl-checkin')">Copy check-in message</button>
+<div class="pb-tpl" id="tpl-nudge" style="margin-top:12px">Hi [name], just a reminder your 14-day free trial is about to end. If the leads are useful, it is easy to keep them going. Do you want to stay on the plan?</div>
+<button class="btn-mini" onclick="copyPb('tpl-nudge')">Copy trial-ending message</button>
+<div class="pb-tpl" id="tpl-success" style="margin-top:12px">Great to hear the leads are working for you! If you know another business that could use fresh leads, they get 14 days free too, and I will be here to help them get set up.</div>
+<button class="btn-mini" onclick="copyPb('tpl-success')">Copy referral-ask message</button>
 </div>
 <div class="tool-sec">
-<h3>1. Win the sign-up — the first 24 hours</h3>
-<div class="step"><b>Contact the moment they sign up</b>Your dashboard <b>Leads</b> tab shows every customer who used your code. Message them the same day — a personal welcome makes them take the 14-day trial seriously.</div>
-<div class="step"><b>Send a welcome text</b>"Thanks for starting your 9amLeads trial! Your first leads arrive tomorrow at 9am — I'll check in to see how they look." Set the expectation that leads arrive every morning.</div>
+<h3>Work the steps</h3>
+<div class="pb-ck" data-pb="pb1" onclick="togglePb('pb1')"><div class="cb" id="cb-pb1"></div><div class="pb-t">Shared your link or code with at least one business this week.</div></div>
+<div class="pb-ck" data-pb="pb2" onclick="togglePb('pb2')"><div class="cb" id="cb-pb2"></div><div class="pb-t">Sent a welcome message to anyone who signed up with your code.</div></div>
+<div class="pb-ck" data-pb="pb3" onclick="togglePb('pb3')"><div class="cb" id="cb-pb3"></div><div class="pb-t">Followed up during their 14-day trial (check-in message above).</div></div>
+<div class="pb-ck" data-pb="pb4" onclick="togglePb('pb4')"><div class="cb" id="cb-pb4"></div><div class="pb-t">Asked about renewing near the end of the trial.</div></div>
+<div class="pb-ck" data-pb="pb5" onclick="togglePb('pb5')"><div class="cb" id="cb-pb5"></div><div class="pb-t">Checked in after their first payment to help them reach the second invoice.</div></div>
+<div class="pb-ck" data-pb="pb6" onclick="togglePb('pb6')"><div class="cb" id="cb-pb6"></div><div class="pb-t">Asked happy customers to refer another business.</div></div>
+</div>
+<div class="tool-sec">
+<h3>1. Win the sign-up: the first 24 hours</h3>
+<div class="step"><b>Contact the moment they sign up</b>Your dashboard <b>Leads</b> tab shows every customer who used your code. Message them the same day. A personal welcome makes them take the 14-day trial seriously.</div>
+<div class="step"><b>Send a welcome text</b>"Thanks for starting your 9amLeads trial! Your first leads arrive tomorrow at 9am. I'll check in to see how they look." Set the expectation that leads arrive every morning.</div>
 <div class="step"><b>Never let a sign-up go cold</b>Every customer who started a trial but never got a follow-up is a £25 commission you walked away from. The trial is only valuable if they actually use it.</div>
 </div>
 <div class="tool-sec">
 <h3>2. Nurture the 14-day trial</h3>
-<div class="step"><b>Day 1 — "How did your first batch look?"</b>Check in after their first 9am delivery. Seeing real leads arrive is what makes the trial feel valuable.</div>
-<div class="step"><b>Day 3–4 — share one tailored tip</b>Open the <b>Tools</b> tab and send the tip that fits their lead type. For a removal company: "call within the hour, the first company to call usually wins the move." For a solicitor: "contact executors within 48 hours."</div>
-<div class="step"><b>Day 7 — halfway nudge</b>"Halfway through your free trial — have the leads been useful? Want me to help you start converting them?"</div>
-<div class="step"><b>Day 10–11 — the trial is ending</b>"Your 14-day trial finishes soon — want to make sure you don't lose your daily leads?" This is your best conversion moment.</div>
+<div class="step"><b>Day 1. "How did your first batch look?"</b>Check in after their first 9am delivery. Seeing real leads arrive is what makes the trial feel valuable.</div>
+<div class="step"><b>Day 3-4. Share one tailored tip</b>Open the <b>Tools</b> tab and send the tip that fits their lead type. For a removal company: "call within the hour, the first company to call usually wins the move." For a solicitor: "contact executors within 48 hours."</div>
+<div class="step"><b>Day 7. Halfway nudge</b>"Halfway through your free trial. Have the leads been useful? Want me to help you start converting them?"</div>
+<div class="step"><b>Day 10-11. The trial is ending</b>"Your 14-day trial finishes soon. Want to make sure you don't lose your daily leads?" This is your best conversion moment.</div>
 </div>
 <div class="tool-sec">
 <h3>3. Convert at the end of the trial</h3>
-<div class="step"><b>Ask on day 11–13</b>They've seen daily value by now. The best time to ask is while it's front of mind — not after it ends.</div>
-<div class="step"><b>Remind them of the deal</b>"You got 14 days free instead of the standard 7 — keep the leads going with a plan. Most start with Starter (£25/week) and upgrade later."</div>
+<div class="step"><b>Ask on day 11-13</b>They've seen daily value by now. The best time to ask is while it's front of mind. Not after it ends.</div>
+<div class="step"><b>Remind them of the deal</b>"You got 14 days free instead of the standard 7. Keep the leads going with a plan. Most start with Starter (£25/week) and upgrade later."</div>
 <div class="step"><b>Handle the price objection</b>"One extra job usually covers a month of leads." If they're a removal company, one move covers it; a solicitor, one probate file covers it.</div>
-<div class="step"><b>Offer help choosing</b>Starter £25/wk, Pro £49/wk, Enterprise £99/wk — all lead types at the same price. Suggest based on how many leads they need.</div>
+<div class="step"><b>Offer help choosing</b>Starter £25/wk, Pro £49/wk, Enterprise £99/wk. All lead types at the same price. Suggest based on how many leads they need.</div>
 </div>
 <div class="tool-sec">
 <h3>4. Get them to their second invoice</h3>
 <div class="step"><b>Your commission = the second paid invoice</b>You earn £25 once a customer pays their second invoice. Help them through the first week of paid use and your commission clears soon after.</div>
-<div class="step"><b>Check in after their first payment</b>A quick "How are the leads looking?" message after their first paid week helps them see value — and get them to that second invoice that earns your £25.</div>
+<div class="step"><b>Check in after their first payment</b>A quick "How are the leads looking?" message after their first paid week helps them see value. And get them to that second invoice that earns your £25.</div>
 <div class="step"><b>Fix problems fast</b>If they say leads aren't working: suggest a different lead type, better postcode areas, or point them to the outreach toolkit. A small fix keeps them subscribed.</div>
-<div class="step"><b>Congratulate their wins</b>"Glad the leads are working!" Referrals who feel your support stay longer — and refer more customers to you.</div>
+<div class="step"><b>Congratulate their wins</b>"Glad the leads are working!" Referrals who feel your support stay longer. And refer more customers to you.</div>
 </div>
 <div class="tool-sec">
 <h3>5. Outreach best practice</h3>
 <div class="step"><b>Speed beats everything</b>Contact referrals the same day they sign up. The customer who hears from you first trusts you first.</div>
-<div class="step"><b>Call, don't just text</b>Calls convert far better than texts or emails. Use the phone scripts in <b>Tools</b> — they're written to get the trial started.</div>
-<div class="step"><b>Best times to call businesses</b>Mid-morning (10–11am) and mid-afternoon (2–4pm), Tuesday to Thursday. Avoid Monday mornings and Friday afternoons.</div>
+<div class="step"><b>Call, don't just text</b>Calls convert far better than texts or emails. Use the phone scripts in <b>Tools</b>. They're written to get the trial started.</div>
+<div class="step"><b>Best times to call businesses</b>Mid-morning (10-11am) and mid-afternoon (2-4pm), Tuesday to Thursday. Avoid Monday mornings and Friday afternoons.</div>
 <div class="step"><b>Use the toolkit end-to-end</b>Phone script → email → SMS → follow-up plan. One tool alone works; the full sequence converts.</div>
 </div>
 </section>
@@ -398,7 +438,7 @@ tr:last-child td{border-bottom:none}
 <div class="m-sec">
 <h3>📖 How it works</h3>
 <ol>
-<li>Share your code — every customer who signs up with it gets a <b style="color:#e2e8f0">14-day free trial</b>.</li>
+<li>Share your code. Every customer who signs up with it gets a <b style="color:#e2e8f0">14-day free trial</b>.</li>
 <li>You earn <b style="color:#e2e8f0">£25</b> for every customer who pays their first package.</li>
 <li>Track everyone in the <b style="color:#e2e8f0">Leads</b> tab and convert them with the <b style="color:#e2e8f0">Tools</b> and <b style="color:#e2e8f0">Playbook</b>.</li>
 <li>Commissions are paid out on a monthly cycle.</li>
@@ -406,16 +446,16 @@ tr:last-child td{border-bottom:none}
 </div>
 <div class="m-sec">
 <h3>❓ Common questions</h3>
-<div class="q">When do I start earning?</div><div class="a">As soon as a customer who used your code becomes a paying subscriber — tracked live in your dashboard.</div>
+<div class="q">When do I start earning?</div><div class="a">As soon as a customer who used your code becomes a paying subscriber. Tracked live in your dashboard.</div>
 <div class="q">How much do I earn?</div><div class="a">£25 per paying customer, paid once when they pay their first package. No cap on the number of customers you refer.</div>
-<div class="q">Do my referrals really get 14 days free?</div><div class="a">Yes — any customer who uses your code gets 14 days free instead of the standard 7.</div>
+<div class="q">Do my referrals really get 14 days free?</div><div class="a">Yes. Any customer who uses your code gets 14 days free instead of the standard 7.</div>
 <div class="q">Where are my scripts and templates?</div><div class="a">Open the Tools tab and pick a lead type. Everything is ready to copy.</div>
 </div>
 <div class="m-sec">
 <h3>✉️ Contact us</h3>
 <div class="m-field"><label>Your name</label><input type="text" id="h-name" placeholder="Your name"></div>
 <div class="m-field"><label>Your email</label><input type="email" id="h-email" placeholder="you@email.com"></div>
-<div class="m-field"><label>Message</label><textarea id="h-msg" placeholder="How can we help? Sign-ups, commissions, dashboard — anything."></textarea></div>
+<div class="m-field"><label>Message</label><textarea id="h-msg" placeholder="How can we help? Sign-ups, commissions, dashboard. Anything."></textarea></div>
 <button class="btn" onclick="sendHelp()" id="h-btn">Send message</button>
 <div class="m-msg" id="h-msg-out"></div>
 <div class="a" style="margin-top:10px;text-align:center">Or email us directly: <a href="mailto:hello@9amleads.com" style="color:#0ea5e9">hello@9amleads.com</a></div>
@@ -500,7 +540,7 @@ function register(){
   var name=document.getElementById('r-name').value.trim(),email=document.getElementById('r-email').value.trim(),pass=document.getElementById('r-pass').value,code=document.getElementById('r-code').value.trim();
   fetch(API+'/api/affiliate/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,email:email,password:pass,code:code})})
   .then(function(r){return r.json();}).then(function(d){
-    if(d.success){var e=document.getElementById('register-err');e.style.color='#34d399';e.textContent='Application received and your account is active — you can sign in now.';e.style.display='block';}
+    if(d.success){var e=document.getElementById('register-err');e.style.color='#34d399';e.textContent='Application received and your account is active. You can sign in now.';e.style.display='block';}
     else err('register-err',d.error||'Could not submit application');
   }).catch(function(){err('register-err','Server is starting up. Please try again.');});
 }
@@ -511,7 +551,7 @@ function badge(st){
   return '<span class="badge '+m[0]+'">'+m[1]+'</span>';
 }
 function stageBadge(s){
-  var map={'Just signed up · in trial':['b-new','Just signed up · in trial'],'Earning':['b-trial','Earning'],'Ready to pay':['b-due','Ready to pay'],'Paid':['b-paid','Paid']};
+  var map={'Just signed up, in trial':['b-new','Just signed up, in trial'],'Earning':['b-trial','Earning'],'Ready to pay':['b-due','Ready to pay'],'Paid':['b-paid','Paid']};
   var m=map[s]||['b-ref',s];
   return '<span class="badge '+m[0]+'">'+m[1]+'</span>';
 }
@@ -550,6 +590,7 @@ function init(){
     renderRefs(d.referrals);
     renderPayouts(d.payouts);
   }).catch(function(){});
+  renderPb();
   loadLeads();
   // Auto-refresh the dashboard every 90s so earnings/payout progress stay live.
   clearInterval(window._affRefresh);
@@ -570,7 +611,7 @@ function renderRecent(list){
   var w=document.getElementById('recent-leads');
   if(!list.length){w.innerHTML='<div class="muted">No leads yet. Share your code to get started!</div>';return;}
   var h='';
-  list.forEach(function(r){h+='<div style="padding:9px 0;border-bottom:1px solid rgba(30,32,48,.5)"><div style="font-size:12.5px;color:#f1f5f9;font-weight:600">'+(EMOJI[r.product]||'')+' '+esc(r.company||r.email)+'</div><div style="font-size:11px;color:#6b7280;margin-top:2px">'+esc(r.product)+' · '+fmtDate(r.signed_up)+' '+badge(r.status)+'</div></div>';});
+  list.forEach(function(r){h+='<div style="padding:9px 0;border-bottom:1px solid rgba(30,32,48,.5)"><div style="font-size:12.5px;color:#f1f5f9;font-weight:600">'+(EMOJI[r.product]||'')+' '+esc(r.company||r.email)+'</div><div style="font-size:11px;color:#6b7280;margin-top:2px">'+esc(r.product)+', '+fmtDate(r.signed_up)+' '+badge(r.status)+'</div></div>';});
   w.innerHTML=h;
 }
 
@@ -579,11 +620,11 @@ function loadLeads(){
     LEADS=d.leads||[];
     document.getElementById('leads-count').textContent=LEADS.length;
     var w=document.getElementById('leads-list');
-    if(!LEADS.length){w.innerHTML='<div class="empty"><b>No leads in your inbox yet.</b><br>Share your code — every customer who signs up with it appears here so you can follow up and monitor them.</div>';return;}
+    if(!LEADS.length){w.innerHTML='<div class="empty"><b>No leads in your inbox yet.</b><br>Share your code. Every customer who signs up with it appears here so you can follow up and monitor them.</div>';return;}
     var h='';
     LEADS.forEach(function(r){
       var pendRms=(r.reminders||[]).filter(function(x){return !x.done;}).length;
-      h+='<div class="lead"><div class="ico">'+(EMOJI[r.product]||'📈')+'</div><div class="main"><div class="co">'+esc(r.company||r.email)+'</div><div class="em">'+esc(r.email)+(r.phone?' · '+esc(r.phone):'')+'</div>'+
+      h+='<div class="lead"><div class="ico">'+(EMOJI[r.product]||'📈')+'</div><div class="main"><div class="co">'+esc(r.company||r.email)+'</div><div class="em">'+esc(r.email)+(r.phone?', '+esc(r.phone):'')+'</div>'+
       '<div class="meta"><span>'+esc(r.product)+'</span>'+(r.plan?'<span>'+esc(r.plan)+'</span>':'')+(r.manual?'<span style="color:#38bdf8">my lead</span>':'<span>'+r.days_since+'d ago</span>')+(r.card_saved?'<span style="color:#34d399">💳 card saved</span>':'')+(pendRms?'<span style="color:#fbbf24">⏰ '+pendRms+' reminder'+(pendRms>1?'s':'')+'</span>':'')+'</div></div>'+
       '<div class="act">'+stageBadge(r.stage)+(r.manual?'<button class="btn-mini" onclick="openLeadModal(\''+esc(r.id)+'\')">View</button>':'<button class="btn-mini" onclick="openLeadModal(\''+esc(r.id)+'\')">View</button>')+'<button class="btn-mini" onclick="openTools(\''+esc(r.product)+'\')">Tools</button></div></div>';
     });
@@ -609,7 +650,7 @@ function renderTools(){
   if(!r)return;
   var h='';
   // header
-  h+='<div class="tool-hero"><div class="em">'+(r.emoji||'📈')+'</div><div><h3>'+esc(r.name)+'</h3><div class="tg">For: '+esc(r.target||'')+'</div></div></div>';
+  h+='<div class="tool-hero"><div class="em">'+(r.emoji||'📈')+'</div><div><h3>'+esc(r.name)+'</h3><div class="tg">For: '+esc(r.target||'')+'</div></div><button class="btn-mini" onclick="copyEntireKit(\''+r.key+'\')" title="Copy every script, email, SMS and social post for this lead type">📋 Copy entire kit</button></div>';
   // pre-call checklist
   if(r.precall&&r.precall.length){
     h+='<div class="pc"><h3>📋 Pre-call checklist</h3><ul>'+r.precall.map(function(p){return '<li><span class="ck"></span><span>'+esc(p)+'</span></li>';}).join('')+'</ul></div>';
@@ -619,30 +660,30 @@ function renderTools(){
     h+='<div class="flow"><h3>✨ Key selling points</h3><div class="facts">'+r.facts.map(function(f){return '<div class="fact"><span class="fi">✓</span><span>'+esc(f)+'</span></div>';}).join('')+'</div></div>';
   }
   // phone script
-  h+='<div class="flow"><h3>📞 Cold-call script — '+esc(r.name)+' <button class="btn-mini" onclick="copyScript(\''+r.key+'\')">Copy all</button></h3>';
+  h+='<div class="flow"><h3>📞 Cold-call script. '+esc(r.name)+' <button class="btn-mini" onclick="copyScript(\''+r.key+'\')">Copy all</button></h3>';
   r.phone.forEach(function(s,i){
     var b=s.indexOf('] ');
     var label=b>-1?s.slice(1,b):('Step '+(i+1));
     var txt=b>-1?s.slice(b+2):s;
-    h+='<div class="step2"><div class="lab">'+esc(label)+'</div><div class="txt">'+esc(txt)+'</div></div>';
+    h+='<div class="step2"><div class="lab">'+esc(label)+'</div><div class="txt">'+esc(txt)+'</div><button class="btn-mini" onclick="shareToWa(\''+r.key+'\','+i+',\'phone\')" title="Share this line on WhatsApp" style="align-self:flex-start;margin-left:8px">WhatsApp</button></div>';
   });
   h+='</div>';
   // emails
   h+='<div class="flow"><h3>📧 Email templates <button class="btn-mini" onclick="copyEmails(\''+r.key+'\')">Copy all</button></h3>';
   r.emails.forEach(function(e,i){
-    h+='<div class="tpl"><div class="subj">Subject: '+esc(e.subject)+'</div><pre>'+esc(e.body)+'</pre><div style="text-align:right;margin-top:8px"><button class="btn-mini" onclick="copyTxt(this,'+i+',\'email\')">Copy</button></div></div>';
+    h+='<div class="tpl"><div class="subj">Subject: '+esc(e.subject)+'</div><pre>'+esc(e.body)+'</pre><div style="text-align:right;margin-top:8px"><button class="btn-mini" onclick="copyTxt(this,'+i+',\'email\')">Copy</button> <button class="btn-mini" onclick="shareToWa(\''+r.key+'\','+i+',\'email\')" title="Share on WhatsApp">WhatsApp</button></div></div>';
   });
   h+='</div>';
   // sms
   h+='<div class="flow"><h3>💬 Text / SMS messages <button class="btn-mini" onclick="copySms(\''+r.key+'\')">Copy all</button></h3>';
   r.sms.forEach(function(s,i){
-    h+='<div class="post-card">'+esc(s)+'<div style="text-align:right;margin-top:6px"><button class="btn-mini" onclick="copyTxt(this,'+i+',\'sms\')">Copy</button></div></div>';
+    h+='<div class="post-card">'+esc(s)+'<div style="text-align:right;margin-top:6px"><button class="btn-mini" onclick="copyTxt(this,'+i+',\'sms\')">Copy</button> <button class="btn-mini" onclick="shareToWa(\''+r.key+'\','+i+',\'sms\')" title="Share on WhatsApp">WhatsApp</button></div></div>';
   });
   h+='</div>';
   // social
   h+='<div class="flow"><h3>📱 Social media posts <button class="btn-mini" onclick="copySocial(\''+r.key+'\')">Copy all</button></h3>';
   r.social.forEach(function(s,i){
-    h+='<div class="post-card">'+esc(s)+'<div style="text-align:right;margin-top:6px"><button class="btn-mini" onclick="copyTxt(this,'+i+',\'social\')">Copy</button></div></div>';
+    h+='<div class="post-card">'+esc(s)+'<div style="text-align:right;margin-top:6px"><button class="btn-mini" onclick="copyTxt(this,'+i+',\'social\')">Copy</button> <button class="btn-mini" onclick="shareToWa(\''+r.key+'\','+i+',\'social\')" title="Share on WhatsApp">WhatsApp</button></div></div>';
   });
   h+='</div>';
   // follow-up timeline
@@ -655,7 +696,33 @@ function renderTools(){
   document.getElementById('tool-content')._r=r;
 }
 function copyTxt(btn,idx,kind){var r=document.getElementById('tool-content')._r;var txt='';if(kind==='email'){var e=r.emails[idx];txt='Subject: '+e.subject+'\n\n'+e.body;}else if(kind==='sms'){txt=r.sms[idx];}else if(kind==='social'){txt=r.social[idx];}copyText(txt,btn);}
-function copyScript(k){var r=(RES||[]).find(function(x){return x.key===k;});var parts=[];if(r.precall&&r.precall.length)parts.push('PRE-CALL CHECKLIST\n'+r.precall.map(function(p){return '- '+p;}).join('\n'));if(r.facts&&r.facts.length)parts.push('KEY SELLING POINTS\n'+r.facts.map(function(f){return '- '+f;}).join('\n'));parts.push('COLD CALL — '+r.name+'\n'+r.phone.join('\n\n'));copyText(parts.join('\n\n------------------\n\n'));}
+function copyScript(k){var r=(RES||[]).find(function(x){return x.key===k;});var parts=[];if(r.precall&&r.precall.length)parts.push('PRE-CALL CHECKLIST\n'+r.precall.map(function(p){return '- '+p;}).join('\n'));if(r.facts&&r.facts.length)parts.push('KEY SELLING POINTS\n'+r.facts.map(function(f){return '- '+f;}).join('\n'));parts.push('COLD CALL: '+r.name+'\n'+r.phone.join('\n\n'));copyText(parts.join('\n\n------------------\n\n'));}
+function copyEntireKit(k){
+  var r=(RES||[]).find(function(x){return x.key===k;});
+  if(!r)return;
+  var parts=[];
+  if(r.precall&&r.precall.length)parts.push('PRE-CALL CHECKLIST\n'+r.precall.map(function(p){return '- '+p;}).join('\n'));
+  if(r.facts&&r.facts.length)parts.push('KEY SELLING POINTS\n'+r.facts.map(function(f){return '- '+f;}).join('\n'));
+  if(r.phone&&r.phone.length)parts.push('COLD CALL\n'+r.phone.join('\n\n'));
+  if(r.emails&&r.emails.length)parts.push('EMAILS\n'+r.emails.map(function(e){return 'SUBJECT: '+e.subject+'\n'+e.body;}).join('\n\n------------------\n\n'));
+  if(r.sms&&r.sms.length)parts.push('SMS\n'+r.sms.join('\n\n'));
+  if(r.social&&r.social.length)parts.push('SOCIAL POSTS\n'+r.social.join('\n\n'));
+  if(r.followup&&r.followup.length)parts.push('FOLLOW-UP PLAN\n'+r.followup.map(function(f){return f.day+': '+f.action;}).join('\n'));
+  copyText(parts.join('\n\n====================================\n\n'));
+  var btn=document.querySelector('.tool-hero .btn-mini');
+  if(btn){var o=btn.textContent;btn.textContent='Copied!';setTimeout(function(){btn.textContent=o;},1400);}
+}
+function shareToWa(k,idx,kind){
+  var r=(RES||[]).find(function(x){return x.key===k;});
+  if(!r)return;
+  var txt='';
+  if(kind==='email'){var e=r.emails[idx];txt='Subject: '+e.subject+'\n'+e.body;}
+  else if(kind==='sms'){txt=r.sms[idx];}
+  else if(kind==='social'){txt=r.social[idx];}
+  else if(kind==='phone'){txt=r.phone[idx];}
+  window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank');
+}
+
 function copyEmails(k){var r=(RES||[]).find(function(x){return x.key===k;});copyText(r.emails.map(function(e){return 'SUBJECT: '+e.subject+'\n'+e.body;}).join('\n\n------------------\n\n'));}
 function copySms(k){var r=(RES||[]).find(function(x){return x.key===k;});copyText(r.sms.join('\n\n'));}
 function copySocial(k){var r=(RES||[]).find(function(x){return x.key===k;});copyText(r.social.join('\n\n'));}
@@ -676,6 +743,40 @@ function renderPayouts(p){
     p.forEach(function(p){h+='<tr><td>'+fmtDate(p.date)+'</td><td>'+p.referrals+'</td><td><b style="color:#34d399">£'+p.amount+'</b></td><td>'+badge(p.status||'paid')+'</td></tr>';});
     h+='</tbody></table>';w.innerHTML=h;
   }
+}
+function copyPb(id){
+  var el=document.getElementById(id);
+  if(!el)return;
+  var txt=el.textContent.trim();
+  copyText(txt,document.querySelector('#tpl-'+id.slice(4)));
+  var btn=document.querySelector('button[onclick="copyPb(\''+id+'\')"]');
+  if(btn){var o=btn.textContent;btn.textContent='Copied!';setTimeout(function(){btn.textContent=o;},1300);}
+}
+function pbState(){
+  var s={};
+  try{ s=JSON.parse(localStorage.getItem('mld_aff_playbook')||'{}'); }catch(e){}
+  return s;
+}
+function renderPb(){
+  var s=pbState();
+  var keys=['pb1','pb2','pb3','pb4','pb5','pb6'];
+  var done=0;
+  keys.forEach(function(k){
+    var cb=document.getElementById('cb-'+k);
+    if(!cb)return;
+    var el=document.querySelector('.pb-ck[data-pb="'+k+'"]');
+    if(s[k]){cb.textContent='✓';el.classList.add('done');done++;}
+    else{cb.textContent='';el.classList.remove('done');}
+  });
+  var pct=Math.round((done/keys.length)*100);
+  var pe=document.getElementById('pb-pct'); if(pe)pe.textContent=pct+'%';
+  var pb=document.getElementById('pb-bar'); if(pb)pb.style.width=pct+'%';
+}
+function togglePb(k){
+  var s=pbState();
+  s[k]=!s[k];
+  localStorage.setItem('mld_aff_playbook',JSON.stringify(s));
+  renderPb();
 }
 function renderPayoutProgress(payout, aff){
   var th = (payout && payout.threshold) || 50;
@@ -699,7 +800,7 @@ function renderPipeline(pl){
 function renderProdEarnings(byProd, lifetime){
   var w=document.getElementById('prod-earn');
   var keys=Object.keys(byProd||{});
-  if(!keys.length){ w.innerHTML='<div class="muted">No earnings yet — share your code to get started.</div>'; return; }
+  if(!keys.length){ w.innerHTML='<div class="muted">No earnings yet. Share your code to get started.</div>'; return; }
   var h='';
   var names={moving:'Moving',probate:'Probate',newbusiness:'New Business',planning:'Planning',tenders:'Tenders',general:'General'};
   keys.forEach(function(k){ h+='<div class="pe">'+(EMOJI[k]||'📈')+' '+esc(names[k]||k)+' <b>£'+(byProd[k]||0).toFixed(0)+'</b></div>'; });
@@ -717,9 +818,9 @@ function sendHelp(){
   btn.disabled=true;btn.textContent='Sending...';
   fetch(API+'/api/send-enquiry',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to:'hello@9amleads.com',subject:'Affiliate help request - '+name,name:name,fromEmail:email,details:msg})})
   .then(function(r){return r.json();}).then(function(d){
-    out.className='m-msg ok';out.style.display='block';out.textContent='Thanks '+name+' — your message has been sent. We\'ll reply to '+email+' shortly.';
+    out.className='m-msg ok';out.style.display='block';out.textContent='Thanks '+name+'. Your message has been sent. We\'ll reply to '+email+' shortly.';
     document.getElementById('h-name').value='';document.getElementById('h-email').value='';document.getElementById('h-msg').value='';
-  }).catch(function(){out.className='m-msg bad';out.style.display='block';out.textContent='Could not send right now — please email hello@9amleads.com.';})
+  }).catch(function(){out.className='m-msg bad';out.style.display='block';out.textContent='Could not send right now. Please email hello@9amleads.com.';})
   .then(function(){btn.disabled=false;btn.textContent='Send message';});
 }
 /* ---- LEAD CRM ---- */
@@ -741,7 +842,7 @@ function openLeadModal(id){
   curLead=(LEADS||[]).find(function(l){return String(l.id)===String(id);});
   if(!curLead)return;
   document.getElementById('ld-title').textContent=(curLead.company||curLead.email||'Lead');
-  document.getElementById('ld-sub').textContent=(curLead.manual?'My lead':'Referral')+' · '+esc(curLead.product);
+  document.getElementById('ld-sub').textContent=(curLead.manual?'My lead':'Referral')+', '+esc(curLead.product);
   document.getElementById('ld-company').value=curLead.company||'';
   document.getElementById('ld-email').value=curLead.email||'';
   document.getElementById('ld-phone').value=curLead.phone||'';
@@ -792,7 +893,7 @@ function renderReminders(){
   var w=document.getElementById('ld-reminders');
   var pend=(curLead.reminders||[]).filter(function(x){return !x.done;});
   document.getElementById('ld-rm-count').textContent=pend.length?'('+pend.length+')':'';
-  if(!curLead.reminders.length){w.innerHTML='<div class="muted" style="margin-bottom:10px">No reminders yet — set one to follow up on this lead.</div>';return;}
+  if(!curLead.reminders.length){w.innerHTML='<div class="muted" style="margin-bottom:10px">No reminders yet. Set one to follow up on this lead.</div>';return;}
   var h='';curLead.reminders.forEach(function(r){
     var when=fmtWhen(r.remind_at);
     h+='<div class="rm'+(r.done?' done':'')+'"><div class="n">'+esc(r.note)+'</div><div class="w">'+(r.done?'done':'⏰ '+when)+'</div>'+(r.done?'':'<button class="btn-mini" onclick="markReminder(\''+esc(r.id)+'\')">Done</button>')+'</div>';

@@ -248,7 +248,7 @@ tbody tr:hover td{background:#f8fafc}
 <div class="tab-panel" id="tab-rejected">
 <div class="card" style="margin-bottom:16px">
 <div style="font-size:14px;font-weight:700;font-family:'Outfit',sans-serif;margin-bottom:12px"><i class="fas fa-ban" style="color:#ef4444;margin-right:6px"></i> Rejected Leads</div>
-<p style="font-size:12.5px;color:#475569;margin:0 0 10px">Leads that customers (or you) have rejected. Review them below — the customer + address + reason are shown — then click <b>Replace</b> to swap each with a valid in-area lead.</p>
+<p style="font-size:12.5px;color:#475569;margin:0 0 10px">Leads that customers (or you) have rejected. Review them below. The customer + address + reason are shown. Then click <b>Replace</b> to swap each with a valid in-area lead.</p>
 <div class="table-wrap" id="rejectedLeadsWrap"><div class="loading">Loading rejected leads...</div></div>
 </div>
 </div>
@@ -325,7 +325,7 @@ function openDeliveryPreview() {
           var guar = (cx.door_now || 0) + ' have door numbers';
           if (cx.door_paf) guar += ' · <b>' + cx.door_paf + ' get door number added at delivery</b>';
           if (cx.door_fail) guar += ' · ' + cx.door_fail + ' replaced';
-          html += '<div style="font-size:11px;color:#0f766e;background:#f0fdfa;border:1px solid #ccfbf1;border-radius:6px;padding:4px 8px;margin:0 0 6px">Guarantee: ' + guar + ' — every delivered lead has a full address + door number</div>';
+          html += '<div style="font-size:11px;color:#0f766e;background:#f0fdfa;border:1px solid #ccfbf1;border-radius:6px;padding:4px 8px;margin:0 0 6px">Guarantee: ' + guar + '. Every delivered lead has a full address + door number</div>';
         }
         (cx.leads || []).forEach(function(l) {
           // Display address without duplicating the postcode area (pool addresses
@@ -376,9 +376,9 @@ function openQuietAreas() {
     .then(function(r) { return r.json(); })
     .then(function(d) {
       if (d.error) { document.getElementById('qa-content').innerHTML = '<span style="color:#dc2626">' + d.error + '</span>'; return; }
-      var html = '<p style="font-size:11px;color:#64748b;margin-bottom:10px">Chosen postcode areas with <b>0 delivered leads in the last ' + d.days + ' days</b> — customers are auto-notified (email + dashboard) once per area per 7 days.</p>';
+      var html = '<p style="font-size:11px;color:#64748b;margin-bottom:10px">Chosen postcode areas with <b>0 delivered leads in the last ' + d.days + ' days</b>. Customers are auto-notified (email + dashboard) once per area per 7 days.</p>';
       var quiet = (d.areas || []).filter(function(a) { return a.delivered === 0; });
-      if (!quiet.length) { html += '<div style="padding:16px;background:#dcfce7;color:#15803d;border-radius:8px">No quiet areas — every chosen postcode has had leads recently.</div>'; }
+      if (!quiet.length) { html += '<div style="padding:16px;background:#dcfce7;color:#15803d;border-radius:8px">No quiet areas. Every chosen postcode has had leads recently.</div>'; }
       else {
         html += '<table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;padding:7px;font-size:11px;color:#64748b;border-bottom:1px solid #e2e8f0">Customer</th><th style="text-align:left;padding:7px;font-size:11px;color:#64748b;border-bottom:1px solid #e2e8f0">Product</th><th style="text-align:left;padding:7px;font-size:11px;color:#64748b;border-bottom:1px solid #e2e8f0">Area</th><th style="text-align:left;padding:7px;font-size:11px;color:#64748b;border-bottom:1px solid #e2e8f0">Delivered</th><th style="text-align:left;padding:7px;font-size:11px;color:#64748b;border-bottom:1px solid #e2e8f0">Last alerted</th></tr></thead><tbody>';
         quiet.forEach(function(a) {
@@ -794,12 +794,12 @@ async function loadData() {
     const stats = await statsResp.json();
     if (!stats || stats.error || statsResp.status !== 200) {
       var badgeEl = document.getElementById('custCountBadge'); if (badgeEl) badgeEl.textContent = (stats.total_customers||0);
-    var labelEl = document.getElementById('custCountLabel'); if (labelEl) labelEl.textContent = '(' + (stats.total_customers||0) + ' total) — everyone with an account on 9amLeads';
+    var labelEl = document.getElementById('custCountLabel'); if (labelEl) labelEl.textContent = '(' + (stats.total_customers||0) + ' total). Everyone with an account on 9amLeads';
     document.getElementById('statsGrid').innerHTML = '<div class="empty" style="color:#ef4444">API error (' + statsResp.status + '): ' + (stats && stats.error || 'unauthorized. check admin password') + '</div>';
       return;
     }
     var badgeEl = document.getElementById('custCountBadge'); if (badgeEl) badgeEl.textContent = (stats.total_customers||0);
-    var labelEl = document.getElementById('custCountLabel'); if (labelEl) labelEl.textContent = '(' + (stats.total_customers||0) + ' total) — everyone with an account on 9amLeads';
+    var labelEl = document.getElementById('custCountLabel'); if (labelEl) labelEl.textContent = '(' + (stats.total_customers||0) + ' total). Everyone with an account on 9amLeads';
     document.getElementById('statsGrid').innerHTML =
       '<div class="stat-card"><div class="num">' + (stats.total_customers||0) + '</div><div class="label">Total Customers</div></div>' +
       '<div class="stat-card"><div class="num" style="color:#0ea5e9">' + (stats.free_trials||0) + '</div><div class="label">Free Trials</div></div>' +
@@ -824,7 +824,7 @@ async function loadData() {
     loadAnalytics();
   } catch (e) {
     var badgeEl = document.getElementById('custCountBadge'); if (badgeEl) badgeEl.textContent = (stats.total_customers||0);
-    var labelEl = document.getElementById('custCountLabel'); if (labelEl) labelEl.textContent = '(' + (stats.total_customers||0) + ' total) — everyone with an account on 9amLeads';
+    var labelEl = document.getElementById('custCountLabel'); if (labelEl) labelEl.textContent = '(' + (stats.total_customers||0) + ' total). Everyone with an account on 9amLeads';
     document.getElementById('statsGrid').innerHTML = '<div class="empty" style="color:#ef4444">Failed to load: ' + e.message + '</div>';
   }
 }
@@ -907,7 +907,7 @@ async function loadAnalytics() {
       html += '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:12px;text-align:center"><div style="font-size:11px;color:#64748b;font-weight:700">' + plans[p].label + ' · £' + plans[p].price + '/wk</div><div style="font-size:24px;font-weight:900;font-family:\'Outfit\',sans-serif;color:#0ea5e9">' + (b.count || 0) + '</div><div style="font-size:11px;color:#64748b">' + (b.pct !== null ? b.pct + '% of paid' : 'n/a') + '</div></div>';
     });
     html += '</div>';
-    html += '<div style="font-size:11px;color:#64748b">Estimated current weekly subscription value (paid plan count × price): <strong style="color:#0c4a6e">£' + (d.weekly_value_est || 0) + '/week</strong> — based on plan counts, not recognised accounting revenue.</div>';
+    html += '<div style="font-size:11px;color:#64748b">Estimated current weekly subscription value (paid plan count × price): <strong style="color:#0c4a6e">£' + (d.weekly_value_est || 0) + '/week</strong>. Based on plan counts, not recognised accounting revenue.</div>';
 
     document.getElementById('analyticsBody').innerHTML = html;
   } catch(e) { document.getElementById('analyticsBody').innerHTML = '<div class="empty" style="color:#ef4444">Failed: ' + e.message + '</div>'; }
