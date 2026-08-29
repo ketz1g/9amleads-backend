@@ -197,6 +197,13 @@ __showByHash();
 <input type="email" id="s-email" placeholder="you@company.co.uk" class="sf">
 </div>
 <div class="form-group">
+<label>Phone Number <span class="ml" style="color:#6b7280;font-weight:400">(optional)</span></label>
+<input type="tel" id="s-phone" placeholder="020 0000 0000" class="sf">
+</div>
+</div>
+
+<div class="form-row">
+<div class="form-group">
 <label>Password</label>
 <div style="position:relative">
 <input type="password" id="s-password" placeholder="Min 8 characters" minlength="8" class="sf" style="padding-right:34px">
@@ -1121,6 +1128,7 @@ function doSignup() {
   var name = document.getElementById('s-name').value.trim();
   var company = document.getElementById('s-company').value.trim();
   var email = document.getElementById('s-email').value.trim().toLowerCase();
+  var phone = (document.getElementById('s-phone') ? document.getElementById('s-phone').value.trim() : '');
   var password = document.getElementById('s-password').value;
   var affiliateCode = (document.getElementById('s-affiliate') ? document.getElementById('s-affiliate').value.trim() : '');
   var productCheckboxes = document.querySelectorAll('#s-products-container input[type=checkbox]:checked');
@@ -1203,7 +1211,7 @@ var pLimit = getPostcodeAreaLimit();
   button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating account...'; button.disabled = true;
   fetch(API + '/api/auth/signup', {
     method:'POST', headers:{ 'Content-Type':'application/json' },
-    body:JSON.stringify({ company:company, name:name, email:email, phone:'', password:password, product:product, products:products, plan:plan, coverage:selectedCoverage, targetAreas:targetAreas, source:'web', analytics_id:getAid(), acceptTerms:document.getElementById('s-terms').checked, marketingConsent:document.getElementById('s-consent').checked, crmWebhookUrl:document.getElementById('s-crm').value.trim(), leadFilters:JSON.stringify(getFilters()), movingType:(document.querySelector('#s-moving-type input[type=radio]:checked')?.value || 'both'), affiliateCode:affiliateCode })
+    body:JSON.stringify({ company:company, name:name, email:email, phone:phone, password:password, product:product, products:products, plan:plan, coverage:selectedCoverage, targetAreas:targetAreas, source:'web', analytics_id:getAid(), acceptTerms:document.getElementById('s-terms').checked, marketingConsent:document.getElementById('s-consent').checked, crmWebhookUrl:document.getElementById('s-crm').value.trim(), leadFilters:JSON.stringify(getFilters()), movingType:(document.querySelector('#s-moving-type input[type=radio]:checked')?.value || 'both'), affiliateCode:affiliateCode })
   }).then(function(r) { return r.json(); }).then(function(d) {
     if (d.token) {
       localStorage.setItem('mld_portal_session', JSON.stringify({ token:d.token, clientId:d.customer?.id || email, name:d.customer?.name || name, plan:plan, email:email, product:product, products:products }));
