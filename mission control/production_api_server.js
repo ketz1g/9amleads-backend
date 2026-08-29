@@ -2790,7 +2790,7 @@ function partnerConfig() {
       affiliate_qualifying_payment_count: 1,
       partners_open: true,
       attribution_first_click_wins: true,
-      affiliate_commission_model: 'monthly',
+      affiliate_commission_model: 'one_off',
       retention_followup_days: 14
     };
   }
@@ -2801,7 +2801,7 @@ function partnerConfig() {
     commission_clearance_days: 30, commission_qualification_days: 30,
     sales_partner_commission_duration_months: null, affiliate_qualifying_payment_count: 1,
     partners_open: true, attribution_first_click_wins: true,
-    affiliate_commission_model: 'monthly', retention_followup_days: 14
+    affiliate_commission_model: 'one_off', retention_followup_days: 14
   };
   for (var k in defaults) { if (dbc.partner_config[k] === undefined) dbc.partner_config[k] = defaults[k]; }
   return dbc.partner_config;
@@ -2968,10 +2968,8 @@ function processPartnerCommissions() {
           created.push(cm);
         });
       } else {
-        // Affiliate: commission model is configurable. Default is MONTHLY:
-        // £25 one-off when the customer first pays + £25/month for as long as
-        // they stay a paying subscriber. The 'one_off' option keeps only the
-        // single £25 referral payment.
+        // Affiliate: one-off £25 commission per new paying customer
+        // (single sign-up payment, no recurring monthly commission).
         var affMonthly = String(cfg.affiliate_commission_model || 'monthly') === 'monthly';
         var affAmount = Number(p.commission_amount) || Number(cfg.affiliate_one_off_amount) || 25;
         attr.filter(function(a){ return a.partner_id === p.id; }).forEach(function(a) {
@@ -15696,7 +15694,7 @@ app.post('/api/stripe/webhook', async (req, res) => {
             if (attPartner) {
               try { db.prepare('UPDATE customers SET affiliate_payout_status = ? WHERE id = ?').run('converted', customer.id); } catch(cv1) {}
               partnerAudit('customer_converted', { partner_id: att.partner_id, customer_id: customer.id });
-              partnerNotify(att.partner_id, 'paid', 'Great news — a customer you referred is now a paying customer: ' + (customer.company || customerEmail) + '. Your monthly commission starts after the qualifying period.', customer.id);
+              partnerNotify(att.partner_id, 'paid', 'Great news — a customer you referred is now a paying customer: ' + (customer.company || customerEmail) + '. Your £25 commission is paid once the qualifying period has passed.', customer.id);
               trackAnalytics('partner_referral_converted', { code: att.referral_code, partner_id: att.partner_id, src: partnerTypeOf(attPartner) });
             }
             }
@@ -15889,7 +15887,7 @@ app.post('/api/stripe/webhook', async (req, res) => {
         console.log('[STRIPE] Subscription cancelled for ' + (subCustomer.email || subCustomer.id));
         // Tell the owning partner so they know the customer cancelled (commission stops).
         var _pc = partnerForCustomer(subCustomer.id);
-        if (_pc) partnerNotify(_pc.id, 'cancelled', 'A customer you referred has cancelled their subscription: ' + (subCustomer.company || subCustomer.email) + '. Their commission has stopped. Consider reaching out to see if we can help retain them.', subCustomer.id);
+        if (_pc) partnerNotify(_pc.id, 'cancelled', 'A customer you referred has cancelled their subscription: ' + (subCustomer.company || subCustomer.email) + '. Their commission was already paid on sign-up. Consider reaching out to see if we can help retain them.', subCustomer.id);
       }
     }
 
