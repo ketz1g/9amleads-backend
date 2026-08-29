@@ -22729,6 +22729,18 @@ app.post('/api/admin/blog/generate', adminAuth, function(req, res) {
 
 // POST /api/admin/blog/regen — Rebuild SEO HTML for ALL existing posts
 // (adds JSON-LD, meta keywords, canonical, internal product links to older posts)
+app.post('/api/admin/blog/topup', adminAuth, function(req, res) {
+  // On-demand queue top-up: generate OpenAI-scheduled posts so the 2/day cadence
+  // never runs dry. Mirrors the 3am cron but callable anytime.
+  try {
+    topUpBlogQueue().then(function(n) {
+      res.json({ success: true, created: n || 0, message: 'Blog queue topped up by ' + (n || 0) + ' post(s)' });
+    }).catch(function(e) {
+      res.status(500).json({ success: false, error: (e && e.message) || String(e) });
+    });
+  } catch(e) { res.status(500).json({ success: false, error: (e && e.message) || String(e) }); }
+});
+
 app.post('/api/admin/blog/regen', adminAuth, function(req, res) {
   try {
     var dbData = getDb();
