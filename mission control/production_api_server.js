@@ -4783,7 +4783,7 @@ app.get('/api/affiliate/leads', affiliateAuth, (req, res) => {
       return { id: l.id, company: l.company, email: l.email, phone: l.phone, product: l.lead_type || 'general',
         plan: '', signed_up: l.created_at, days_since: 0, trial_days: 0, card_saved: false,
         status: 'manual', stage: 'My lead', earned: 0, lead_status: l.status || 'new', manual: true,
-        source: 'manual', comments: l.comments || [], reminders: l.reminders || [], extra_id: l.id };
+        source: 'manual', notes: l.notes || '', comments: l.comments || [], reminders: l.reminders || [], extra_id: l.id };
     }));
     out.sort(function(a, b) { return String(b.signed_up || '').localeCompare(String(a.signed_up || '')); });
     res.json({ success: true, leads: out });
