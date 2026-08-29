@@ -5,6 +5,7 @@
 /robots.txt  https://nineamleads-backend.onrender.com/robots.txt  200
 /blog  https://nineamleads-backend.onrender.com/blog  200
 /blog/*  https://nineamleads-backend.onrender.com/blog/:splat  200
+/r/*  https://nineamleads-backend.onrender.com/r/:splat  200
 /success-centre  /blog  301
 /success-centre/*  /blog  301
 /movingleadsdaily  /who-we-serve/  301
