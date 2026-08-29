@@ -591,15 +591,21 @@ function loadAffiliates() {
     .then(function(d) {
       if (!d.success || !d.affiliates) { wrap.innerHTML = '<div class="empty">Could not load affiliates.</div>'; return; }
       if (!d.affiliates.length) { wrap.innerHTML = '<div class="empty">No affiliates yet. Click "Add Affiliate" to create one.</div>'; return; }
-      var h = '<table><thead><tr><th>Affiliate</th><th>Code</th><th>Status</th><th>Application</th><th>Association</th><th>Rate</th><th>Referrals</th><th>Pending</th><th>Ready to pay</th><th>Paid</th><th>Actions</th></tr></thead><tbody>';
+      var h = '<table><thead><tr><th>Affiliate</th><th>Code</th><th>Status</th><th>Application</th><th>KYC</th><th>Association</th><th>Rate</th><th>Referrals</th><th>Pending</th><th>Ready to pay</th><th>Paid</th><th>Actions</th></tr></thead><tbody>';
       d.affiliates.forEach(function(a) {
         var st = a.status === 'pending' ? '<span class="badge badge-warn">Pending</span>' : a.status === 'rejected' ? '<span class="badge" style="background:#fef2f2;color:#ef4444">Rejected</span>' : a.status === 'paused' ? '<span class="badge">Paused</span>' : '<span class="badge badge-ok">Active</span>';
         var appCell = a.application ? '<button class="btn btn-outline btn-sm" onclick="reviewApplication(\'' + a.id + '\')">' + (a.status === 'pending' ? 'Review' : 'View') + '</button>' : '<span style="font-size:11px;color:#94a3b8">-</span>';
+        var kycCell = '';
+        if (a.kyc && a.kyc.status === 'approved') kycCell = '<span class="badge badge-ok">Verified</span>';
+        else if (a.kyc && a.kyc.status === 'pending_review') kycCell = '<button class="btn btn-outline btn-sm" style="border-color:#f59e0b;color:#d97706" onclick="reviewKyc(\'' + a.id + '\')">Review ID</button>';
+        else if (a.kyc && a.kyc.status === 'rejected') kycCell = '<button class="btn btn-outline btn-sm" style="border-color:#ef4444;color:#ef4444" onclick="reviewKyc(\'' + a.id + '\')">Rejected</button>';
+        else kycCell = '<span style="font-size:11px;color:#94a3b8">Not submitted</span>';
         var assoc = a.association || '-';
         var rate = (a.commission_amount || 25);
         h += '<tr><td><b>' + esc(a.name) + '</b><div style="font-size:11px;color:#64748b">' + esc(a.email) + '</div></td>' +
           '<td><code>' + esc(a.code) + '</code></td><td>' + st + '</td>' +
           '<td>' + appCell + '</td>' +
+          '<td>' + kycCell + '</td>' +
           '<td>' + esc(assoc) + ' <button class="btn btn-outline btn-sm" style="margin-left:2px" onclick="setAffAssociation(\'' + a.id + '\',\'' + esc(a.association || '') + '\')" title="Set a trade association"><i class="fas fa-tag"></i></button></td>' +
           '<td style="font-weight:600">£' + rate + '</td>' +
           '<td>' + a.counts.referrals + '</td><td>£' + a.earnings_pending + ' (' + a.counts.pending + ')</td>' +
@@ -699,6 +705,44 @@ function decideApplication(id, decision) {
     .then(function(d) {
       if (d.success) { alert(decision === 'approve' ? 'Approved! ' + d.affiliate.name + ' can now sign in.' : 'Application rejected.'); document.getElementById('adminModalOverlay').style.display = 'none'; loadAffiliates(); }
       else alert(d.error || 'Could not process review');
+    })
+    .catch(function(e) { alert('Error: ' + e.message); });
+}
+function reviewKyc(id) {
+  fetch(API + '/api/admin/affiliates?t=' + Date.now(), { headers: adminHeaders() })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var a = (d.affiliates || []).find(function(x) { return x.id === id; });
+      if (!a) { alert('Affiliate not found'); return; }
+      var k = a.kyc || {};
+      var idHtml = k.id_uploaded
+        ? '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:12px;text-align:center"><div style="font-size:12px;font-weight:700;color:#334155;margin-bottom:6px">ID upload</div><img src="data:image/jpeg;base64,' + k.id_uploaded + '" style="max-width:100%;max-height:220px;border-radius:8px;border:1px solid #cbd5e1" alt="Affiliate ID"></div>'
+        : '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:12px;color:#64748b;font-size:12px">No ID uploaded yet.</div>';
+      var content = idHtml +
+        '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;margin-bottom:14px">' +
+        '<div style="font-size:12px;margin-bottom:8px"><b>Legal name (ID):</b> ' + pEsc(k.legal_name || '-') + '</div>' +
+        '<div style="font-size:12px;margin-bottom:8px"><b>ID type:</b> ' + pEsc(k.id_type || '-') + '</div>' +
+        '<div style="font-size:12px;margin-bottom:8px"><b>Bank:</b> ' + pEsc(k.bank_name || '-') + '</div>' +
+        '<div style="font-size:12px;margin-bottom:8px"><b>Bank account holder:</b> ' + pEsc(k.bank_account_holder || '-') + '</div>' +
+        '<div style="font-size:12px"><b>Name match:</b> ' + (pEsc(k.legal_name)===pEsc(k.bank_account_holder) ? '<span style="color:#16a34a;font-weight:700">MATCH</span>' : '<span style="color:#d97706;font-weight:700">CHECK</span>') + '</div>' +
+        '<div style="font-size:12px;margin-top:8px"><b>T&amp;C accepted:</b> ' + (k.tc_accepted ? '<span style="color:#16a34a;font-weight:700">Yes</span>' : '<span style="color:#ef4444;font-weight:700">No</span>') + '</div>' +
+        (k.status === 'rejected' && k.id_review_note ? '<div style="font-size:12px;color:#ef4444;margin-top:8px"><b>Reject reason:</b> ' + pEsc(k.id_review_note) + '</div>' : '') +
+        '</div>' +
+        '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input id="kyc-note" placeholder="Optional note (sent to affiliate)" style="flex:1;min-width:160px;padding:9px 11px;border:1px solid #cbd5e1;border-radius:8px;font-size:12px">' +
+        '<button class="btn btn-primary btn-sm" onclick="decideKyc(\'' + id + '\',\'approve\')">✓ Approve ID</button>' +
+        '<button class="btn btn-sm" style="background:#ef4444;color:#fff" onclick="decideKyc(\'' + id + '\',\'reject\')">✗ Reject ID</button></div>';
+      showModal('ID Verification · ' + pEsc(a.name), content, 520);
+    })
+    .catch(function(e) { alert('Error: ' + e.message); });
+}
+function decideKyc(id, decision) {
+  var note = (document.getElementById('kyc-note') || {}).value || '';
+  if (decision === 'reject' && !confirm('Reject this ID? The affiliate will be emailed and cannot be paid until they re-submit.')) return;
+  fetch(API + '/api/admin/affiliates/' + id + '/kyc-review', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: JSON.stringify({ decision: decision, note: note }) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) { alert(decision === 'approve' ? 'ID approved. ' + d.kyc.legal_name + ' can now be paid.' : 'ID rejected.'); document.getElementById('adminModalOverlay').style.display = 'none'; loadAffiliates(); }
+      else alert(d.error || 'Could not process KYC review');
     })
     .catch(function(e) { alert('Error: ' + e.message); });
 }

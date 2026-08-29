@@ -328,6 +328,7 @@ tr:last-child td{border-bottom:none}
 <div class="tab" data-t="playbook" onclick="go('playbook')">Playbook</div>
 <div class="tab" data-t="refs" onclick="go('refs')">Referrals</div>
 <div class="tab" data-t="rewards" onclick="go('rewards')">Rewards 🎡</div>
+<div class="tab" data-t="compliance" onclick="go('compliance')">Compliance</div>
 <div class="tab" data-t="payouts" onclick="go('payouts')">Payouts</div>
 </div>
 
@@ -563,6 +564,39 @@ tr:last-child td{border-bottom:none}
 </div>
 </section>
 
+<!-- COMPLIANCE (KYC) -->
+<section id="view-compliance" style="display:none">
+<div class="payout-card" style="background:linear-gradient(135deg,rgba(14,165,233,.10),rgba(37,99,235,.04));border-color:rgba(14,165,233,.3)">
+<div class="p-head"><div><div class="lbl">Compliance status</div><div class="val" id="kyc-status" style="font-size:18px;color:#f1f5f9">Checking...</div></div><div class="lbl" id="kyc-sub">Verify your identity to unlock payouts</div></div>
+</div>
+<div class="panel" style="margin-bottom:16px">
+<h2>Why we need this</h2>
+<p style="font-size:12.5px;color:#94a3b8;line-height:1.7">To pay you, we're required by law to verify your identity and your bank details. This is the same "know your customer" (KYC) check every legitimate payout service runs. It protects you, and it protects the programme from fraud.</p>
+<ul style="font-size:12.5px;color:#c6cfdd;line-height:1.8;padding-left:18px;margin:10px 0 0">
+<li><b>ID must be your driving licence or passport</b> (a clear photo or scan).</li>
+<li><b>The legal name on your ID must match the bank account holder</b> name exactly. Payments only go out to the verified person.</li>
+<li>Your details are stored securely and used only for payout verification.</li>
+<li><b>No payout is released until your ID is approved.</b></li>
+</ul>
+</div>
+<div class="panel" style="margin-bottom:16px">
+<h2>Verify your identity</h2>
+<div class="fg"><label>Legal name (exactly as it appears on your ID)</label><input type="text" id="kyc-legal" placeholder="e.g. John Michael Smith" style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px"></div>
+<div class="fg"><label>ID type</label>
+<select id="kyc-idtype" style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px"><option value="">Choose...</option><option value="Driving licence">Driving licence</option><option value="Passport">Passport</option></select></div>
+<div class="fg"><label>Upload a clear photo of your ID (front) <span class="muted">JPG or PNG</span></label>
+<input type="file" id="kyc-file" accept="image/jpeg,image/png,image/jpg" style="width:100%;padding:11px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:12px">
+<div id="kyc-preview" style="margin-top:8px"></div></div>
+<div class="fg"><label>Bank name</label><input type="text" id="kyc-bank" placeholder="e.g. Barclays" style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px"></div>
+<div class="fg"><label>Bank account holder name (exactly as on the account)</label><input type="text" id="kyc-bankholder" placeholder="Must match the legal name above" style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px"></div>
+<div id="kyc-match" style="font-size:11.5px;margin-top:4px;color:#6b7280">Enter the same name in both fields so they match.</div>
+<div class="fg" style="margin-top:14px"><label style="display:flex;gap:8px;align-items:flex-start;font-size:11.5px;color:#c6cfdd;cursor:pointer"><input type="checkbox" id="kyc-tc" style="margin-top:2px"> I have read and accept the <a href="#" onclick="showKycTerms();return false" style="color:#0ea5e9">9amLeads Affiliate Agreement</a> (Terms &amp; Conditions). I confirm that the information I have provided is accurate, that my name on the ID matches my bank account, and that I will not engage in fraudulent or misleading referral activity.</label></div>
+<div style="display:flex;gap:8px;margin-top:14px"><button class="btn" id="kyc-submit-btn" onclick="submitKyc()">Submit for verification</button></div>
+<div class="err" id="kyc-err"></div>
+<div id="kyc-result" style="margin-top:10px;font-size:13px;color:#34d399;font-weight:700;display:none"></div>
+</div>
+</section>
+
 <!-- REFERRALS -->
 <section id="view-refs" style="display:none">
 <div class="panel"><h2>All referrals</h2><div id="refs-table-wrap"></div></div>
@@ -773,7 +807,7 @@ var EMOJI={moving:'🚚',probate:'⚖️',newbusiness:'💼',planning:'🏗️',
 
 function go(t){
   document.querySelectorAll('.tab').forEach(function(x){x.classList.toggle('on',x.dataset.t===t);});
-  ['overview','leads','tools','playbook','refs','rewards','payouts'].forEach(function(v){document.getElementById('view-'+v).style.display=(v===t)?'block':'none';});
+  ['overview','leads','tools','playbook','refs','rewards','compliance','payouts'].forEach(function(v){document.getElementById('view-'+v).style.display=(v===t)?'block':'none';});
   if(t==='tools'&&!RES)loadResources();
   if(t==='leads'&&!LEADS)loadLeads();
   if(t==='payouts')loadPayouts();
@@ -808,7 +842,11 @@ function init(){
   renderPb();
   loadWheel();
   loadLeads();
+  loadKyc();
   affTip();
+  var kf=document.getElementById('kyc-file'); if(kf)kf.addEventListener('change',onKycFile);
+  var kl=document.getElementById('kyc-legal'); if(kl)kl.addEventListener('input',updateKycMatch);
+  var kh=document.getElementById('kyc-bankholder'); if(kh)kh.addEventListener('input',updateKycMatch);
   // Auto-refresh the dashboard every 90s so earnings/payout progress stay live.
   clearInterval(window._affRefresh);
   window._affRefresh=setInterval(function(){
@@ -1012,6 +1050,115 @@ function affTip(){
     if(pg2)pg2.textContent='Tip '+((_affTipIdx%AFF_TIPS.length)+1)+' of '+AFF_TIPS.length;
     _affTipIdx++;
   },12000);
+}
+/* ---- KYC / COMPLIANCE ---- */
+var _kycImageB64='';
+function loadKyc(){
+  api('GET','/affiliate/kyc').then(function(d){
+    if(!d.success)return;
+    var k=d.kyc;
+    var stEl=document.getElementById('kyc-status');
+    var subEl=document.getElementById('kyc-sub');
+    var stText,stColor='#f1f5f9';
+    if(k.status==='approved'){stText='✅ Verified';stColor='#34d399';}
+    else if(k.status==='pending_review'){stText='⏳ Under review';stColor='#fbbf24';}
+    else if(k.status==='rejected'){stText='❌ Needs attention';stColor='#f87171';}
+    else {stText='⚠️ Not submitted';stColor='#f59e0b';}
+    if(stEl)stEl.textContent=stText;
+    if(stEl)stEl.style.color=stColor;
+    if(subEl){
+      if(k.status==='approved')subEl.textContent='Your ID is verified. Payouts are unlocked.';
+      else if(k.status==='pending_review')subEl.textContent='Your ID is being reviewed. You will be emailed when it is approved.';
+      else if(k.status==='rejected')subEl.textContent=(k.id_review_note||'Your ID could not be verified. Please re-upload a clear photo.')+' Your legal name must match your bank account holder.';
+      else subEl.textContent='Verify your identity to unlock payouts. It takes 2 minutes.';
+    }
+    // Prefill saved values
+    var legal=document.getElementById('kyc-legal'); if(legal&&k.legal_name)legal.value=k.legal_name;
+    var idt=document.getElementById('kyc-idtype'); if(idt&&k.id_type)idt.value=k.id_type;
+    var bank=document.getElementById('kyc-bank'); if(bank&&k.bank_name)bank.value=k.bank_name;
+    var bh=document.getElementById('kyc-bankholder'); if(bh&&k.bank_account_holder)bh.value=k.bank_account_holder;
+    var tc=document.getElementById('kyc-tc'); if(tc&&k.tc_accepted)tc.checked=true;
+    var btn=document.getElementById('kyc-submit-btn');
+    if(btn&&(k.status==='pending_review'||k.status==='approved')){btn.disabled=true;btn.style.opacity='.4';btn.textContent=k.status==='approved'?'Already verified':(k.status==='pending_review'?'Under review':'Re-submit');}
+    // Show a dashboard prompt banner if KYC not complete
+    renderKycBanner(k);
+  }).catch(function(){});
+}
+function renderKycBanner(k){
+  var old=document.getElementById('kyc-banner');
+  if(old)old.remove();
+  if(!k||k.status==='approved')return;
+  var wrap=document.getElementById('dash-view');
+  if(!wrap)return;
+  var b=document.createElement('div');
+  b.id='kyc-banner';
+  b.style.cssText='background:linear-gradient(135deg,rgba(245,158,11,.14),rgba(234,88,12,.06));border:1px solid rgba(245,158,11,.4);border-radius:14px;padding:16px 18px;margin:14px 0;display:flex;align-items:center;gap:14px;flex-wrap:wrap';
+  var msg = k.status==='pending_review' ? 'Your ID is under review. Payouts unlock once it is approved.' : k.status==='rejected' ? 'Your ID needs attention. Re-submit in the Compliance tab to unlock payouts.' : 'Verify your ID in the Compliance tab to unlock payouts. It takes 2 minutes.';
+  b.innerHTML='<span style="font-size:22px">🪪</span><div style="flex:1;min-width:220px"><b style="font-size:13.5px;color:#f1f5f9">Complete your ID verification</b><div style="font-size:12px;color:#c6cfdd;margin-top:2px">'+msg+'</div></div><button class="btn-mini" onclick="go(\'compliance\')" style="background:linear-gradient(135deg,#f59e0b,#f97316);color:#fff;border:none;padding:9px 18px;border-radius:9px;font-weight:700">Verify now</button>';
+  wrap.insertBefore(b, wrap.firstChild);
+}
+function onKycFile(ev){
+  var f=ev.target.files&&ev.target.files[0];
+  if(!f)return;
+  if(f.size>3*1024*1024){alert('Please keep the ID image under 3MB.');return;}
+  var fr=new FileReader();
+  fr.onload=function(){
+    _kycImageB64=String(fr.result||'').split(',')[1]||'';
+    var pv=document.getElementById('kyc-preview');
+    if(pv)pv.innerHTML='<img src="'+fr.result+'" style="max-width:200px;max-height:140px;border-radius:8px;border:1px solid #1e2030">';
+    updateKycMatch();
+  };
+  fr.readAsDataURL(f);
+}
+function updateKycMatch(){
+  var legal=(document.getElementById('kyc-legal')||{}).value||'';
+  var bh=(document.getElementById('kyc-bankholder')||{}).value||'';
+  var el=document.getElementById('kyc-match');
+  if(!el)return;
+  var norm=function(s){return String(s||'').toLowerCase().replace(/[^a-z ]/g,'').replace(/\s+/g,' ').trim();};
+  if(legal&&bh){ el.textContent = norm(legal)===norm(bh) ? '✓ Names match' : '⚠ Names must match exactly'; el.style.color = norm(legal)===norm(bh) ? '#34d399' : '#fbbf24'; }
+  else { el.textContent='Enter the same name in both fields so they match.'; el.style.color='#6b7280'; }
+}
+function submitKyc(){
+  var errEl=document.getElementById('kyc-err'); errEl.style.display='none';
+  var legal=(document.getElementById('kyc-legal')||{}).value.trim();
+  var idType=(document.getElementById('kyc-idtype')||{}).value;
+  var bank=(document.getElementById('kyc-bank')||{}).value.trim();
+  var holder=(document.getElementById('kyc-bankholder')||{}).value.trim();
+  var tc=!!(document.getElementById('kyc-tc')||{}).checked;
+  if(!legal){errEl.textContent='Enter your legal name as it appears on your ID';errEl.style.display='block';return;}
+  if(!idType){errEl.textContent='Choose your ID type (driving licence or passport)';errEl.style.display='block';return;}
+  if(!_kycImageB64){errEl.textContent='Please upload a clear photo of your ID';errEl.style.display='block';return;}
+  if(!bank||!holder){errEl.textContent='Enter your bank name and bank account holder';errEl.style.display='block';return;}
+  if(!tc){errEl.textContent='You must accept the Affiliate Agreement to be eligible for payout';errEl.style.display='block';return;}
+  var btn=document.getElementById('kyc-submit-btn');
+  if(btn){btn.disabled=true;btn.textContent='Submitting...';}
+  api('POST','/affiliate/kyc',{legal_name:legal,id_type:idType,bank_name:bank,bank_account_holder:holder,id_image:_kycImageB64,accept_tc:tc}).then(function(d){
+    if(btn){btn.disabled=false;btn.textContent='Submit for verification';}
+    if(d.success){
+      var r=document.getElementById('kyc-result');
+      if(r){r.style.display='block';r.textContent='Submitted! Your ID is under review. You will be emailed once it is approved.';}
+      loadKyc();
+    } else {
+      errEl.textContent=d.error||'Could not submit';
+      errEl.style.display='block';
+    }
+  }).catch(function(){ if(btn){btn.disabled=false;btn.textContent='Submit for verification';} errEl.textContent='Server is starting up. Please try again.';errEl.style.display='block'; });
+}
+function showKycTerms(){
+  var terms='<div style="font-size:13px;line-height:1.8;color:#c6cfdd;max-height:60vh;overflow-y:auto;padding:4px"><h3 style="color:#f1f5f9;margin:0 0 10px">9amLeads Affiliate Agreement (Summary)</h3>'+
+  '<p><b>1. Referrals.</b> You earn a commission for customers who sign up with your code and meet the qualifying criteria set out in your dashboard. Commission is paid on a monthly cycle once the customer has paid their qualifying invoices.</p>'+
+  '<p><b>2. Identity verification (KYC).</b> By law we must verify your identity before any payment. You agree to provide a genuine, clear photo of your driving licence or passport, your legal name, and accurate bank details. The legal name on your ID must match the bank account holder.</p>'+
+  '<p><b>3. Your obligations.</b> You agree to refer genuine businesses in good faith, not to use fraudulent, deceptive or self-referral activity, and not to misrepresent 9amLeads to potential customers.</p>'+
+  '<p><b>4. Payouts.</b> No payout is released until your ID is approved and you have accepted this agreement. Payouts are paid out on the monthly cycle once minimums are met. We may withhold or claw back payments that are fraudulent, refunded or in breach of this agreement.</p>'+
+  '<p><b>5. Tax.</b> You are responsible for reporting and paying any tax on commissions you receive. We may require additional information to comply with tax law.</p>'+
+  '<p><b>6. Fair use.</b> The Wheel of Fortune rewards are at our discretion and are subject to the same verification and clawback rules as commissions.</p>'+
+  '<p><b>7. Termination.</b> We may terminate this agreement at any time. Earned and verified commissions are still paid.</p>'+
+  '<p><b>8. Data.</b> Your data is handled under our Privacy Policy and used to run the programme and meet legal obligations.</p></div>';
+  var ov=document.createElement('div');
+  ov.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.innerHTML='<div style="background:#0b0d14;border:1px solid #1e2030;border-radius:14px;max-width:560px;width:100%;padding:22px">'+terms+'<div style="margin-top:14px;text-align:right"><button class="btn-mini" onclick="this.closest(\'div\').parentElement.remove()">Close</button></div></div>';
+  document.body.appendChild(ov);
 }
 /* ---- REWARD WHEEL ---- */
 var _wheel=null,_wheelSpinIdx=0,_wheelAnim=null;

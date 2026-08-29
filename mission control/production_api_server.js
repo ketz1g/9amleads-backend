@@ -3358,6 +3358,24 @@ function affiliateWheelClawback(dbc, aff) {
     console.log('[WHEEL] Clawback for ' + aff.email + ': spins now ' + consumed + ' (retained ' + retained + ')');
   }
 }
+// ===== AFFILIATE KYC / COMPLIANCE =====
+// Anti-money-laundering style KYC for affiliate payouts. Affiliates must submit
+// proof of identity (photo ID), confirm their legal name matches the bank account
+// they receive payouts into, and accept the affiliate agreement (T&C) before any
+// payment is released. Admin reviews the ID and approves/rejects.
+function kycStatus(aff) {
+  var k = aff.kyc || {};
+  return { status: k.status || 'not_submitted', tc_accepted: !!k.tc_accepted, tc_accepted_at: k.tc_accepted_at || null,
+    legal_name: k.legal_name || '', id_type: k.id_type || '', id_uploaded: !!k.id_uploaded,
+    id_review_note: k.id_review_note || '', bank_name: k.bank_name || '', bank_account_holder: k.bank_account_holder || '',
+    submitted_at: k.submitted_at || null, reviewed_at: k.reviewed_at || null };
+}
+// Compute the combined KYC state for display: block payout until tc accepted + id approved.
+function kycComplete(aff) {
+  var k = aff.kyc || {};
+  return !!(k.tc_accepted && k.status === 'approved');
+}
+
 function runAffiliateWheelUnlockEmails() {
   try {
     var dbc = getDb();
@@ -4669,7 +4687,7 @@ app.post('/api/affiliate/register', async (req, res) => {
       score: scoreAffiliateApplication(survey),
       review_status: 'pending'
     };
-    var aff = { id: uuidv4(), name: String(name).trim(), email: em, code: code2, password_hash: passwordHash, payout_rate: AFFILIATE_PAYOUT_RATE, status: 'pending', created_at: new Date().toISOString(), payouts: [], association: String(req.body.association || '').trim().substring(0, 60) || '', application: application };
+    var aff = { id: uuidv4(), name: String(name).trim(), email: em, code: code2, password_hash: passwordHash, payout_rate: AFFILIATE_PAYOUT_RATE, status: 'pending', created_at: new Date().toISOString(), payouts: [], association: String(req.body.association || '').trim().substring(0, 60) || '', application: application, kyc: { status: 'not_submitted', tc_accepted: false, tc_accepted_at: null } };
     affs.push(aff);
     saveDb();
     // Confirmation email to the affiliate (so they know their application arrived).
@@ -4853,6 +4871,91 @@ app.get('/api/affiliate/dashboard', affiliateAuth, (req, res) => {
       referrals: referralRows,
       payouts: payouts
     });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/affiliate/kyc — current KYC / compliance status.
+app.get('/api/affiliate/kyc', affiliateAuth, (req, res) => {
+  try { res.json({ success: true, kyc: kycStatus(req.affiliate) }); }
+  catch(e) { res.status(500).json({ error: e.message }); }
+});
+// POST /api/affiliate/kyc — submit ID + bank details + accept the affiliate agreement.
+// legal_name MUST match the bank account holder (anti-fraud).
+app.post('/api/affiliate/kyc', affiliateAuth, (req, res) => {
+  try {
+    var aff = req.affiliate;
+    var legalName = String(req.body.legal_name || '').trim().substring(0, 120);
+    var idType = String(req.body.id_type || '').trim().substring(0, 40);
+    var bankName = String(req.body.bank_name || '').trim().substring(0, 120);
+    var bankHolder = String(req.body.bank_account_holder || '').trim().substring(0, 120);
+    var idB64 = String(req.body.id_image || '');
+    var acceptTc = !!req.body.accept_tc;
+    if (!legalName || !idType || !bankName || !bankHolder) return res.status(400).json({ error: 'Please complete all fields: legal name, ID type, bank name and bank account holder.' });
+    if (!acceptTc) return res.status(400).json({ error: 'You must accept the Affiliate Agreement (Terms & Conditions) to be eligible for payout.' });
+    if (idB64.length < 50) return res.status(400).json({ error: 'Please upload a clear photo or scan of your ID (driving licence or passport).' });
+    if (normalizeName(legalName) !== normalizeName(bankHolder)) {
+      return res.status(400).json({ error: 'The legal name on your ID must match the bank account holder name exactly. Please check both and resubmit.' });
+    }
+    if (aff.kyc && aff.kyc.status === 'approved') {
+      return res.status(400).json({ error: 'Your ID has already been approved. No changes needed.' });
+    }
+    aff.kyc = aff.kyc || {};
+    aff.kyc.legal_name = legalName;
+    aff.kyc.id_type = idType;
+    aff.kyc.bank_name = bankName;
+    aff.kyc.bank_account_holder = bankHolder;
+    aff.kyc.id_uploaded = idB64;
+    aff.kyc.id_uploaded_at = new Date().toISOString();
+    aff.kyc.tc_accepted = true;
+    aff.kyc.tc_accepted_at = aff.kyc.tc_accepted_at || new Date().toISOString();
+    aff.kyc.submitted_at = new Date().toISOString();
+    aff.kyc.status = 'pending_review';
+    aff.kyc.id_review_note = '';
+    saveDb();
+    try {
+      sendBrevoEmail({ email: 'hello@9amleads.com', name: '9amLeads Owner' },
+        'Affiliate KYC pending review: ' + aff.name,
+        '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto">' +
+        '<h1 style="font-family:Outfit,sans-serif;color:#f59e0b;margin:0 0 10px">Affiliate ID verification needed</h1>' +
+        '<p style="color:#ccc;line-height:1.7"><strong style="color:#fff">' + escHtml(aff.name) + '</strong> (' + escHtml(aff.email) + ', code ' + escHtml(aff.code || '') + ') submitted their ID for payout approval.</p>' +
+        '<p style="color:#ccc;line-height:1.7">Legal name: <strong style="color:#fff">' + escHtml(legalName) + '</strong>. ID type: <strong style="color:#fff">' + escHtml(idType) + '</strong>.</p>' +
+        '<p style="color:#ccc;line-height:1.7">Review and approve in the admin dashboard: <a href="https://9amleads.com/portal/admin.html" style="color:#0ea5e9">Admin &rarr; Affiliates</a>.</p>' +
+        '<p style="color:#888;font-size:13px;margin-top:24px">This affiliate cannot be paid until their ID is approved.</p></div>').catch(function() {});
+    } catch(eA) {}
+    res.json({ success: true, kyc: kycStatus(aff) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+// POST /api/admin/affiliates/:id/kyc-review — admin approves or rejects an ID.
+app.post('/api/admin/affiliates/:id/kyc-review', adminAuth, (req, res) => {
+  try {
+    var dbc = getDb();
+    var id = String(req.params.id || '');
+    var aff = (dbc.affiliates || []).find(function(a){ return a.id === id; });
+    if (!aff) return res.status(404).json({ error: 'Affiliate not found' });
+    var decision = String(req.body.decision || '').toLowerCase();
+    aff.kyc = aff.kyc || {};
+    if (decision === 'approve') {
+      aff.kyc.status = 'approved';
+      aff.kyc.reviewed_at = new Date().toISOString();
+      aff.kyc.id_review_note = String(req.body.note || '').trim();
+    } else if (decision === 'reject') {
+      aff.kyc.status = 'rejected';
+      aff.kyc.reviewed_at = new Date().toISOString();
+      aff.kyc.id_review_note = String(req.body.note || 'ID could not be verified. Please re-upload a clear photo.').trim();
+    } else { return res.status(400).json({ error: "decision must be 'approve' or 'reject'" }); }
+    saveDb();
+    try {
+      var h = '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto">' +
+        '<h1 style="font-family:Outfit,sans-serif;color:' + (decision === 'approve' ? '#34d399' : '#f87171') + ';margin:0 0 10px">' + (decision === 'approve' ? 'ID verified' : 'ID needs attention') + '</h1>' +
+        '<p style="color:#ccc;line-height:1.7">Hi ' + escHtml(aff.name || 'there') + ',</p>' +
+        (decision === 'approve'
+          ? '<p style="color:#ccc;line-height:1.7">Your identity has been verified and your account is now eligible for payout. Commissions and wheel wins will be released on the monthly cycle.</p>'
+          : '<p style="color:#ccc;line-height:1.7">We could not verify your ID. ' + escHtml(aff.kyc.id_review_note || 'Please re-upload a clear photo or scan of your driving licence or passport.') + '</p>' +
+            '<p style="color:#ccc;line-height:1.7">Log in to your <a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">affiliate dashboard</a> and re-submit your ID under the Compliance tab.</p>') +
+        '<p style="color:#888;font-size:13px;margin-top:24px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>';
+      sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' }, decision === 'approve' ? 'Your 9amLeads ID has been verified' : '9amLeads: please re-submit your ID', h).catch(function() {});
+    } catch(eB) {}
+    res.json({ success: true, kyc: kycStatus(aff) });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -5103,6 +5206,8 @@ app.get('/api/admin/affiliates', adminAuth, (req, res) => {
         association: a.association || '', commission_amount: a.commission_amount || null,
         created_at: a.created_at, counts: counts,
         application: a.application || null,
+        kyc: kycStatus(a),
+        kyc_complete: kycComplete(a),
         earnings_pending: counts.pending * (a.commission_amount || rate), earnings_due: counts.due * (a.commission_amount || rate), earnings_paid: counts.paid * (a.commission_amount || rate),
         payout_history: a.payouts || []
       };
@@ -5145,6 +5250,12 @@ app.post('/api/admin/affiliates/pay', adminAuth, (req, res) => {
     var q = (req.body && (req.body.affiliate_id || req.body.affiliate_email)) || '';
     var aff = (getDb().affiliates || []).find(function(a) { return a.id === q || String(a.email || '').toLowerCase() === String(q || '').toLowerCase(); });
     if (!aff) return res.status(404).json({ error: 'Affiliate not found' });
+    // COMPLIANCE: never release a payout before the affiliate's ID is approved and
+    // they have accepted the Affiliate Agreement.
+    if (!kycComplete(aff)) {
+      var st = kycStatus(aff);
+      return res.status(400).json({ error: 'Payout blocked: affiliate has not completed compliance. T&C accepted: ' + (st.tc_accepted ? 'yes' : 'no') + '. ID status: ' + st.status + '. Please review their ID in Admin -> Affiliates.' });
+    }
     var rate = aff.payout_rate || AFFILIATE_PAYOUT_RATE;
     var nowIso = new Date().toISOString();
     var paidRefs = [];
