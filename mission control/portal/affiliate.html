@@ -326,6 +326,7 @@ tr:last-child td{border-bottom:none}
 <div class="tab" data-t="tools" onclick="go('tools')">Tools</div>
 <div class="tab" data-t="playbook" onclick="go('playbook')">Playbook</div>
 <div class="tab" data-t="refs" onclick="go('refs')">Referrals</div>
+<div class="tab" data-t="rewards" onclick="go('rewards')">Rewards 🎡</div>
 <div class="tab" data-t="payouts" onclick="go('payouts')">Payouts</div>
 </div>
 
@@ -477,6 +478,41 @@ tr:last-child td{border-bottom:none}
 <div class="step"><b>Builder / trades</b>Use the <b>Planning</b> script: approvals ready to spend, first quote gets the site visit.</div>
 <div class="step"><b>Cleaning / IT / facilities</b>Use the <b>Tenders</b> script: matched public contracts, far less competition.</div>
 <div class="step"><b>Not sure?</b>Use the <b>General</b> script and match them on the call. Every lead type uses the same 14-day code pitch, so you never need to memorise six different opens.</div>
+</div>
+</section>
+
+<!-- REWARDS WHEEL -->
+<section id="view-rewards" style="display:none">
+<div class="payout-card" style="background:linear-gradient(135deg,rgba(245,158,11,.12),rgba(234,88,12,.05));border-color:rgba(245,158,11,.35)">
+<div class="p-head"><div><div class="lbl">Reward wheel</div><div class="val" id="rw-tier" style="color:#f59e0b">Tier 1</div></div><div class="lbl" id="rw-pct">0 / 50</div></div>
+<div class="bar" style="border-color:rgba(245,158,11,.3)"><div class="fill" id="rw-bar" style="width:0%;background:linear-gradient(90deg,#f59e0b,#f97316)"></div></div>
+<div class="p-sub" id="rw-sub">Every 50 retained signups unlocks a spin with prizes up to £200. Retained = customers who reached their 2nd invoice and stayed.</div>
+</div>
+<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px">
+<div style="flex:1;min-width:300px;background:rgba(255,255,255,.045);border:1px solid #1e2030;border-radius:14px;padding:20px;text-align:center">
+<div style="position:relative;width:220px;height:220px;margin:0 auto">
+<canvas id="rw-canvas" width="220" height="220" style="width:220px;height:220px"></canvas>
+<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:12px;font-weight:800;color:#fff;background:rgba(0,0,0,.55);border-radius:50%;width:56px;height:56px;display:flex;align-items:center;justify-content:center;pointer-events:none">9amLeads</div>
+<div id="rw-pointer" style="position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-top:16px solid #f59e0b;pointer-events:none"></div>
+</div>
+<div style="margin-top:16px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+<button class="btn-mini" id="rw-spin-btn" onclick="spinWheel()" style="font-size:13px;padding:10px 22px;background:linear-gradient(135deg,#f59e0b,#f97316);color:#fff;border:none;border-radius:10px">🎡 Spin</button>
+</div>
+<div id="rw-result" style="margin-top:12px;font-size:15px;font-weight:800;color:#34d399;min-height:22px"></div>
+<div id="rw-odds" style="margin-top:8px;font-size:11px;color:#6b7280">Fair odds. Equal chance of each prize.</div>
+</div>
+<div style="flex:1;min-width:280px;background:rgba(255,255,255,.045);border:1px solid #1e2030;border-radius:14px;padding:20px">
+<h3 style="font-size:13px;font-weight:700;color:#f1f5f9;margin:0 0 12px">How the wheel works</h3>
+<ul style="font-size:12.5px;color:#c6cfdd;line-height:1.7;padding-left:18px;margin:0 0 14px">
+<li><b>Every 50 retained signups</b> = one spin.</li>
+<li>Retained = customers who paid their 2nd invoice and stayed (same as your £25 commission).</li>
+<li>Prizes are <b>paid straight to your balance</b> the moment you win.</li>
+<li>Tiers escalate: 50 → up to £200, 100 → up to £500, 200+ → up to £1000.</li>
+<li>Fair odds: each prize has an equal chance.</li>
+<li>If a counted customer refunds, their count is removed and any unclaimed spin is reset.</li>
+</ul>
+<div id="rw-history-wrap"></div>
+</div>
 </div>
 </section>
 
@@ -722,6 +758,7 @@ function init(){
     renderPayouts(d.payouts);
   }).catch(function(){});
   renderPb();
+  loadWheel();
   loadLeads();
   // Auto-refresh the dashboard every 90s so earnings/payout progress stay live.
   clearInterval(window._affRefresh);
@@ -875,6 +912,103 @@ function renderPayouts(p){
     p.forEach(function(p){h+='<tr><td>'+fmtDate(p.date)+'</td><td>'+p.referrals+'</td><td><b style="color:#34d399">£'+p.amount+'</b></td><td>'+badge(p.status||'paid')+'</td></tr>';});
     h+='</tbody></table>';w.innerHTML=h;
   }
+}
+/* ---- REWARD WHEEL ---- */
+var _wheel=null,_wheelSpinIdx=0,_wheelAnim=null;
+var WHEEL_COLORS=['#f59e0b','#0ea5e9','#f97316','#10b981'];
+function loadWheel(){
+  api('GET','/affiliate/wheel').then(function(d){
+    if(!d.success)return;
+    _wheel=d.wheel;
+    drawWheel(d.wheel.prizes||[50,100,150,200],0);
+    var pct=Math.round(((d.wheel.progress||0)/50)*100);
+    var t=d.wheel.tier||1;
+    document.getElementById('rw-tier').textContent='Tier '+(t>=3?'3+':t);
+    document.getElementById('rw-pct').textContent=(d.wheel.progress||0)+' / 50';
+    document.getElementById('rw-bar').style.width=pct+'%';
+    var btn=document.getElementById('rw-spin-btn');
+    var sub=document.getElementById('rw-sub');
+    if(d.wheel.can_spin){btn.disabled=false;btn.style.opacity='1';sub.innerHTML='<b style="color:#f59e0b">Spin ready!</b> You have '+(d.wheel.since_last_spin||50)+' retained signups.';}
+    else {btn.disabled=true;btn.style.opacity='.4';sub.textContent='Every 50 retained signups unlocks a spin. '+(50-(d.wheel.progress||0))+' more to go. Prizes up to £'+(d.wheel.prizes[d.wheel.prizes.length-1]||200)+'.';}
+    renderWheelHistory(d.history||[]);
+  }).catch(function(){});
+}
+function drawWheel(prizes,rotDeg){
+  var cv=document.getElementById('rw-canvas');
+  if(!cv)return;
+  var ctx=cv.getContext('2d');
+  var cx=110,cy=110,r=104;
+  var n=prizes.length,start=rotDeg*Math.PI/180;
+  ctx.clearRect(0,0,220,220);
+  for(var i=0;i<n;i++){
+    var a0=start+(i/n)*2*Math.PI;
+    var a1=start+((i+1)/n)*2*Math.PI;
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r,a0,a1);
+    ctx.closePath();
+    ctx.fillStyle=WHEEL_COLORS[i%WHEEL_COLORS.length];
+    ctx.fill();
+    ctx.strokeStyle='#0b0d14';ctx.lineWidth=2;ctx.stroke();
+    ctx.save();
+    ctx.translate(cx,cy);
+    ctx.rotate(a0+(a1-a0)/2);
+    ctx.textAlign='right';
+    ctx.fillStyle='#fff';ctx.font='bold 15px Inter,sans-serif';
+    ctx.fillText('£'+prizes[i],r-14,5);
+    ctx.restore();
+  }
+  // outer ring
+  ctx.beginPath();ctx.arc(cx,cy,r+4,0,2*Math.PI);ctx.strokeStyle='rgba(245,158,11,.6)';ctx.lineWidth=3;ctx.stroke();
+}
+function spinWheel(){
+  if(!_wheel||!_wheel.can_spin)return;
+  var btn=document.getElementById('rw-spin-btn');
+  btn.disabled=true;btn.textContent='Spinning...';
+  var prizes=_wheel.prizes;
+  var target=Math.floor(Math.random()*prizes.length);
+  var extraFull=Math.floor(Math.random()*5+5)*360;
+  var base=360-(target*(360/prizes.length));
+  var endDeg=base+extraFull;
+  var startDeg=0,startTime=Date.now(),dur=3200;
+  var res=document.getElementById('rw-result');res.textContent='';
+  function frame(){
+    var p=Math.min(1,(Date.now()-startTime)/dur);
+    var ease=1-Math.pow(1-p,3);
+    var cur=startDeg+endDeg*ease;
+    drawWheel(prizes,cur);
+    if(p<1){requestAnimationFrame(frame);}
+    else{
+      _wheelSpinIdx=target;
+      api('POST','/affiliate/wheel/spin',{}).then(function(d){
+        if(d.success){
+          res.textContent='🎉 You won £'+d.result.prize+'!';
+          _wheel=d.wheel;
+          drawWheel(d.wheel.prizes,cur%360);
+          document.getElementById('rw-spin-btn').textContent='🎡 Spin';
+          btn.disabled=true;btn.style.opacity='.4';
+          var pct=Math.round(((d.wheel.progress||0)/50)*100);
+          document.getElementById('rw-bar').style.width=pct+'%';
+          document.getElementById('rw-pct').textContent=(d.wheel.progress||0)+' / 50';
+          document.getElementById('rw-sub').textContent='Every 50 retained signups unlocks a spin. '+(50-(d.wheel.progress||0))+' more to go.';
+          loadWheel();
+        } else {
+          res.textContent='';
+          btn.disabled=true;btn.style.opacity='.4';btn.textContent='🎡 Spin';
+          alert(d.error||'Spin unavailable');
+        }
+      }).catch(function(){res.textContent='';btn.textContent='🎡 Spin';});
+    }
+  }
+  requestAnimationFrame(frame);
+}
+function renderWheelHistory(h){
+  var w=document.getElementById('rw-history-wrap');
+  if(!w)return;
+  if(!h||!h.length){w.innerHTML='<div class="muted">No spins yet. Hit 50 retained signups to unlock your first.</div>';return;}
+  var hh='<h3 style="font-size:13px;font-weight:700;color:#f1f5f9;margin:0 0 10px">Spin history</h3><table><thead><tr><th>Date</th><th>Tier</th><th>Prize</th></tr></thead><tbody>';
+  h.forEach(function(s){hh+='<tr><td>'+fmtDate(s.at)+'</td><td>Tier '+s.tier+'</td><td style="color:#34d399;font-weight:700">£'+s.prize+'</td></tr>';});
+  hh+='</tbody></table>';w.innerHTML=hh;
 }
 function copyPb(id){
   var el=document.getElementById(id);

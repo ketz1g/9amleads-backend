@@ -3272,8 +3272,106 @@ function runAffiliateAutoPayout() {
 function runAffiliateAutomation() {
   var r1 = processAffiliateNurture();
   var r2 = processAffiliateReactivation();
-  return { nurture: r1, reactivation: r2 };
+  // Wheel: clamp spins to retained count (clawback on refunds) + send unlock emails.
+  var dbc = getDb();
+  (dbc.affiliates || []).forEach(function(aff) { affiliateWheelClawback(dbc, aff); });
+  try { saveDb(); } catch(e) {}
+  var r3 = runAffiliateWheelUnlockEmails();
+  return { nurture: r1, reactivation: r2, wheel: r3 };
 }
+// ===== AFFILIATE REWARD WHEEL =====
+// Milestone spin wheel. Every 50 RETAINED paid signups (customers whose
+// commission has been APPROVED/PAID, i.e. survived the ~30 day clearance window)
+// earns the affiliate a spin with fair (equal) odds. Tiers escalate:
+//   50 paid -> [50,100,150,200]   100 paid -> [100,200,300,500]   200 paid -> [200,400,600,1000]
+// Each +50 beyond 200 re-uses the top tier. Prizes credit straight into the
+// affiliate's payout balance. A refund of a counted customer claws the count back.
+function wheelTierFor(milestone) {
+  var tier = Math.floor((milestone - 1) / 50) + 1;
+  if (tier >= 3) return 3;
+  return tier;
+}
+function wheelPrizes(tier) {
+  if (tier === 1) return [50, 100, 150, 200];
+  if (tier === 2) return [100, 200, 300, 500];
+  return [200, 400, 600, 1000];
+}
+function wheelMilestoneFor(tier) { return tier * 50; }
+function countAffiliateRetained(dbc, aff) {
+  if (!dbc || !dbc.partner_commissions) return 0;
+  var custs = dbc.customers || [];
+  return (dbc.partner_commissions || []).filter(function(cm) {
+    if (!(cm.partner_id === aff.id && cm.commission_type === 'one_off' && (cm.status === 'approved' || cm.status === 'paid'))) return false;
+    // Exclude refunded customers so a refund claws the retained count back.
+    var c2 = custs.find(function(c){ return c.id === cm.customer_id; });
+    if (c2 && customerRefunded(c2)) return false;
+    return true;
+  }).length;
+}
+function wheelState(dbc, aff) {
+  var retained = countAffiliateRetained(dbc, aff);
+  var spins = aff.wheel_spins || 0;
+  var milestonesDone = spins;
+  var since = Math.max(0, retained - (milestonesDone * 50));
+  var canSpin = since >= 50;
+  var tier = wheelTierFor(milestonesDone + 1);
+  return { retained: retained, spins: spins, progress: Math.min(since, 50), next_milestone: wheelMilestoneFor(Math.min(milestonesDone + 1, 9999)),
+    tier: tier, prizes: wheelPrizes(tier), can_spin: canSpin, since_last_spin: since };
+}
+function affiliateSpin(dbc, aff) {
+  var st = wheelState(dbc, aff);
+  if (!st.can_spin) return { error: 'Spin not available yet. ' + (50 - st.progress) + ' more retained signups needed.' };
+  var prizes = st.prizes;
+  var idx = Math.floor(Math.random() * prizes.length);
+  var prize = prizes[idx];
+  aff.wheel_spins = (aff.wheel_spins || 0) + 1;
+  aff.wheel_history = aff.wheel_history || [];
+  aff.wheel_history.push({ tier: st.tier, prize: prize, at: new Date().toISOString(), status: 'paid', note: 'Milestone ' + (aff.wheel_spins * 50) + ' retained' });
+  aff.payouts = aff.payouts || [];
+  aff.payouts.push({ id: uuidv4(), amount: prize, status: 'paid', date: new Date().toISOString(), method: 'wheel', reference: 'wheel-t' + st.tier, note: 'Reward wheel win' });
+  return { prize: prize, tier: st.tier, total_spins: aff.wheel_spins, balance_added: prize, next_milestone: wheelMilestoneFor(Math.min(aff.wheel_spins + 1, 9999)) };
+}
+function affiliateWheelClawback(dbc, aff) {
+  if (!aff) return;
+  var retained = countAffiliateRetained(dbc, aff);
+  var consumed = Math.floor(retained / 50);
+  if ((aff.wheel_spins || 0) > consumed) {
+    aff.wheel_spins = consumed;
+    aff.wheel_clawback_at = new Date().toISOString();
+    console.log('[WHEEL] Clawback for ' + aff.email + ': spins now ' + consumed + ' (retained ' + retained + ')');
+  }
+}
+function runAffiliateWheelUnlockEmails() {
+  try {
+    var dbc = getDb();
+    var sent = 0;
+    (dbc.affiliates || []).forEach(function(aff) {
+      if (!aff || aff.status !== 'active' || !aff.email) return;
+      var st = wheelState(dbc, aff);
+      var notified = aff.wheel_unlocked_sent || [];
+      if (st.can_spin && !notified.includes(String(aff.wheel_spins || 0))) {
+        var prizes = st.prizes.join(' / ');
+        try {
+          sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' },
+            'Your Wheel of Fortune is ready!',
+            '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto">' +
+            '<h1 style="font-family:Outfit,sans-serif;color:#f59e0b;margin:0 0 10px">Your Wheel of Fortune is ready!</h1>' +
+            '<p style="color:#ccc;line-height:1.7">Hi ' + escHtml(aff.name || 'there') + ',</p>' +
+            '<p style="color:#ccc;line-height:1.7">You have reached <strong style="color:#fff">' + st.retained + ' retained signups</strong> and unlocked a spin on the Wheel of Fortune.</p>' +
+            '<p style="color:#ccc;line-height:1.7">Prizes on this wheel: <strong style="color:#f59e0b">\u00a3' + prizes + '</strong>. Fair odds, paid out straight to your balance when you claim.</p>' +
+            '<p style="color:#ccc;line-height:1.7">Log in to your <a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">affiliate dashboard</a> and hit Spin!</p>' +
+            '<p style="color:#888;font-size:13px;margin-top:24px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>');
+          notified.push(String(aff.wheel_spins || 0));
+          aff.wheel_unlocked_sent = notified;
+          sent++;
+        } catch(e) {}
+      }
+    });
+    saveDb();
+    return { unlock_emails_sent: sent };
+  } catch(e) { return { unlock_emails_sent: 0, error: e.message }; }
+}
+
 
 // ===== PARTNER APPLICATION / JOIN =====
 app.post('/api/partner/apply', async (req, res) => {
@@ -4735,6 +4833,55 @@ app.get('/api/affiliate/dashboard', affiliateAuth, (req, res) => {
       payouts: payouts
     });
   } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/affiliate/wheel — the affiliate reward wheel state + spin history.
+app.get('/api/affiliate/wheel', affiliateAuth, (req, res) => {
+  try {
+    var dbc = getDb();
+    var st = wheelState(dbc, req.affiliate);
+    res.json({ success: true, wheel: st, history: (req.affiliate.wheel_history || []).slice().reverse() });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+// POST /api/affiliate/wheel/spin — spin the wheel (fair odds), credit the prize.
+app.post('/api/affiliate/wheel/spin', affiliateAuth, (req, res) => {
+  try {
+    var dbc = getDb();
+    var result = affiliateSpin(dbc, req.affiliate);
+    if (result.error) return res.status(400).json({ success: false, error: result.error });
+    saveDb();
+    res.json({ success: true, result: result, wheel: wheelState(dbc, req.affiliate) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+// POST /api/admin/affiliate/run-wheel-unlocks — send unlock emails now (admin test/trigger).
+app.post('/api/admin/affiliate/run-wheel-unlocks', adminAuth, (req, res) => {
+  try { res.json({ success: true, result: runAffiliateWheelUnlockEmails() }); }
+  catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== AFFILIATE REWARD WHEEL ROUTES =====
+// GET /api/affiliate/wheel — the affiliate reward wheel state + spin history.
+app.get('/api/affiliate/wheel', affiliateAuth, (req, res) => {
+  try {
+    var dbc = getDb();
+    var st = wheelState(dbc, req.affiliate);
+    res.json({ success: true, wheel: st, history: (req.affiliate.wheel_history || []).slice().reverse() });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+// POST /api/affiliate/wheel/spin — spin the wheel (fair odds), credit the prize.
+app.post('/api/affiliate/wheel/spin', affiliateAuth, (req, res) => {
+  try {
+    var dbc = getDb();
+    var result = affiliateSpin(dbc, req.affiliate);
+    if (result.error) return res.status(400).json({ success: false, error: result.error });
+    saveDb();
+    res.json({ success: true, result: result, wheel: wheelState(dbc, req.affiliate) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+// POST /api/admin/affiliate/run-wheel-unlocks — send unlock emails now (admin test/trigger).
+app.post('/api/admin/affiliate/run-wheel-unlocks', adminAuth, (req, res) => {
+  try { res.json({ success: true, result: runAffiliateWheelUnlockEmails() }); }
+  catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // GET /api/affiliate/resources — the affiliate sales toolkit (phone scripts, emails,
