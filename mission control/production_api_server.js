@@ -9379,9 +9379,31 @@ app.post('/api/admin/bulk-create-customers', adminAuth, (req, res) => {
         signup_ip: 'bulk-test',
         leads_per_day: dailyLimit,
         email_verified: 1,
-        verification_token: ''
+        verification_token: '',
+        affiliate_id: a.affiliate_id || '',
+        affiliate_code: String(a.affiliate_code || '').toUpperCase(),
+        affiliate_payout_status: a.affiliate_payout_status || 'referral_pending',
+        affiliate_trial_days: a.affiliate_trial_days || 14
       };
+      if (cust.affiliate_code) {
+        var _affRec = (db.affiliates || []).find(function(f) { return String(f.code || '').toUpperCase() === cust.affiliate_code; });
+        if (_affRec && !cust.affiliate_id) cust.affiliate_id = _affRec.id;
+      }
       db.customers.push(cust);
+      // Optional: seed a partner commission so the affiliate inbox shows a
+      // specific stage (pending / approved / paid). Used for demo data.
+      if (a.commission && cust.affiliate_id) {
+        if (!db.partner_commissions) db.partner_commissions = [];
+        var _affObj = (db.affiliates || []).find(function(f){ return f.id === cust.affiliate_id; });
+        var _amt = Number(a.commission.amount) || Number(_affObj && _affObj.commission_amount) || 25;
+        db.partner_commissions.push({
+          id: uuidv4(), partner_id: cust.affiliate_id, customer_id: cust.id,
+          period: 'ONEOFF', commission_type: 'one_off', commission_amount: _amt,
+          currency: 'GBP', status: a.commission.status || 'pending',
+          created_at: new Date().toISOString(),
+          commission_period: 'ONEOFF'
+        });
+      }
       created++;
     }
     saveDb();
