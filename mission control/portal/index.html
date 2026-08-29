@@ -1291,6 +1291,7 @@ function setHeroView(v) {
   window.addEventListener('load', function() { setTimeout(showFormByHash, 50); });
   var params = new URLSearchParams(window.location.search);
   var refParam = params.get('ref');
+  if (!refParam) { try { var m = (document.cookie || '').match(/(?:^|; )9am_aff=([^;]+)/); if (m) refParam = decodeURIComponent(m[1]); } catch(e) {} }
   if (refParam) {
     try {
       var affField = document.getElementById('s-affiliate');

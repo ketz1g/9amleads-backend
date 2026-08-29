@@ -1409,6 +1409,43 @@ var CURATED_POSTS = [
       ]}
     ]
   }
+  ,
+  {
+    slug: 'become-a-9amleads-affiliate-earn-25-per-signup',
+    title: 'Become a 9amLeads Affiliate: Earn £25 for Every Business You Refer',
+    description: 'Join the 9amLeads affiliate programme and earn £25 for every UK business that signs up with your code and pays their second invoice. Free to join, ready-made scripts included, and every referral gets 14 days free.',
+    category: 'general', product_name: 'Affiliate Programme', categoryLabel: 'Affiliate Programme',
+    keywords: ['9amleads affiliate', 'earn money referring businesses', 'business referral programme UK', 'affiliate leads programme', 'earn £25 per signup'],
+    date: '2026-08-28', read: 4,
+    heroImg: 'https://9amleads.com/blog/img/become-a-9amleads-affiliate-earn-25-per-signup.png',
+    ogImg: 'https://9amleads.com/blog/og/become-a-9amleads-affiliate-earn-25-per-signup.png',
+    ctaUrl: 'https://9amleads.com/affiliates',
+    ctaLabel: 'Join the affiliate programme free',
+    sections: [
+      { h: 'Refer businesses. Earn £25 each.', body: [
+        'If you work with UK businesses - removal firms, solicitors, builders, accountants, letting agents - you probably already recommend services to them. The 9amLeads affiliate programme turns that word-of-mouth into a paying referral stream.',
+        'Here is the whole deal in one line: every business that signs up with your code gets 14 days of free UK leads, and when they pay their second invoice you earn £25. No caps, no limits, no chasing. You refer, we pay.'
+      ]},
+      { h: 'How the £25 commission works', body: [
+        'The timing is designed to be fair for everyone. When a business you referred starts their 14-day free trial, no commission is earned yet. After the trial they pay their first invoice, and once they pay their second invoice (a sign they are getting real value) your £25 is triggered.',
+        'Your commission clears after the qualifying period and is paid out on the monthly cycle. Every sign-up is tracked live in your affiliate dashboard, so you always know exactly where you stand.'
+      ]},
+      { h: 'Why businesses convert through you', body: [
+        '9amLeads delivers fresh UK business leads - home movers, probate grants, new company registrations, planning approvals and public tenders - straight to a customer\'s inbox at 9am every morning. It is a product that pays for itself with one extra job.',
+        'Because your referrals get 14 days free instead of the standard 7, signing up through you is a genuinely better deal. That is what makes your recommendation powerful.'
+      ]},
+      { h: 'What you get in your affiliate dashboard', body: [
+        'Joining is free and takes under a minute. Once approved you get:',
+        { ul: ['A unique referral code and short link to share anywhere', 'Ready-made cold-call scripts, emails, SMS texts and social posts', 'A live dashboard tracking every sign-up, trial and commission', 'A conversion playbook that walks you through follow-ups step by step', 'A personal share link that remembers visitors with a cookie so no referral is lost'] }
+      ]},
+      { h: 'Three ways to start today', body: [
+        '1. Share your link with five businesses you already know. The 14-day free trial makes it an easy yes.',
+        '2. Post in a WhatsApp or Facebook group of local business owners. Use the ready-made post from your dashboard.',
+        '3. Follow up anyone who started a trial. The business that sees value reaches that second invoice - and that is your £25.',
+        'Start free at the affiliate page and get your code in under a minute.'
+      ]}
+    ]
+  }
 ];
 
 module.exports = { CURATED_POSTS: CURATED_POSTS, buildPostHTML: buildPostHTML };

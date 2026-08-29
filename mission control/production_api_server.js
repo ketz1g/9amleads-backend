@@ -2791,7 +2791,9 @@ function partnerConfig() {
       partners_open: true,
       attribution_first_click_wins: true,
       affiliate_commission_model: 'one_off',
-      retention_followup_days: 14
+      retention_followup_days: 14,
+      affiliate_min_payout: 50,
+      association_bonus_amount: 5
     };
   }
   // Backfill any keys added in newer versions so existing configs stay complete.
@@ -2801,7 +2803,7 @@ function partnerConfig() {
     commission_clearance_days: 30, commission_qualification_days: 30,
     sales_partner_commission_duration_months: null, affiliate_qualifying_payment_count: 1,
     partners_open: true, attribution_first_click_wins: true,
-    affiliate_commission_model: 'one_off', retention_followup_days: 14
+    affiliate_commission_model: 'one_off', retention_followup_days: 14, affiliate_min_payout: 50, association_bonus_amount: 5
   };
   for (var k in defaults) { if (dbc.partner_config[k] === undefined) dbc.partner_config[k] = defaults[k]; }
   return dbc.partner_config;
@@ -3056,6 +3058,141 @@ function runPartnerJobs() {
   var r3 = holdCommissionsForCancelled();
   console.log('[PARTNER] commission job: created=' + r1.created + ' approved=' + r2.approved + ' held=' + r3.held);
   return { created: r1.created, approved: r2.approved, held: r3.held };
+}
+
+// ===== AFFILIATE AUTOMATION =====
+// Nurture emails to new affiliates (days 3, 7, 14 after signup). Deduped via
+// the affiliate's 'nurture_sent' array so each is sent exactly once.
+function affiliateNurtureEmail(aff, day) {
+  var base = '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto">' +
+    '<h1 style="font-family:Outfit,sans-serif;color:#0ea5e9;margin:0 0 10px">' + (day === 3 ? 'Your affiliate kit is ready' : day === 7 ? 'Turn shares into sign-ups' : 'Keep your referrals converting') + '</h1>' +
+    '<p style="color:#ccc;line-height:1.7">Hi ' + escHtml(aff.name || 'there') + ',</p>';
+  var tips;
+  if (day === 3) {
+    tips = '<p style="color:#ccc;line-height:1.7">Your code is <strong style="color:#0ea5e9">' + escHtml(aff.code || '') + '</strong> and your share link is live in your dashboard. Here\'s what to do this week:</p>' +
+      '<ul style="color:#ccc;line-height:1.8">' +
+      '<li><b>Pick your audience</b> - removal firms, solicitors, builders, accountants. You know who they are.</li>' +
+      '<li><b>Send your link to 5 businesses today</b> - even 1 sign-up gets you on the board.</li>' +
+      '<li><b>Use the ready-made scripts</b> in your <a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">dashboard</a> - no writing needed.</li>' +
+      '</ul>';
+  } else if (day === 7) {
+    tips = '<p style="color:#ccc;line-height:1.7">Most affiliates who earn are the ones who follow up. Try these this week:</p>' +
+      '<ul style="color:#ccc;line-height:1.8">' +
+      '<li><b>Follow up your first shares</b> - "Did you get my message about the 14-day free trial?"</li>' +
+      '<li><b>Post once in a WhatsApp or Facebook group</b> of local business owners.</li>' +
+      '<li><b>Remind them it is free</b> - 14 days of real leads, no card needed, and you earn £25 once they pay their second invoice.</li>' +
+      '</ul>';
+  } else {
+    tips = '<p style="color:#ccc;line-height:1.7">Two weeks in - here\'s how to turn interest into payouts:</p>' +
+      '<ul style="color:#ccc;line-height:1.8">' +
+      '<li><b>Follow up anyone who started a trial</b> - help them see the value of the leads.</li>' +
+      '<li><b>Ask for referrals</b> - happy customers recommend other businesses.</li>' +
+      '<li><b>Your £25 per sign-up</b> lands after their second invoice. Check your <a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">dashboard</a> to track it live.</li>' +
+      '</ul>';
+  }
+  return base + tips + '<p style="color:#888;font-size:13px;margin-top:24px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>';
+}
+function processAffiliateNurture() {
+  try {
+    var sent = 0;
+    (getDb().affiliates || []).forEach(function(aff) {
+      if (!aff.email || aff.status !== 'active') return;
+      var created = aff.created_at ? new Date(aff.created_at) : null;
+      if (!created) return;
+      var ageDays = Math.floor((new Date() - created) / 86400000);
+      var sentArr = [];
+      try { sentArr = JSON.parse(aff.nurture_sent || '[]'); } catch(e) {}
+      [3, 7, 14].forEach(function(day) {
+        if (ageDays >= day && !sentArr.includes('d' + day)) {
+          try {
+            sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' }, '9amLeads Affiliate - ' + (day === 3 ? 'your kit is ready' : day === 7 ? 'keep your referrals converting' : '2 weeks in, keep the momentum'), affiliateNurtureEmail(aff, day));
+            sentArr.push('d' + day);
+          } catch(e) {}
+        }
+      });
+      if (JSON.stringify(sentArr) !== JSON.stringify((function(){ try { return JSON.parse(aff.nurture_sent || '[]'); } catch(e){ return []; } })())) {
+        aff.nurture_sent = JSON.stringify(sentArr);
+      }
+    });
+    saveDb();
+    return { nurture_sent: sent };
+  } catch(e) { return { nurture_sent: sent, error: e.message }; }
+}
+// Reactivation: email affiliates who have been active for 21+ days but have no
+// earnings and haven't logged in recently. Deduped via 'reactivation_sent'.
+function affiliateReactivationEmail(aff) {
+  return '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto">' +
+    '<h1 style="font-family:Outfit,sans-serif;color:#0ea5e9;margin:0 0 10px">Your code is still live</h1>' +
+    '<p style="color:#ccc;line-height:1.7">Hi ' + escHtml(aff.name || 'there') + ',</p>' +
+    '<p style="color:#ccc;line-height:1.7">Your affiliate code <strong style="color:#0ea5e9">' + escHtml(aff.code || '') + '</strong> is still active, but we haven\'t seen a sign-up from it yet. Here are 3 quick ways to get moving:</p>' +
+    '<ul style="color:#ccc;line-height:1.8">' +
+    '<li><b>Share your link with 3 businesses today</b> - the 14-day free trial makes it an easy yes.</li>' +
+    '<li><b>Use the ready-made WhatsApp/LinkedIn posts</b> in your dashboard. Copy, paste, done.</li>' +
+    '<li><b>Follow up anyone you have already told</b> - most sign-ups come from the second message.</li>' +
+    '</ul>' +
+    '<p style="color:#ccc;line-height:1.7">Every business that pays their second invoice earns you <strong style="color:#fff">£25</strong>.</p>' +
+    '<p style="color:#888;font-size:13px;margin-top:24px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>';
+}
+function processAffiliateReactivation() {
+  try {
+    var sent = 0;
+    (getDb().affiliates || []).forEach(function(aff) {
+      if (!aff.email || aff.status !== 'active') return;
+      var created = aff.created_at ? new Date(aff.created_at) : null;
+      if (!created) return;
+      var ageDays = Math.floor((new Date() - created) / 86400000);
+      if (ageDays < 21) return;
+      // Already earning? Skip.
+      var earns = (getDb().partner_commissions || []).some(function(cm){ return cm.partner_id === aff.id && cm.status !== 'pending'; }) ||
+                  (getDb().customers || []).some(function(c){ return c.affiliate_id === aff.id && String(c.affiliate_payout_status || '') === 'paid'; });
+      if (earns) return;
+      var lastLogin = aff.last_login_at ? new Date(aff.last_login_at) : null;
+      var loggedInRecently = lastLogin && (new Date() - lastLogin) < 14 * 86400000;
+      if (loggedInRecently) return;
+      var sentArr = [];
+      try { sentArr = JSON.parse(aff.reactivation_sent || '[]'); } catch(e) {}
+      if (sentArr.length) return; // only once per affiliate
+      try {
+        sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' }, '9amLeads Affiliate - your code is still live', affiliateReactivationEmail(aff));
+        aff.reactivation_sent = JSON.stringify(['sent']);
+        sent++;
+      } catch(e) {}
+    });
+    saveDb();
+    return { reactivation_sent: sent };
+  } catch(e) { return { reactivation_sent: sent, error: e.message }; }
+}
+// AUTO-PAYOUT: on the monthly cycle, mark APPROVED partner commissions as PAID
+// when the affiliate's total due meets the minimum threshold. Pays out to a
+// manual/transfer reference via the payout ledger (Stripe is used for the
+// customer side; affiliate payouts are settled by bank transfer monthly).
+function runAffiliateAutoPayout() {
+  try {
+    var dbc = getDb();
+    var cfg = partnerConfig();
+    var minPayout = Number(cfg.affiliate_min_payout || 50);
+    var paid = 0;
+    (dbc.affiliates || []).forEach(function(aff) {
+      if (!aff || aff.status !== 'active') return;
+      var dueComms = (dbc.partner_commissions || []).filter(function(cm) { return cm.partner_id === aff.id && cm.status === 'approved'; });
+      var dueTotal = dueComms.reduce(function(a, cm) { return a + Number(cm.commission_amount || 0); }, 0);
+      if (dueTotal < minPayout) return;
+      // Create a payout record + mark commissions paid.
+      var payout = { id: uuidv4(), affiliate_id: aff.id, amount: dueTotal, status: 'paid', date: new Date().toISOString(), method: 'bank_transfer', reference: 'auto-payout', note: 'Monthly auto-payout' };
+      aff.payouts = aff.payouts || [];
+      aff.payouts.push(payout);
+      dueComms.forEach(function(cm) { cm.status = 'paid'; cm.paid_at = new Date().toISOString(); cm.payout_id = payout.id; });
+      paid += dueComms.length;
+    });
+    saveDb();
+    return { commissions_paid: paid };
+  } catch(e) { return { commissions_paid: paid, error: e.message }; }
+}
+// Wire affiliate automation into the daily partner job (runs post-delivery).
+function runAffiliateAutomation() {
+  var r1 = processAffiliateNurture();
+  var r2 = processAffiliateReactivation();
+  return { nurture: r1, reactivation: r2 };
 }
 
 // ===== PARTNER APPLICATION / JOIN =====
@@ -3326,6 +3463,16 @@ app.post('/api/admin/partner/run-commissions', adminAuth, (req, res) => {
   res.json({ success: true, result: r });
 });
 
+// Admin test/trigger endpoints for affiliate automation (nurture, reactivation, auto-payout).
+app.post('/api/admin/affiliate/run-automation', adminAuth, (req, res) => {
+  try { res.json({ success: true, result: runAffiliateAutomation() }); }
+  catch(e) { res.status(500).json({ error: e.message }); }
+});
+app.post('/api/admin/affiliate/run-auto-payout', adminAuth, (req, res) => {
+  try { res.json({ success: true, result: runAffiliateAutoPayout() }); }
+  catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== PAYOUTS (admin; tracking only - no automatic money movement) =====
 app.get('/api/admin/partner/commissions', adminAuth, (req, res) => {
   try {
@@ -3497,7 +3644,7 @@ app.get('/api/admin/partner/config', adminAuth, (req, res) => { try { res.json({
 app.post('/api/admin/partner/config', adminAuth, (req, res) => {
   try {
     var cfg = partnerConfig();
-    var allowed = ['affiliate_one_off_amount','sales_partner_monthly_amount','affiliate_trial_days','sales_partner_trial_days','standard_trial_days','attribution_window_days','commission_clearance_days','commission_qualification_days','sales_partner_commission_duration_months','affiliate_qualifying_payment_count','partners_open','attribution_first_click_wins','affiliate_commission_model','retention_followup_days'];
+    var allowed = ['affiliate_one_off_amount','sales_partner_monthly_amount','affiliate_trial_days','sales_partner_trial_days','standard_trial_days','attribution_window_days','commission_clearance_days','commission_qualification_days','sales_partner_commission_duration_months','affiliate_qualifying_payment_count','partners_open','attribution_first_click_wins','affiliate_commission_model','retention_followup_days','affiliate_min_payout','association_bonus_amount'];
     var prev = JSON.stringify(cfg);
     allowed.forEach(function(k) { if (req.body[k] !== undefined) cfg[k] = req.body[k]; });
     saveDb();
@@ -3505,6 +3652,42 @@ app.post('/api/admin/partner/config', adminAuth, (req, res) => {
     res.json({ success: true, config: cfg });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+// Cookie-attribution short link: /r/:code sets a 30-day referral cookie and
+// sends the visitor to the signup page with their code pre-filled. Works even
+// if the visitor signs up days later from a different device or tab.
+app.get('/r/:code', (req, res) => {
+  try {
+    var code = String(req.params.code || '').substring(0, 40).toUpperCase();
+    var p = partnerByCode(code) || (getDb().affiliates || []).find(function(a){ return String(a.code || '').toLowerCase() === code.toLowerCase() && partnerStatusActive(a); });
+    var ckCode = (p && p.code) ? p.code : code;
+    var maxAge = 30 * 86400;
+    res.setHeader('Set-Cookie', '9am_aff=' + encodeURIComponent(ckCode) + '; Max-Age=' + maxAge + '; Path=/; SameSite=Lax');
+    if (p) trackAnalytics('partner_ref_click', { code: ckCode, src: 'shortlink', _uid: '' });
+    var dest = PUBLIC_URL + '/portal/?ref=' + encodeURIComponent(ckCode) + '#signup';
+    return res.redirect(302, dest);
+  } catch(e) { return res.redirect(302, PUBLIC_URL + '/portal/#signup'); }
+});
+
+// Admin: set an affiliate's association (e.g. a trade body). Association partners
+// get a bonus on top of the base commission (base 25 + bonus 5 = 30).
+app.post('/api/admin/affiliates/:id/association', adminAuth, (req, res) => {
+  try {
+    var dbc = getDb();
+    var id = String(req.params.id || '');
+    var aff = (dbc.affiliates || []).find(function(a){ return a.id === id; });
+    if (!aff) return res.status(404).json({ error: 'Affiliate not found' });
+    var assoc = String(req.body.association || '').trim().substring(0, 60);
+    var cfg = partnerConfig();
+    var base = Number(cfg.affiliate_one_off_amount) || 25;
+    var bonus = Number(cfg.association_bonus_amount) || 5;
+    aff.association = assoc;
+    aff.commission_amount = assoc ? (base + bonus) : null;
+    saveDb();
+    partnerAudit('affiliate_association_set', { affiliate_id: aff.id, association: assoc, commission_amount: aff.commission_amount, admin: (req.user && req.user.email) || 'admin' });
+    res.json({ success: true, affiliate: { id: aff.id, name: aff.name, association: aff.association, commission_amount: aff.commission_amount } });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // Partner acquisition source in the existing analytics (signup_completed already logs product/plan; add source)
 // Referral click tracking (public): fired when a visitor hits a partner referral link
 app.post('/api/partner/click', async (req, res) => {
@@ -4238,7 +4421,7 @@ app.post('/api/affiliate/register', async (req, res) => {
     var code2 = String(code || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '') || (String(name).replace(/[^A-Za-z]/g, '').toUpperCase().slice(0, 8));
     if (affs.some(function(a) { return String(a.code || '').toLowerCase() === String(code2).toLowerCase(); })) return res.status(409).json({ error: 'That affiliate code is already taken. Pick another.' });
     var passwordHash = await bcrypt.hash(password, 10);
-    var aff = { id: uuidv4(), name: String(name).trim(), email: em, code: code2, password_hash: passwordHash, payout_rate: AFFILIATE_PAYOUT_RATE, status: AFFILIATE_AUTO_ACTIVATE ? 'active' : 'pending', created_at: new Date().toISOString(), payouts: [] };
+    var aff = { id: uuidv4(), name: String(name).trim(), email: em, code: code2, password_hash: passwordHash, payout_rate: AFFILIATE_PAYOUT_RATE, status: AFFILIATE_AUTO_ACTIVATE ? 'active' : 'pending', created_at: new Date().toISOString(), payouts: [], association: String(req.body.association || '').trim().substring(0, 60) || '' };
     affs.push(aff);
     saveDb();
     // Confirmation email to the affiliate (so they know their application arrived).
@@ -4277,6 +4460,8 @@ app.post('/api/affiliate/login', async (req, res) => {
     if (!ok) return res.status(401).json({ error: 'Invalid email or password' });
     if (aff.status === 'pending') return res.status(403).json({ error: 'Your affiliate account is awaiting activation. Please check back shortly.', pending: true });
     if (aff.status === 'paused') return res.status(403).json({ error: 'Your affiliate account is currently paused. Contact hello@9amleads.com.', paused: true });
+    aff.last_login_at = new Date().toISOString();
+    try { saveDb(); } catch(e) {}
     res.json({ token: affiliateToken(aff), affiliate: { id: aff.id, name: aff.name, code: aff.code, email: aff.email } });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -11084,6 +11269,8 @@ cron.schedule('0 9 * * 1-5', async () => {
     // POST-DELIVERY JOBS (no longer delay the 9am emails):
     try { var _pj = runPartnerJobs(); console.log('[PARTNER] commission job:', JSON.stringify(_pj)); } catch(pjErr) { console.log('[PARTNER] commission job error:', pjErr.message); }
     try { var _affPaid = processAffiliatePayouts(); if (_affPaid) console.log('[AFFILIATE] ' + _affPaid + ' payout(s) became due'); } catch(ape) { console.log('[AFFILIATE] Payout check error:', ape.message); }
+    try { var _affAuto = runAffiliateAutomation(); console.log('[AFFILIATE] nurture/reactivation job:', JSON.stringify(_affAuto)); } catch(aae) { console.log('[AFFILIATE] automation error:', aae.message); }
+    try { var _affPay = runAffiliateAutoPayout(); if (_affPay && _affPay.commissions_paid) console.log('[AFFILIATE] auto-payout paid ' + _affPay.commissions_paid + ' commission(s)'); } catch(apy) { console.log('[AFFILIATE] auto-payout error:', apy.message); }
     try { var _capRev = revertExpiredCapOverrides(); if (_capRev) console.log('[CAP-OVERRIDE] reverted ' + _capRev + ' expired cap override(s)'); } catch(crE) { console.log('[CAP-OVERRIDE] revert error:', crE.message); }
   } catch(e) { console.log('[09:00 UK] Delivery error:', e.message); }
 }, {

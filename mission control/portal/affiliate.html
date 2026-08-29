@@ -429,7 +429,7 @@ function fmtDate(iso){if(!iso)return '-';try{return new Date(iso).toLocaleDateSt
 function copyText(txt,btn){var b=btn||document.querySelector('.code button');navigator.clipboard.writeText(txt).then(function(){var o=b.textContent;b.textContent='Copied!';setTimeout(function(){b.textContent=o;},1300);});}
 function copyCode(){copyText(document.getElementById('a-code').textContent);}
 var shareUrl='';
-function setLink(code){shareUrl='https://9amleads.com/portal/?ref='+encodeURIComponent(code)+'#signup';var el=document.getElementById('a-link');if(el)el.textContent=shareUrl;}
+function setLink(code){shareUrl='https://9amleads.com/r/'+encodeURIComponent(code);var el=document.getElementById('a-link');if(el)el.textContent=shareUrl;}
 function copyLink(){copyText(shareUrl,document.querySelectorAll('.code button')[1]);}
 function share(ch){
   var u=encodeURIComponent(shareUrl),t=encodeURIComponent('Get 14 days of FREE UK business leads delivered every morning at 9am with my code \u2014 try 9amLeads!');
