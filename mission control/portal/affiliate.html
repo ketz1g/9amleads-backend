@@ -220,6 +220,8 @@ tr:last-child td{border-bottom:none}
 .pb-ck .pb-btn{font-size:10.5px;color:#0ea5e9;background:rgba(14,165,233,.12);border:1px solid rgba(14,165,233,.3);border-radius:6px;padding:4px 9px;font-weight:700;cursor:pointer}
 .pb-ck .pb-btn:hover{background:rgba(14,165,233,.24)}
 .pb-tpl{background:#0b0d14;border:1px solid #1e2030;border-radius:10px;padding:11px 13px;margin-bottom:8px;font-size:12px;color:#c6cfdd;line-height:1.6;white-space:pre-wrap}
+/* lead notes */
+.lead-note{background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.25);border-radius:8px;padding:8px 10px;margin-top:8px;font-size:12px;color:#fbbf24;line-height:1.5}
 </style>
 </head>
 <body>
@@ -457,6 +459,24 @@ tr:last-child td{border-bottom:none}
 <div class="step"><b>Call, don't just text</b>Calls convert far better than texts or emails. Use the phone scripts in <b>Tools</b>. They're written to get the trial started.</div>
 <div class="step"><b>Best times to call businesses</b>Mid-morning (10-11am) and mid-afternoon (2-4pm), Tuesday to Thursday. Avoid Monday mornings and Friday afternoons.</div>
 <div class="step"><b>Use the toolkit end-to-end</b>Phone script → email → SMS → follow-up plan. One tool alone works; the full sequence converts.</div>
+</div>
+<div class="tool-sec">
+<h3>6. The value message. Say these words</h3>
+<div class="step"><b>The double-trial pitch</b>"Normally we only offer a 7-day free trial, but with my code you get 14 days free, no card required, cancel anytime." This is your single strongest line. Say it early, say it twice.</div>
+<div class="step"><b>The no-brainer line</b>"It's free leads, free customers and free profits. Sign up now, it's a no-brainer." Use this after you've given the 14-day pitch to make the decision feel obvious.</div>
+<div class="step"><b>The proof line</b>"We have proof of every lead. Each one comes with the full contact details, so you know it's a real lead, not a guess." This removes the "are these real?" objection before it's asked.</div>
+<div class="step"><b>The exclusivity line</b>"You get your own daily allocation. Nobody else gets your leads, and you're never sent the same lead twice." Frame it as a private allocation, not a shared feed.</div>
+<div class="step"><b>The Print & Post line</b>"We even offer auto Print & Post. We send your leaflet or letter out for you, and you track it live. You just open your leads and make the calls." This adds a service layer competitors don't have.</div>
+<div class="step"><b>Objection round-up</b>Price → "14 days free, then from £25 a week. One extra customer covers it." Busy → "Five minutes each morning. Open leads at 9am, call the strongest two." Referrals → "This is extra, on top, and it's free. Nothing to lose."</div>
+</div>
+<div class="tool-sec">
+<h3>7. Match every lead to the right script</h3>
+<div class="step"><b>Removal company</b>Use the <b>Moving</b> script in Tools: fresh under-offer homes, first call usually wins the move.</div>
+<div class="step"><b>Solicitor / estate admin</b>Use the <b>Probate</b> script: grants from the official register, first contact wins the file.</div>
+<div class="step"><b>Accountant / business services</b>Use the <b>New Business</b> script: fresh registrations, first contact wins the onboarding.</div>
+<div class="step"><b>Builder / trades</b>Use the <b>Planning</b> script: approvals ready to spend, first quote gets the site visit.</div>
+<div class="step"><b>Cleaning / IT / facilities</b>Use the <b>Tenders</b> script: matched public contracts, far less competition.</div>
+<div class="step"><b>Not sure?</b>Use the <b>General</b> script and match them on the call. Every lead type uses the same 14-day code pitch, so you never need to memorise six different opens.</div>
 </div>
 </section>
 
@@ -736,8 +756,9 @@ function loadLeads(){
     LEADS.forEach(function(r){
       var pendRms=(r.reminders||[]).filter(function(x){return !x.done;}).length;
       h+='<div class="lead"><div class="ico">'+(EMOJI[r.product]||'📈')+'</div><div class="main"><div class="co">'+esc(r.company||r.email)+'</div><div class="em">'+esc(r.email)+(r.phone?', '+esc(r.phone):'')+'</div>'+
-      '<div class="meta"><span>'+esc(r.product)+'</span>'+(r.plan?'<span>'+esc(r.plan)+'</span>':'')+(r.manual?'<span style="color:#38bdf8">my lead</span>':'<span>'+r.days_since+'d ago</span>')+(r.card_saved?'<span style="color:#34d399">💳 card saved</span>':'')+(pendRms?'<span style="color:#fbbf24">⏰ '+pendRms+' reminder'+(pendRms>1?'s':'')+'</span>':'')+'</div></div>'+
-      '<div class="act">'+stageBadge(r.stage)+(r.manual?'<button class="btn-mini" onclick="openLeadModal(\''+esc(r.id)+'\')">View</button>':'<button class="btn-mini" onclick="openLeadModal(\''+esc(r.id)+'\')">View</button>')+'<button class="btn-mini" onclick="openTools(\''+esc(r.product)+'\')">Tools</button></div></div>';
+      '<div class="meta"><span>'+esc(r.product)+'</span>'+(r.plan?'<span>'+esc(r.plan)+'</span>':'')+(r.manual?'<span style="color:#38bdf8">my lead</span>':'<span>'+r.days_since+'d ago</span>')+(r.card_saved?'<span style="color:#34d399">💳 card saved</span>':'')+(pendRms?'<span style="color:#fbbf24">⏰ '+pendRms+' reminder'+(pendRms>1?'s':'')+'</span>':'')+'</div>'+
+      (r.notes?'<div class="lead-note" id="note-'+esc(r.id)+'">📝 '+esc(r.notes)+'</div>':'')+'</div>'+
+      '<div class="act">'+stageBadge(r.stage)+'<button class="btn-mini" onclick="quickNote(\''+esc(r.id)+'\')" title="Add or edit a note">📝 Note</button><button class="btn-mini" onclick="openLeadModal(\''+esc(r.id)+'\')">View</button><button class="btn-mini" onclick="openTools(\''+esc(r.product)+'\')">Tools</button></div></div>';
     });
     w.innerHTML=h;
   }).catch(function(){});
@@ -947,6 +968,18 @@ function addLead(){
   api('POST','/affiliate/leads',{company:company,email:email,phone:phone,lead_type:type,notes:notes}).then(function(d){
     if(d.success){document.getElementById('nl-company').value='';document.getElementById('nl-email').value='';document.getElementById('nl-phone').value='';document.getElementById('nl-notes').value='';toggleAddLead();loadLeads();}
     else alert(d.error||'Could not add lead');
+  });
+}
+function quickNote(id){
+  var lead=(LEADS||[]).find(function(l){return String(l.id)===String(id);});
+  if(!lead)return;
+  var cur=lead.notes||'';
+  var next=prompt('Add or edit a note for this lead:',cur);
+  if(next===null)return;
+  next=next.trim();
+  api('PUT','/affiliate/leads/'+encodeURIComponent(id),{notes:next}).then(function(d){
+    if(d.success){lead.notes=next;renderLeads();}
+    else alert(d.error||'Could not save note');
   });
 }
 function openLeadModal(id){

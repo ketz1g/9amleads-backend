@@ -4774,6 +4774,7 @@ app.get('/api/affiliate/leads', affiliateAuth, (req, res) => {
         signed_up: c.created_at, days_since: days, trial_days: c.affiliate_trial_days || 14,
         card_saved: !!(c.stripe_payment_method_id), status: st, stage: stage, earned: earned,
         lead_status: (ex && ex.status) || 'new', manual: false, source: 'referral',
+        notes: (ex && ex.notes) || '',
         comments: (ex && ex.comments) || [], reminders: (ex && ex.reminders) || [],
         extra_id: ex ? ex.id : null
       };
