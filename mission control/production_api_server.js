@@ -22553,7 +22553,10 @@ app.get('/api/admin/blog/posts', adminAuth, function(req, res) {
     var dbData = getDb();
     var posts = (dbData.blog_posts || []).filter(function(p) { return p.published; });
     var templatesTotal = blogTemplateCount();
-    res.json({ posts: posts, total: posts.length, templates_total: templatesTotal, templates_used: posts.length });
+    var allCount = (dbData.blog_posts || []).length;
+    var queuedCount = (dbData.blog_posts || []).filter(function(p) { return p.published === false && p.publish_at; }).length;
+    var queued = (dbData.blog_posts || []).filter(function(p) { return p.published === false && p.publish_at; }).slice(0, 30).map(function(q) { return { title: q.title, slug: q.slug, publish_at: q.publish_at, generated_by: q.generated_by || 'template' }; });
+    res.json({ posts: posts, total: posts.length, templates_total: templatesTotal, templates_used: posts.length, queued_count: queuedCount, total_all: allCount, queued: queued });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
