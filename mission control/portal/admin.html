@@ -591,13 +591,15 @@ function loadAffiliates() {
     .then(function(d) {
       if (!d.success || !d.affiliates) { wrap.innerHTML = '<div class="empty">Could not load affiliates.</div>'; return; }
       if (!d.affiliates.length) { wrap.innerHTML = '<div class="empty">No affiliates yet. Click "Add Affiliate" to create one.</div>'; return; }
-      var h = '<table><thead><tr><th>Affiliate</th><th>Code</th><th>Status</th><th>Association</th><th>Rate</th><th>Referrals</th><th>Pending</th><th>Ready to pay</th><th>Paid</th><th>Actions</th></tr></thead><tbody>';
+      var h = '<table><thead><tr><th>Affiliate</th><th>Code</th><th>Status</th><th>Application</th><th>Association</th><th>Rate</th><th>Referrals</th><th>Pending</th><th>Ready to pay</th><th>Paid</th><th>Actions</th></tr></thead><tbody>';
       d.affiliates.forEach(function(a) {
-        var st = a.status === 'pending' ? '<span class="badge badge-warn">Pending</span>' : a.status === 'paused' ? '<span class="badge">Paused</span>' : '<span class="badge badge-ok">Active</span>';
+        var st = a.status === 'pending' ? '<span class="badge badge-warn">Pending</span>' : a.status === 'rejected' ? '<span class="badge" style="background:#fef2f2;color:#ef4444">Rejected</span>' : a.status === 'paused' ? '<span class="badge">Paused</span>' : '<span class="badge badge-ok">Active</span>';
+        var appCell = a.application ? '<button class="btn btn-outline btn-sm" onclick="reviewApplication(\'' + a.id + '\')">' + (a.status === 'pending' ? 'Review' : 'View') + '</button>' : '<span style="font-size:11px;color:#94a3b8">-</span>';
         var assoc = a.association || '-';
         var rate = (a.commission_amount || 25);
         h += '<tr><td><b>' + esc(a.name) + '</b><div style="font-size:11px;color:#64748b">' + esc(a.email) + '</div></td>' +
           '<td><code>' + esc(a.code) + '</code></td><td>' + st + '</td>' +
+          '<td>' + appCell + '</td>' +
           '<td>' + esc(assoc) + ' <button class="btn btn-outline btn-sm" style="margin-left:2px" onclick="setAffAssociation(\'' + a.id + '\',\'' + esc(a.association || '') + '\')" title="Set a trade association"><i class="fas fa-tag"></i></button></td>' +
           '<td style="font-weight:600">£' + rate + '</td>' +
           '<td>' + a.counts.referrals + '</td><td>£' + a.earnings_pending + ' (' + a.counts.pending + ')</td>' +
@@ -647,6 +649,57 @@ function setAffAssociation(id, current) {
   fetch(API + '/api/admin/affiliates/' + id + '/association', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: JSON.stringify({ association: assoc }) })
     .then(function(r) { return r.json(); })
     .then(function(d) { if (d.success) { alert('Association set for ' + d.affiliate.name + '. Rate: £' + d.affiliate.commission_amount); loadAffiliates(); } else alert(d.error || 'Could not set association'); })
+    .catch(function(e) { alert('Error: ' + e.message); });
+}
+function reviewApplication(id) {
+  fetch(API + '/api/admin/affiliates?t=' + Date.now(), { headers: adminHeaders() })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var a = (d.affiliates || []).find(function(x) { return x.id === id; });
+      if (!a) { alert('Affiliate not found'); return; }
+      var app = a.application || {};
+      var s = app.survey || {};
+      function q(n, v) { return '<div style="font-size:12px;margin-bottom:8px"><div style="color:#475569;font-weight:600">' + n + '</div><div style="color:#0f172a;margin-top:2px">' + pEsc(v || '-') + '</div></div>'; }
+      var score = app.score || { total: 0, pass: false, fail_reasons: [] };
+      var scoreHtml = '<div style="display:flex;align-items:center;gap:10px;background:' + (score.pass ? '#f0fdf4' : '#fffbeb') + ';border:1px solid ' + (score.pass ? '#bbf7d0' : '#fde68a') + ';border-radius:10px;padding:10px 14px;margin-bottom:14px">' +
+        '<div style="font-size:26px;font-weight:800;color:' + (score.pass ? '#16a34a' : '#d97706') + '">' + (score.total || 0) + '</div>' +
+        '<div style="font-size:12px;color:#334155"><b>Application score</b><br>' + (score.pass ? 'Auto-suggested: PASS' : 'Auto-suggested: REVIEW') + (score.fail_reasons && score.fail_reasons.length ? ' · Flags: ' + score.fail_reasons.join(', ') : '') + '</div></div>';
+      var voiceHtml = app.voice && app.voice.audio
+        ? '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin-bottom:14px"><div style="font-size:12px;font-weight:700;color:#334155;margin-bottom:6px">🎙️ Voice test</div><audio controls style="width:100%" src="data:audio/webm;base64,' + pEsc(app.voice.audio) + '"></audio><div style="font-size:11px;color:#64748b;margin-top:4px">Recorded ' + pEsc(app.voice.recorded_at || '') + '</div></div>'
+        : '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin-bottom:14px;color:#64748b;font-size:12px">No voice recording submitted.</div>';
+      var content = scoreHtml + voiceHtml +
+        '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;max-height:340px;overflow-y:auto;margin-bottom:14px">' +
+        q('1. Willing to find own customers?', s.q1) +
+        q('2. Willing to use own phone?', s.q2) +
+        q('3. Open a dedicated email account?', s.q3) +
+        q('4. Hours per week', s.q4) +
+        q('5. Days and hours', s.q5) +
+        q('6. Happy being paid 1 month after signup?', s.q6) +
+        q('7. Follow up during trial?', s.q7) +
+        q('8. Reply to "we already get enough work from referrals"', s.q8) +
+        q('9. Explain the £25 commission to a friend', s.q9) +
+        q('10. Comfortable calling businesses?', s.q10) +
+        q('11. Trial customer stops replying — what do you do?', s.q11) +
+        q('12. Referred businesses before?', s.q12) +
+        q('13. Questions for us', s.q13) +
+        (app.review_note ? '<div style="font-size:12px;color:#16a34a;margin-top:8px"><b>Review note:</b> ' + pEsc(app.review_note) + '</div>' : '') +
+        '</div>' +
+        '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input id="rv-note" placeholder="Optional note to email them" style="flex:1;min-width:160px;padding:9px 11px;border:1px solid #cbd5e1;border-radius:8px;font-size:12px">' +
+        '<button class="btn btn-primary btn-sm" onclick="decideApplication(\'' + id + '\',\'approve\')">✓ Approve</button>' +
+        '<button class="btn btn-sm" style="background:#ef4444;color:#fff" onclick="decideApplication(\'' + id + '\',\'reject\')">✗ Reject</button></div>';
+      showModal('Application Review · ' + pEsc(a.name), content, 680);
+    })
+    .catch(function(e) { alert('Error: ' + e.message); });
+}
+function decideApplication(id, decision) {
+  var note = (document.getElementById('rv-note') || {}).value || '';
+  if (decision === 'reject' && !confirm('Reject this application? The affiliate will be emailed and cannot sign in.')) return;
+  fetch(API + '/api/admin/affiliates/' + id + '/review', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: JSON.stringify({ decision: decision, note: note }) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) { alert(decision === 'approve' ? 'Approved! ' + d.affiliate.name + ' can now sign in.' : 'Application rejected.'); document.getElementById('adminModalOverlay').style.display = 'none'; loadAffiliates(); }
+      else alert(d.error || 'Could not process review');
+    })
     .catch(function(e) { alert('Error: ' + e.message); });
 }
 function runAffAutoPayout() {

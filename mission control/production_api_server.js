@@ -2445,11 +2445,91 @@ function moduleWithTimeout(promise, ms, label) {
 var AFFILIATE_PAYOUT_RATE = 25;
 // New affiliate sign-ups are activated immediately (true) so they can log in right
 // away. Set AFFILIATE_AUTO_ACTIVATE=false in env to require manual admin approval.
-var AFFILIATE_AUTO_ACTIVATE = process.env.AFFILIATE_AUTO_ACTIVATE !== 'false';
+var AFFILIATE_AUTO_ACTIVATE = process.env.AFFILIATE_AUTO_ACTIVATE === 'true';
 
 function escHtml(s) {
   return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// Score an affiliate application from the onboarding survey.
+// Returns { total, pass, fail_reasons, breakdown }.
+function scoreAffiliateApplication(survey) {
+  var s = survey || {};
+  var reasons = [];
+  var total = 0;
+  var reasonsBreakdown = {};
+  function add(k, v) { total += v; reasonsBreakdown[k] = v; }
+
+  // Q1 find your own customers (Yes=strong)
+  var q1 = String(s.q1 || '').toLowerCase();
+  if (q1 === 'yes') add('q1', 10);
+  else if (q1 === 'unsure') add('q1', 3);
+  else if (q1 === 'no') { add('q1', 0); reasons.push('Not willing to find their own customers'); }
+
+  // Q2 use own phone
+  var q2 = String(s.q2 || '').toLowerCase();
+  if (q2 === 'yes') add('q2', 8);
+  else if (q2 === 'prefer text-only') add('q2', 3);
+  else add('q2', 0);
+
+  // Q3 dedicated email
+  var q3 = String(s.q3 || '').toLowerCase();
+  if (q3 === 'yes') add('q3', 5);
+  else add('q3', 0);
+
+  // Q4 hours per week
+  var q4 = String(s.q4 || '');
+  if (/10+/.test(q4)) add('q4', 10);
+  else if (/5-10/.test(q4)) add('q4', 8);
+  else if (/2-5/.test(q4)) add('q4', 4);
+  else add('q4', 1);
+
+  // Q5 days/hours - require non-empty meaningful text
+  var q5 = String(s.q5 || '').trim();
+  if (q5.length >= 6) add('q5', 4); else add('q5', 0);
+
+  // Q6 paid 1 month later
+  var q6 = String(s.q6 || '').toLowerCase();
+  if (q6 === 'yes') add('q6', 10);
+  else if (q6 === 'unsure') add('q6', 2);
+  else { add('q6', 0); reasons.push('Not happy being paid 1 month after signup'); }
+
+  // Q7 follow up during trial
+  var q7 = String(s.q7 || '').toLowerCase();
+  if (q7 === 'yes') add('q7', 6);
+  else add('q7', 0);
+
+  // Q8 objection response (free text) - length + keywords
+  var q8 = String(s.q8 || '').toLowerCase();
+  if (q8.length >= 20) { add('q8', 6); if (/trial|free|extra|on top|referral|renew/.test(q8)) add('q8b', 4); }
+  else add('q8', 1);
+
+  // Q9 pitch commission (free text)
+  var q9 = String(s.q9 || '').toLowerCase();
+  if (q9.length >= 20) { add('q9', 6); if (/\u00a325|25|sign|refer|invoice|month/.test(q9)) add('q9b', 4); }
+  else add('q9', 1);
+
+  // Q10 comfortable calling
+  var q10 = String(s.q10 || '').toLowerCase();
+  if (q10 === 'yes') add('q10', 8);
+  else if (q10 === 'nervous but willing') add('q10', 4);
+  else add('q10', 0);
+
+  // Q11 trial customer stops replying (free text)
+  var q11 = String(s.q11 || '').toLowerCase();
+  if (q11.length >= 20) { add('q11', 6); if (/follow|call|email|message|check|ask/.test(q11)) add('q11b', 3); }
+  else add('q11', 1);
+
+  // Q12 referred before
+  var q12 = String(s.q12 || '').toLowerCase();
+  if (q12 === 'yes') add('q12', 6);
+  else if (q12 === 'not yet') add('q12', 2);
+  else add('q12', 0);
+
+  var pass = total >= 55 && reasons.length === 0;
+  return { total: total, pass: pass, fail_reasons: reasons, breakdown: reasonsBreakdown, max: 100 };
 }
+
 
 function resolveAffiliate(codeOrName) {
   var q = String(codeOrName || '').trim();
@@ -3670,6 +3750,46 @@ app.get('/r/:code', (req, res) => {
 
 // Admin: set an affiliate's association (e.g. a trade body). Association partners
 // get a bonus on top of the base commission (base 25 + bonus 5 = 30).
+app.post('/api/admin/affiliates/:id/review', adminAuth, (req, res) => {
+  try {
+    var dbc = getDb();
+    var id = String(req.params.id || '');
+    var aff = (dbc.affiliates || []).find(function(a){ return a.id === id; });
+    if (!aff) return res.status(404).json({ error: 'Affiliate not found' });
+    var decision = String(req.body.decision || '').toLowerCase(); // approve | reject
+    if (decision === 'approve') {
+      aff.status = 'active';
+      aff.application = aff.application || {};
+      aff.application.review_status = 'approved';
+      aff.application.reviewed_at = new Date().toISOString();
+      aff.application.review_note = String(req.body.note || '').trim();
+    } else if (decision === 'reject') {
+      aff.status = 'rejected';
+      aff.application = aff.application || {};
+      aff.application.review_status = 'rejected';
+      aff.application.reviewed_at = new Date().toISOString();
+      aff.application.review_note = String(req.body.note || '').trim();
+    } else {
+      return res.status(400).json({ error: "decision must be 'approve' or 'reject'" });
+    }
+    saveDb();
+    partnerAudit('affiliate_review_' + decision, { affiliate_id: aff.id, email: aff.email, note: aff.application.review_note, admin: (req.user && req.user.email) || 'admin' });
+    // Notify the affiliate of the decision.
+    try {
+      var emHtml = '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto">' +
+        '<h1 style="font-family:Outfit,sans-serif;color:' + (decision === 'approve' ? '#34d399' : '#f87171') + ';margin:0 0 10px">' + (decision === 'approve' ? 'You have been approved!' : 'Update on your application') + '</h1>' +
+        '<p style="color:#ccc;line-height:1.7">Hi ' + escHtml(aff.name || 'there') + ',</p>' +
+        (decision === 'approve'
+          ? '<p style="color:#ccc;line-height:1.7">Congratulations, you have been approved as a 9amLeads affiliate. Your code is <strong style="color:#0ea5e9">' + escHtml(aff.code || '') + '</strong>. Log in to your dashboard to get your share link, scripts and playbook.</p>' +
+            '<p style="color:#ccc;line-height:1.7">Sign in at <a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">your affiliate dashboard</a> and share your code with businesses today.</p>'
+          : '<p style="color:#ccc;line-height:1.7">Thank you for applying. After reviewing your application we are unable to accept you into the programme at this time.</p>') +
+        '<p style="color:#888;font-size:13px;margin-top:24px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>';
+      sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' }, decision === 'approve' ? 'Welcome to the 9amLeads Affiliate Programme' : '9amLeads Affiliate application update', emHtml);
+    } catch(e) { console.log('[AFFILIATE] review email error:', e.message); }
+    res.json({ success: true, affiliate: { id: aff.id, name: aff.name, status: aff.status, application: aff.application } });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/admin/affiliates/:id/association', adminAuth, (req, res) => {
   try {
     var dbc = getDb();
@@ -4422,7 +4542,19 @@ app.post('/api/affiliate/register', async (req, res) => {
     var code2 = String(code || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '') || (String(name).replace(/[^A-Za-z]/g, '').toUpperCase().slice(0, 8));
     if (affs.some(function(a) { return String(a.code || '').toLowerCase() === String(code2).toLowerCase(); })) return res.status(409).json({ error: 'That affiliate code is already taken. Pick another.' });
     var passwordHash = await bcrypt.hash(password, 10);
-    var aff = { id: uuidv4(), name: String(name).trim(), email: em, code: code2, password_hash: passwordHash, payout_rate: AFFILIATE_PAYOUT_RATE, status: AFFILIATE_AUTO_ACTIVATE ? 'active' : 'pending', created_at: new Date().toISOString(), payouts: [], association: String(req.body.association || '').trim().substring(0, 60) || '' };
+    var consent = !!req.body.consent_voice;
+    var survey = {};
+    try { survey = req.body.survey || {}; } catch(e) {}
+    var voiceAudio = String(req.body.voice_audio || '');
+    var application = {
+      submitted_at: new Date().toISOString(),
+      survey: survey,
+      voice: voiceAudio ? { recorded_at: new Date().toISOString(), audio: voiceAudio } : null,
+      consent_voice: consent,
+      score: scoreAffiliateApplication(survey),
+      review_status: 'pending'
+    };
+    var aff = { id: uuidv4(), name: String(name).trim(), email: em, code: code2, password_hash: passwordHash, payout_rate: AFFILIATE_PAYOUT_RATE, status: 'pending', created_at: new Date().toISOString(), payouts: [], association: String(req.body.association || '').trim().substring(0, 60) || '', application: application };
     affs.push(aff);
     saveDb();
     // Confirmation email to the affiliate (so they know their application arrived).
@@ -4459,7 +4591,8 @@ app.post('/api/affiliate/login', async (req, res) => {
     if (!aff) return res.status(401).json({ error: 'Invalid email or password' });
     var ok = await bcrypt.compare(String(password || ''), aff.password_hash || '');
     if (!ok) return res.status(401).json({ error: 'Invalid email or password' });
-    if (aff.status === 'pending') return res.status(403).json({ error: 'Your affiliate account is awaiting activation. Please check back shortly.', pending: true });
+    if (aff.status === 'pending') return res.status(403).json({ error: 'Your application is being reviewed. We\'ll email you once it\'s approved (usually within 24 hours).', pending: true });
+    if (aff.status === 'rejected') return res.status(403).json({ error: 'Your application was not approved. Contact hello@9amleads.com if you think this is a mistake.', rejected: true });
     if (aff.status === 'paused') return res.status(403).json({ error: 'Your affiliate account is currently paused. Contact hello@9amleads.com.', paused: true });
     aff.last_login_at = new Date().toISOString();
     try { saveDb(); } catch(e) {}
@@ -4763,6 +4896,7 @@ app.get('/api/admin/affiliates', adminAuth, (req, res) => {
         id: a.id, name: a.name, code: a.code, email: a.email, status: a.status, payout_rate: rate,
         association: a.association || '', commission_amount: a.commission_amount || null,
         created_at: a.created_at, counts: counts,
+        application: a.application || null,
         earnings_pending: counts.pending * (a.commission_amount || rate), earnings_due: counts.due * (a.commission_amount || rate), earnings_paid: counts.paid * (a.commission_amount || rate),
         payout_history: a.payouts || []
       };

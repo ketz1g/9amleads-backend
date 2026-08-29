@@ -244,14 +244,56 @@ tr:last-child td{border-bottom:none}
 </div>
 
 <!-- REGISTER -->
-<div class="login" id="register-view" style="display:none">
+<div class="login" id="register-view" style="display:none;max-width:560px">
 <h1>Become an affiliate</h1>
-<p>Earn <b style="color:#34d399">£25</b> for every customer who signs up with your name or code and pays for their first package. Works for every lead type.</p>
+<p>Earn <b style="color:#34d399">£25</b> for every customer who signs up with your code and pays their second invoice. Complete the application and we'll review it within 24 hours.</p>
+<div id="app-step-1">
+<p style="font-size:12px;font-weight:700;color:#0ea5e9;margin:0 0 12px">Step 1 of 3 · Your details</p>
 <div class="fg"><label>Full name</label><input type="text" id="r-name" placeholder="Your name"></div>
 <div class="fg"><label>Email</label><input type="email" id="r-email" placeholder="you@partner.com"></div>
 <div class="fg"><label>Password</label><div style="position:relative"><input type="password" id="r-pass" placeholder="Min 8 characters" style="padding-right:34px"><span onclick="var p=document.getElementById('r-pass');p.type=p.type==='password'?'text':'password';this.textContent=p.type==='password'?'\uD83D\uDC41':'Hide'" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:11px;color:#8890a8;cursor:pointer;user-select:none;font-weight:600">&#128065;</span></div></div>
 <div class="fg"><label>Your referral code <span class="muted">(optional. We'll make one for you)</span></label><input type="text" id="r-code" placeholder="e.g. JAMES24"></div>
-<button class="btn" onclick="register()">Apply</button>
+<button class="btn" onclick="appStep(2)">Continue</button>
+</div>
+<div id="app-step-2" style="display:none">
+<p style="font-size:12px;font-weight:700;color:#0ea5e9;margin:0 0 12px">Step 2 of 3 · A few quick questions</p>
+<div class="fg"><label>1. Are you willing to find your own customers? We provide the marketing tools, scripts and templates — you do the outreach.</label>
+<select id="q1" style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px"><option value="">Choose...</option><option value="Yes">Yes</option><option value="No">No</option><option value="Unsure">Unsure</option></select></div>
+<div class="fg"><label>2. Are you willing to use your own phone to call businesses?</label>
+<select id="q2" style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px"><option value="">Choose...</option><option value="Yes">Yes</option><option value="No">No</option><option value="Prefer text-only">Prefer text-only</option></select></div>
+<div class="fg"><label>3. Are you willing to open a new dedicated email account for messaging your clients?</label>
+<select id="q3" style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px"><option value="">Choose...</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
+<div class="fg"><label>4. How many hours per week can you realistically give to this?</label>
+<select id="q4" style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px"><option value="">Choose...</option><option value="0-2">0-2 hours</option><option value="2-5">2-5 hours</option><option value="5-10">5-10 hours</option><option value="10+">10+ hours</option></select></div>
+<div class="fg"><label>5. Which days and hours will you work?</label><input type="text" id="q5" placeholder="e.g. Mon-Fri 9am-12pm, Sun evenings"></div>
+<div class="fg"><label>6. Are you happy being paid 1 month after your client signs up (on their 2nd invoice)?</label>
+<select id="q6" style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px"><option value="">Choose...</option><option value="Yes">Yes</option><option value="No">No</option><option value="Unsure">Unsure</option></select></div>
+<div class="fg"><label>7. Will you commit to following up with referrals during their free trial?</label>
+<select id="q7" style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px"><option value="">Choose...</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
+<div class="fg"><label>8. A business says "we already get enough work from referrals". How do you reply?</label><textarea id="q8" placeholder="Your reply..." style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px;min-height:70px;font-family:inherit"></textarea></div>
+<div class="fg"><label>9. How would you explain the £25 commission to a friend?</label><textarea id="q9" placeholder="Your answer..." style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px;min-height:70px;font-family:inherit"></textarea></div>
+<div class="fg"><label>10. Are you comfortable calling businesses you don't know?</label>
+<select id="q10" style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px"><option value="">Choose...</option><option value="Yes">Yes</option><option value="No">No</option><option value="Nervous but willing">Nervous but willing</option></select></div>
+<div class="fg"><label>11. A trial customer stops replying to you. What do you do?</label><textarea id="q11" placeholder="Your answer..." style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px;min-height:70px;font-family:inherit"></textarea></div>
+<div class="fg"><label>12. Have you referred businesses to other services before?</label>
+<select id="q12" style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px"><option value="">Choose...</option><option value="Yes">Yes</option><option value="No">No</option><option value="Not yet">Not yet</option></select></div>
+<div class="fg"><label>13. Do you have any questions for us? <span class="muted">(optional)</span></label><textarea id="q13" placeholder="Any questions about the programme?" style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px;min-height:60px;font-family:inherit"></textarea></div>
+<div style="display:flex;gap:8px"><button class="btn btn-out" style="width:auto" onclick="appStep(1)">Back</button><button class="btn" onclick="appStep(3)">Continue</button></div>
+</div>
+<div id="app-step-3" style="display:none">
+<p style="font-size:12px;font-weight:700;color:#0ea5e9;margin:0 0 12px">Step 3 of 3 · Voice test</p>
+<p style="font-size:12px;color:#94a3b8;margin-bottom:14px">Read the script below aloud and record it so we can hear how you'd sound calling businesses. <b style="color:#e2e8f0">Keep it under 30 seconds.</b></p>
+<div style="background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.3);border-radius:10px;padding:14px;font-size:13px;color:#e2e8f0;line-height:1.7;margin-bottom:14px">"Hi, this is <b>[your name]</b> from 9amLeads. We send removal companies fresh moving leads every morning at 9am — homes that have just gone under offer in their area. It's a 14-day free trial, no card needed. Would now be a good time to talk?"</div>
+<div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
+<button class="btn-mini" id="rec-btn" onclick="toggleRec()">🎙️ Record</button>
+<button class="btn-mini" id="rec-play" style="display:none" onclick="playRec()">▶ Play</button>
+<button class="btn-mini" id="rec-redo" style="display:none" onclick="resetRec()">↺ Re-record</button>
+<span id="rec-status" style="font-size:11px;color:#94a3b8"></span>
+</div>
+<audio id="rec-audio" controls style="display:none;width:100%;margin-bottom:10px"></audio>
+<div class="fg" style="margin-top:6px"><label style="display:flex;gap:8px;align-items:flex-start;font-size:11.5px;color:#c6cfdd;cursor:pointer"><input type="checkbox" id="r-consent" style="margin-top:2px"> I agree to 9amLeads recording my voice for onboarding review, and to be contacted about my application.</label></div>
+<div style="display:flex;gap:8px"><button class="btn btn-out" style="width:auto" onclick="appStep(2)">Back</button><button class="btn" onclick="submitApplication()">Submit application</button></div>
+</div>
 <div class="err" id="register-err"></div>
 <p style="font-size:11px;color:#6b7280;margin-top:16px;text-align:center"><a href="#" onclick="showLogin();return false">Back to sign in</a></p>
 </div>
@@ -536,13 +578,82 @@ function login(){
     else err('login-err',d.error||'Sign in failed');
   }).catch(function(){err('login-err','Server is starting up. Please wait a few seconds and try again.');});
 }
-function register(){
+function appStep(n){
+  ['app-step-1','app-step-2','app-step-3'].forEach(function(id){document.getElementById(id).style.display=(id==='app-step-'+n)?'block':'none';});
+  var e=document.getElementById('register-err'); if(e)e.style.display='none';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+var _recMedia=null,_recChunks=[],_recUrl=null,_recStream=null,_recActive=false;
+function toggleRec(){
+  var st=document.getElementById('rec-status');
+  if(_recActive){ stopRec(); return; }
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){ if(st)st.textContent='Recording not supported in this browser. Try Chrome or Safari.'; return; }
+  navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
+    _recStream=stream;
+    _recMedia=new MediaRecorder(stream);
+    _recChunks=[];
+    _recMedia.ondataavailable=function(ev){ if(ev.data&&ev.data.size) _recChunks.push(ev.data); };
+    _recMedia.onstop=function(){
+      var blob=new Blob(_recChunks,{type:_recMedia.mimeType||'audio/webm'});
+      if(_recUrl)URL.revokeObjectURL(_recUrl);
+      _recUrl=URL.createObjectURL(blob);
+      window._recBlob=blob;
+      var au=document.getElementById('rec-audio'); if(au){au.src=_recUrl;au.style.display='block';}
+      document.getElementById('rec-play').style.display='inline-block';
+      document.getElementById('rec-redo').style.display='inline-block';
+      if(st){st.textContent='Recorded ('+(Math.round(blob.size/1024))+' KB). Listen back or re-record.';st.style.color='#34d399';}
+      document.getElementById('rec-btn').textContent='🎙️ Record';
+      _recActive=false;
+      if(_recStream){_recStream.getTracks().forEach(function(t){t.stop();});_recStream=null;}
+    };
+    _recMedia.start();
+    _recActive=true;
+    if(st){st.textContent='Recording... read the script aloud.';st.style.color='#fbbf24';}
+    document.getElementById('rec-btn').textContent='⏹ Stop';
+    // Auto-stop after 30 seconds
+    setTimeout(function(){ if(_recActive){ stopRec(); if(st)st.textContent='Stopped (30s max). Listen back or re-record.'; } },30000);
+  }).catch(function(){ if(st)st.textContent='Microphone access denied. Please allow mic access to complete the voice test.'; });
+}
+function stopRec(){ if(_recMedia&&_recMedia.state!=='inactive'){ try{_recMedia.stop();}catch(e){} } _recActive=false; }
+function playRec(){ var au=document.getElementById('rec-audio'); if(au&&au.src){au.play();} }
+function resetRec(){
+  _recChunks=[]; window._recBlob=null; if(_recUrl)URL.revokeObjectURL(_recUrl); _recUrl=null;
+  var au=document.getElementById('rec-audio'); if(au){au.src='';au.style.display='none';}
+  document.getElementById('rec-play').style.display='none';
+  document.getElementById('rec-redo').style.display='none';
+  var st=document.getElementById('rec-status'); if(st){st.textContent='';}
+  document.getElementById('rec-btn').textContent='🎙️ Record';
+}
+function submitApplication(){
   var name=document.getElementById('r-name').value.trim(),email=document.getElementById('r-email').value.trim(),pass=document.getElementById('r-pass').value,code=document.getElementById('r-code').value.trim();
-  fetch(API+'/api/affiliate/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,email:email,password:pass,code:code})})
-  .then(function(r){return r.json();}).then(function(d){
-    if(d.success){var e=document.getElementById('register-err');e.style.color='#34d399';e.textContent='Application received and your account is active. You can sign in now.';e.style.display='block';}
-    else err('register-err',d.error||'Could not submit application');
-  }).catch(function(){err('register-err','Server is starting up. Please try again.');});
+  var q1=document.getElementById('q1').value,q2=document.getElementById('q2').value,q3=document.getElementById('q3').value,q4=document.getElementById('q4').value,q5=document.getElementById('q5').value.trim(),q6=document.getElementById('q6').value,q7=document.getElementById('q7').value,q8=document.getElementById('q8').value.trim(),q9=document.getElementById('q9').value.trim(),q10=document.getElementById('q10').value,q11=document.getElementById('q11').value.trim(),q12=document.getElementById('q12').value,q13=document.getElementById('q13').value.trim();
+  var consent=document.getElementById('r-consent').checked;
+  var errEl=document.getElementById('register-err'); errEl.style.color='#f87171'; errEl.style.display='none';
+  if(!name||!email||!pass){ errEl.textContent='Please fill in your name, email and password'; errEl.style.display='block'; return; }
+  if(pass.length<8){ errEl.textContent='Password must be at least 8 characters'; errEl.style.display='block'; return; }
+  if(!q1||!q2||!q3||!q4||!q6||!q7||!q10||!q12){ errEl.textContent='Please answer all the multiple-choice questions'; errEl.style.display='block'; return; }
+  if(!consent){ errEl.textContent='Please tick the consent box to submit your application'; errEl.style.display='block'; return; }
+  if(!window._recBlob){ errEl.textContent='Please record your voice test before submitting'; errEl.style.display='block'; return; }
+  var btn=document.querySelector('#app-step-3 button.btn'); if(btn){btn.disabled=true;btn.textContent='Submitting...';}
+  // Convert audio blob to base64
+  var fr=new FileReader();
+  fr.onload=function(){
+    var audioB64=String(fr.result||'').split(',')[1]||'';
+    var payload={name:name,email:email,password:pass,code:code,consent_voice:consent,voice_audio:audioB64,survey:{q1:q1,q2:q2,q3:q3,q4:q4,q5:q5,q6:q6,q7:q7,q8:q8,q9:q9,q10:q10,q11:q11,q12:q12,q13:q13}};
+    fetch(API+'/api/affiliate/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+    .then(function(r){return r.json();}).then(function(d){
+      if(btn){btn.disabled=false;btn.textContent='Submit application';}
+      if(d.success){
+        errEl.style.color='#34d399';
+        errEl.innerHTML='<b>Application received.</b> We\'ll review it within 24 hours and email you once your account is approved. You can sign in after approval.';
+        errEl.style.display='block';
+        document.querySelector('#app-step-3 button.btn').style.display='none';
+        appStep(1);
+      }
+      else err('register-err',d.error||'Could not submit application');
+    }).catch(function(){ if(btn){btn.disabled=false;btn.textContent='Submit application';} err('register-err','Server is starting up. Please try again.'); });
+  };
+  fr.readAsDataURL(window._recBlob);
 }
 
 function badge(st){
