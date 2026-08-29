@@ -101,8 +101,7 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 
 <!-- Product selector tabs -->
 <div class="prod-tabs" id="prod-tabs">
-<button class="prod-tab active" data-prod="all" onclick="switchProduct('all')">All Products</button>
-<button class="prod-tab" data-prod="moving" onclick="switchProduct('moving')">Moving</button>
+<button class="prod-tab active" data-prod="moving" onclick="switchProduct('moving')">Moving</button>
 <button class="prod-tab" data-prod="probate" onclick="switchProduct('probate')">Probate</button>
 <button class="prod-tab" data-prod="newbusiness" onclick="switchProduct('newbusiness')">New Business</button>
 <button class="prod-tab" data-prod="planning" onclick="switchProduct('planning')">Planning</button>
@@ -219,7 +218,6 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 
 <script>
 var productData = {
-  all: { starter:'5', pro:'10', enterprise:'15', areaStarter:'5 postcode areas', areaPro:'Unlimited areas', areaEnterprise:'All UK coverage' },
   moving: { starter:'5', pro:'10', enterprise:'15', areaStarter:'5 postcode areas', areaPro:'Unlimited areas', areaEnterprise:'All UK coverage' },
   probate: { starter:'2', pro:'5', enterprise:'10', areaStarter:'3 areas', areaPro:'Unlimited areas', areaEnterprise:'All UK' },
   newbusiness: { starter:'5', pro:'10', enterprise:'15', areaStarter:'5 postcode areas', areaPro:'Unlimited areas', areaEnterprise:'All UK' },
@@ -229,7 +227,7 @@ var productData = {
 function switchProduct(prod) {
   document.querySelectorAll('.prod-tab').forEach(function(t){t.classList.remove('active');});
   document.querySelector('.prod-tab[data-prod="'+prod+'"]').classList.add('active');
-  var d = productData[prod] || productData.all;
+  var d = productData[prod];
   document.getElementById('leads-starter').innerHTML = '<strong>'+d.starter+'</strong> leads/day &middot; Mon-Fri';
   document.getElementById('leads-pro').innerHTML = '<strong>'+d.pro+'</strong> leads/day &middot; Mon-Fri';
   document.getElementById('leads-enterprise').innerHTML = '<strong>'+d.enterprise+'</strong> leads/day &middot; Mon-Fri';
