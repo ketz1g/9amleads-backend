@@ -3087,7 +3087,7 @@ function affiliateNurtureEmail(aff, day) {
       '<ul style="color:#ccc;line-height:1.8">' +
       '<li><b>Follow up anyone who started a trial</b> - help them see the value of the leads.</li>' +
       '<li><b>Ask for referrals</b> - happy customers recommend other businesses.</li>' +
-      '<li><b>Your £25 per sign-up</b> lands after their second invoice. Check your <a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">dashboard</a> to track it live.</li>' +
+      '<li><b>Your £25 per sign-up</b> lands about a month after they sign up, once they pay their second invoice. Check your <a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">dashboard</a> to track it live.</li>' +
       '</ul>';
   }
   return base + tips + '<p style="color:#888;font-size:13px;margin-top:24px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>';
@@ -3130,7 +3130,7 @@ function affiliateReactivationEmail(aff) {
     '<li><b>Use the ready-made WhatsApp/LinkedIn posts</b> in your dashboard. Copy, paste, done.</li>' +
     '<li><b>Follow up anyone you have already told</b> - most sign-ups come from the second message.</li>' +
     '</ul>' +
-    '<p style="color:#ccc;line-height:1.7">Every business that pays their second invoice earns you <strong style="color:#fff">£25</strong>.</p>' +
+    '<p style="color:#ccc;line-height:1.7">Every business that pays their second invoice (around a month after sign-up) earns you <strong style="color:#fff">£25</strong>.</p>' +
     '<p style="color:#888;font-size:13px;margin-top:24px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>';
 }
 function processAffiliateReactivation() {
@@ -4431,7 +4431,7 @@ app.post('/api/affiliate/register', async (req, res) => {
         '<h1 style="font-family:Outfit,sans-serif;color:#0ea5e9;margin:0 0 10px">Welcome to the 9amLeads Affiliate Programme</h1>' +
         '<p style="color:#ccc;line-height:1.7">Hi ' + escHtml(String(name).trim()) + ',</p>' +
         '<p style="color:#ccc;line-height:1.7">Your affiliate application has been received' + (AFFILIATE_AUTO_ACTIVATE ? ' and your account is now <strong style="color:#fff">active</strong>' : ' and is being reviewed') + '.</p>' +
-        '<p style="color:#ccc;line-height:1.7">Your unique referral code is <strong style="color:#0ea5e9">' + escHtml(code2) + '</strong>. Customers enter this at signup and you earn <strong style="color:#fff">&pound;' + (aff.payout_rate || 25) + '</strong> for every qualifying referral.</p>' +
+        '<p style="color:#ccc;line-height:1.7">Your unique referral code is <strong style="color:#0ea5e9">' + escHtml(code2) + '</strong>. Customers enter this at signup and you earn <strong style="color:#fff">&pound;' + (aff.payout_rate || 25) + '</strong> for every qualifying referral, paid around a month after they sign up (their second invoice).</p>' +
         '<p style="color:#ccc;line-height:1.7">Log in to your dashboard to track referrals and earnings: <a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">9amleads.com/portal/affiliate.html</a></p>' +
         '<p style="color:#888;font-size:13px;margin-top:24px">Questions? Reply to this email or contact hello@9amleads.com.</p>' +
         '</div>';

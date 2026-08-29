@@ -210,7 +210,7 @@ module.exports = [
       'Tender opportunities are matched to their sector and region, delivered daily.',
       'Public sector buyers pay reliably and prefer local, specialist suppliers.',
       'One won contract usually covers years of leads (from £25/week).',
-      'Their referrals get a 14-day free trial: no card needed.'
+      'Their referrals get a 14-day free trial: no card needed, and you earn £25 about a month later once they pay their second invoice.'
     ],
     phone: [
       '[Opener] "Hi [name], it\u2019s [your name] from 9amLeads. I\u2019m calling [sector] companies that could win public sector work. Have you got two minutes, or should I call back?"',
