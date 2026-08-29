@@ -510,6 +510,17 @@ function isCommercialLead(ld) {
   if (ld.commercial || ld.commercial_let) return true;
   var s = String(ld.propertyType || ld.address || ld.fullAddress || ld.title || ld.name || '').toUpperCase();
   if (/\b(UNIT|LAND|PLOT|OFFICE|WAREHOUSE|SHOP|FACTORY|INDUSTRIAL|STORAGE|SUITE|PREMISES|COMMERCIAL|RETAIL|WORKSHOP)\b/.test(s)) return true;
+  // COMPANY/ORGANISATION ADDRESSES: a business name prefix + a building name is a
+  // company registered office / trading address, NOT a home-mover lead (e.g.
+  // "British Telecom, Ryland House, 9 Church Road", "ACME LTD, Centurion House").
+  // Catches company names and building-name addresses that slipped past the
+  // simple keywords above. Only flag when there's a company/building signal so a
+  // genuine home at "Maple House, 5 Oak Road" is NOT wrongly excluded.
+  if (/\b(LTD|LIMITED|PLC|TELECOM|ELECTRIC|POWER|ENERGY|GAS|WATER|BANK|INSURANCE|HOSPITAL|HOTEL|UNIVERSITY|COUNCIL|NHS|GOVERNMENT|CO-OP|ASSOCIATION|COMPANY|HOLDINGS|GROUP|CORPORATION|ENTERPRISE|TECHNOLOG|SERVICES|SOLUTIONS|SYSTEMS|DISTRIBUT|SUPPLIER|WHOLESAL|PROPERTIES|ESTATES?|INVESTMENTS?)\b/.test(s)) return true;
+  // Building names ending in "House"/"Building"/"Court"/"Chambers"/"Works" with a
+  // company name preceding (two+ name tokens before it) strongly indicate a
+  // commercial registered office rather than a private home.
+  if (/[A-Z]{2,}[A-Z -]{1,}(HOUSE|BUILDING|CHAMBERS|COURT|WORKS|PARK|BUSINESS CENTRE)\b/.test(s) && /(LTD|LIMITED|PLC|GROUP|HOLDINGS|CORPORATION|ENTERPRISE|TECHNOLOG|SERVICES|SOLUTIONS|TELECOM|ELECTRIC|POWER|BANK|INSURANCE|HOSPITAL|COUNCIL|NHS|PROPERTIES|ESTATES?|INVESTMENTS?)\b/.test(s)) return true;
   // Investment / developer-marketing listings (e.g. "The Gateway, Liverpool
   // Business District - 6%+ Returns", "offers above £X"), NOT home-movers.
   if (/\b(?:RETURN|RETURNS|YIELD|INVESTMENT|INVESTOR|INVESTMENT? OPPORTUNIT|OPPORTUNITY)\b/i.test(s)) return true;
