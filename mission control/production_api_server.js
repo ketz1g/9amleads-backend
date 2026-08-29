@@ -22480,7 +22480,7 @@ function normalizeBodyPart(part) {
 // Generate one high-quality post via OpenAI and queue it as a draft.
 async function generateAutoBlogPost(category) {
   var typeLabel = BLOG_CATEGORIES[category] || 'business leads';
-  var system = 'You write high-quality, genuinely useful UK business blog posts for 9amLeads, a service that delivers fresh UK business leads every morning at 9am across moving, probate, new business (Companies House), planning permission and public sector tenders. Write like an experienced practitioner: specific, actionable, UK-focused, no fluff, no hype. Return ONLY valid JSON.';
+  var system = 'You write high-quality, genuinely useful UK blog posts FOR BUSINESS OWNERS who buy leads to win work (removal companies, solicitors, accountants, builders, tender bidders). Every post must help a business owner find, win and convert more clients — write directly TO the business owner, never to homeowners/consumers. 9amLeads delivers fresh UK business leads every morning at 9am across moving, probate, new business (Companies House), planning permission and public sector tenders. Write like an experienced practitioner: specific, actionable, UK-focused, no fluff, no hype. Never overclaim exclusivity. Return ONLY valid JSON.';
   var user = 'Write a long-form blog post about "' + typeLabel + '". Choose a specific, practical angle a UK business would search for and find genuinely useful. The article body MUST be at least 950 words — count the words carefully and write enough detailed, specific content. Return strict JSON matching exactly this schema: {"title": string, "description": string (a 1-2 sentence meta description), "category": "' + category + '", "keywords": array of 5 strings, "faqs": array of exactly 4 objects {"q": string, "a": string of 2-3 sentences}, "sections": array of 6-7 objects {"h": string (H2 heading), "body": array where each element is either a plain string paragraph OR an object with exactly one key from {"ul": [strings]}, {"table": [[strings]]}, {"cta": string}}}. Write paragraphs of 70-110 words so the article is genuinely in-depth. Include at least one table AND at least one list. Do not use markdown, backticks or literal newlines inside strings; escape quotes properly.';
   var res = await callOpenAIChat([{ role: 'system', content: system }, { role: 'user', content: user }]);
   var content = (res.choices && res.choices[0] && res.choices[0].message && res.choices[0].message.content) || '';
@@ -22703,19 +22703,19 @@ app.post('/api/admin/blog/generate', adminAuth, function(req, res) {
       var slug = title.toLowerCase().replace(/[':]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 80);
       if (dbData.blog_posts.some(function(p) { return p.slug === slug; })) continue;
       var paraPool = [
-        'In today\'s market, businesses need every advantage. ' + title + ' is one of the most effective ways to stay ahead.',
-        productName + ' provide a stream of exclusive opportunities your competitors don\'t have access to.',
-        'Consistency is key with ' + type + '. Fresh opportunities every morning builds a daily outreach habit.',
-        'The businesses that win with ' + type + ' are the ones that act fast. A structured morning workflow increases conversion.',
-        productName + ' are sourced from official registers and updated daily. The data is accurate, fresh, and actionable.',
-        'The cost of ' + type + ' is predictable and fixed. No auction dynamics or rising CPCs.',
-        'First contact wins. Studies show contacting a prospect within 30 minutes increases conversion by 400%.',
-        productName + ' are exclusive. No other business in your territory has the same lead.'
+        'In today\'s market, every UK business owner needs an edge to win work. ' + title + ' gives you a steady, repeatable pipeline you can rely on.',
+        productName + ' hand you fresh, sourced opportunities every morning — so you are not waiting for the phone to ring or scraping directories yourself.',
+        'Consistency is key with ' + type + '. A fresh batch each morning builds a daily outreach habit that compounds into booked work.',
+        'The businesses that win with ' + type + ' act fast. A structured morning workflow means you contact the homeowner or prospect while the opportunity is still fresh.',
+        productName + ' come from official registers and portals and are updated daily. Accurate, fresh, actionable — the kind of data you can act on the same morning.',
+        'The cost of ' + type + ' is predictable and fixed. No auction dynamics, no rising CPCs, no guesswork on your marketing budget.',
+        'Being first to contact wins. When a fresh opportunity lands at 9am, the business that reaches out first controls the conversation.',
+        productName + ' give you your own daily allocation of fresh opportunities in the areas you choose — never the same lead twice.',
       ];
       var sections = '';
       sections += '<h2>Why ' + title.split(' ').slice(0,3).join(' ') + ' Matters</h2><p>' + paraPool[0] + '</p><p>' + paraPool[1] + '</p>';
       sections += '<h2>What Are ' + type.charAt(0).toUpperCase() + type.slice(1) + '?</h2><p>' + paraPool[2] + '</p><p>' + paraPool[3] + '</p>';
-      sections += '<div style="background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.1);border-radius:10px;padding:20px;margin:20px 0"><h3 style="font-size:15px;margin-bottom:8px;color:#0ea5e9">Key Benefits</h3><ul style="padding-left:20px;line-height:1.8"><li>Exclusive leads - only your business receives them</li><li>Fixed weekly pricing with no auction dynamics</li><li>Daily morning delivery - always first to contact</li><li>Free 7-day trial with no credit card required</li></ul></div>';
+      sections += '<div style="background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.1);border-radius:10px;padding:20px;margin:20px 0"><h3 style="font-size:15px;margin-bottom:8px;color:#0ea5e9">Key Benefits</h3><ul style="padding-left:20px;line-height:1.8"><li>Your own daily allocation of fresh opportunities</li><li>Fixed weekly pricing with no auction dynamics</li><li>Daily morning delivery - always first to contact</li><li>Free 7-day trial with no credit card required</li></ul></div>';
       sections += '<h2>The Benefits of Consistent ' + type.charAt(0).toUpperCase() + type.slice(1) + '</h2><p>' + paraPool[4] + '</p><p>' + paraPool[5] + '</p>';
       sections += '<h2>How to Get Started with ' + type.charAt(0).toUpperCase() + type.slice(1) + '</h2><p>' + paraPool[6] + '</p><p>' + paraPool[7] + '</p>';
       var wordCount = sections.replace(/<[^>]+>/g, '').split(/\s+/).length;
