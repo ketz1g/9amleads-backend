@@ -3847,6 +3847,7 @@ app.get('/sitemap.xml', (req, res) => {
       '<url><loc>https://9amleads.com/who-we-serve/</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
       '<url><loc>https://9amleads.com/about-us/</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
       '<url><loc>https://9amleads.com/blog/</loc><priority>0.7</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/affiliates</loc><priority>0.7</priority><changefreq>weekly</changefreq><lastmod>' + today + '</lastmod></url>',
       '<url><loc>https://9amleads.com/founder/</loc><priority>0.5</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
       '<url><loc>https://9amleads.com/privacy.html</loc><priority>0.3</priority><changefreq>yearly</changefreq><lastmod>' + today + '</lastmod></url>',
       '<url><loc>https://9amleads.com/terms.html</loc><priority>0.3</priority><changefreq>yearly</changefreq><lastmod>' + today + '</lastmod></url>'
@@ -21953,6 +21954,7 @@ function writeSitemap() {
       '<url><loc>https://9amleads.com/who-we-serve/</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
       '<url><loc>https://9amleads.com/about-us/</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
       '<url><loc>https://9amleads.com/blog/</loc><priority>0.7</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/affiliates</loc><priority>0.7</priority><changefreq>weekly</changefreq><lastmod>' + today + '</lastmod></url>',
       '<url><loc>https://9amleads.com/founder/</loc><priority>0.5</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
       '<url><loc>https://9amleads.com/privacy.html</loc><priority>0.3</priority><changefreq>yearly</changefreq><lastmod>' + today + '</lastmod></url>',
       '<url><loc>https://9amleads.com/terms.html</loc><priority>0.3</priority><changefreq>yearly</changefreq><lastmod>' + today + '</lastmod></url>'
@@ -22865,6 +22867,7 @@ app.post('/api/admin/seo/refresh-sitemap', adminAuth, function(req, res) {
       '<url><loc>https://9amleads.com/how-it-works/</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
       '<url><loc>https://9amleads.com/who-we-serve/</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
       '<url><loc>https://9amleads.com/blog/</loc><priority>0.7</priority><changefreq>daily</changefreq><lastmod>' + today + '</lastmod></url>',
+      '<url><loc>https://9amleads.com/affiliates</loc><priority>0.7</priority><changefreq>weekly</changefreq><lastmod>' + today + '</lastmod></url>',
       '<url><loc>https://9amleads.com/founder/</loc><priority>0.5</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
       '<url><loc>https://9amleads.com/invest/</loc><priority>0.5</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
       '<url><loc>https://9amleads.com/about.html</loc><priority>0.6</priority><changefreq>monthly</changefreq><lastmod>' + today + '</lastmod></url>',
