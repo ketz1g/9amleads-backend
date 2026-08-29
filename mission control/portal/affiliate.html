@@ -905,7 +905,7 @@ function loadLeads(){
     LEADS=d.leads||[];
     document.getElementById('leads-count').textContent=LEADS.length;
     var w=document.getElementById('leads-list');
-    if(!LEADS.length){w.innerHTML='<div class="empty"><b>No leads in your inbox yet.</b><br>Share your code. Every customer who signs up with it appears here so you can follow up and monitor them.</div>';return;}
+    if(!LEADS.length){w.innerHTML=renderLeadExamples();return;}
     var h='';
     LEADS.forEach(function(r){
       var pendRms=(r.reminders||[]).filter(function(x){return !x.done;}).length;
@@ -1404,6 +1404,27 @@ function addLead(){
     if(d.success){document.getElementById('nl-company').value='';document.getElementById('nl-email').value='';document.getElementById('nl-phone').value='';document.getElementById('nl-notes').value='';toggleAddLead();loadLeads();}
     else alert(d.error||'Could not add lead');
   });
+}
+function renderLeadExamples(){
+  var ex=[
+    {stage:'Just signed up, in trial', badge:'b-new', emoji:'🚚', company:'Swift Removal Co', email:'office@swiftmoves.co.uk', phone:'020 8123 4567', product:'Moving', extra:'14-day free trial. They have not paid yet. This is your chance to build the relationship and help them see the leads.', icon:'🆕'},
+    {stage:'Earning', badge:'b-trial', emoji:'⚖️', company:'Graysons Probate', email:'lets@graysonsproperty.co.uk', phone:'0161 555 0199', product:'Probate', extra:'They have paid their first invoice. They are a paying customer now. Your £25 is triggered when they pay their SECOND invoice. Keep them engaged.', icon:'💳'},
+    {stage:'Ready to pay', badge:'b-due', emoji:'🏗️', company:'Kingsbridge Builders', email:'enquiries@kingsbridgebuild.co.uk', phone:'0121 288 3344', product:'Planning', extra:'They have reached their second invoice. Your £25 commission has cleared and is ready. This is when you get paid.', icon:'💰'},
+    {stage:'Paid', badge:'b-paid', emoji:'📋', company:'Secure & Tender Ltd', email:'bids@secureandtender.co.uk', phone:'029 2092 1100', product:'Tenders', extra:'Payout complete. Your £25 is on its way to your balance, and this customer also counts toward your next Wheel of Fortune spin.', icon:'✅'}
+  ];
+  var h='<div class="empty" style="text-align:left"><b>📥 No leads in your inbox yet.</b><br>Share your code. Every customer who signs up with it appears here so you can follow up and monitor them.<br><br><b>Here is exactly what each stage looks like:</b></div>'+
+  '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:12px">';
+  ex.forEach(function(e){
+    h+='<div style="background:rgba(255,255,255,.04);border:1px solid #1e2030;border-radius:12px;padding:14px">'+
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:18px">'+e.icon+'</span><span class="badge '+e.badge+'">'+e.stage+'</span></div>'+
+    '<div style="font-size:13px;color:#f1f5f9;font-weight:700">'+e.emoji+' '+e.company+'</div>'+
+    '<div style="font-size:11.5px;color:#94a3b8;margin:3px 0">'+e.email+', '+e.phone+'</div>'+
+    '<div style="font-size:11px;color:#38bdf8;margin-bottom:8px">'+e.product+'</div>'+
+    '<div style="font-size:11.5px;color:#c6cfdd;line-height:1.6">'+e.extra+'</div>'+
+    '</div>';
+  });
+  h+='</div><p style="font-size:12px;color:#94a3b8;margin-top:14px">💡 These are examples. Your leads will show here the moment a customer signs up with your code, and you can add your own leads with the <b>+ Add lead</b> button above.</p>';
+  return h;
 }
 function quickNote(id){
   var lead=(LEADS||[]).find(function(l){return String(l.id)===String(id);});
