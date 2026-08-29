@@ -2977,8 +2977,10 @@ function processPartnerCommissions() {
           if (!c || !customerIsPaying(c) || customerRefunded(c)) return;
           var conv = a.converted_at || a.signup_at;
           if (!conv) return;
-          var qDays = Number(cfg.commission_qualification_days) || 30;
-          if ((now.getTime() - new Date(conv).getTime()) < qDays * 86400000) return;
+          // Affiliate £25 is earned when the referred customer pays their SECOND
+          // subscription invoice (set by the invoice.paid webhook). Require that
+          // marker here too so the daily engine never creates the commission early.
+          if (!affMonthly && String(c.affiliate_payout_status || '') !== 'pending' && String(c.affiliate_payout_status || '') !== 'due' && String(c.affiliate_payout_status || '') !== 'paid') return;
           if (!dbc.partner_commissions) dbc.partner_commissions = [];
           if (affMonthly) {
             // 1) One-off £25 "sign-up" commission (created once per customer).
@@ -15810,22 +15812,35 @@ app.post('/api/stripe/webhook', async (req, res) => {
         db.prepare('UPDATE customers SET auto_send_paused = 0, leads_paused = 0, plan = ? WHERE id = ?').run(invKeepPlan, invCustomer.id);
         saveDb();
         console.log('[STRIPE] Weekly renewal paid: ' + (invCustomer.email || invCustomer.id));
-        // AFFILIATE: a referred customer PAID their first invoice for a paid package
-        // (starter/pro/enterprise) -> the affiliate's referral is now EARNING. Paid
-        // one month after signup provided the customer stays active. Guarded so it
-        // only fires on the FIRST real (paid, non-zero) invoice — referral_pending
-        // -> pending. A saved card alone does not earn.
+        // AFFILIATE: a referred customer earns their £25 sign-up commission once
+        // they pay their SECOND subscription invoice (starter/pro/enterprise).
+        // 1st invoice = customer is paying, but no commission yet (they can still
+        // cancel). 2nd invoice = they have renewed once, so the £25 is earned and
+        // the payout clears after the clearance period. A saved card alone does not earn.
         try {
-          var invPaidAmt = (inv.amount_paid || 0) > 0;
-          var invPaidPlan = String(invCustomer.plan || '').toLowerCase();
-          var invOnPaidPkg = invPaidPlan === 'starter' || invPaidPlan === 'pro' || invPaidPlan === 'enterprise';
-          if (invCustomer.affiliate_id && invCustomer.affiliate_payout_status === 'referral_pending' && invPaidAmt && invOnPaidPkg) {
-            db.prepare('UPDATE customers SET affiliate_payout_status = ?, affiliate_payout_due = ? WHERE id = ?')
-              .run('pending',
-                new Date(new Date(invCustomer.created_at || Date.now()).getTime() + 30 * 86400000).toISOString(),
-                invCustomer.id);
-            saveDb();
-            console.log('[AFFILIATE] Referral from ' + (invCustomer.affiliate_code || invCustomer.affiliate_id) + ' earned (first invoice £' + (inv.amount_paid / 100) + ' paid, plan ' + invPaidPlan + ') — payout pending for ' + invCustomer.email);
+          var invPaidAmt2 = (inv.amount_paid || 0) > 0;
+          var invPaidPlan2 = String(invCustomer.plan || '').toLowerCase();
+          var invOnPaidPkg2 = invPaidPlan2 === 'starter' || invPaidPlan2 === 'pro' || invPaidPlan2 === 'enterprise';
+          if (invCustomer.affiliate_id && invPaidAmt2 && invOnPaidPkg2) {
+            // Count this customer's paid subscription invoices already on record.
+            var _pmtCount = 0;
+            try {
+              var _pmts = (getDb().payments || []).filter(function(r){
+                if (r.product && r.product === 'direct_mail') return false; // Print & Post orders are not subscription payments
+                return (r.customer_id && r.customer_id === invCustomer.id) || (r.customer_email && r.customer_email === invCustomer.email);
+              });
+              _pmtCount = _pmts.length;
+            } catch(pcErr) {}
+            var invCount = _pmtCount + 1; // this invoice
+            if (invCustomer.affiliate_payout_status === 'referral_pending' && invCount >= 2) {
+              // 2nd paid invoice: the customer has renewed at least once -> commission earned.
+              db.prepare('UPDATE customers SET affiliate_payout_status = ?, affiliate_payout_due = ? WHERE id = ?')
+                .run('pending',
+                  new Date(Date.now() + 30 * 86400000).toISOString(),
+                  invCustomer.id);
+              saveDb();
+              console.log('[AFFILIATE] Referral from ' + (invCustomer.affiliate_code || invCustomer.affiliate_id) + ' earned (2nd invoice £' + (inv.amount_paid / 100) + ' paid, plan ' + invPaidPlan2 + ') — payout pending for ' + invCustomer.email);
+            }
           }
         } catch(affErr) { console.log('[AFFILIATE] invoice.paid affiliate error:', affErr.message); }
         // Persist an "invoice paid" receipt + email the customer a receipt.
