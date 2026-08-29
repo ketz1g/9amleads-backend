@@ -333,17 +333,28 @@ tr:last-child td{border-bottom:none}
 
 <!-- OVERVIEW -->
 <section id="view-overview">
-<div class="payout-card" style="background:linear-gradient(135deg,rgba(245,158,11,.12),rgba(234,88,12,.05));border-color:rgba(245,158,11,.35);cursor:pointer" onclick="go('rewards')">
-<div class="p-head"><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-<div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#f97316);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">🎡</div>
-<div><div class="lbl" style="color:#f59e0b;font-weight:800">Reward Wheel</div><div class="val" id="ov-tier" style="font-size:16px;color:#f1f5f9">Tier 1</div></div>
-</div><div class="lbl" id="ov-pct">0 / 50 retained</div></div>
+<div class="payout-card" style="background:linear-gradient(135deg,rgba(245,158,11,.12),rgba(234,88,12,.05));border-color:rgba(245,158,11,.35)">
+<div class="p-head"><div><div class="lbl" style="color:#f59e0b;font-weight:800">🎡 Reward Wheel</div><div class="val" id="ov-tier" style="font-size:18px;color:#f1f5f9">Tier 1</div></div><div class="lbl" id="ov-pct">0 / 50 retained</div></div>
+<div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-top:8px">
+<div style="position:relative;width:150px;height:150px;flex-shrink:0;margin:0 auto">
+<canvas id="ov-canvas" width="150" height="150" style="width:150px;height:150px"></canvas>
+<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:9px;font-weight:800;color:#fff;background:rgba(0,0,0,.55);border-radius:50%;width:42px;height:42px;display:flex;align-items:center;justify-content:center;pointer-events:none">9amLeads</div>
+<div style="position:absolute;top:-5px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:14px solid #f59e0b;pointer-events:none"></div>
+</div>
+<div style="flex:1;min-width:220px">
 <div class="bar" style="border-color:rgba(245,158,11,.3)"><div class="fill" id="ov-bar" style="width:0%;background:linear-gradient(90deg,#f59e0b,#f97316)"></div></div>
-<div class="p-sub" id="ov-sub">Every 50 retained signups unlocks a spin for prizes up to £200. Open the Rewards tab to spin.</div>
-<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;font-size:11px;color:#94a3b8">
-<span>50 retained → up to <b style="color:#f59e0b">£200</b></span>
-<span>100 retained → up to <b style="color:#0ea5e9">£500</b></span>
-<span>200+ retained → up to <b style="color:#34d399">£1000</b></span>
+<div class="p-sub" id="ov-sub" style="margin-top:10px">Every 50 retained signups unlocks a spin for prizes up to £200.</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+<button class="btn-mini" id="ov-spin-btn" onclick="spinWheel()" style="font-size:13px;padding:10px 22px;background:linear-gradient(135deg,#f59e0b,#f97316);color:#fff;border:none;border-radius:10px">🎡 Spin</button>
+<a href="#" onclick="go('rewards');return false" style="font-size:12px;color:#0ea5e9;align-self:center">View history & tiers →</a>
+</div>
+<div id="ov-result" style="margin-top:8px;font-size:14px;font-weight:800;color:#34d399;min-height:20px"></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:11px;color:#94a3b8">
+<span>50 → up to <b style="color:#f59e0b">£200</b></span>
+<span>100 → up to <b style="color:#0ea5e9">£500</b></span>
+<span>200+ → up to <b style="color:#34d399">£1000</b></span>
+</div>
+</div>
 </div>
 </div>
 <div class="payout-card">
@@ -963,22 +974,28 @@ function loadWheel(){
     if(d.wheel.can_spin){btn.disabled=false;btn.style.opacity='1';sub.innerHTML='<b style="color:#f59e0b">Spin ready!</b> You have '+(d.wheel.since_last_spin||50)+' retained signups.';}
     else {btn.disabled=true;btn.style.opacity='.4';sub.textContent='Every 50 retained signups unlocks a spin. '+(50-(d.wheel.progress||0))+' more to go. Prizes up to £'+(d.wheel.prizes[d.wheel.prizes.length-1]||200)+'.';}
     renderWheelHistory(d.history||[]);
-    // Overview widget
+    // Overview widget (draw the actual wheel on the dashboard)
     var maxPrize=d.wheel.prizes[d.wheel.prizes.length-1]||200;
     var ovt=document.getElementById('ov-tier'); if(ovt)ovt.textContent='Tier '+(t>=3?'3+':t)+' · prizes up to £'+maxPrize;
     var ovp=document.getElementById('ov-pct'); if(ovp)ovp.textContent=(d.wheel.progress||0)+' / 50 retained';
     var ovb=document.getElementById('ov-bar'); if(ovb)ovb.style.width=pct+'%';
+    drawWheelCanvas('ov-canvas', d.wheel.prizes||[50,100,150,200], 0);
     var ovs=document.getElementById('ov-sub');
-    if(ovs) ovs.textContent = d.wheel.can_spin ? 'Spin ready! Click to open the wheel and claim your prize.' : 'Every 50 retained signups unlocks a spin. '+(50-(d.wheel.progress||0))+' more to go. Prizes up to £'+maxPrize+'.';
+    if(ovs) ovs.textContent = d.wheel.can_spin ? 'Spin ready! Hit the button to claim a prize.' : 'Every 50 retained signups unlocks a spin. '+(50-(d.wheel.progress||0))+' more to go. Prizes up to £'+maxPrize+'.';
+    var ovb2=document.getElementById('ov-spin-btn'); if(ovb2){ovb2.disabled=!d.wheel.can_spin;ovb2.style.opacity=d.wheel.can_spin?'1':'.4';}
+    var ovr=document.getElementById('ov-result'); if(ovr)ovr.textContent='';
   }).catch(function(){});
 }
-function drawWheel(prizes,rotDeg){
-  var cv=document.getElementById('rw-canvas');
+function drawWheel(prizes,rotDeg){ drawWheelCanvas('rw-canvas', prizes, rotDeg); }
+function drawWheelCanvas(canvasId, prizes, rotDeg){
+  var cv=document.getElementById(canvasId);
   if(!cv)return;
   var ctx=cv.getContext('2d');
-  var cx=110,cy=110,r=104;
+  var size=cv.width||220;
+  var cx=size/2,cy=size/2,r=size/2-6;
+  var fontSize=Math.round(size/14.6);
   var n=prizes.length,start=rotDeg*Math.PI/180;
-  ctx.clearRect(0,0,220,220);
+  ctx.clearRect(0,0,size,size);
   for(var i=0;i<n;i++){
     var a0=start+(i/n)*2*Math.PI;
     var a1=start+((i+1)/n)*2*Math.PI;
@@ -988,55 +1005,66 @@ function drawWheel(prizes,rotDeg){
     ctx.closePath();
     ctx.fillStyle=WHEEL_COLORS[i%WHEEL_COLORS.length];
     ctx.fill();
-    ctx.strokeStyle='#0b0d14';ctx.lineWidth=2;ctx.stroke();
+    ctx.strokeStyle='#0b0d14';ctx.lineWidth=Math.max(1,size/110);ctx.stroke();
     ctx.save();
     ctx.translate(cx,cy);
     ctx.rotate(a0+(a1-a0)/2);
     ctx.textAlign='right';
-    ctx.fillStyle='#fff';ctx.font='bold 15px Inter,sans-serif';
-    ctx.fillText('£'+prizes[i],r-14,5);
+    ctx.fillStyle='#fff';ctx.font='bold '+fontSize+'px Inter,sans-serif';
+    ctx.fillText('£'+prizes[i],r-8,fontSize*0.33);
     ctx.restore();
   }
-  // outer ring
-  ctx.beginPath();ctx.arc(cx,cy,r+4,0,2*Math.PI);ctx.strokeStyle='rgba(245,158,11,.6)';ctx.lineWidth=3;ctx.stroke();
+  ctx.beginPath();ctx.arc(cx,cy,r+3,0,2*Math.PI);ctx.strokeStyle='rgba(245,158,11,.6)';ctx.lineWidth=Math.max(2,size/70);ctx.stroke();
 }
 function spinWheel(){
   if(!_wheel||!_wheel.can_spin)return;
   var btn=document.getElementById('rw-spin-btn');
-  btn.disabled=true;btn.textContent='Spinning...';
+  var ovbtn=document.getElementById('ov-spin-btn');
+  if(btn){btn.disabled=true;btn.textContent='Spinning...';}
+  if(ovbtn){ovbtn.disabled=true;ovbtn.textContent='Spinning...';}
   var prizes=_wheel.prizes;
   var target=Math.floor(Math.random()*prizes.length);
   var extraFull=Math.floor(Math.random()*5+5)*360;
   var base=360-(target*(360/prizes.length));
   var endDeg=base+extraFull;
   var startDeg=0,startTime=Date.now(),dur=3200;
-  var res=document.getElementById('rw-result');res.textContent='';
+  var res=document.getElementById('rw-result');if(res)res.textContent='';
+  var ores=document.getElementById('ov-result');if(ores)ores.textContent='';
   function frame(){
     var p=Math.min(1,(Date.now()-startTime)/dur);
     var ease=1-Math.pow(1-p,3);
     var cur=startDeg+endDeg*ease;
     drawWheel(prizes,cur);
+    drawWheelCanvas('ov-canvas',prizes,cur);
     if(p<1){requestAnimationFrame(frame);}
     else{
       _wheelSpinIdx=target;
       api('POST','/affiliate/wheel/spin',{}).then(function(d){
         if(d.success){
-          res.textContent='🎉 You won £'+d.result.prize+'!';
+          var msg='🎉 You won £'+d.result.prize+'!';
+          if(res){res.textContent=msg;}
+          if(ores){ores.textContent=msg;}
           _wheel=d.wheel;
           drawWheel(d.wheel.prizes,cur%360);
-          document.getElementById('rw-spin-btn').textContent='🎡 Spin';
-          btn.disabled=true;btn.style.opacity='.4';
+          drawWheelCanvas('ov-canvas',d.wheel.prizes,cur%360);
+          if(btn){btn.textContent='🎡 Spin';btn.disabled=true;btn.style.opacity='.4';}
+          if(ovbtn){ovbtn.textContent='🎡 Spin';ovbtn.disabled=true;ovbtn.style.opacity='.4';}
           var pct=Math.round(((d.wheel.progress||0)/50)*100);
           document.getElementById('rw-bar').style.width=pct+'%';
           document.getElementById('rw-pct').textContent=(d.wheel.progress||0)+' / 50';
           document.getElementById('rw-sub').textContent='Every 50 retained signups unlocks a spin. '+(50-(d.wheel.progress||0))+' more to go.';
+          document.getElementById('ov-bar').style.width=pct+'%';
+          document.getElementById('ov-pct').textContent=(d.wheel.progress||0)+' / 50 retained';
+          var ovs=document.getElementById('ov-sub'); if(ovs)ovs.textContent='Every 50 retained signups unlocks a spin. '+(50-(d.wheel.progress||0))+' more to go.';
           loadWheel();
         } else {
-          res.textContent='';
-          btn.disabled=true;btn.style.opacity='.4';btn.textContent='🎡 Spin';
+          if(res)res.textContent='';
+          if(ores)ores.textContent='';
+          if(btn){btn.disabled=true;btn.style.opacity='.4';btn.textContent='🎡 Spin';}
+          if(ovbtn){ovbtn.disabled=true;ovbtn.style.opacity='.4';ovbtn.textContent='🎡 Spin';}
           alert(d.error||'Spin unavailable');
         }
-      }).catch(function(){res.textContent='';btn.textContent='🎡 Spin';});
+      }).catch(function(){if(res)res.textContent='';if(ores)ores.textContent='';if(btn)btn.textContent='🎡 Spin';if(ovbtn)ovbtn.textContent='🎡 Spin';});
     }
   }
   requestAnimationFrame(frame);
