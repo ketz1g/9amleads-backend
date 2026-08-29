@@ -333,6 +333,10 @@ tr:last-child td{border-bottom:none}
 
 <!-- OVERVIEW -->
 <section id="view-overview">
+<div class="payout-card" style="background:rgba(14,165,233,.06);border-color:rgba(14,165,233,.3)">
+<div class="p-head"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:18px">💡</span><b style="font-size:13.5px;color:#f1f5f9">Tip of the day</b></div><div class="lbl" id="aff-tip-pager">Tip 1 of 10</div></div>
+<div style="font-size:13px;color:#c6cfdd;line-height:1.7" id="aff-quick-tip">Loading...</div>
+</div>
 <div class="payout-card" style="background:linear-gradient(135deg,rgba(245,158,11,.12),rgba(234,88,12,.05));border-color:rgba(245,158,11,.35)">
 <div class="p-head"><div><div class="lbl" style="color:#f59e0b;font-weight:800">🎡 Reward Wheel</div><div class="val" id="ov-tier" style="font-size:18px;color:#f1f5f9">Tier 1</div></div><div class="lbl" id="ov-pct">0 / 50 retained</div></div>
 <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-top:8px">
@@ -804,6 +808,7 @@ function init(){
   renderPb();
   loadWheel();
   loadLeads();
+  affTip();
   // Auto-refresh the dashboard every 90s so earnings/payout progress stay live.
   clearInterval(window._affRefresh);
   window._affRefresh=setInterval(function(){
@@ -973,6 +978,40 @@ function loadPayouts(){
     if(!d.success)return;
     renderPayouts(d.payouts, d.totals);
   }).catch(function(){});
+}
+/* ---- AFFILIATE TIPS (rotating, motivational) ---- */
+var AFF_TIPS=[
+  {icon:"🔥",title:"You're on fire — keep sharing!",text:"Every business you share your code with today is a potential £25. Send your link to 3 businesses before lunch."},
+  {icon:"🎡",title:"Hit 50 retained and spin!",text:"Every 50 retained signups unlocks the Wheel of Fortune for prizes up to £200 (then £500, then £1000). Keep referring!"},
+  {icon:"💡",title:"Lead with the 14-day code.",text:"Normally it's a 7-day trial. With your code they get 14 days free, no card, cancel anytime. That line closes more signups than anything else."},
+  {icon:"📞",title:"Call within the first hour.",text:"The customer who hears from you first trusts you first. When a referral signs up, message or call them the same day."},
+  {icon:"📈",title:"Track your pipeline.",text:"Your Leads tab shows every referral at each stage. Watch who's in trial and nudge them toward their first paid week."},
+  {icon:"💸",title:"Your £25 lands on their 2nd invoice.",text:"That's about a month after they sign up. Help them through the first paid week and your commission clears."},
+  {icon:"🖨️",title:"Mention auto Print & Post.",text:"We send their leaflets and letters for them, tracked live. It's a service competitors don't offer — use it in your pitch."},
+  {icon:"✅",title:"Never let a trial go cold.",text:"Follow up on day 1, day 3 and day 7. Most sign-ups come from the second or third message."},
+  {icon:"🤝",title:"Ask happy customers for referrals.",text:"A customer who loves their leads knows other businesses. Ask them to share your code too."},
+  {icon:"🏆",title:"You're building real income.",text:"Each retained customer is worth up to £25 to you, plus wheel rewards. Small daily actions compound into serious money."},
+  {icon:"📊",title:"Check your Rewards tab.",text:"Watch your retained count climb toward the next spin. It's your scoreboard — keep it moving."},
+  {icon:"🎯",title:"Match the lead to the right script.",text:"Removal firm? Moving script. Solicitor? Probate script. Builder? Planning script. The right script converts better every time."}
+];
+var _affTipIdx=0;
+function affTip(){
+  var el=document.getElementById('aff-quick-tip');
+  var pg=document.getElementById('aff-tip-pager');
+  if(!el)return;
+  var t=AFF_TIPS[_affTipIdx%AFF_TIPS.length];
+  el.innerHTML='<b style="color:#0ea5e9">'+t.icon+' '+t.title+'</b><br>'+t.text;
+  if(pg)pg.textContent='Tip '+((_affTipIdx%AFF_TIPS.length)+1)+' of '+AFF_TIPS.length;
+  _affTipIdx++;
+  clearInterval(window._affTipInt);
+  window._affTipInt=setInterval(function(){
+    var el2=document.getElementById('aff-quick-tip'); if(!el2)return;
+    var t2=AFF_TIPS[_affTipIdx%AFF_TIPS.length];
+    el2.innerHTML='<b style="color:#0ea5e9">'+t2.icon+' '+t2.title+'</b><br>'+t2.text;
+    var pg2=document.getElementById('aff-tip-pager');
+    if(pg2)pg2.textContent='Tip '+((_affTipIdx%AFF_TIPS.length)+1)+' of '+AFF_TIPS.length;
+    _affTipIdx++;
+  },12000);
 }
 /* ---- REWARD WHEEL ---- */
 var _wheel=null,_wheelSpinIdx=0,_wheelAnim=null;
