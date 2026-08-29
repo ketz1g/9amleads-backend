@@ -4913,7 +4913,7 @@ app.get('/api/affiliate/leads', affiliateAuth, (req, res) => {
       else if (custComms.length || customerIsPaying(c)) st = 'earning';
       var created = c.created_at ? new Date(c.created_at).getTime() : 0;
       var days = created ? Math.max(0, Math.floor((Date.now() - created) / 86400000)) : 0;
-      var stage = st === 'paid' ? 'Paid' : st === 'approved' ? 'Ready to pay' : st === 'earning' ? 'Earning · recurring' : 'Just signed up · in trial';
+      var stage = st === 'paid' ? 'Paid' : st === 'approved' ? 'Ready to pay' : st === 'earning' ? 'Earning' : 'Just signed up, in trial';
       var ex = custExtras.find(function(x) { return x.customer_id === c.id; });
       return {
         id: c.id, company: (ex && ex.company) || c.company || '', email: (ex && ex.email) || c.email || '',
