@@ -332,6 +332,14 @@ tr:last-child td{border-bottom:none}
 
 <!-- OVERVIEW -->
 <section id="view-overview">
+<div class="payout-card" style="background:linear-gradient(135deg,rgba(245,158,11,.12),rgba(234,88,12,.05));border-color:rgba(245,158,11,.35);cursor:pointer" onclick="go('rewards')">
+<div class="p-head"><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+<div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#f97316);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">🎡</div>
+<div><div class="lbl" style="color:#f59e0b;font-weight:800">Reward Wheel</div><div class="val" id="ov-tier" style="font-size:16px;color:#f1f5f9">Tier 1</div></div>
+</div><div class="lbl" id="ov-pct">0 / 50 retained</div></div>
+<div class="bar" style="border-color:rgba(245,158,11,.3)"><div class="fill" id="ov-bar" style="width:0%;background:linear-gradient(90deg,#f59e0b,#f97316)"></div></div>
+<div class="p-sub" id="ov-sub">Every 50 retained signups unlocks a spin for prizes up to £200. Open the Rewards tab to spin.</div>
+</div>
 <div class="payout-card">
 <div class="p-head"><div><div class="lbl">Your next payout</div><div class="val" id="c-next-payout">£0</div></div><div class="lbl" id="c-payout-pct">0% of £50</div></div>
 <div class="bar"><div class="fill" id="c-payout-bar" style="width:0%"></div></div>
@@ -931,6 +939,13 @@ function loadWheel(){
     if(d.wheel.can_spin){btn.disabled=false;btn.style.opacity='1';sub.innerHTML='<b style="color:#f59e0b">Spin ready!</b> You have '+(d.wheel.since_last_spin||50)+' retained signups.';}
     else {btn.disabled=true;btn.style.opacity='.4';sub.textContent='Every 50 retained signups unlocks a spin. '+(50-(d.wheel.progress||0))+' more to go. Prizes up to £'+(d.wheel.prizes[d.wheel.prizes.length-1]||200)+'.';}
     renderWheelHistory(d.history||[]);
+    // Overview widget
+    var maxPrize=d.wheel.prizes[d.wheel.prizes.length-1]||200;
+    var ovt=document.getElementById('ov-tier'); if(ovt)ovt.textContent='Tier '+(t>=3?'3+':t)+' · prizes up to £'+maxPrize;
+    var ovp=document.getElementById('ov-pct'); if(ovp)ovp.textContent=(d.wheel.progress||0)+' / 50 retained';
+    var ovb=document.getElementById('ov-bar'); if(ovb)ovb.style.width=pct+'%';
+    var ovs=document.getElementById('ov-sub');
+    if(ovs) ovs.textContent = d.wheel.can_spin ? 'Spin ready! Click to open the wheel and claim your prize.' : 'Every 50 retained signups unlocks a spin. '+(50-(d.wheel.progress||0))+' more to go. Prizes up to £'+maxPrize+'.';
   }).catch(function(){});
 }
 function drawWheel(prizes,rotDeg){
