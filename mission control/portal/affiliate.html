@@ -223,6 +223,10 @@ tr:last-child td{border-bottom:none}
 /* lead notes */
 .lead-note{background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.25);border-radius:8px;padding:8px 10px;margin-top:8px;font-size:12px;color:#fbbf24;line-height:1.5}
 @media(max-width:700px){.rw-tiers{grid-template-columns:1fr!important}}
+/* affiliate header CTAs */
+.aff-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:rgba(255,255,255,.04);border:1px solid #1e2030;border-radius:14px;padding:12px 16px;margin-bottom:16px}
+.aff-cta{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:#e2e8f0;background:rgba(255,255,255,.05);border:1px solid #1e2030;border-radius:9px;padding:8px 14px;text-decoration:none;transition:.15s}
+.aff-cta:hover{background:rgba(14,165,233,.15);border-color:rgba(14,165,233,.4);color:#fff;transform:translateY(-1px)}
 </style>
 </head>
 <body>
@@ -303,6 +307,18 @@ tr:last-child td{border-bottom:none}
 
 <!-- DASHBOARD -->
 <div class="wrap" id="dash-view" style="display:none">
+<div class="aff-header">
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+<a href="#overview" onclick="go('overview');return false" class="aff-cta" style="background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff">🏠 Overview</a>
+<a href="#leads" onclick="go('leads');return false" class="aff-cta">📥 My Leads</a>
+<a href="#tools" onclick="go('tools');return false" class="aff-cta">🧰 Tools</a>
+<a href="#playbook" onclick="go('playbook');return false" class="aff-cta">📖 Playbook</a>
+<a href="#rewards" onclick="go('rewards');return false" class="aff-cta">🎡 Rewards</a>
+<a href="#compliance" onclick="go('compliance');return false" class="aff-cta">🪪 Compliance</a>
+<a href="#payouts" onclick="go('payouts');return false" class="aff-cta">💰 Payouts</a>
+<a href="#signup" onclick="window.open('https://9amleads.com/portal/#signup','_blank');return false" class="aff-cta" style="background:rgba(52,211,153,.15);border-color:rgba(52,211,153,.4);color:#34d399">➕ Refer a business</a>
+</div>
+</div>
 <div class="hero">
 <h1>Welcome back, <span id="a-name">Affiliate</span> 👋</h1>
 <p>Share your code below. Every customer who uses it for <b>any lead type</b> gets a <b>14-day free trial</b>. You earn <b>£25</b> for every customer who pays their second invoice, around a month after they sign up. Use the <b>Tools</b> tab for ready-made phone scripts, emails, SMS and social posts to help your referrals start the free trial.</p>
