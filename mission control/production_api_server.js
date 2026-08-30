@@ -10912,13 +10912,13 @@ const LEAD_TYPE_RULES = {
     name: 'Planning Permissions', key: 'planning', local: false, model: 'weekly',
     coverage: ['county', 'ukwide'],
     area_limit: { free_trial: 3, starter: 3, pro: 999, enterprise: 999 },
-    plans: { free_trial: { default: 1, county: 1, region: 1, ukwide: 1 }, starter: { default: 1, county: 1, region: 1, ukwide: 1 }, pro: { default: 3, county: 3, region: 3, ukwide: 3 }, enterprise: { default: 5, county: 5, region: 5, ukwide: 5 } },
+    plans: { free_trial: { default: 2, county: 2, region: 2, ukwide: 2 }, starter: { default: 2, county: 2, region: 2, ukwide: 2 }, pro: { default: 5, county: 5, region: 5, ukwide: 5 }, enterprise: { default: 10, county: 10, region: 10, ukwide: 10 } },
     min_area: 'county', up_to: true, enabled: true,
     price_starter: 'price_1TmEKSADspDnFpfBrCHXJBFu',
     price_growth: 'price_1TmEKTADspDnFpfBVdi1APEq',
     price_power: 'price_1TmEKTADspDnFpfBxFjHeoP9',
-    weekly_est: { free_trial: 25, starter: 5, pro: 15, enterprise: 25 },
-    monthly_est: { starter: 20, pro: 60, enterprise: 100 }
+    weekly_est: { free_trial: 10, starter: 10, pro: 25, enterprise: 50 },
+    monthly_est: { starter: 40, pro: 100, enterprise: 200 }
   },
   probate: {
     name: 'Probate Leads', key: 'probate', local: false, model: 'weekly',
@@ -10929,20 +10929,20 @@ const LEAD_TYPE_RULES = {
     price_starter: 'price_1TxQqKADspDnFpfBccT0Lh2w',
     price_growth: 'price_1Tm6PPADspDnFpfB3q61i5FP',
     price_power: 'price_1Tm6PQADspDnFpfBazgz1UD7',
-    weekly_est: { starter: 10, pro: 25, enterprise: 50 },
+    weekly_est: { starter: 5, pro: 15, enterprise: 25 },
     monthly_est: { starter: 40, pro: 100, enterprise: 200 }
   },
   tenders: {
     name: 'Public Tenders', key: 'tenders', local: false, model: 'weekly',
     coverage: ['county', 'region', 'ukwide'],
     area_limit: { free_trial: 3, starter: 3, pro: 999, enterprise: 999 },
-    plans: { free_trial: { default: 1, county: 1, region: 1, ukwide: 1 }, starter: { default: 1, county: 1, region: 1, ukwide: 1 }, pro: { default: 3, county: 3, region: 3, ukwide: 3 }, enterprise: { default: 5, county: 5, region: 5, ukwide: 5 } },
+    plans: { free_trial: { default: 2, county: 2, region: 2, ukwide: 2 }, starter: { default: 2, county: 2, region: 2, ukwide: 2 }, pro: { default: 5, county: 5, region: 5, ukwide: 5 }, enterprise: { default: 10, county: 10, region: 10, ukwide: 10 } },
     min_area: 'county', up_to: true, enabled: true,
     price_starter: 'price_1TmEKTADspDnFpfBsi6jjA6B',
     price_growth: 'price_1TmEKUADspDnFpfBqnyKzJxM',
     price_power: 'price_1TmEKUADspDnFpfBugGOoqhD',
-    weekly_est: { free_trial: 25, starter: 5, pro: 15, enterprise: 25 },
-    monthly_est: { starter: 20, pro: 60, enterprise: 100 }
+    weekly_est: { free_trial: 10, starter: 10, pro: 25, enterprise: 50 },
+    monthly_est: { starter: 40, pro: 100, enterprise: 200 }
   },
   property: {
     name: 'Property Leads', key: 'property', local: true,
