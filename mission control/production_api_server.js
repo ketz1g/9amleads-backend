@@ -1525,11 +1525,14 @@ class DirectMailProvider {
         } catch (trimErr) { console.log('[STANNP] Front trim skipped:', trimErr.message); }
       }
       var outBuf;
-if (isBack && !hasBakedZone) {
-        // FRESH BACK UPLOAD (no baked zone): the design sits BELOW the white
-        // address zone (top 28%). The design is STRETCHED to fill the full width
-        // edge-to-edge below the zone, so preview == editor == saved == printed.
-        // (Stannp's clearzone overlays the top at print; the zone is white here.)
+      if (isBack) {
+        // The back ALWAYS sits below the white address zone (top 28%). The
+        // design is STRETCHED to fill the full width edge-to-edge below the
+        // zone, so preview == editor == saved == printed. Stannp's clearzone
+        // (or the saved white top) overlays the address area at print.
+        // We intentionally do NOT try to detect a "baked zone" here — that
+        // heuristic mis-fired on full-page designs and made them fill the whole
+        // page instead of sitting below the address area.
         var zoneFrac = 0.28;        // top address zone (matches Stannp clearzone)
         var designTop = Math.round(A5_H * zoneFrac);   // y where the design starts
         var designH = A5_H - designTop;                // zone bottom -> page bottom
@@ -1542,17 +1545,15 @@ if (isBack && !hasBakedZone) {
           .composite([{ input: scaled, top: Math.round(designTop), left: 0 }])
           .jpeg({ quality: 82 })
           .toBuffer();
-        console.log('[STANNP] Prepared BACK (fresh) artwork for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> stretch-fill below zone ' + A5_W + 'x' + Math.round(designH) + ')');
-      } else {
-        // FRONT, or BACK that already has its baked zone: full-bleed, edge-to-edge.
-        // Fronts are pre-trimmed of white margins (see above), then STRETCHED
-        // (fit 'fill') to exactly fill the A5 canvas — zero white bands, zero
-        // cropped content, matching what the in-app editor shows. Backs with a
-        // baked zone are cover-fitted (they already fill the sheet).
-        var frontFit = isBack ? 'cover' : 'fill';
+        console.log('[STANNP] Prepared BACK artwork for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> stretch-fill below zone ' + A5_W + 'x' + Math.round(designH) + ')');
+      } else {
+        // FRONT: full-bleed, edge-to-edge. Fronts are pre-trimmed of white
+        // margins (see above), then STRETCHED (fit 'fill') to exactly fill the
+        // A5 canvas — zero white bands, zero cropped content, matching what the
+        // in-app editor shows.
         outBuf = await sharp(inputForResize)
           .rotate()
-          .resize({ width: A5_W, height: A5_H, fit: frontFit, position: 'attention', background: { r: 255, g: 255, b: 255 } }).jpeg({ quality: 82 })
+          .resize({ width: A5_W, height: A5_H, fit: 'fill', background: { r: 255, g: 255, b: 255 } }).jpeg({ quality: 82 })
           .toBuffer();
         console.log('[STANNP] Prepared FRONT/full-bleed artwork for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> ' + A5_W + 'x' + A5_H + ', fit=' + frontFit + (isBack && hasBakedZone ? ', baked zone detected' : '') + ')' + trimNote);
       }

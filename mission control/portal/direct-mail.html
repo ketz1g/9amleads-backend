@@ -1224,21 +1224,12 @@ function flyerEditorReset(){
   // exactly fill the page (edge-to-edge, nothing white, nothing cropped).
   // Back: show the design positioned to fill the area below the address zone.
   if (_flyerEditor.matType === 'flyer_back') {
+    // Back: design sits BELOW the white address zone (top 28%), full width.
     var zoneTop2 = Math.round(_flyerEditor.zoneH || Math.round(h * 0.28));
-    if (_flyerEditor.hasBakedZone) {
-      // Design already has the white zone baked into its top: full-bleed, the
-      // baked zone IS the address area.
-      _flyerEditor.rw = w;
-      _flyerEditor.rh = h;
-      _flyerEditor.rx = 0;
-      _flyerEditor.ry = 0;
-    } else {
-      // Fresh back: design sits BELOW the white address zone, full width.
-      _flyerEditor.rw = w;
-      _flyerEditor.rh = h - zoneTop2;
-      _flyerEditor.rx = 0;
-      _flyerEditor.ry = zoneTop2;
-    }
+    _flyerEditor.rw = w;
+    _flyerEditor.rh = h - zoneTop2;
+    _flyerEditor.rx = 0;
+    _flyerEditor.ry = zoneTop2;
   } else {
     _flyerEditor.rw = w;
     _flyerEditor.rh = h;
@@ -1258,21 +1249,13 @@ function flyerEditorAutoFit(){
   var iw=ed.img.width, ih=ed.img.height;
   var bleedPx=feMmToPx(6);
   if(ed.matType==='flyer_back'){
+    // Back: STRETCH to exactly fill the width below the address zone, from the
+    // zone bottom to the page bottom — edge-to-edge, no white margins.
     var zoneTop = Math.round(ed.zoneH || Math.round(h * 0.28));
-    if (ed.hasBakedZone) {
-      // Zone already baked into the image's top: full-bleed, edge-to-edge.
-      ed.rw = w;
-      ed.rh = h;
-      ed.rx = 0;
-      ed.ry = 0;
-    } else {
-      // Fresh back: STRETCH to exactly fill the width below the address zone,
-      // from the zone bottom to the page bottom — edge-to-edge, no white margins.
-      ed.rw = w;                                  // exactly page width = zone width
-      ed.rh = h - zoneTop;                        // zone bottom -> page bottom
-      ed.rx = 0;                                  // left-aligned to the zone
-      ed.ry = zoneTop;                            // starts exactly below the zone
-    }
+    ed.rw = w;                                  // exactly page width = zone width
+    ed.rh = h - zoneTop;                        // zone bottom -> page bottom
+    ed.rx = 0;                                  // left-aligned to the zone
+    ed.ry = zoneTop;                            // starts exactly below the zone
   } else {
     // FRONT: STRETCH to exactly fill the full page (edge-to-edge, no white).
     // The front design is auto-cropped of pure-white margins at load, so the
@@ -1404,12 +1387,12 @@ function flyerEditorDraw(){
     var reachesRight  = dx + dw >= ox + pw - tol;
     var reachesTop    = dy <= oy + tol;
     var reachesBottom = dy + dh >= oy + ph - tol;
-    // Front (or baked-zone back): full-bleed, reach all edges.
-    // Fresh back: design sits below the address zone (not behind it), so it
-    // must reach left/right/bottom but sit BELOW the zone top (not cover it).
-    var isFreshBack = (ed.matType==='flyer_back' && !ed.hasBakedZone);
-    var backOK = isFreshBack ? (dy >= oy + ed.zoneH - tol && reachesBottom) : true;
-    var inLine = reachesLeft && reachesRight && reachesBottom && (isFreshBack ? backOK : reachesTop);
+    // Front: full-bleed, reach all edges. Back: design sits below the address
+    // zone (not behind it), so it must reach left/right/bottom but sit below the
+    // zone top (not cover it).
+    var isBack2 = (ed.matType==='flyer_back');
+    var backOK = isBack2 ? (dy >= oy + ed.zoneH - tol && reachesBottom) : true;
+    var inLine = reachesLeft && reachesRight && reachesBottom && (isBack2 ? backOK : reachesTop);
     // Draw the bleed line (always) — green when in line, red when not.
     ctx.strokeStyle = inLine ? '#22c55e' : '#ef4444';
     ctx.lineWidth = inLine ? 3 : 2;
