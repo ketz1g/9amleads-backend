@@ -1078,7 +1078,11 @@ var _flyerEditor = {
   dragging:false, startX:0, startY:0, startRx:0, startRy:0, startRw:0, startRh:0,
   mode:'move', canvas:null, ctx:null, loaded:false, zoneH:0, hasBakedZone:false
 };
-function _mm(){ return _flyerEditor.pageW / 148; }
+function _mm(){
+  // Orientation-aware px-per-mm. Portrait: 360px = 148mm. Landscape: 511px = 210mm.
+  var mmBase = (_flyerEditor.pageW > _flyerEditor.pageH) ? 210 : 148;
+  return _flyerEditor.pageW / mmBase;
+}
 function feMmToPx(mm){ return mm * _mm(); }
 function fePxToMm(px){ return px / _mm(); }
 function feRound1(v){ return Math.round(v*10)/10; }
@@ -1118,6 +1122,16 @@ function feSetFromInputs(){
 }
 function openFlyerEditor(id, name, matType){
   _flyerEditor.id=id; _flyerEditor.matType=matType||''; _flyerEditor.loaded=false;
+  // Orientation-aware canvas: A5 portrait = 360x511 (148x210mm), A5 landscape =
+  // 511x360 (210x148mm). Use the currently selected format to size the editor so
+  // the canvas matches what will print (portrait vs landscape).
+  var isLandscape = false;
+  var fmtNow = _formats.find(function(x){ return x.id === _selectedFormat; });
+  if (fmtNow && fmtNow.width && fmtNow.height && fmtNow.width > fmtNow.height) isLandscape = true;
+  _flyerEditor.pageW = isLandscape ? 511 : 360;
+  _flyerEditor.pageH = isLandscape ? 360 : 511;
+  _flyerEditor.cw = _flyerEditor.pageW + 60;
+  _flyerEditor.ch = _flyerEditor.pageH + 60;
   var modal=document.getElementById('flyer-editor-modal');
   modal.style.display='flex';
   var canvas=document.getElementById('flyer-editor-canvas');
@@ -1397,13 +1411,15 @@ function flyerEditorDraw(){
   ctx.strokeStyle='#94a3b8'; ctx.lineWidth=1;
   var mmp=feMmToPx(1);
   ctx.fillStyle='#475569'; ctx.font='8px Arial'; ctx.textAlign='center';
-  for(var mm=0; mm<=148; mm+=5){
+  var wMm = ed.pageW > ed.pageH ? 210 : 148; // horizontal ruler spans page width in mm
+  var hMm = ed.pageW > ed.pageH ? 148 : 210; // vertical ruler spans page height in mm
+  for(var mm=0; mm<=wMm; mm+=5){
     var x=ox+mm*mmp;
     if(mm%10===0){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,oy); ctx.stroke(); ctx.fillText(mm+'',x,oy-3); }
     else { ctx.beginPath(); ctx.moveTo(x,oy-6); ctx.lineTo(x,oy); ctx.stroke(); }
   }
   ctx.textAlign='right';
-  for(var mm2=0; mm2<=210; mm2+=10){
+  for(var mm2=0; mm2<=hMm; mm2+=10){
     var y=oy+mm2*mmp;
     ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(ox,y); ctx.stroke();
     ctx.fillText(mm2+'',ox-3,y+3);
@@ -1481,7 +1497,9 @@ function saveFlyerEditor(){
   var btn=document.getElementById('flyer-editor-save');
   var status=document.getElementById('flyer-editor-status');
   btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Preparing full-quality print...'; status.textContent='';
-  var PW=1819, PH=2551;
+  // Orientation-aware output: A5-PORT = 1819x2551, A5 landscape = 2551x1819.
+  var isLand = _flyerEditor.pageW > _flyerEditor.pageH;
+  var PW = isLand ? 2551 : 1819, PH = isLand ? 1819 : 2551;
   var zonePct=0.28, zoneH=Math.round(PH*zonePct);
   var outCanvas=document.createElement('canvas');
   outCanvas.width=PW; outCanvas.height=PH;
