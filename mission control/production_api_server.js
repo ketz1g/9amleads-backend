@@ -3319,7 +3319,8 @@ function runAffiliateAutomation() {
   (dbc.affiliates || []).forEach(function(aff) { affiliateWheelClawback(dbc, aff); });
   try { saveDb(); } catch(e) {}
   var r3 = runAffiliateWheelUnlockEmails();
-  return { nurture: r1, reactivation: r2, wheel: r3 };
+  var r4 = runAffiliateProspectSequence();
+  return { nurture: r1, reactivation: r2, wheel: r3, prospects: r4 };
 }
 // ===== AFFILIATE REWARD WHEEL =====
 // Milestone spin wheel. Every 50 RETAINED paid signups (customers whose
@@ -4945,6 +4946,69 @@ app.get('/api/affiliate/dashboard', affiliateAuth, (req, res) => {
     });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+
+// #2: Recruitment email funnel — capture a prospect from the affiliates page and
+// send a welcome email + follow-up sequence (day 3 and day 7). Stores prospects in
+// db.affiliate_prospects. No login needed.
+app.post('/api/affiliate-prospect/capture', (req, res) => {
+  try {
+    var dbc = getDb();
+    var em = String(req.body.email || '').trim().toLowerCase();
+    var src = String(req.body.source || 'affiliates_page').substring(0, 40);
+    if (!em || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) return res.status(400).json({ error: 'Please enter a valid email.' });
+    if (!dbc.affiliate_prospects) dbc.affiliate_prospects = [];
+    var existing = dbc.affiliate_prospects.find(function(x){ return x.email === em; });
+    if (existing) { return res.json({ success: true, already: true }); }
+    var rec = { id: uuidv4(), email: em, source: src, created_at: new Date().toISOString(), emails_sent: [], last_email_at: null };
+    dbc.affiliate_prospects.push(rec);
+    saveDb();
+    try {
+      sendBrevoEmail({ email: em, name: em.split('@')[0] },
+        'Your 9amLeads affiliate starter pack',
+        '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto">' +
+        '<h1 style="font-family:Outfit,sans-serif;color:#0ea5e9;margin:0 0 10px">Your 9amLeads affiliate starter pack</h1>' +
+        '<p style="color:#ccc;line-height:1.7">Hi there,</p>' +
+        '<p style="color:#ccc;line-height:1.7">Thanks for your interest in the 9amLeads affiliate programme. Here is everything you need to know:</p>' +
+        '<ul style="color:#ccc;line-height:1.8">' +
+        '<li><b>£25 per sign-up</b> — paid when a business you referred pays their second invoice (around a month after they join).</li>' +
+        '<li><b>14-day free trial</b> for everyone you refer (double the standard 7, no card).</li>' +
+        '<li><b>Wheel of Fortune</b> — spin for up to £1,000 every 50 sign-ups.</li>' +
+        '<li><b>Free to join</b> — 2 minutes, no card, no minimums, cancel anytime.</li>' +
+        '<li><b>Everything provided</b> — scripts, emails, SMS, social posts, a live dashboard.</li>' +
+        '</ul>' +
+        '<p style="color:#ccc;line-height:1.7">Your referral plan: pick 5 businesses you know (removal firm, solicitor, builder, accountant, letting agent). Share your code. Follow up during their trial. That is it.</p>' +
+        '<p style="color:#ccc;line-height:1.7"><a href="https://9amleads.com/affiliates" style="color:#0ea5e9">Apply free here</a> and get your code in 2 minutes.</p>' +
+        '<p style="color:#888;font-size:13px;margin-top:24px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>').catch(function(){});
+      rec.emails_sent.push('welcome'); rec.last_email_at = new Date().toISOString();
+      saveDb();
+    } catch(eW) {}
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+// Follow-up sequence for affiliate prospects: day 3 and day 7 nudges.
+function runAffiliateProspectSequence() {
+  try {
+    var dbc = getDb();
+    var sent = 0;
+    (dbc.affiliate_prospects || []).forEach(function(p) {
+      if (!p || !p.email) return;
+      var ageDays = Math.floor((new Date() - new Date(p.created_at)) / 86400000);
+      var sentArr = p.emails_sent || [];
+      var seq = [];
+      if (ageDays >= 3 && !sentArr.includes('day3')) seq.push({ key: 'day3', subj: 'Still thinking about earning £25 per sign-up?', body: '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="font-family:Outfit,sans-serif;color:#f59e0b;margin:0 0 10px">A quick reminder</h1><p style="color:#ccc;line-height:1.7">Hi there,</p><p style="color:#ccc;line-height:1.7">You grabbed the 9amLeads affiliate pack a few days ago. Just a nudge that the programme is free to join in 2 minutes, and the only cost is sharing your code.</p><p style="color:#ccc;line-height:1.7">£25 per retained sign-up, wheel spins up to £1,000, and a 14-day free trial for everyone you refer. It takes one business that stays to see how it works.</p><p style="color:#ccc;line-height:1.7"><a href="https://9amleads.com/affiliates" style="color:#0ea5e9">Join free here</a>.</p></div>' });
+      if (ageDays >= 7 && !sentArr.includes('day7')) seq.push({ key: 'day7', subj: 'Last nudge: your £25-per-sign-up starter code is waiting', body: '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="font-family:Outfit,sans-serif;color:#34d399;margin:0 0 10px">Don\'t leave it on the table</h1><p style="color:#ccc;line-height:1.7">Hi there,</p><p style="color:#ccc;line-height:1.7">You asked about the 9amLeads affiliate programme a week ago. This is the last email we will send you about it (no hard feelings if it is not for you).</p><p style="color:#ccc;line-height:1.7">If it is for you: 2 minutes to join, free, no card. Your code is live the moment you are approved, and your referrals get 14 days free.</p><p style="color:#ccc;line-height:1.7"><a href="https://9amleads.com/affiliates" style="color:#0ea5e9">Get your code here</a> or reply to this email with any questions.</p></div>' });
+      seq.forEach(function(m) {
+        try {
+          sendBrevoEmail({ email: p.email, name: p.email.split('@')[0] }, m.subj, m.body).catch(function(){});
+          sentArr.push(m.key); p.last_email_at = new Date().toISOString(); sent++;
+        } catch(e) {}
+      });
+      p.emails_sent = sentArr;
+    });
+    saveDb();
+    return { prospect_emails_sent: sent };
+  } catch(e) { return { prospect_emails_sent: 0, error: e.message }; }
+}
 
 // GET /api/affiliate/kyc — current KYC / compliance status.
 app.get('/api/affiliate/kyc', affiliateAuth, (req, res) => {

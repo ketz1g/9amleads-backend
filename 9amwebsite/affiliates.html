@@ -151,6 +151,17 @@ tbody tr.hl{background:rgba(14,165,233,.07)}
 <a href="/portal/affiliate.html#register" class="btn btn-primary">Join free. Get your code</a>
 <a href="#how" class="btn btn-ghost">See how it works</a>
 </div>
+<div class="aff-capture" style="margin-top:22px;max-width:520px;margin-left:auto;margin-right:auto">
+<div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:18px 20px">
+<div style="font-size:13px;font-weight:700;color:#e2e8f0;margin-bottom:4px">📬 Not ready to join yet?</div>
+<div style="font-size:12px;color:#9aa7bc;margin-bottom:12px">Drop your email and we'll send you the full affiliate pack + a starter plan to your inbox. No spam, unsubscribe anytime.</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<input type="email" id="aff-cap-email" placeholder="you@email.com" style="flex:1;min-width:180px;padding:11px 14px;border-radius:9px;border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.3);color:#fff;font-size:13px">
+<button class="btn btn-primary" style="padding:11px 20px;font-size:13px" onclick="captureAffiliateEmail()">Send me the pack</button>
+</div>
+<div id="aff-cap-msg" style="font-size:12px;color:#34d399;margin-top:8px;display:none">✅ On its way! Check your inbox for the affiliate pack.</div>
+</div>
+</div>
 <div class="trust">
 <span><i>✓</i> Free to join</span>
 <span><i>✓</i> No minimum referrals</span>
@@ -341,6 +352,26 @@ Questions? <a href="mailto:hello@9amleads.com">hello@9amleads.com</a>
 </div>
 </div>
 <script>
+function captureAffiliateEmail(){
+  var el=document.getElementById('aff-cap-email');
+  var msg=document.getElementById('aff-cap-msg');
+  var em=el?el.value.trim():'';
+  if(!em || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){ el.style.borderColor='#f87171'; return; }
+  el.style.borderColor='rgba(255,255,255,.2)';
+  fetch('https://nineamleads-backend.onrender.com/api/affiliate-prospect/capture',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:em,source:'affiliates_page'})})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.success){
+        if(msg)msg.style.display='block';
+        if(el)el.value='';
+        // clear the message after a few seconds
+        setTimeout(function(){ if(msg)msg.style.display='none'; },6000);
+      } else {
+        if(msg){msg.style.color='#f87171';msg.textContent=d.error||'Could not subscribe. Try again or email hello@9amleads.com.';msg.style.display='block';}
+      }
+    })
+    .catch(function(){ if(msg){msg.style.color='#f87171';msg.textContent='Server is starting up. Please try again.';msg.style.display='block';} });
+}
 function sendEnquiry(){
   var name=document.getElementById('cq-name').value.trim();
   var email=document.getElementById('cq-email').value.trim();
