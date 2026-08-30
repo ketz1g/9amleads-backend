@@ -1523,27 +1523,25 @@ class DirectMailProvider {
         } catch (trimErr) { console.log('[STANNP] Front trim skipped:', trimErr.message); }
       }
       var outBuf;
-      if (isBack && !hasBakedZone) {
-        // Address zone = top 28%. Printable design area = from just below the
-        // zone down to a ~4% bottom safety margin, so the design sits clearly
-        // within the page and the bottom line is never clipped.
-        var zoneFrac = 0.28;        // top address zone (matches Stannp clearzone)
-        var bottomMarginFrac = 0.04; // safe white margin at the very bottom
-        var designTop = Math.round(A5_H * zoneFrac);                  // y where design area starts
-        var designBottom = Math.round(A5_H * (1 - bottomMarginFrac)); // y where design area ends
-        var designH = designBottom - designTop;
-        // Fit the whole design (contain, no crop) into that design area, padded
-        // with white, then place it below the zone on a full A5 white canvas.
-        var scaled = await sharp(inputBuf)
-          .rotate()
-          .resize({ width: A5_W, height: designH, fit: 'contain', position: 'centre', background: { r: 255, g: 255, b: 255 } })
-          .jpeg({ quality: 82 })
-          .toBuffer();
-        outBuf = await sharp({ create: { width: A5_W, height: A5_H, channels: 3, background: { r: 255, g: 255, b: 255 } } })
-          .composite([{ input: scaled, top: Math.round(designTop), left: 0 }])
-          .jpeg({ quality: 82 })
-          .toBuffer();
-        console.log('[STANNP] Prepared BACK artwork for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> design area ' + A5_W + 'x' + Math.round(designH) + ' below top zone, bottom margin kept)');
+if (isBack && !hasBakedZone) {
+        // Address zone = top 28% (Stannp's native clearzone at print). The back
+        // design is STRETCHED to fill EXACTLY the area below the zone,
+        // edge-to-edge with no white margins — matching what the in-app editor's
+        // "Fit to Page" shows. Only the address zone (top) is white; there is no
+        // second white band/padding.
+        var zoneFrac = 0.28;        // top address zone (matches Stannp clearzone)
+        var designTop = Math.round(A5_H * zoneFrac);   // y where the design starts
+        var designH = A5_H - designTop;                // zone bottom -> page bottom
+        var scaled = await sharp(inputBuf)
+          .rotate()
+          .resize({ width: A5_W, height: designH, fit: 'fill', background: { r: 255, g: 255, b: 255 } })
+          .jpeg({ quality: 82 })
+          .toBuffer();
+        outBuf = await sharp({ create: { width: A5_W, height: A5_H, channels: 3, background: { r: 255, g: 255, b: 255 } } })
+          .composite([{ input: scaled, top: Math.round(designTop), left: 0 }])
+          .jpeg({ quality: 82 })
+          .toBuffer();
+        console.log('[STANNP] Prepared BACK artwork for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> stretch-fill ' + A5_W + 'x' + Math.round(designH) + ' below top zone, edge-to-edge)');
       } else {
         // FRONT, or BACK that already has its baked zone: full-bleed, edge-to-edge.
         // Fronts are pre-trimmed of white margins (see above), then STRETCHED
