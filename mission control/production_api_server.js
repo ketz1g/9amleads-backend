@@ -20517,14 +20517,17 @@ app.get('/api/campaigns', authMiddleware, (req, res) => {
 
 // ===== PRINT & POST PRICING =====
 // Your markup is added on top of Stannp's print+post costs
+// NOTE (TESTING): prices temporarily set to £0.01 (1p) so test orders don't
+// charge the card. REVERT to real prices before launch:
+//   flyer_a5: 1.99, letter_a4: 1.49, flyer_plus_letter: 2.99
 var PRINT_POST_PRICES = {
   // Per-item prices charged to customer (GBP), priced against Stannp's actual
   // Royal Mail Standard rates so we stay profitable. A letter is cheaper than a
   // leaflet — Stannp's own rates reflect this (A4 letter £1.02, A5 postcard £1.18).
   // Margins: letter £0.47, leaflet £0.81, pack £0.79 per item.
-  flyer_a5: { label: 'A5 Leaflet', customer: 1.99, stannp: 1.18 },
-  letter_a4: { label: 'A4 Letter', customer: 1.49, stannp: 1.02 },
-  flyer_plus_letter: { label: 'A5 Leaflet + A4 Letter', customer: 2.99, stannp: 2.20 },
+  flyer_a5: { label: 'A5 Leaflet', customer: 0.01, stannp: 1.18 },
+  letter_a4: { label: 'A4 Letter', customer: 0.01, stannp: 1.02 },
+  flyer_plus_letter: { label: 'A5 Leaflet + A4 Letter', customer: 0.01, stannp: 2.20 },
   // Postage included in above prices (Royal Mail Standard)
   markup_percent: function(item) { return Math.round((this[item].customer - this[item].stannp) / this[item].stannp * 100); }
 };
@@ -20626,11 +20629,11 @@ function cleanMailText(text) {
 // downloadable design template. Used by the dashboard format selector so
 // customers can pick portrait / landscape / enveloped / letter.
 var DM_FORMATS = [
-  { id: 'flyer_a5_portrait', label: 'A5 Portrait Leaflet', size: 'A5-PORT', kind: 'flyer', width: 1819, height: 2551, mm: '148×210mm', safe: '148×210mm', template: 'a5-leaflet-portrait.pdf', price: 1.99, desc: 'Classic A5 flyer, portrait. Full colour, 300gsm.' },
-  { id: 'flyer_a5_landscape', label: 'A5 Landscape Leaflet', size: 'A5', kind: 'flyer', width: 2551, height: 1819, mm: '210×148mm', safe: '210×148mm', template: 'a5-leaflet.pdf', price: 1.99, desc: 'A5 flyer, landscape orientation.' },
-  { id: 'flyer_a5_enveloped', label: 'A5 Leaflet in Envelope', size: 'A5-ENV', kind: 'flyer', width: 2551, height: 1819, mm: '210×148mm', safe: '210×148mm', template: 'a5-enveloped-postcard.pdf', price: 2.75, desc: 'A5 leaflet sent inside a windowed envelope. More premium feel.' },
-  { id: 'flyer_plus_letter', label: 'Leaflet + Letter', size: 'A5-PORT', kind: 'flyer_plus_letter', width: 1819, height: 2551, mm: 'A5 leaflet + A4 letter', safe: '148×210mm + 210×297mm', template: 'a5-leaflet-portrait.pdf', price: 2.99, desc: 'A5 leaflet with a personalised A4 letter. Great for a fuller introduction.' },
-  { id: 'letter_a4', label: 'A4 Letter', size: 'letter', kind: 'letter', width: 0, height: 0, mm: '210×297mm', safe: '210×297mm', template: 'a4-letter.pdf', price: 1.49, desc: 'Professional A4 letter with windowed envelope.' }
+  { id: 'flyer_a5_portrait', label: 'A5 Portrait Leaflet', size: 'A5-PORT', kind: 'flyer', width: 1819, height: 2551, mm: '148×210mm', safe: '148×210mm', template: 'a5-leaflet-portrait.pdf', price: 0.01, desc: 'Classic A5 flyer, portrait. Full colour, 300gsm.' },
+  { id: 'flyer_a5_landscape', label: 'A5 Landscape Leaflet', size: 'A5', kind: 'flyer', width: 2551, height: 1819, mm: '210×148mm', safe: '210×148mm', template: 'a5-leaflet.pdf', price: 0.01, desc: 'A5 flyer, landscape orientation.' },
+  { id: 'flyer_a5_enveloped', label: 'A5 Leaflet in Envelope', size: 'A5-ENV', kind: 'flyer', width: 2551, height: 1819, mm: '210×148mm', safe: '210×148mm', template: 'a5-enveloped-postcard.pdf', price: 0.01, desc: 'A5 leaflet sent inside a windowed envelope. More premium feel.' },
+  { id: 'flyer_plus_letter', label: 'Leaflet + Letter', size: 'A5-PORT', kind: 'flyer_plus_letter', width: 1819, height: 2551, mm: 'A5 leaflet + A4 letter', safe: '148×210mm + 210×297mm', template: 'a5-leaflet-portrait.pdf', price: 0.01, desc: 'A5 leaflet with a personalised A4 letter. Great for a fuller introduction.' },
+  { id: 'letter_a4', label: 'A4 Letter', size: 'letter', kind: 'letter', width: 0, height: 0, mm: '210×297mm', safe: '210×297mm', template: 'a4-letter.pdf', price: 0.01, desc: 'Professional A4 letter with windowed envelope.' }
 ];
 
 // GET /api/direct-mail/pricing — return Print & Post prices and formats
