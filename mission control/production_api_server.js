@@ -1451,21 +1451,30 @@ class DirectMailProvider {
       // already laid out below the zone and must be passed through full-bleed
       // (we must NOT squish it into the zone area again). Fresh uploads have no
       // baked zone and get the address-zone-aware layout applied here.
-      var hasBakedZone = false;
-      if (isBack) {
-        try {
+      var hasBakedZone = false;
+      if (isBack) {
+        try {
+          // Robust baked-zone check: sample SEVERAL rows across the top 28%
+          // (not just one row, which mis-fired on full-page designs with a light
+          // band). If ALL sampled rows are overwhelmingly white, the zone is
+          // already baked in and the design sits below it.
           var zoneFracCheck = 0.28;
-          var probeY = Math.round((meta.height || A5_H) * (zoneFracCheck / 2));
-          var probeBand = await sharp(inputBuf).rotate().extract({ left: 0, top: probeY, width: Math.round((meta.width || A5_W) * 0.9), height: 1 }).raw().toBuffer();
-          var probeCh = Math.round(probeBand.length / Math.max(1, Math.round((meta.width || A5_W) * 0.9)));
-          var samples = 0, nearWhite = 0;
-          for (var si = 0; si + 2 < probeBand.length; si += Math.max(3, probeCh)) {
-            samples++;
-            if (probeBand[si] > 242 && probeBand[si + 1] > 242 && probeBand[si + 2] > 242) nearWhite++;
+          var probeRows = [0.05, 0.10, 0.15, 0.20, 0.25].map(function(f){ return Math.round((meta.height || A5_H) * f); });
+          var zoneWhiteCount = 0;
+          for (var pr = 0; pr < probeRows.length; pr++) {
+            var probeBand = await sharp(inputBuf).rotate().extract({ left: 0, top: probeRows[pr], width: Math.round((meta.width || A5_W) * 0.9), height: 1 }).raw().toBuffer();
+            var probeCh = Math.round(probeBand.length / Math.max(1, Math.round((meta.width || A5_W) * 0.9)));
+            var samples = 0, nearWhite = 0;
+            for (var si = 0; si + 2 < probeBand.length; si += Math.max(3, probeCh)) {
+              samples++;
+              if (probeBand[si] > 242 && probeBand[si + 1] > 242 && probeBand[si + 2] > 242) nearWhite++;
+            }
+            if (samples > 0 && (nearWhite / samples) > 0.90) zoneWhiteCount++;
           }
-          if (samples > 0 && (nearWhite / samples) > 0.85) hasBakedZone = true;
-        } catch (zoneProbeErr) { console.log('[STANNP] zone probe failed:', zoneProbeErr.message); }
-      }
+          // Baked only if MOST sampled rows are ~white (>=4 of 5).
+          if (zoneWhiteCount >= 4) hasBakedZone = true;
+        } catch (zoneProbeErr) { console.log('[STANNP] zone probe failed:', zoneProbeErr.message); }
+      }
       // The recipient address zone occupies the TOP 28% of the BACK (Stannp's
       // native clearzone). If we sent the back design full-bleed (filling the
       // whole A5), the design would effectively get covered at the top and its
@@ -1524,28 +1533,36 @@ class DirectMailProvider {
           }
         } catch (trimErr) { console.log('[STANNP] Front trim skipped:', trimErr.message); }
       }
-      var outBuf;
+var outBuf;
       if (isBack) {
-        // The back ALWAYS sits below the white address zone (top 28%). The
-        // design is STRETCHED to fill the full width edge-to-edge below the
-        // zone, so preview == editor == saved == printed. Stannp's clearzone
-        // (or the saved white top) overlays the address area at print.
-        // We intentionally do NOT try to detect a "baked zone" here — that
-        // heuristic mis-fired on full-page designs and made them fill the whole
-        // page instead of sitting below the address area.
-        var zoneFrac = 0.28;        // top address zone (matches Stannp clearzone)
-        var designTop = Math.round(A5_H * zoneFrac);   // y where the design starts
-        var designH = A5_H - designTop;                // zone bottom -> page bottom
-        var scaled = await sharp(inputBuf)
-          .rotate()
-          .resize({ width: A5_W, height: designH, fit: 'fill', background: { r: 255, g: 255, b: 255 } })
-          .jpeg({ quality: 82 })
-          .toBuffer();
-        outBuf = await sharp({ create: { width: A5_W, height: A5_H, channels: 3, background: { r: 255, g: 255, b: 255 } } })
-          .composite([{ input: scaled, top: Math.round(designTop), left: 0 }])
-          .jpeg({ quality: 82 })
-          .toBuffer();
-        console.log('[STANNP] Prepared BACK artwork for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> stretch-fill below zone ' + A5_W + 'x' + Math.round(designH) + ')');
+        // BACK handling. Two cases:
+        // 1. Already-baked zone (top ~28% is white — the in-app editor's save
+        //    whites out the address area and stores it). The design already sits
+        //    below the zone, so PASS IT THROUGH FULL-BLEED unchanged. Re-stretching
+        //    it into the below-zone area would double-process and whiten the top.
+        // 2. Fresh upload (no baked zone): stretch the design below the zone.
+        if (hasBakedZone) {
+          outBuf = await sharp(inputBuf)
+            .rotate()
+            .resize({ width: A5_W, height: A5_H, fit: 'fill', background: { r: 255, g: 255, b: 255 } })
+            .jpeg({ quality: 82 })
+            .toBuffer();
+          console.log('[STANNP] Prepared BACK (baked zone) artwork for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> pass-through full-bleed, zone already baked)');
+        } else {
+          var zoneFrac = 0.28;        // top address zone (matches Stannp clearzone)
+          var designTop = Math.round(A5_H * zoneFrac);   // y where the design starts
+          var designH = A5_H - designTop;                // zone bottom -> page bottom
+          var scaled = await sharp(inputBuf)
+            .rotate()
+            .resize({ width: A5_W, height: designH, fit: 'fill', background: { r: 255, g: 255, b: 255 } })
+            .jpeg({ quality: 82 })
+            .toBuffer();
+          outBuf = await sharp({ create: { width: A5_W, height: A5_H, channels: 3, background: { r: 255, g: 255, b: 255 } } })
+            .composite([{ input: scaled, top: Math.round(designTop), left: 0 }])
+            .jpeg({ quality: 82 })
+            .toBuffer();
+          console.log('[STANNP] Prepared BACK (fresh) artwork for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> stretch-fill below zone ' + A5_W + 'x' + Math.round(designH) + ')');
+        }
       } else {
         // FRONT: full-bleed, edge-to-edge. Fronts are pre-trimmed of white
         // margins (see above), then STRETCHED (fit 'fill') to exactly fill the
