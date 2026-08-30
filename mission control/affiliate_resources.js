@@ -17,16 +17,17 @@ module.exports = [
       'Moving leads arrive every morning at 9am: homes that just went under offer in their postcode areas.',
       'The first company to call the homeowner usually wins the move.',
       'Normally we offer 7 days free. With my code they get 14 days free, no card required, cancel anytime.',
-      'We have proof of every lead: full address and contact details on each one, so they know they are real.',
+      'Every lead is verified: full address and contact details on each one, so they can check they are real - unlike companies that sell unverified guesses.',
       'They get their own daily allocation, never the same lead twice.',
-      'We also offer auto Print & Post: we send their leaflet and letter out for them, with live tracking.'
+      'We also offer auto Print & Post: we send their leaflet and letter out for them, with live tracking.',
+      'And with my code their trial includes ALL features - Print & Post, Auto Send, AI letters and live proof tracking - so they can use everything before paying.'
     ],
     phone: [
       '[Opener] "Hi [name], it’s [your name] from 9amLeads. I’m calling removal companies in [area]. Are you with me for two minutes?"',
       '[Hook] "We send removal companies fresh moving leads every morning at 9am: homes that just went under offer in their postcode. That is the exact moment homeowners are comparing removal quotes."',
       '[Code] "And here is the good part. Normally we only give a 7-day free trial, but with my code you get 14 days free, no card required, cancel anytime."',
-      '[Proof] "Every lead has the full address and contact details, so you know they are real. And you get your own daily allocation, never the same lead twice."',
-      '[Print&Post] "If you like, we can even auto print and post your leaflet or letter to the homeowner for you, tracked live. You literally just open your leads and call."',
+      '[Proof] "Every lead is verified: you get the full address and contact details so you can check it is real. Unlike other companies, we do not sell guesses - and you get your own daily allocation, never the same lead twice."',
+      '[Print&Post] "And here is the part other companies do not offer: we can auto print and post your leaflet or letter to the homeowner for you, with live tracking so you can watch it arrive. You literally just open your leads and call."',
       '[Objection: "We already get enough work from referrals"] "That is great. Referrals are the best work you get. This is extra, on top, and it is free for 14 days with my code. You can see exactly what it brings before spending a penny."',
       '[Objection: "How much does it cost?"] "Free for 14 days, no card. After that from £25 a week, roughly the price of one small local move. If one extra booking covers a month of leads, it is a no-brainer."',
       '[Objection: "I’m too busy"] "That is exactly why it works. It takes five minutes each morning: open your leads at 9am, call the strongest two, done. I can set you up right now."',
@@ -68,15 +69,16 @@ module.exports = [
       'Probate leads come from the official Gov.uk register: newly granted probate, daily.',
       'The firms that contact executors first usually win the instruction.',
       'Normally 7 days free. With my code they get 14 days free, no card, cancel anytime.',
-      'Every lead has proof: the grant details, executor and estate info, so they know it is real.',
+      'Every lead is verified: the grant details, executor and estate info, so they can check it is real - unlike companies that sell unverified guesses.',
       'Their own daily allocation, never the same lead twice.',
-      'Auto Print & Post available: we send their letter to the executor for them, tracked live.'
+      'Auto Print & Post available: we send their letter to the executor for them, tracked live.',
+      'And with my code their trial includes ALL features - Print & Post, Auto Send, AI letters and live proof tracking - so they can use everything before paying.'
     ],
     phone: [
       '[Opener] "Hi [name], it’s [your name] from 9amLeads. I’m calling probate practitioners in [area]. Two minutes?"',
       '[Hook] "We deliver newly granted probate from the official register every morning at 9am, in the postcode areas they choose. Executors need help the moment a grant lands, and the first firm to reach them usually wins the instruction."',
       '[Code] "Normally we give a 7-day free trial, but with my code you get 14 days free, no card required, cancel anytime."',
-      '[Proof] "Every lead comes with the grant and estate details, so you know it is real. And you get your own daily allocation, never the same lead twice."',
+      '[Proof] "Every lead is verified: you get the grant and estate details so you can check it is real. Unlike other companies, we do not sell guesses - and you get your own daily allocation, never the same lead twice."',
       '[Objection: "We rely on referrals"] "Referrals are brilliant. This adds to them. It is daily, from the official register, and free for 14 days with my code. See what it surfaces before you decide."',
       '[Objection: "How much does it cost?"] "Free for 14 days, no card. After that from £25 a week. One estate instruction typically covers many months of that."',
       '[Objection: "Worried about volume"] "Start with the free trial and set it to exactly the volume you can handle. No pressure."',
@@ -118,15 +120,16 @@ module.exports = [
       'New business leads are freshly registered UK companies, delivered daily at 9am.',
       'New companies need suppliers in their first days, and first contact wins the onboarding.',
       'Normally 7 days free. With my code they get 14 days free, no card, cancel anytime.',
-      'Every lead has proof: the registered company details, so they know it is real.',
+      'Every lead is verified: the registered company details, so they can check it is real - unlike companies that sell unverified guesses.',
       'Their own daily allocation, never the same lead twice.',
-      'Auto Print & Post available: we send their letter to new companies for them, tracked live.'
+      'Auto Print & Post available: we send their letter to new companies for them, tracked live.',
+      'And with my code their trial includes ALL features - Print & Post, Auto Send, AI letters and live proof tracking - so they can use everything before paying.'
     ],
     phone: [
       '[Opener] "Hi [name], it’s [your name] from 9amLeads. I’m calling accountants and business services in [area]. Two minutes?"',
       '[Hook] "We deliver freshly registered UK companies every morning at 9am. A brand-new company has no accountant, no website, no insurance yet. The first to reach them wins the onboarding."',
       '[Code] "Normally we give a 7-day free trial, but with my code you get 14 days free, no card required, cancel anytime."',
-      '[Proof] "Every lead has the registered company details, so you know it is real. And you get your own daily allocation, never the same lead twice."',
+      '[Proof] "Every lead is verified: you get the registered company details so you can check it is real. Unlike other companies, we do not sell guesses - and you get your own daily allocation, never the same lead twice."',
       '[Objection: "We get clients through referrals"] "Referrals are the best clients. This is extra, on top, and it is free for 14 days. A brand-new company is the easiest onboarding you will ever get."',
       '[Objection: "How much does it cost?"] "Free for 14 days, no card. After that from £25 a week. One new client covers it easily."',
       '[Close] "Let me get you set up. What email should I use? Your first new-company leads arrive at 9am tomorrow."'
@@ -167,15 +170,16 @@ module.exports = [
       'Planning leads are planning approvals and applications, delivered daily at 9am.',
       'Approved homeowners have already paid for drawings and are ready to spend.',
       'Normally 7 days free. With my code they get 14 days free, no card, cancel anytime.',
-      'Every lead has proof: the applicant and project details, so they know it is real.',
+      'Every lead is verified: the applicant and project details, so they can check it is real - unlike companies that sell unverified guesses.',
       'Their own daily allocation, never the same lead twice.',
-      'Auto Print & Post available: we send their letter to the applicant for them, tracked live.'
+      'Auto Print & Post available: we send their letter to the applicant for them, tracked live.',
+      'And with my code their trial includes ALL features - Print & Post, Auto Send, AI letters and live proof tracking - so they can use everything before paying.'
     ],
     phone: [
       '[Opener] "Hi [name], it’s [your name] from 9amLeads. I’m calling builders and trades in [area]. Two minutes?"',
       '[Hook] "We deliver planning approvals and applications every morning at 9am. When consent lands, the homeowner is ready to build, and the first builder to quote usually gets the site visit."',
       '[Code] "Normally we give a 7-day free trial, but with my code you get 14 days free, no card required, cancel anytime."',
-      '[Proof] "Every lead has the applicant and project details, so you know it is real. And you get your own daily allocation, never the same lead twice."',
+      '[Proof] "Every lead is verified: you get the applicant and project details so you can check it is real. Unlike other companies, we do not sell guesses - and you get your own daily allocation, never the same lead twice."',
       '[Objection: "We get work from word of mouth"] "Word of mouth is the best work. This is extra, on top, and it is free for 14 days. Approved projects are the easiest quotes to win."',
       '[Objection: "How much does it cost?"] "Free for 14 days, no card. After that from £25 a week. One extension quote covers it."',
       '[Close] "Let me get you set up. What email should I use? Your first planning leads arrive at 9am tomorrow."'
@@ -216,15 +220,16 @@ module.exports = [
       'Tender leads are matched public-sector contract opportunities, delivered daily at 9am.',
       'Public contracts are recurring, reliable revenue, and far less competitive than the open market.',
       'Normally 7 days free. With my code they get 14 days free, no card, cancel anytime.',
-      'Every tender has proof: the full contract details and deadlines, so they know it is real.',
+      'Every tender is verified: the full contract details and deadlines, so they can check it is real - unlike companies that sell unverified guesses.',
       'Matched to their services, so they only see tenders they can actually deliver.',
-      'Auto Print & Post available for supporting their bids.'
+      'Auto Print & Post available for supporting their bids, with live tracking.',
+      'And with my code their trial includes ALL features - Print & Post, Auto Send, AI letters and live proof tracking - so they can use everything before paying.'
     ],
     phone: [
       '[Opener] "Hi [name], it’s [your name] from 9amLeads. I’m calling businesses that could win public-sector contracts. Two minutes?"',
       '[Hook] "We deliver matched public tenders every morning at 9am: councils, NHS, schools. Public contracts are recurring revenue, and far fewer firms bid on them than the open market."',
       '[Code] "Normally we give a 7-day free trial, but with my code you get 14 days free, no card required, cancel anytime."',
-      '[Proof] "Every tender comes with the full contract details and deadlines, so you know it is real. And they are matched to your services."',
+      '[Proof] "Every tender is verified: full contract details and deadlines so you can check it is real. Unlike other companies, we do not sell guesses - and they are matched to your services."',
       '[Objection: "Tenders are too competitive"] "Most SMEs never bid. The tenders that match you see a handful of bidders, not dozens. That is why public work is worth chasing."',
       '[Objection: "How much does it cost?"] "Free for 14 days, no card. After that from £25 a week. One won contract covers it many times over."',
       '[Close] "Let me get you set up. What email should I use? Your first matched tenders arrive at 9am tomorrow."'
@@ -265,16 +270,17 @@ module.exports = [
       'Fresh business leads delivered every morning at 9am, matched to their trade and area.',
       'Choose the lead type that fits how they win work: moving, probate, planning, new business or tenders.',
       'Normally 7 days free. With my code they get 14 days free, no card required, cancel anytime.',
-      'We have proof of every lead: full contact details, so they know they are real.',
+      'Every lead is verified: full contact details, so they can check it is real - unlike companies that sell unverified guesses.',
       'Their own daily allocation, never the same lead twice.',
-      'Auto Print & Post available: we send their leaflet and letters out for them, tracked live.'
+      'Auto Print & Post available: we send their leaflet and letters out for them, tracked live.',
+      'And with my code their trial includes ALL features - Print & Post, Auto Send, AI letters and live proof tracking - so they can use everything before paying.'
     ],
     phone: [
       '[Opener] "Hi [name], it’s [your name] from 9amLeads. I’m calling businesses in [area] that want more customers. Two minutes?"',
       '[Qualify] "First, what does your business do, and where does most of your work come from at the moment?"',
       '[Match] "Based on that we would set you up with [moving/probate/new business/planning/tenders] leads, delivered every morning at 9am in your postcode areas."',
       '[Code] "Normally we only give a 7-day free trial, but with my code you get 14 days free, no card required, cancel anytime."',
-      '[Proof] "Every lead comes with full contact details, so you know it is real. You get your own daily allocation, never the same lead twice."',
+      '[Proof] "Every lead is verified: full contact details so you can check it is real. Unlike other companies, we do not sell guesses - and you get your own daily allocation, never the same lead twice."',
       '[Objection: "What type of leads do I get?"] "You pick the type that fits how you win work: moving for removals, planning for builders, tenders for cleaning or IT. We match it on the call."',
       '[Objection: "How much does it cost?"] "Free for 14 days, no card. After that from £25 a week. One extra customer usually pays for the whole month."',
       '[Objection: "I’ll think about it"] "Completely understand. The free trial is the easiest way to see it with zero risk. Let me set you up now so you can look at real leads tomorrow at 9am."',
