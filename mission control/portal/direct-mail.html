@@ -1168,17 +1168,17 @@ function flyerEditorAutoFit(){
   var iw=ed.img.width, ih=ed.img.height;
   var bleedPx=feMmToPx(6);
   if(ed.matType==='flyer_back'){
-    // STRETCH to fill the area below the white address zone, edge-to-edge.
-    // The back zone is the top 28% (white-filled at save), so the design spans
-    // from the zone bottom down through the page + bottom bleed, and fills the
-    // full width + bleed. Stretching (non-uniform scale) is intentional here so
-    // the design always covers the whole below-zone area regardless of its
-    // original shape — the user explicitly chose this for the back.
+    // STRETCH to EXACTLY fill the area below the white address zone — no more, no
+    // less. The white zone is exactly the page width (pageW), so the design must
+    // be exactly pageW wide (NOT pageW + bleed, which made it wider than the
+    // zone). Height runs from the zone bottom to exactly the page bottom (NOT
+    // past it into the bleed, which trimmed the bottom content). Stretching
+    // (non-uniform scale) is intentional so the design always fills this area.
     var zoneTop = Math.round(ed.zoneH || Math.round(h * 0.28));
-    ed.rw = Math.round(w + bleedPx * 2);              // full width + side bleed
-    ed.rh = Math.round((h - zoneTop) + bleedPx);      // zone bottom -> page bottom + bleed
-    ed.rx = Math.round((w - ed.rw) / 2);              // centered, overflows into side bleed
-    ed.ry = zoneTop;                                  // starts exactly below the zone
+    ed.rw = w;                                  // exactly page width = zone width
+    ed.rh = h - zoneTop;                        // zone bottom -> page bottom
+    ed.rx = 0;                                  // left-aligned to the zone
+    ed.ry = zoneTop;                            // starts exactly below the zone
   } else {
     // FRONT: cover-fit the FULL page + bleed (edge-to-edge, no white borders,
     // aspect preserved — excess is cropped into the bleed).
