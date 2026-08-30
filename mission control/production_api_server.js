@@ -6224,7 +6224,7 @@ app.post('/api/admin/add-test-lead', adminAuth, (req, res) => {
       city: (req.body && req.body.city) || '',
       bedrooms: (req.body && req.body.bedrooms) || '3',
       name: (req.body && req.body.name) || '',
-      company: (req.body && req.body.name) || '',
+      company: (req.body && req.body.company) || '',
       source: (req.body && req.body.source) || 'self-test',
       url: (req.body && req.body.url) || 'https://www.rightmove.co.uk/',
       firstVisibleDate: nowIso,
