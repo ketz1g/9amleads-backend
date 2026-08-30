@@ -927,7 +927,7 @@ function loadFinalPrintPreview(){  var box=document.getElementById('final-print-
     }
     // Front Edit button: open the flyer editor for the front material.
     var fpFrontEdit=document.getElementById('fp-front-edit');
-    if(fpFrontEdit&&d.flyer_front&&d.flyer_front.id){ fpFrontEdit.style.display='inline-block'; fpFrontEdit.setAttribute('data-id',d.flyer_front.id); fpFrontEdit.setAttribute('data-name',String(d.flyer_front.name||'').replace(/'/g,"\\'")); fpFrontEdit.setAttribute('data-type','flyer_front'); }
+    if(fpFrontEdit&&d.flyer_front&&d.flyer_front.id){ fpFrontEdit.style.display='inline-block'; fpFrontEdit.setAttribute('data-id',d.flyer_front.id); fpFrontEdit.setAttribute('data-name',String(d.flyer_front.name||'').replace(/'/g,"\\'")); fpFrontEdit.setAttribute('data-type','flyer_front'); fpFrontEdit.setAttribute('data-format',(d.format&&d.format.id)||_selectedFormat||'flyer_a5_portrait'); }
     else if(fpFrontEdit){ fpFrontEdit.style.display='none'; }
     // Specs
     var specsEl=document.getElementById('fp-front-specs');
@@ -963,17 +963,17 @@ function loadFinalPrintPreview(){  var box=document.getElementById('final-print-
     }
     // Back Edit button: open the flyer editor for the back material.
     var fpBackEdit=document.getElementById('fp-back-edit');
-    if(fpBackEdit&&d.flyer_back&&d.flyer_back.id){ fpBackEdit.style.display='inline-block'; fpBackEdit.setAttribute('data-id',d.flyer_back.id); fpBackEdit.setAttribute('data-name',String(d.flyer_back.name||'').replace(/'/g,"\\'")); fpBackEdit.setAttribute('data-type','flyer_back'); }
+    if(fpBackEdit&&d.flyer_back&&d.flyer_back.id){ fpBackEdit.style.display='inline-block'; fpBackEdit.setAttribute('data-id',d.flyer_back.id); fpBackEdit.setAttribute('data-name',String(d.flyer_back.name||'').replace(/'/g,"\\'")); fpBackEdit.setAttribute('data-type','flyer_back'); fpBackEdit.setAttribute('data-format',(d.format&&d.format.id)||_selectedFormat||'flyer_a5_portrait'); }
     else if(fpBackEdit){ fpBackEdit.style.display='none'; }
   });
 }
 function fpEditFront(){
   var b=document.getElementById('fp-front-edit');
-  if(b&&b.getAttribute('data-id'))openFlyerEditor(b.getAttribute('data-id'),b.getAttribute('data-name')||'',b.getAttribute('data-type')||'flyer_front');
+  if(b&&b.getAttribute('data-id'))openFlyerEditor(b.getAttribute('data-id'),b.getAttribute('data-name')||'',b.getAttribute('data-type')||'flyer_front',b.getAttribute('data-format')||_selectedFormat);
 }
 function fpEditBack(){
   var b=document.getElementById('fp-back-edit');
-  if(b&&b.getAttribute('data-id'))openFlyerEditor(b.getAttribute('data-id'),b.getAttribute('data-name')||'',b.getAttribute('data-type')||'flyer_back');
+  if(b&&b.getAttribute('data-id'))openFlyerEditor(b.getAttribute('data-id'),b.getAttribute('data-name')||'',b.getAttribute('data-type')||'flyer_back',b.getAttribute('data-format')||_selectedFormat);
 }
 function loadLeads(){
   var list=document.getElementById('leads-list');
@@ -1120,13 +1120,14 @@ function feSetFromInputs(){
   if(!isNaN(h) && h>0) _flyerEditor.rh=feMmToPx(h);
   flyerEditorDraw();
 }
-function openFlyerEditor(id, name, matType){
+function openFlyerEditor(id, name, matType, formatId){
   _flyerEditor.id=id; _flyerEditor.matType=matType||''; _flyerEditor.loaded=false;
   // Orientation-aware canvas: A5 portrait = 360x511 (148x210mm), A5 landscape =
-  // 511x360 (210x148mm). Use the currently selected format to size the editor so
-  // the canvas matches what will print (portrait vs landscape).
+  // 511x360 (210x148mm). Use the passed format (or the currently selected one)
+  // to size the editor so the canvas matches what will print (portrait vs
+  // landscape).
   var isLandscape = false;
-  var fmtNow = _formats.find(function(x){ return x.id === _selectedFormat; });
+  var fmtNow = _formats.find(function(x){ return x.id === (formatId || _selectedFormat); });
   if (fmtNow && fmtNow.width && fmtNow.height && fmtNow.width > fmtNow.height) isLandscape = true;
   _flyerEditor.pageW = isLandscape ? 511 : 360;
   _flyerEditor.pageH = isLandscape ? 360 : 511;
