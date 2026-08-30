@@ -1219,20 +1219,14 @@ function flyerEditorReset(){
   // exactly fill the page (edge-to-edge, nothing white, nothing cropped).
   // Back: show the design positioned to fill the area below the address zone.
   if (_flyerEditor.matType === 'flyer_back') {
-    var zoneTop2 = Math.round(_flyerEditor.zoneH || Math.round(h * 0.28));
-    if (_flyerEditor.hasBakedZone) {
-      // Zone already baked into the image's top: show it FULL-BLEED, edge-to-edge.
-      _flyerEditor.rw = w;
-      _flyerEditor.rh = h;
-      _flyerEditor.rx = 0;
-      _flyerEditor.ry = 0;
-    } else {
-      // Fresh upload: design sits below the address zone.
-      _flyerEditor.rw = w;
-      _flyerEditor.rh = h - zoneTop2;
-      _flyerEditor.rx = 0;
-      _flyerEditor.ry = zoneTop2;
-    }
+    // Back: the design fills the WHOLE page (full-bleed, edge-to-edge). The
+    // white address zone is overlaid on top at save/print (Stannp clearzone).
+    // Shown full-bleed for BOTH fresh uploads and already-baked designs, so
+    // preview == editor == saved == printed.
+    _flyerEditor.rw = w;
+    _flyerEditor.rh = h;
+    _flyerEditor.rx = 0;
+    _flyerEditor.ry = 0;
   } else {
     _flyerEditor.rw = w;
     _flyerEditor.rh = h;
@@ -1252,26 +1246,14 @@ function flyerEditorAutoFit(){
   var iw=ed.img.width, ih=ed.img.height;
   var bleedPx=feMmToPx(6);
   if(ed.matType==='flyer_back'){
-    var zoneTop = Math.round(ed.zoneH || Math.round(h * 0.28));
-    if (ed.hasBakedZone) {
-      // Zone already baked into the image's top: full-bleed, edge-to-edge —
-      // matches the final-print preview. The blue address-zone overlay sits on
-      // top of the baked white.
-      ed.rw = w;
-      ed.rh = h;
-      ed.rx = 0;
-      ed.ry = 0;
-    } else {
-      // STRETCH to EXACTLY fill the area below the white address zone — no more,
-      // no less. The white zone is exactly the page width (pageW), so the design
-      // must be exactly pageW wide (NOT pageW + bleed, which made it wider than
-      // the zone). Height runs from the zone bottom to exactly the page bottom
-      // (NOT past it into the bleed, which trimmed the bottom content).
-      ed.rw = w;                                  // exactly page width = zone width
-      ed.rh = h - zoneTop;                        // zone bottom -> page bottom
-      ed.rx = 0;                                  // left-aligned to the zone
-      ed.ry = zoneTop;                            // starts exactly below the zone
-    }
+    // Back: STRETCH to exactly fill the FULL page (edge-to-edge, no white). The
+    // design is the whole-page back; the white address zone overlays the top at
+    // save/print (Stannp clearzone). Full-bleed for both fresh and baked designs,
+    // so preview == editor == saved == printed.
+    ed.rw = w;
+    ed.rh = h;
+    ed.rx = 0;
+    ed.ry = 0;
   } else {
     // FRONT: STRETCH to exactly fill the full page (edge-to-edge, no white).
     // The front design is auto-cropped of pure-white margins at load, so the

@@ -1526,24 +1526,19 @@ class DirectMailProvider {
       }
       var outBuf;
 if (isBack && !hasBakedZone) {
-        // Address zone = top 28% (Stannp's native clearzone at print). The back
-        // design is STRETCHED to fill EXACTLY the area below the zone,
-        // edge-to-edge with no white margins — matching what the in-app editor's
-        // "Fit to Page" shows. Only the address zone (top) is white; there is no
-        // second white band/padding.
-        var zoneFrac = 0.28;        // top address zone (matches Stannp clearzone)
-        var designTop = Math.round(A5_H * zoneFrac);   // y where the design starts
-        var designH = A5_H - designTop;                // zone bottom -> page bottom
-        var scaled = await sharp(inputBuf)
+        // FRESH BACK UPLOAD (no baked zone): the user's design fills the WHOLE
+        // page. Show it full-bleed edge-to-edge, exactly as designed. Stannp's
+        // native clearzone overlays the top 28% (white address area) at print
+        // time — we do NOT need to compress the design below the zone here, or
+        // the preview/editor/save would all disagree with the user's artwork.
+        // This matches how baked-zone backs are handled and how the editor shows
+        // a fresh back, so preview == editor == saved == printed.
+        outBuf = await sharp(inputBuf)
           .rotate()
-          .resize({ width: A5_W, height: designH, fit: 'fill', background: { r: 255, g: 255, b: 255 } })
+          .resize({ width: A5_W, height: A5_H, fit: 'fill', background: { r: 255, g: 255, b: 255 } })
           .jpeg({ quality: 82 })
           .toBuffer();
-        outBuf = await sharp({ create: { width: A5_W, height: A5_H, channels: 3, background: { r: 255, g: 255, b: 255 } } })
-          .composite([{ input: scaled, top: Math.round(designTop), left: 0 }])
-          .jpeg({ quality: 82 })
-          .toBuffer();
-        console.log('[STANNP] Prepared BACK artwork for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> stretch-fill ' + A5_W + 'x' + Math.round(designH) + ' below top zone, edge-to-edge)');
+        console.log('[STANNP] Prepared BACK (fresh) artwork for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> full-bleed ' + A5_W + 'x' + A5_H + ', clearzone overlays at print)');
       } else {
         // FRONT, or BACK that already has its baked zone: full-bleed, edge-to-edge.
         // Fronts are pre-trimmed of white margins (see above), then STRETCHED
