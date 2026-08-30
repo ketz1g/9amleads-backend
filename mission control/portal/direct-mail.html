@@ -1135,7 +1135,50 @@ function openFlyerEditor(id, name, matType){
   document.getElementById('flyer-editor-zoomlabel').textContent='100%';
   ['fe-x','fe-y','fe-w','fe-h'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
   var img=new Image();
-  img.onload=function(){ _flyerEditor.img=img; _flyerEditor.loaded=true; flyerEditorReset(); flyerEditorDraw(); };
+  img.onload=function(){
+    // Auto-crop pure-white margins for the FRONT so it fills Stannp's full-bleed
+    // area with no white band. Many designs (esp. made from templates) have a
+    // white footer/header baked in; Stannp's guidelines expect edge-to-edge.
+    // The back keeps its design untouched (its top white area is the address zone).
+    if (matType !== 'flyer_back') {
+      try {
+        var cw2=img.width, ch2=img.height;
+        var tmp=document.createElement('canvas'); tmp.width=cw2; tmp.height=ch2;
+        var tctx=tmp.getContext('2d'); tctx.drawImage(img,0,0);
+        var idata=tctx.getImageData(0,0,cw2,ch2).data;
+        var minX=cw2,minY=ch2,maxX=-1,maxY=-1,step=2;
+        for(var yy=0; yy<ch2; yy+=step){
+          for(var xx=0; xx<cw2; xx+=step){
+            var o=(yy*cw2+xx)*4;
+            var r=idata[o],g=idata[o+1],b=idata[o+2],a=idata[o+3];
+            var isWhite = (r>=248 && g>=248 && b>=248) || a===0;
+            if(!isWhite){
+              if(xx<minX)minX=xx; if(xx>maxX)maxX=xx;
+              if(yy<minY)minY=yy; if(yy>maxY)maxY=yy;
+            }
+          }
+        }
+        if(maxX>=minX && maxY>=minY){
+          var pad=8;
+          var cxl=Math.max(0,minX-pad), cyt=Math.max(0,minY-pad);
+          var cxr=Math.min(cw2,maxX+pad+1), cyb=Math.min(ch2,maxY+pad+1);
+          // Only crop when the white band is substantial (>=6% of the dimension),
+          // otherwise it's just a thin safety margin and cropping risks over-tightness.
+          if((cyb-cyt) <= ch2*0.94 || (cxr-cxl) <= cw2*0.94){
+            var cropped=document.createElement('canvas');
+            cropped.width=cxr-cxl; cropped.height=cyb-cyt;
+            var cctx=cropped.getContext('2d');
+            cctx.drawImage(img,cxl,cyt,cxr-cxl,cyb-cyt,0,0,cxr-cxl,cyb-cyt);
+            var ci=new Image(); ci.src=cropped.toDataURL('image/png');
+            ci.onload=function(){ _flyerEditor.img=ci; _flyerEditor.loaded=true; flyerEditorReset(); flyerEditorDraw(); };
+            _flyerEditor.cropRect={x:cxl,y:cyt,w:cxr-cxl,h:cyb-cyt};
+            return;
+          }
+        }
+      } catch(e) {}
+    }
+    _flyerEditor.img=img; _flyerEditor.loaded=true; flyerEditorReset(); flyerEditorDraw();
+  };
   img.src='/api/direct-mail/materials/'+id+'/file?token='+encodeURIComponent(_token)+'&v='+Date.now();
   canvas.onmousedown=function(e){ flyerEditorStart(e.clientX,e.clientY); };
   window.onmousemove=function(e){ if(_flyerEditor.dragging)flyerEditorMove(e.clientX,e.clientY); };
@@ -1149,12 +1192,21 @@ function closeFlyerEditor(){ document.getElementById('flyer-editor-modal').style
 function flyerEditorReset(){
   var w=_flyerEditor.pageW, h=_flyerEditor.pageH;
   var iw=_flyerEditor.img? _flyerEditor.img.width:1, ih=_flyerEditor.img? _flyerEditor.img.height:1;
-  // Default to COVER fit (fill the whole page edge-to-edge, crop any tiny excess)
-  // so the design starts "within the blue lines" / full-bleed. Customers can then
-  // drag/stretch if they prefer a different crop.
-  var baseF=Math.max(w/iw,h/ih);
-  _flyerEditor.rw=iw*baseF; _flyerEditor.rh=ih*baseF;
-  _flyerEditor.rx=(w-_flyerEditor.rw)/2; _flyerEditor.ry=(h-_flyerEditor.rh)/2;
+  // Front: the design was auto-cropped of pure-white margins, so stretch it to
+  // exactly fill the page (edge-to-edge, nothing white, nothing cropped).
+  // Back: show the design positioned to fill the area below the address zone.
+  if (_flyerEditor.matType === 'flyer_back') {
+    var zoneTop2 = Math.round(_flyerEditor.zoneH || Math.round(h * 0.28));
+    _flyerEditor.rw = w;
+    _flyerEditor.rh = h - zoneTop2;
+    _flyerEditor.rx = 0;
+    _flyerEditor.ry = zoneTop2;
+  } else {
+    _flyerEditor.rw = w;
+    _flyerEditor.rh = h;
+    _flyerEditor.rx = 0;
+    _flyerEditor.ry = 0;
+  }
   flyerEditorDraw();
 }
 // One-click auto-fit: sizes the flyer so it fills the page AND extends into the
@@ -1180,14 +1232,15 @@ function flyerEditorAutoFit(){
     ed.rx = 0;                                  // left-aligned to the zone
     ed.ry = zoneTop;                            // starts exactly below the zone
   } else {
-    // FRONT: cover-fit the FULL page + bleed (edge-to-edge, no white borders,
-    // aspect preserved — excess is cropped into the bleed).
-    var targetW = w + bleedPx*2;
-    var targetH = h + bleedPx*2;
-    var baseF=Math.max(targetW/iw, targetH/ih);
-    ed.rw=Math.round(iw*baseF); ed.rh=Math.round(ih*baseF);
-    ed.rx=Math.round((w-ed.rw)/2);
-    ed.ry=Math.round((h-ed.rh)/2);
+    // FRONT: STRETCH to exactly fill the full page (edge-to-edge, no white).
+    // The front design is auto-cropped of pure-white margins at load, so the
+    // visible content fills the entire page width AND height. Stretching
+    // (non-uniform scale) is intentional — it guarantees zero white bands and
+    // zero cropped content, matching Stannp's full-bleed guideline.
+    ed.rw = w;
+    ed.rh = h;
+    ed.rx = 0;
+    ed.ry = 0;
   }
   flyerEditorDraw();
 }
