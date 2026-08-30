@@ -232,6 +232,38 @@ function exportLeads() {
   });
   var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download = 'leads.csv'; a.click();
 }
+function scoreLead(l, d, product) {
+  // Heuristic lead score 0-100: freshness + recency of the event + completeness.
+  // High score = call this one first.
+  var s = 0;
+  var now = Date.now();
+  var dateField = product === 'moving' ? (d.firstVisibleDate || l.firstVisibleDate || '') : product === 'probate' ? (d.issuedDate || d.dateOfGrant || d.grantDate || '') : product === 'newbusiness' ? (d.incorporationDate || d.dateOfCreation || l.incorporation_date || '') : product === 'planning' ? (d.dateValidated || d.decisionDate || '') : (d.deadlineDate || d.datePublished || '');
+  var eventDate = dateField ? new Date(dateField).getTime() : NaN;
+  if (isNaN(eventDate)) eventDate = l.created_at ? new Date(l.created_at).getTime() : now;
+  var hours = (now - eventDate) / 3600000;
+  // Freshness (0-50)
+  if (hours <= 12) s += 50;
+  else if (hours <= 24) s += 42;
+  else if (hours <= 48) s += 34;
+  else if (hours <= 72) s += 25;
+  else if (hours <= 168) s += 14;
+  else s += 5;
+  // Completeness (0-30)
+  var addr = (d.address || d.fullAddress || d.street || '');
+  if (addr && d.postcode) s += 15; else if (addr) s += 10;
+  if (product === 'moving') { if (d.bedrooms) s += 8; if (d.url) s += 7; }
+  else if (product === 'probate') { if (d.executorName || d.deceasedName) s += 15; }
+  else if (product === 'newbusiness') { if (d.companyNumber) s += 12; if (d.sicCode) s += 3; }
+  else if (product === 'planning') { if (d.applicantName || d.description) s += 15; }
+  else if (product === 'tenders') { if (d.contractValue) s += 10; if (d.deadlineDate) s += 5; }
+  // Speed signal (0-20): moving under-offer is urgent; tenders with close deadline urgent
+  if (product === 'moving') { if (d.listingStatus === 'SSTC' || d.listingStatus === 'Under Offer' || d.listingStatus === 'Sold Subject to Contract') s += 20; else s += 8; }
+  else if (product === 'tenders') { if (d.deadlineDate) { var dl = new Date(d.deadlineDate).getTime(); var dlh = (dl - now)/3600000; if (dlh < 72) s += 18; else if (dlh < 168) s += 12; else s += 6; } }
+  else s += 10;
+  s = Math.max(0, Math.min(100, s));
+  var color = s >= 75 ? '#22c55e' : s >= 50 ? '#0ea5e9' : s >= 30 ? '#f59e0b' : '#94a3b8';
+  return { value: s, color: color };
+}
 function renderLeads(leads) {
   var container = document.getElementById('leads-container');
   if (!leads.length) { container.innerHTML = ''; document.getElementById('no-leads').style.display = 'block'; populateNoLeads(); return; }
@@ -266,6 +298,8 @@ function renderLeadList(dayLeads, noGroup) {
     var dateStr = l.created_at ? new Date(l.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'}) : '';
     var status = d.listingStatus || d.status || 'New';
     var pc = d.postcode || '';
+    var score = scoreLead(l, d, product);
+    var scoreBadge = score ? '<span style="display:inline-block;margin-left:6px;padding:2px 8px;border-radius:5px;font-size:10px;font-weight:800;background:' + score.color + '22;color:' + score.color + '">★ ' + score.value + '/100</span>' : '';
     var badge = product === 'moving' ? 'MOVING' : product === 'probate' ? 'PROBATE' : product === 'newbusiness' ? 'NEW BIZ' : product === 'planning' ? 'PLANNING' : 'TENDER';
     var badgeColor = product === 'moving' ? '#0ea5e9' : product === 'probate' ? '#a855f7' : product === 'newbusiness' ? '#22c55e' : product === 'planning' ? '#f59e0b' : '#6366f1';
     var isSel = selectedLeads.indexOf(l.id) !== -1;
@@ -279,7 +313,7 @@ function renderLeadList(dayLeads, noGroup) {
       var incStr = incDate ? 'Incorporated ' + new Date(incDate).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '';
       var metaParts = [incStr, d.sicCode ? 'SIC: ' + d.sicCode : ''].filter(Boolean);
       var chLink = d.companyNumber ? '<a href="https://find-and-update.company-information.service.gov.uk/company/' + d.companyNumber + '" target="_blank" style="color:var(--accent);text-decoration:underline;font-size:11px">View on Companies House</a>' : '';
-      html += '<div class="lead' + selClass + '">' + chk + '<div style="flex:1"><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' +
+      html += '<div class="lead' + selClass + '">' + chk + '<div style="flex:1"><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' + scoreBadge +
         '<div class="addr">' + biz + '</div>' +
         '<div class="meta">' + (d.address||'') + '</div>' +
         '<div class="meta">' + metaParts.join(' \u00b7 ') + (chLink ? ' \u00b7 ' + chLink : '') + '</div></div>' +
