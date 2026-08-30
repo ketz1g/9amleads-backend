@@ -5482,8 +5482,9 @@ app.post('/api/admin/auto-heal', adminAuth, (req, res) => {
 function uptimeRobotRequest(apiKey, payload) {
   return new Promise(function(resolve) {
     var https = require('https');
+    // v2 API: api_key goes in the QUERY STRING, everything else in the body.
     var body = new URLSearchParams(payload).toString();
-    var req = https.request({ hostname: 'api.uptimerobot.com', path: '/v2/newMonitor', method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
+    var req = https.request({ hostname: 'api.uptimerobot.com', path: '/v2/newMonitor?api_key=' + encodeURIComponent(apiKey), method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
       var d = ''; res.on('data', function(ch){ d += ch; }); res.on('end', function() { try { resolve(JSON.parse(d)); } catch(e) { resolve({ stat: 'fail', error: { message: d } }); } });
     });
     req.on('error', function(e){ resolve({ stat: 'fail', error: { message: e.message } }); });
@@ -5492,7 +5493,7 @@ function uptimeRobotRequest(apiKey, payload) {
 }
 // UptimeRobot v2 uses api_key in the body
 function buildMonitorPayload(apiKey, name, url, keywords) {
-  return { api_key: apiKey, format: 'json', type: '1', url: url, friendly_name: name, interval: '300', alert_contacts: '' };
+  return { format: 'json', type: '1', url: url, friendly_name: name, interval: '300' };
 }
 // Create both monitors; skip any that already exist (idempotent).
 async function setupUptimeMonitors(apiKey) {
@@ -5518,8 +5519,8 @@ async function setupUptimeMonitors(apiKey) {
 async function getUptimeStatus(apiKey) {
   return new Promise(function(resolve) {
     var https = require('https');
-    var body = new URLSearchParams({ api_key: apiKey, format: 'json' }).toString();
-    var req = https.request({ hostname: 'api.uptimerobot.com', path: '/v2/getMonitors', method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
+    var body = new URLSearchParams({ format: 'json' }).toString();
+    var req = https.request({ hostname: 'api.uptimerobot.com', path: '/v2/getMonitors?api_key=' + encodeURIComponent(apiKey), method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
       var d = ''; res.on('data', function(ch){ d += ch; }); res.on('end', function() { try { resolve(JSON.parse(d)); } catch(e) { resolve({ stat: 'fail', error: { message: d } }); } });
     });
     req.on('error', function(e){ resolve({ stat: 'fail', error: { message: e.message } }); });
@@ -5588,8 +5589,9 @@ app.post('/api/admin/auto-heal', adminAuth, (req, res) => {
 function uptimeRobotRequest(apiKey, payload) {
   return new Promise(function(resolve) {
     var https = require('https');
+    // v2 API: api_key goes in the QUERY STRING, everything else in the body.
     var body = new URLSearchParams(payload).toString();
-    var req = https.request({ hostname: 'api.uptimerobot.com', path: '/v2/newMonitor', method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
+    var req = https.request({ hostname: 'api.uptimerobot.com', path: '/v2/newMonitor?api_key=' + encodeURIComponent(apiKey), method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
       var d = ''; res.on('data', function(ch){ d += ch; }); res.on('end', function() { try { resolve(JSON.parse(d)); } catch(e) { resolve({ stat: 'fail', error: { message: d } }); } });
     });
     req.on('error', function(e){ resolve({ stat: 'fail', error: { message: e.message } }); });
@@ -5598,7 +5600,7 @@ function uptimeRobotRequest(apiKey, payload) {
 }
 // UptimeRobot v2 uses api_key in the body
 function buildMonitorPayload(apiKey, name, url, keywords) {
-  return { api_key: apiKey, format: 'json', type: '1', url: url, friendly_name: name, interval: '300', alert_contacts: '' };
+  return { format: 'json', type: '1', url: url, friendly_name: name, interval: '300' };
 }
 // Create both monitors; skip any that already exist (idempotent).
 async function setupUptimeMonitors(apiKey) {
@@ -5624,8 +5626,8 @@ async function setupUptimeMonitors(apiKey) {
 async function getUptimeStatus(apiKey) {
   return new Promise(function(resolve) {
     var https = require('https');
-    var body = new URLSearchParams({ api_key: apiKey, format: 'json' }).toString();
-    var req = https.request({ hostname: 'api.uptimerobot.com', path: '/v2/getMonitors', method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
+    var body = new URLSearchParams({ format: 'json' }).toString();
+    var req = https.request({ hostname: 'api.uptimerobot.com', path: '/v2/getMonitors?api_key=' + encodeURIComponent(apiKey), method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
       var d = ''; res.on('data', function(ch){ d += ch; }); res.on('end', function() { try { resolve(JSON.parse(d)); } catch(e) { resolve({ stat: 'fail', error: { message: d } }); } });
     });
     req.on('error', function(e){ resolve({ stat: 'fail', error: { message: e.message } }); });
