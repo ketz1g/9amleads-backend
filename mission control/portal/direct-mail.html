@@ -1081,7 +1081,7 @@ var _flyerEditor = {
   cw:390, ch:541,          // canvas size incl. ruler bands
   rx:0, ry:0, rw:0, rh:0,
   dragging:false, startX:0, startY:0, startRx:0, startRy:0, startRw:0, startRh:0,
-  mode:'move', canvas:null, ctx:null, loaded:false, zoneH:0
+  mode:'move', canvas:null, ctx:null, loaded:false, zoneH:0, hasBakedZone:false
 };
 function _mm(){ return _flyerEditor.pageW / 148; }
 function feMmToPx(mm){ return mm * _mm(); }
@@ -1136,6 +1136,29 @@ function openFlyerEditor(id, name, matType){
   ['fe-x','fe-y','fe-w','fe-h'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
   var img=new Image();
   img.onload=function(){
+    // Detect whether the BACK design already has the white address zone baked
+    // into its top (the editor's previous saves white out the top 28%). If it
+    // does, the design is already laid out below the zone and must be shown
+    // FULL-BLEED (edge to edge) so the preview and editor agree — the blue
+    // address-zone overlay in the editor simply sits on top of the baked white.
+    // Fresh back uploads (no baked zone) are fitted below the zone instead.
+    _flyerEditor.hasBakedZone = false;
+    if (matType === 'flyer_back' && img.width > 0) {
+      try {
+        var bzc = document.createElement('canvas'); bzc.width = Math.min(200, img.width); bzc.height = img.height;
+        var bzt = bzc.getContext('2d');
+        bzt.drawImage(img, 0, 0, bzc.width, bzc.height);
+        var bzd = bzt.getImageData(0, 0, bzc.width, bzc.height).data;
+        var probeY = Math.round(bzc.height * 0.14); // ~middle of the 28% zone
+        var nearWhite = 0, samples = 0;
+        for (var bx = 0; bx < bzc.width; bx++) {
+          var bo = (probeY * bzc.width + bx) * 4;
+          if (bzd[bo] > 242 && bzd[bo+1] > 242 && bzd[bo+2] > 242) nearWhite++;
+          samples++;
+        }
+        if (samples > 0 && (nearWhite / samples) > 0.85) _flyerEditor.hasBakedZone = true;
+      } catch(e) {}
+    }
     // Auto-crop pure-white margins for the FRONT so it fills Stannp's full-bleed
     // area with no white band. Many designs (esp. made from templates) have a
     // white footer/header baked in; Stannp's guidelines expect edge-to-edge.
@@ -1197,10 +1220,19 @@ function flyerEditorReset(){
   // Back: show the design positioned to fill the area below the address zone.
   if (_flyerEditor.matType === 'flyer_back') {
     var zoneTop2 = Math.round(_flyerEditor.zoneH || Math.round(h * 0.28));
-    _flyerEditor.rw = w;
-    _flyerEditor.rh = h - zoneTop2;
-    _flyerEditor.rx = 0;
-    _flyerEditor.ry = zoneTop2;
+    if (_flyerEditor.hasBakedZone) {
+      // Zone already baked into the image's top: show it FULL-BLEED, edge-to-edge.
+      _flyerEditor.rw = w;
+      _flyerEditor.rh = h;
+      _flyerEditor.rx = 0;
+      _flyerEditor.ry = 0;
+    } else {
+      // Fresh upload: design sits below the address zone.
+      _flyerEditor.rw = w;
+      _flyerEditor.rh = h - zoneTop2;
+      _flyerEditor.rx = 0;
+      _flyerEditor.ry = zoneTop2;
+    }
   } else {
     _flyerEditor.rw = w;
     _flyerEditor.rh = h;
@@ -1220,17 +1252,26 @@ function flyerEditorAutoFit(){
   var iw=ed.img.width, ih=ed.img.height;
   var bleedPx=feMmToPx(6);
   if(ed.matType==='flyer_back'){
-    // STRETCH to EXACTLY fill the area below the white address zone — no more, no
-    // less. The white zone is exactly the page width (pageW), so the design must
-    // be exactly pageW wide (NOT pageW + bleed, which made it wider than the
-    // zone). Height runs from the zone bottom to exactly the page bottom (NOT
-    // past it into the bleed, which trimmed the bottom content). Stretching
-    // (non-uniform scale) is intentional so the design always fills this area.
     var zoneTop = Math.round(ed.zoneH || Math.round(h * 0.28));
-    ed.rw = w;                                  // exactly page width = zone width
-    ed.rh = h - zoneTop;                        // zone bottom -> page bottom
-    ed.rx = 0;                                  // left-aligned to the zone
-    ed.ry = zoneTop;                            // starts exactly below the zone
+    if (ed.hasBakedZone) {
+      // Zone already baked into the image's top: full-bleed, edge-to-edge —
+      // matches the final-print preview. The blue address-zone overlay sits on
+      // top of the baked white.
+      ed.rw = w;
+      ed.rh = h;
+      ed.rx = 0;
+      ed.ry = 0;
+    } else {
+      // STRETCH to EXACTLY fill the area below the white address zone — no more,
+      // no less. The white zone is exactly the page width (pageW), so the design
+      // must be exactly pageW wide (NOT pageW + bleed, which made it wider than
+      // the zone). Height runs from the zone bottom to exactly the page bottom
+      // (NOT past it into the bleed, which trimmed the bottom content).
+      ed.rw = w;                                  // exactly page width = zone width
+      ed.rh = h - zoneTop;                        // zone bottom -> page bottom
+      ed.rx = 0;                                  // left-aligned to the zone
+      ed.ry = zoneTop;                            // starts exactly below the zone
+    }
   } else {
     // FRONT: STRETCH to exactly fill the full page (edge-to-edge, no white).
     // The front design is auto-cropped of pure-white margins at load, so the
@@ -1408,6 +1449,9 @@ function saveFlyerEditor(){
     var dw=_flyerEditor.rw*sxP, dh=_flyerEditor.rh*syP;
     ctx.drawImage(_flyerEditor.img, dx, dy, dw, dh);
   }
+  // Back: ensure the address zone is white. If the design was already saved with
+  // the zone baked in (hasBakedZone), it's drawn full-bleed so the baked white is
+  // already in place — re-whitening is harmless but skipped for clarity.
   if(_flyerEditor.matType === 'flyer_back'){
     ctx.fillStyle='#ffffff'; ctx.fillRect(0, 0, PW, zoneH);
   }
