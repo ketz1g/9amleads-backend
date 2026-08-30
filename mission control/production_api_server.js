@@ -5279,25 +5279,27 @@ app.post('/api/affiliate/demo-customer-session', affiliateAuth, async (req, res)
       try { demo = db.prepare('SELECT * FROM customers WHERE id = ?').get(demoId); } catch(e) {}
     }
     // Seed a few sample leads into the demo account so affiliates see a populated dashboard.
+    // We write DIRECTLY into the JSON leads store (getDb().leads) which /api/leads reads,
+    // avoiding the SQL-shim INSERT quirks. Runs only if the demo has fewer than 4 leads.
     try {
-      var demoLeadCount = db.prepare('SELECT COUNT(*) AS n FROM leads WHERE customer_id = ?').get(demo ? demo.id : (function(){ var d2 = db.prepare('SELECT id FROM customers WHERE email = ?').get(DEMO_EMAIL); return d2 && d2.id; })());
-      var demoId2 = (demo && demo.id) || (db.prepare('SELECT id FROM customers WHERE email = ?').get(DEMO_EMAIL) || {}).id;
-      var _cnt = demoLeadCount ? Number(demoLeadCount.n != null ? demoLeadCount.n : demoLeadCount.count) : 0;
-      if (_cnt < 4 && demoId2) {
-        var nowIso = new Date().toISOString();
-        var sampleLeads = [
-          { addr: '14 Maple Avenue, Clapham', pc: 'SW4 8LL', st: 'Under Offer', beds: 3, type: 'Semi-Detached', price: 625000, priceLabel: '£625,000', url: 'https://www.rightmove.co.uk', firstVisible: nowIso, status: 'new' },
-          { addr: '27 Rowan Close, Streatham', pc: 'SW16 3ER', st: 'Under Offer', beds: 2, type: 'Flat', price: 410000, priceLabel: '£410,000', url: 'https://www.rightmove.co.uk', firstVisible: nowIso, status: 'contacted' },
-          { addr: '5 Willow Grove, Balham', pc: 'SW12 8NX', st: 'Sold Subject to Contract', beds: 4, type: 'Terraced', price: 850000, priceLabel: '£850,000', url: 'https://www.rightmove.co.uk', firstVisible: nowIso, status: 'booked' },
-          { addr: '31 Cedar Walk, Tooting', pc: 'SW17 7QT', st: 'Under Offer', beds: 3, type: 'Semi-Detached', price: 690000, priceLabel: '£690,000', url: 'https://www.rightmove.co.uk', firstVisible: nowIso, status: 'new' }
+      var demoId3 = (demo && demo.id) || (function(){ var d3 = db.prepare('SELECT id FROM customers WHERE email = ?').get(DEMO_EMAIL); return d3 && d3.id; })();
+      var existingLeads = (dbc.leads || []).filter(function(l2){ return l2.customer_id === demoId3; });
+      if (existingLeads.length < 4 && demoId3) {
+        var nowIso2 = new Date().toISOString();
+        var sampleLeads2 = [
+          { addr: '14 Maple Avenue, Clapham', pc: 'SW4 8LL', st: 'Under Offer', beds: 3, type: 'Semi-Detached', price: 625000, priceLabel: '£625,000', url: 'https://www.rightmove.co.uk', firstVisible: nowIso2, status: 'new' },
+          { addr: '27 Rowan Close, Streatham', pc: 'SW16 3ER', st: 'Under Offer', beds: 2, type: 'Flat', price: 410000, priceLabel: '£410,000', url: 'https://www.rightmove.co.uk', firstVisible: nowIso2, status: 'contacted' },
+          { addr: '5 Willow Grove, Balham', pc: 'SW12 8NX', st: 'Sold Subject to Contract', beds: 4, type: 'Terraced', price: 850000, priceLabel: '£850,000', url: 'https://www.rightmove.co.uk', firstVisible: nowIso2, status: 'booked' },
+          { addr: '31 Cedar Walk, Tooting', pc: 'SW17 7QT', st: 'Under Offer', beds: 3, type: 'Semi-Detached', price: 690000, priceLabel: '£690,000', url: 'https://www.rightmove.co.uk', firstVisible: nowIso2, status: 'new' }
         ];
-        sampleLeads.forEach(function(sl, i2) {
-          var lid = uuidv4();
+        var createdLeads = sampleLeads2.map(function(sl, i2) {
           var dataObj = { address: sl.addr, postcode: sl.pc, listingStatus: sl.st, bedrooms: sl.beds, propertyType: sl.type, price: sl.price, priceLabel: sl.priceLabel, url: sl.url, firstVisibleDate: sl.firstVisible, status: sl.status, source: 'Rightmove (Apify)' };
-          db.prepare('INSERT INTO leads (id, customer_id, product, data, status, delivered, created_at, delivered_at, release_at) VALUES (?,?,?,?,?,?,?,?,?)')
-            .run(lid, demoId2, 'moving', JSON.stringify(dataObj), sl.status, 1, new Date(Date.now() - (3 - i2) * 86400000).toISOString(), nowIso, nowIso);
+          return { id: uuidv4(), customer_id: demoId3, product: 'moving', data: JSON.stringify(dataObj), status: sl.status, delivered: 1, created_at: new Date(Date.now() - (3 - i2) * 86400000).toISOString(), delivered_at: nowIso2, release_at: nowIso2 };
         });
-        console.log('[DEMO] seeded 4 sample leads for demo customer');
+        if (!dbc.leads) dbc.leads = [];
+        createdLeads.forEach(function(cl){ dbc.leads.push(cl); });
+        saveDb();
+        console.log('[DEMO] seeded ' + createdLeads.length + ' sample leads for demo customer');
       }
     } catch(seedErr) { console.log('[DEMO] seed leads error:', seedErr.message); }
     var token = generateToken(demo);
