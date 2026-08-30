@@ -1198,14 +1198,14 @@ function openFlyerEditor(id, name, matType){
             var cctx=cropped.getContext('2d');
             cctx.drawImage(img,cxl,cyt,cxr-cxl,cyb-cyt,0,0,cxr-cxl,cyb-cyt);
             var ci=new Image(); ci.src=cropped.toDataURL('image/png');
-            ci.onload=function(){ _flyerEditor.img=ci; _flyerEditor.loaded=true; flyerEditorReset(); flyerEditorDraw(); };
+            ci.onload=function(){ _flyerEditor.img=ci; _flyerEditor.loaded=true; flyerEditorReset(); flyerEditorDraw(); feCheckContentRisk(); };
             _flyerEditor.cropRect={x:cxl,y:cyt,w:cxr-cxl,h:cyb-cyt};
             return;
           }
         }
       } catch(e) {}
     }
-    _flyerEditor.img=img; _flyerEditor.loaded=true; flyerEditorReset(); flyerEditorDraw();
+    _flyerEditor.img=img; _flyerEditor.loaded=true; flyerEditorReset(); flyerEditorDraw(); feCheckContentRisk();
   };
   img.src='/api/direct-mail/materials/'+id+'/file?token='+encodeURIComponent(_token)+'&v='+Date.now();
   canvas.onmousedown=function(e){ flyerEditorStart(e.clientX,e.clientY); };
@@ -1242,6 +1242,72 @@ function flyerEditorReset(){
 // 6mm bleed (so it reaches the green bleed line with nothing white at the trimmed
 // edge). Front fills the whole page+bleed; the back fills the area below the
 // white address zone, extending to the bottom bleed edge.
+function feSetStatus(msg, type){
+  var el=document.getElementById('flyer-editor-status');
+  if(!el) return;
+  el.innerHTML=msg;
+  el.style.color = type==='error' ? '#dc2626' : (type==='warn' ? '#b45309' : '#16a34a');
+  el.style.fontWeight = (type==='error'||type==='warn') ? '700' : '600';
+}
+function feShowFitResult(){
+  var ed=_flyerEditor;
+  // Run the content-risk check first — a warning about covered/trimmed content is
+  // more important than the success message, so it takes precedence.
+  var hadWarn = feCheckContentRisk();
+  if(hadWarn) return;
+  if(ed.matType==='flyer_back'){
+    feSetStatus('✓ Fitted below the address zone — the design fills the width and reaches the bottom. Nothing is covered by the address box.', 'ok');
+  } else {
+    feSetStatus('✓ Fitted to the full page — the design fills edge-to-edge, nothing cut off.', 'ok');
+  }
+}
+// Analyse the loaded design and warn the customer about print-safety issues:
+//  - BACK: content sitting in the top address zone would be covered by the white
+//    address box at print.
+//  - FRONT: content too close to the trim edge (within ~2.5mm) risks being trimmed.
+function feCheckContentRisk(){
+  var ed=_flyerEditor;
+  if(!ed.img || !ed.loaded) return false;
+  var iw=ed.img.width, ih=ed.img.height;
+  if(!iw || !ih) return false;
+  try {
+    var c=document.createElement('canvas'); c.width=Math.min(400,iw); c.height=Math.min(560,ih);
+    var cx=c.getContext('2d'); cx.drawImage(ed.img,0,0,c.width,c.height);
+    var idata=cx.getImageData(0,0,c.width,c.height).data;
+    var W=c.width, H=c.height, step=2;
+    var zoneFracTop = 0.28;
+    var zoneY = Math.round(H*zoneFracTop);
+    var edgePx = Math.round(W*0.015); // ~2.5mm at the sampled scale
+    var inZone=0, zoneSamples=0, inEdgeB=0, inEdgeT=0, edgeSamplesB=0, edgeSamplesT=0;
+    for(var yy=0; yy<H; yy+=step){
+      for(var xx=0; xx<W; xx+=step){
+        var o=(yy*W+xx)*4;
+        var r=idata[o],g=idata[o+1],b=idata[o+2],a=idata[o+3];
+        var hasInk = (a===0) ? false : (r<248||g<248||b<248);
+        if(!hasInk) continue;
+        if(ed.matType==='flyer_back' && yy<zoneY){ inZone++; zoneSamples++; }
+        if(ed.matType!=='flyer_back'){
+          if(yy>=H-edgePx){ inEdgeB++; edgeSamplesB++; }
+          if(yy<=edgePx){ inEdgeT++; edgeSamplesT++; }
+        }
+      }
+    }
+    if(ed.matType==='flyer_back'){
+      if(inZone>0 && zoneSamples>0 && (inZone/zoneSamples)>0.15){
+        feSetStatus('⚠ Warning: your back design has content in the <b>top address zone</b> (blue box). That area is white-filled for the recipient\'s address at print, so that content will be <b>covered</b>. Move important content below the blue box before saving.', 'warn');
+        return true;
+      }
+    } else {
+      var riskB = edgeSamplesB>0 && (inEdgeB/edgeSamplesB)>0.30;
+      var riskT = edgeSamplesT>0 && (inEdgeT/edgeSamplesT)>0.30;
+      if(riskB || riskT){
+        feSetStatus('⚠ Warning: content sits very close to the <b>edge</b> of the flyer. The outer ~3mm is trimmed at print, so text/logos near the edge could be partially cut. Keep important content inside the blue dashed safe area.', 'warn');
+        return true;
+      }
+    }
+  } catch(e) {}
+  return false;
+}
 function flyerEditorAutoFit(){
   var ed=_flyerEditor;
   if(!ed.img || !ed.loaded) return;
@@ -1268,6 +1334,7 @@ function flyerEditorAutoFit(){
     ed.ry = 0;
   }
   flyerEditorDraw();
+  feShowFitResult();
 }
 function flyerEditorPoint(cx,cy){
   var c=_flyerEditor.canvas, r=c.getBoundingClientRect();
