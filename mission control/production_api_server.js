@@ -5308,6 +5308,16 @@ app.post('/api/affiliate/demo-customer-session', affiliateAuth, async (req, res)
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// DEBUG: dump demo customer + leads (admin only)
+app.get('/api/admin/demo-debug', adminAuth, (req, res) => {
+  try {
+    var dbc = getDb();
+    var demo = (dbc.customers || []).find(function(x){ return String(x.email||'').toLowerCase() === 'test.affiliatedemo@9amleads.com'; });
+    var leads = (dbc.leads || []).filter(function(l){ return l.customer_id === (demo && demo.id); });
+    res.json({ demo_id: demo && demo.id, demo_found: !!demo, demo_plan: demo && demo.plan, leads_count: leads.length, leads: leads.map(function(l){ var d={}; try{d=JSON.parse(l.data||'{}');}catch(e){} return { id: l.id, addr: d.address, status: l.status }; }) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/affiliate/kyc — current KYC / compliance status.
 app.get('/api/affiliate/kyc', affiliateAuth, (req, res) => {
   try { res.json({ success: true, kyc: kycStatus(req.affiliate) }); }
