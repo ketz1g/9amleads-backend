@@ -5030,6 +5030,44 @@ app.post('/api/affiliate/delete-account', affiliateAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// SEND SAMPLE EMAILS: trigger every affiliate/email template to an address so the
+// owner can preview them. POST /api/admin/affiliate/send-samples {to: "email"}.
+app.post('/api/admin/affiliate/send-samples', adminAuth, async (req, res) => {
+  var to = String(req.body.to || '').trim().toLowerCase() || 'ketzman1g@gmail.com';
+  var sent = [];
+  function em(subj, html){ return sendBrevoEmail({ email: to, name: 'Sample' }, subj, html).then(function(){ sent.push(subj); }).catch(function(e){ sent.push(subj + ' (ERR ' + e.message + ')'); }); }
+  var affSample = { name: 'James Smith', email: to, code: 'JAMES24', id: 'sample', status: 'active', created_at: new Date().toISOString() };
+
+  // 1. Nurture day 3 / 7 / 14
+  await em('SAMPLE: Affiliate nurture - day 3', affiliateNurtureEmail(affSample, 3));
+  await em('SAMPLE: Affiliate nurture - day 7', affiliateNurtureEmail(affSample, 7));
+  await em('SAMPLE: Affiliate nurture - day 14', affiliateNurtureEmail(affSample, 14));
+  // 2. Reactivation
+  await em('SAMPLE: Affiliate reactivation', affiliateReactivationEmail(affSample));
+  // 3. Wheel unlock + reminder
+  var wheelHtml = '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="font-family:Outfit,sans-serif;color:#f59e0b;margin:0 0 10px">Your Wheel of Fortune is ready!</h1><p style="color:#ccc;line-height:1.7">Hi James,</p><p style="color:#ccc;line-height:1.7">You have reached <strong style="color:#fff">50 retained signups</strong> and unlocked a spin.</p><p style="color:#ccc;line-height:1.7">Prizes on this wheel: <strong style="color:#f59e0b">£50 / £100 / £150 / £200</strong>. Fair odds, paid instantly.</p><p style="color:#ccc;line-height:1.7"><a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">Log in and hit Spin!</a></p></div>';
+  await em('SAMPLE: Wheel unlocked', wheelHtml);
+  await em('SAMPLE: Spin reminder (day 3+ waiting)', '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="font-family:Outfit,sans-serif;color:#f59e0b;margin:0 0 10px">Your spin is waiting</h1><p style="color:#ccc;line-height:1.7">Hi James,</p><p style="color:#ccc;line-height:1.7">You unlocked a Wheel of Fortune spin a few days ago. Prizes up to <strong style="color:#f59e0b">£200</strong>.</p><p style="color:#ccc;line-height:1.7"><a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">Open your dashboard and hit Spin</a>.</p></div>');
+  // 4. Commission cleared
+  await em('SAMPLE: Commission cleared', '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="font-family:Outfit,sans-serif;color:#34d399;margin:0 0 10px">Your commission has cleared!</h1><p style="color:#ccc;line-height:1.7">Hi James,</p><p style="color:#ccc;line-height:1.7">A referral you made has reached their second invoice and your <strong style="color:#fff">£25</strong> commission has cleared.</p><p style="color:#ccc;line-height:1.7">Check your <a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">dashboard</a>.</p></div>');
+  // 5. Two-tier recruit bonus
+  await em('SAMPLE: Two-tier recruit bonus', '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="font-family:Outfit,sans-serif;color:#34d399;margin:0 0 10px">Recruit bonus earned!</h1><p style="color:#ccc;line-height:1.7">Hi James,</p><p style="color:#ccc;line-height:1.7">The affiliate you recruited (Sarah Brown) has earned their first commission, so you have earned a <strong style="color:#fff">£10</strong> two-tier bonus.</p></div>');
+  // 6. Recruitment funnel (welcome / day3 / day7) - reuse capture copy inline
+  await em('SAMPLE: Prospect welcome (starter pack)', '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="font-family:Outfit,sans-serif;color:#0ea5e9;margin:0 0 10px">Your 9amLeads affiliate starter pack</h1><p style="color:#ccc;line-height:1.7">Hi there,</p><p style="color:#ccc;line-height:1.7">£25 per sign-up, 14-day free trial for referrals, Wheel of Fortune up to £1,000, free to join, everything provided. <a href="https://9amleads.com/affiliates" style="color:#0ea5e9">Apply free here</a>.</p></div>');
+  await em('SAMPLE: Prospect day 3 follow-up', '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="font-family:Outfit,sans-serif;color:#f59e0b;margin:0 0 10px">A quick reminder</h1><p style="color:#ccc;line-height:1.7">Hi there,</p><p style="color:#ccc;line-height:1.7">The programme is free to join in 2 minutes. £25 per retained sign-up, wheel spins up to £1,000. <a href="https://9amleads.com/affiliates" style="color:#0ea5e9">Join free here</a>.</p></div>');
+  await em('SAMPLE: Prospect day 7 last nudge', '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="font-family:Outfit,sans-serif;color:#34d399;margin:0 0 10px">Don\'t leave it on the table</h1><p style="color:#ccc;line-height:1.7">Hi there,</p><p style="color:#ccc;line-height:1.7">2 minutes to join, free, no card. Your referrals get 14 days free. <a href="https://9amleads.com/affiliates" style="color:#0ea5e9">Get your code here</a>.</p></div>');
+  // 7. KYC approve / reject
+  await em('SAMPLE: KYC approved', '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="font-family:Outfit,sans-serif;color:#34d399;margin:0 0 10px">ID verified</h1><p style="color:#ccc;line-height:1.7">Hi James,</p><p style="color:#ccc;line-height:1.7">Your identity has been verified and your account is now eligible for payout.</p></div>');
+  await em('SAMPLE: KYC rejected (re-submit)', '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="font-family:Outfit,sans-serif;color:#f87171;margin:0 0 10px">ID needs attention</h1><p style="color:#ccc;line-height:1.7">Hi James,</p><p style="color:#ccc;line-height:1.7">We could not verify your ID. Please re-upload a clear photo of your driving licence or passport.</p></div>');
+  // 8. Admin application alert (to admin email = to)
+  await em('SAMPLE: Admin - new affiliate application', '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="font-family:Outfit,sans-serif;color:#0ea5e9;margin:0 0 10px">New affiliate application</h1><p style="color:#ccc;line-height:1.7"><strong style="color:#fff">James Smith</strong> (james@test.com) applied with code <strong style="color:#0ea5e9">JAMES24</strong>.</p><p style="color:#ccc;line-height:1.7">Score: <strong style="color:#34d399">96/100</strong>. Voice test: <strong style="color:#fff">yes</strong>.</p><p style="color:#ccc;line-height:1.7"><a href="https://9amleads.com/portal/admin.html" style="color:#0ea5e9">Review in admin</a>.</p></div>');
+  // 9. Application approved / rejected
+  await em('SAMPLE: Application approved (welcome)', '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="font-family:Outfit,sans-serif;color:#34d399;margin:0 0 10px">You have been approved!</h1><p style="color:#ccc;line-height:1.7">Hi James,</p><p style="color:#ccc;line-height:1.7">Your code is <strong style="color:#0ea5e9">JAMES24</strong>. Log in to your <a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">dashboard</a> and start sharing.</p></div>');
+  await em('SAMPLE: Application rejected', '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="font-family:Outfit,sans-serif;color:#f87171;margin:0 0 10px">Update on your application</h1><p style="color:#ccc;line-height:1.7">Hi James,</p><p style="color:#ccc;line-height:1.7">Thank you for applying. We are unable to accept you at this time.</p></div>');
+
+  res.json({ success: true, sent: sent, to: to });
+});
+
 // GET /api/affiliate/kyc — current KYC / compliance status.
 app.get('/api/affiliate/kyc', affiliateAuth, (req, res) => {
   try { res.json({ success: true, kyc: kycStatus(req.affiliate) }); }
