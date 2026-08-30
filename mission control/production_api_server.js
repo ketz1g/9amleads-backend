@@ -3127,11 +3127,17 @@ function processCommissionClearance() {
             try {
               sendBrevoEmail({ email: _recruiter.email, name: _recruiter.name || 'Affiliate' },
                 'You earned a £' + bonusAmt + ' recruit bonus!',
-                '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto">' +
-                '<h1 style="font-family:Outfit,sans-serif;color:#34d399;margin:0 0 10px">Recruit bonus earned!</h1>' +
-                '<p style="color:#ccc;line-height:1.7">Hi ' + escHtml(_recruiter.name || 'there') + ',</p>' +
-                '<p style="color:#ccc;line-height:1.7">The affiliate you recruited (' + escHtml(_recOwner.name || 'someone') + ') has earned their first commission, so you have earned a <strong style="color:#fff">£' + bonusAmt + '</strong> two-tier bonus.</p>' +
-                '<p style="color:#ccc;line-height:1.7">Keep recruiting affiliates and earning on their success. See your <a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">dashboard</a>.</p></div>').catch(function(){});
+                '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:600px;margin:0 auto">' +
+                '<div style="text-align:center;margin-bottom:18px"><span style="background:rgba(52,211,153,.15);color:#34d399;font-size:11px;font-weight:800;padding:5px 14px;border-radius:50px;letter-spacing:.5px">9amLeads TWO-TIER BONUS</span></div>' +
+                '<h1 style="font-family:Outfit,sans-serif;color:#34d399;margin:0 0 8px;font-size:26px">Recruit bonus earned! 🎉</h1>' +
+                '<p style="color:#c9d1de;line-height:1.8;margin:0 0 14px">Hi ' + escHtml(_recruiter.name || 'there') + ',</p>' +
+                '<p style="color:#c9d1de;line-height:1.8">The affiliate you recruited (<strong style="color:#fff">' + escHtml(_recOwner.name || 'someone') + '</strong>) has earned their first commission, which means you have earned a <strong style="color:#fff;font-size:20px">£' + bonusAmt + '</strong> two-tier bonus.</p>' +
+                '<div style="background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.3);border-radius:12px;padding:16px;margin:14px 0">' +
+                '<p style="color:#c9d1de;line-height:1.8;margin:0">This is how the programme grows: you refer businesses, and you can also recruit other affiliates. Every time someone you recruited earns their first commission, you earn £' + bonusAmt + ' too. Keep building your team and your bonus income compounds.</p>' +
+                '</div>' +
+                '<p style="color:#c9d1de;line-height:1.8">You can see this bonus and all your earnings in your dashboard.</p>' +
+                '<div style="text-align:center;margin:18px 0 6px"><a href="https://9amleads.com/portal/affiliate.html" style="display:inline-block;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;padding:12px 26px;border-radius:10px;font-weight:700;font-size:14px;text-decoration:none">Open your dashboard</a></div>' +
+                '<p style="color:#888;font-size:13px;margin-top:20px;border-top:1px solid #1e2030;padding-top:12px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>').catch(function(){});
             } catch(e4) {}
           }
         }
@@ -3146,10 +3152,14 @@ function processCommissionClearance() {
               'Your £' + Number(cm.commission_amount || 25) + ' commission has cleared',
               '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto">' +
               '<h1 style="font-family:Outfit,sans-serif;color:#34d399;margin:0 0 10px">Your commission has cleared!</h1>' +
-              '<p style="color:#ccc;line-height:1.7">Hi ' + escHtml(_affOwner.name || 'there') + ',</p>' +
-              '<p style="color:#ccc;line-height:1.7">A referral you made has reached their second invoice and your <strong style="color:#fff">£' + Number(cm.commission_amount || 25) + '</strong> commission has cleared. It is now ready toward your next payout.</p>' +
-              '<p style="color:#ccc;line-height:1.7">Check your <a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">dashboard</a> to see your progress.</p>' +
-              '<p style="color:#888;font-size:13px;margin-top:24px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>').catch(function(){});
+              '<p style="color:#c9d1de;line-height:1.8">Hi ' + escHtml(_affOwner.name || 'there') + ',</p>' +
+              '<p style="color:#c9d1de;line-height:1.8">Great news - a referral you made has reached their second invoice and your <strong style="color:#fff;font-size:20px">£' + Number(cm.commission_amount || 25) + '</strong> commission has cleared.</p>' +
+              '<div style="background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.3);border-radius:12px;padding:16px;margin:14px 0">' +
+              '<p style="color:#c9d1de;line-height:1.8;margin:0">This is now ready toward your next payout. You can see exactly where it sits in your dashboard - your earnings, your payout progress, and your Wheel of Fortune progress all update live.</p>' +
+              '</div>' +
+              '<p style="color:#c9d1de;line-height:1.8">Keep going! Every retained sign-up adds £25, and every 50 adds a wheel spin worth up to £1,000.</p>' +
+              '<div style="text-align:center;margin:18px 0 6px"><a href="https://9amleads.com/portal/affiliate.html" style="display:inline-block;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;padding:12px 26px;border-radius:10px;font-weight:700;font-size:14px;text-decoration:none">See it in your dashboard</a></div>' +
+              '<p style="color:#888;font-size:13px;margin-top:20px;border-top:1px solid #1e2030;padding-top:12px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>').catch(function(){});
           }
         } catch(e2) {}
       }
@@ -3186,33 +3196,79 @@ function runPartnerJobs() {
 // Nurture emails to new affiliates (days 3, 7, 14 after signup). Deduped via
 // the affiliate's 'nurture_sent' array so each is sent exactly once.
 function affiliateNurtureEmail(aff, day) {
-  var base = '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto">' +
-    '<h1 style="font-family:Outfit,sans-serif;color:#0ea5e9;margin:0 0 10px">' + (day === 3 ? 'Your affiliate kit is ready' : day === 7 ? 'Turn shares into sign-ups' : 'Keep your referrals converting') + '</h1>' +
-    '<p style="color:#ccc;line-height:1.7">Hi ' + escHtml(aff.name || 'there') + ',</p>';
-  var tips;
+  var code = escHtml(aff.code || '');
+  var dash = '<a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">dashboard</a>';
+  var top = '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:600px;margin:0 auto">' +
+    '<div style="text-align:center;margin-bottom:18px"><span style="background:rgba(14,165,233,.15);color:#0ea5e9;font-size:11px;font-weight:800;padding:5px 14px;border-radius:50px;letter-spacing:.5px">9amLeads AFFILIATE PROGRAMME</span></div>' +
+    '<h1 style="font-family:Outfit,sans-serif;color:#0ea5e9;margin:0 0 8px;font-size:26px;line-height:1.25">' + (day === 3 ? 'Your affiliate kit is ready' : day === 7 ? 'Turn shares into sign-ups' : '2 weeks in - keep the momentum') + '</h1>' +
+    '<p style="color:#c9d1de;line-height:1.8;margin:0 0 16px">Hi ' + escHtml(aff.name || 'there') + ', welcome to the 9amLeads affiliate programme. Here is your complete starter kit and exactly what to do next.</p>';
+  var body;
   if (day === 3) {
-    tips = '<p style="color:#ccc;line-height:1.7">Your code is <strong style="color:#0ea5e9">' + escHtml(aff.code || '') + '</strong> and your share link is live in your dashboard. Here\'s what to do this week:</p>' +
-      '<ul style="color:#ccc;line-height:1.8">' +
-      '<li><b>Pick your audience</b> - removal firms, solicitors, builders, accountants. You know who they are.</li>' +
-      '<li><b>Send your link to 5 businesses today</b> - even 1 sign-up gets you on the board.</li>' +
-      '<li><b>Use the ready-made scripts</b> in your <a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">dashboard</a> - no writing needed.</li>' +
-      '</ul>';
+    body = '' +
+      '<div style="background:rgba(255,255,255,.04);border:1px solid #1e2030;border-radius:12px;padding:18px;margin-bottom:14px">' +
+      '<h2 style="font-family:Outfit,sans-serif;color:#f1f5f9;font-size:15px;margin:0 0 10px">Your details</h2>' +
+      '<p style="color:#c9d1de;line-height:1.8;margin:0 0 6px"><b style="color:#fff">Your code:</b> <span style="background:rgba(14,165,233,.15);color:#0ea5e9;font-weight:800;padding:2px 8px;border-radius:5px">' + code + '</span></p>' +
+      '<p style="color:#c9d1de;line-height:1.8;margin:0 0 6px"><b style="color:#fff">Your share link:</b> live in your ' + dash + '</p>' +
+      '<p style="color:#c9d1de;line-height:1.8;margin:0"><b style="color:#fff">Your plan:</b> refer businesses, they get 14 days free, you earn £25 when they stay.</p>' +
+      '</div>' +
+      '<div style="background:rgba(255,255,255,.04);border:1px solid #1e2030;border-radius:12px;padding:18px;margin-bottom:14px">' +
+      '<h2 style="font-family:Outfit,sans-serif;color:#f1f5f9;font-size:15px;margin:0 0 10px">This week (day 1-7)</h2>' +
+      '<ul style="color:#c9d1de;line-height:1.9;margin:0;padding-left:18px">' +
+      '<li><b style="color:#fff">Pick your audience.</b> Removal firms, solicitors, builders, accountants, letting agents. You already know who they are - start there.</li>' +
+      '<li><b style="color:#fff">Send your link to 5 businesses today.</b> Even one sign-up gets you on the board and shows you how it works.</li>' +
+      '<li><b style="color:#fff">Use the ready-made scripts.</b> Open your ' + dash + ', go to Tools, and copy a phone script, email, SMS or social post. No writing needed.</li>' +
+      '<li><b style="color:#fff">Know your selling points.</b> Your referrals get 14 days free instead of 7 (that is your unique advantage), no card required, cancel anytime, and they get real door-numbered leads every morning at 9am.</li>' +
+      '</ul>' +
+      '</div>' +
+      '<div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:12px;padding:16px;margin-bottom:14px">' +
+      '<h2 style="font-family:Outfit,sans-serif;color:#f59e0b;font-size:14px;margin:0 0 8px">🎡 Don\'t forget the Wheel of Fortune</h2>' +
+      '<p style="color:#c9d1de;line-height:1.8;margin:0">Every 50 retained sign-ups unlocks a spin for prizes up to £200 (then £500, then £1,000). Refer enough businesses and the wheel rewards you on top of your £25 commission.</p>' +
+      '</div>';
   } else if (day === 7) {
-    tips = '<p style="color:#ccc;line-height:1.7">Most affiliates who earn are the ones who follow up. Try these this week:</p>' +
-      '<ul style="color:#ccc;line-height:1.8">' +
-      '<li><b>Follow up your first shares</b> - "Did you get my message about the 14-day free trial?"</li>' +
-      '<li><b>Post once in a WhatsApp or Facebook group</b> of local business owners.</li>' +
-      '<li><b>Remind them it is free</b> - 14 days of real leads, no card needed, and you earn £25 once they pay their second invoice.</li>' +
-      '</ul>';
+    body = '' +
+      '<div style="background:rgba(255,255,255,.04);border:1px solid #1e2030;border-radius:12px;padding:18px;margin-bottom:14px">' +
+      '<h2 style="font-family:Outfit,sans-serif;color:#f1f5f9;font-size:15px;margin:0 0 10px">This week (day 7-14) - follow up</h2>' +
+      '<p style="color:#c9d1de;line-height:1.8;margin:0 0 10px">Most affiliates who earn are the ones who follow up. Here is your follow-up playbook:</p>' +
+      '<ul style="color:#c9d1de;line-height:1.9;margin:0;padding-left:18px">' +
+      '<li><b style="color:#fff">Follow up your first shares.</b> "Did you get my message about the 14-day free trial?" A second message converts far more than a first.</li>' +
+      '<li><b style="color:#fff">Post once in a WhatsApp or Facebook group</b> of local business owners. Use the ready-made post in your Tools tab.</li>' +
+      '<li><b style="color:#fff">Lead with the double trial.</b> "Normally it is 7 days free, but with my code you get 14." That line closes more sign-ups than anything else.</li>' +
+      '<li><b style="color:#fff">Remind them it is risk-free.</b> 14 days of real leads, no card, cancel anytime. There is nothing to lose by trying.</li>' +
+      '</ul>' +
+      '</div>' +
+      '<div style="background:rgba(255,255,255,.04);border:1px solid #1e2030;border-radius:12px;padding:18px;margin-bottom:14px">' +
+      '<h2 style="font-family:Outfit,sans-serif;color:#f1f5f9;font-size:15px;margin:0 0 10px">Where to find businesses</h2>' +
+      '<ul style="color:#c9d1de;line-height:1.9;margin:0;padding-left:18px">' +
+      '<li><b style="color:#fff">Google Maps:</b> search "removal companies [your town]" and you get names + phone numbers for free. Shortlist 10-20.</li>' +
+      '<li><b style="color:#fff">Facebook groups:</b> "[your town] business owners" - join, see who is active, message them directly.</li>' +
+      '<li><b style="color:#fff">Word of mouth:</b> ask friends and family "do you know a builder, solicitor or accountant?" Warm referrals convert best.</li>' +
+      '</ul>' +
+      '</div>' +
+      '<div style="background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.3);border-radius:12px;padding:16px;margin-bottom:14px">' +
+      '<p style="color:#c9d1de;line-height:1.8;margin:0"><b style="color:#fff">Remember the value:</b> your referrals get 14 days of real leads free (no card), they keep the leads if they find them useful, and you earn £25 when they pay their second invoice around a month after signing up.</p>' +
+      '</div>';
   } else {
-    tips = '<p style="color:#ccc;line-height:1.7">Two weeks in - here\'s how to turn interest into payouts:</p>' +
-      '<ul style="color:#ccc;line-height:1.8">' +
-      '<li><b>Follow up anyone who started a trial</b> - help them see the value of the leads.</li>' +
-      '<li><b>Ask for referrals</b> - happy customers recommend other businesses.</li>' +
-      '<li><b>Your £25 per sign-up</b> lands about a month after they sign up, once they pay their second invoice. Check your <a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">dashboard</a> to track it live.</li>' +
-      '</ul>';
+    body = '' +
+      '<div style="background:rgba(255,255,255,.04);border:1px solid #1e2030;border-radius:12px;padding:18px;margin-bottom:14px">' +
+      '<h2 style="font-family:Outfit,sans-serif;color:#f1f5f9;font-size:15px;margin:0 0 10px">Two weeks in - turn interest into payouts</h2>' +
+      '<ul style="color:#c9d1de;line-height:1.9;margin:0;padding-left:18px">' +
+      '<li><b style="color:#fff">Follow up anyone who started a trial.</b> Help them see the value of the leads - that is what makes them stay and makes you £25.</li>' +
+      '<li><b style="color:#fff">Ask happy customers for referrals.</b> A business that loves their leads knows other businesses. One happy referral leads to more.</li>' +
+      '<li><b style="color:#fff">Nudge trials near the end.</b> "How have the leads been? It is easy to keep them going if you want." Most sign-ups come from this gentle push.</li>' +
+      '<li><b style="color:#fff">Check your wheel progress.</b> Every 50 retained sign-ups unlocks a spin. Watch it climb in your ' + dash + '.</li>' +
+      '</ul>' +
+      '</div>' +
+      '<div style="background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.3);border-radius:12px;padding:16px;margin-bottom:14px">' +
+      '<h2 style="font-family:Outfit,sans-serif;color:#34d399;font-size:14px;margin:0 0 8px">💸 How your £25 arrives</h2>' +
+      '<p style="color:#c9d1de;line-height:1.8;margin:0">A business you referred signs up and starts their 14-day free trial. Around a month later they pay their second invoice - that is when your <b style="color:#fff">£25</b> commission is triggered. It clears after the qualifying period and is paid on the monthly cycle. You will see it all tracked live in your ' + dash + '.</p>' +
+      '</div>' +
+      '<div style="background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.3);border-radius:12px;padding:16px;margin-bottom:14px">' +
+      '<p style="color:#c9d1de;line-height:1.8;margin:0"><b style="color:#fff">Legitimate and compliant:</b> to be paid you verify your ID (driving licence or passport) in the Compliance tab and confirm your bank details. This is standard and required before any payout.</p>' +
+      '</div>';
   }
-  return base + tips + '<p style="color:#888;font-size:13px;margin-top:24px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>';
+  var cta = '<div style="text-align:center;margin:20px 0 8px"><a href="https://9amleads.com/portal/affiliate.html" style="display:inline-block;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;padding:13px 28px;border-radius:10px;font-weight:700;font-size:14px;text-decoration:none">Open your dashboard</a></div>' +
+    '<p style="color:#8a94a8;font-size:12px;text-align:center;margin:0">Your code: <b style="color:#c9d1de">' + code + '</b> - share it anywhere.</p>';
+  return top + body + cta + '<p style="color:#888;font-size:13px;margin-top:22px;border-top:1px solid #1e2030;padding-top:14px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>';
 }
 function processAffiliateNurture() {
   try {
@@ -3243,17 +3299,31 @@ function processAffiliateNurture() {
 // Reactivation: email affiliates who have been active for 21+ days but have no
 // earnings and haven't logged in recently. Deduped via 'reactivation_sent'.
 function affiliateReactivationEmail(aff) {
-  return '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto">' +
-    '<h1 style="font-family:Outfit,sans-serif;color:#0ea5e9;margin:0 0 10px">Your code is still live</h1>' +
-    '<p style="color:#ccc;line-height:1.7">Hi ' + escHtml(aff.name || 'there') + ',</p>' +
-    '<p style="color:#ccc;line-height:1.7">Your affiliate code <strong style="color:#0ea5e9">' + escHtml(aff.code || '') + '</strong> is still active, but we haven\'t seen a sign-up from it yet. Here are 3 quick ways to get moving:</p>' +
-    '<ul style="color:#ccc;line-height:1.8">' +
-    '<li><b>Share your link with 3 businesses today</b> - the 14-day free trial makes it an easy yes.</li>' +
-    '<li><b>Use the ready-made WhatsApp/LinkedIn posts</b> in your dashboard. Copy, paste, done.</li>' +
-    '<li><b>Follow up anyone you have already told</b> - most sign-ups come from the second message.</li>' +
+  var code = escHtml(aff.code || '');
+  return '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:600px;margin:0 auto">' +
+    '<div style="text-align:center;margin-bottom:18px"><span style="background:rgba(14,165,233,.15);color:#0ea5e9;font-size:11px;font-weight:800;padding:5px 14px;border-radius:50px;letter-spacing:.5px">9amLeads AFFILIATE PROGRAMME</span></div>' +
+    '<h1 style="font-family:Outfit,sans-serif;color:#0ea5e9;margin:0 0 8px;font-size:26px">Your code is still live</h1>' +
+    '<p style="color:#c9d1de;line-height:1.8;margin:0 0 14px">Hi ' + escHtml(aff.name || 'there') + ',</p>' +
+    '<p style="color:#c9d1de;line-height:1.8;margin:0 0 16px">Your affiliate code <b style="background:rgba(14,165,233,.15);color:#0ea5e9;padding:2px 8px;border-radius:5px">' + code + '</b> is still active, but we haven\'t seen a sign-up from it yet. That is completely normal - most affiliates get their first sign-up after a few attempts. Here is exactly how to get moving:</p>' +
+    '<div style="background:rgba(255,255,255,.04);border:1px solid #1e2030;border-radius:12px;padding:18px;margin-bottom:14px">' +
+    '<h2 style="font-family:Outfit,sans-serif;color:#f1f5f9;font-size:15px;margin:0 0 10px">Three ways to get your first sign-up</h2>' +
+    '<ul style="color:#c9d1de;line-height:1.9;margin:0;padding-left:18px">' +
+    '<li><b style="color:#fff">Share your link with 3 businesses today.</b> The 14-day free trial (no card) makes it an easy yes - you are handing them a better deal, not selling.</li>' +
+    '<li><b style="color:#fff">Use the ready-made WhatsApp/LinkedIn posts</b> in your Tools tab. Copy, paste, done - no writing needed.</li>' +
+    '<li><b style="color:#fff">Follow up anyone you have already told.</b> Most sign-ups come from the second message. "Did you see my note about the 14-day free trial?"</li>' +
     '</ul>' +
-    '<p style="color:#ccc;line-height:1.7">Every business that pays their second invoice (around a month after sign-up) earns you <strong style="color:#fff">£25</strong>.</p>' +
-    '<p style="color:#888;font-size:13px;margin-top:24px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>';
+    '</div>' +
+    '<div style="background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.3);border-radius:12px;padding:16px;margin-bottom:14px">' +
+    '<h2 style="font-family:Outfit,sans-serif;color:#0ea5e9;font-size:14px;margin:0 0 8px">Why businesses say yes</h2>' +
+    '<p style="color:#c9d1de;line-height:1.8;margin:0">Your referrals get <b style="color:#fff">14 days of real business leads</b> delivered every morning at 9am - fresh, door-numbered leads matched to their trade and area. That is double the usual trial, with no card required and no commitment. For a removal firm, one extra booking from a lead covers a month of the service.</p>' +
+    '</div>' +
+    '<div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:12px;padding:16px;margin-bottom:14px">' +
+    '<h2 style="font-family:Outfit,sans-serif;color:#f59e0b;font-size:14px;margin:0 0 8px">What you earn</h2>' +
+    '<p style="color:#c9d1de;line-height:1.8;margin:0">Every business that pays their second invoice (around a month after signing up) earns you <b style="color:#fff">£25</b> - plus a Wheel of Fortune spin every 50 retained sign-ups, with prizes up to £1,000. Your earnings, referrals and spins are all tracked live in your dashboard.</p>' +
+    '</div>' +
+    '<div style="text-align:center;margin:20px 0 8px"><a href="https://9amleads.com/portal/affiliate.html" style="display:inline-block;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;padding:13px 28px;border-radius:10px;font-weight:700;font-size:14px;text-decoration:none">Open your dashboard</a></div>' +
+    '<p style="color:#8a94a8;font-size:12px;text-align:center;margin:0">Your code: <b style="color:#c9d1de">' + code + '</b></p>' +
+    '<p style="color:#888;font-size:13px;margin-top:22px;border-top:1px solid #1e2030;padding-top:14px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>';
 }
 function processAffiliateReactivation() {
   try {
@@ -3432,13 +3502,22 @@ function runAffiliateWheelUnlockEmails() {
         try {
           sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' },
             'Your Wheel of Fortune is ready!',
-            '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto">' +
-            '<h1 style="font-family:Outfit,sans-serif;color:#f59e0b;margin:0 0 10px">Your Wheel of Fortune is ready!</h1>' +
-            '<p style="color:#ccc;line-height:1.7">Hi ' + escHtml(aff.name || 'there') + ',</p>' +
-            '<p style="color:#ccc;line-height:1.7">You have reached <strong style="color:#fff">' + st.retained + ' retained signups</strong> and unlocked a spin on the Wheel of Fortune.</p>' +
-            '<p style="color:#ccc;line-height:1.7">Prizes on this wheel: <strong style="color:#f59e0b">\u00a3' + prizes + '</strong>. Fair odds, paid out straight to your balance when you claim.</p>' +
-            '<p style="color:#ccc;line-height:1.7">Log in to your <a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">affiliate dashboard</a> and hit Spin!</p>' +
-            '<p style="color:#888;font-size:13px;margin-top:24px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>');
+            '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:600px;margin:0 auto">' +
+            '<div style="text-align:center;margin-bottom:18px"><span style="background:rgba(245,158,11,.15);color:#f59e0b;font-size:11px;font-weight:800;padding:5px 14px;border-radius:50px;letter-spacing:.5px">9amLeads REWARD WHEEL</span></div>' +
+            '<h1 style="font-family:Outfit,sans-serif;color:#f59e0b;margin:0 0 8px;font-size:26px">Your Wheel of Fortune is ready! 🎡</h1>' +
+            '<p style="color:#c9d1de;line-height:1.8;margin:0 0 14px">Hi ' + escHtml(aff.name || 'there') + ',</p>' +
+            '<p style="color:#c9d1de;line-height:1.8;margin:0 0 16px">Congratulations - you have reached <strong style="color:#fff">' + st.retained + ' retained signups</strong> and unlocked a spin on the Wheel of Fortune. This is your reward on top of your £25 per-sign-up commission.</p>' +
+            '<div style="background:rgba(255,255,255,.04);border:1px solid #1e2030;border-radius:12px;padding:18px;margin-bottom:14px">' +
+            '<h2 style="font-family:Outfit,sans-serif;color:#f1f5f9;font-size:15px;margin:0 0 10px">Prizes on this wheel</h2>' +
+            '<p style="color:#c9d1de;line-height:1.8;margin:0"><strong style="color:#f59e0b;font-size:18px">\u00a3' + prizes + '</strong></p>' +
+            '<p style="color:#c9d1de;line-height:1.8;margin:8px 0 0">Fair odds - every prize has an equal chance. Whatever you land is paid straight to your balance the moment you win.</p>' +
+            '</div>' +
+            '<div style="background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.3);border-radius:12px;padding:16px;margin-bottom:14px">' +
+            '<h2 style="font-family:Outfit,sans-serif;color:#0ea5e9;font-size:14px;margin:0 0 8px">How it works</h2>' +
+            '<p style="color:#c9d1de;line-height:1.8;margin:0">Hit Spin in your dashboard, the wheel lands on a prize, and it is added to your payout balance instantly. As you refer more, the tiers grow: 50 sign-ups unlocks up to £200, 100 up to £500, and 200+ up to £1,000. Keep referring and the rewards keep coming.</p>' +
+            '</div>' +
+            '<div style="text-align:center;margin:20px 0 8px"><a href="https://9amleads.com/portal/affiliate.html" style="display:inline-block;background:linear-gradient(135deg,#f59e0b,#f97316);color:#fff;padding:13px 28px;border-radius:10px;font-weight:700;font-size:14px;text-decoration:none">Hit Spin now</a></div>' +
+            '<p style="color:#888;font-size:13px;margin-top:22px;border-top:1px solid #1e2030;padding-top:14px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>');
           notified.push(String(aff.wheel_spins || 0));
           aff.wheel_unlocked_sent = notified;
           aff.wheel_unlocked_at = new Date().toISOString();
@@ -3972,14 +4051,18 @@ app.post('/api/admin/affiliates/:id/review', adminAuth, (req, res) => {
     partnerAudit('affiliate_review_' + decision, { affiliate_id: aff.id, email: aff.email, note: aff.application.review_note, admin: (req.user && req.user.email) || 'admin' });
     // Notify the affiliate of the decision.
     try {
-      var emHtml = '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto">' +
-        '<h1 style="font-family:Outfit,sans-serif;color:' + (decision === 'approve' ? '#34d399' : '#f87171') + ';margin:0 0 10px">' + (decision === 'approve' ? 'You have been approved!' : 'Update on your application') + '</h1>' +
-        '<p style="color:#ccc;line-height:1.7">Hi ' + escHtml(aff.name || 'there') + ',</p>' +
+      var emHtml = '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:600px;margin:0 auto">' +
+        '<div style="text-align:center;margin-bottom:18px"><span style="background:rgba(52,211,153,.15);color:#34d399;font-size:11px;font-weight:800;padding:5px 14px;border-radius:50px;letter-spacing:.5px">9amLeads AFFILIATE PROGRAMME</span></div>' +
+        '<h1 style="font-family:Outfit,sans-serif;color:' + (decision === 'approve' ? '#34d399' : '#f87171') + ';margin:0 0 8px;font-size:26px">' + (decision === 'approve' ? 'You have been approved! 🎉' : 'Update on your application') + '</h1>' +
+        '<p style="color:#c9d1de;line-height:1.8">Hi ' + escHtml(aff.name || 'there') + ',</p>' +
         (decision === 'approve'
-          ? '<p style="color:#ccc;line-height:1.7">Congratulations, you have been approved as a 9amLeads affiliate. Your code is <strong style="color:#0ea5e9">' + escHtml(aff.code || '') + '</strong>. Log in to your dashboard to get your share link, scripts and playbook.</p>' +
-            '<p style="color:#ccc;line-height:1.7">Sign in at <a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">your affiliate dashboard</a> and share your code with businesses today.</p>'
-          : '<p style="color:#ccc;line-height:1.7">Thank you for applying. After reviewing your application we are unable to accept you into the programme at this time.</p>') +
-        '<p style="color:#888;font-size:13px;margin-top:24px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>';
+          ? '<p style="color:#c9d1de;line-height:1.8">Congratulations - you have been approved as a 9amLeads affiliate. Your code is <strong style="background:rgba(14,165,233,.15);color:#0ea5e9;padding:2px 8px;border-radius:5px">' + escHtml(aff.code || '') + '</strong>.</p>' +
+            '<div style="background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.3);border-radius:12px;padding:16px;margin:14px 0"><p style="color:#c9d1de;line-height:1.8;margin:0"><b style="color:#fff">Here is what to do now:</b><br>1. Log in to your dashboard and grab your share link.<br>2. Use the ready-made scripts in Tools - no writing needed.<br>3. Share your code with 5 businesses this week. Your referrals get 14 days free, and you earn £25 when they stay - plus wheel spins every 50 sign-ups.</p></div>' +
+            '<p style="color:#c9d1de;line-height:1.8">Sign in at <a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">your affiliate dashboard</a> and share your code with businesses today.</p>' +
+            '<div style="text-align:center;margin:18px 0 6px"><a href="https://9amleads.com/portal/affiliate.html" style="display:inline-block;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;padding:12px 26px;border-radius:10px;font-weight:700;font-size:14px;text-decoration:none">Open your dashboard</a></div>'
+          : '<p style="color:#c9d1de;line-height:1.8">Thank you for applying to the 9amLeads affiliate programme. After carefully reviewing your application, we are unable to accept you into the programme at this time.</p>' +
+            '<div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:12px;padding:16px;margin:14px 0"><p style="color:#c9d1de;line-height:1.8;margin:0">If you think this is a mistake, or would like to re-apply in the future, reply to this email or contact <a href="mailto:hello@9amleads.com" style="color:#0ea5e9">hello@9amleads.com</a>. We are always happy to help.</p></div>') +
+        '<p style="color:#888;font-size:13px;margin-top:20px;border-top:1px solid #1e2030;padding-top:12px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>';
       sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' }, decision === 'approve' ? 'Welcome to the 9amLeads Affiliate Programme' : '9amLeads Affiliate application update', emHtml);
     } catch(e) { console.log('[AFFILIATE] review email error:', e.message); }
     res.json({ success: true, affiliate: { id: aff.id, name: aff.name, status: aff.status, application: aff.application } });
@@ -5139,14 +5222,17 @@ app.post('/api/admin/affiliates/:id/kyc-review', adminAuth, (req, res) => {
     } else { return res.status(400).json({ error: "decision must be 'approve' or 'reject'" }); }
     saveDb();
     try {
-      var h = '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto">' +
-        '<h1 style="font-family:Outfit,sans-serif;color:' + (decision === 'approve' ? '#34d399' : '#f87171') + ';margin:0 0 10px">' + (decision === 'approve' ? 'ID verified' : 'ID needs attention') + '</h1>' +
-        '<p style="color:#ccc;line-height:1.7">Hi ' + escHtml(aff.name || 'there') + ',</p>' +
+var h = '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:600px;margin:0 auto">' +
+        '<div style="text-align:center;margin-bottom:18px"><span style="background:rgba(52,211,153,.15);color:#34d399;font-size:11px;font-weight:800;padding:5px 14px;border-radius:50px;letter-spacing:.5px">9amLeads COMPLIANCE</span></div>' +
+        '<h1 style="font-family:Outfit,sans-serif;color:' + (decision === 'approve' ? '#34d399' : '#f87171') + ';margin:0 0 8px;font-size:26px">' + (decision === 'approve' ? 'Your ID has been verified ✅' : 'Your ID needs attention') + '</h1>' +
+        '<p style="color:#c9d1de;line-height:1.8">Hi ' + escHtml(aff.name || 'there') + ',</p>' +
         (decision === 'approve'
-          ? '<p style="color:#ccc;line-height:1.7">Your identity has been verified and your account is now eligible for payout. Commissions and wheel wins will be released on the monthly cycle.</p>'
-          : '<p style="color:#ccc;line-height:1.7">We could not verify your ID. ' + escHtml(aff.kyc.id_review_note || 'Please re-upload a clear photo or scan of your driving licence or passport.') + '</p>' +
-            '<p style="color:#ccc;line-height:1.7">Log in to your <a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">affiliate dashboard</a> and re-submit your ID under the Compliance tab.</p>') +
-        '<p style="color:#888;font-size:13px;margin-top:24px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>';
+          ? '<p style="color:#c9d1de;line-height:1.8">Great news - your identity has been verified and your account is now eligible for payout. Commissions and Wheel of Fortune wins will be released on the monthly cycle.</p>' +
+            '<div style="background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.3);border-radius:12px;padding:16px;margin:14px 0"><p style="color:#c9d1de;line-height:1.8;margin:0">You can now see your earnings, payout progress and wheel spins in your dashboard. Keep referring - every retained sign-up adds £25.</p></div>'
+          : '<p style="color:#c9d1de;line-height:1.8">We could not verify your ID. ' + escHtml(aff.kyc.id_review_note || 'Please re-upload a clear photo or scan of your driving licence or passport.') + '</p>' +
+            '<div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:12px;padding:16px;margin:14px 0"><p style="color:#c9d1de;line-height:1.8;margin:0">To fix it: log in to your <a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">affiliate dashboard</a>, open the Compliance tab, and re-upload a clear photo of your driving licence or passport. Make sure the legal name matches your bank account holder. We review re-submissions quickly.</p></div>') +
+        '<div style="text-align:center;margin:18px 0 6px"><a href="https://9amleads.com/portal/affiliate.html" style="display:inline-block;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;padding:12px 26px;border-radius:10px;font-weight:700;font-size:14px;text-decoration:none">Open your dashboard</a></div>' +
+        '<p style="color:#888;font-size:13px;margin-top:20px;border-top:1px solid #1e2030;padding-top:12px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>';
       sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' }, decision === 'approve' ? 'Your 9amLeads ID has been verified' : '9amLeads: please re-submit your ID', h).catch(function() {});
     } catch(eB) {}
     res.json({ success: true, kyc: kycStatus(aff) });
