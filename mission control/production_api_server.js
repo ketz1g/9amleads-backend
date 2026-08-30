@@ -1454,15 +1454,16 @@ class DirectMailProvider {
       var hasBakedZone = false;
       if (isBack) {
         try {
-          var zoneFracCheck = 0.28;
-          var probeY = Math.round((meta.height || A5_H) * (zoneFracCheck / 2));
-          var probeBand = await sharp(inputBuf).rotate().extract({ left: 0, top: probeY, width: Math.round((meta.width || A5_W) * 0.9), height: 1 }).raw().toBuffer();
-          var samples = 0, nearWhite = 0;
-          for (var si = 0; si + 2 < probeBand.length; si += 3) {
-            samples++;
-            if (probeBand[si] > 242 && probeBand[si + 1] > 242 && probeBand[si + 2] > 242) nearWhite++;
-          }
-          if (samples > 0 && (nearWhite / samples) > 0.85) hasBakedZone = true;
+          var zoneFracCheck = 0.28;
+          var probeY = Math.round((meta.height || A5_H) * (zoneFracCheck / 2));
+          var probeBand = await sharp(inputBuf).rotate().extract({ left: 0, top: probeY, width: Math.round((meta.width || A5_W) * 0.9), height: 1 }).raw().toBuffer();
+          var probeCh = Math.round(probeBand.length / Math.max(1, Math.round((meta.width || A5_W) * 0.9)));
+          var samples = 0, nearWhite = 0;
+          for (var si = 0; si + 2 < probeBand.length; si += Math.max(3, probeCh)) {
+            samples++;
+            if (probeBand[si] > 242 && probeBand[si + 1] > 242 && probeBand[si + 2] > 242) nearWhite++;
+          }
+          if (samples > 0 && (nearWhite / samples) > 0.85) hasBakedZone = true;
         } catch (zoneProbeErr) { console.log('[STANNP] zone probe failed:', zoneProbeErr.message); }
       }
       // The recipient address zone occupies the TOP 28% of the BACK (Stannp's
@@ -1487,12 +1488,13 @@ class DirectMailProvider {
             // Compute the non-white bounding box by sampling at ~4px intervals.
             var T_W = trimMeta.width || A5_W, T_H = trimMeta.height || A5_H;
             var raw = await sharp(inputBuf).rotate().raw().toBuffer();
+            var rawCh = (raw.length / (T_W * T_H)) || 4;   // 3 for JPEG, 4 for PNG
             var minX = T_W, minY = T_H, maxX = -1, maxY = -1;
             var step = 4;
-            var rw = T_W * 4;
+            var rw = T_W * rawCh;
             for (var ty = 0; ty < T_H; ty += step) {
               for (var tx = 0; tx < T_W; tx += step) {
-                var o = ty * rw + tx * 4;
+                var o = ty * rw + tx * rawCh;
                 var rv = raw[o], gv = raw[o + 1], bv = raw[o + 2];
                 var notWhite = (rv < 248 || gv < 248 || bv < 248);
                 if (notWhite) {
