@@ -22864,6 +22864,37 @@ app.put('/api/direct-mail/materials/:id', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// TEMP-ADMIN: restore a material's file_data from a local hourly backup (one-off recovery).
+app.post('/api/admin/direct-mail/material-restore', adminAuth, (req, res) => {
+  try {
+    var materialId = (req.body && req.body.material_id) || '';
+    var backupName = (req.body && req.body.backup) || '';
+    if (!materialId) return res.status(400).json({ error: 'material_id required' });
+    var target = null;
+    if (backupName) {
+      var bp = path.join(BACKUP_DIR, backupName);
+      if (!fs.existsSync(bp)) return res.status(404).json({ error: 'Backup not found: ' + backupName });
+      target = JSON.parse(fs.readFileSync(bp, 'utf-8'));
+    } else {
+      var all = fs.readdirSync(BACKUP_DIR).filter(function(f) { return f.startsWith('database-') && f.endsWith('.json'); }).sort();
+      for (var bi = all.length - 1; bi >= 0; bi--) {
+        var cand = JSON.parse(fs.readFileSync(path.join(BACKUP_DIR, all[bi]), 'utf-8'));
+        var hit = (cand.direct_mail_materials || []).filter(function(m) { return m.id === materialId; })[0];
+        if (hit && hit.file_data) { target = cand; break; }
+      }
+      if (!target) return res.status(404).json({ error: 'No backup contains that material with file data' });
+    }
+    var orig = (target.direct_mail_materials || []).filter(function(m) { return m.id === materialId; })[0];
+    if (!orig || !orig.file_data) return res.status(404).json({ error: 'Material not in chosen backup' });
+    var current = db.prepare('SELECT * FROM direct_mail_materials WHERE id = ?').get(materialId);
+    if (!current) return res.status(404).json({ error: 'Material not found in live DB' });
+    db.prepare('UPDATE direct_mail_materials SET file_data=?, file_type=?, file_size=?, name=?, updated_at=? WHERE id=?')
+      .run(orig.file_data, orig.file_type || 'image', String(orig.file_data).length, orig.name || current.name, new Date().toISOString(), materialId);
+    saveDb();
+    res.json({ success: true, message: 'Material restored', material_id: materialId, name: orig.name, restored_file_size: String(orig.file_data).length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/direct-mail/materials — Save an uploaded material (base64 JSON).
 // The Print & Post dashboard (direct-mail.html) calls THIS endpoint on "Upload
 // Files". Without it the upload silently 404'd and the flyer/letter never saved.
