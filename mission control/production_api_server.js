@@ -21061,7 +21061,13 @@ async function sendDmCampaignInner(campaignId, customerId) {
   var files = [];
   for (var mi = 0; mi < materialIds.length; mi++) {
     var mat = db.prepare('SELECT * FROM direct_mail_materials WHERE id = ? AND customer_id = ?').get(materialIds[mi], customerId);
-    if (mat && mat.file_data) files.push({ name: mat.name || 'artwork.' + (mat.file_type === 'pdf' ? 'pdf' : 'png'), file_data: mat.file_data });
+    if (mat && mat.file_data) {
+      // Ensure the file name carries the material's role (front/back/letter) so
+      // the send path can match it — otherwise "ChatGPT Image..." names don't
+      // contain "front"/"back" and the leaflet send rejects them.
+      var role = (mat.type === 'flyer_back') ? 'flyer_back' : (mat.type === 'letter' ? 'letter' : 'flyer_front');
+      files.push({ name: role + '_' + (mat.name || (role + '.png')), file_data: mat.file_data, type: mat.type });
+    }
   }
   // FALLBACK: if the template had no linked materials (common for My Leads one-click
   // sends where materials are uploaded separately), use the customer's most recent
