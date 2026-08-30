@@ -1174,7 +1174,13 @@ function flyerEditorAutoFit(){
     var zonePx=ed.zoneH||Math.round(h*0.28);
     targetH = (h - zonePx) + bleedPx; // usable area + bottom bleed
   }
-  var baseF=Math.min(targetW/iw, targetH/ih);
+  // COVER fit (not contain): the design must FILL the full width + height target
+  // (page + bleed) so it prints edge-to-edge with no white borders. On the back
+  // the target height is reduced by the address zone, so a contain-fit would scale
+  // to that shorter height and leave horizontal margins. Cover ensures the width
+  // reaches the bleed; excess height is cropped into the zone (white-filled) and
+  // the bottom bleed (trimmed), exactly as full-bleed print requires.
+  var baseF=Math.max(targetW/iw, targetH/ih);
   ed.rw=Math.round(iw*baseF); ed.rh=Math.round(ih*baseF);
   if(ed.matType==='flyer_back'){
     // Center horizontally, start just at the top of the zone (design sits below it),
