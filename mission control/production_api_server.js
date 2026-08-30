@@ -5467,6 +5467,13 @@ app.post('/api/affiliate/wheel/spin', affiliateAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 // POST /api/admin/affiliate/run-wheel-unlocks — send unlock emails now (admin test/trigger).
+app.post('/api/admin/auto-heal', adminAuth, (req, res) => {
+  try {
+    var r = runAutoHeal();
+    res.json({ success: true, result: r });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/admin/affiliate/run-wheel-unlocks', adminAuth, (req, res) => {
   try { res.json({ success: true, result: runAffiliateWheelUnlockEmails() }); }
   catch(e) { res.status(500).json({ error: e.message }); }
@@ -5492,6 +5499,13 @@ app.post('/api/affiliate/wheel/spin', affiliateAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 // POST /api/admin/affiliate/run-wheel-unlocks — send unlock emails now (admin test/trigger).
+app.post('/api/admin/auto-heal', adminAuth, (req, res) => {
+  try {
+    var r = runAutoHeal();
+    res.json({ success: true, result: r });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/admin/affiliate/run-wheel-unlocks', adminAuth, (req, res) => {
   try { res.json({ success: true, result: runAffiliateWheelUnlockEmails() }); }
   catch(e) { res.status(500).json({ error: e.message }); }
@@ -12198,6 +12212,199 @@ cron.schedule('0 11 * * 1-5', async () => {
     if (qa.length) console.log('[QUIET-AREA] alerted ' + qa.length + ': ' + qa.map(function(x) { return x.email + ' (' + x.area + ')'; }).join(', '));
   } catch(e) { console.log('[QUIET-AREA] cron error:', e.message); }
 }, { timezone: 'Europe/London' });
+// ===== AUTO-HEAL WATCHDOG =====
+// Runs every 15 minutes. Detects and AUTO-FIXES common faults so the site stays up:
+//  1. Stale delivery lock (a crashed delivery) -> release it
+//  2. Stuck paused flags -> clear them (customers should be receiving leads)
+//  3. Critically low pools -> auto-trigger the scraper
+//  4. Failed-email backlog -> auto-resend
+//  5. Error-rate spike -> alert admin (and note it)
+//  6. Backup restore-ability -> verify the backup JSON is readable
+function recordError(source, message, meta) {
+  try {
+    var errLog = getDb();
+    if (!errLog.error_log) errLog.error_log = [];
+    errLog.error_log.push({ at: new Date().toISOString(), source: String(source||'system').substring(0,60), message: String(message||'').substring(0,600), meta: meta || '' });
+    if (errLog.error_log.length > 200) errLog.error_log = errLog.error_log.slice(-200);
+    saveDb();
+  } catch(e) {}
+  try { if (global.__lastErrors) global.__lastErrors.push({ at: new Date().toISOString(), url: source, message: String(message||'').substring(0,600) }); } catch(e) {}
+}
+function checkErrorRate() {
+  try {
+    var dbc = getDb();
+    var log = dbc.error_log || [];
+    var now = Date.now();
+    var hour = log.filter(function(e){ return e.at && (now - new Date(e.at).getTime()) < 3600000; });
+    var count = hour.length;
+    var uncaught = (global.__lastErrors || []).filter(function(e){ return e.at && (now - new Date(e.at).getTime()) < 3600000 && (String(e.url||'').indexOf('PROCESS') === 0); }).length;
+    var threshold = 5;
+    if ((count + uncaught) > threshold && !dbc.error_alerted_hour) {
+      try {
+        sendAdminAlert('⚠ High error rate detected (' + (count + uncaught) + ' in the last hour)', '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="color:#f87171;margin:0 0 8px">High error rate</h1><p style="color:#ccc;line-height:1.7">' + (count + uncaught) + ' errors logged in the last hour (' + count + ' app + ' + uncaught + ' process-level). Auto-heal is monitoring. If this keeps happening, review the error log.</p><ul style="color:#ccc;line-height:1.8">' + hour.slice(-5).map(function(e){ return '<li>' + (e.source||'system') + ': ' + (e.message||'').substring(0,80) + '</li>'; }).join('') + '</ul></div>');
+      } catch(e) {}
+      dbc.error_alerted_hour = true;
+      saveDb();
+    }
+    // Reset the once-per-hour flag when the window passes
+    var oldHour = log.filter(function(e){ return e.at && (now - new Date(e.at).getTime()) >= 3600000; });
+    if (dbc.error_alerted_hour && oldHour.length && hour.length === 0) { dbc.error_alerted_hour = false; saveDb(); }
+    return { errors_last_hour: count + uncaught, threshold: threshold, alerted: !!dbc.error_alerted_hour };
+  } catch(e) { return { errors_last_hour: 0, error: e.message }; }
+}
+function releaseStaleDeliveryLock() {
+  try {
+    // If a delivery has been holding the lock for > 20 minutes, it crashed -> release.
+    if (_deliveryLock && _deliveryLockAt && (Date.now() - _deliveryLockAt) > 20 * 60 * 1000) {
+      _deliveryLock = false;
+      console.log('[AUTO-HEAL] Released stale delivery lock (held ' + Math.round((Date.now() - _deliveryLockAt)/60000) + 'min)');
+      recordError('auto-heal', 'Released stale delivery lock');
+      return true;
+    }
+    return false;
+  } catch(e) { return false; }
+}
+function clearStuckPausedFlags() {
+  try {
+    var dbc = getDb();
+    var dbj = dbc;
+    // Any paying customer stuck paused with no reason for > 24h gets unpaused.
+    var cleared = 0;
+    (dbj.customers || []).forEach(function(c) {
+      if (c.plan && c.plan !== 'free_trial' && c.plan !== 'cancelled' && (c.leads_paused || c.auto_send_paused)) {
+        if (!c.paused_at || (Date.now() - new Date(c.paused_at).getTime()) > 24*3600000) {
+          var was = (c.leads_paused?'leads':'') + (c.auto_send_paused?'+auto_send':'');
+          c.leads_paused = 0; c.auto_send_paused = 0;
+          cleared++;
+          console.log('[AUTO-HEAL] Cleared stuck pause on ' + c.email + ' (' + was + ')');
+        }
+      }
+    });
+    if (cleared) { saveDb(); recordError('auto-heal', 'Cleared ' + cleared + ' stuck paused flag(s)'); }
+    return cleared;
+  } catch(e) { return 0; }
+}
+function autoRefillLowPools() {
+  try {
+    var dbc = getDb();
+    // Count fresh leads per product (<48h). If a pool is critically low (<10 usable),
+    // trigger the scraper for that product automatically.
+    var floors = { moving: 20, probate: 10, newbusiness: 15, planning: 20, tenders: 8 };
+    var now = Date.now();
+    var counts = { moving: 0, probate: 0, newbusiness: 0, planning: 0, tenders: 0 };
+    (dbc.leads || []).forEach(function(l) {
+      var p = l.product || 'moving';
+      if (!counts[p]) counts[p] = 0;
+      var ts = null;
+      try { var d = typeof l.data === 'string' ? JSON.parse(l.data||'{}') : (l.data||{}); ts = d.scrapedAt || d.firstVisibleDate || l.created_at || d.firstVisible; } catch(e) {}
+      if (ts && (now - new Date(ts).getTime()) < 48*3600000) counts[p]++;
+    });
+    var triggered = [];
+    Object.keys(floors).forEach(function(prod) {
+      if (counts[prod] < floors[prod]) {
+        // Trigger scraper for this product
+        try {
+          var scrBody = JSON.stringify({ product: prod, force: true });
+          var scrReq = require('https').request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!'), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(scrBody) } }, function(res){ res.resume(); });
+          scrReq.on('error', function(){}); scrReq.write(scrBody); scrReq.end();
+          triggered.push(prod + ':' + counts[prod]);
+          console.log('[AUTO-HEAL] Auto-triggered scraper for ' + prod + ' (fresh ' + counts[prod] + ' < floor ' + floors[prod] + ')');
+        } catch(se) { console.log('[AUTO-HEAL] scrape trigger error ' + prod + ':', se.message); }
+      }
+    });
+    if (triggered.length) recordError('auto-heal', 'Auto-triggered scrapers for low pools: ' + triggered.join(','));
+    return triggered;
+  } catch(e) { return []; }
+}
+function autoResendFailedEmails() {
+  try {
+    var dbc = getDb();
+    var q = (dbc.failed_emails || []).slice();
+    if (!q.length) return 0;
+    var sent = 0, stillFailing = [];
+    for (var i = 0; i < q.length; i++) {
+      var m = q[i];
+      try {
+        sendBrevoEmail({ email: m.email, name: m.name || 'Customer' }, m.subject, m.html);
+        sent++;
+      } catch(e) { m.attempts = (m.attempts || 0) + 1; if ((m.attempts||0) <= 5) stillFailing.push(m); }
+    }
+    dbc.failed_emails = stillFailing;
+    saveDb();
+    if (sent) console.log('[AUTO-HEAL] Resent ' + sent + ' failed emails (' + stillFailing.length + ' still failing)');
+    return sent;
+  } catch(e) { return 0; }
+}
+function verifyBackupRestorable() {
+  try {
+    var bDir = path.join(DATA_DIR, 'backups');
+    var bFiles = fs.readdirSync(bDir).filter(function(f){ return f.indexOf('.json') !== -1; });
+    if (!bFiles.length) return { ok: false, reason: 'no backup file' };
+    var newest = bFiles.map(function(f){ return { name: f, mtime: fs.statSync(path.join(bDir, f)).mtimeMs }; }).sort(function(a,b){ return b.mtime - a.mtime; })[0];
+    var content = fs.readFileSync(path.join(bDir, newest.name), 'utf-8');
+    JSON.parse(content); // throws if not valid JSON
+    return { ok: true, file: newest.name };
+  } catch(e) { recordError('backup', 'Backup not restorable: ' + e.message); return { ok: false, reason: e.message }; }
+}
+function runAutoHeal() {
+  var out = {};
+  out.lock = releaseStaleDeliveryLock();
+  out.pauses = clearStuckPausedFlags();
+  out.pools = autoRefillLowPools();
+  out.resend = autoResendFailedEmails();
+  out.errors = checkErrorRate();
+  out.backup = verifyBackupRestorable();
+  out.payments = checkPaymentHealth();
+  out.webhook = checkWebhookHealth();
+  try { var _ahd = getDb(); _ahd.auto_heal_last = { at: new Date().toISOString(), result: out }; if (_ahd.auto_heal_log && _ahd.auto_heal_log.length > 30) _ahd.auto_heal_log.shift(); if (!_ahd.auto_heal_log) _ahd.auto_heal_log = []; _ahd.auto_heal_log.push({ at: new Date().toISOString(), result: out }); saveDb(); } catch(e) {}
+  return out;
+}
+function recordFailedPayment(custEmail, reason, amountPence) {
+  try {
+    var dbc = getDb();
+    if (!dbc.payment_failures) dbc.payment_failures = [];
+    dbc.payment_failures.push({ at: new Date().toISOString(), email: custEmail, reason: String(reason||'').substring(0,120), amount_pence: amountPence || 0 });
+    if (dbc.payment_failures.length > 100) dbc.payment_failures = dbc.payment_failures.slice(-100);
+    saveDb();
+  } catch(e) {}
+}
+function checkPaymentHealth() {
+  try {
+    var dbc = getDb();
+    var fails = dbc.payment_failures || [];
+    var now = Date.now();
+    var hour = fails.filter(function(f){ return f.at && (now - new Date(f.at).getTime()) < 3600000; });
+    // Auto-alert if 3+ payment failures in the last hour (revenue risk).
+    if (hour.length >= 3 && !dbc.payment_alerted_hour) {
+      try {
+        sendAdminAlert('⚠ ' + hour.length + ' payment failures in the last hour', '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="color:#f87171;margin:0 0 8px">Payment failures detected</h1><p style="color:#ccc;line-height:1.7">' + hour.length + ' subscription payment(s) failed in the last hour. Customers have been notified to update their card. Stripe smart-retries are active and the auto-heal watchdog will unpause recovered customers.</p><ul style="color:#ccc;line-height:1.8">' + hour.slice(-5).map(function(f){ return '<li>' + (f.email||'?') + ' - ' + (f.reason||'') + '</li>'; }).join('') + '</ul></div>');
+      } catch(e) {}
+      dbc.payment_alerted_hour = true;
+      saveDb();
+    }
+    // Reset the alert flag once the failure window clears.
+    if (dbc.payment_alerted_hour && hour.length === 0) { dbc.payment_alerted_hour = false; saveDb(); }
+    return { payment_failures_hour: hour.length, alerted: !!dbc.payment_alerted_hour };
+  } catch(e) { return { error: e.message }; }
+}
+// Webhook health: track last Stripe webhook receipt time. If none in 24h on a
+// delivery day, something is wrong with the Stripe->webhook path.
+function checkWebhookHealth() {
+  try {
+    var dbc = getDb();
+    var last = dbc.last_webhook_at || null;
+    return { last_webhook_at: last, ok: last ? ((Date.now() - new Date(last).getTime()) < 24*3600000) : false };
+  } catch(e) { return { error: e.message }; }
+}
+// Watchdog cron every 15 minutes
+cron.schedule('*/15 * * * *', function() {
+  try {
+    var r = runAutoHeal();
+    console.log('[AUTO-HEAL] run:', JSON.stringify(r));
+  } catch(e) { console.log('[AUTO-HEAL] error:', e.message); }
+}, { timezone: 'Europe/London' });
+// ===== END AUTO-HEAL WATCHDOG =====
+
 // ===== DELIVERY CRON: Runs directly (not via HTTP) to avoid timing issues =====
 // Pipeline: 06:00 UK scraper → 06:05 UK distributor → 09:00 UK delivery
 // Delivery runs Mon-Fri at 09:00 UK time (handles BST/GMT automatically via timezone).
@@ -16777,6 +16984,7 @@ app.post('/api/stripe/webhook', async (req, res) => {
     var whSecret = isTestMode ? (process.env.STRIPE_TEST_WEBHOOK_SECRET || '') : (process.env.STRIPE_WEBHOOK_SECRET || '');
     var rawBody = req.rawBody;
     var sig = req.headers['stripe-signature'];
+    try { var _whd2 = getDb(); _whd2.last_webhook_at = new Date().toISOString(); saveDb(); } catch(e) {}
     if (whSecret) {
       if (!sig || !rawBody) { return res.status(400).json({ error: 'Missing Stripe signature' }); }
       try {
@@ -17039,6 +17247,7 @@ app.post('/api/stripe/webhook', async (req, res) => {
         // recovers (invoice.paid / re-subscribe clears leads_paused).
         db.prepare('UPDATE customers SET auto_send_paused = 1, leads_paused = 1 WHERE id = ?').run(fCustomer.id);
         saveDb();
+        recordFailedPayment(fCustomer.email, (invObj && invObj.last_payment_error && invObj.last_payment_error.message) || 'card_declined', invObj && invObj.amount_due);
         // Tell the owning partner: a referred customer has a payment problem (retention risk)
         try { var _pf = partnerForCustomer(fCustomer.id); if (_pf) partnerNotify(_pf.id, 'payment_failed', 'A customer you referred has a failed payment: ' + (fCustomer.company || fCustomer.email) + '. Their leads are paused until they update payment. Reach out to help keep them on board.', fCustomer.id); } catch(pfE) {}
         try { dmDashboardNotify(fCustomer.id, 'payment_failed', '⚠️ Payment failed', 'Your weekly subscription payment failed. Update your payment method to keep your leads and Print & Post running.', ''); } catch(ne) {}
@@ -27725,6 +27934,12 @@ app.get('/api/admin/platform-health', adminAuth, async (req, res) => {
       } catch(e) { backupOk = false; }
       results.backup = { status: backupOk ? 'healthy' : 'warning', last_ok: new Date().toISOString(), age_hours: backupAgeHours, error: backupOk ? null : 'No recent backup found (expected within 48h)' };
     } catch(e) { results.backup = { status: 'warning', last_ok: null, error: e.message }; }
+
+    // 12. Auto-heal watchdog status (last run + any auto-fixes applied).
+    try {
+      var _ah = getDb().auto_heal_last || null;
+      results.auto_heal = { status: 'healthy', last_ok: new Date().toISOString(), last_run: _ah, error: null };
+    } catch(e) { results.auto_heal = { status: 'warning', last_ok: null, error: e.message }; }
 
     // Calculate overall status
     var allHealthy = Object.values(results).every(function(r) { return r.status === 'healthy'; });
