@@ -20541,64 +20541,39 @@ var PRINT_POST_PRICES = {
 // above it; if it's a normal business letter with no such heading, it keeps the
 // whole body intact (never empties the letter).
 function cleanLetterBodyForPrint(text) {
+  // Keep the customer's FULL letter — heading, greeting, intro, product
+  // sections, and sign-off — and ONLY strip the 9amLeads marketing footer that
+  // the AI template appends ("MORE THAN JUST LEADS", "START YOUR 1-WEEK FREE
+  // TRIAL", "www.9amleads.com", "The 9amLeads Team", "BE FIRST..." etc.). These
+  // are 9amLeads self-promotion and should not appear in a letter a customer
+  // sends to THEIR prospects.
   var s = String(text || '');
   if (!s) return '';
   var lines = s.split('\n').map(function(l){ return l.trim(); });
-  // Is this a "5 types / product list" style letter? Look for the section
-  // headings. Headings are SHORT standalone lines — either ALL-CAPS ("MOVING &
-  // PROPERTY") or a short title ("Our Services") — NOT full sentences. Bare words
-  // alone (e.g. a line that just starts with "Moving") must NOT count, otherwise
-  // a normal business letter like "Moving home can be stressful..." would have
-  // its opening paragraphs wrongly stripped.
-  var productHeadingRe = /^(?:(?:PLANNING & CONSTRUCTION|MOVING & PROPERTY|PROBATE & LEGAL|NEW BUSINESS & B2B|PUBLIC SECTOR & GOVERNMENT TENDERS|OUR SERVICES|WHAT WE DO|HOW WE WORK|WHY CHOOSE US|ABOUT US|OUR PRODUCTS|OUR SERVICES)[:.]?|(?:PLANNING|MOVING|PROBATE|NEW BUSINESS|PUBLIC SECTOR)\b(?: [A-Z&]+)?)$/i;
-  var startIdx = -1;
+
+  // Find the first 9amLeads marketing footer line — everything from there on is
+  // stripped. Recognises the exact marketing block headings AND the generic
+  // trial/C-team lines so a customer's own "Kind regards" is preserved.
+  var footerRe = /^(MORE THAN JUST LEADS|START YOUR(?: 1-WEEK)? FREE TRIAL|BE FIRST\.|See how 9amLeads|www\.9amleads\.com|The 9amLeads Team|Fresh opportunities delivered|Hyper-local postcode|Real & verified opportunities?|No competition leads|Track contacts, quotes and wins|Professional marketing templates|Flyers & letters printed|Proof of posting & live tracking|9amLeads gives you|The principle is simple|Rather than waiting)/i;
+  var footerIdx = -1;
   for (var i = 0; i < lines.length; i++) {
-    // Only treat as a heading if the line is short (no sentence punctuation / no
-    // long body text) AND matches the heading pattern.
-    var l = lines[i];
-    if (l && l.length <= 40 && productHeadingRe.test(l)) { startIdx = i; break; }
+    if (lines[i] && footerRe.test(lines[i])) { footerIdx = i; break; }
   }
-  // Address-block line detector: name / street / town / postcode / digits-only lines
-  // that appear as a standalone block (not part of a real sentence).
+  if (footerIdx >= 0) lines = lines.slice(0, footerIdx);
+
+  // Drop only the obvious address-block remnant lines (recipient address that
+  // Stannp prints itself in the envelope window) — NOT letter sentences.
   var addrLineRe = /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i; // full postcode
-  var nameLineRe = /^[A-Z][a-z]+(?:\s[A-Z][a-z]+){0,2}$/;          // "Ket Mandalia"
-  var townLineRe = /^[A-Z]{2,}(?:\s[A-Z]{2,})*$/;                  // "HARROW"
   var out = [];
   for (var j = 0; j < lines.length; j++) {
     var line = lines[j];
     if (!line) { if (out.length) out.push(''); continue; }
-    // Drop the marketing preamble ABOVE the product list (only when a product
-    // heading exists — a normal business letter is kept whole).
-    if (startIdx >= 0 && j < startIdx) continue;
-    // STOP at the 9amLeads marketing FOOTER ("MORE THAN JUST LEADS ... START YOUR
-    // 1-WEEK FREE TRIAL ... www.9amleads.com ... The 9amLeads Team"). The letter
-    // should end after the last product section (PUBLIC SECTOR & GOVERNMENT
-    // TENDERS), not carry 9amLeads self-promotion.
-    if (/^(MORE THAN JUST LEADS|START YOUR|BE FIRST|See how 9amLeads|The principle is|Rather than waiting|9amLeads gives you|www\.9amleads|Kind regards,|The 9amLeads Team|Fresh opportunities delivered|Hyper-local postcode|Real & verified|No competition leads|Track contacts|Professional marketing|Flyers & letters printed|Proof of posting)/i.test(line)) break;
-    // Drop unmerged placeholder tokens like "00000  /  0000" and "[name]" etc.
-    if (/^\s*\d{3,}\s*\/\s*\d{3,}\s*$/.test(line)) continue;
-    if (/^\[[a-z_]+\]$/i.test(line)) continue;
-    // Drop full-postcode-only lines (Stannp adds the recipient address itself).
-    if (addrLineRe.test(line)) continue;
-    // Drop a duplicated/standalone name line when it is followed by another name
-    // line or a street-looking line (the address block). Keep it if it is a normal
-    // greeting/sign-off word like "Regards" or the sender's signature.
-    if (nameLineRe.test(line) && j + 1 < lines.length && lines[j+1]) {
-      var nxt = lines[j+1];
-      if ((nameLineRe.test(nxt) || /^[0-9][A-Za-z0-9'.,\/\- ]{2,60}$/.test(nxt) || addrLineRe.test(nxt))) continue;
-    }
-    // Drop an ALL-CAPS town line that follows a street-looking line (address block).
-    if (townLineRe.test(line) && j > 0 && /^[0-9][A-Za-z0-9'.,\/\- ]{2,60}$/.test(lines[j-1])) continue;
-    // Drop a standalone numbered-street line (e.g. "4 Farmborough Close") that is
-    // clearly an address remnant, when it is NOT a real body sentence. Addresses
-    // start with a number + short street words and usually contain no verb.
-    if (/^[0-9][A-Za-z0-9'.,\/\- ]{2,60}$/.test(line) && /^(the|a|an|we|i|you|please|call|visit|our|your|get|don't|do\s|is|are|this|that|it|if|when|for|with|to|on|at|by|as|in|of)\b/i.test(line) === false && !/[.;!?]$/.test(line)) continue;
+    if (addrLineRe.test(line)) continue; // standalone postcode line
+    if (/^\s*\d{3,}\s*\/\s*\d{3,}\s*$/.test(line)) continue; // "00000 / 0000" placeholder
+    if (/^\[[a-z_]+\]$/i.test(line)) continue; // "[name]" placeholder
     out.push(line);
   }
   var joined = out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
-  // Final multi-line address-block strip: a 3-5 line block ending in a postcode or
-  // all-caps town (e.g. "Ket Mandalia\nKet Mandalia\n4 Farmborough Close\nHARROW\nHA1 3YG").
-  joined = joined.replace(/(?:^|\n)(?:[A-Z][a-zA-Z'.\- ]{1,40}\n){1,2}(?:[A-Za-z0-9'.,\/\- ]{2,60}\n){1,3}(?:[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}|[A-Z]{2,}(?:\s[A-Z]{2,})*)\s*(?=\n|$)/gm, '\n').replace(/\n{3,}/g, '\n\n').trim();
   return joined;
 }
 
