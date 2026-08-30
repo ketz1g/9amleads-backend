@@ -20544,40 +20544,24 @@ var PRINT_POST_PRICES = {
 // above it; if it's a normal business letter with no such heading, it keeps the
 // whole body intact (never empties the letter).
 function cleanLetterBodyForPrint(text) {
-  // Keep the customer's FULL letter — heading, greeting, intro, product
-  // sections, and sign-off — and ONLY strip the 9amLeads marketing footer that
-  // the AI template appends ("MORE THAN JUST LEADS", "START YOUR 1-WEEK FREE
-  // TRIAL", "www.9amleads.com", "The 9amLeads Team", "BE FIRST..." etc.). These
-  // are 9amLeads self-promotion and should not appear in a letter a customer
-  // sends to THEIR prospects.
+  // Print EXACTLY what the customer wrote. No stripping of any content — if the
+  // customer includes "BE FIRST. MAKE CONTACT..." or anything else, it prints.
+  // Previously we stripped a "9amLeads marketing footer" but this removed lines
+  // customers legitimately wrote themselves (e.g. their own tagline), making the
+  // letter look cut off. The only cleanup is normalising whitespace and dropping
+  // the odd placeholder token Stannp injects into its preview.
   var s = String(text || '');
   if (!s) return '';
   var lines = s.split('\n').map(function(l){ return l.trim(); });
-
-  // Find the first 9amLeads marketing footer line — everything from there on is
-  // stripped. Recognises the exact marketing block headings AND the generic
-  // trial/C-team lines so a customer's own "Kind regards" is preserved.
-  var footerRe = /^(MORE THAN JUST LEADS|START YOUR(?: 1-WEEK)? FREE TRIAL|BE FIRST\.|See how 9amLeads|www\.9amleads\.com|The 9amLeads Team|Fresh opportunities delivered|Hyper-local postcode|Real & verified opportunities?|No competition leads|Track contacts, quotes and wins|Professional marketing templates|Flyers & letters printed|Proof of posting & live tracking|9amLeads gives you|The principle is simple|Rather than waiting)/i;
-  var footerIdx = -1;
-  for (var i = 0; i < lines.length; i++) {
-    if (lines[i] && footerRe.test(lines[i])) { footerIdx = i; break; }
-  }
-  if (footerIdx >= 0) lines = lines.slice(0, footerIdx);
-
-  // Drop only the obvious address-block remnant lines (recipient address that
-  // Stannp prints itself in the envelope window) — NOT letter sentences.
-  var addrLineRe = /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i; // full postcode
   var out = [];
   for (var j = 0; j < lines.length; j++) {
     var line = lines[j];
     if (!line) { if (out.length) out.push(''); continue; }
-    if (addrLineRe.test(line)) continue; // standalone postcode line
-    if (/^\s*\d{3,}\s*\/\s*\d{3,}\s*$/.test(line)) continue; // "00000 / 0000" placeholder
+    if (/^\s*\d{3,}\s*\/\s*\d{3,}\s*$/.test(line)) continue; // "00000 / 0000" preview token
     if (/^\[[a-z_]+\]$/i.test(line)) continue; // "[name]" placeholder
     out.push(line);
   }
-  var joined = out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
-  return joined;
+  return out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
 }
 
 // Build the CLEAN A4 letter HTML: sender return address top-right, date, divider,
