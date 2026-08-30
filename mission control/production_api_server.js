@@ -20534,11 +20534,19 @@ function cleanLetterBodyForPrint(text) {
   var s = String(text || '');
   if (!s) return '';
   var lines = s.split('\n').map(function(l){ return l.trim(); });
-  // Is this a "5 types / product list" style letter? Look for the section headings.
-  var productHeadingRe = /^(PLANNING & CONSTRUCTION|MOVING & PROPERTY|PROBATE & LEGAL|NEW BUSINESS & B2B|PUBLIC SECTOR & GOVERNMENT TENDERS|PLANNING|MOVING|PROBATE|NEW BUSINESS|PUBLIC SECTOR|OUR SERVICES|WHAT WE|HOW WE|WHY CHOOSE|ABOUT US|OUR PRODUCTS)/i;
+  // Is this a "5 types / product list" style letter? Look for the section
+  // headings. Headings are SHORT standalone lines — either ALL-CAPS ("MOVING &
+  // PROPERTY") or a short title ("Our Services") — NOT full sentences. Bare words
+  // alone (e.g. a line that just starts with "Moving") must NOT count, otherwise
+  // a normal business letter like "Moving home can be stressful..." would have
+  // its opening paragraphs wrongly stripped.
+  var productHeadingRe = /^(?:(?:PLANNING & CONSTRUCTION|MOVING & PROPERTY|PROBATE & LEGAL|NEW BUSINESS & B2B|PUBLIC SECTOR & GOVERNMENT TENDERS|OUR SERVICES|WHAT WE DO|HOW WE WORK|WHY CHOOSE US|ABOUT US|OUR PRODUCTS|OUR SERVICES)[:.]?|(?:PLANNING|MOVING|PROBATE|NEW BUSINESS|PUBLIC SECTOR)\b(?: [A-Z&]+)?)$/i;
   var startIdx = -1;
   for (var i = 0; i < lines.length; i++) {
-    if (productHeadingRe.test(lines[i])) { startIdx = i; break; }
+    // Only treat as a heading if the line is short (no sentence punctuation / no
+    // long body text) AND matches the heading pattern.
+    var l = lines[i];
+    if (l && l.length <= 40 && productHeadingRe.test(l)) { startIdx = i; break; }
   }
   // Address-block line detector: name / street / town / postcode / digits-only lines
   // that appear as a standalone block (not part of a real sentence).
