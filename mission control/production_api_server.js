@@ -1562,12 +1562,11 @@ class DirectMailProvider {
       }
 var outBuf;
       if (isBack) {
-        // BACK handling. Two cases:
-        // 1. Already-baked zone (top ~28% is white — the in-app editor's save
-        //    whites out the address area and stores it). The design already sits
-        //    below the zone, so PASS IT THROUGH FULL-BLEED unchanged. Re-stretching
-        //    it into the below-zone area would double-process and whiten the top.
-        // 2. Fresh upload (no baked zone): stretch the design below the zone.
+        // BACK: full-bleed, edge-to-edge — the design fills the whole page. We do
+        // NOT compress it below a top band: Stannp overlays its own address
+        // clearzone at print time (position depends on format — for A5 landscape
+        // it sits top-right, for portrait top). Compressing below a full-width top
+        // band distorted landscape backs and cut the design's top content.
         if (hasBakedZone) {
           outBuf = await sharp(inputBuf)
             .rotate()
@@ -1576,19 +1575,13 @@ var outBuf;
             .toBuffer();
           console.log('[STANNP] Prepared BACK (baked zone) artwork for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> pass-through full-bleed, zone already baked)');
         } else {
-          var zoneFrac = 0.28;        // top address zone (matches Stannp clearzone)
-          var designTop = Math.round(A5_H * zoneFrac);   // y where the design starts
-          var designH = A5_H - designTop;                // zone bottom -> page bottom
-          var scaled = await sharp(inputBuf)
+          // Fresh back: full-bleed fill, exactly like the front.
+          outBuf = await sharp(inputBuf)
             .rotate()
-            .resize({ width: A5_W, height: designH, fit: 'fill', background: { r: 255, g: 255, b: 255 } })
+            .resize({ width: A5_W, height: A5_H, fit: 'fill', background: { r: 255, g: 255, b: 255 } })
             .jpeg({ quality: 82 })
             .toBuffer();
-          outBuf = await sharp({ create: { width: A5_W, height: A5_H, channels: 3, background: { r: 255, g: 255, b: 255 } } })
-            .composite([{ input: scaled, top: Math.round(designTop), left: 0 }])
-            .jpeg({ quality: 82 })
-            .toBuffer();
-          console.log('[STANNP] Prepared BACK (fresh) artwork for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> stretch-fill below zone ' + A5_W + 'x' + Math.round(designH) + ')');
+          console.log('[STANNP] Prepared BACK (fresh) artwork for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> full-bleed ' + A5_W + 'x' + A5_H + ', Stannp clearzone overlays address)');
         }
       } else {
         // FRONT: full-bleed, edge-to-edge. Fronts are pre-trimmed of white
