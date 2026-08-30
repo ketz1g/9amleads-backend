@@ -1167,19 +1167,28 @@ function flyerEditorAutoFit(){
   var w=ed.pageW, h=ed.pageH;
   var iw=ed.img.width, ih=ed.img.height;
   var bleedPx=feMmToPx(6);
-  // Target = FULL page + bleed on all sides, for BOTH front and back. The back
-  // design is the full page (the white address zone is overlaid on top at save
-  // time), so it must be sized edge-to-edge exactly like the front — otherwise a
-  // contain/reduced-height fit scales to the shorter usable area and leaves
-  // horizontal margins. Cover fit (max) guarantees the width reaches the bleed;
-  // any excess height is cropped into the bleed (trimmed) or the top zone
-  // (white-filled), which is exactly what full-bleed print requires.
-  var targetW = w + bleedPx*2;
-  var targetH = h + bleedPx*2;
-  var baseF=Math.max(targetW/iw, targetH/ih);
-  ed.rw=Math.round(iw*baseF); ed.rh=Math.round(ih*baseF);
-  ed.rx=Math.round((w-ed.rw)/2);
-  ed.ry=Math.round((h-ed.rh)/2);
+  if(ed.matType==='flyer_back'){
+    // STRETCH to fill the area below the white address zone, edge-to-edge.
+    // The back zone is the top 28% (white-filled at save), so the design spans
+    // from the zone bottom down through the page + bottom bleed, and fills the
+    // full width + bleed. Stretching (non-uniform scale) is intentional here so
+    // the design always covers the whole below-zone area regardless of its
+    // original shape — the user explicitly chose this for the back.
+    var zoneTop = Math.round(ed.zoneH || Math.round(h * 0.28));
+    ed.rw = Math.round(w + bleedPx * 2);              // full width + side bleed
+    ed.rh = Math.round((h - zoneTop) + bleedPx);      // zone bottom -> page bottom + bleed
+    ed.rx = Math.round((w - ed.rw) / 2);              // centered, overflows into side bleed
+    ed.ry = zoneTop;                                  // starts exactly below the zone
+  } else {
+    // FRONT: cover-fit the FULL page + bleed (edge-to-edge, no white borders,
+    // aspect preserved — excess is cropped into the bleed).
+    var targetW = w + bleedPx*2;
+    var targetH = h + bleedPx*2;
+    var baseF=Math.max(targetW/iw, targetH/ih);
+    ed.rw=Math.round(iw*baseF); ed.rh=Math.round(ih*baseF);
+    ed.rx=Math.round((w-ed.rw)/2);
+    ed.ry=Math.round((h-ed.rh)/2);
+  }
   flyerEditorDraw();
 }
 function flyerEditorPoint(cx,cy){
