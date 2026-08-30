@@ -5266,13 +5266,17 @@ app.post('/api/affiliate/demo-customer-session', affiliateAuth, async (req, res)
   try {
     var dbc = getDb();
     var DEMO_EMAIL = 'test.affiliatedemo@9amleads.com';
-    var demo = (dbc.customers || []).find(function(c2){ return String(c2.email||'').toLowerCase() === DEMO_EMAIL; });
+    var demo = null;
+    try { demo = db.prepare('SELECT * FROM customers WHERE email = ?').get(DEMO_EMAIL); } catch(e) {}
     if (!demo) {
-      // Create the demo account if it doesn't exist (test.* = isolated from delivery).
-      demo = { id: uuidv4(), email: DEMO_EMAIL, company: 'Demo Removal Co (view only)', name: 'Demo Customer', phone: '020 1234 5678', plan: 'pro', product: 'moving', products: ['moving'], coverage: 'county', target_areas: 'Greater London', leads_per_day: 5, status: 'active', created_at: new Date().toISOString(), demo: true };
-      if (!dbc.customers) dbc.customers = [];
-      dbc.customers.push(demo);
-      saveDb();
+      // Create the demo account in the SQLite customers table (isolated: test.* prefix).
+      var demoId = uuidv4();
+      var demoPass = '';
+      try {
+        db.prepare('INSERT INTO customers (id, email, company, contact_name, phone, password_hash, product, lead_type, business_type, target_areas, coverage, biz_field2, biz_field3, source, plan, trial_ends, marketing_consent, created_at, extra_postcodes, crm_webhook_url, campaign_sent, signup_ip, affiliate_id, affiliate_code, affiliate_applied_at, affiliate_trial_days, affiliate_payout_status, affiliate_payout_due) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+          .run(demoId, DEMO_EMAIL, 'Demo Removal Co (view only)', 'Demo Customer', '020 1234 5678', demoPass, 'moving', 'both', 'both', JSON.stringify(['Greater London','Kent','Surrey']), 'county', '', JSON.stringify(['moving']), 'demo', 'pro', null, 1, new Date().toISOString(), 5, '', 0, 'demo', null, null, null, null, null, null);
+      } catch(insErr) { console.log('[DEMO] insert error:', insErr.message); }
+      try { demo = db.prepare('SELECT * FROM customers WHERE id = ?').get(demoId); } catch(e) {}
     }
     var token = generateToken(demo);
     var session = { token: token, email: DEMO_EMAIL, name: 'Demo Customer', plan: demo.plan || 'pro', product: demo.product || 'moving', products: demo.products || ['moving'], demo: true };
