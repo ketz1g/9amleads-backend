@@ -1970,10 +1970,17 @@ class StannpProvider extends DirectMailProvider {
 
 async sendMailpiece(mailType, recipient, files, format) {
     var nameParts = (recipient.name || '').split(' ').filter(Boolean);
+    // Only send the COMPANY line when it's actually a business name. If company
+    // equals the recipient's name (e.g. the system copied "Ketz Mandalia" into
+    // both name and company), sending it makes Stannp print the name twice on
+    // the address. Deduplicate so the address reads cleanly.
+    var rcptName = String(recipient.name || '').trim();
+    var rcptCompany = String(recipient.company || '').trim();
+    var companyDiffers = rcptCompany && rcptCompany !== rcptName && !(nameParts.length >= 1 && rcptCompany.toLowerCase() === nameParts[0].toLowerCase());
     var rcpt = {
       'recipient[firstname]': nameParts[0] || '',
       'recipient[lastname]': nameParts.slice(1).join(' ') || '',
-      'recipient[company]': recipient.company || '',
+      'recipient[company]': companyDiffers ? rcptCompany : '',
       'recipient[address1]': recipient.address_line1 || '',
       'recipient[address2]': recipient.address_line2 || recipient.address2 || '',
       'recipient[city]': recipient.city || '',
@@ -2129,10 +2136,13 @@ async sendMailpiece(mailType, recipient, files, format) {
     var added = 0, failed = 0, errors = [];
     for (var i = 0; i < recipients.length; i++) {
       var r = recipients[i];
+      var rName2 = String(r.name || '').trim();
+      var rCompany2 = String(r.company || '').trim();
+      var rCompanyDiffers2 = rCompany2 && rCompany2 !== rName2 && !(rName2 && rCompany2.toLowerCase() === rName2.split(' ')[0].toLowerCase());
       var params = {
         'recipient[firstname]': (r.name || '').split(' ')[0] || '',
         'recipient[lastname]': (r.name || '').split(' ').slice(1).join(' ') || '',
-        'recipient[company]': r.company || '',
+        'recipient[company]': rCompanyDiffers2 ? rCompany2 : '',
         'recipient[address1]': r.address_line1 || '',
         'recipient[city]': r.city || '',
         'recipient[postcode]': r.postcode || '',
