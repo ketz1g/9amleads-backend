@@ -106,7 +106,7 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 <div style="margin-top:12px">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
 <label class="label" style="margin-bottom:0">Cover Letter Text <span style="color:var(--muted);font-weight:400">(optional. leaflet-only sends don't need one)</span></label>
-<span id="letter-counter" style="font-size:11px;font-weight:700;color:var(--success);white-space:nowrap">0 / 1,300 characters · 0 / 180 words</span>
+<span id="letter-counter" style="font-size:11px;font-weight:700;color:var(--success);white-space:nowrap">0 / 1,100 characters · 0 / 150 words</span>
 </div>
 <textarea class="input" id="t-content" rows="8" oninput="updateLetterPreviewLive()" placeholder="Dear [name],&#10;&#10;We are your local removal specialists...&#10;&#10;Kind regards,&#10;[Your Company]"></textarea>
 <div style="font-size:10px;color:var(--muted);margin-top:4px">Tip: if you paste a letter that includes markdown formatting (*, **, #), we clean it automatically when you save and print. <b style="color:var(--text2)">One A4 page fits a max of ~430 words / ~3,200 characters.</b></div>
@@ -138,7 +138,7 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
   <div style="flex:1;min-width:240px;font-size:11px;color:var(--text2);line-height:1.7">
     <b style="color:#0ea5e9">The blue box (top-left)</b> is the <b>envelope window</b>. the recipient's address prints there. Keep it clear.<br><br>
     <b>Your letter fills one side of A4.</b> Keep your cover letter short enough to fit on one page. if it's too long it will spill onto a second side, which costs extra and looks unprofessional.<br><br>
-    <b style="color:var(--success)">One A4 page fits up to ~180 words / ~1,300 characters</b> (the address window takes the top, so there's less room for text). Watch the counter — it shows your current <b>words / characters</b> and flags when you're getting close or too long.<br><br>
+    <b style="color:var(--success)">One A4 page fits up to ~150 words / ~1,100 characters</b> (the address window takes the top, so there's less room for text). Watch the counter — it shows your current <b>words / characters</b> and flags when you're getting close or too long.<br><br>
     <b>Symbols &amp; icons:</b> Checkmarks (✓), bullets (•), £ and other common symbols <b>print correctly</b>. Colour emojis (😀) can't be printed in a letter, so keep to symbols and plain text for a clean, professional result.<br><br>
     <b style="color:var(--success)">The page preview updates live</b> as you write. Watch the status below the page: <b style="color:#15803d">"Fits on one A4 page"</b> = good, or <b style="color:#dc2626">"Letter is too long. shorten it"</b>.
   </div>
@@ -452,13 +452,12 @@ function saveTemplate(){
   var name=document.getElementById('t-name').value||('Cover Letter '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}));
   var body={name:name,type:document.getElementById('t-type').value,ai_generated_text:document.getElementById('t-content').value};
   if(!body.ai_generated_text){toast('Write a cover letter first');return;}
-  // Match Stannp's preview: the whole letter must show in Stannp's preview, so
-  // the max is 1,300 chars / 180 words (ends ~80% of the A4 page). Block saving
-  // anything longer.
+  // Match Stannp: keep the letter to 150 words / 1,100 chars so the whole letter
+  // fits one A4 page and shows fully in Stannp's preview. Block saving longer.
   var saveClean=cleanLetterPreviewText(body.ai_generated_text);
   var saveChars=saveClean.length, saveWords=saveClean?saveClean.split(/\s+/).filter(function(w){return w.length>0;}).length:0;
-  if(saveChars>1300||saveWords>180){
-    toast('✕ Letter is too long — max 1,300 characters / 180 words so it fits Stannp\'s preview & one A4 page. Please shorten it.');
+  if(saveChars>1100||saveWords>150){
+    toast('✕ Letter is too long — max 1,100 characters / 150 words so it fits Stannp\'s preview & one A4 page. Please shorten it.');
     var sc=document.getElementById('letter-counter'); if(sc)sc.style.color='#dc2626';
     return;
   }
@@ -472,7 +471,7 @@ function saveTemplate(){
       var lp=document.getElementById('letter-preview-box'); if(lp)lp.style.display='block';
       var bodyEl=document.getElementById('lp-letter-body'); if(bodyEl)bodyEl.textContent=cleanLetterPreviewText(body.ai_generated_text)||'(letter is empty)';
       var cEl=document.getElementById('letter-counter');
-      if(cEl){var cl=cleanLetterPreviewText(body.ai_generated_text);cEl.textContent=cl.length+' / 1,300 characters · '+(cl?cl.split(/\s+/).filter(function(w){return w.length>0;}).length:0)+' / 180 words';}
+      if(cEl){var cl=cleanLetterPreviewText(body.ai_generated_text);cEl.textContent=cl.length+' / 1,100 characters · '+(cl?cl.split(/\s+/).filter(function(w){return w.length>0;}).length:0)+' / 150 words';}
       checkLetterFit();
       // ALSO save this letter as the setup's active cover letter so it's what
       // actually gets sent (the send reads the setup template text, not a
@@ -614,8 +613,8 @@ function updateLetterPreviewLive(){
   var clean=cleanLetterPreviewText(text);
   var cc=clean.length, wc=clean?clean.split(/\s+/).filter(function(w){return w.length>0;}).length:0;
   if(cEl){
-    cEl.textContent=cc+' / 1,300 characters · '+wc+' / 180 words';
-    cEl.style.color = (cc>1300||wc>180) ? '#dc2626' : ((cc>1200||wc>170) ? '#b45309' : '#15803d');
+    cEl.textContent=cc+' / 1,100 characters · '+wc+' / 150 words';
+    cEl.style.color = (cc>1100||wc>150) ? '#dc2626' : ((cc>1000||wc>140) ? '#b45309' : '#15803d');
   }
   if(!box||!bodyEl)return;
   if(box.style.display==='none')return; // only update if the preview is visible
@@ -647,15 +646,13 @@ function checkLetterFit(){
   var bodyEl=document.getElementById('lp-letter-body');
   if(!statusEl||!bodyEl)return;
   var text=bodyEl.textContent||'';
-  // MATCH STANNP's PREVIEW: Stannp's preview pane shows ~the top 80% of the A4
-  // page, so a letter must end around there to be FULLY visible. A ~180-word
-  // body (with greeting + sign-off ~185 total) ends at ~80%. Enforce 1,300 chars
-  // / 180 words so the whole letter always shows in Stannp's preview and prints
-  // comfortably on one page.
+  // SAFE LETTER SPEC: a ~150-word body (plus greeting + sign-off) is the most a
+  // single A4 letter page should carry so the WHOLE letter is fully visible in
+  // Stannp's preview and prints comfortably. Enforce 1,100 chars / 150 words.
   var charCount = text.trim().length;
   var wordCount = text.trim().split(/\s+/).filter(function(w){return w.length>0;}).length;
-  var tooLong = charCount > 1300 || wordCount > 180;
-  var maxWords = 180, maxChars = 1300;
+  var tooLong = charCount > 1100 || wordCount > 150;
+  var maxWords = 150, maxChars = 1100;
   // AUTO-FIT: shrink the preview font so the WHOLE letter is visible on the A4
   // page (no scrollbar / nothing cut off) whenever it fits one A4 side. Only
   // letters that are over the limit keep scrolling + show the red warning.
@@ -674,7 +671,7 @@ function checkLetterFit(){
   if(tooLong){
     statusEl.textContent='✕ ' + wordCount + ' words / ' + charCount + ' chars — too long for one A4 page (max ' + maxWords + ' words / ' + maxChars + ' chars). Shorten it.';
     statusEl.style.color='#dc2626';
-  } else if(charCount > 1200 || wordCount > 170){
+  } else if(charCount > 1000 || wordCount > 140){
     statusEl.textContent='~' + wordCount + ' words / ' + charCount + ' chars — near the limit (max ' + maxWords + ' words / ' + maxChars + ' chars). Consider shortening slightly for comfort.';
     statusEl.style.color='#b45309';
   } else {
