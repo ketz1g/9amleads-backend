@@ -1555,7 +1555,7 @@ class DirectMailProvider {
           .rotate()
           .resize({ width: A5_W, height: A5_H, fit: 'fill', background: { r: 255, g: 255, b: 255 } }).jpeg({ quality: 82 })
           .toBuffer();
-        console.log('[STANNP] Prepared FRONT/full-bleed artwork for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> ' + A5_W + 'x' + A5_H + ', fit=' + frontFit + (isBack && hasBakedZone ? ', baked zone detected' : '') + ')' + trimNote);
+        console.log('[STANNP] Prepared FRONT/full-bleed artwork for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> ' + A5_W + 'x' + A5_H + ', fit=fill)' + trimNote);
       }
       return { ok: true, file: { name: file.name, file_data: outBuf.toString('base64'), file_type: 'image/jpeg' }, spec: spec };
     } catch(e) {
