@@ -28865,6 +28865,13 @@ app.listen(PORT, () => {
   } catch(e) {
     console.log('[SEO] Startup blog seed error: ' + (e && e.message || e));
   }
+  // CRASH / RESTART ALERT: if the server boots, email the owner. If this happens
+  // outside a deploy, the process crashed and auto-restarted (Render restarts it).
+  try {
+    var bootEmail = process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com';
+    sendBrevoEmail({ email: bootEmail, name: '9amLeads Owner' }, '9amLeads server restarted',
+      '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="font-family:Outfit,sans-serif;color:#f59e0b;margin:0 0 8px">Server restarted</h1><p style="color:#ccc;line-height:1.7">The 9amLeads backend just started up at ' + new Date().toISOString() + ' UK.</p><p style="color:#ccc;line-height:1.7">If this was an intentional deploy, ignore this. If not, the process crashed and auto-restarted - check Render logs and the auto-heal watchdog status.</p></div>').catch(function(){});
+  } catch(e) {}
   console.log('\n========================================');
   console.log('  9amLeads Production API Server');
   console.log('  Domain: www.9amleads.com');

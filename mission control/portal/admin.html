@@ -180,7 +180,9 @@ tbody tr:hover td{background:#f8fafc}
 <div class="card" id="healthCard" style="display:none;margin-bottom:16px">
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
 <div style="display:flex;align-items:center;gap:8px"><span id="healthIcon" style="width:10px;height:10px;border-radius:50%;display:inline-block"></span><strong style="font-size:15px">System Health</strong><span id="healthSummary" style="font-size:12px;color:#64748b"></span></div>
-<div style="display:flex;align-items:center;gap:10px"><span id="healthTimestamp" style="font-size:11px;color:#94a3b8"></span><button class="btn btn-outline btn-sm" onclick="loadHealth(true)"><i class="fas fa-sync"></i> Refresh</button></div>
+<div style="display:flex;align-items:center;gap:10px"><span id="healthTimestamp" style="font-size:11px;color:#94a3b8"></span><button class="btn btn-outline btn-sm" onclick="loadHealth(true)"><i class="fas fa-sync"></i> Refresh</button>
+<button class="btn btn-sm" style="background:#6366f1;color:#fff" onclick="runAutoHeal()"><i class="fas fa-heart-pulse"></i> Run Auto-Heal</button></div>
+<div id="autoHealResult" style="display:none;margin:10px 0;padding:12px 14px;border-radius:10px;font-size:12.5px;line-height:1.7"></div>
 </div>
 <div id="healthIssues"></div>
 <div id="healthSystem" style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:#64748b"></div>
@@ -1180,7 +1182,48 @@ async function fixExtendTrial(customerId) {
 }
 
 // ===== HEALTH DASHBOARD =====
-async function loadHealth() {
+async function runAutoHeal() {
+  const btn = document.querySelector('button[onclick="runAutoHeal()"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Healing...'; }
+  const el = document.getElementById('autoHealResult');
+  if (el) { el.style.display = 'block'; el.style.background = '#eef2ff'; el.style.border = '1px solid #c7d2fe'; el.style.color = '#3730a3'; el.textContent = 'Running auto-heal checks...'; }
+  fetch(API + '/api/admin/auto-heal', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: '{}' })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Run Auto-Heal'; }
+      if (el && d.success) {
+        const o = d.result || {};
+        const fixes = [];
+        if (o.pauses > 0) fixes.push('Cleared ' + o.pauses + ' stuck pause(s)');
+        if (o.lock) fixes.push('Released stale delivery lock');
+        if (o.resend > 0) fixes.push('Resent ' + o.resend + ' failed email(s)');
+        if (o.pools && o.pools.length) fixes.push('Triggered scraper for: ' + o.pools.join(', '));
+        if (o.errors && o.errors.errors_last_hour > o.errors.threshold) fixes.push('High error rate: ' + o.errors.errors_last_hour + '/hr');
+        const lines = [
+          'Auto-heal completed.',
+          fixes.length ? 'Auto-fixed: ' + fixes.join('; ') : 'No auto-fixes were needed.',
+          'Backup restorable: ' + (o.backup && o.backup.ok ? 'YES' : 'NO'),
+          'Errors last hour: ' + (o.errors ? o.errors.errors_last_hour : '?'),
+          'Payment failures last hour: ' + (o.payments ? o.payments.payment_failures_hour : '?'),
+          'Stripe webhook received: ' + (o.webhook && o.webhook.last_webhook_at ? 'YES' : 'not yet today')
+        ];
+        el.innerHTML = lines.join('<br>');
+        el.style.background = fixes.length ? '#fef3c7' : '#f0fdf4';
+        el.style.borderColor = fixes.length ? '#fde68a' : '#bbf7d0';
+        el.style.color = fixes.length ? '#92400e' : '#166534';
+      } else if (el) {
+        el.style.background = '#fef2f2'; el.style.borderColor = '#fecaca'; el.style.color = '#991b1b';
+        el.textContent = 'Error: ' + ((d && d.error) || 'could not run auto-heal');
+      }
+      loadHealth(true);
+    })
+    .catch(function(e) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Run Auto-Heal'; }
+      if (el) { el.style.display = 'block'; el.style.background = '#fef2f2'; el.style.border = '1px solid #fecaca'; el.style.color = '#991b1b'; el.textContent = 'Error: ' + e.message; }
+    });
+}
+
+function loadHealth() {
   try {
     const r = await fetch(API + '/api/admin/health-report?t=' + Date.now(), { headers: adminHeaders() });
     if (!r.ok) return;
