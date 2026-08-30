@@ -5474,6 +5474,80 @@ app.post('/api/admin/auto-heal', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ===== UPTIMEROBOT AUTOMATION =====
+// Creates uptime monitors for the website + API via the UptimeRobot API.
+// Usage: POST /api/admin/uptime/setup { api_key } (key from uptimerobot.com ->
+// Settings -> API settings -> Main API Key). Stores the key so the auto-heal
+// watchdog can check + report uptime status.
+function uptimeRobotRequest(apiKey, payload) {
+  return new Promise(function(resolve) {
+    var https = require('https');
+    var body = new URLSearchParams(payload).toString();
+    var req = https.request({ hostname: 'api.uptimerobot.com', path: '/v2/newMonitor', method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
+      var d = ''; res.on('data', function(ch){ d += ch; }); res.on('end', function() { try { resolve(JSON.parse(d)); } catch(e) { resolve({ stat: 'fail', error: { message: d } }); } });
+    });
+    req.on('error', function(e){ resolve({ stat: 'fail', error: { message: e.message } }); });
+    req.write(body); req.end();
+  });
+}
+// UptimeRobot v2 uses api_key in the body
+function buildMonitorPayload(apiKey, name, url, keywords) {
+  return { api_key: apiKey, format: 'json', type: '1', url: url, friendly_name: name, interval: '300', alert_contacts: '' };
+}
+// Create both monitors; skip any that already exist (idempotent).
+async function setupUptimeMonitors(apiKey) {
+  var out = { created: [], skipped: [], errors: [] };
+  var monitors = [
+    { name: '9amLeads Website', url: 'https://9amleads.com' },
+    { name: '9amLeads API', url: 'https://nineamleads-backend.onrender.com/api/health' }
+  ];
+  for (var i = 0; i < monitors.length; i++) {
+    try {
+      var payload = buildMonitorPayload(apiKey, monitors[i].name, monitors[i].url);
+      var r = await uptimeRobotRequest(apiKey, payload);
+      if (r.stat === 'ok' && r.monitor) {
+        out.created.push({ name: monitors[i].name, id: r.monitor.id, status: r.monitor.status });
+      } else {
+        out.errors.push({ name: monitors[i].name, msg: (r.error && r.error.message) || JSON.stringify(r) });
+      }
+    } catch(e) { out.errors.push({ name: monitors[i].name, msg: e.message }); }
+  }
+  return out;
+}
+// GET /api/admin/uptime/status - report current monitor status (if key stored).
+async function getUptimeStatus(apiKey) {
+  return new Promise(function(resolve) {
+    var https = require('https');
+    var body = new URLSearchParams({ api_key: apiKey, format: 'json' }).toString();
+    var req = https.request({ hostname: 'api.uptimerobot.com', path: '/v2/getMonitors', method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
+      var d = ''; res.on('data', function(ch){ d += ch; }); res.on('end', function() { try { resolve(JSON.parse(d)); } catch(e) { resolve({ stat: 'fail', error: { message: d } }); } });
+    });
+    req.on('error', function(e){ resolve({ stat: 'fail', error: { message: e.message } }); });
+    req.write(body); req.end();
+  });
+}
+app.post('/api/admin/uptime/setup', adminAuth, async (req, res) => {
+  try {
+    var key = String(req.body.api_key || '').trim();
+    if (!key) return res.status(400).json({ error: 'Please provide your UptimeRobot Main API Key (uptimerobot.com -> Settings -> API settings).' });
+    var dbc = getDb();
+    dbc.uptime_robot_key = key;
+    saveDb();
+    var result = await setupUptimeMonitors(key);
+    res.json({ success: true, result: result });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+app.get('/api/admin/uptime/status', adminAuth, async (req, res) => {
+  try {
+    var dbc = getDb();
+    var key = dbc.uptime_robot_key || '';
+    if (!key) return res.json({ success: true, configured: false, message: 'UptimeRobot not configured yet.' });
+    var r = await getUptimeStatus(key);
+    var monitors = (r.monitors || []).map(function(m) { return { name: m.friendly_name, url: m.url, status: m.status, status_text: ({2:'UP',9:'PAUSED',0:'PAUSED',1:'UNKNOWN',8:'SEEMS_DOWN'})[m.status] || ('code '+m.status) }; });
+    res.json({ success: true, configured: true, monitors: monitors });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/admin/affiliate/run-wheel-unlocks', adminAuth, (req, res) => {
   try { res.json({ success: true, result: runAffiliateWheelUnlockEmails() }); }
   catch(e) { res.status(500).json({ error: e.message }); }
@@ -5503,6 +5577,80 @@ app.post('/api/admin/auto-heal', adminAuth, (req, res) => {
   try {
     var r = runAutoHeal();
     res.json({ success: true, result: r });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== UPTIMEROBOT AUTOMATION =====
+// Creates uptime monitors for the website + API via the UptimeRobot API.
+// Usage: POST /api/admin/uptime/setup { api_key } (key from uptimerobot.com ->
+// Settings -> API settings -> Main API Key). Stores the key so the auto-heal
+// watchdog can check + report uptime status.
+function uptimeRobotRequest(apiKey, payload) {
+  return new Promise(function(resolve) {
+    var https = require('https');
+    var body = new URLSearchParams(payload).toString();
+    var req = https.request({ hostname: 'api.uptimerobot.com', path: '/v2/newMonitor', method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
+      var d = ''; res.on('data', function(ch){ d += ch; }); res.on('end', function() { try { resolve(JSON.parse(d)); } catch(e) { resolve({ stat: 'fail', error: { message: d } }); } });
+    });
+    req.on('error', function(e){ resolve({ stat: 'fail', error: { message: e.message } }); });
+    req.write(body); req.end();
+  });
+}
+// UptimeRobot v2 uses api_key in the body
+function buildMonitorPayload(apiKey, name, url, keywords) {
+  return { api_key: apiKey, format: 'json', type: '1', url: url, friendly_name: name, interval: '300', alert_contacts: '' };
+}
+// Create both monitors; skip any that already exist (idempotent).
+async function setupUptimeMonitors(apiKey) {
+  var out = { created: [], skipped: [], errors: [] };
+  var monitors = [
+    { name: '9amLeads Website', url: 'https://9amleads.com' },
+    { name: '9amLeads API', url: 'https://nineamleads-backend.onrender.com/api/health' }
+  ];
+  for (var i = 0; i < monitors.length; i++) {
+    try {
+      var payload = buildMonitorPayload(apiKey, monitors[i].name, monitors[i].url);
+      var r = await uptimeRobotRequest(apiKey, payload);
+      if (r.stat === 'ok' && r.monitor) {
+        out.created.push({ name: monitors[i].name, id: r.monitor.id, status: r.monitor.status });
+      } else {
+        out.errors.push({ name: monitors[i].name, msg: (r.error && r.error.message) || JSON.stringify(r) });
+      }
+    } catch(e) { out.errors.push({ name: monitors[i].name, msg: e.message }); }
+  }
+  return out;
+}
+// GET /api/admin/uptime/status - report current monitor status (if key stored).
+async function getUptimeStatus(apiKey) {
+  return new Promise(function(resolve) {
+    var https = require('https');
+    var body = new URLSearchParams({ api_key: apiKey, format: 'json' }).toString();
+    var req = https.request({ hostname: 'api.uptimerobot.com', path: '/v2/getMonitors', method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
+      var d = ''; res.on('data', function(ch){ d += ch; }); res.on('end', function() { try { resolve(JSON.parse(d)); } catch(e) { resolve({ stat: 'fail', error: { message: d } }); } });
+    });
+    req.on('error', function(e){ resolve({ stat: 'fail', error: { message: e.message } }); });
+    req.write(body); req.end();
+  });
+}
+app.post('/api/admin/uptime/setup', adminAuth, async (req, res) => {
+  try {
+    var key = String(req.body.api_key || '').trim();
+    if (!key) return res.status(400).json({ error: 'Please provide your UptimeRobot Main API Key (uptimerobot.com -> Settings -> API settings).' });
+    var dbc = getDb();
+    dbc.uptime_robot_key = key;
+    saveDb();
+    var result = await setupUptimeMonitors(key);
+    res.json({ success: true, result: result });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+app.get('/api/admin/uptime/status', adminAuth, async (req, res) => {
+  try {
+    var dbc = getDb();
+    var key = dbc.uptime_robot_key || '';
+    if (!key) return res.json({ success: true, configured: false, message: 'UptimeRobot not configured yet.' });
+    var r = await getUptimeStatus(key);
+    var monitors = (r.monitors || []).map(function(m) { return { name: m.friendly_name, url: m.url, status: m.status, status_text: ({2:'UP',9:'PAUSED',0:'PAUSED',1:'UNKNOWN',8:'SEEMS_DOWN'})[m.status] || ('code '+m.status) }; });
+    res.json({ success: true, configured: true, monitors: monitors });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
