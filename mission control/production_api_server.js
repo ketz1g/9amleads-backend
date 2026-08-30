@@ -5359,7 +5359,7 @@ app.get('/api/admin/affiliates', adminAuth, (req, res) => {
       refs.forEach(function(c) { var st = c.affiliate_payout_status || 'referral_pending'; if (counts[st] !== undefined) counts[st]++; });
       return {
         id: a.id, name: a.name, code: a.code, email: a.email, status: a.status, payout_rate: rate,
-        association: a.association || '', commission_amount: a.commission_amount || null,
+        association: a.association || '', recruited_by: a.recruited_by || '', commission_amount: a.commission_amount || null,
         created_at: a.created_at, counts: counts,
         application: a.application || null,
         kyc: kycStatus(a),
