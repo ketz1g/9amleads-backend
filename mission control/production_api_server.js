@@ -5282,7 +5282,7 @@ app.post('/api/affiliate/demo-customer-session', affiliateAuth, async (req, res)
     try {
       var demoLeadCount = db.prepare('SELECT COUNT(*) AS n FROM leads WHERE customer_id = ?').get(demo ? demo.id : (function(){ var d2 = db.prepare('SELECT id FROM customers WHERE email = ?').get(DEMO_EMAIL); return d2 && d2.id; })());
       var demoId2 = (demo && demo.id) || (db.prepare('SELECT id FROM customers WHERE email = ?').get(DEMO_EMAIL) || {}).id;
-      var _cnt = demoLeadCount ? Number(demoLeadCount.n) : 0;
+      var _cnt = demoLeadCount ? Number(demoLeadCount.n != null ? demoLeadCount.n : demoLeadCount.count) : 0;
       if (_cnt < 4 && demoId2) {
         var nowIso = new Date().toISOString();
         var sampleLeads = [
