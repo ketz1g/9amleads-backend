@@ -22849,6 +22849,16 @@ app.put('/api/direct-mail/materials/:id', authMiddleware, (req, res) => {
     var fileData = req.body.file_data || '';
     var fileName = req.body.name || existing.name;
     if (!fileData) return res.status(400).json({ error: 'No file data provided' });
+    // Detect the ACTUAL content type from the data-URI prefix so a JPEG-encoded
+    // editor save is stored with a .jpg name + image/jpeg type (the /file endpoint
+    // serves by type, and sharp/Stannp read content not extension). Falls back to
+    // the existing name's extension for plain base64 uploads.
+    var mimeMatch = fileData.match(/^data:([^;,]+);base64,/i);
+    if (mimeMatch) {
+      var mime = String(mimeMatch[1] || '').toLowerCase();
+      if (mime === 'image/jpeg' || mime === 'image/jpg') { if (!/\.jpe?g$/i.test(fileName)) fileName = fileName.replace(/\.[^.]*$/, '') + '.jpg'; }
+      else if (mime === 'image/png') { if (!/\.png$/i.test(fileName)) fileName = fileName.replace(/\.[^.]*$/, '') + '.png'; }
+    }
     // Strip any data-URI prefix (e.g. "data:image/png;base64,") so the stored
     // value is PURE base64 — the /file endpoint decodes it with Buffer.from
     // (which fails on a data-URI prefix and corrupts the image). The editor sends
@@ -22861,37 +22871,6 @@ app.put('/api/direct-mail/materials/:id', authMiddleware, (req, res) => {
     var fileType = existing.type;
     db.prepare('UPDATE direct_mail_materials SET file_data=?,file_type=?,file_size=?,name=?,updated_at=? WHERE id=?').run(fileData, ext === '.pdf' ? 'pdf' : 'image', fileData.length, fileName, new Date().toISOString(), existing.id);
     res.json({ success: true, message: 'Material updated', material: { id: existing.id, name: fileName, type: fileType } });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// TEMP-ADMIN: restore a material's file_data from a local hourly backup (one-off recovery).
-app.post('/api/admin/direct-mail/material-restore', adminAuth, (req, res) => {
-  try {
-    var materialId = (req.body && req.body.material_id) || '';
-    var backupName = (req.body && req.body.backup) || '';
-    if (!materialId) return res.status(400).json({ error: 'material_id required' });
-    var target = null;
-    if (backupName) {
-      var bp = path.join(BACKUP_DIR, backupName);
-      if (!fs.existsSync(bp)) return res.status(404).json({ error: 'Backup not found: ' + backupName });
-      target = JSON.parse(fs.readFileSync(bp, 'utf-8'));
-    } else {
-      var all = fs.readdirSync(BACKUP_DIR).filter(function(f) { return f.startsWith('database-') && f.endsWith('.json'); }).sort();
-      for (var bi = all.length - 1; bi >= 0; bi--) {
-        var cand = JSON.parse(fs.readFileSync(path.join(BACKUP_DIR, all[bi]), 'utf-8'));
-        var hit = (cand.direct_mail_materials || []).filter(function(m) { return m.id === materialId; })[0];
-        if (hit && hit.file_data) { target = cand; break; }
-      }
-      if (!target) return res.status(404).json({ error: 'No backup contains that material with file data' });
-    }
-    var orig = (target.direct_mail_materials || []).filter(function(m) { return m.id === materialId; })[0];
-    if (!orig || !orig.file_data) return res.status(404).json({ error: 'Material not in chosen backup' });
-    var current = db.prepare('SELECT * FROM direct_mail_materials WHERE id = ?').get(materialId);
-    if (!current) return res.status(404).json({ error: 'Material not found in live DB' });
-    db.prepare('UPDATE direct_mail_materials SET file_data=?, file_type=?, file_size=?, name=?, updated_at=? WHERE id=?')
-      .run(orig.file_data, orig.file_type || 'image', String(orig.file_data).length, orig.name || current.name, new Date().toISOString(), materialId);
-    saveDb();
-    res.json({ success: true, message: 'Material restored', material_id: materialId, name: orig.name, restored_file_size: String(orig.file_data).length });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 

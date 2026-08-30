@@ -1355,9 +1355,17 @@ function saveFlyerEditor(){
   if(_flyerEditor.matType === 'flyer_back'){
     ctx.fillStyle='#ffffff'; ctx.fillRect(0, 0, PW, zoneH);
   }
-  var out=outCanvas.toDataURL('image/png');
+  // Encode as JPEG (quality 0.92) instead of PNG. The full-res canvas at
+  // 1819x2551 produces a PNG that can exceed the hosting proxy's ~10MB request
+  // limit, which made saves fail with "Error saving: try again". JPEG keeps the
+  // exact print size and print quality but is a fraction of the size, so the
+  // save reliably goes through. The stored name keeps its original extension and
+  // the /file endpoint serves it by type.
+  var out;
+  try { out = outCanvas.toDataURL('image/jpeg', 0.92); }
+  catch(e) { out = outCanvas.toDataURL('image/png'); }
   var base64=out.split(',')[1]||'';
-  api('PUT','/api/direct-mail/materials/'+_flyerEditor.id,{file_data:'data:image/png;base64,'+base64},function(err,d){
+  api('PUT','/api/direct-mail/materials/'+_flyerEditor.id,{file_data:'data:image/jpeg;base64,'+base64},function(err,d){
     if(d&&d.success){
       status.textContent='✅ ' + (_flyerEditor.matType==='flyer_back' ? 'Back flyer saved (address zone at top)' : 'Front flyer saved at full print quality');
       setTimeout(function(){ closeFlyerEditor(); loadMaterials(); loadFinalPrintPreview(); }, 800);
