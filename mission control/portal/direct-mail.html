@@ -957,11 +957,16 @@ function loadFinalPrintPreview(){  var box=document.getElementById('final-print-
     var backImg=document.getElementById('fp-back-img');
     var dlBack=document.getElementById('fp-download-back');
     if(backImg&&d.flyer_back&&d.flyer_back.preview_url){
-      backImg.src='/api/direct-mail/materials/'+d.flyer_back.id+'/preview-zone'+tokq;
+      // Back preview + download use /final-print (same as the front), so the
+      // on-screen preview and the downloaded file show EXACTLY what prints:
+      // full-bleed design with the white address zone. Using /preview-zone here
+      // ran a separate old code path that disagreed with the editor/print.
+      var backFmt=(d.format&&d.format.id)||'flyer_a5_portrait';
+      backImg.src='/api/direct-mail/materials/'+d.flyer_back.id+'/final-print'+tokq+'&format='+encodeURIComponent(backFmt);
       backImg.onload=function(){ markInLine('back'); };
       backImg.onerror=function(){ markInLine('back',false); };
       if(document.getElementById('fp-back-name'))document.getElementById('fp-back-name').textContent=d.flyer_back.name||'';
-      if(dlBack){dlBack.href='/api/direct-mail/materials/'+d.flyer_back.id+'/preview-zone'+tokq; dlBack.download=d.flyer_back.name||'leaflet-back'; dlBack.style.display='flex';}
+      if(dlBack){dlBack.href='/api/direct-mail/materials/'+d.flyer_back.id+'/final-print'+tokq+'&format='+encodeURIComponent(backFmt)+'&download=1'; dlBack.download=(d.flyer_back.name||'leaflet-back')+'-final.jpg'; dlBack.style.display='flex';}
     } else {
       if(backImg){backImg.style.display='none';} 
       if(dlBack){dlBack.style.display='none';}
@@ -1385,8 +1390,9 @@ function flyerEditorDraw(){
     var reachesRight  = dx + dw >= ox + pw - tol;
     var reachesTop    = dy <= oy + tol;
     var reachesBottom = dy + dh >= oy + ph - tol;
-    var backOK = (ed.matType==='flyer_back') ? (dy >= oy + ed.zoneH - tol && reachesBottom) : true;
-    var inLine = reachesLeft && reachesRight && reachesBottom && (ed.matType==='flyer_back' ? backOK : reachesTop);
+    // Back is full-bleed too (the white address zone overlays the top at save),
+    // so it must reach all four edges just like the front.
+    var inLine = reachesLeft && reachesRight && reachesTop && reachesBottom;
     // Draw the bleed line (always) — green when in line, red when not.
     ctx.strokeStyle = inLine ? '#22c55e' : '#ef4444';
     ctx.lineWidth = inLine ? 3 : 2;
