@@ -301,6 +301,18 @@ tr:last-child td{border-bottom:none}
 <div class="fg" style="margin-top:6px"><label style="display:flex;gap:8px;align-items:flex-start;font-size:11.5px;color:#c6cfdd;cursor:pointer"><input type="checkbox" id="r-consent" style="margin-top:2px"> I agree to 9amLeads recording my voice for onboarding review, and to be contacted about my application.</label></div>
 <div style="display:flex;gap:8px"><button class="btn btn-out" style="width:auto" onclick="appStep(2)">Back</button><button class="btn" onclick="submitApplication()">Submit application</button></div>
 </div>
+<div id="app-success" style="display:none;text-align:center;padding:30px 10px">
+<div style="font-size:46px;margin-bottom:12px">✅</div>
+<h2 style="font-family:Outfit,sans-serif;color:#34d399;margin:0 0 10px;font-size:24px">Application received</h2>
+<p style="font-size:14px;color:#c9d1de;line-height:1.8;max-width:420px;margin:0 auto 6px">Thanks for applying to the 9amLeads affiliate programme.</p>
+<p style="font-size:13px;color:#94a3b8;line-height:1.8;max-width:440px;margin:0 auto 8px">We'll review your application and your voice test, then email <b style="color:#e2e8f0" id="app-success-email">you</b> once your account is approved. You'll then be able to sign in to your affiliate dashboard.</p>
+<p style="font-size:13px;color:#94a3b8;line-height:1.8;max-width:440px;margin:0 auto 20px">This usually takes under 24 hours.</p>
+<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+<a href="https://9amleads.com/" class="btn btn-primary">Go to the 9amLeads website</a>
+<a href="#" onclick="showLogin();return false" style="font-size:13px;color:#0ea5e9;align-self:center">Back to sign in</a>
+</div>
+</div>
+
 <div class="err" id="register-err"></div>
 <p style="font-size:11px;color:#6b7280;margin-top:16px;text-align:center"><a href="#" onclick="showLogin();return false">Back to sign in</a></p>
 </div>
@@ -748,7 +760,16 @@ var TOKEN = sessionStorage.getItem('mld_affiliate_session') || localStorage.getI
 var D = null, RES = null, LEADS = null, curType = 'moving';
 
 function showLogin(){document.getElementById('login-view').style.display='block';document.getElementById('register-view').style.display='none';}
-function showRegister(){document.getElementById('login-view').style.display='none';document.getElementById('register-view').style.display='block';}
+function showRegister(){
+  document.getElementById('login-view').style.display='none';
+  document.getElementById('register-view').style.display='block';
+  // Reset to a fresh Step 1 form (hide any prior success screen).
+  var succ=document.getElementById('app-success'); if(succ)succ.style.display='none';
+  ['app-step-1','app-step-2','app-step-3'].forEach(function(id){var el=document.getElementById(id); if(el)el.style.display=(id==='app-step-1')?'block':'none';});
+  ['r-name','r-email','r-pass','r-code','q1','q2','q3','q4','q5','q6','q7','q8','q9','q10','q11','q12','q13'].forEach(function(id){var el=document.getElementById(id); if(el)el.value='';});
+  var tc=document.getElementById('r-consent'); if(tc)tc.checked=false;
+  resetRec();
+}
 function err(id,msg){var e=document.getElementById(id);e.textContent=msg;e.style.display='block';}
 function api(method,path,body){
   return fetch(API+'/api'+path,{method:method,headers:{'Content-Type':'application/json','Authorization':TOKEN?'Bearer '+TOKEN:''},body:body?JSON.stringify(body):undefined}).then(function(r){return r.json();});
@@ -845,11 +866,13 @@ function submitApplication(){
     .then(function(r){return r.json();}).then(function(d){
       if(btn){btn.disabled=false;btn.textContent='Submit application';}
       if(d.success){
-        errEl.style.color='#34d399';
-        errEl.innerHTML='<b>Application received.</b> We\'ll review it within 24 hours and email you once your account is approved. You can sign in after approval.';
-        errEl.style.display='block';
-        document.querySelector('#app-step-3 button.btn').style.display='none';
-        appStep(1);
+        // Show a proper success screen instead of bouncing back to the form.
+        ['app-step-1','app-step-2','app-step-3'].forEach(function(id){var el=document.getElementById(id); if(el)el.style.display='none';});
+        var succ=document.getElementById('app-success');
+        if(succ)succ.style.display='block';
+        var sne=document.getElementById('app-success-email'); if(sne)sne.textContent=email;
+        if(errEl)errEl.style.display='none';
+        window.scrollTo({top:0,behavior:'smooth'});
       }
       else err('register-err',d.error||'Could not submit application');
     }).catch(function(){ if(btn){btn.disabled=false;btn.textContent='Submit application';} err('register-err','Server is starting up. Please try again.'); });
