@@ -5319,7 +5319,7 @@ app.get('/api/admin/demo-debug', adminAuth, (req, res) => {
     var leads = (dbc.leads || []).filter(function(l){ return l.customer_id === (demo && demo.id); });
     var shimLeads = [];
     try { shimLeads = db.prepare('SELECT * FROM leads WHERE customer_id = ? ORDER BY created_at DESC LIMIT 50').all(demo && demo.id); } catch(e) { shimLeads = [{err:e.message}]; }
-    res.json({ demo_id: demo && demo.id, demo_found: !!demo, demo_plan: demo && demo.plan, leads_count: leads.length, shim_count: shimLeads.length, shim_ids: shimLeads.map(function(l){return l.id;}), leads: leads.map(function(l){ var d={}; try{d=JSON.parse(l.data||'{}');}catch(e){} return { id: l.id, addr: d.address, fullAddress: d.fullAddress, buildingNumber: d.buildingNumber, street: d.street, postcode: d.postcode, delivered: l.delivered, status: l.status }; }) });
+    res.json({ demo_id: demo && demo.id, demo_found: !!demo, demo_plan: demo && demo.plan, leads_count: leads.length, shim_count: shimLeads.length, shim_ids: shimLeads.map(function(l){return l.id;}), usable: shimLeads.map(function(l){ return { id: l.id, usable: leadHasUsableAddress(l, demo && demo.product || 'moving'), dataType: typeof l.data }; }), leads: leads.map(function(l){ var d={}; try{d=JSON.parse(l.data||'{}');}catch(e){} return { id: l.id, addr: d.address, fullAddress: d.fullAddress, buildingNumber: d.buildingNumber, street: d.street, postcode: d.postcode, delivered: l.delivered, status: l.status }; }) });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
