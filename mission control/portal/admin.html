@@ -280,6 +280,7 @@ tbody tr:hover td{background:#f8fafc}
 <button class="btn btn-primary btn-sm" onclick="createAffiliateForm()"><i class="fas fa-plus"></i> Add Affiliate</button>
 </div>
 <p style="font-size:12.5px;color:#475569;margin:0 0 10px">Referrals use an affiliate's name or code at signup → customer gets a <b>14-day trial</b> → affiliate earns <b>£25</b> once the customer pays their <b>second</b> invoice for a Starter/Pro/Enterprise package. Approved commissions auto-pay monthly when they reach the £50 minimum. Associations earn £30 (25 + £5 bonus).</p>
+<div id="affPendingWrap"></div>
 <div class="table-wrap" id="affiliateTableWrap"><div class="loading">Loading affiliates...</div></div>
 </div>
 </div>
@@ -586,9 +587,32 @@ function replaceRejectedLead(leadId) {
 // ===== AFFILIATES =====
 function loadAffiliates() {
   var wrap = document.getElementById('affiliateTableWrap');
+  var pw = document.getElementById('affPendingWrap');
   fetch(API + '/api/admin/affiliates?t=' + Date.now(), { headers: adminHeaders() })
     .then(function(r) { return r.json(); })
     .then(function(d) {
+      // Prominent "applications waiting for your decision" banner.
+      if (pw) {
+        var pending = (d.affiliates || []).filter(function(a){ return a.status === 'pending'; });
+        var hasVoice = function(a){ return a.application && a.application.voice && a.application.voice.audio; };
+        var anyVoice = pending.some(hasVoice);
+        if (pending.length) {
+          var cards = pending.map(function(a){
+            var score = (a.application && a.application.score) || {};
+            var v = hasVoice(a);
+            return '<div style="display:flex;align-items:center;gap:12px;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;margin-bottom:8px;flex-wrap:wrap">' +
+              '<div style="font-size:20px">' + (v ? '🎙️' : '📋') + '</div>' +
+              '<div style="flex:1;min-width:180px"><b>' + pEsc(a.name) + '</b><div style="font-size:11px;color:#64748b">' + pEsc(a.email) + ' · code ' + pEsc(a.code) + ' · score ' + (score.total || '?') + '/100' + (v ? ' · voice test recorded' : ' · no voice') + '</div></div>' +
+              '<button class="btn btn-primary btn-sm" onclick="reviewApplication(\'' + a.id + '\')">' + (v ? '🎙️ Review (listen + form)' : 'Review form') + '</button>' +
+              '<button class="btn btn-sm" style="background:#16a34a;color:#fff" onclick="instantApprove(\'' + a.id + '\',\'' + pEsc(a.name) + '\')">✓ Approve</button>' +
+              '</div>';
+          }).join('');
+          pw.innerHTML = '<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:12px;padding:14px;margin-bottom:14px">' +
+            '<div style="font-weight:800;color:#92400e;font-size:13px;margin-bottom:8px">' + (anyVoice ? '🎙️ ' : '') + pending.length + ' application' + (pending.length>1?'s':'') + ' waiting for your decision</div>' + cards + '</div>';
+        } else {
+          pw.innerHTML = '';
+        }
+      }
       if (!d.success || !d.affiliates) { wrap.innerHTML = '<div class="empty">Could not load affiliates.</div>'; return; }
       if (!d.affiliates.length) { wrap.innerHTML = '<div class="empty">No affiliates yet. Click "Add Affiliate" to create one.</div>'; return; }
       var h = '<table><thead><tr><th>Affiliate</th><th>Code</th><th>Status</th><th>Application</th><th>KYC</th><th>Association</th><th>Rate</th><th>Referrals</th><th>Pending</th><th>Ready to pay</th><th>Paid</th><th>Actions</th></tr></thead><tbody>';
@@ -672,7 +696,11 @@ function reviewApplication(id) {
         '<div style="font-size:26px;font-weight:800;color:' + (score.pass ? '#16a34a' : '#d97706') + '">' + (score.total || 0) + '</div>' +
         '<div style="font-size:12px;color:#334155"><b>Application score</b><br>' + (score.pass ? 'Auto-suggested: PASS' : 'Auto-suggested: REVIEW') + (score.fail_reasons && score.fail_reasons.length ? ' · Flags: ' + score.fail_reasons.join(', ') : '') + '</div></div>';
       var voiceHtml = app.voice && app.voice.audio
-        ? '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin-bottom:14px"><div style="font-size:12px;font-weight:700;color:#334155;margin-bottom:6px">🎙️ Voice test</div><audio controls style="width:100%" src="data:audio/webm;base64,' + pEsc(app.voice.audio) + '"></audio><div style="font-size:11px;color:#64748b;margin-top:4px">Recorded ' + pEsc(app.voice.recorded_at || '') + '</div></div>'
+        ? '<div style="background:#f0fdf4;border:2px solid #86efac;border-radius:10px;padding:14px;margin-bottom:14px"><div style="font-size:12px;font-weight:800;color:#15803d;margin-bottom:8px">🎙️ Listen to their voice test (read this before you approve)</div>' +
+          '<audio controls preload="auto" style="width:100%" type="audio/webm" src="data:audio/webm;base64,' + app.voice.audio + '"></audio>' +
+          '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="btn btn-outline btn-sm" onclick="window.open(\'data:audio/webm;base64,' + app.voice.audio + '\',\'_blank\')">↗ Open audio in new tab</button>' +
+          '<button class="btn btn-outline btn-sm" onclick="window.open(\'data:audio/wav;base64,' + app.voice.audio + '\',\'_blank\')">Try .wav</button></div>' +
+          '<div style="font-size:11px;color:#64748b;margin-top:6px">Recorded ' + pEsc(app.voice.recorded_at || '') + '</div></div>'
         : '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin-bottom:14px;color:#64748b;font-size:12px">No voice recording submitted.</div>';
       var content = scoreHtml + voiceHtml +
         '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;max-height:340px;overflow-y:auto;margin-bottom:14px">' +
