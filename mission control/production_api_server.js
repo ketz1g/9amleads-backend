@@ -1465,16 +1465,64 @@ class DirectMailProvider {
           if (samples > 0 && (nearWhite / samples) > 0.85) hasBakedZone = true;
         } catch (zoneProbeErr) { console.log('[STANNP] zone probe failed:', zoneProbeErr.message); }
       }
-      // The recipient address zone occupies the TOP 28% of the BACK (Stannp's
-      // native clearzone). If we sent the back design full-bleed (filling the
-      // whole A5), the design would effectively get covered at the top and its
-      // bottom would run past the printable area — customers received flyers with
-      // the bottom content cut off. Fix: for the BACK, scale the design to fit
-      // INSIDE the printable area BELOW the address zone (bottom ~68%), keeping
-      // a safe white bottom margin so nothing is ever cut. The FRONT stays
-      // full-bleed edge-to-edge. Editor-saved backs (zone already baked) pass
-      // through unchanged.
-      var outBuf;
+      // The recipient address zone occupies the TOP 28% of the BACK (Stannp's
+      // native clearzone). If we sent the back design full-bleed (filling the
+      // whole A5), the design would effectively get covered at the top and its
+      // bottom would run past the printable area — customers received flyers with
+      // the bottom content cut off. Fix: for the BACK, scale the design to fit
+      // INSIDE the printable area BELOW the address zone (bottom ~68%), keeping
+      // a safe white bottom margin so nothing is ever cut. The FRONT stays
+      // full-bleed edge-to-edge. Editor-saved backs (zone already baked) pass
+      // through unchanged.
+      // FRONT WHITE-MARGIN TRIM: designs are often built on a template that
+      // leaves a pure-white footer/header band. Stannp expects edge-to-edge
+      // full-bleed, so we trim pure-white margins from FRONT artwork before the
+      // cover resize. (Backs keep their top white zone — it IS the address area.)
+      var inputForResize = inputBuf;
+      var trimNote = '';
+      if (!isBack) {
+        try {
+          var trimMeta = await sharp(inputBuf).metadata();
+          if (['png', 'jpeg', 'jpg', 'webp'].indexOf(trimMeta.format) !== -1) {
+            // Compute the non-white bounding box by sampling at ~4px intervals.
+            var T_W = trimMeta.width || A5_W, T_H = trimMeta.height || A5_H;
+            var raw = await sharp(inputBuf).rotate().raw().toBuffer();
+            var minX = T_W, minY = T_H, maxX = -1, maxY = -1;
+            var step = 4;
+            var rw = T_W * 4;
+            for (var ty = 0; ty < T_H; ty += step) {
+              for (var tx = 0; tx < T_W; tx += step) {
+                var o = ty * rw + tx * 4;
+                var rv = raw[o], gv = raw[o + 1], bv = raw[o + 2];
+                var notWhite = (rv < 248 || gv < 248 || bv < 248);
+                if (notWhite) {
+                  if (tx < minX) minX = tx;
+                  if (tx > maxX) maxX = tx;
+                  if (ty < minY) minY = ty;
+                  if (ty > maxY) maxY = ty;
+                }
+              }
+            }
+            if (maxX >= minX && maxY >= minY) {
+              var pad = 4;
+              var cxl = Math.max(0, minX - pad), cyt = Math.max(0, minY - pad);
+              var cxr = Math.min(T_W, maxX + pad + 1), cyb = Math.min(T_H, maxY + pad + 1);
+              var trimW = cxr - cxl, trimH = cyb - cyt;
+              var bandW = T_W - trimW, bandH = T_H - trimH;
+              // Only trim when the removed band is substantial (>=5% of that
+              // dimension) so thin safety margins aren't over-tightened.
+              if (bandW >= T_W * 0.05 || bandH >= T_H * 0.05) {
+                inputForResize = await sharp(inputBuf)
+                  .rotate()
+                  .extract({ left: cxl, top: cyt, width: trimW, height: trimH })
+                  .png().toBuffer();
+                trimNote = ' (trimmed white margins ' + T_W + 'x' + T_H + ' -> ' + trimW + 'x' + trimH + ')';
+              }
+            }
+          }
+        } catch (trimErr) { console.log('[STANNP] Front trim skipped:', trimErr.message); }
+      }
+      var outBuf;
       if (isBack && !hasBakedZone) {
         // Address zone = top 28%. Printable design area = from just below the
         // zone down to a ~4% bottom safety margin, so the design sits clearly
@@ -1497,12 +1545,17 @@ class DirectMailProvider {
           .toBuffer();
         console.log('[STANNP] Prepared BACK artwork for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> design area ' + A5_W + 'x' + Math.round(designH) + ' below top zone, bottom margin kept)');
       } else {
-        // FRONT, or BACK that already has its baked zone: full-bleed, edge-to-edge — never crop.
-        outBuf = await sharp(inputBuf)
-          .rotate()
-          .resize({ width: A5_W, height: A5_H, fit: 'cover', position: 'attention', background: { r: 255, g: 255, b: 255 } }).jpeg({ quality: 82 })
-          .toBuffer();
-        console.log('[STANNP] Prepared FRONT/full-bleed artwork for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> ' + A5_W + 'x' + A5_H + ', fit=contain' + (isBack && hasBakedZone ? ', baked zone detected' : '') + ')');
+        // FRONT, or BACK that already has its baked zone: full-bleed, edge-to-edge.
+        // Fronts are pre-trimmed of white margins (see above), then STRETCHED
+        // (fit 'fill') to exactly fill the A5 canvas — zero white bands, zero
+        // cropped content, matching what the in-app editor shows. Backs with a
+        // baked zone are cover-fitted (they already fill the sheet).
+        var frontFit = isBack ? 'cover' : 'fill';
+        outBuf = await sharp(inputForResize)
+          .rotate()
+          .resize({ width: A5_W, height: A5_H, fit: frontFit, position: 'attention', background: { r: 255, g: 255, b: 255 } }).jpeg({ quality: 82 })
+          .toBuffer();
+        console.log('[STANNP] Prepared FRONT/full-bleed artwork for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> ' + A5_W + 'x' + A5_H + ', fit=' + frontFit + (isBack && hasBakedZone ? ', baked zone detected' : '') + ')' + trimNote);
       }
       return { ok: true, file: { name: file.name, file_data: outBuf.toString('base64'), file_type: 'image/jpeg' }, spec: spec };
     } catch(e) {
