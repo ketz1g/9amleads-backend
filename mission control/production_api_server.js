@@ -22966,6 +22966,29 @@ app.post('/api/direct-mail/materials/validate', authMiddleware, async (req, res)
     var fmt = DM_FORMATS.find(function(f) { return f.id === formatId; }) || DM_FORMATS.find(function(f) { return f.id === 'flyer_a5_portrait'; });
     if (!fileData) return res.status(400).json({ success: false, errors: ['No file provided'] });
     var provider = getDirectMailProvider();
+    // Auto-orient before validating: if the uploaded image is stored in the
+    // opposite orientation to the selected format (e.g. a landscape flyer saved
+    // portrait, or a portrait flyer saved landscape), rotate 90° so it validates
+    // correctly — matching what prepareA5Artwork does at preview/send time. The
+    // user designs the artwork in the orientation they want; the system handles
+    // the rotation consistently everywhere.
+    var vBuf = null, vMeta = null;
+    try {
+      var sharp = require('sharp');
+      var dataUri2 = String(fileData);
+      var b64 = dataUri2.indexOf(',') !== -1 ? dataUri2.split(',')[1] : dataUri2;
+      vBuf = Buffer.from(b64, 'base64');
+      vMeta = await sharp(vBuf).metadata();
+      var fw2 = fmt.width || 1819, fh2 = fmt.height || 2551;
+      if (vMeta && vMeta.width && vMeta.height && fw2 && fh2) {
+        var imgLand = vMeta.width > vMeta.height, tgtLand = fw2 > fh2;
+        if (imgLand !== tgtLand) {
+          vBuf = await sharp(vBuf).rotate(90).toBuffer();
+          vMeta = await sharp(vBuf).metadata();
+          fileData = 'data:image/' + (vMeta.format || 'jpeg') + ';base64,' + vBuf.toString('base64');
+        }
+      }
+    } catch(vErr) { console.log('[STANNP] validate auto-orient skipped:', vErr.message); }
     var spec = await provider.validateArtworkSpec({ name: fileName, file_data: fileData }, fmt.width || 1819, fmt.height || 2551);
     res.json({
       success: spec.ok,
