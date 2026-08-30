@@ -183,6 +183,16 @@ tbody tr:hover td{background:#f8fafc}
 <div style="display:flex;align-items:center;gap:10px"><span id="healthTimestamp" style="font-size:11px;color:#94a3b8"></span><button class="btn btn-outline btn-sm" onclick="loadHealth(true)"><i class="fas fa-sync"></i> Refresh</button>
 <button class="btn btn-sm" style="background:#6366f1;color:#fff" onclick="runAutoHeal()"><i class="fas fa-heart-pulse"></i> Run Auto-Heal</button></div>
 <div id="autoHealResult" style="display:none;margin:10px 0;padding:12px 14px;border-radius:10px;font-size:12.5px;line-height:1.7"></div>
+<div style="margin:12px 0;padding:14px 16px;border:1px solid #c7d2fe;border-radius:12px;background:#eef2ff">
+<div style="font-size:13px;font-weight:800;color:#3730a3;margin-bottom:8px"><i class="fas fa-tower-cell"></i> Uptime Monitoring (external alerts)</div>
+<div style="font-size:12px;color:#4f46e5;margin-bottom:10px;line-height:1.6">Creates external uptime monitors for the website + API via UptimeRobot. You'll get an email the moment either goes down, even if Render is off.</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+<input type="text" id="uptimeKey" placeholder="UptimeRobot Main API Key (u9...)..." style="flex:1;min-width:200px;padding:9px 12px;border:1px solid #c7d2fe;border-radius:8px;font-size:12px;font-family:monospace">
+<button class="btn btn-sm" style="background:#6366f1;color:#fff" onclick="setupUptime()">Create monitors</button>
+<button class="btn btn-outline btn-sm" onclick="checkUptime()">Check status</button>
+</div>
+<div id="uptimeResult" style="margin-top:8px;font-size:12px;color:#3730a3;line-height:1.6"></div>
+</div>
 </div>
 <div id="healthIssues"></div>
 <div id="healthSystem" style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:#64748b"></div>
@@ -1221,6 +1231,38 @@ async function runAutoHeal() {
       if (btn) { btn.disabled = false; btn.textContent = 'Run Auto-Heal'; }
       if (el) { el.style.display = 'block'; el.style.background = '#fef2f2'; el.style.border = '1px solid #fecaca'; el.style.color = '#991b1b'; el.textContent = 'Error: ' + e.message; }
     });
+}
+
+function setupUptime() {
+  const key = (document.getElementById('uptimeKey') || {}).value || '';
+  const el = document.getElementById('uptimeResult');
+  if (!key) { el.textContent = 'Please paste your UptimeRobot Main API Key first.'; return; }
+  el.textContent = 'Creating monitors...';
+  fetch(API + '/api/admin/uptime/setup', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: JSON.stringify({ api_key: key }) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) {
+        const o = d.result || {};
+        const lines = ['Uptime monitors set up:', 'Created: ' + (o.created || []).map(function(m){ return m.name; }).join(', ') || 'none'];
+        if (o.skipped && o.skipped.length) lines.push('Skipped: ' + o.skipped.join(', '));
+        if (o.errors && o.errors.length) lines.push('Errors: ' + o.errors.map(function(e){ return e.name + ' (' + e.msg + ')'; }).join('; '));
+        el.textContent = lines.join('\n');
+        checkUptime();
+      } else { el.textContent = 'Error: ' + (d.error || 'setup failed'); }
+    })
+    .catch(function(e) { el.textContent = 'Error: ' + e.message; });
+}
+function checkUptime() {
+  const el = document.getElementById('uptimeResult');
+  fetch(API + '/api/admin/uptime/status', { headers: adminHeaders() })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) {
+        if (!d.configured) { el.textContent = 'UptimeRobot not configured yet.'; return; }
+        el.innerHTML = (d.monitors || []).map(function(m){ return m.name + ': <b style="color:' + (m.status_text === 'UP' ? '#16a34a' : m.status_text === 'SEEMS_DOWN' ? '#ef4444' : '#d97706') + '">' + (m.status_text || '?') + '</b>'; }).join(' &nbsp;|&nbsp; ');
+      } else { el.textContent = 'Error: ' + (d.error || ''); }
+    })
+    .catch(function(e) { el.textContent = 'Error: ' + e.message; });
 }
 
 async function loadHealth() {
