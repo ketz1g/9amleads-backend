@@ -20651,7 +20651,7 @@ var DM_FORMATS = [
 app.get('/api/direct-mail/pricing', (req, res) => {
   res.json({
     success: true,
-    formats: DM_FORMATS.map(function(f) { return { id: f.id, label: f.label, size: f.size, kind: f.kind, mm: f.mm, safe: f.safe, template: '/portal/templates/' + f.template, price: f.price, desc: f.desc }; }),
+    formats: DM_FORMATS.map(function(f) { return { id: f.id, label: f.label, size: f.size, kind: f.kind, mm: f.mm, safe: f.safe, width: f.width, height: f.height, template: '/portal/templates/' + f.template, price: f.price, desc: f.desc }; }),
     prices: DM_FORMATS.map(function(f) { return { id: f.id, label: f.label + ' (printed & posted)', price: f.price, unit: 'per item' }; }),
     info: 'Prices include full colour printing and Royal Mail postage. The recipient address is printed in a clear zone. Download the matching template (with bleed + safe-zone guides) for each format before designing.'
   });

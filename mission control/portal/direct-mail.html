@@ -1128,7 +1128,10 @@ function openFlyerEditor(id, name, matType, formatId){
   // landscape).
   var isLandscape = false;
   var fmtNow = _formats.find(function(x){ return x.id === (formatId || _selectedFormat); });
-  if (fmtNow && fmtNow.width && fmtNow.height && fmtNow.width > fmtNow.height) isLandscape = true;
+  if (fmtNow) {
+    if (fmtNow.width && fmtNow.height && fmtNow.width > fmtNow.height) isLandscape = true;
+    else if (!fmtNow.width && /210\s*[x×*]\s*148|landscape/i.test(String(fmtNow.mm || '') + ' ' + String(fmtNow.label || ''))) isLandscape = true;
+  }
   _flyerEditor.pageW = isLandscape ? 511 : 360;
   _flyerEditor.pageH = isLandscape ? 360 : 511;
   _flyerEditor.cw = _flyerEditor.pageW + 60;
