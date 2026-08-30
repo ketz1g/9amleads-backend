@@ -1436,10 +1436,37 @@ class DirectMailProvider {
       if (['png', 'jpeg', 'jpg', 'webp'].indexOf(fmt) === -1) {
         return { error: 'Unsupported file type: ' + fmt + '. Use PNG, JPG or PDF.', file: file };
       }
-      var A5_W = targetW || 1819, A5_H = targetH || 2551; // default A5-PORT
-      // Validate aspect ratio BEFORE resizing — if it doesn't match, warn loudly
-      // and return an error so we never send a cropped/broken print.
-      var spec = await this.validateArtworkSpec(file, A5_W, A5_H);
+      var A5_W = targetW || 1819, A5_H = targetH || 2551; // default A5-PORT
+      // AUTO-ORIENT: if the stored image is portrait but the target format is
+      // landscape (or vice-versa) — a near-90° aspect mismatch — the customer
+      // almost certainly designed it for the other orientation (e.g. uploaded a
+      // landscape flyer that got saved portrait). Rotate 90° so it matches the
+      // target BEFORE aspect validation, so it previews/prints the way they
+      // designed it instead of being rejected.
+      var didAutoRotate = false;
+      try {
+        var imgMeta = meta;
+        var iw = imgMeta.width, ih = imgMeta.height;
+        if (iw && ih && A5_W && A5_H) {
+          var imgLand = iw > ih, tgtLand = A5_W > A5_H;
+          if (imgLand !== tgtLand) {
+            inputBuf = await sharp(inputBuf).rotate(90).toBuffer();
+            meta = await sharp(inputBuf).metadata();
+            didAutoRotate = true;
+            console.log('[STANNP] Auto-rotated 90° artwork ' + (file.name || 'flyer') + ' from ' + iw + 'x' + ih + ' -> ' + meta.width + 'x' + meta.height + ' to match ' + A5_W + 'x' + A5_H + ' target');
+          }
+        }
+      } catch(rotErr) { console.log('[STANNP] auto-orient skipped:', rotErr.message); }
+      // Validate aspect ratio BEFORE resizing — if it doesn't match, warn loudly
+      // and return an error so we never send a cropped/broken print. If we
+      // auto-rotated, validate the ROTATED buffer (its dimensions now match the
+      // target orientation).
+      var specFile = file;
+      if (didAutoRotate) {
+        var rotBase64 = inputBuf.toString('base64');
+        specFile = { name: file.name, file_type: file.file_type, file_data: 'data:image/' + (meta.format || 'jpeg') + ';base64,' + rotBase64 };
+      }
+      var spec = await this.validateArtworkSpec(specFile, A5_W, A5_H);
       if (!spec.ok) {
         var msg = (spec.errors && spec.errors.length) ? spec.errors.join(' ') : 'Artwork does not meet the print spec for this format.';
         console.log('[STANNP] Artwork rejected for ' + (file.name || 'flyer') + ': ' + msg);
