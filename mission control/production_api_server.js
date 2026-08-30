@@ -2873,7 +2873,9 @@ function partnerConfig() {
       affiliate_commission_model: 'one_off',
       retention_followup_days: 14,
       affiliate_min_payout: 50,
-      association_bonus_amount: 5
+      association_bonus_amount: 5,
+      two_tier_bonus_amount: 10, sms_delivery_enabled: false,
+      sms_delivery_enabled: false
     };
   }
   // Backfill any keys added in newer versions so existing configs stay complete.
@@ -2883,7 +2885,7 @@ function partnerConfig() {
     commission_clearance_days: 30, commission_qualification_days: 30,
     sales_partner_commission_duration_months: null, affiliate_qualifying_payment_count: 1,
     partners_open: true, attribution_first_click_wins: true,
-    affiliate_commission_model: 'one_off', retention_followup_days: 14, affiliate_min_payout: 50, association_bonus_amount: 5
+    affiliate_commission_model: 'one_off', retention_followup_days: 14, affiliate_min_payout: 50, association_bonus_amount: 5, two_tier_bonus_amount: 10, sms_delivery_enabled: false
   };
   for (var k in defaults) { if (dbc.partner_config[k] === undefined) dbc.partner_config[k] = defaults[k]; }
   return dbc.partner_config;
@@ -3111,6 +3113,46 @@ function processCommissionClearance() {
       if (!c || !customerIsPaying(c) || customerRefunded(c)) return; // hold while not paying
       cm.status = 'approved'; cm.approved_at = new Date().toISOString();
       approved++;
+      // #3: two-tier recruit-a-recruit bonus - when this affiliate's referral earns,
+      // credit the affiliate who recruited them a small bonus (once, on the referral's 2nd invoice).
+      if (!cm.recruit_bonus_given) {
+        var _recOwner = (dbc.affiliates || []).find(function(a2){ return a2.id === cm.partner_id; });
+        if (_recOwner && _recOwner.recruited_by) {
+          var _recruiter = (dbc.affiliates || []).find(function(a3){ return String(a3.code||'').toUpperCase() === _recOwner.recruited_by.toUpperCase() || String(a3.email||'').toLowerCase() === _recOwner.recruited_by.toLowerCase(); });
+          if (_recruiter && _recruiter.status === 'active') {
+            var bonusAmt = Number(partnerConfig().two_tier_bonus_amount || 10);
+            cm.recruit_bonus_given = true;
+            dbc.partner_commissions = dbc.partner_commissions || [];
+            dbc.partner_commissions.push({ id: uuidv4(), partner_id: _recruiter.id, customer_id: cm.customer_id, commission_period: 'TWO_TIER', commission_type: 'two_tier', commission_amount: bonusAmt, currency: 'GBP', status: 'approved', qualifying_date: new Date().toISOString(), created_at: new Date().toISOString(), note: 'Two-tier bonus: recruited ' + (_recOwner.name || _recOwner.email) });
+            try {
+              sendBrevoEmail({ email: _recruiter.email, name: _recruiter.name || 'Affiliate' },
+                'You earned a £' + bonusAmt + ' recruit bonus!',
+                '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto">' +
+                '<h1 style="font-family:Outfit,sans-serif;color:#34d399;margin:0 0 10px">Recruit bonus earned!</h1>' +
+                '<p style="color:#ccc;line-height:1.7">Hi ' + escHtml(_recruiter.name || 'there') + ',</p>' +
+                '<p style="color:#ccc;line-height:1.7">The affiliate you recruited (' + escHtml(_recOwner.name || 'someone') + ') has earned their first commission, so you have earned a <strong style="color:#fff">£' + bonusAmt + '</strong> two-tier bonus.</p>' +
+                '<p style="color:#ccc;line-height:1.7">Keep recruiting affiliates and earning on their success. See your <a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">dashboard</a>.</p></div>').catch(function(){});
+            } catch(e4) {}
+          }
+        }
+      }
+      // #7: notify the affiliate their commission cleared (only first time)
+      if (!cm.notified_approved) {
+        cm.notified_approved = true;
+        try {
+          var _affOwner = (dbc.affiliates || []).find(function(a2){ return a2.id === cm.partner_id; });
+          if (_affOwner && _affOwner.email) {
+            sendBrevoEmail({ email: _affOwner.email, name: _affOwner.name || 'Affiliate' },
+              'Your £' + Number(cm.commission_amount || 25) + ' commission has cleared',
+              '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto">' +
+              '<h1 style="font-family:Outfit,sans-serif;color:#34d399;margin:0 0 10px">Your commission has cleared!</h1>' +
+              '<p style="color:#ccc;line-height:1.7">Hi ' + escHtml(_affOwner.name || 'there') + ',</p>' +
+              '<p style="color:#ccc;line-height:1.7">A referral you made has reached their second invoice and your <strong style="color:#fff">£' + Number(cm.commission_amount || 25) + '</strong> commission has cleared. It is now ready toward your next payout.</p>' +
+              '<p style="color:#ccc;line-height:1.7">Check your <a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">dashboard</a> to see your progress.</p>' +
+              '<p style="color:#888;font-size:13px;margin-top:24px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>').catch(function(){});
+          }
+        } catch(e2) {}
+      }
     });
     saveDb();
     return { approved: approved };
@@ -3398,8 +3440,28 @@ function runAffiliateWheelUnlockEmails() {
             '<p style="color:#888;font-size:13px;margin-top:24px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>');
           notified.push(String(aff.wheel_spins || 0));
           aff.wheel_unlocked_sent = notified;
+          aff.wheel_unlocked_at = new Date().toISOString();
           sent++;
         } catch(e) {}
+      }
+      // #8: reminder - if a spin has been waiting 3+ days, nudge them once to come spin.
+      if (st.can_spin) {
+        var unlockedAt = aff.wheel_unlocked_at ? new Date(aff.wheel_unlocked_at) : null;
+        var remindedArr = aff.wheel_reminded_sent || [];
+        if (unlockedAt && (Date.now() - unlockedAt.getTime()) > 3 * 86400000 && !remindedArr.includes(String(aff.wheel_spins || 0))) {
+          try {
+            sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' },
+              'Your wheel spin is waiting — don\'t leave money behind',
+              '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto">' +
+              '<h1 style="font-family:Outfit,sans-serif;color:#f59e0b;margin:0 0 10px">Your spin is waiting</h1>' +
+              '<p style="color:#ccc;line-height:1.7">Hi ' + escHtml(aff.name || 'there') + ',</p>' +
+              '<p style="color:#ccc;line-height:1.7">You unlocked a Wheel of Fortune spin a few days ago and it is still waiting. Prizes up to <strong style="color:#f59e0b">£' + st.prizes[st.prizes.length-1] + '</strong>, fair odds, paid instantly.</p>' +
+              '<p style="color:#ccc;line-height:1.7"><a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">Open your dashboard and hit Spin</a> before you forget.</p></div>').catch(function(){});
+            remindedArr.push(String(aff.wheel_spins || 0));
+            aff.wheel_reminded_sent = remindedArr;
+            sent++;
+          } catch(e) {}
+        }
       }
     });
     saveDb();
@@ -4687,7 +4749,7 @@ app.post('/api/affiliate/register', async (req, res) => {
       score: scoreAffiliateApplication(survey),
       review_status: 'pending'
     };
-    var aff = { id: uuidv4(), name: String(name).trim(), email: em, code: code2, password_hash: passwordHash, payout_rate: AFFILIATE_PAYOUT_RATE, status: 'pending', created_at: new Date().toISOString(), payouts: [], association: String(req.body.association || '').trim().substring(0, 60) || '', application: application, kyc: { status: 'not_submitted', tc_accepted: false, tc_accepted_at: null } };
+    var aff = { id: uuidv4(), name: String(name).trim(), email: em, code: code2, password_hash: passwordHash, payout_rate: AFFILIATE_PAYOUT_RATE, status: 'pending', created_at: new Date().toISOString(), payouts: [], association: String(req.body.association || '').trim().substring(0, 60) || '', recruited_by: String(req.body.recruited_by || req.body.recruiter_code || '').toUpperCase().substring(0, 40) || '', application: application, kyc: { status: 'not_submitted', tc_accepted: false, tc_accepted_at: null } };
     affs.push(aff);
     saveDb();
     // Confirmation email to the affiliate (so they know their application arrived).
@@ -4840,6 +4902,15 @@ app.get('/api/affiliate/dashboard', affiliateAuth, (req, res) => {
     // Payout progress toward the min-threshold (approved + paid commissions so far).
     var minPayout = Number(partnerConfig().affiliate_min_payout) || 50;
     var approvedTotal = cleared + paid;
+    // #5: benchmark - this affiliate's conversion (retained/referrals) vs programme average.
+    var _allRefs = (dbc.customers || []).filter(function(x){ return x.affiliate_id === aff.id || String(x.affiliate_code||'').toLowerCase() === String(aff.code||'').toLowerCase(); });
+    var _myReferrals = _allRefs.length;
+    var _myRetained = countAffiliateRetained(dbc, aff);
+    var _myRate = _myReferrals > 0 ? Math.round((_myRetained / _myReferrals) * 100) : 0;
+    var _progTotalRefs = 0, _progTotalRetained = 0;
+    (dbc.affiliates || []).forEach(function(a2){ if (a2.id === aff.id) return; _progTotalRefs += (dbc.customers||[]).filter(function(x){ return x.affiliate_id === a2.id || String(x.affiliate_code||'').toLowerCase() === String(a2.code||'').toLowerCase(); }).length; _progTotalRetained += countAffiliateRetained(dbc, a2); });
+    var _progAvg = _progTotalRefs > 0 ? Math.round((_progTotalRetained / _progTotalRefs) * 100) : 0;
+    var benchmark = { my_rate: _myRate, programme_avg: _progAvg, referrals: _myReferrals, retained: _myRetained, above_average: _myReferrals > 0 ? _myRate >= _progAvg : false };
     var payoutProgress = Math.min(100, Math.round((approvedTotal / minPayout) * 100));
     var nextPayoutAt = null;
     if (approvedTotal >= minPayout) {
@@ -4867,6 +4938,7 @@ app.get('/api/affiliate/dashboard', affiliateAuth, (req, res) => {
       payout: { threshold: minPayout, approved_total: approvedTotal, progress_pct: payoutProgress, next_payout_at: nextPayoutAt },
       by_product: byProduct,
       by_product_earnings: byProductEarnings,
+      benchmark: benchmark,
       pipeline: pipeline,
       referrals: referralRows,
       payouts: payouts
@@ -10000,6 +10072,22 @@ function sendBrevoEmail(to, subject, htmlContent) {
   });
 }
 
+// #11: send a transactional SMS via Brevo (SMS delivery of 9am leads, opt-in only).
+// Uses BREVO_SMS_API_KEY. Enabled via partner config 'sms_delivery_enabled'.
+function sendSmsViaBrevo(phone, text) {
+  return new Promise(function(resolve) {
+    if (!process.env.BREVO_SMS_API_KEY) return resolve({ skipped: 'no SMS key' });
+    if (!phone) return resolve({ skipped: 'no phone' });
+    var https = require('https');
+    var body = JSON.stringify({ type: 'transactional', unicodeEnabled: true, sender: '9amLeads', recipient: phone, content: String(text).substring(0, 160) });
+    var req = https.request({ hostname: 'api.brevo.com', path: '/v3/transactionalSMS/sms', method: 'POST', headers: { 'Content-Type': 'application/json', 'api-key': process.env.BREVO_SMS_API_KEY, 'Content-Length': Buffer.byteLength(body) } }, function(res) {
+      var d = ''; res.on('data', function(ch){ d += ch; }); res.on('end', function(){ try { resolve(JSON.parse(d)); } catch(e){ resolve({ raw: d }); } });
+    });
+    req.on('error', function(e){ resolve({ error: e.message }); });
+    req.write(body); req.end();
+  });
+}
+
 // ===== ADMIN ALERTS =====
 // Email the founder (ketzman1g@gmail.com) when something needs attention so issues
 // are caught BEFORE they affect customers. Used for delivery errors, readiness
@@ -14582,6 +14670,14 @@ _deliverDiag[cust.email].products = products;
             try { cust.last_email_date = today; } catch(leErr2) {}
             var skSubj = '9amLeads \u2022 Your Daily Opportunities on ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
             emailQueue.push({ email: cust.email, name: cust.company || 'Customer', subject: skSubj, html: generateLeadEmailHTML(cust, skipEmailLeads) });
+            // #11: optional SMS alert when sms_delivery_enabled + phone + SMS key present.
+            try {
+              var _smsOn = partnerConfig().sms_delivery_enabled && process.env.BREVO_SMS_API_KEY;
+              if (_smsOn && cust.phone) {
+                var _sp = String(cust.phone).replace(/[^0-9+]/g,'');
+                if (/^\+?[0-9]{10,15}$/.test(_sp)) sendSmsViaBrevo(_sp, '9amLeads: ' + skipEmailLeads.length + ' fresh lead(s) for ' + (cust.company || 'you') + ' are in your inbox now. Call first to win the job. Reply STOP to opt out.');
+              }
+            } catch(smsE) {}
             saveDb();
             continue;
           }
