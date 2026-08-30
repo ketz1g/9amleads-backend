@@ -914,21 +914,25 @@ function renderRecent(list){
   w.innerHTML=h;
 }
 
+function renderLeads(){
+  var w=document.getElementById('leads-list');
+  if(!w)return;
+  if(!LEADS.length){w.innerHTML=renderLeadExamples();return;}
+  var h='';
+  LEADS.forEach(function(r){
+    var pendRms=(r.reminders||[]).filter(function(x){return !x.done;}).length;
+    h+='<div class="lead"><div class="ico">'+(EMOJI[r.product]||'📈')+'</div><div class="main"><div class="co">'+esc(r.company||r.email)+'</div><div class="em">'+esc(r.email)+(r.phone?', '+esc(r.phone):'')+'</div>'+
+    '<div class="meta"><span>'+esc(r.product)+'</span>'+(r.plan?'<span>'+esc(r.plan)+'</span>':'')+(r.manual?'<span style="color:#38bdf8">my lead</span>':'<span>'+r.days_since+'d ago</span>')+(r.card_saved?'<span style="color:#34d399">💳 card saved</span>':'')+(pendRms?'<span style="color:#fbbf24">⏰ '+pendRms+' reminder'+(pendRms>1?'s':'')+'</span>':'')+'</div>'+
+    (r.notes?'<div class="lead-note" id="note-'+esc(r.id)+'">📝 '+esc(r.notes)+'</div>':'')+'</div>'+
+    '<div class="act">'+stageBadge(r.stage)+'<button class="btn-mini" onclick="quickNote(\''+esc(r.id)+'\')" title="Add or edit a note">📝 Note</button><button class="btn-mini" onclick="openLeadModal(\''+esc(r.id)+'\')">View</button><button class="btn-mini" onclick="openTools(\''+esc(r.product)+'\')">Tools</button></div></div>';
+  });
+  w.innerHTML=h;
+}
 function loadLeads(){
   api('GET','/affiliate/leads').then(function(d){
     LEADS=d.leads||[];
     document.getElementById('leads-count').textContent=LEADS.length;
-    var w=document.getElementById('leads-list');
-    if(!LEADS.length){w.innerHTML=renderLeadExamples();return;}
-    var h='';
-    LEADS.forEach(function(r){
-      var pendRms=(r.reminders||[]).filter(function(x){return !x.done;}).length;
-      h+='<div class="lead"><div class="ico">'+(EMOJI[r.product]||'📈')+'</div><div class="main"><div class="co">'+esc(r.company||r.email)+'</div><div class="em">'+esc(r.email)+(r.phone?', '+esc(r.phone):'')+'</div>'+
-      '<div class="meta"><span>'+esc(r.product)+'</span>'+(r.plan?'<span>'+esc(r.plan)+'</span>':'')+(r.manual?'<span style="color:#38bdf8">my lead</span>':'<span>'+r.days_since+'d ago</span>')+(r.card_saved?'<span style="color:#34d399">💳 card saved</span>':'')+(pendRms?'<span style="color:#fbbf24">⏰ '+pendRms+' reminder'+(pendRms>1?'s':'')+'</span>':'')+'</div>'+
-      (r.notes?'<div class="lead-note" id="note-'+esc(r.id)+'">📝 '+esc(r.notes)+'</div>':'')+'</div>'+
-      '<div class="act">'+stageBadge(r.stage)+'<button class="btn-mini" onclick="quickNote(\''+esc(r.id)+'\')" title="Add or edit a note">📝 Note</button><button class="btn-mini" onclick="openLeadModal(\''+esc(r.id)+'\')">View</button><button class="btn-mini" onclick="openTools(\''+esc(r.product)+'\')">Tools</button></div></div>';
-    });
-    w.innerHTML=h;
+    renderLeads();
   }).catch(function(){});
 }
 
