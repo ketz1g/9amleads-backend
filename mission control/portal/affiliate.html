@@ -330,6 +330,7 @@ tr:last-child td{border-bottom:none}
 <a href="#payouts" onclick="go('payouts');return false" class="aff-cta">💰 Payouts</a>
 <a href="#signup" onclick="window.open('https://9amleads.com/portal/#signup','_blank');return false" class="aff-cta" style="background:rgba(52,211,153,.15);border-color:rgba(52,211,153,.4);color:#34d399">➕ Refer a business</a>
 <a href="#" onclick="openAskQuestion();return false" class="aff-cta" style="background:rgba(14,165,233,.15);border-color:rgba(14,165,233,.4);color:#38bdf8">❓ Ask a question</a>
+<a href="#" onclick="openDemoCustomer();return false" class="aff-cta" style="background:rgba(52,211,153,.15);border-color:rgba(52,211,153,.4);color:#34d399">👀 See what a customer sees</a>
 </div>
 </div>
 <div class="hero">
@@ -1461,6 +1462,20 @@ function renderProdEarnings(byProd, lifetime){
 }
 function openHelp(){document.getElementById('help-modal').classList.add('open');}
 function closeHelp(){document.getElementById('help-modal').classList.remove('open');}
+function openDemoCustomer(){
+  var btn=document.querySelector('a[onclick="openDemoCustomer()"]');
+  if(btn)btn.style.opacity='.6';
+  api('POST','/affiliate/demo-customer-session',{}).then(function(d){
+    if(btn)btn.style.opacity='1';
+    if(d && d.success && d.session){
+      // Store the demo session where the customer dashboard expects it, then open it.
+      try { localStorage.setItem('mld_portal_session', JSON.stringify(d.session)); } catch(e) {}
+      window.open('https://9amleads.com/portal/dashboard.html','_blank');
+    } else {
+      alert('Could not open the demo. Please try again.');
+    }
+  }).catch(function(){ if(btn)btn.style.opacity='1'; alert('Could not open the demo. Please try again.'); });
+}
 function openAskQuestion(){
   var m=document.getElementById('ask-modal'); if(m)m.classList.add('open');
   var em=document.getElementById('aq-email'); if(em)em.textContent=(D&&D.affiliate&&D.affiliate.email)?D.affiliate.email:'you';

@@ -5259,6 +5259,27 @@ app.post('/api/affiliate/ask-question', affiliateAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// DEMO CUSTOMER VIEW: lets an affiliate see what a paying customer sees in their
+// dashboard, so they understand the product before selling it. Returns a session
+// token for a dedicated demo customer account (isolated from real delivery).
+app.post('/api/affiliate/demo-customer-session', affiliateAuth, async (req, res) => {
+  try {
+    var dbc = getDb();
+    var DEMO_EMAIL = 'test.affiliatedemo@9amleads.com';
+    var demo = (dbc.customers || []).find(function(c2){ return String(c2.email||'').toLowerCase() === DEMO_EMAIL; });
+    if (!demo) {
+      // Create the demo account if it doesn't exist (test.* = isolated from delivery).
+      demo = { id: uuidv4(), email: DEMO_EMAIL, company: 'Demo Removal Co (view only)', name: 'Demo Customer', phone: '020 1234 5678', plan: 'pro', product: 'moving', products: ['moving'], coverage: 'county', target_areas: 'Greater London', leads_per_day: 5, status: 'active', created_at: new Date().toISOString(), demo: true };
+      if (!dbc.customers) dbc.customers = [];
+      dbc.customers.push(demo);
+      saveDb();
+    }
+    var token = generateToken(demo);
+    var session = { token: token, email: DEMO_EMAIL, name: 'Demo Customer', plan: demo.plan || 'pro', product: demo.product || 'moving', products: demo.products || ['moving'], demo: true };
+    res.json({ success: true, session: session, note: 'This is a read-only demo. Opens the customer dashboard in a new tab.' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/affiliate/kyc — current KYC / compliance status.
 app.get('/api/affiliate/kyc', affiliateAuth, (req, res) => {
   try { res.json({ success: true, kyc: kycStatus(req.affiliate) }); }
