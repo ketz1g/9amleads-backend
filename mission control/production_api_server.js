@@ -2046,7 +2046,7 @@ async sendMailpiece(mailType, recipient, files, format) {
 
   // PREPARE FULL-BLEED ARTWORK for Stannp postcards at the requested format size.
   // Stannp templates are 300 DPI (A5 Portrait = 1819 x 2551, A5 Landscape = 2551 x
-  // 1819, A6 = 1276 x 1819, DL = 1234 x 1890, A5-ENV = 1819 x 2551) incl 6mm bleed.
+  // 1819, A6 = 1276 x 1819, DL = 1234 x 1890, A5-ENV = 2551 x 1819) incl 6mm bleed.
   // If the uploaded artwork is lower resolution (e.g. 746 x 1054 = ~128 DPI),
   // Stannp prints it letterboxed/too small. We upscale to the exact full-bleed
   // template so the design fills the whole card, then bake a white address
@@ -20565,7 +20565,7 @@ function cleanMailText(text) {
 var DM_FORMATS = [
   { id: 'flyer_a5_portrait', label: 'A5 Portrait Leaflet', size: 'A5-PORT', kind: 'flyer', width: 1819, height: 2551, mm: '148×210mm', safe: '148×210mm', template: 'a5-leaflet-portrait.pdf', price: 1.99, desc: 'Classic A5 flyer, portrait. Full colour, 300gsm.' },
   { id: 'flyer_a5_landscape', label: 'A5 Landscape Leaflet', size: 'A5', kind: 'flyer', width: 2551, height: 1819, mm: '210×148mm', safe: '210×148mm', template: 'a5-leaflet.pdf', price: 1.99, desc: 'A5 flyer, landscape orientation.' },
-  { id: 'flyer_a5_enveloped', label: 'A5 Leaflet in Envelope', size: 'A5-ENV', kind: 'flyer', width: 1819, height: 2551, mm: '148×210mm', safe: '148×210mm', template: 'a5-enveloped-postcard.pdf', price: 2.75, desc: 'A5 leaflet sent inside a windowed envelope. More premium feel.' },
+  { id: 'flyer_a5_enveloped', label: 'A5 Leaflet in Envelope', size: 'A5-ENV', kind: 'flyer', width: 2551, height: 1819, mm: '210×148mm', safe: '210×148mm', template: 'a5-enveloped-postcard.pdf', price: 2.75, desc: 'A5 leaflet sent inside a windowed envelope. More premium feel.' },
   { id: 'flyer_plus_letter', label: 'Leaflet + Letter', size: 'A5-PORT', kind: 'flyer_plus_letter', width: 1819, height: 2551, mm: 'A5 leaflet + A4 letter', safe: '148×210mm + 210×297mm', template: 'a5-leaflet-portrait.pdf', price: 2.99, desc: 'A5 leaflet with a personalised A4 letter. Great for a fuller introduction.' },
   { id: 'letter_a4', label: 'A4 Letter', size: 'letter', kind: 'letter', width: 0, height: 0, mm: '210×297mm', safe: '210×297mm', template: 'a4-letter.pdf', price: 1.49, desc: 'Professional A4 letter with windowed envelope.' }
 ];
