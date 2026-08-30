@@ -1560,29 +1560,37 @@ class DirectMailProvider {
           }
         } catch (trimErr) { console.log('[STANNP] Front trim skipped:', trimErr.message); }
       }
-var outBuf;
+      var outBuf;
       if (isBack) {
-        // BACK: full-bleed, edge-to-edge — the design fills the whole page. We do
-        // NOT compress it below a top band: Stannp overlays its own address
-        // clearzone at print time (position depends on format — for A5 landscape
-        // it sits top-right, for portrait top). Compressing below a full-width top
-        // band distorted landscape backs and cut the design's top content.
-        if (hasBakedZone) {
-          outBuf = await sharp(inputBuf)
-            .rotate()
-            .resize({ width: A5_W, height: A5_H, fit: 'fill', background: { r: 255, g: 255, b: 255 } })
-            .jpeg({ quality: 82 })
-            .toBuffer();
-          console.log('[STANNP] Prepared BACK (baked zone) artwork for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> pass-through full-bleed, zone already baked)');
+        // BACK: full-bleed, edge-to-edge — the design fills the whole page (we
+        // do NOT compress it below a top band, which distorted landscape backs).
+        // Then overlay a WHITE address rectangle exactly where Stannp prints the
+        // recipient address (its clearzone), so the preview shows the correct
+        // whited-out address area:
+        //   portrait: top-left  (x 14-36%, y 7-17%)
+        //   landscape: top-right (x 69-84%, y 30-41%)
+        // This matches the physical print — the design fills everything and the
+        // address window sits over it in the same spot.
+        var baseBuf = await sharp(inputBuf)
+          .rotate()
+          .resize({ width: A5_W, height: A5_H, fit: 'fill', background: { r: 255, g: 255, b: 255 } })
+          .jpeg({ quality: 82 })
+          .toBuffer();
+        var addrX0 = 0, addrY0 = 0, addrW = 0, addrH = 0;
+        if (A5_W > A5_H) {
+          // landscape: top-right
+          addrX0 = Math.round(A5_W * 0.69); addrY0 = Math.round(A5_H * 0.30);
+          addrW = Math.round(A5_W * 0.84) - addrX0; addrH = Math.round(A5_H * 0.41) - addrY0;
         } else {
-          // Fresh back: full-bleed fill, exactly like the front.
-          outBuf = await sharp(inputBuf)
-            .rotate()
-            .resize({ width: A5_W, height: A5_H, fit: 'fill', background: { r: 255, g: 255, b: 255 } })
-            .jpeg({ quality: 82 })
-            .toBuffer();
-          console.log('[STANNP] Prepared BACK (fresh) artwork for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> full-bleed ' + A5_W + 'x' + A5_H + ', Stannp clearzone overlays address)');
+          // portrait: top-left
+          addrX0 = Math.round(A5_W * 0.14); addrY0 = Math.round(A5_H * 0.07);
+          addrW = Math.round(A5_W * 0.36) - addrX0; addrH = Math.round(A5_H * 0.17) - addrY0;
         }
+        // Build a white rectangle as a sharp image and composite it at the address
+        // position on the back.
+        var whiteRect = await sharp({ create: { width: Math.max(1, addrW), height: Math.max(1, addrH), channels: 3, background: { r: 255, g: 255, b: 255 } } }).jpeg({ quality: 82 }).toBuffer();
+        outBuf = await sharp(baseBuf).composite([{ input: whiteRect, left: addrX0, top: addrY0 }]).jpeg({ quality: 82 }).toBuffer();
+        console.log('[STANNP] Prepared BACK artwork for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> full-bleed ' + A5_W + 'x' + A5_H + ' + white address zone at ' + addrX0 + ',' + addrY0 + ' ' + addrW + 'x' + addrH + (A5_W > A5_H ? ' (top-right)' : ' (top-left)') + ')');
       } else {
         // FRONT: full-bleed, edge-to-edge. Fronts are pre-trimmed of white
         // margins (see above), then STRETCHED (fit 'fill') to exactly fill the
