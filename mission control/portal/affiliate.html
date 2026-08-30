@@ -899,9 +899,14 @@ function init(){
     // #5 benchmark cards
     if(d.benchmark){
       var cr=document.getElementById('c-rate'); if(cr)cr.textContent=d.benchmark.my_rate+'%';
-      var ca=document.getElementById('c-avg'); if(ca)ca.textContent=d.benchmark.programme_avg+'%';
+      var ca=document.getElementById('c-avg'); if(ca)ca.textContent=d.benchmark.enough_data ? d.benchmark.programme_avg+'%' : '—';
       var cas=document.getElementById('c-avg-sub');
-      if(cas){ if(d.benchmark.referrals===0) cas.textContent='refer someone to see your rate'; else if(d.benchmark.above_average) cas.textContent='✅ above the programme average'; else cas.textContent='refer more to close the gap'; }
+      if(cas){
+        if(d.benchmark.referrals===0) cas.textContent='refer someone to see your rate';
+        else if(!d.benchmark.enough_data) cas.textContent='benchmark builds as more affiliates join';
+        else if(d.benchmark.above_average) cas.textContent='✅ above the programme average';
+        else cas.textContent='refer more to close the gap';
+      }
     }
     renderPayoutProgress(d.payout, d.affiliate);
     renderPipeline(d.pipeline);

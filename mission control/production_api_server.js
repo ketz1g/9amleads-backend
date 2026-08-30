@@ -4987,14 +4987,26 @@ app.get('/api/affiliate/dashboard', affiliateAuth, (req, res) => {
     var minPayout = Number(partnerConfig().affiliate_min_payout) || 50;
     var approvedTotal = cleared + paid;
     // #5: benchmark - this affiliate's conversion (retained/referrals) vs programme average.
+    // The programme average only counts affiliates with at least MIN_REFS referrals so a
+    // handful of tiny accounts can't skew the number. If fewer than MIN_AFFS qualify,
+    // we show "not enough data yet" instead of a misleading figure.
     var _allRefs = (dbc.customers || []).filter(function(x){ return x.affiliate_id === aff.id || String(x.affiliate_code||'').toLowerCase() === String(aff.code||'').toLowerCase(); });
     var _myReferrals = _allRefs.length;
     var _myRetained = countAffiliateRetained(dbc, aff);
     var _myRate = _myReferrals > 0 ? Math.round((_myRetained / _myReferrals) * 100) : 0;
-    var _progTotalRefs = 0, _progTotalRetained = 0;
-    (dbc.affiliates || []).forEach(function(a2){ if (a2.id === aff.id) return; _progTotalRefs += (dbc.customers||[]).filter(function(x){ return x.affiliate_id === a2.id || String(x.affiliate_code||'').toLowerCase() === String(a2.code||'').toLowerCase(); }).length; _progTotalRetained += countAffiliateRetained(dbc, a2); });
-    var _progAvg = _progTotalRefs > 0 ? Math.round((_progTotalRetained / _progTotalRefs) * 100) : 0;
-    var benchmark = { my_rate: _myRate, programme_avg: _progAvg, referrals: _myReferrals, retained: _myRetained, above_average: _myReferrals > 0 ? _myRate >= _progAvg : false };
+    var MIN_REFS = 5, MIN_AFFS = 3;
+    var _progTotalRefs = 0, _progTotalRetained = 0, _progCount = 0;
+    (dbc.affiliates || []).forEach(function(a2){
+      if (a2.id === aff.id || a2.status !== 'active') return;
+      var a2Refs = (dbc.customers||[]).filter(function(x){ return x.affiliate_id === a2.id || String(x.affiliate_code||'').toLowerCase() === String(a2.code||'').toLowerCase(); }).length;
+      if (a2Refs < MIN_REFS) return; // ignore tiny/insignificant affiliates
+      _progTotalRefs += a2Refs;
+      _progTotalRetained += countAffiliateRetained(dbc, a2);
+      _progCount++;
+    });
+    var _enoughData = _progCount >= MIN_AFFS && _progTotalRefs > 0;
+    var _progAvg = _enoughData ? Math.round((_progTotalRetained / _progTotalRefs) * 100) : null;
+    var benchmark = { my_rate: _myRate, programme_avg: _progAvg, referrals: _myReferrals, retained: _myRetained, above_average: _enoughData && _myReferrals > 0 ? _myRate >= _progAvg : null, enough_data: _enoughData };
     var payoutProgress = Math.min(100, Math.round((approvedTotal / minPayout) * 100));
     var nextPayoutAt = null;
     if (approvedTotal >= minPayout) {
