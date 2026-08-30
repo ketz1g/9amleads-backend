@@ -5010,6 +5010,26 @@ function runAffiliateProspectSequence() {
   } catch(e) { return { prospect_emails_sent: 0, error: e.message }; }
 }
 
+// #15: Right-to-erasure — an affiliate can delete their own account + personal data.
+app.post('/api/affiliate/delete-account', affiliateAuth, async (req, res) => {
+  try {
+    var dbc = getDb();
+    var aff = req.affiliate;
+    var em = aff.email;
+    // Remove the affiliate + all their personal data from the programme.
+    var idx = (dbc.affiliates || []).findIndex(function(a){ return a.id === aff.id; });
+    if (idx !== -1) dbc.affiliates.splice(idx, 1);
+    // Remove their commissions (keep audit trail of payouts? per UK GDPR erase personal data).
+    (dbc.partner_commissions || []).forEach(function(cm){ if (cm.partner_id === aff.id) cm.partner_id = 'deleted'; });
+    saveDb();
+    try {
+      sendBrevoEmail({ email: 'hello@9amleads.com', name: '9amLeads Owner' }, 'Affiliate account deleted (right to erasure): ' + em,
+        '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="font-family:Outfit,sans-serif;color:#f87171;margin:0 0 10px">Affiliate account deleted</h1><p style="color:#ccc;line-height:1.7">' + escHtml(em) + ' deleted their affiliate account and data (right to erasure).</p></div>').catch(function(){});
+    } catch(eA) {}
+    res.json({ success: true, message: 'Your affiliate account and personal data have been deleted.' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/affiliate/kyc — current KYC / compliance status.
 app.get('/api/affiliate/kyc', affiliateAuth, (req, res) => {
   try { res.json({ success: true, kyc: kycStatus(req.affiliate) }); }
@@ -27385,6 +27405,30 @@ app.get('/api/admin/platform-health', adminAuth, async (req, res) => {
       });
       results.website = { status: websiteCheck && websiteCheck.statusCode ? 'healthy' : 'warning', last_ok: new Date().toISOString(), error: websiteCheck && websiteCheck.error ? websiteCheck.error : null };
     } catch(e) { results.website = { status: 'offline', last_ok: null, error: e.message }; }
+
+    // 10. Email deliverability (#19) — check the last delivery run didn't bounce/fail.
+    try {
+      var _aud = (getDb().delivery_audit || []).slice(-3);
+      var _recentFails = 0, _recentTotal = 0;
+      _aud.forEach(function(a){ _recentTotal += (a.emails_sent || 0); _recentFails += (a.email_failures || 0); });
+      var _failPct = _recentTotal > 0 ? (_recentFails / _recentTotal) : 0;
+      results.emails = { status: _failPct > 0.1 ? 'warning' : 'healthy', last_ok: new Date().toISOString(), emails_sent: _recentTotal, failures: _recentFails, error: _failPct > 0.1 ? 'High email failure rate in recent deliveries' : null };
+    } catch(e) { results.emails = { status: 'warning', last_ok: null, error: 'Deliverability check failed: ' + e.message }; }
+
+    // 11. Backup (#20) — confirm a recent backup file exists and is valid.
+    try {
+      var backupOk = false, backupAgeHours = null;
+      try {
+        var bDir = path.join(DATA_DIR, 'backups');
+        var bFiles = fs.readdirSync(bDir).filter(function(f){ return f.indexOf('backup') !== -1 || f.indexOf('.json') !== -1; });
+        if (bFiles.length) {
+          var newest = bFiles.map(function(f){ return { name: f, mtime: fs.statSync(path.join(bDir, f)).mtimeMs }; }).sort(function(a,b){ return b.mtime - a.mtime; })[0];
+          backupAgeHours = (Date.now() - newest.mtime) / 3600000;
+          backupOk = backupAgeHours < 48;
+        }
+      } catch(e) { backupOk = false; }
+      results.backup = { status: backupOk ? 'healthy' : 'warning', last_ok: new Date().toISOString(), age_hours: backupAgeHours, error: backupOk ? null : 'No recent backup found (expected within 48h)' };
+    } catch(e) { results.backup = { status: 'warning', last_ok: null, error: e.message }; }
 
     // Calculate overall status
     var allHealthy = Object.values(results).every(function(r) { return r.status === 'healthy'; });

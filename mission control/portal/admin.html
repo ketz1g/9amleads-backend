@@ -612,6 +612,7 @@ function loadAffiliates() {
           '<td style="color:#16a34a;font-weight:600">£' + a.earnings_due + ' (' + a.counts.due + ')</td>' +
           '<td>£' + a.earnings_paid + ' (' + a.counts.paid + ')</td>' +
           '<td>' + (a.counts.due ? '<button class="btn btn-outline btn-sm" onclick="payAffiliate(\'' + a.id + '\',\'' + esc(a.name) + '\')"><i class="fas fa-pound-sign"></i> Pay £' + a.earnings_due + '</button>' : '<span style="font-size:11px;color:#94a3b8">-</span>') + ' ' +
+          (a.status === 'pending' ? '<button class="btn btn-sm" style="background:#16a34a;color:#fff" onclick="instantApprove(\'' + a.id + '\',\'' + esc(a.name) + '\')" title="Approve without opening the review">✓ Approve</button> ' : '') +
           '<button class="btn btn-outline btn-sm" onclick="viewAffiliateDashboard(\'' + a.id + '\')" title="View this affiliate\'s dashboard"><i class="fas fa-eye"></i> View</button></td></tr>';
       });
       h += '</tbody></table>'; wrap.innerHTML = h;
@@ -744,6 +745,13 @@ function decideKyc(id, decision) {
       if (d.success) { alert(decision === 'approve' ? 'ID approved. ' + d.kyc.legal_name + ' can now be paid.' : 'ID rejected.'); document.getElementById('adminModalOverlay').style.display = 'none'; loadAffiliates(); }
       else alert(d.error || 'Could not process KYC review');
     })
+    .catch(function(e) { alert('Error: ' + e.message); });
+}
+function instantApprove(id, name) {
+  if (!confirm('Approve ' + name + ' immediately? This activates their affiliate account. You can still review their application and KYC from the View button later.')) return;
+  fetch(API + '/api/admin/affiliates/' + id + '/review', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: JSON.stringify({ decision: 'approve', note: 'Approved via instant approve' }) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) { if (d.success) { alert(name + ' approved!'); loadAffiliates(); } else alert(d.error || 'Could not approve'); })
     .catch(function(e) { alert('Error: ' + e.message); });
 }
 function runAffAutoPayout() {

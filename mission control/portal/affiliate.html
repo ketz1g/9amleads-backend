@@ -627,6 +627,11 @@ tr:last-child td{border-bottom:none}
 <div class="err" id="kyc-err"></div>
 <div id="kyc-result" style="margin-top:10px;font-size:13px;color:#34d399;font-weight:700;display:none"></div>
 </div>
+<div class="panel" style="border:1px solid rgba(239,68,68,.3);background:rgba(239,68,68,.04)">
+<h2 style="color:#f87171">Danger zone</h2>
+<p style="font-size:12.5px;color:#94a3b8;line-height:1.7">You have the right to delete your affiliate account and personal data (right to erasure under UK GDPR). This removes your account, your identity documents, your voice recording and your referral data. Verified commissions already paid are not affected. This cannot be undone.</p>
+<button class="btn-mini" onclick="deleteAffiliateAccount()" style="background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.4);padding:9px 18px;border-radius:9px;font-weight:700">Delete my account and data</button>
+</div>
 </section>
 
 <!-- REFERRALS -->
@@ -1183,6 +1188,19 @@ function submitKyc(){
       errEl.style.display='block';
     }
   }).catch(function(){ if(btn){btn.disabled=false;btn.textContent='Submit for verification';} errEl.textContent='Server is starting up. Please try again.';errEl.style.display='block'; });
+}
+function deleteAffiliateAccount(){
+  if(!confirm('Are you sure? This permanently deletes your affiliate account, identity documents, voice recording and referral data. This cannot be undone.'))return;
+  if(!confirm('Final confirmation: delete all of your data? Type OK in the next prompt to confirm.'))return;
+  var ok=prompt('Type OK to confirm you want to delete your account and data:');
+  if(ok!=='OK'){alert('Deletion cancelled.');return;}
+  api('POST','/affiliate/delete-account',{}).then(function(d){
+    if(d.success){
+      alert('Your affiliate account and data have been deleted.');
+      try{localStorage.clear();}catch(e){}
+      location.href='/portal/';
+    } else alert(d.error||'Could not delete account');
+  }).catch(function(){alert('Server error. Please try again.');});
 }
 function showKycTerms(){
   var terms='<div style="font-size:13px;line-height:1.8;color:#c6cfdd;max-height:60vh;overflow-y:auto;padding:4px"><h3 style="color:#f1f5f9;margin:0 0 10px">9amLeads Affiliate Agreement (Summary)</h3>'+
