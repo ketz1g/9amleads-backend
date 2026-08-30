@@ -5211,6 +5211,34 @@ app.post('/api/admin/affiliate/send-samples', adminAuth, async (req, res) => {
   res.json({ success: true, sent: sent, to: to });
 });
 
+// Ask a question: an affiliate asks a question from their dashboard. This emails the
+// owner (ketzman1g@gmail.com) with REPLY-TO set to the affiliate's own email, so a
+// simple Reply in the inbox answers them directly.
+app.post('/api/affiliate/ask-question', affiliateAuth, (req, res) => {
+  try {
+    var aff = req.affiliate;
+    var question = String(req.body.question || '').trim().substring(0, 2000);
+    var topic = String(req.body.topic || 'General').substring(0, 40);
+    if (!question) return res.status(400).json({ error: 'Please write your question first.' });
+    var ownerEmail = process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com';
+    var html = '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:600px;margin:0 auto">' +
+      '<div style="text-align:center;margin-bottom:18px"><span style="background:rgba(14,165,233,.15);color:#0ea5e9;font-size:11px;font-weight:800;padding:5px 14px;border-radius:50px;letter-spacing:.5px">AFFILIATE QUESTION</span></div>' +
+      '<h1 style="font-family:Outfit,sans-serif;color:#0ea5e9;margin:0 0 8px;font-size:24px">Question from ' + escHtml(aff.name || 'an affiliate') + '</h1>' +
+      '<div style="background:rgba(255,255,255,.04);border:1px solid #1e2030;border-radius:12px;padding:16px;margin:14px 0"><p style="color:#c9d1de;line-height:1.8;margin:0"><b style="color:#fff">Topic:</b> ' + escHtml(topic) + '</p><p style="color:#c9d1de;line-height:1.8;margin:8px 0 0"><b style="color:#fff">From:</b> ' + escHtml(aff.name || '') + ' (' + escHtml(aff.email) + ', code ' + escHtml(aff.code || '') + ')</p></div>' +
+      '<div style="background:rgba(14,165,233,.06);border:1px solid rgba(14,165,233,.25);border-radius:12px;padding:16px;margin:14px 0"><p style="color:#e8ebf2;line-height:1.8;margin:0;white-space:pre-wrap">' + escHtml(question) + '</p></div>' +
+      '<div style="background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.3);border-radius:12px;padding:16px;margin:14px 0"><p style="color:#c9d1de;line-height:1.8;margin:0"><b style="color:#fff">To reply:</b> just hit Reply to this email - it will go straight back to ' + escHtml(aff.email) + '. Or open their profile in the <a href="https://9amleads.com/portal/admin.html" style="color:#0ea5e9">admin dashboard</a>.</p></div>' +
+      '<p style="color:#888;font-size:13px;margin-top:16px">Sent from the affiliate dashboard.</p></div>';
+    sendBrevoEmail({ email: ownerEmail, name: '9amLeads Owner', replyTo: { email: aff.email, name: aff.name || 'Affiliate' } }, 'Affiliate question from ' + (aff.name || '') + ' (' + topic + ')', html).catch(function(e){ console.log('[ASK-Q] send error:', e.message); });
+    // Confirmation to the affiliate
+    try {
+      sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' },
+        'We received your question',
+        '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="font-family:Outfit,sans-serif;color:#34d399;margin:0 0 8px;font-size:24px">We received your question</h1><p style="color:#c9d1de;line-height:1.8">Hi ' + escHtml(aff.name || 'there') + ',</p><p style="color:#c9d1de;line-height:1.8">Thanks for getting in touch. Your question about <b style="color:#fff">' + escHtml(topic) + '</b> has been sent to our team and we will reply to this email address shortly.</p></div>').catch(function(){});
+    } catch(eB) {}
+    res.json({ success: true, message: 'Your question has been sent. We will reply to your email shortly.' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/affiliate/kyc — current KYC / compliance status.
 app.get('/api/affiliate/kyc', affiliateAuth, (req, res) => {
   try { res.json({ success: true, kyc: kycStatus(req.affiliate) }); }
@@ -10287,7 +10315,7 @@ function sendBrevoEmail(to, subject, htmlContent) {
   var senderName = '9amLeads';
   const data = JSON.stringify({
     sender: { name: senderName, email: senderFrom },
-    replyTo: { email: 'hello@9amleads.com', name: '9amLeads Support' },
+    replyTo: to.replyTo ? { email: to.replyTo.email, name: to.replyTo.name || 'Customer' } : { email: 'hello@9amleads.com', name: '9amLeads Support' },
     to: [{ email: to.email, name: to.name }],
     subject,
     htmlContent,

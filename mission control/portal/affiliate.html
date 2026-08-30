@@ -317,6 +317,7 @@ tr:last-child td{border-bottom:none}
 <a href="#compliance" onclick="go('compliance');return false" class="aff-cta">🪪 Compliance</a>
 <a href="#payouts" onclick="go('payouts');return false" class="aff-cta">💰 Payouts</a>
 <a href="#signup" onclick="window.open('https://9amleads.com/portal/#signup','_blank');return false" class="aff-cta" style="background:rgba(52,211,153,.15);border-color:rgba(52,211,153,.4);color:#34d399">➕ Refer a business</a>
+<a href="#" onclick="openAskQuestion();return false" class="aff-cta" style="background:rgba(14,165,233,.15);border-color:rgba(14,165,233,.4);color:#38bdf8">❓ Ask a question</a>
 </div>
 </div>
 <div class="hero">
@@ -675,6 +676,32 @@ tr:last-child td{border-bottom:none}
 <button class="btn" onclick="sendHelp()" id="h-btn">Send message</button>
 <div class="m-msg" id="h-msg-out"></div>
 <div class="a" style="margin-top:10px;text-align:center">Or email us directly: <a href="mailto:hello@9amleads.com" style="color:#0ea5e9">hello@9amleads.com</a></div>
+</div>
+</div>
+</div>
+
+<!-- ASK A QUESTION MODAL -->
+<div class="modal" id="ask-modal">
+<div class="modal-box" style="max-width:520px">
+<button class="m-close" onclick="closeAskQuestion()">&times;</button>
+<h2>Ask a question</h2>
+<div class="sub">Stuck on anything? Ask us and we'll reply straight to your email. No ticket systems, no waiting.</div>
+<div class="m-sec">
+<div class="m-field"><label>Topic</label>
+<select id="aq-topic" style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px">
+<option value="General">General</option>
+<option value="Sharing my code">Sharing my code</option>
+<option value="Commission & payouts">Commission &amp; payouts</option>
+<option value="Wheel of Fortune">Wheel of Fortune</option>
+<option value="Compliance / ID">Compliance / ID</option>
+<option value="Leads & CRM">Leads &amp; CRM</option>
+<option value="Tools & scripts">Tools &amp; scripts</option>
+<option value="Something else">Something else</option>
+</select></div>
+<div class="m-field"><label>Your question</label><textarea id="aq-msg" placeholder="Type your question here..." style="width:100%;min-height:100px;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px;font-family:inherit"></textarea></div>
+<button class="btn" id="aq-btn" onclick="sendAskQuestion()">Send question</button>
+<div class="m-msg" id="aq-out"></div>
+<div class="a" style="margin-top:10px;text-align:center;font-size:12px;color:#94a3b8">We reply to your registered email (<span id="aq-email"></span>).</div>
 </div>
 </div>
 </div>
@@ -1406,6 +1433,29 @@ function renderProdEarnings(byProd, lifetime){
 }
 function openHelp(){document.getElementById('help-modal').classList.add('open');}
 function closeHelp(){document.getElementById('help-modal').classList.remove('open');}
+function openAskQuestion(){
+  var m=document.getElementById('ask-modal'); if(m)m.classList.add('open');
+  var em=document.getElementById('aq-email'); if(em)em.textContent=(D&&D.affiliate&&D.affiliate.email)?D.affiliate.email:'you';
+  var out=document.getElementById('aq-out'); if(out){out.className='m-msg';out.style.display='none';}
+}
+function closeAskQuestion(){document.getElementById('ask-modal').classList.remove('open');}
+function sendAskQuestion(){
+  var topic=document.getElementById('aq-topic').value;
+  var msg=document.getElementById('aq-msg').value.trim();
+  var out=document.getElementById('aq-out');
+  var btn=document.getElementById('aq-btn');
+  if(!msg){out.className='m-msg bad';out.style.display='block';out.textContent='Please write your question first.';return;}
+  btn.disabled=true;btn.textContent='Sending...';
+  api('POST','/affiliate/ask-question',{topic:topic,question:msg}).then(function(d){
+    if(d.success){
+      out.className='m-msg ok';out.style.display='block';out.textContent='Sent! We will reply to your email shortly.';
+      document.getElementById('aq-msg').value='';
+    } else {
+      out.className='m-msg bad';out.style.display='block';out.textContent=d.error||'Could not send. Please try again.';
+    }
+  }).catch(function(){out.className='m-msg bad';out.style.display='block';out.textContent='Could not send right now. Please email hello@9amleads.com.';})
+  .then(function(){btn.disabled=false;btn.textContent='Send question';});
+}
 function sendHelp(){
   var name=document.getElementById('h-name').value.trim();
   var email=document.getElementById('h-email').value.trim();
