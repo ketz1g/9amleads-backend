@@ -928,9 +928,17 @@ try {
   }
 } catch(e) { console.log('[DM-FEATURES] Config error:', e.message); }
 
-function customerCanUseDMFeature(customerPlan, featureKey) {
+function customerCanUseDMFeature(customerPlan, featureKey, customer) {
   var feature = DM_FEATURE_ACCESS[featureKey];
   if (!feature) return false;
+  // AFFILIATE REFERRAL PERK: customers on a free trial who signed up through an
+  // affiliate's code get FULL direct-mail feature access (Print & Post, Auto Send,
+  // AI generators, proof tracking, etc.) for the duration of their 2-week trial,
+  // so they can experience everything before converting. This is part of what
+  // makes the affiliate's 14-day trial compelling.
+  if (customerPlan === 'free_trial' && customer && (customer.affiliate_id || customer.affiliate_code)) {
+    return feature['starter'] === true;
+  }
   return feature[customerPlan] === true;
 }
 
@@ -24133,7 +24141,7 @@ app.get('/api/direct-mail/features', authMiddleware, (req, res) => {
     var features = {};
     for (var _fk in DM_FEATURE_ACCESS) {
       features[_fk] = {
-        accessible: customerCanUseDMFeature(plan, _fk),
+        accessible: customerCanUseDMFeature(plan, _fk, customer),
         label: DM_FEATURE_ACCESS[_fk].label,
         desc: DM_FEATURE_ACCESS[_fk].desc
       };
