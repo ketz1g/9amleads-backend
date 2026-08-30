@@ -1223,7 +1223,7 @@ async function runAutoHeal() {
     });
 }
 
-function loadHealth() {
+async function loadHealth() {
   try {
     const r = await fetch(API + '/api/admin/health-report?t=' + Date.now(), { headers: adminHeaders() });
     if (!r.ok) return;
