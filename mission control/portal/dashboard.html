@@ -381,9 +381,6 @@ document.addEventListener('DOMContentLoaded', function(){
             <!-- Whited-out address window (where recipient address prints) -->
             <div style="background:#fff;border:1px dashed #0ea5e9;border-radius:4px;height:52px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#0ea5e9;font-weight:700;letter-spacing:0.3px">RECIPIENT ADDRESS<br>(printed here)</div>
           </td>
-          <td width="52%" align="right" valign="top">
-            <div style="font-size:9px;color:var(--text2);line-height:1.5;text-align:right" id="pp-letter-from"></div>
-          </td>
         </tr></table>
         <div style="border-top:2px solid var(--accent);margin:18px 0 14px"></div>
         <div style="font-size:11px;line-height:1.7;color:#334155;white-space:pre-wrap" id="pp-letter-body"></div>
@@ -1429,19 +1426,11 @@ function loadPrintPostSetup(){
     // cover letter), not an uploaded image, so we render the text directly.
     var letterWrap=document.getElementById('pp-preview-letter-wrap');
     var letterBody=document.getElementById('pp-letter-body');
-    var letterFrom=document.getElementById('pp-letter-from');
     var letterName=document.getElementById('pp-preview-letter-name');
     var coverText=(d.default_template&&d.default_template.ai_generated_text)||document.getElementById('pp-letter').value||'';
     var showLetter = (d.letter && (d.letter.preview_url || d.letter.preview_zone_url)) || coverText.trim();
     if(letterWrap&&showLetter){
       if(letterBody)letterBody.textContent=coverText||'Your cover letter will appear here.';
-      if(letterFrom){
-        var bizName=document.getElementById('pp-company')?document.getElementById('pp-company').value:'';
-        var bizAddr=document.getElementById('pp-addr1')?document.getElementById('pp-addr1').value:'';
-        var bizCity=document.getElementById('pp-city')?document.getElementById('pp-city').value:'';
-        var bizPc=document.getElementById('pp-postcode')?document.getElementById('pp-postcode').value:'';
-        letterFrom.innerHTML=(bizName?bizName+'<br>':'')+(bizAddr?bizAddr+'<br>':'')+(bizCity?bizCity+'<br>':'')+(bizPc?bizPc:'');
-      }
       if(letterName)letterName.textContent=d.letter?d.letter.name:'Cover letter';
       letterWrap.style.display='block';
     } else if(letterWrap) { letterWrap.style.display='none'; }

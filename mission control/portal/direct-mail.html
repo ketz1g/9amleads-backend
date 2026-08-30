@@ -126,8 +126,6 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
     <div style="background:#fff;border:1px solid #cbd5e1;border-radius:4px;width:360px;height:520px;overflow:hidden;box-shadow:0 2px 12px rgba(15,23,42,0.10);padding:18px 24px;position:relative">
       <!-- Address window (section across the top; ~50mm tall) -->
       <div style="background:#f1f5f9;border:1.5px solid #0ea5e9;border-radius:4px;width:210px;height:82px;position:absolute;top:20px;left:20px;display:flex;align-items:center;justify-content:center;font-size:6.5px;color:#0ea5e9;font-weight:700;text-align:center;z-index:2">RECIPIENT<br>ADDRESS<br>(printed here)</div>
-      <!-- Return address top-right -->
-      <div style="font-size:6.5px;color:#64748b;line-height:1.4;text-align:right;position:absolute;top:20px;right:20px" id="lp-letter-from"></div>
       <!-- Letter body (starts below the address window; fit judged by character count) -->
       <div style="font-size:9px;line-height:1.5;color:#1e293b;white-space:pre-wrap;margin-top:110px;overflow-y:auto;max-height:370px" id="lp-letter-body">Your cover letter text appears here.</div>
       <!-- Page edge indicator line -->
@@ -684,19 +682,11 @@ function loadLetterPreview(){
   // the saved letter from the setup.
   var editorText=document.getElementById('t-content')?document.getElementById('t-content').value:'';
   var bodyEl=document.getElementById('lp-letter-body');
-  var fromEl=document.getElementById('lp-letter-from');
   if(bodyEl)bodyEl.textContent=cleanLetterPreviewText(editorText)||'Loading your saved cover letter…';
   checkLetterFit();
-  // Fill the return address from the profile fields
-  if(fromEl){
-    var biz='';
-    var cn=document.getElementById('p-company')?document.getElementById('p-company').value:'';
-    var a1=document.getElementById('p-addr1')?document.getElementById('p-addr1').value:'';
-    var ci=document.getElementById('p-city')?document.getElementById('p-city').value:'';
-    var pc=document.getElementById('p-postcode')?document.getElementById('p-postcode').value:'';
-    biz=(cn?cn+'<br>':'')+(a1?a1+'<br>':'')+(ci?ci+'<br>':'')+(pc?pc:'');
-    fromEl.innerHTML=biz||'Your Company<br>Address';
-  }
+  // Note: no return address is shown. The printed letter (Stannp A4) contains
+  // only the letter body — Stannp prints the recipient address in its own
+  // envelope window, and the sender's return address is NOT part of what prints.
   // Fetch the saved setup/cover letter so the preview reflects what's saved,
   // BUT only when the editor field is empty. If the customer has typed/pasted
   // text into the editor, that is what they see (their latest content wins).
@@ -711,15 +701,7 @@ function loadLetterPreview(){
     else if(saved && bodyEl) bodyEl.textContent=cleanLetterPreviewText(saved);
     checkLetterFit();
     updateLetterPreviewLive(); // refresh the character/word counter too
-    // Prefer the setup's saved business info for the return address
-    if(fromEl && d.profile && d.profile.company_name){
-      var pb='';
-      pb=(d.profile.company_name?d.profile.company_name+'<br>':'');
-      pb+=(d.profile.address_line1?d.profile.address_line1+'<br>':'');
-      pb+=(d.profile.city?d.profile.city+'<br>':'');
-      pb+=(d.profile.postcode?d.profile.postcode:'');
-      if(pb)fromEl.innerHTML=pb;
-    }
+    // No return address is shown (the printed letter contains only the body).
   });
 }
 function renderTemplateDownloads(){
