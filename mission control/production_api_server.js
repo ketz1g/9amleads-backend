@@ -5317,7 +5317,9 @@ app.get('/api/admin/demo-debug', adminAuth, (req, res) => {
     var dbc = getDb();
     var demo = (dbc.customers || []).find(function(x){ return String(x.email||'').toLowerCase() === 'test.affiliatedemo@9amleads.com'; });
     var leads = (dbc.leads || []).filter(function(l){ return l.customer_id === (demo && demo.id); });
-    res.json({ demo_id: demo && demo.id, demo_found: !!demo, demo_plan: demo && demo.plan, leads_count: leads.length, leads: leads.map(function(l){ var d={}; try{d=JSON.parse(l.data||'{}');}catch(e){} return { id: l.id, addr: d.address, fullAddress: d.fullAddress, buildingNumber: d.buildingNumber, street: d.street, postcode: d.postcode, delivered: l.delivered, status: l.status }; }) });
+    var shimLeads = [];
+    try { shimLeads = db.prepare('SELECT * FROM leads WHERE customer_id = ? ORDER BY created_at DESC LIMIT 50').all(demo && demo.id); } catch(e) { shimLeads = [{err:e.message}]; }
+    res.json({ demo_id: demo && demo.id, demo_found: !!demo, demo_plan: demo && demo.plan, leads_count: leads.length, shim_count: shimLeads.length, shim_ids: shimLeads.map(function(l){return l.id;}), leads: leads.map(function(l){ var d={}; try{d=JSON.parse(l.data||'{}');}catch(e){} return { id: l.id, addr: d.address, fullAddress: d.fullAddress, buildingNumber: d.buildingNumber, street: d.street, postcode: d.postcode, delivered: l.delivered, status: l.status }; }) });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
