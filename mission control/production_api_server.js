@@ -323,6 +323,19 @@ function countyFromPostcode(pc) {
   return POSTCODE_AREA_COUNTY[m[1]] || '';
 }
 
+// Remove duplicate comma-separated segments from an address (case-insensitive).
+// Older enrichment passes could leave "19 Long Ley, Harlow, Essex, CM20 3NH,
+// Harlow, Essex, CM20 3NH" — dedupe to a clean single pass.
+function dedupeAddressSegments(s) {
+  var parts = String(s || '').split(',').map(function(x){ return String(x).trim(); }).filter(Boolean);
+  var seen = {}, out = [];
+  for (var i = 0; i < parts.length; i++) {
+    var k = String(parts[i]).toLowerCase();
+    if (!seen[k]) { seen[k] = 1; out.push(parts[i]); }
+  }
+  return out.join(', ');
+}
+
 // Ensure a lead's address fields are complete: door number, street, town, county,
 // full postcode. Parses any missing piece from the address text or postcode.
 function ensureFullLeadAddress(l) {
@@ -7517,7 +7530,7 @@ app.get('/api/leads', authMiddleware, (req, res) => {
       if (_cn && _joined.toLowerCase().indexOf(String(_cn).toLowerCase()) === -1) _pp.push(String(_cn).trim());
       if (_joined.toLowerCase().indexOf(String(_pc).toLowerCase()) === -1) _pp.push(String(_pc).trim());
       var _full = _pp.filter(Boolean).join(', ');
-      if (_full && _full.split(',').length >= 2) parsed.fullAddress = _full;
+      if (_full && _full.split(',').length >= 2) parsed.fullAddress = dedupeAddressSegments(_full);
     }
     if (parsed.address) parsed.address = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(parsed.address)));
     if (parsed.deceasedAddress) parsed.deceasedAddress = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(parsed.deceasedAddress)));
@@ -14986,7 +14999,7 @@ app.post('/api/admin/backfill-delivered-addresses', adminAuth, (req, res) => {
       if (d.county) _parts.push(d.county);
       if (d.postcode) _parts.push(d.postcode);
       var _fa = _parts.filter(Boolean).join(', ');
-      if (_fa) { d.fullAddress = _fa; if (!d.address || !/,/.test(String(d.address || ''))) d.address = _fa; }
+      if (_fa) { d.fullAddress = dedupeAddressSegments(_fa); if (!d.address || !/,/.test(String(d.address || ''))) d.address = _fa; }
       var after = (d.town || '') + '|' + (d.city || '') + '|' + (d.county || '') + '|' + (d.fullAddress || '');
       if (before !== after) { row.data = JSON.stringify(d); updated++; }
     }
