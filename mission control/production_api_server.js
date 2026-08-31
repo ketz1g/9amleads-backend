@@ -14939,14 +14939,14 @@ app.post('/api/admin/pool/enrich-addresses', adminAuth, async (req, res) => {
 app.post('/api/admin/backfill-delivered-addresses', adminAuth, (req, res) => {
   try {
     var prod = (req.body && req.body.product) || 'moving';
-    var rows = db.prepare('SELECT id, customer_id, data, delivered FROM leads WHERE product = ?').all(prod);
+    var dbObj = getDb();
+    var leads = dbObj.leads || [];
     var updated = 0;
-    var nowIso = new Date().toISOString();
-    for (var bi = 0; bi < rows.length; bi++) {
-      var row = rows[bi];
+    for (var bi = 0; bi < leads.length; bi++) {
+      var row = leads[bi];
+      if (String(row.product || '') !== prod) continue;
       var d = null; try { d = JSON.parse(row.data || '{}'); } catch(e) {}
       if (!d || typeof d !== 'object') continue;
-      if (row.delivered && (d.product !== prod && !d.product)) d.product = prod;
       var before = (d.town || '') + '|' + (d.city || '') + '|' + (d.county || '') + '|' + (d.fullAddress || '');
       try { ensureFullLeadAddress(d); } catch(e) {}
       // Rebuild the full printable address from the parts.
@@ -14960,12 +14960,10 @@ app.post('/api/admin/backfill-delivered-addresses', adminAuth, (req, res) => {
       var _fa = _parts.filter(Boolean).join(', ');
       if (_fa) { d.fullAddress = _fa; if (!d.address || !/,/.test(String(d.address || ''))) d.address = _fa; }
       var after = (d.town || '') + '|' + (d.city || '') + '|' + (d.county || '') + '|' + (d.fullAddress || '');
-      if (before !== after) {
-        db.prepare('UPDATE leads SET data = ? WHERE id = ?').run(JSON.stringify(d), row.id);
-        updated++;
-      }
+      if (before !== after) { row.data = JSON.stringify(d); updated++; }
     }
-    res.json({ success: true, product: prod, rows: rows.length, updated: updated });
+    if (updated > 0) saveDb();
+    res.json({ success: true, product: prod, rows: leads.length, updated: updated });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
