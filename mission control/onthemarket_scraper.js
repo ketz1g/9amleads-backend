@@ -193,6 +193,29 @@ function extractStreetName(addr) {
   return s.trim();
 }
 
+// Parse town / city / county out of the OTM address text so every lead carries a
+// usable town for Print & Post. OTM addresses look like:
+//   "1 Charlton Road, London, Greater London, SE3 7EU"
+//   "1128 Eastern Avenue, Ilford, Greater London, IG2 7SD"
+//   "39 Shirley Avenue, Croydon, Surrey, CR0 8SN"
+//   "Costcutter Supermarket, 55 Burlington Street, Liverpool, Merseyside, L3 6LG"
+// Strategy: drop the leading premise/door/street portion (up to the 2nd-3rd comma),
+// then the last segment(s) that aren't the postcode/county are the town.
+function extractTownCounty(addr, postcode) {
+  const s = String(addr || '').trim();
+  const parts = s.split(',').map(function(p){ return p.trim(); }).filter(Boolean);
+  if (!parts.length) return { town: '', city: '', county: '' };
+  // Remove the postcode from the end
+  if (parts.length && /^[A-Z]{1,2}\d/i.test(parts[parts.length-1])) parts.pop();
+  if (parts.length && /^[A-Z]{1,2}\d/i.test(parts[parts.length-1])) parts.pop();
+  // Remaining tail = [..., town, county]
+  let county = '', town = '';
+  if (parts.length >= 2) county = parts[parts.length - 1];
+  if (parts.length >= 2) town = parts[parts.length - 2];
+  else if (parts.length === 1) town = parts[0];
+  return { town: town, city: town, county: county };
+}
+
 async function collectOnTheMarketLeads(params) {
   const out = [];
   const areas = (params && params.areas) || [];
@@ -259,6 +282,10 @@ async function collectOnTheMarketLeads(params) {
         // rejected as door-less and never delivered.
         building_number: extractBuildingNumber(l.address),
         street: extractStreetName(l.address),
+        // Parse town/city/county so every lead has them for Print & Post.
+        town: extractTownCounty(l.address, pc).town,
+        city: extractTownCounty(l.address, pc).city,
+        county: extractTownCounty(l.address, pc).county,
         postcode: pc,
         bedrooms: l.bedrooms,
         price: l.priceNum || l.price,
@@ -280,4 +307,4 @@ async function collectOnTheMarketLeads(params) {
   return out;
 }
 
-module.exports = { collectOnTheMarketLeads, OTM_SLUGS, extractPostcodeArea, isDevelopmentListing, otmListedDate, extractBuildingNumber, extractStreetName };
+module.exports = { collectOnTheMarketLeads, OTM_SLUGS, extractPostcodeArea, isDevelopmentListing, otmListedDate, extractBuildingNumber, extractStreetName, extractTownCounty };
