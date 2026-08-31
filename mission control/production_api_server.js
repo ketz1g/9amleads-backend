@@ -269,16 +269,58 @@ function normaliseMovingAddress(addr) {
 // ("1128 Eastern Avenue, Ilford, Greater London, IG2 7SD") with empty town/city/
 // county fields. This parses them out of the address whenever they're missing.
 function parseTownCountyFromAddress(addr, postcode) {
-  var s = String(addr || '').trim();
+  var s = String(addr || '').trim().replace(/\n/g, ',');
   if (!s) return { town: '', city: '', county: '' };
   var parts = s.split(',').map(function(p){ return p.trim(); }).filter(Boolean);
   if (!parts.length) return { town: '', city: '', county: '' };
-  // Drop the postcode from the end
+  // Drop trailing postcode / partial postcode segments ("SW17 9AH", "AL1 4TT")
   while (parts.length && /^[A-Z]{1,2}\d/i.test(parts[parts.length - 1])) parts.pop();
-  var county = '', town = '';
-  if (parts.length >= 2) { county = parts[parts.length - 1]; town = parts[parts.length - 2]; }
-  else if (parts.length === 1) town = parts[0];
-  return { town: town, city: town, county: county };
+  if (!parts.length) return { town: '', city: '', county: '' };
+  // Street-only address has NO town info — leave empty (postcode enrichment fills it).
+  if (parts.length === 1) return { town: '', city: '', county: '' };
+  // "299 Kennington Road, Kennington"               -> town = Kennington
+  // "39 Shirley Avenue, Croydon, Surrey"            -> town = Croydon, county = Surrey
+  // "Beaumont Avenue, St. Albans, Hertfordshire"    -> town = St. Albans, county = Hertfordshire
+  if (parts.length === 2) return { town: parts[1], city: parts[1], county: '' };
+  return { town: parts[parts.length - 2], city: parts[parts.length - 2], county: parts[parts.length - 1] };
+}
+
+// UK postcode AREA (first 1-2 letters, e.g. "CR", "AL") -> county/locality fallback.
+// Used when a lead has a postcode but no town/county (OnTheMarket gives street +
+// postcode only). This guarantees EVERY lead has at least a county for the full
+// printable address; Postcoder refines it to the exact postal town when budget allows.
+var POSTCODE_AREA_COUNTY = {
+  AB:'Aberdeenshire', AL:'Hertfordshire', B:'West Midlands', BA:'Somerset', BB:'Lancashire',
+  BD:'West Yorkshire', BH:'Dorset', BL:'Greater Manchester', BN:'East Sussex', BR:'Greater London',
+  BS:'Bristol', BT:'County Antrim', CA:'Cumbria', CB:'Cambridgeshire', CF:'South Glamorgan',
+  CH:'Cheshire', CM:'Essex', CO:'Essex', CR:'Greater London', CT:'Kent', CV:'Warwickshire',
+  CW:'Cheshire', DA:'Greater London', DD:'Dundee', DE:'Derbyshire', DG:'Dumfries and Galloway',
+  DH:'County Durham', DL:'North Yorkshire', DN:'South Yorkshire', DT:'Dorset', DY:'West Midlands',
+  E:'Greater London', EC:'Greater London', EH:'Edinburgh', EN:'Greater London', EX:'Devon',
+  FK:'Stirling', FY:'Lancashire', G:'Glasgow', GL:'Gloucestershire', GU:'Surrey', HA:'Greater London',
+  HD:'West Yorkshire', HG:'North Yorkshire', HP:'Buckinghamshire', HR:'Herefordshire', HS:'Western Isles',
+  HU:'East Riding of Yorkshire', HX:'West Yorkshire', IG:'Greater London', IP:'Suffolk', IV:'Inverness-shire',
+  KA:'Ayrshire', KT:'Surrey', KW:'Orkney', KY:'Fife', L:'Merseyside', LA:'Lancashire', LD:'Powys',
+  LE:'Leicestershire', LL:'North Wales', LN:'Lincolnshire', LS:'West Yorkshire', LU:'Bedfordshire',
+  M:'Greater Manchester', ME:'Kent', MK:'Buckinghamshire', ML:'Lanarkshire', N:'Greater London',
+  NE:'Tyne and Wear', NG:'Nottinghamshire', NN:'Northamptonshire', NP:'South Wales', NR:'Norfolk',
+  NW:'Greater London', OL:'Greater Manchester', OX:'Oxfordshire', PA:'Renfrewshire', PE:'Cambridgeshire',
+  PH:'Perthshire', PL:'Devon', PO:'Hampshire', PR:'Lancashire', RG:'Berkshire', RH:'West Sussex',
+  RM:'Greater London', S:'South Yorkshire', SA:'Swansea', SE:'Greater London', SG:'Hertfordshire',
+  SK:'Cheshire', SL:'Berkshire', SM:'Greater London', SN:'Wiltshire', SO:'Hampshire', SP:'Wiltshire',
+  SR:'Tyne and Wear', SS:'Essex', ST:'Staffordshire', SW:'Greater London', SY:'Shropshire', TA:'Somerset',
+  TD:'Scottish Borders', TF:'Shropshire', TN:'Kent', TQ:'Devon', TR:'Cornwall', TS:'Cleveland',
+  TW:'Greater London', UB:'Greater London', W:'Greater London', WA:'Cheshire', WC:'Greater London',
+  WD:'Hertfordshire', WF:'West Yorkshire', WN:'Greater Manchester', WR:'Worcestershire', WS:'West Midlands',
+  WV:'West Midlands', YO:'North Yorkshire', ZE:'Shetland'
+};
+
+// Derive a county fallback from the postcode area (first 1-2 letters).
+function countyFromPostcode(pc) {
+  var s = String(pc || '').trim().toUpperCase();
+  var m = s.match(/^([A-Z]{1,2})\d/);
+  if (!m) return '';
+  return POSTCODE_AREA_COUNTY[m[1]] || '';
 }
 
 // Ensure a lead's address fields are complete: door number, street, town, county,
@@ -287,12 +329,19 @@ function ensureFullLeadAddress(l) {
   try {
     if (!l || typeof l !== 'object') return l;
     var a = l.address || l.fullAddress || l.deceasedAddress || '';
-    // town / city / county
+    // town / city / county — layered sources: (1) address text, (2) Rightmove's
+    // title field which embeds "Street, Town, County, PostcodeArea", (3) postcode
+    // area -> county fallback so EVERY lead ends up with a usable location.
     if (!l.town && !l.city) {
       var tc = parseTownCountyFromAddress(a, l.postcode || '');
+      if (!tc.town && l.title) tc = parseTownCountyFromAddress(l.title, l.postcode || '');
       if (tc && tc.town) { l.town = tc.town; l.city = tc.city || tc.town; }
       if (tc && tc.county) l.county = tc.county;
     } else if (!l.city && l.town) { l.city = l.town; }
+    if (!l.town && !l.city && !l.county) {
+      var _cnty = countyFromPostcode(l.postcode || '');
+      if (_cnty) l.county = _cnty;
+    }
     // door number (moving only) — parse from address text if missing
     if ((l.product === 'moving' || !l.product) && !l.building_number && !l.number) {
       var bn = extractMovingDoorNumber(a);
@@ -615,8 +664,10 @@ function loadProductPool(prod) {
           if (prod === 'moving' && !l.town && !l.city) {
             try {
               var _tc0 = parseTownCountyFromAddress(l.address || l.fullAddress || '', l.postcode || '');
+              if (!_tc0.town && l.title) _tc0 = parseTownCountyFromAddress(l.title, l.postcode || '');
               if (_tc0 && _tc0.town) { l.town = _tc0.town; l.city = _tc0.city || _tc0.town; }
               if (_tc0 && _tc0.county) l.county = _tc0.county;
+              if (!l.town && !l.city && !l.county) { var _cnty0 = countyFromPostcode(l.postcode || ''); if (_cnty0) l.county = _cnty0; }
             } catch(_tce0) {}
           }
           if (l.address) {

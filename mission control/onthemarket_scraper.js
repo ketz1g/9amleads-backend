@@ -116,6 +116,28 @@ function parseDetailPostcode(body) {
   return m ? m[1].trim() : '';
 }
 
+// Extract the FULL address (including town/locality) from the OTM detail page.
+// The list page only exposes a street-only address, but the detail page embeds the
+// full printable address in its data layer, e.g.
+//   "address":"299 Kennington Road\nKennington\nSE11 4QE"
+//   "address":"1 Charlton Road, London, Greater London, SE3 7EU"
+// Returns { postcode, address } — the address with town/county, newlines->commas.
+function parseDetailAddress(body) {
+  let pc = parseDetailPostcode(body);
+  let addr = '';
+  const am = body.match(/"address":"([^"]{6,200})"/);
+  if (am) {
+    addr = am[1]
+      .replace(/\\n/g, ',')
+      .replace(/\s+/g, ' ')
+      .split(',')
+      .map(function(p){ return p.trim(); })
+      .filter(Boolean)
+      .join(', ');
+  }
+  return { postcode: pc, address: addr };
+}
+
 // Freshness: keep listings added within maxDays (default 7). Parses the
 // "days-since-added-reduced" label (e.g. "Added today", "Added 3 days ago",
 // "Added > 14 days"). Anything ambiguous (e.g. just "Reduced") is skipped.
@@ -202,18 +224,20 @@ function extractStreetName(addr) {
 // Strategy: drop the leading premise/door/street portion (up to the 2nd-3rd comma),
 // then the last segment(s) that aren't the postcode/county are the town.
 function extractTownCounty(addr, postcode) {
-  const s = String(addr || '').trim();
-  const parts = s.split(',').map(function(p){ return p.trim(); }).filter(Boolean);
+  const s = String(addr || '').trim().replace(/\n/g, ',');
+  let parts = s.split(',').map(function(p){ return p.trim(); }).filter(Boolean);
   if (!parts.length) return { town: '', city: '', county: '' };
-  // Remove the postcode from the end
-  if (parts.length && /^[A-Z]{1,2}\d/i.test(parts[parts.length-1])) parts.pop();
-  if (parts.length && /^[A-Z]{1,2}\d/i.test(parts[parts.length-1])) parts.pop();
-  // Remaining tail = [..., town, county]
-  let county = '', town = '';
-  if (parts.length >= 2) county = parts[parts.length - 1];
-  if (parts.length >= 2) town = parts[parts.length - 2];
-  else if (parts.length === 1) town = parts[0];
-  return { town: town, city: town, county: county };
+  // Remove trailing postcode / partial postcode segments
+  while (parts.length && /^[A-Z]{1,2}\d/i.test(parts[parts.length-1])) parts.pop();
+  if (!parts.length) return { town: '', city: '', county: '' };
+  // Street-only address ("204A Brixton Road") has NO town info — leave it empty so
+  // the postcode-based enrichment fills it, rather than faking "Brixton Road" as a town.
+  if (parts.length === 1) return { town: '', city: '', county: '' };
+  // "299 Kennington Road, Kennington"          -> town = Kennington
+  // "39 Shirley Avenue, Croydon, Surrey"       -> town = Croydon, county = Surrey
+  // "1128 Eastern Avenue, Ilford, Greater London" -> town = Ilford, county = Greater London
+  if (parts.length === 2) return { town: parts[1], city: parts[1], county: '' };
+  return { town: parts[parts.length - 2], city: parts[parts.length - 2], county: parts[parts.length - 1] };
 }
 
 async function collectOnTheMarketLeads(params) {
@@ -266,10 +290,17 @@ async function collectOnTheMarketLeads(params) {
     }
     detailFetches += freshToResolve.length;
     freshToResolve.forEach(function(l, li) {
-      const pc = resolved[li];
+      const detail = resolved[li];
+      if (!detail) return;
+      const pc = detail.postcode;
       if (!pc) return;
       let fv = otmListedDate(l.daysSinceAdded);
       if (!fv) { if (maxDays === 0) { fv = new Date().toISOString(); } else { return; } } // no-gate fill accepts ambiguous labels; otherwise drop
+      // The detail page carries the full address (with town/county). Use it for
+      // town/city/county so every lead has a usable printable address; keep the
+      // list street-address as the premise text.
+      const fullAddr = detail.address || l.address;
+      const tc = extractTownCounty(fullAddr, pc);
       const lead = {
         id: 'OTM_' + l.id,
         listingId: l.id,
@@ -283,9 +314,9 @@ async function collectOnTheMarketLeads(params) {
         building_number: extractBuildingNumber(l.address),
         street: extractStreetName(l.address),
         // Parse town/city/county so every lead has them for Print & Post.
-        town: extractTownCounty(l.address, pc).town,
-        city: extractTownCounty(l.address, pc).city,
-        county: extractTownCounty(l.address, pc).county,
+        town: tc.town,
+        city: tc.city,
+        county: tc.county,
         postcode: pc,
         bedrooms: l.bedrooms,
         price: l.priceNum || l.price,
@@ -307,4 +338,4 @@ async function collectOnTheMarketLeads(params) {
   return out;
 }
 
-module.exports = { collectOnTheMarketLeads, OTM_SLUGS, extractPostcodeArea, isDevelopmentListing, otmListedDate, extractBuildingNumber, extractStreetName, extractTownCounty };
+module.exports = { collectOnTheMarketLeads, OTM_SLUGS, extractPostcodeArea, isDevelopmentListing, otmListedDate, extractBuildingNumber, extractStreetName, extractTownCounty, parseDetailAddress };
