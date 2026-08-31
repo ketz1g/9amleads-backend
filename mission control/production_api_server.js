@@ -1629,35 +1629,60 @@ class DirectMailProvider {
       }
       var outBuf;
       if (isBack) {
-        // BACK: full-bleed, edge-to-edge — the design fills the whole page (we
-        // do NOT compress it below a top band, which distorted landscape backs).
-        // Then overlay a WHITE address rectangle exactly where Stannp prints the
-        // recipient address (its clearzone), so the preview shows the correct
-        // whited-out address area:
+        // Address zone (Stannp's native clearzone): where the recipient address
+        // prints and MUST stay white.
         //   portrait: top-left  (x 14-36%, y 7-17%)
-        //   landscape: top-right (x 69-84%, y 30-41%)
-        // This matches the physical print — the design fills everything and the
-        // address window sits over it in the same spot.
-        var baseBuf = await sharp(inputBuf)
-          .rotate()
-          .resize({ width: A5_W, height: A5_H, fit: 'fill', background: { r: 255, g: 255, b: 255 } })
-          .jpeg({ quality: 82 })
-          .toBuffer();
+        //   landscape: right side (x 69-84%, y 30-41%)
         var addrX0 = 0, addrY0 = 0, addrW = 0, addrH = 0;
         if (A5_W > A5_H) {
-          // landscape: top-right
           addrX0 = Math.round(A5_W * 0.69); addrY0 = Math.round(A5_H * 0.30);
           addrW = Math.round(A5_W * 0.84) - addrX0; addrH = Math.round(A5_H * 0.41) - addrY0;
         } else {
-          // portrait: top-left
           addrX0 = Math.round(A5_W * 0.14); addrY0 = Math.round(A5_H * 0.07);
           addrW = Math.round(A5_W * 0.36) - addrX0; addrH = Math.round(A5_H * 0.17) - addrY0;
         }
-        // Build a white rectangle as a sharp image and composite it at the address
-        // position on the back.
+        // Build a white rectangle for the address zone.
         var whiteRect = await sharp({ create: { width: Math.max(1, addrW), height: Math.max(1, addrH), channels: 3, background: { r: 255, g: 255, b: 255 } } }).jpeg({ quality: 82 }).toBuffer();
-        outBuf = await sharp(baseBuf).composite([{ input: whiteRect, left: addrX0, top: addrY0 }]).jpeg({ quality: 82 }).toBuffer();
-        console.log('[STANNP] Prepared BACK artwork for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> full-bleed ' + A5_W + 'x' + A5_H + ' + white address zone at ' + addrX0 + ',' + addrY0 + ' ' + addrW + 'x' + addrH + (A5_W > A5_H ? ' (top-right)' : ' (top-left)') + ')');
+        // Detect whether the back was ALREADY positioned by the in-app editor:
+        // editor saves render a FULL-PAGE JPEG at the exact A5 print size with the
+        // design already laid out around the white zone. A fresh upload is any
+        // other size/format and must be auto-positioned so the white zone is
+        // clearly visible (matches the editor's auto-fit).
+        var srcW = meta.width || A5_W, srcH = meta.height || A5_H;
+        var isFullPage = (srcW === A5_W && srcH === A5_H) || (srcW === A5_H && srcH === A5_W);
+        var alreadyPositioned = isFullPage && (meta.format === 'jpeg' || meta.format === 'jpg');
+        if (alreadyPositioned) {
+          // Editor-positioned back: full-bleed pass-through + re-whiten the zone
+          // (harmless if already white). Design keeps its placed layout.
+          var baseBuf = await sharp(inputBuf)
+            .rotate()
+            .resize({ width: A5_W, height: A5_H, fit: 'fill', background: { r: 255, g: 255, b: 255 } })
+            .jpeg({ quality: 82 })
+            .toBuffer();
+          outBuf = await sharp(baseBuf).composite([{ input: whiteRect, left: addrX0, top: addrY0 }]).jpeg({ quality: 82 }).toBuffer();
+          console.log('[STANNP] Prepared BACK (editor-positioned, full-bleed) for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> ' + A5_W + 'x' + A5_H + ' + white address zone at ' + addrX0 + ',' + addrY0 + ' ' + addrW + 'x' + addrH + ')');
+        } else {
+          // FRESH back upload: fit the design into the USABLE area — the whole
+          // page MINUS the white address zone — so the address area is visibly
+          // whited out immediately on upload (no design hidden behind it), exactly
+          // like the in-app editor's auto-fit. Landscape: design fills the left
+          // ~69% (zone on the right). Portrait: design fills the area below the
+          // top-left zone.
+          var uzX = 0, uzY = 0, uzW, uzH;
+          if (A5_W > A5_H) { uzW = Math.max(1, Math.round(A5_W * 0.69)); uzH = A5_H; }
+          else { uzW = A5_W; uzY = Math.round(A5_H * 0.17); uzH = Math.max(1, A5_H - uzY); }
+          var designBuf = await sharp(inputBuf)
+            .rotate()
+            .resize({ width: uzW, height: uzH, fit: 'fill', background: { r: 255, g: 255, b: 255 } })
+            .jpeg({ quality: 82 })
+            .toBuffer();
+          var whiteCanvas = await sharp({ create: { width: A5_W, height: A5_H, channels: 3, background: { r: 255, g: 255, b: 255 } } }).jpeg({ quality: 82 }).toBuffer();
+          outBuf = await sharp(whiteCanvas).composite([
+            { input: designBuf, left: uzX, top: uzY },
+            { input: whiteRect, left: addrX0, top: addrY0 }
+          ]).jpeg({ quality: 82 }).toBuffer();
+          console.log('[STANNP] Prepared BACK (fresh upload, fitted around zone) for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> design ' + uzW + 'x' + uzH + ' at ' + uzX + ',' + uzY + ' on ' + A5_W + 'x' + A5_H + ' + white address zone at ' + addrX0 + ',' + addrY0 + ' ' + addrW + 'x' + addrH + ')');
+        }
       } else {
         // FRONT: full-bleed, edge-to-edge. Fronts are pre-trimmed of white
         // margins (see above), then STRETCHED (fit 'fill') to exactly fill the
