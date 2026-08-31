@@ -1085,6 +1085,29 @@ function _mm(){
 function feMmToPx(mm){ return mm * _mm(); }
 function fePxToMm(px){ return px / _mm(); }
 function feRound1(v){ return Math.round(v*10)/10; }
+// Usable area on the BACK = whole page MINUS the white address zone box, so the
+// design is never hidden behind the recipient address. Matches Stannp's real
+// clearzone position: portrait = top-left box (x14-36%, y7-17%); landscape =
+// right-side box (x69-84%, y30-41%).
+function feBackUsableRect(w, h) {
+  var isLand = w > h;
+  var zx, zy, zw, zh;
+  if (isLand) {
+    zx = Math.round(w * 0.69); zy = Math.round(h * 0.30);
+    zw = Math.round(w * 0.84) - zx; zh = Math.round(h * 0.41) - zy;
+  } else {
+    zx = Math.round(w * 0.14); zy = Math.round(h * 0.07);
+    zw = Math.round(w * 0.36) - zx; zh = Math.round(h * 0.17) - zy;
+  }
+  // Largest rectangle not overlapping the zone: take the left column (if zone is
+  // on the right) plus the strip below the zone. Simplify to: the bigger of
+  // [everything left of the zone] vs [everything below the zone].
+  var leftW = zx, leftH = h;              // area to the left of the zone
+  var belowW = w, belowH = h - (zy + zh); // area below the zone
+  var areaLeft = leftW * leftH, areaBelow = belowW * belowH;
+  if (areaLeft >= areaBelow) return { x: 0, y: 0, w: Math.max(1,leftW), h: Math.max(1,leftH) };
+  return { x: 0, y: zy + zh, w: Math.max(1,belowW), h: Math.max(1,belowH) };
+}
 function feSnap(v, guides, tol){ for(var g=0; g<guides.length; g++){ if(Math.abs(v-guides[g])<=tol) return guides[g]; } return v; }
 function feGuidesX(){
   var w=_flyerEditor.pageW, m5=feMmToPx(5);
@@ -1227,17 +1250,17 @@ function closeFlyerEditor(){ document.getElementById('flyer-editor-modal').style
 function flyerEditorReset(){
   var w=_flyerEditor.pageW, h=_flyerEditor.pageH;
   var iw=_flyerEditor.img? _flyerEditor.img.width:1, ih=_flyerEditor.img? _flyerEditor.img.height:1;
-  // Front: the design was auto-cropped of pure-white margins, so stretch it to
-  // exactly fill the page (edge-to-edge, nothing white, nothing cropped).
-  // Back: show the design positioned to fill the area below the address zone.
   if (_flyerEditor.matType === 'flyer_back') {
-    // Back: full-bleed, edge-to-edge — the design fills the whole page. Stannp
-    // overlays its own address clearzone at print (top-right for landscape, top
-    // for portrait), so we do NOT compress the design below a top band.
-    _flyerEditor.rw = w;
-    _flyerEditor.rh = h;
-    _flyerEditor.rx = 0;
-    _flyerEditor.ry = 0;
+    // Back: fit the design into the USABLE area — the whole page MINUS the white
+    // address zone box, so no design content is ever hidden behind it. For
+    // landscape the zone is a right-side box; for portrait a top-left box.
+    var uz = feBackUsableRect(w, h);
+    // STRETCH to fill the usable area edge-to-edge (non-uniform, matches the
+    // full-bleed print intent while keeping content out of the address box).
+    _flyerEditor.rw = uz.w;
+    _flyerEditor.rh = uz.h;
+    _flyerEditor.rx = uz.x;
+    _flyerEditor.ry = uz.y;
   } else {
     _flyerEditor.rw = w;
     _flyerEditor.rh = h;
@@ -1323,12 +1346,14 @@ function flyerEditorAutoFit(){
   var iw=ed.img.width, ih=ed.img.height;
   var bleedPx=feMmToPx(6);
   if(ed.matType==='flyer_back'){
-    // Back: full-bleed, edge-to-edge — fills the whole page. Stannp's own
-    // clearzone overlays the address at print, so no below-zone compression.
-    ed.rw = w;
-    ed.rh = h;
-    ed.rx = 0;
-    ed.ry = 0;
+    // Back: fit into the USABLE area (page minus the white address zone box) so
+    // no design content is hidden behind it. Landscape zone = right-side box,
+    // portrait = top-left box.
+    var uzb = feBackUsableRect(w, h);
+    ed.rw = uzb.w;
+    ed.rh = uzb.h;
+    ed.rx = uzb.x;
+    ed.ry = uzb.y;
   } else {
     // FRONT: STRETCH to exactly fill the full page (edge-to-edge, no white).
     // The front design is auto-cropped of pure-white margins at load, so the
@@ -1459,14 +1484,19 @@ function flyerEditorDraw(){
     // (allowing a small tolerance = half the safe zone) on every side; on the back
     // the design must also sit below the address zone.
     var tol = s5 / 2;
-    var reachesLeft   = dx <= ox + tol;
-    var reachesRight  = dx + dw >= ox + pw - tol;
-    var reachesTop    = dy <= oy + tol;
-    var reachesBottom = dy + dh >= oy + ph - tol;
-    // Front AND back are both full-bleed: the design must reach all four edges.
-    // Stannp overlays the recipient address in its own window at print, so the
-    // back design fills the whole page just like the front.
-    var inLine = reachesLeft && reachesRight && reachesTop && reachesBottom;
+    // Front: full-bleed, must reach all four edges. Back: fitted into the usable
+    // area (page minus the white address zone), so it must reach that area's
+    // edges instead.
+    var isBackE = (ed.matType === 'flyer_back');
+    var inLine;
+    if (isBackE) {
+      var uzc = feBackUsableRect(ed.pageW, ed.pageH);
+      var ux0 = ox + uzc.x, uy0 = oy + uzc.y, ux1 = ox + uzc.x + uzc.w, uy1 = oy + uzc.y + uzc.h;
+      var backOK = dx <= ux0 + tol && (dx + dw) >= ux1 - tol && dy <= uy0 + tol && (dy + dh) >= uy1 - tol;
+      inLine = backOK;
+    } else {
+      inLine = dx <= ox + tol && (dx + dw) >= ox + pw - tol && dy <= oy + tol && (dy + dh) >= oy + ph - tol;
+    }
     // Draw the bleed line (always) — green when in line, red when not.
     ctx.strokeStyle = inLine ? '#22c55e' : '#ef4444';
     ctx.lineWidth = inLine ? 3 : 2;
