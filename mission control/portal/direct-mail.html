@@ -655,12 +655,20 @@ function loadLetterPreview(){
     var saved='';
     if(d.default_template && d.default_template.ai_generated_text) saved=d.default_template.ai_generated_text;
     else if(d.cover_letter) saved=d.cover_letter;
-    // If the editor has its own text, keep showing it (don't overwrite).
-    if(editorNow && editorNow.trim().length>0){ if(bodyEl)bodyEl.textContent=cleanLetterPreviewText(editorNow); }
-    else if(saved && bodyEl) bodyEl.textContent=cleanLetterPreviewText(saved);
+    // Show the editor text if there is any (their latest content wins), otherwise
+    // the saved letter. Never fall back to the placeholder when a saved letter exists.
+    var shown = (editorNow && editorNow.trim().length>0) ? editorNow : (saved || '');
+    if(bodyEl) bodyEl.textContent = cleanLetterPreviewText(shown) || 'No cover letter saved yet. Write one above and save it.';
     checkLetterFit();
-    updateLetterPreviewLive(); // refresh the character/word counter too
-    // No return address is shown (the printed letter contains only the body).
+    // Keep the counter in sync with whatever is displayed (editor text or saved letter).
+    var countTxt = (editorNow && editorNow.trim().length>0) ? editorNow : (saved || '');
+    var cEl=document.getElementById('letter-counter');
+    if(cEl){
+      var cl=cleanLetterPreviewText(countTxt);
+      var cc=cl.length, wc=cl?cl.split(/\s+/).filter(function(w){return w.length>0;}).length:0;
+      cEl.textContent=cc+' / 2,600 characters · '+wc+' / 350 words';
+      cEl.style.color = (cc>2600||wc>350) ? '#dc2626' : ((cc>2400||wc>330) ? '#b45309' : '#15803d');
+    }
   });
 }
 function renderTemplateDownloads(){
