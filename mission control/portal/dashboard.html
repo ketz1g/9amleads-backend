@@ -375,7 +375,7 @@ document.addEventListener('DOMContentLoaded', function(){
     <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:6px"><i class="fas fa-envelope" style="color:var(--accent);margin-right:4px"></i> Letter Preview <span style="color:var(--success);font-weight:700">Address Window Shown (whited out)</span></div>
     <div style="border:1px solid var(--border);border-radius:10px;padding:14px;background:#f8fafc;text-align:left">
       <!-- Rendered A4-style letter -->
-      <div style="background:#fff;border:1px solid var(--border);border-radius:4px;max-width:520px;margin:0 auto;padding:36px 40px;box-shadow:0 2px 12px rgba(15,23,42,0.06)">
+      <div style="background:#fff;border:1px solid var(--border);border-radius:4px;max-width:520px;margin:0 auto;padding:36px 40px;box-shadow:0 2px 12px rgba(15,23,42,0.06);height:735px;overflow:hidden">
         <table width="100%" cellpadding="0" cellspacing="0"><tr>
           <td width="48%" valign="top">
             <!-- Whited-out address window (where recipient address prints) -->
@@ -383,8 +383,7 @@ document.addEventListener('DOMContentLoaded', function(){
           </td>
         </tr></table>
         <div style="border-top:2px solid var(--accent);margin:18px 0 14px"></div>
-        <div style="font-size:11px;line-height:1.7;color:#334155;white-space:pre-wrap" id="pp-letter-body"></div>
-      </div>
+        <div style="font-size:11px;line-height:1.7;color:#334155;white-space:pre-wrap" id="pp-letter-body"></div>      </div>
       <div style="font-size:10px;color:var(--text2);margin-top:10px;line-height:1.5;text-align:center">The <b style="color:#0ea5e9">blue-dashed box at the top</b> is the envelope window where the recipient's address is printed. The letter body (your cover letter) stays exactly as written.</div>
       <div style="font-size:10px;color:var(--muted);margin-top:4px;text-align:center" id="pp-preview-letter-name"></div>
     </div>
@@ -393,7 +392,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
 <!-- Cover letter -->
 <div style="font-size:12px;font-weight:700;color:var(--text);margin:14px 0 8px"><i class="fas fa-file-alt" style="color:var(--accent);margin-right:4px"></i> 3. Your Cover Letter</div>
-<textarea class="input" id="pp-letter" rows="5" placeholder="Dear [name],&#10;&#10;We are your local specialists...&#10;&#10;Kind regards,&#10;[Your Company]"></textarea>
+<textarea class="input" id="pp-letter" rows="5" oninput="ppUpdateLetterPreviewLive()" placeholder="Dear [name],&#10;&#10;We are your local specialists...&#10;&#10;Kind regards,&#10;[Your Company]"></textarea>
 <div style="font-size:10px;color:var(--muted);margin-top:4px">Tip: markdown formatting (*, **, #) is removed automatically when you save.</div>
 
 <div style="display:flex;gap:10px;margin-top:14px">
@@ -1430,7 +1429,7 @@ function loadPrintPostSetup(){
     var coverText=(d.default_template&&d.default_template.ai_generated_text)||document.getElementById('pp-letter').value||'';
     var showLetter = (d.letter && (d.letter.preview_url || d.letter.preview_zone_url)) || coverText.trim();
     if(letterWrap&&showLetter){
-      if(letterBody)letterBody.textContent=coverText||'Your cover letter will appear here.';
+      if(letterBody){letterBody.textContent=ppCleanLetterText(coverText)||'Your cover letter will appear here.'; ppFitLetter();}
       if(letterName)letterName.textContent=d.letter?d.letter.name:'Cover letter';
       letterWrap.style.display='block';
     } else if(letterWrap) { letterWrap.style.display='none'; }
@@ -1689,6 +1688,51 @@ function ppDownloadCoverLetter(){
   a.click();
   setTimeout(function(){URL.revokeObjectURL(url);a.remove();},100);
   toast('Cover letter downloaded');
+}
+// Clean letter text for preview display (matches the print): strip markdown,
+// collapse double spaces/tabs from pasted text so the character count is accurate.
+function ppCleanLetterText(t){
+  var s=String(t||'');
+  s=s.replace(/\r\n?/g,'\n');
+  s=s.replace(/^\s*\*+\s+/gm,'• ');
+  s=s.replace(/^\s*(-\s+|\+\s+)/gm,'• ');
+  s=s.replace(/\*\*/g,'');
+  s=s.replace(/^\s*#{1,6}\s*/gm,'');
+  s=s.replace(/^\s*(---+|\*\*\*+|___+)\s*$/gm,'');
+  s=s.replace(/\*([^*\n]+)\*/g,'$1');
+  s=s.replace(/`/g,'');
+  s=s.replace(/\[([^\]]+)\]\([^)]+\)/g,'$1');
+  s=s.replace(/\*+/g,'');
+  s=s.replace(/\n{3,}/g,'\n\n');
+  s=s.replace(/[ \t]+/g,' ');
+  s=s.replace(/ +\n/g,'\n');
+  return s.trim();
+}
+// Fit the letter into the A4 page preview: shrink the font so the WHOLE letter is
+// visible on the page (nothing cut off), scrolling only if it's genuinely over-length.
+function ppFitLetter(){
+  var body=document.getElementById('pp-letter-body');
+  if(!body)return;
+  body.style.fontSize='11px';
+  body.style.lineHeight='1.7';
+  body.style.maxHeight='520px';
+  body.style.overflowY='hidden';
+  var tries=20;
+  while(body.scrollHeight>body.clientHeight && tries>0 && parseFloat(body.style.fontSize||11)>8){
+    body.style.fontSize=(parseFloat(body.style.fontSize||11)-0.3)+'px';
+    tries--;
+  }
+  if(body.scrollHeight>body.clientHeight){ body.style.overflowY='auto'; }
+}
+// Live-update the letter preview as the user types in the dashboard.
+function ppUpdateLetterPreviewLive(){
+  var text=document.getElementById('pp-letter')?document.getElementById('pp-letter').value:'';
+  var body=document.getElementById('pp-letter-body');
+  var wrap=document.getElementById('pp-preview-letter-wrap');
+  if(!body)return;
+  if(wrap)wrap.style.display='block';
+  body.textContent=ppCleanLetterText(text)||'Your cover letter will appear here.';
+  ppFitLetter();
 }
 
 // ===== ONBOARDING =====
