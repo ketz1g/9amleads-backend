@@ -64,11 +64,13 @@ function parseNoticeJsonLd(url) {
         const pcRaw = pcMatch[0].toUpperCase().replace(/[^A-Z0-9]/g, '');
         postcode = pcRaw.slice(0, pcRaw.length - 3) + ' ' + pcRaw.slice(-3);
       }
-      // Full funeral-director address: the sentence after "All enquiries to" (or
-      // "Enquiries to") up to the phone number. Includes firm + street + town + postcode.
+      // Full funeral-director address: the block after "All enquiries to" (or
+      // "Enquiries to"), stopping at the phone number. This is the only reliably
+      // mailable address on a funeral notice (the deceased's home is never
+      // published), and we must NOT capture the whole notice text as the address.
       let enquiriesAddr = '';
-      const enqMatch = body.match(/(?:All\s+)?[Ee]nquiries?\s+to\s+([^.\n]*?)(?:\b(Tel|Phone|Mob)[:.]?\s*[\d\s\-()+]{6,})?[.\n]?$/i);
-      if (enqMatch) enquiriesAddr = enqMatch[1].trim();
+      const enqMatch = body.match(/[Ee]nquiries?\s+to\s+([^.\n]*?)(?=\s*(?:Tel|Phone|Mob)[:.]?\s*[\d\s\-()+]{5,}|[.\n]|$)/i);
+      if (enqMatch && enqMatch[1] && enqMatch[1].trim().length >= 6) enquiriesAddr = enqMatch[1].trim();
       if (!enquiriesAddr) {
         // fallback: grab the last ~3 lines containing the postcode
         const lines = body.split('\n').map(function(s){ return s.trim(); }).filter(Boolean);
