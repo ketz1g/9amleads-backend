@@ -6591,6 +6591,28 @@ app.post('/api/admin/trial-expire', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/pause-test-accounts - pause (leads_paused + auto_send_paused) every
+// test/seed account (email matches *@9amleads.com or test.*) so the real customer
+// pools are not drained by the test fleet. Reversible (set leads_paused=0 to restore).
+app.post('/api/admin/pause-test-accounts', adminAuth, (req, res) => {
+  try {
+    var dbP = getDb();
+    var custsP = dbP.customers || [];
+    var paused = 0;
+    for (var pi = 0; pi < custsP.length; pi++) {
+      var em = String(custsP[pi].email || '').toLowerCase().trim();
+      var isTest = em.indexOf('@9amleads.com') !== -1 || em.indexOf('test.') === 0 || /\.1788\d*@/.test(em);
+      if (!isTest) continue;
+      if (custsP[pi].plan === 'cancelled') continue;
+      custsP[pi].leads_paused = 1;
+      custsP[pi].auto_send_paused = 1;
+      paused++;
+    }
+    if (paused > 0) saveDb();
+    res.json({ success: true, paused: paused, note: 'Test accounts paused. Real customers unaffected. Set leads_paused=0 to restore.' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/set-plan — apply a paid plan (calls applyPlan: sets plan +
 // leads_per_day + clears trial_ends). Mirrors the post-payment webhook.
 app.post('/api/admin/set-plan', adminAuth, (req, res) => {
