@@ -1739,9 +1739,11 @@ class DirectMailProvider {
           var uzX = 0, uzY = 0, uzW, uzH;
           // LANDSCAPE: design sits in the left column ending ~1 inch (12%) short of
           // the address zone (zone left edge x68%) so the printed address never
-          // overlaps the flyer. Portrait: design fills below the top-left zone.
+          // overlaps the flyer. PORTRAIT: design sits BELOW the top-left zone with a
+          // ~1 inch (12%) gap at the top so the flyer header is never cut by the
+          // recipient address.
           if (A5_W > A5_H) { uzW = Math.max(1, Math.round(A5_W * 0.56)); uzH = A5_H; }
-          else { uzW = A5_W; uzY = Math.round(A5_H * 0.17); uzH = Math.max(1, A5_H - uzY); }
+          else { uzW = A5_W; uzY = Math.round(A5_H * 0.29); uzH = Math.max(1, A5_H - uzY); }
           var designBuf = await sharp(inputBuf)
             .rotate()
             .resize({ width: uzW, height: uzH, fit: 'fill', background: { r: 255, g: 255, b: 255 } })

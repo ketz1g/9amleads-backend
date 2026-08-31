@@ -1055,12 +1055,14 @@ function feBackUsableRect(w, h) {
   zx = Math.round(w * 0.14); zy = Math.round(h * 0.07);
   zw = Math.round(w * 0.36) - zx; zh = Math.round(h * 0.17) - zy;
   // Largest rectangle not overlapping the zone: the bigger of [left of the zone]
-  // vs [below the zone] for the portrait top-left zone.
+  // vs [below the zone] for the portrait top-left zone. Add a ~1 inch (12%) gap
+  // BELOW the zone so the flyer header is never cut by the recipient address.
   var leftW = zx, leftH = h;              // area to the left of the zone
   var belowW = w, belowH = h - (zy + zh); // area below the zone
   var areaLeft = leftW * leftH, areaBelow = belowW * belowH;
   if (areaLeft >= areaBelow) return { x: 0, y: 0, w: Math.max(1,leftW), h: Math.max(1,leftH) };
-  return { x: 0, y: zy + zh, w: Math.max(1,belowW), h: Math.max(1,belowH) };
+  var _gap = Math.round(h * 0.12);
+  return { x: 0, y: zy + zh + _gap, w: Math.max(1,belowW), h: Math.max(1, h - (zy + zh + _gap)) };
 }
 function feSnap(v, guides, tol){ for(var g=0; g<guides.length; g++){ if(Math.abs(v-guides[g])<=tol) return guides[g]; } return v; }
 function feGuidesX(){
@@ -1278,8 +1280,21 @@ function feCheckContentRisk(){
       }
     }
     if(ed.matType==='flyer_back'){
-      if(inZone>0 && zoneSamples>0 && (inZone/zoneSamples)>0.15){
-        feSetStatus('⚠ Warning: your back design has content in the <b>top address zone</b> (blue box). That area is white-filled for the recipient\'s address at print, so that content will be <b>covered</b>. Move important content below the blue box before saving.', 'warn');
+      // BACK: warn only if the positioned design actually overlaps the address
+      // zone box (the blue box). Auto-fit places the design below/left of the
+      // zone, so a fresh upload triggers no warning; dragging the design over the
+      // blue box does.
+      var _zX,_zY,_zW,_zH;
+      if(ed.pageW > ed.pageH){
+        _zX = Math.round(ed.pageW*0.68); _zY = Math.round(ed.pageH*0.30);
+        _zW = Math.round(ed.pageW*0.88)-_zX; _zH = Math.round(ed.pageH*0.41)-_zY;
+      } else {
+        _zX = Math.round(ed.pageW*0.14); _zY = Math.round(ed.pageH*0.07);
+        _zW = Math.round(ed.pageW*0.36)-_zX; _zH = Math.round(ed.pageH*0.17)-_zY;
+      }
+      var _overlap = !(ed.rx+ed.rw <= _zX || ed.rx >= _zX+_zW || ed.ry+ed.rh <= _zY || ed.ry >= _zY+_zH);
+      if(_overlap){
+        feSetStatus('⚠ The flyer currently sits under the <b>white address zone</b> (blue box). That area is white-filled for the recipient\'s address at print, so content there would be <b>covered</b>. Drag the flyer clear of the blue box or click <b>Fit to Page</b>.', 'warn');
         return true;
       }
     } else {
@@ -1476,14 +1491,22 @@ function flyerEditorDraw(){
       zx = Math.round(pw * 0.14); zy = Math.round(ph * 0.07);
       zw = Math.round(pw * 0.36) - zx; zh = Math.round(ph * 0.17) - zy;
     }
-    ctx.fillStyle='rgba(219,234,254,0.95)'; ctx.fillRect(ox+zx, oy+zy, zw, zh);
-    ctx.strokeStyle='#0c4a6e'; ctx.lineWidth=4; ctx.strokeRect(ox+zx, oy+zy, zw, zh);
-    ctx.strokeStyle='#0c4a6e'; ctx.setLineDash([8,5]); ctx.lineWidth=2; ctx.strokeRect(ox+zx+2, oy+zy+2, zw-4, zh-4); ctx.setLineDash([]);
-    ctx.fillStyle='#0c4a6e';
-    ctx.fillStyle='#ffffff'; ctx.font='bold 11px Arial'; ctx.textAlign='center';
-    ctx.fillText('ADDRESS ZONE — recipient address prints here', ox+zx+zw/2, oy+zy+Math.min(26, zh/2));
-    ctx.fillStyle='#0c4a6e'; ctx.font='bold 10px Arial';
-    ctx.fillText('Keep this area plain (white)', ox+zx+zw/2, oy+zy+Math.min(44, zh/2)+12);
+    var zcx = ox+zx, zcy = oy+zy;
+    // Solid white so nothing behind it shows through — this is exactly where the
+    // recipient address prints.
+    ctx.fillStyle='#ffffff'; ctx.fillRect(zcx, zcy, zw, zh);
+    // Diagonal hatch so it reads clearly as a "reserved" area.
+    ctx.strokeStyle='rgba(12,74,110,0.35)'; ctx.lineWidth=1;
+    ctx.beginPath();
+    for(var hx=-zh; hx<zw; hx+=8){ ctx.moveTo(zcx+hx, zcy+zh); ctx.lineTo(zcx+hx+zh, zcy); }
+    ctx.stroke();
+    // Bold blue border + label.
+    ctx.strokeStyle='#0c4a6e'; ctx.lineWidth=4; ctx.strokeRect(zcx, zcy, zw, zh);
+    ctx.strokeStyle='#0c4a6e'; ctx.setLineDash([8,5]); ctx.lineWidth=2; ctx.strokeRect(zcx+3, zcy+3, zw-6, zh-6); ctx.setLineDash([]);
+    ctx.fillStyle='#0c4a6e'; ctx.font='bold 11px Arial'; ctx.textAlign='center';
+    ctx.fillText('ADDRESS ZONE — recipient address prints here', zcx+zw/2, zcy+Math.min(26, zh/2));
+    ctx.font='bold 10px Arial';
+    ctx.fillText('Keep this area plain (white)', zcx+zw/2, zcy+Math.min(44, zh/2)+12);
     ctx.textAlign='left';
   }
   feUpdateReadout();
@@ -1534,7 +1557,7 @@ function saveFlyerEditor(){
   var base64=out.split(',')[1]||'';
   api('PUT','/api/direct-mail/materials/'+_flyerEditor.id,{file_data:'data:image/jpeg;base64,'+base64},function(err,d){
     if(d&&d.success){
-      status.textContent='✅ ' + (_flyerEditor.matType==='flyer_back' ? 'Back flyer saved (address zone at top)' : 'Front flyer saved at full print quality');
+      status.textContent='✅ ' + (_flyerEditor.matType==='flyer_back' ? 'Back flyer saved (white address zone kept clear)' : 'Front flyer saved at full print quality');
       setTimeout(function(){ closeFlyerEditor(); loadMaterials(); loadFinalPrintPreview(); }, 800);
     } else {
       status.textContent='Error saving: '+((d&&d.error)||'try again'); status.style.color='#dc2626';
