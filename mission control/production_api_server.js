@@ -4288,6 +4288,31 @@ app.post('/api/admin/partner/reassign', adminAuth, (req, res) => {
 app.get('/api/admin/partner/attribution', adminAuth, (req, res) => {
   try { res.json({ success: true, attribution: (getDb().partner_attribution || []) }); } catch(e) { res.status(500).json({ error: e.message }); }
 });
+// POST /api/admin/partner/cleanup-test - mark TEST/demo partner commissions as
+// "released" so they can never be paid. The bulk-test signup tool seeded ~160
+// commissions for bulk-test customers (cbc/payc/test.affh accounts, signup_ip
+// 'bulk-test') and deleted demo partners — none are real referrals. Real
+// attribution still works and new REAL commissions are untouched.
+app.post('/api/admin/partner/cleanup-test', adminAuth, (req, res) => {
+  try {
+    var dbc = getDb();
+    var custsC = dbc.customers || [];
+    var partnersC = dbc.affiliates || [];
+    var commsC = dbc.partner_commissions || [];
+    var released = 0, kept = 0;
+    for (var ci = 0; ci < commsC.length; ci++) {
+      var cm = commsC[ci];
+      if (!cm || cm.status === 'released') continue;
+      var cust = custsC.find(function(x){ return x.id === cm.customer_id; });
+      var partner = partnersC.find(function(x){ return x.id === cm.partner_id; });
+      var isTest = (cust && (String(cust.signup_ip || '') === 'bulk-test' || /test|\.1788\d*@|@9amleads\.com/i.test(String(cust.email || '')))) || !partner || String(partner.status || '') === 'paused';
+      if (isTest) { cm.status = 'released'; cm.released_at = new Date().toISOString(); cm.release_reason = 'test/demo commission cleanup'; released++; }
+      else kept++;
+    }
+    if (released > 0) saveDb();
+    res.json({ success: true, released: released, kept_real: kept });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 app.get('/api/admin/partner/feedback', adminAuth, (req, res) => {
   try { res.json({ success: true, feedback: (getDb().partner_feedback || []).slice().sort(function(a,b){ return String(a.created_at) < String(b.created_at) ? 1 : -1; }) }); } catch(e) { res.status(500).json({ error: e.message }); }
 });
