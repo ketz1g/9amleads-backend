@@ -240,7 +240,7 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 <!-- Step 3: Select Recipients -->
 <div class="card">
 <div class="sect-title"><i class="fas fa-users" style="color:var(--accent)"></i> Step 3 · Who to send to</div>
-<p style="font-size:12px;color:var(--text2);margin-bottom:12px">Click <b>Load My Leads</b>, tick the leads to mail, choose your saved cover letter + delivery date, then <b>Create &amp; Send Campaign</b>. You pay per item sent (£0.30 during testing).</p>
+<p style="font-size:12px;color:var(--text2);margin-bottom:12px">Click <b>Load My Leads</b>, tick the leads to mail, choose your saved cover letter + delivery date, then <b>Create &amp; Send Campaign</b>. You pay per item sent (A5 leaflet £1.99 · letter £1.49 · leaflet + letter £2.99).</p>
 <div class="grid-2">
 <div><label class="label">Cover Letter</label><select class="input" id="c-template" onchange="loadTemplateContent(this)"><option value="">Select a saved cover letter...</option></select></div>
 <div><label class="label">Delivery Date</label><input type="date" class="input" id="c-date"></div>
@@ -255,7 +255,7 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 <div style="font-size:13px;font-weight:700">Selected: <span id="sel-count">0</span> recipients</div>
 <div style="font-size:11px;color:var(--muted);margin-top:2px">Tick the leads above to include them in this mailing. Your cover letter and materials are used for each one.</div>
 <div class="price-card" style="margin-top:10px">
-  <div class="lbl" style="color:var(--muted)">Estimated cost. per item (£0.30 during testing)</div>
+  <div class="lbl" style="color:var(--muted)">Estimated cost. per item</div>
 <div class="amt">£<span id="est-cost">0.00</span></div>
 </div>
 <button class="btn btn-primary" onclick="createCampaign()" id="create-campaign-btn" style="margin-top:12px;width:100%;justify-content:center"><i class="fas fa-paper-plane"></i> Create &amp; Send Campaign</button>
@@ -266,7 +266,7 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 <!-- SAMPLE TO SELF (free trial users can test delivery to their own address) -->
 <div class="card" style="border:2px solid #0ea5e9;background:linear-gradient(135deg,#f0f9ff,#eff6ff)">
 <div class="sect-title"><i class="fas fa-envelope-open-text" style="color:var(--accent)"></i> Try It. Send a Sample To Yourself</div>
-<p style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:12px">Send a real printed sample to <b>your own address</b> to check it looks right before mailing to customers, and follow the live tracking. Costs the normal per-item price (£0.30 during testing).</p>
+<p style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:12px">Send a real printed sample to <b>your own address</b> to check it looks right before mailing to customers, and follow the live tracking. Costs the normal per-item price (A5 leaflet £1.99 · letter £1.49 · leaflet + letter £2.99).</p>
 <div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px">
 <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px">Deliver to my address</div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
@@ -278,14 +278,14 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 <div style="margin-top:10px">
 <label class="label">Sample type</label>
 <select class="input" id="sample-type" style="padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-family:var(--ff-b);outline:none;background:#fff;width:100%">
-<option value="letter">A4 Letter. £0.30</option>
-<option value="flyer">A5 Leaflet. £0.30 (uses your selected format + uploaded design)</option>
-<option value="flyer_plus_letter">Leaflet + Letter. £0.30</option>
+<option value="letter">A4 Letter. £1.49</option>
+<option value="flyer">A5 Leaflet. £1.99 (uses your selected format + uploaded design)</option>
+<option value="flyer_plus_letter">Leaflet + Letter. £2.99</option>
 </select>
 <div style="font-size:10px;color:var(--muted);margin-top:4px">Leaflet samples use the format selected above (A5 portrait / A5 landscape / A5 in envelope).</div>
 </div>
 </div>
-<button class="btn btn-primary" onclick="sendSample()" style="width:100%;justify-content:center"><i class="fas fa-paper-plane"></i> Send Me A Sample (£0.30)</button>
+<button class="btn btn-primary" onclick="sendSample()" style="width:100%;justify-content:center"><i class="fas fa-paper-plane"></i> Send Me A Sample</button>
 <div id="sample-status" style="font-size:11px;color:var(--text2);margin-top:8px"></div>
 </div>
 
@@ -954,7 +954,7 @@ function toggleLead(id,el){
   if(selectedLeads.has(id)){selectedLeads.delete(id);el.style.borderColor='var(--border)';el.style.background='';el.querySelector('.status-badge').textContent='Select';el.querySelector('.status-badge').className='status-badge';}
   else{selectedLeads.add(id);el.style.borderColor='var(--accent)';el.style.background='#f0f7ff';el.querySelector('.status-badge').textContent='Selected';el.querySelector('.status-badge').className='status-badge approved';}
   document.getElementById('sel-count').textContent=selectedLeads.size;
-  var price = 0.30;
+  var price = 1.99;
   var fSel = _formats.find(function(x){return x.id===_selectedFormat;});
   if(fSel) price = fSel.price;
   document.getElementById('est-cost').textContent=(selectedLeads.size*price).toFixed(2);
@@ -973,7 +973,7 @@ function selectAllLeads(select){
     }
   });
   document.getElementById('sel-count').textContent=selectedLeads.size;
-  var price=0.30;var fSel=_formats.find(function(x){return x.id===_selectedFormat;});if(fSel)price=fSel.price;
+  var price=1.99;var fSel=_formats.find(function(x){return x.id===_selectedFormat;});if(fSel)price=fSel.price;
   document.getElementById('est-cost').textContent=(selectedLeads.size*price).toFixed(2);
   toast(select?'All leads selected':'Selection cleared');
 }
