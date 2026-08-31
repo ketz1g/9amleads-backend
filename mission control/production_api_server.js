@@ -9860,8 +9860,24 @@ app.post('/api/admin/set-customer-lead-total', adminAuth, async (req, res) => {
         if (usedKeys[key]) continue;
         usedKeys[key] = 1;
         var dS = { address: pl.address || pl.fullAddress || '', fullAddress: pl.fullAddress || pl.address || '', postcode: pl.postcode || '', url: pl.url || '', street: pl.street || '', building_number: pl.building_number || '', source: pl.source || '', firstVisibleDate: pl.firstVisibleDate || nowIso, scrapedAt: nowIso };
-        // FULL-ADDRESS GUARANTEE: every lead that reaches a customer's dashboard &
-        // email must carry door number + street + town/county + full postcode.
+        // Carry the parsed town/county through to the delivered lead (the pool now
+        // back-fills these from the full address; keep them on the delivered lead).
+        if (!dS.town && pl.town) dS.town = pl.town;
+        if (!dS.city && pl.city) dS.city = pl.city;
+        if (!dS.county && pl.county) dS.county = pl.county;
+        // FULL-ADDRESS GUARANTEE: rebuild the full printable address from the parts
+        // so it always reads "1 High Street, London, Greater London, SW1A 1AA" — the
+        // normalised pool address is street-only, which Print & Post can't post.
+        try {
+          var _addrParts = [];
+          if (dS.building_number) _addrParts.push(dS.building_number + (dS.street ? ' ' + dS.street : ''));
+          else if (dS.street) _addrParts.push(dS.street);
+          if (dS.town) _addrParts.push(dS.town);
+          if (dS.county) _addrParts.push(dS.county);
+          if (dS.postcode) _addrParts.push(dS.postcode);
+          var _fullAddr = _addrParts.filter(Boolean).join(', ');
+          if (_fullAddr) { dS.fullAddress = _fullAddr; if (!dS.address) dS.address = _fullAddr; }
+        } catch(_fa) {}
         try { ensureFullLeadAddress(dS); } catch(_e) {}
         // NEVER stamp backfill leads as TODAY — that inflates "Leads Today" past the
         // cap. Use the oldest delivery day in the customer's history as fallback so
@@ -10068,7 +10084,7 @@ app.post('/api/admin/refresh-pending-leads', adminAuth, (req, res) => {
         var key = l.url || ('a:' + String(l.address || l.fullAddress || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0,30));
         if (deliveredKeys[key] || seen[key]) continue;
         seen[key] = 1;
-        var dQ2 = { address: l.address || l.fullAddress || '', fullAddress: l.fullAddress || l.address || '', postcode: l.postcode || '', url: l.url || '', street: l.street || '', building_number: l.building_number || '', source: l.source || '', firstVisibleDate: l.firstVisibleDate || nowIso, scrapedAt: nowIso }; try { ensureFullLeadAddress(dQ2); } catch(_e2) {}
+        var dQ2 = { address: l.address || l.fullAddress || '', fullAddress: l.fullAddress || l.address || '', postcode: l.postcode || '', url: l.url || '', street: l.street || '', building_number: l.building_number || '', source: l.source || '', firstVisibleDate: l.firstVisibleDate || nowIso, scrapedAt: nowIso }; if (!dQ2.town && l.town) dQ2.town = l.town; if (!dQ2.city && l.city) dQ2.city = l.city; if (!dQ2.county && l.county) dQ2.county = l.county; try { ensureFullLeadAddress(dQ2); } catch(_e2) {}
         dbQ.leads.push({ id: uuidv4(), customer_id: cust.id, product: cust.product, data: JSON.stringify(dQ2), status: 'new', delivered: 0, created_at: nowIso, delivered_at: null, release_at: nowIso.split('T')[0] + 'T09:00:00.000Z' });
         assigned++; custEntry.added_valid++;
       }
