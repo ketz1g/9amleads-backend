@@ -50,6 +50,7 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 <div class="container">
 <div class="page-header">
 <div><h1><i class="fas fa-mail-bulk" style="color:var(--accent);margin-right:6px"></i> Print &amp; Post</h1><div class="sub" style="font-size:13px;color:var(--text2);margin-top:2px">Send professionally printed letters and flyers to your leads <span id="ver-tag" style="margin-left:8px;font-size:11px;font-weight:700;color:#0ea5e9;background:#eff6ff;padding:2px 8px;border-radius:10px">v20260831B</span></div></div>
+<button class="btn btn-outline" onclick="openHelp()"><i class="fas fa-life-ring" style="color:var(--accent)"></i> Need help?</button>
 <button class="btn btn-primary" onclick="newCampaign()"><i class="fas fa-plus"></i> New Campaign</button>
 </div>
 
@@ -320,6 +321,23 @@ var selectedTemplate='';
 var currentLeadType='moving';
 
 function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.style.display='block';setTimeout(function(){t.style.display='none';},3000);}
+function openHelp(){ var m=document.getElementById('pp-help-modal'); if(m) m.style.display='flex'; }
+function closeHelp(){ var m=document.getElementById('pp-help-modal'); if(m) m.style.display='none'; }
+function sendHelp(){
+  var name=document.getElementById('h-name').value.trim();
+  var email=document.getElementById('h-email').value.trim();
+  var msg=document.getElementById('h-msg').value.trim();
+  var out=document.getElementById('h-msg-out');
+  if(!out) return;
+  if(!name||!email||!msg){out.textContent='Please fill in your name, email and message.';out.style.color='#dc2626';return;}
+  var btn=document.getElementById('h-btn');
+  btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Sending...';
+  api('POST','/api/send-enquiry',{name:name,fromEmail:email,subject:'Print & Post support - '+name,details:msg},function(err,d){
+    btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane"></i> Send Message';
+    if(!err&&d&&d.success){out.textContent='✓ Message sent. We\'ll get back to you shortly.';out.style.color='#16a34a';document.getElementById('h-name').value='';document.getElementById('h-email').value='';document.getElementById('h-msg').value='';}
+    else{out.textContent='Something went wrong sending. Email us at hello@9amleads.com.';out.style.color='#dc2626';}
+  });
+}
 function togglePrintGuide(btn){
   var g=document.getElementById('pp-print-guide');
   var arrow=btn.querySelector('.pp-guide-arrow');
@@ -1622,6 +1640,24 @@ function saveFlyerEditor(){
   </div>
   <div id="flyer-editor-status" style="font-size:12px;color:var(--success);margin-top:8px;text-align:center"></div>
 </div>
+</div>
+
+<div id="pp-help-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,0.85);z-index:9999;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:14px;max-width:500px;width:100%;max-height:92vh;overflow:auto;padding:20px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-size:16px;font-weight:800;color:var(--text)"><i class="fas fa-life-ring" style="color:var(--accent);margin-right:6px"></i> Need help?</div>
+      <button onclick="closeHelp()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#64748b">✕</button>
+    </div>
+    <div style="padding:12px 14px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;font-size:13px;color:#1e3a8a;line-height:1.6;margin-bottom:14px">
+      <b>Have an issue?</b> Contact us and we'll sort it out — <b>we can even edit your design for you.</b> Tell us what's wrong (e.g. a leaflet header cut off, the address overlapping, or just send us your files) and we'll fix it.
+    </div>
+    <div style="margin-bottom:10px"><label class="label">Your name</label><input class="input" id="h-name" placeholder="Your name"></div>
+    <div style="margin-bottom:10px"><label class="label">Your email</label><input class="input" id="h-email" placeholder="you@email.com"></div>
+    <div style="margin-bottom:12px"><label class="label">What's the issue?</label><textarea class="input" id="h-msg" rows="4" placeholder="e.g. The top of my leaflet is cut off / the address overlaps the design / can you edit my leaflet for me?"></textarea></div>
+    <button class="btn btn-primary" onclick="sendHelp()" id="h-btn" style="width:100%;justify-content:center"><i class="fas fa-paper-plane"></i> Send Message</button>
+    <div id="h-msg-out" style="font-size:12px;margin-top:10px;text-align:center"></div>
+    <div style="margin-top:12px;font-size:12px;color:var(--text2);text-align:center">Or email us directly: <a href="mailto:hello@9amleads.com" style="color:var(--accent)">hello@9amleads.com</a></div>
+  </div>
 </div>
 
 </body></html>
