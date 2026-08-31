@@ -678,6 +678,16 @@ function loadProductPool(prod) {
   arr = arr.filter(function(l) { return !/zoopla/i.test(String(l.source || '')); });
   arr = arr.filter(function(l) { return !hasBadUnitCode(l.address || l.fullAddress || ''); });
   arr = arr.filter(function(l) { return !isPlaceholderLead(l); });
+  // PRE-PROBATE / EARLY-ESTATE EXCLUSION: death/funeral notices are NOT confirmed
+  // probate. They are "Early Estate Opportunity" leads for house-clearance /
+  // removals / auction / probate-buyers - never delivered as confirmed probate.
+  // (Funeral-notice leads have the funeral director's address or notice text, not
+  // the deceased's registered address - not what a probate customer wants.)
+  arr = arr.filter(function(l) {
+    var _ls = String(l.source || '').toLowerCase();
+    if (_ls === 'early-estate' || _ls === 'funeral-notices' || _ls === 'funeral' || l.preProbate) return false;
+    return true;
+  });
   // NEVER deliver a pool lead that has been REJECTED/blocked (wrong/commercial/
   // out-of-area lead the founder flagged). These are removed from the deliverable
   // pool permanently so a re-delivery can't pick them up again.
