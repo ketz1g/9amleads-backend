@@ -567,7 +567,8 @@ function updateLetterPreviewLive(){
     cEl.style.color = (cc>2600||wc>350) ? '#dc2626' : ((cc>2400||wc>330) ? '#b45309' : '#15803d');
   }
   if(!box||!bodyEl)return;
-  if(box.style.display==='none')return; // only update if the preview is visible
+  // Always keep the preview in sync with what's in the editor, even while the
+  // preview box is hidden — otherwise it shows a stale/truncated saved letter.
   bodyEl.textContent=clean||'Your cover letter text appears here.';
   checkLetterFit();
 }
