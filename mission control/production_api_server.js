@@ -362,6 +362,16 @@ function ensureFullLeadAddress(l) {
     }
     // street — parse from address text if missing
     if (!l.street) l.street = extractMovingStreet(a);
+    // POSTCODE — many probate (and some other) leads carry the postcode embedded
+    // in the address text but leave the postcode FIELD empty, which breaks area
+    // matching. If the field is missing, extract a real UK postcode from the text.
+    if (!l.postcode && a) {
+      var _pcMatch = String(a).match(/\b[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}\b/i);
+      if (_pcMatch) {
+        var _pcRaw = _pcMatch[0].toUpperCase().replace(/[^A-Z0-9]/g, '');
+        l.postcode = _pcRaw.slice(0, _pcRaw.length - 3) + ' ' + _pcRaw.slice(-3);
+      }
+    }
     return l;
   } catch(e) { return l; }
 }
