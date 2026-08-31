@@ -7492,8 +7492,27 @@ app.get('/api/leads', authMiddleware, (req, res) => {
     .map(l => {
     const parsed = JSON.parse(l.data || '{}');
     if (customer && customer.product === 'moving') {
+      // FULL-ADDRESS GUARANTEE: rebuild the displayed full address from the
+      // structured parts (door + street + town + county + postcode) so every
+      // moving lead reads "2 Sussex Road, Greater London, E6 2PS" — never a bare
+      // street or a region-stripped shell. (Previously stripRegionTags removed
+      // "Greater London" here, hiding the county.)
+      var _bn = parsed.building_number || parsed.buildingNumber || parsed.number || parsed.houseNumber || '';
+      var _st = parsed.street || '';
+      var _tn = parsed.town || parsed.city || '';
+      var _cn = parsed.county || '';
+      var _pc = parsed.postcode || '';
+      if ((_bn || _st) && (_tn || _cn || _pc)) {
+        var _pp = [];
+        if (_bn) _pp.push(String(_bn).trim() + (_st ? ' ' + String(_st).trim() : ''));
+        else if (_st) _pp.push(String(_st).trim());
+        if (_tn && _pp.join(',').toLowerCase().indexOf(String(_tn).toLowerCase()) === -1) _pp.push(String(_tn).trim());
+        if (_cn && _pp.join(',').toLowerCase().indexOf(String(_cn).toLowerCase()) === -1) _pp.push(String(_cn).trim());
+        if (_pc && _pp.join(',').toLowerCase().indexOf(String(_pc).toLowerCase()) === -1) _pp.push(String(_pc).trim());
+        parsed.fullAddress = _pp.filter(Boolean).join(', ');
+      }
       if (parsed.address) parsed.address = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(parsed.address)));
-      if (parsed.fullAddress) parsed.fullAddress = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(parsed.fullAddress)));
+      if (parsed.fullAddress && !_bn && !_st) parsed.fullAddress = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(parsed.fullAddress)));
     }
     const scored = attachOpportunityScore(parsed, customer?.product || l.product);
     // DIAGNOSTIC: expose the raw lead id + customer_id so the direct-mail payment
