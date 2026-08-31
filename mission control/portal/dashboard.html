@@ -375,7 +375,7 @@ document.addEventListener('DOMContentLoaded', function(){
     <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:6px"><i class="fas fa-envelope" style="color:var(--accent);margin-right:4px"></i> Letter Preview <span style="color:var(--success);font-weight:700">Address Window Shown (whited out)</span></div>
     <div style="border:1px solid var(--border);border-radius:10px;padding:14px;background:#f8fafc;text-align:left">
       <!-- Rendered A4-style letter -->
-      <div style="background:#fff;border:1px solid var(--border);border-radius:4px;max-width:520px;margin:0 auto;padding:36px 40px;box-shadow:0 2px 12px rgba(15,23,42,0.06);height:735px;overflow:hidden">
+      <div style="background:#fff;border:1px solid var(--border);border-radius:4px;max-width:620px;margin:0 auto;padding:40px 44px;box-shadow:0 2px 12px rgba(15,23,42,0.06);height:877px;overflow:hidden">
         <table width="100%" cellpadding="0" cellspacing="0"><tr>
           <td width="48%" valign="top">
             <!-- Whited-out address window (where recipient address prints) -->
@@ -1715,9 +1715,9 @@ function ppFitLetter(){
   if(!body)return;
   body.style.fontSize='11px';
   body.style.lineHeight='1.7';
-  body.style.maxHeight='520px';
+  body.style.maxHeight='600px';
   body.style.overflowY='hidden';
-  var tries=20;
+  var tries=25;
   while(body.scrollHeight>body.clientHeight && tries>0 && parseFloat(body.style.fontSize||11)>8){
     body.style.fontSize=(parseFloat(body.style.fontSize||11)-0.3)+'px';
     tries--;
