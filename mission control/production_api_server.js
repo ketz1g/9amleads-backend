@@ -262,6 +262,62 @@ function normaliseMovingAddress(addr) {
 //   - has no new-build unit/plot code (L-001226, Plot 12, Unit 12a)
 //   - has a listing URL
 //   - has no guessed "Flat 1" prefix
+// ===== FULL-ADDRESS GUARANTEE =====
+// Every moving lead delivered to a customer's dashboard/email MUST carry a usable
+// town/city AND county (plus door number + full postcode) so Print & Post and the
+// address are complete. Older scrapes stored the town only inside the address text
+// ("1128 Eastern Avenue, Ilford, Greater London, IG2 7SD") with empty town/city/
+// county fields. This parses them out of the address whenever they're missing.
+function parseTownCountyFromAddress(addr, postcode) {
+  var s = String(addr || '').trim();
+  if (!s) return { town: '', city: '', county: '' };
+  var parts = s.split(',').map(function(p){ return p.trim(); }).filter(Boolean);
+  if (!parts.length) return { town: '', city: '', county: '' };
+  // Drop the postcode from the end
+  while (parts.length && /^[A-Z]{1,2}\d/i.test(parts[parts.length - 1])) parts.pop();
+  var county = '', town = '';
+  if (parts.length >= 2) { county = parts[parts.length - 1]; town = parts[parts.length - 2]; }
+  else if (parts.length === 1) town = parts[0];
+  return { town: town, city: town, county: county };
+}
+
+// Ensure a lead's address fields are complete: door number, street, town, county,
+// full postcode. Parses any missing piece from the address text or postcode.
+function ensureFullLeadAddress(l) {
+  try {
+    if (!l || typeof l !== 'object') return l;
+    var a = l.address || l.fullAddress || l.deceasedAddress || '';
+    // town / city / county
+    if (!l.town && !l.city) {
+      var tc = parseTownCountyFromAddress(a, l.postcode || '');
+      if (tc && tc.town) { l.town = tc.town; l.city = tc.city || tc.town; }
+      if (tc && tc.county) l.county = tc.county;
+    } else if (!l.city && l.town) { l.city = l.town; }
+    // door number (moving only) — parse from address text if missing
+    if ((l.product === 'moving' || !l.product) && !l.building_number && !l.number) {
+      var bn = extractMovingDoorNumber(a);
+      if (bn) l.building_number = bn;
+    }
+    // street — parse from address text if missing
+    if (!l.street) l.street = extractMovingStreet(a);
+    return l;
+  } catch(e) { return l; }
+}
+function extractMovingDoorNumber(addr) {
+  var s = String(addr || '').trim();
+  var m = s.match(/^(?:Flat|Apartment|Suite|Unit)\s+[A-Z0-9\-]+/i);
+  if (m) return m[0];
+  var n = s.match(/^(\d+[A-Z]?)\b/);
+  return n ? n[1] : '';
+}
+function extractMovingStreet(addr) {
+  var s = String(addr || '').trim();
+  s = s.replace(/^(?:Flat|Apartment|Suite|Unit)\s+[A-Z0-9\-]+,\s*/i, '');
+  s = s.replace(/^\d+[A-Z]?\s*,\s*/, '');
+  s = s.replace(/^\d+[A-Z]?\s+/, '');
+  return s.trim();
+}
+// Validate a moving lead (doc comment preserved below).
 function validateMovingLead(ld) {
   var a = String(ld.fullAddress || ld.address || '').trim();
   var pc = String(ld.postcode || '').trim().toUpperCase();
@@ -562,6 +618,17 @@ function loadProductPool(prod) {
             if (prod === 'moving') _c2 = normaliseMovingAddress(_c2);
             l.fullAddress = _c2;
           }
+        }
+        // TOWN/CITY/COUNTY BACK-FILL: ensure every moving lead carries a usable
+        // town for Print & Post. Older scrapes left these empty even though the
+        // address text contains them ("1128 Eastern Avenue, Ilford, Greater
+        // London, IG2 7SD"). Parse from the address when missing.
+        if (prod === 'moving' && (!l.town && !l.city)) {
+          try {
+            var _tc = parseTownCountyFromAddress(l.address || l.fullAddress || '', l.postcode || '');
+            if (_tc && _tc.town) { l.town = _tc.town; l.city = _tc.city || _tc.town; }
+            if (_tc && _tc.county) l.county = _tc.county;
+          } catch(_tce) {}
         }
         return l;
       });
@@ -9793,6 +9860,9 @@ app.post('/api/admin/set-customer-lead-total', adminAuth, async (req, res) => {
         if (usedKeys[key]) continue;
         usedKeys[key] = 1;
         var dS = { address: pl.address || pl.fullAddress || '', fullAddress: pl.fullAddress || pl.address || '', postcode: pl.postcode || '', url: pl.url || '', street: pl.street || '', building_number: pl.building_number || '', source: pl.source || '', firstVisibleDate: pl.firstVisibleDate || nowIso, scrapedAt: nowIso };
+        // FULL-ADDRESS GUARANTEE: every lead that reaches a customer's dashboard &
+        // email must carry door number + street + town/county + full postcode.
+        try { ensureFullLeadAddress(dS); } catch(_e) {}
         // NEVER stamp backfill leads as TODAY — that inflates "Leads Today" past the
         // cap. Use the oldest delivery day in the customer's history as fallback so
         // the total grows without touching today's exact-5 batch.
@@ -9998,7 +10068,7 @@ app.post('/api/admin/refresh-pending-leads', adminAuth, (req, res) => {
         var key = l.url || ('a:' + String(l.address || l.fullAddress || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0,30));
         if (deliveredKeys[key] || seen[key]) continue;
         seen[key] = 1;
-        var dQ2 = { address: l.address || l.fullAddress || '', fullAddress: l.fullAddress || l.address || '', postcode: l.postcode || '', url: l.url || '', street: l.street || '', building_number: l.building_number || '', source: l.source || '', firstVisibleDate: l.firstVisibleDate || nowIso, scrapedAt: nowIso };
+        var dQ2 = { address: l.address || l.fullAddress || '', fullAddress: l.fullAddress || l.address || '', postcode: l.postcode || '', url: l.url || '', street: l.street || '', building_number: l.building_number || '', source: l.source || '', firstVisibleDate: l.firstVisibleDate || nowIso, scrapedAt: nowIso }; try { ensureFullLeadAddress(dQ2); } catch(_e2) {}
         dbQ.leads.push({ id: uuidv4(), customer_id: cust.id, product: cust.product, data: JSON.stringify(dQ2), status: 'new', delivered: 0, created_at: nowIso, delivered_at: null, release_at: nowIso.split('T')[0] + 'T09:00:00.000Z' });
         assigned++; custEntry.added_valid++;
       }
