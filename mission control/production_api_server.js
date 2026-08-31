@@ -10489,7 +10489,19 @@ app.get('/api/admin/customers', adminAuth, (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 50;
 
-  const allCustomers = db.prepare('SELECT * FROM customers ORDER BY created_at DESC').all();
+  // Sort REAL customers first (non test.*, non *.1788* checkout tests), then test
+  // accounts. Without this, 50 recent test accounts fill page 1 and real customers
+  // (oathxxx, AFS Removals, Essex bros, etc.) are hidden on later pages.
+  const allCustomers = db.prepare('SELECT * FROM customers').all()
+    .sort(function(a, b) {
+      function isTest(x) {
+        var e = String(x.email || '').toLowerCase();
+        return e.indexOf('test.') === 0 || /\.1788\d+@/.test(e);
+      }
+      var ta = isTest(a) ? 1 : 0, tb = isTest(b) ? 1 : 0;
+      if (ta !== tb) return ta - tb;
+      return String(b.created_at || '').localeCompare(String(a.created_at || ''));
+    });
   const total = db.prepare('SELECT COUNT(*) as count FROM customers').get();
   const customers = allCustomers.slice((page - 1) * limit, page * limit);
 
