@@ -20883,10 +20883,12 @@ function buildCleanLetterHtml(templateBody, senderName, senderAddr) {
     .replace(/\[?[a-zA-Z_]+(?:_[a-zA-Z_]+)*\]?/g, function(tok) { return /^\[[a-z_]+\]$/.test(tok) ? '' : tok; });
   // NO sender name/address/date header: Stannp prints the RECIPIENT address in its
   // envelope window itself, so the letter is just the clean body content. Keeping
-  // a header here duplicated the name/address on the printed letter.
+  // a header here duplicated the name/address on the printed letter. The body
+  // starts lower (padding-top ~100px) to clear the envelope window but uses the
+  // FULL A4 width + bottom so customers can write a fuller letter (~2,600 chars).
   var letterHtml =
     '<html><body style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;color:#1e293b">' +
-    '<div style="font-size:11px;line-height:1.7;white-space:pre-wrap;padding-top:130px">' + (printBody || '').split('\n').join('<br>') + '</div>' +
+    '<div style="font-size:11px;line-height:1.7;white-space:pre-wrap;padding-top:100px">' + (printBody || '').split('\n').join('<br>') + '</div>' +
     '</body></html>';
   return { html: letterHtml, body: printBody };
 }
