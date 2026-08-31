@@ -19,7 +19,17 @@ const OTM_SLUGS = {
   'L': 'liverpool', 'WA': 'warrington', 'CH': 'chester', 'WN': 'wigan', 'PR': 'preston',
   'AL': 'st-albans', 'M': 'manchester', 'BL': 'bolton', 'OL': 'oldham', 'SK': 'stockport',
   'SM': 'sutton', 'BR': 'bromley', 'UB': 'uxbridge', 'WD': 'watford', 'SG': 'stevenage',
-  'SS': 'southend', 'CO': 'colchester', 'ME': 'medway', 'CT': 'canterbury', 'TN': 'tunbridge-wells'
+  'SS': 'southend', 'CO': 'colchester', 'ME': 'medway', 'CT': 'canterbury', 'TN': 'tunbridge-wells',
+  // Added Sep 2026 to cover the remaining customer areas (previously many areas
+  // had no slug so they got NO OnTheMarket supply at all).
+  'BT': 'belfast', 'G': 'glasgow', 'EH': 'edinburgh', 'AB': 'aberdeen', 'DD': 'dundee',
+  'NG': 'nottingham', 'DE': 'derby', 'LE': 'leicester', 'LN': 'lincoln', 'DN': 'doncaster',
+  'GL': 'gloucester', 'BS': 'bristol', 'SN': 'swindon', 'RG': 'reading', 'BA': 'bath',
+  'B': 'birmingham', 'WS': 'walsall', 'WV': 'wolverhampton', 'DY': 'dudley', 'CV': 'coventry',
+  'S': 'sheffield', 'HU': 'hull', 'YO': 'york', 'WF': 'wakefield', 'PE': 'peterborough',
+  'CB': 'cambridge', 'NR': 'norwich', 'IP': 'ipswich', 'EX': 'exeter', 'PL': 'plymouth',
+  'TQ': 'torquay', 'TR': 'truro', 'TA': 'taunton', 'BH': 'bournemouth', 'PO': 'portsmouth',
+  'SO': 'southampton', 'SP': 'salisbury', 'DT': 'dorchester', 'KY': 'kirkcaldy', 'FK': 'stirling', 'LS': 'leeds'
 };
 
 function httpGet(host, path, timeoutMs) {
@@ -35,30 +45,70 @@ function httpGet(host, path, timeoutMs) {
   });
 }
 
+// Retry a GET with exponential backoff for transient failures (429 / 5xx / timeout).
+// OTM rate-limits rapid fire requests, so consecutive areas must be throttled too.
+async function httpGetRetry(host, path, opts) {
+  opts = opts || {};
+  const maxAttempts = (opts.retries != null) ? opts.retries : 3;
+  const delayMs = (opts.delayMs != null) ? opts.delayMs : 2500;
+  let last = null;
+  for (let a = 0; a < maxAttempts; a++) {
+    if (a > 0) await sleep(delayMs * a);
+    last = await httpGet(host, path, opts.timeoutMs);
+    if (last.status === 200) return last;
+    if (last.status === 429 || last.status === 403 || last.status >= 500 || last.status === 0) {
+      continue; // retry
+    }
+    break; // 404 etc — don't retry
+  }
+  return last;
+}
+function sleep(ms) { return new Promise(function(r){ setTimeout(r, ms); }); }
+
 function parseListPage(body) {
-  const i = body.indexOf('__NEXT_DATA__');
-  if (i < 0) return [];
-  const js = body.indexOf('>', i) + 1;
-  const ct = body.indexOf('</script>', js);
-  if (ct < 0) return [];
-  let j;
-  try { j = JSON.parse(body.substring(js, ct).trim()); } catch (e) { return []; }
-  const irst = j.props && j.props.initialReduxState;
-  const list = (irst && irst.results && irst.results.list) || [];
-  return list.map(function(l) {
-    return {
-      id: String(l.id || ''),
-      address: (l.address || '').trim(),
-      propertyType: l['humanised-property-type'] || '',
-      bedrooms: parseInt(l.bedrooms) || 0,
-      price: l['short-price'] || l.price || '',
-      priceNum: parseInt(String(l.price || '').replace(/[^0-9]/g, '')) || 0,
-      daysSinceAdded: l['days-since-added-reduced'] || '',
-      url: l['details-url'] || '',
-      agent: (l.agent && l.agent.name) || '',
-      mainLabel: l['main-label'] || ''
-    };
-  }).filter(function(l) { return l.id && l.url; });
+  // OTM's page structure changed (Sep 2026): each listing is an <li id="result-{id}">
+  // block containing the property card (title="View the details for {address} -
+  // {beds} {type} for sale"), a £price, and a freshness <span>Added &lt; 7 days</span>
+  // / <span>Added &gt; 14 days</span>. There is no longer a __NEXT_DATA__ JSON
+  // blob, so we parse the <li> blocks directly.
+  const items = String(body).split(/<li id="result-/).slice(1);
+  const out = [];
+  for (let ci = 0; ci < items.length; ci++) {
+    const li = items[ci];
+    const idM = li.match(/^(\d+)"/);
+    const titleM = li.match(/title="View the details for ([^"]+)"/);
+    if (!idM || !titleM) continue;
+    const title = titleM[1];
+    const dash = title.indexOf(' - ');
+    const address = dash > 0 ? title.substring(0, dash).trim() : title;
+    const bedsM = title.match(/(\d+)\s*beds?/i);
+    const typeM = title.match(/for (?:sale|rent)\s*[^-]*?(\w[\w '-]*?)\s*$/i);
+    const priceM = li.match(/£([0-9,]+)/);
+    const freshM = li.match(/Added\s*(&lt;|&gt;|<|>)?\s*([\d\w\- ]+?)<\/span>/i);
+    let normLabel = '';
+    if (freshM) {
+      if (freshM[1] === '&lt;' || freshM[1] === '<') normLabel = 'Added today';   // "Added < 7 days" = listed very recently -> treat as fresh today
+      else if (freshM[1] === '&gt;' || freshM[1] === '>') normLabel = 'Added 99 days ago'; // "Added > 14 days" = stale
+      else if (/today/i.test(freshM[2] || '')) normLabel = 'Added today';
+      else if (/yesterday/i.test(freshM[2] || '')) normLabel = 'Added yesterday';
+      else if (/\d+\s*days?\s*ago/.test(freshM[2] || '')) normLabel = freshM[2];
+    }
+    out.push({
+      id: idM[1],
+      address: address,
+      propertyType: (typeM && typeM[1]) ? typeM[1].trim() : (bedsM ? 'House' : ''),
+      bedrooms: parseInt(bedsM && bedsM[1]) || 0,
+      price: priceM ? priceM[1] : '',
+      priceNum: priceM ? parseInt(priceM[1].replace(/[^0-9]/g, '')) : 0,
+      daysSinceAdded: normLabel,
+      url: '/details/' + idM[1] + '/',
+      agent: '',
+      mainLabel: ''
+    });
+  }
+  // Dedup by id.
+  const seen = {};
+  return out.filter(function(l) { if (seen[l.id]) return false; seen[l.id] = 1; return l.id && l.url; });
 }
 
 function parseDetailPostcode(body) {
@@ -131,12 +181,15 @@ async function collectOnTheMarketLeads(params) {
     const area = String(areas[ai] || '').toUpperCase().replace(/[^A-Z]/g, '');
     const slug = OTM_SLUGS[area];
     if (!slug) { console.log('[OTM] no slug for area ' + area); continue; }
-    const listRes = await httpGet('www.onthemarket.com', '/for-sale/property/' + slug + '/?view_type=list');
+    // Throttle between areas so OTM doesn't rate-limit the whole batch.
+    if (ai > 0) await sleep(1800);
+    const listRes = await httpGetRetry('www.onthemarket.com', '/for-sale/property/' + slug + '/?view_type=list', { retries: 3, delayMs: 2500 });
     if (listRes.status !== 200) { console.log('[OTM] list ' + area + ' HTTP ' + listRes.status); continue; }
     let listings = parseListPage(listRes.body);
     // Optional second page for more volume.
     if (maxPerArea > 30 && listings.length >= 30) {
-      const p2 = await httpGet('www.onthemarket.com', '/for-sale/property/' + slug + '/?view_type=list&page=2');
+      await sleep(1500);
+      const p2 = await httpGetRetry('www.onthemarket.com', '/for-sale/property/' + slug + '/?view_type=list&page=2', { retries: 3, delayMs: 2500 });
       if (p2.status === 200) listings = listings.concat(parseListPage(p2.body));
     }
     listings = listings.slice(0, maxPerArea);
@@ -156,11 +209,12 @@ async function collectOnTheMarketLeads(params) {
     let idx = 0;
     while (idx < freshToResolve.length) {
       const batch = freshToResolve.slice(idx, idx + concurrency);
-      const results = await Promise.all(batch.map(function(l) { return httpGet('www.onthemarket.com', l.url); }));
+      const results = await Promise.all(batch.map(function(l) { return httpGetRetry('www.onthemarket.com', l.url, { retries: 2, delayMs: 2000 }); }));
       results.forEach(function(r, bi) {
         resolved[idx + bi] = parseDetailPostcode(r.body);
       });
       idx += concurrency;
+      if (idx < freshToResolve.length) await sleep(1200);
     }
     detailFetches += freshToResolve.length;
     freshToResolve.forEach(function(l, li) {
