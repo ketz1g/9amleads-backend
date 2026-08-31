@@ -1480,17 +1480,27 @@ function flyerEditorDraw(){
     ctx.fillText(inLine ? '✓ IN LINE — reaches the bleed line, nothing cut off' : '⚠ Adjust so the flyer reaches the bleed line', ox + pw/2, by1 - 4);
     ctx.textAlign = 'left';
   }
-  // ADDRESS ZONE (BACK only: top 28%, labelled in mm)
+  // ADDRESS ZONE (BACK only) — matches Stannp's actual clearzone position:
+  //   portrait : top-left  box  (x 14-36%, y 7-17%)
+  //   landscape: right-side box  (x 69-84%, y 30-41%)
   if(ed.matType==='flyer_back'){
-    var zoneH=ed.zoneH;
-    ctx.fillStyle='rgba(219,234,254,0.95)'; ctx.fillRect(ox,oy,pw,zoneH);
-    ctx.strokeStyle='#0c4a6e'; ctx.lineWidth=4; ctx.strokeRect(ox,oy,pw,zoneH);
-    ctx.strokeStyle='#0c4a6e'; ctx.setLineDash([8,5]); ctx.lineWidth=2; ctx.strokeRect(ox+2,oy+2,pw-4,zoneH-4); ctx.setLineDash([]);
-    ctx.fillStyle='#0c4a6e'; ctx.fillRect(ox,oy,pw,26);
-    ctx.fillStyle='#ffffff'; ctx.font='bold 12px Arial'; ctx.textAlign='center';
-    ctx.fillText('ADDRESS ZONE - '+feRound1(fePxToMm(zoneH))+'mm. recipient address prints here', ox+pw/2, oy+18);
-    ctx.fillStyle='#0c4a6e'; ctx.font='bold 11px Arial';
-    ctx.fillText('Keep this area plain (white)', ox+pw/2, oy+42);
+    var isLand = ed.pageW > ed.pageH;
+    var zx, zy, zw, zh;
+    if (isLand) {
+      zx = Math.round(pw * 0.69); zy = Math.round(ph * 0.30);
+      zw = Math.round(pw * 0.84) - zx; zh = Math.round(ph * 0.41) - zy;
+    } else {
+      zx = Math.round(pw * 0.14); zy = Math.round(ph * 0.07);
+      zw = Math.round(pw * 0.36) - zx; zh = Math.round(ph * 0.17) - zy;
+    }
+    ctx.fillStyle='rgba(219,234,254,0.95)'; ctx.fillRect(ox+zx, oy+zy, zw, zh);
+    ctx.strokeStyle='#0c4a6e'; ctx.lineWidth=4; ctx.strokeRect(ox+zx, oy+zy, zw, zh);
+    ctx.strokeStyle='#0c4a6e'; ctx.setLineDash([8,5]); ctx.lineWidth=2; ctx.strokeRect(ox+zx+2, oy+zy+2, zw-4, zh-4); ctx.setLineDash([]);
+    ctx.fillStyle='#0c4a6e';
+    ctx.fillStyle='#ffffff'; ctx.font='bold 11px Arial'; ctx.textAlign='center';
+    ctx.fillText('ADDRESS ZONE — recipient address prints here', ox+zx+zw/2, oy+zy+Math.min(26, zh/2));
+    ctx.fillStyle='#0c4a6e'; ctx.font='bold 10px Arial';
+    ctx.fillText('Keep this area plain (white)', ox+zx+zw/2, oy+zy+Math.min(44, zh/2)+12);
     ctx.textAlign='left';
   }
   feUpdateReadout();
@@ -1514,11 +1524,20 @@ function saveFlyerEditor(){
     var dw=_flyerEditor.rw*sxP, dh=_flyerEditor.rh*syP;
     ctx.drawImage(_flyerEditor.img, dx, dy, dw, dh);
   }
-  // Back: ensure the address zone is white. If the design was already saved with
-  // the zone baked in (hasBakedZone), it's drawn full-bleed so the baked white is
-  // already in place — re-whitening is harmless but skipped for clarity.
+  // Back: ensure the address zone is white — at Stannp's actual clearzone position:
+  // portrait top-left box, landscape right-side box. (If the design already has the
+  // zone baked, re-whitening the same area is harmless.)
   if(_flyerEditor.matType === 'flyer_back'){
-    ctx.fillStyle='#ffffff'; ctx.fillRect(0, 0, PW, zoneH);
+    var _isLand = _flyerEditor.pageW > _flyerEditor.pageH;
+    var _zx, _zy, _zw, _zh;
+    if (_isLand) {
+      _zx = Math.round(PW * 0.69); _zy = Math.round(PH * 0.30);
+      _zw = Math.round(PW * 0.84) - _zx; _zh = Math.round(PH * 0.41) - _zy;
+    } else {
+      _zx = Math.round(PW * 0.14); _zy = Math.round(PH * 0.07);
+      _zw = Math.round(PW * 0.36) - _zx; _zh = Math.round(PH * 0.17) - _zy;
+    }
+    ctx.fillStyle='#ffffff'; ctx.fillRect(_zx, _zy, _zw, _zh);
   }
   // Encode as JPEG (quality 0.92) instead of PNG. The full-res canvas at
   // 1819x2551 produces a PNG that can exceed the hosting proxy's ~10MB request
