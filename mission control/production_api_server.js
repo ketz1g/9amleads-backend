@@ -608,6 +608,17 @@ function loadProductPool(prod) {
   arr = arr.filter(function(l) { return !(l.rejected || l.blocked || l.blocked_by_admin); });
       arr = arr.map(function(l) {
         if (l && (l.address || l.fullAddress)) {
+          // FULL-ADDRESS GUARANTEE: capture town/city/county from the RAW address
+          // BEFORE normalisation strips it down to street-only. Older scrapes left
+          // these empty even though the address text contains them ("1128 Eastern
+          // Avenue, Ilford, Greater London, IG2 7SD"). Parse + persist now.
+          if (prod === 'moving' && !l.town && !l.city) {
+            try {
+              var _tc0 = parseTownCountyFromAddress(l.address || l.fullAddress || '', l.postcode || '');
+              if (_tc0 && _tc0.town) { l.town = _tc0.town; l.city = _tc0.city || _tc0.town; }
+              if (_tc0 && _tc0.county) l.county = _tc0.county;
+            } catch(_tce0) {}
+          }
           if (l.address) {
             var _c1 = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(l.address)));
             if (prod === 'moving') _c1 = normaliseMovingAddress(_c1);
@@ -618,17 +629,6 @@ function loadProductPool(prod) {
             if (prod === 'moving') _c2 = normaliseMovingAddress(_c2);
             l.fullAddress = _c2;
           }
-        }
-        // TOWN/CITY/COUNTY BACK-FILL: ensure every moving lead carries a usable
-        // town for Print & Post. Older scrapes left these empty even though the
-        // address text contains them ("1128 Eastern Avenue, Ilford, Greater
-        // London, IG2 7SD"). Parse from the address when missing.
-        if (prod === 'moving' && (!l.town && !l.city)) {
-          try {
-            var _tc = parseTownCountyFromAddress(l.address || l.fullAddress || '', l.postcode || '');
-            if (_tc && _tc.town) { l.town = _tc.town; l.city = _tc.city || _tc.town; }
-            if (_tc && _tc.county) l.county = _tc.county;
-          } catch(_tce) {}
         }
         return l;
       });
