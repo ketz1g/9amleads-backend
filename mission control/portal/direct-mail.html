@@ -589,6 +589,8 @@ function cleanLetterPreviewText(t){
   s=s.replace(/\[([^\]]+)\]\([^)]+\)/g,'$1');
   s=s.replace(/\*+/g,'');
   s=s.replace(/\n{3,}/g,'\n\n');
+  s=s.replace(/[ \t]+/g,' ');   // collapse runs of spaces/tabs (pasted text has many)
+  s=s.replace(/ +\n/g,'\n');    // trim trailing spaces before line breaks
   return s.trim();
 }
 // Check whether the letter fits on one A4 page (compares body scroll height to the

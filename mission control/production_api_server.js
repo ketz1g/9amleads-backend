@@ -20916,6 +20916,11 @@ function cleanMailText(text) {
   s = s.replace(/\*+/g, '');
   // 8. Collapse 3+ blank lines to one
   s = s.replace(/\n{3,}/g, '\n\n');
+  // 9. Collapse runs of spaces/tabs to a single space — pasted text (PDFs, docs)
+  //    is often full of double spaces/indents that inflate the character count.
+  s = s.replace(/[ \t]+/g, ' ');
+  // 10. Trim trailing spaces before line breaks
+  s = s.replace(/ +\n/g, '\n');
   return s.trim();
 }
 
