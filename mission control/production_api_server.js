@@ -14815,6 +14815,31 @@ app.get('/api/admin/pool-leads', adminAuth, (req, res) => {
 });
 
 // DIAGNOSTIC: dump pool area distribution for a product
+
+// POST /api/admin/pool/enrich-addresses — back-fill town/city/county + door/street
+// on ALL existing pool leads and persist to the pool file. Ensures every lead has
+// the full address (Print & Post guarantee). Idempotent.
+app.post('/api/admin/pool/enrich-addresses', adminAuth, async (req, res) => {
+  try {
+    var prod = (req.body && req.body.product) || 'moving';
+    var fn = path.join(DATA_DIR, PRODUCT_LEAD_FILES[prod] ? PRODUCT_LEAD_FILES[prod].file : (prod + '-leads.json'));
+    var pool = [];
+    try { pool = JSON.parse(fs.readFileSync(fn, 'utf-8')); if (!Array.isArray(pool)) pool = []; } catch(e) { pool = []; }
+    var updated = 0;
+    for (var i = 0; i < pool.length; i++) {
+      var l = pool[i];
+      if (!l) continue;
+      var before = (l.town || '') + '|' + (l.county || '') + '|' + (l.building_number || '');
+      ensureFullLeadAddress(l);
+      var after = (l.town || '') + '|' + (l.county || '') + '|' + (l.building_number || '');
+      if (before !== after) updated++;
+    }
+    fs.writeFileSync(fn, JSON.stringify(pool));
+    res.json({ success: true, product: prod, leads: pool.length, updated: updated });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// DIAGNOSTIC: dump pool area distribution for a product
 app.get('/api/admin/pool-areas', adminAuth, (req, res) => {
   try {
     var prod = req.query.product || 'moving';
