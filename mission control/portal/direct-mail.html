@@ -1116,13 +1116,15 @@ function feBackUsableRect(w, h) {
   if (isLand) {
     zx = Math.round(w * 0.68); zy = Math.round(h * 0.30);
     zw = Math.round(w * 0.88) - zx; zh = Math.round(h * 0.41) - zy;
-  } else {
-    zx = Math.round(w * 0.14); zy = Math.round(h * 0.07);
-    zw = Math.round(w * 0.36) - zx; zh = Math.round(h * 0.17) - zy;
+    // Design sits in the LEFT column, ending ~1 inch (12%) short of the address
+    // zone so the printed recipient address never overlaps the flyer design.
+    var inchL = Math.round(w * 0.12);
+    return { x: 0, y: 0, w: Math.max(1, zx - inchL), h: Math.max(1, h) };
   }
-  // Largest rectangle not overlapping the zone: take the left column (if zone is
-  // on the right) plus the strip below the zone. Simplify to: the bigger of
-  // [everything left of the zone] vs [everything below the zone].
+  zx = Math.round(w * 0.14); zy = Math.round(h * 0.07);
+  zw = Math.round(w * 0.36) - zx; zh = Math.round(h * 0.17) - zy;
+  // Largest rectangle not overlapping the zone: the bigger of [left of the zone]
+  // vs [below the zone] for the portrait top-left zone.
   var leftW = zx, leftH = h;              // area to the left of the zone
   var belowW = w, belowH = h - (zy + zh); // area below the zone
   var areaLeft = leftW * leftH, areaBelow = belowW * belowH;
