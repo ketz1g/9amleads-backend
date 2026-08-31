@@ -168,6 +168,31 @@ function extractPostcodeArea(pc) {
   return m ? m[1].toUpperCase() : '';
 }
 
+// Pull the door number / flat identifier from the front of an OTM address so the
+// delivery's door-number gate can use it. Examples:
+//   "55 Burlington Street"       -> "55"
+//   "Flat 3, Enfield Court"      -> "Flat 3"
+//   "Apartment 101, 145 Farnworth" -> "Apartment 101"
+//   "2 Yew Tree Road"            -> "2"
+// Returns '' when the address doesn't start with a number/flat (e.g. "Costcutter
+// Supermarket, 55 Burlington Street" — a named premise; leave door blank).
+function extractBuildingNumber(addr) {
+  const s = String(addr || '').trim();
+  const m = s.match(/^(?:Flat|Apartment|Suite|Unit)\s+[A-Z0-9\-]+/i);
+  if (m) return m[0];
+  const n = s.match(/^(\d+[A-Z]?)\b/);
+  return n ? n[1] : '';
+}
+
+// Strip the leading number / flat from the address to leave the street name.
+function extractStreetName(addr) {
+  let s = String(addr || '').trim();
+  s = s.replace(/^(?:Flat|Apartment|Suite|Unit)\s+[A-Z0-9\-]+,\s*/i, '');
+  s = s.replace(/^\d+[A-Z]?\s*,\s*/, '');
+  s = s.replace(/^\d+[A-Z]?\s+/, '');
+  return s.trim();
+}
+
 async function collectOnTheMarketLeads(params) {
   const out = [];
   const areas = (params && params.areas) || [];
@@ -227,7 +252,13 @@ async function collectOnTheMarketLeads(params) {
         listingId: l.id,
         address: l.address,
         fullAddress: l.address,
-        street: l.address,
+        // Extract the door number / flat from the front of the address so the
+        // delivery's door-number gate and Postcoder PAF can use it. OTM embeds it
+        // in the address text ("55 Burlington Street", "Flat 3 X", "Apartment 101"),
+        // but leaves the field blank — without extraction every lead would be
+        // rejected as door-less and never delivered.
+        building_number: extractBuildingNumber(l.address),
+        street: extractStreetName(l.address),
         postcode: pc,
         bedrooms: l.bedrooms,
         price: l.priceNum || l.price,
@@ -249,4 +280,4 @@ async function collectOnTheMarketLeads(params) {
   return out;
 }
 
-module.exports = { collectOnTheMarketLeads, OTM_SLUGS, extractPostcodeArea, isDevelopmentListing, otmListedDate };
+module.exports = { collectOnTheMarketLeads, OTM_SLUGS, extractPostcodeArea, isDevelopmentListing, otmListedDate, extractBuildingNumber, extractStreetName };
