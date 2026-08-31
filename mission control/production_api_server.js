@@ -656,14 +656,15 @@ function loadProductPool(prod) {
   // pool permanently so a re-delivery can't pick them up again.
   arr = arr.filter(function(l) { return !(l.rejected || l.blocked || l.blocked_by_admin); });
       arr = arr.map(function(l) {
-        if (l && (l.address || l.fullAddress)) {
-          // FULL-ADDRESS GUARANTEE: capture town/city/county from the RAW address
-          // BEFORE normalisation strips it down to street-only. Older scrapes left
-          // these empty even though the address text contains them ("1128 Eastern
-          // Avenue, Ilford, Greater London, IG2 7SD"). Parse + persist now.
-          if (prod === 'moving' && !l.town && !l.city) {
+        var _srcAddr = l.address || l.fullAddress || l.deceasedAddress || '';
+        if (l && _srcAddr) {
+          // FULL-ADDRESS GUARANTEE (ALL products): capture town/city/county from the
+          // RAW address BEFORE normalisation strips it down to street-only. Older
+          // scrapes left these empty even though the address text contains them
+          // ("1128 Eastern Avenue, Ilford, Greater London, IG2 7SD"). Parse + persist.
+          if (!l.town && !l.city) {
             try {
-              var _tc0 = parseTownCountyFromAddress(l.address || l.fullAddress || '', l.postcode || '');
+              var _tc0 = parseTownCountyFromAddress(_srcAddr, l.postcode || '');
               if (!_tc0.town && l.title) _tc0 = parseTownCountyFromAddress(l.title, l.postcode || '');
               if (_tc0 && _tc0.town) { l.town = _tc0.town; l.city = _tc0.city || _tc0.town; }
               if (_tc0 && _tc0.county) l.county = _tc0.county;
@@ -679,6 +680,9 @@ function loadProductPool(prod) {
             var _c2 = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(l.fullAddress)));
             if (prod === 'moving') _c2 = normaliseMovingAddress(_c2);
             l.fullAddress = _c2;
+          }
+          if (l.deceasedAddress) {
+            l.deceasedAddress = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(l.deceasedAddress)));
           }
         }
         return l;
@@ -1683,11 +1687,11 @@ class DirectMailProvider {
         // Address zone (Stannp's native clearzone): where the recipient address
         // prints and MUST stay white.
         //   portrait: top-left  (x 14-36%, y 7-17%)
-        //   landscape: right side (x 69-84%, y 30-41%)
+        //   landscape: right side (x 68-88%, y 30-41%)
         var addrX0 = 0, addrY0 = 0, addrW = 0, addrH = 0;
         if (A5_W > A5_H) {
-          addrX0 = Math.round(A5_W * 0.69); addrY0 = Math.round(A5_H * 0.30);
-          addrW = Math.round(A5_W * 0.84) - addrX0; addrH = Math.round(A5_H * 0.41) - addrY0;
+          addrX0 = Math.round(A5_W * 0.68); addrY0 = Math.round(A5_H * 0.30);
+          addrW = Math.round(A5_W * 0.88) - addrX0; addrH = Math.round(A5_H * 0.41) - addrY0;
         } else {
           addrX0 = Math.round(A5_W * 0.14); addrY0 = Math.round(A5_H * 0.07);
           addrW = Math.round(A5_W * 0.36) - addrX0; addrH = Math.round(A5_H * 0.17) - addrY0;
@@ -1717,10 +1721,10 @@ class DirectMailProvider {
           // page MINUS the white address zone — so the address area is visibly
           // whited out immediately on upload (no design hidden behind it), exactly
           // like the in-app editor's auto-fit. Landscape: design fills the left
-          // ~69% (zone on the right). Portrait: design fills the area below the
+          // ~68% (zone on the right). Portrait: design fills the area below the
           // top-left zone.
           var uzX = 0, uzY = 0, uzW, uzH;
-          if (A5_W > A5_H) { uzW = Math.max(1, Math.round(A5_W * 0.69)); uzH = A5_H; }
+          if (A5_W > A5_H) { uzW = Math.max(1, Math.round(A5_W * 0.68)); uzH = A5_H; }
           else { uzW = A5_W; uzY = Math.round(A5_H * 0.17); uzH = Math.max(1, A5_H - uzY); }
           var designBuf = await sharp(inputBuf)
             .rotate()
@@ -7491,29 +7495,32 @@ app.get('/api/leads', authMiddleware, (req, res) => {
     })
     .map(l => {
     const parsed = JSON.parse(l.data || '{}');
-    if (customer && customer.product === 'moving') {
-      // FULL-ADDRESS GUARANTEE: rebuild the displayed full address from the
-      // structured parts (door + street + town + county + postcode) so every
-      // moving lead reads "2 Sussex Road, Greater London, E6 2PS" — never a bare
-      // street or a region-stripped shell. (Previously stripRegionTags removed
-      // "Greater London" here, hiding the county.)
-      var _bn = parsed.building_number || parsed.buildingNumber || parsed.number || parsed.houseNumber || '';
-      var _st = parsed.street || '';
-      var _tn = parsed.town || parsed.city || '';
-      var _cn = parsed.county || '';
-      var _pc = parsed.postcode || '';
-      if ((_bn || _st) && (_tn || _cn || _pc)) {
-        var _pp = [];
-        if (_bn) _pp.push(String(_bn).trim() + (_st ? ' ' + String(_st).trim() : ''));
-        else if (_st) _pp.push(String(_st).trim());
-        if (_tn && _pp.join(',').toLowerCase().indexOf(String(_tn).toLowerCase()) === -1) _pp.push(String(_tn).trim());
-        if (_cn && _pp.join(',').toLowerCase().indexOf(String(_cn).toLowerCase()) === -1) _pp.push(String(_cn).trim());
-        if (_pc && _pp.join(',').toLowerCase().indexOf(String(_pc).toLowerCase()) === -1) _pp.push(String(_pc).trim());
-        parsed.fullAddress = _pp.filter(Boolean).join(', ');
-      }
-      if (parsed.address) parsed.address = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(parsed.address)));
-      if (parsed.fullAddress && !_bn && !_st) parsed.fullAddress = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(parsed.fullAddress)));
+    // FULL-ADDRESS GUARANTEE (all postcode products — moving, probate,
+    // newbusiness, planning): rebuild the displayed full address from the
+    // structured parts (door + street + town/county + postcode) so every lead
+    // reads "2 Sussex Road, Greater London, E6 2PS" — never a bare street or a
+    // region-stripped shell. (Previously stripRegionTags removed "Greater London"
+    // here, hiding the county.) Tenders (no postcode) are left untouched.
+    var _pc = parsed.postcode || '';
+    var _bn = parsed.building_number || parsed.buildingNumber || parsed.number || parsed.houseNumber || '';
+    var _st = parsed.street || '';
+    var _tn = parsed.town || parsed.city || '';
+    var _cn = parsed.county || '';
+    var _src = parsed.address || parsed.fullAddress || parsed.deceasedAddress || '';
+    if (_pc && (_bn || _st || _src)) {
+      var _pp = [];
+      if (_bn) _pp.push(String(_bn).trim() + (_st ? ' ' + String(_st).trim() : ''));
+      else if (_st) _pp.push(String(_st).trim());
+      else if (_src && !/,/.test(String(_src))) _pp.push(String(_src).trim());
+      var _joined = _pp.join(',');
+      if (_tn && _joined.toLowerCase().indexOf(String(_tn).toLowerCase()) === -1) _pp.push(String(_tn).trim());
+      if (_cn && _joined.toLowerCase().indexOf(String(_cn).toLowerCase()) === -1) _pp.push(String(_cn).trim());
+      if (_joined.toLowerCase().indexOf(String(_pc).toLowerCase()) === -1) _pp.push(String(_pc).trim());
+      var _full = _pp.filter(Boolean).join(', ');
+      if (_full && _full.split(',').length >= 2) parsed.fullAddress = _full;
     }
+    if (parsed.address) parsed.address = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(parsed.address)));
+    if (parsed.deceasedAddress) parsed.deceasedAddress = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(parsed.deceasedAddress)));
     const scored = attachOpportunityScore(parsed, customer?.product || l.product);
     // DIAGNOSTIC: expose the raw lead id + customer_id so the direct-mail payment
     // path can be debugged against the exact ids the dashboard hands to send-lead.
@@ -14968,11 +14975,13 @@ app.post('/api/admin/backfill-delivered-addresses', adminAuth, (req, res) => {
       if (!d || typeof d !== 'object') continue;
       var before = (d.town || '') + '|' + (d.city || '') + '|' + (d.county || '') + '|' + (d.fullAddress || '');
       try { ensureFullLeadAddress(d); } catch(e) {}
-      // Rebuild the full printable address from the parts.
+      // Rebuild the full printable address from the parts (supports moving,
+      // probate deceasedAddress, newbusiness & planning).
       var _parts = [];
       if (d.building_number) _parts.push(d.building_number + (d.street ? ' ' + d.street : ''));
       else if (d.street) _parts.push(d.street);
       else if (d.address && !/,/.test(String(d.address || ''))) _parts.push(d.address);
+      else if (d.deceasedAddress && !/,/.test(String(d.deceasedAddress || ''))) _parts.push(d.deceasedAddress);
       if (d.town) _parts.push(d.town);
       if (d.county) _parts.push(d.county);
       if (d.postcode) _parts.push(d.postcode);

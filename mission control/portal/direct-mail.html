@@ -1109,13 +1109,13 @@ function feRound1(v){ return Math.round(v*10)/10; }
 // Usable area on the BACK = whole page MINUS the white address zone box, so the
 // design is never hidden behind the recipient address. Matches Stannp's real
 // clearzone position: portrait = top-left box (x14-36%, y7-17%); landscape =
-// right-side box (x69-84%, y30-41%).
+// right-side box (x68-88%, y30-41%).
 function feBackUsableRect(w, h) {
   var isLand = w > h;
   var zx, zy, zw, zh;
   if (isLand) {
-    zx = Math.round(w * 0.69); zy = Math.round(h * 0.30);
-    zw = Math.round(w * 0.84) - zx; zh = Math.round(h * 0.41) - zy;
+    zx = Math.round(w * 0.68); zy = Math.round(h * 0.30);
+    zw = Math.round(w * 0.88) - zx; zh = Math.round(h * 0.41) - zy;
   } else {
     zx = Math.round(w * 0.14); zy = Math.round(h * 0.07);
     zw = Math.round(w * 0.36) - zx; zh = Math.round(h * 0.17) - zy;
@@ -1532,13 +1532,13 @@ function flyerEditorDraw(){
   }
   // ADDRESS ZONE (BACK only) — matches Stannp's actual clearzone position:
   //   portrait : top-left  box  (x 14-36%, y 7-17%)
-  //   landscape: right-side box  (x 69-84%, y 30-41%)
+  //   landscape: right-side box  (x 68-88%, y 30-41%)
   if(ed.matType==='flyer_back'){
     var isLand = ed.pageW > ed.pageH;
     var zx, zy, zw, zh;
     if (isLand) {
-      zx = Math.round(pw * 0.69); zy = Math.round(ph * 0.30);
-      zw = Math.round(pw * 0.84) - zx; zh = Math.round(ph * 0.41) - zy;
+      zx = Math.round(pw * 0.68); zy = Math.round(ph * 0.30);
+      zw = Math.round(pw * 0.88) - zx; zh = Math.round(ph * 0.41) - zy;
     } else {
       zx = Math.round(pw * 0.14); zy = Math.round(ph * 0.07);
       zw = Math.round(pw * 0.36) - zx; zh = Math.round(ph * 0.17) - zy;
@@ -1581,8 +1581,8 @@ function saveFlyerEditor(){
     var _isLand = _flyerEditor.pageW > _flyerEditor.pageH;
     var _zx, _zy, _zw, _zh;
     if (_isLand) {
-      _zx = Math.round(PW * 0.69); _zy = Math.round(PH * 0.30);
-      _zw = Math.round(PW * 0.84) - _zx; _zh = Math.round(PH * 0.41) - _zy;
+      _zx = Math.round(PW * 0.68); _zy = Math.round(PH * 0.30);
+      _zw = Math.round(PW * 0.88) - _zx; _zh = Math.round(PH * 0.41) - _zy;
     } else {
       _zx = Math.round(PW * 0.14); _zy = Math.round(PH * 0.07);
       _zw = Math.round(PW * 0.36) - _zx; _zh = Math.round(PH * 0.17) - _zy;
