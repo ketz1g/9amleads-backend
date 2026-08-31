@@ -21577,6 +21577,10 @@ app.get('/api/direct-mail/materials/:id/final-print', authQueryOrHeader, async (
     var buf = Buffer.from(base64, 'base64');
     // Artwork is now JPEG (compressed for Stannp upload limits)
     res.setHeader('Content-Type', 'image/jpeg');
+    // No-store so previews/downloads always show the CURRENT baked artwork
+    // (white address zone etc.) — never a stale cached copy from the CDN edge.
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    res.setHeader('Pragma', 'no-cache');
     if (req.query.download === '1' || req.query.download === 'true') {
       res.setHeader('Content-Disposition', 'attachment; filename="' + (mat.name || 'leaflet') + '-final.jpg"');
     }

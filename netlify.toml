@@ -139,3 +139,11 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' https://images.unsplash.com data:; connect-src 'self' https://nineamleads-backend.onrender.com"
+
+# Never cache API responses at the edge — they're dynamic (auth tokens, freshly
+# baked artwork, live delivery data). Caching proxied API images (e.g. /final-print)
+# served stale copies of the artwork without the white address zone.
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Cache-Control = "no-store, no-cache, must-revalidate, max-age=0"
