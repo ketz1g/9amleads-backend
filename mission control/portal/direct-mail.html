@@ -53,8 +53,8 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 <button class="btn btn-primary" onclick="newCampaign()"><i class="fas fa-plus"></i> New Campaign</button>
 </div>
 
-<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:11px 14px;margin:0 0 14px;font-size:12.5px;color:#14532d;line-height:1.7">
-<strong>💡 Tips to get the most from Print &amp; Post:</strong> Upload your flyer + a short intro letter once — they're reused for every mailing · <strong>Auto-Send</strong> posts every new lead automatically after the 9am delivery · Most jobs are won on the <strong>second letter</strong> — use Post Again on leads a couple of weeks later · A hand-addressed envelope gets opened and remembered.
+<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px 14px;margin:0 0 14px;font-size:12px;color:#14532d;line-height:1.6">
+💡 <strong>Quick tips:</strong> Save your leaflet + cover letter once and reuse them for every mailing · <strong>Auto-Send</strong> posts new leads automatically after each 9am delivery · Follow up leads a couple of weeks later with <strong>Post Again</strong> — most jobs are won on the second letter.
 </div>
 
 <div id="toast"></div>
@@ -62,11 +62,7 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 <!-- Step 1: Business Profile -->
 <div class="card">
 <div class="sect-title"><i class="fas fa-building" style="color:var(--accent)"></i> Step 1 · Your Business Profile</div>
-<div style="margin-bottom:12px;padding:12px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;font-size:12px;color:#166534;line-height:1.7">
-  <b><i class="fas fa-list-ol" style="margin-right:4px"></i> How this works:</b> This is the <b>sender's name &amp; address</b> printed on your mailings (and used as the "from" on your letters). Fill it in once. it's saved and reused for every mailing.
-  <div style="margin-top:6px;font-size:11px;color:#15803d">💡 <b>Tip:</b> Use your real business address and phone number so recipients can identify and contact you. Your <b>Contact Name</b> is used in personalised letters ("Dear Ketz..." if you want a personal touch).</div>
-</div>
-<p style="font-size:12px;color:var(--text2);margin-bottom:12px">This is the sender address shown on your mailings.</p>
+<p style="font-size:12px;color:var(--text2);margin-bottom:12px">Your sender name &amp; address printed on every mailing. Fill it in once — it's saved and reused.</p>
 <div class="grid-2">
 <div><label class="label">Company Name</label><input class="input" id="p-company" placeholder="Your company name"></div>
 <div><label class="label">Contact Name</label><input class="input" id="p-name" placeholder="Your name"></div>
@@ -81,17 +77,7 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 <!-- Step 2: Template / Cover Letter -->
 <div class="card">
 <div class="sect-title"><i class="fas fa-file-alt" style="color:var(--accent)"></i> Step 2 · Choose Format &amp; Your Cover Letter</div>
-<div style="margin-bottom:12px;padding:12px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;font-size:12px;color:#166534;line-height:1.8">
-  <b><i class="fas fa-list-ol" style="margin-right:4px"></i> How this works. follow these steps in order:</b>
-  <ol style="margin:6px 0 0 18px;padding:0">
-    <li><b>Pick your format</b> below (A5 Portrait / A5 Landscape / A5 in Envelope / A4 Letter). This sets the print size.</li>
-    <li><b>Upload your flyer front &amp; back</b> (or use our <b>Edit / Position</b> tool to position and crop your design onto the page).</li>
-    <li>Write your <b>cover letter</b> (only needed for letter and leaflet+letter sends).</li>
-    <li>Review the <b>Print-Ready preview</b>, then click <b>Save My Leaflet</b>.</li>
-  </ol>
-  <div style="margin-top:6px;font-size:11px;color:#15803d">💡 <b>Tip:</b> The <b>bottom strip</b> of the front is where your recipient's address prints (Royal Mail requirement). Keep it plain. Use the <b>Edit / Position</b> tool to make your design fill the page the way you want. you're in control of the final look.</div>
-</div>
-<p style="font-size:12px;color:var(--text2);margin-bottom:12px">Pick the print format (size &amp; orientation), download the matching design template with correct bleed + safe-zone lines, then write your cover letter (optional for leaflet-only sends).</p>
+<p style="font-size:12px;color:var(--text2);margin-bottom:12px">1. <b>Pick your format</b> (A5 Portrait / A5 Landscape / A5 in Envelope / A4 Letter) · 2. <b>Upload or Edit</b> your leaflet front &amp; back · 3. <b>Write your cover letter</b> (letters only). Then <b style="color:var(--success)">save your leaflet and letter, and review the Print-Ready preview below</b> before sending.</p>
 
 <!-- Format selector -->
 <div style="margin-bottom:16px;padding:14px;background:#f8fafc;border:1px solid var(--border);border-radius:10px">
@@ -137,11 +123,9 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
   </div>
   <!-- Guidance -->
   <div style="flex:1;min-width:240px;font-size:11px;color:var(--text2);line-height:1.7">
-    <b style="color:#0ea5e9">The blue box (top-left)</b> is the <b>envelope window</b>. the recipient's address prints there. Keep it clear.<br><br>
-    <b>Your letter fills one side of A4.</b> Keep your cover letter short enough to fit on one page. if it's too long it will spill onto a second side, which costs extra and looks unprofessional.<br><br>
-    <b style="color:var(--success)">One A4 page fits up to ~150 words / ~1,100 characters</b> (the address window takes the top, so there's less room for text). Watch the counter — it shows your current <b>words / characters</b> and flags when you're getting close or too long.<br><br>
-    <b>Symbols &amp; icons:</b> Checkmarks (✓), bullets (•), £ and other common symbols <b>print correctly</b>. Colour emojis (😀) can't be printed in a letter, so keep to symbols and plain text for a clean, professional result.<br><br>
-    <b style="color:var(--success)">The page preview updates live</b> as you write. Watch the status below the page: <b style="color:#15803d">"Fits on one A4 page"</b> = good, or <b style="color:#dc2626">"Letter is too long. shorten it"</b>.
+    <b style="color:#0ea5e9">The blue box (top-left)</b> is the <b>envelope window</b> — the recipient's address prints there, so keep it clear.<br><br>
+    <b>Your letter fills one side of A4.</b> Keep it to <b style="color:var(--success)">~150 words / ~1,100 characters</b> (the counter below flags when it's too long). The preview updates live as you write.<br><br>
+    <b>Symbols &amp; icons:</b> ✓, •, £ and other common symbols print correctly. Colour emojis (😀) can't be printed, so keep to plain text for a clean result.
   </div>
 </div>
 <div style="display:flex;gap:10px;margin-top:12px">
@@ -156,12 +140,8 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 
 <!-- Final print preview with whited-out address zone + download -->
 <div id="final-print-preview" style="display:none;margin-top:16px;border:1px solid var(--border);border-radius:10px;padding:14px;background:#f8fafc">
-<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px"><i class="fas fa-print" style="color:var(--accent);margin-right:4px"></i> Your Print-Ready Leaflet <span style="color:var(--success);font-weight:700">(white address zone baked in — no content lost)</span></div>
-<div style="padding:10px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:12px;color:#15803d;line-height:1.6;margin-bottom:10px">
-<i class="fas fa-check-circle" style="margin-right:4px"></i><b>Nothing is cut off.</b> Your back design is automatically scaled to fit neatly below/around the white address zone with a safe margin — so the bottom of your leaflet always prints fully. We've handled the layout for you.
-</div>
-<p style="font-size:11px;color:var(--text2);margin-bottom:10px">The white address zone — where Royal Mail prints the recipient address — stays clean white on the <b>back</b> (on the right for landscape, top-left for portrait). Your full design is preserved on the <b>front</b>, and on the <b>back</b> it's positioned around the zone automatically. If you'd like finer control, use <b>Edit</b> on the back preview and drag/stretch the design to taste — the preview always shows exactly what will print.</p>
-<p style="font-size:11px;color:#0369a1;background:#eff6ff;border:1px solid #bae6fd;border-radius:8px;padding:8px 10px;margin-bottom:10px"><i class="fas fa-edit" style="margin-right:4px"></i><b>Tip:</b> Your back design is automatically positioned around the white address zone so nothing is cut off. If you'd like to tweak it, click <b>Edit</b> on the <b>Back. Print-Ready</b> preview above — drag to move and stretch the handles to taste. The preview updates as you adjust it.</p>
+<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px"><i class="fas fa-print" style="color:var(--accent);margin-right:4px"></i> Your Print-Ready Leaflet <span style="color:var(--success);font-weight:700">(white address zone baked in — nothing is cut off)</span></div>
+<p style="font-size:11px;color:var(--text2);margin-bottom:10px">This is exactly what will print. The white address zone stays clean on the <b>back</b> (right for landscape, top-left for portrait); use <b>Edit</b> on either preview to tweak the position — it updates as you adjust it.</p>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
   <div style="border:1px solid var(--border);border-radius:10px;padding:8px;background:#fff;text-align:center">
     <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:8px">Front. Print-Ready <span style="color:var(--success);font-weight:400">(full design)</span> <span id="fp-front-label" style="font-weight:400;color:var(--muted)"></span> <button id="fp-front-edit" onclick="fpEditFront()" style="display:none;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;color:var(--accent);border:1px solid var(--border);background:#fff;cursor:pointer"><i class="fas fa-crop-alt"></i> Edit</button></div>
@@ -186,48 +166,18 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 </div>
 
 <!-- Design tips + how the white space works -->
-<div id="flyer-tips" style="display:none;margin-top:14px;border:1px solid var(--border);border-radius:10px;padding:14px;background:#fff">
-<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px"><i class="fas fa-lightbulb" style="color:#f59e0b;margin-right:4px"></i> Guides &amp; Top tips</div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px">
-  <div style="padding:10px 12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;font-size:11px;color:#1e40af;line-height:1.7">
-    <b style="color:var(--text)"><i class="fas fa-crop-alt" style="color:var(--accent);margin-right:4px"></i> How to use Edit / Position</b><br>
-    Click <b>Edit / Position</b> on your saved flyer to open the editor:<br>
-    • <b>Keep everything inside the BLUE dashed lines</b> — that's the safe print area<br>
-    • <b>Drag the flyer</b> to move it around the page<br>
-    • <b>Drag any blue square (handle)</b> to stretch it up/down or left/right<br>
-    • Use <b>+ / − / scroll wheel</b> to scale the whole design<br>
-    • On the <b>Back</b>, don't drag your design into the <b>white address zone</b> shown on the preview — it stays clean white for the recipient's address<br>
-    • Click <b>Save Positioned Flyer</b> when it looks right<br>
-    The print matches exactly what you position. you're in full control.
-  </div>
-  <div style="padding:10px 12px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--text2);line-height:1.6">
-    <b style="color:var(--text)">Why the white space?</b><br>
-    Royal Mail machines read the recipient's address automatically. To do that reliably, the address must sit on a <b>clean white area</b> with no design, images or text underneath. If anything overlaps it, the address can't be read and the flyer may be delayed or returned.
-  </div>
-  <div style="padding:10px 12px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--text2);line-height:1.6">
-    <b style="color:var(--text)">The easy way (recommended)</b><br>
-    You don't need to change anything. your <b>print-ready version</b> above already has the white space added. Just download it and use it.
-  </div>
-  <div style="padding:10px 12px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--text2);line-height:1.6">
-    <b style="color:var(--text)">Want your own design?</b><br>
-    Download the <b>design template</b> below (it shows the exact bleed, safe zone and the clear zone marked). Design within the safe zone and leave the bottom ~28% (the orange clear zone) blank. then upload your finished front and back.
-  </div>
-  <div style="padding:10px 12px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--text2);line-height:1.6;grid-column:1/-1">
-    <b style="color:var(--text)">Top tips</b><br>
-    • Keep logos, contact details and your call to action <b>inside the safe zone</b><br>
-    • Make the background reach the <b>edge (bleed)</b> so there are no white borders<br>
-    • Use <b>300 DPI</b> images for crisp print (we auto-upscale for you)<br>
-    • Avoid text across the bottom clear zone<br>
-    • After editing, <b>hard-refresh (Ctrl+F5)</b> if the preview looks old
-  </div>
+<div id="flyer-tips" style="display:none;margin-top:14px;border:1px solid var(--border);border-radius:10px;padding:12px 14px;background:#fff">
+<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px"><i class="fas fa-lightbulb" style="color:#f59e0b;margin-right:4px"></i> Top tips</div>
+<div style="font-size:11px;color:var(--text2);line-height:1.7">
+  • The <b>print-ready preview</b> above is exactly what we print — your design is positioned automatically around the white address zone, so nothing is cut off.<br>
+  • Use <b>Edit / Position</b> on any saved flyer to drag or stretch your design; keep everything inside the <b>blue safe area</b> and out of the <b>white address zone</b> (Royal Mail machine-reads it).<br>
+  • <b>Download the template</b> below to design your own — it shows the bleed, safe zone and clear zone guides.<br>
+  • After editing, <b>hard-refresh (Ctrl+F5)</b> if the preview looks old.
 </div>
 </div>
 <div style="margin-top:14px;padding:12px 14px;background:#f8fafc;border:1px dashed var(--border);border-radius:10px">
-<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px"><i class="fas fa-file-upload" style="color:var(--accent);margin-right:4px"></i> Upload or replace your files below</div>
-<div style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.6">
-<b><i class="fas fa-list-ol" style="margin-right:4px"></i> How to upload:</b>
-1. Pick your flyer <b>front</b> and <b>back</b> images (PNG/JPG/PDF). &nbsp; 2. They'll be checked against the print spec automatically. &nbsp; 3. Use <b>Edit / Position</b> on any saved file to fine-tune how it fills the page. &nbsp; 4. Click <b>Upload Files</b> or <b>Save My Leaflet</b>.
-</div>
+<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px"><i class="fas fa-file-upload" style="color:var(--accent);margin-right:4px"></i> Upload or replace your files</div>
+<div style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.6">Pick your flyer <b>front</b> and <b>back</b> (PNG/JPG/PDF) — they're checked against the print spec automatically. Use <b>Edit / Position</b> to fine-tune, then <b>Save My Leaflet</b>.</div>
 <div class="grid-3">
 <div><label class="label">Leaflet Front</label><input type="file" class="input" id="up-flyer-front" accept=".pdf,.png,.jpg,.jpeg" onchange="validateArtwork(this,'flyer_front')"></div>
 <div><label class="label">Leaflet Back</label><input type="file" class="input" id="up-flyer-back" accept=".pdf,.png,.jpg,.jpeg" onchange="validateArtwork(this,'flyer_back')"></div>
@@ -235,17 +185,18 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 </div>
 <div id="artwork-validation" style="margin-top:10px;display:none"></div>
 </div>
-<div style="margin-top:8px;padding:10px 12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;font-size:11px;color:#0369a1">
-<i class="fas fa-info-circle" style="margin-right:4px"></i><b>Important: address clear zone:</b> The recipient's name &amp; address is printed automatically in a reserved <b>clear zone</b> on the <b>front</b>, and that area is kept <b>white</b> so Royal Mail can machine-read it. Design specs: <b>6mm bleed</b> on all edges (we extend your design edge-to-edge for you), keep important content <b>inside the safe zone</b>, and leave the marked <b>orange clear zone</b> plain. Download the template for your chosen format to see the exact guides.
+<div style="margin-top:8px;padding:9px 12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;font-size:11px;color:#0369a1">
+<i class="fas fa-info-circle" style="margin-right:4px"></i>The recipient's address is printed automatically in a reserved <b>clear zone</b>, kept white so Royal Mail can machine-read it. The template below shows the 6mm bleed and safe-zone guides.
 </div>
 
 <!-- Design Templates -->
 <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border)">
 <div class="sect-title"><i class="fas fa-ruler-combined" style="color:var(--accent)"></i> Design Template (Print Specs)</div>
-<p style="font-size:12px;color:var(--text2);margin-bottom:10px">Download the official blank template for your chosen format. it shows the exact <b>bleed margin</b> (red), <b>safe zone</b> (blue) and <b>address clear zone</b> (orange) so your design prints perfectly. Front and back templates included.</p>
+<p style="font-size:12px;color:var(--text2);margin-bottom:10px">Download the blank template for your chosen format — it shows the bleed (red), safe zone (blue) and address clear zone (orange).</p>
 <div id="tpl-downloads" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px"></div>
-<div style="font-size:11px;color:var(--muted)">Design on the template, then upload your front and back below. We print edge-to-edge (300 DPI) and keep the address clear zone white for Royal Mail.</div>
+<div style="font-size:11px;color:var(--muted)">Design on the template, then upload front &amp; back below. We print edge-to-edge (300 DPI) and keep the address clear zone white for Royal Mail.</div>
 <button class="btn btn-primary" onclick="saveFlyerSetup()" id="save-flyer-btn" style="margin-top:12px;width:100%;justify-content:center"><i class="fas fa-save"></i> Save My Leaflet (Front &amp; Back)</button>
+<div style="font-size:11px;color:#15803d;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:8px 12px;margin-top:8px"><i class="fas fa-check-circle" style="margin-right:4px"></i><b>Save your leaflet and cover letter, then review the Print-Ready preview above</b> before you send. If you need to change anything, use <b>Edit / Position</b> and save again.</div>
 <div id="save-flyer-status" style="font-size:12px;color:var(--success);margin-top:8px;text-align:center"></div>
 
 <!-- Print specs guide (Clear Zones / Bleed / Safe Zones / Trim Marks) -->
@@ -289,17 +240,7 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 <!-- Step 3: Select Recipients -->
 <div class="card">
 <div class="sect-title"><i class="fas fa-users" style="color:var(--accent)"></i> Step 3 · Who to send to</div>
-<div style="margin-bottom:12px;padding:12px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;font-size:12px;color:#166534;line-height:1.7">
-  <b><i class="fas fa-list-ol" style="margin-right:4px"></i> How this works:</b>
-  <ol style="margin:6px 0 0 18px;padding:0">
-    <li>Click <b>Load My Leads</b> to see the leads in your account.</li>
-    <li><b>Tick the boxes</b> next to the leads you want to mail to.</li>
-    <li>Choose your <b>cover letter</b> and <b>delivery date</b>.</li>
-    <li>Review the <b>estimated cost</b>, then click <b>Create &amp; Send Campaign</b>. you'll pay securely and we print &amp; post to each selected lead.</li>
-  </ol>
-  <div style="margin-top:6px;font-size:11px;color:#15803d">💡 <b>Tip:</b> You're charged per item sent (£0.30 during testing). Only tick the leads you actually want to mail.</div>
-</div>
-<p style="font-size:12px;color:var(--text2);margin-bottom:12px">Pick <b>which of your leads</b> get this mailing. You'll pay per item when you send (£0.30 during testing).</p>
+<p style="font-size:12px;color:var(--text2);margin-bottom:12px">Click <b>Load My Leads</b>, tick the leads to mail, choose your saved cover letter + delivery date, then <b>Create &amp; Send Campaign</b>. You pay per item sent (£0.30 during testing).</p>
 <div class="grid-2">
 <div><label class="label">Cover Letter</label><select class="input" id="c-template" onchange="loadTemplateContent(this)"><option value="">Select a saved cover letter...</option></select></div>
 <div><label class="label">Delivery Date</label><input type="date" class="input" id="c-date"></div>
@@ -325,17 +266,7 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 <!-- SAMPLE TO SELF (free trial users can test delivery to their own address) -->
 <div class="card" style="border:2px solid #0ea5e9;background:linear-gradient(135deg,#f0f9ff,#eff6ff)">
 <div class="sect-title"><i class="fas fa-envelope-open-text" style="color:var(--accent)"></i> Try It. Send a Sample To Yourself</div>
-<div style="margin-bottom:12px;padding:12px 14px;background:#fff;border:1px solid #bae6fd;border-radius:10px;font-size:12px;color:#0c4a6e;line-height:1.7">
-  <b><i class="fas fa-list-ol" style="margin-right:4px"></i> How it works:</b>
-  <ol style="margin:6px 0 0 18px;padding:0">
-    <li>Enter <b>your own address</b> below.</li>
-    <li>Pick the <b>sample type</b> (A4 letter / A5 leaflet / leaflet + letter).</li>
-    <li>Click <b>Send Me A Sample</b> and pay the per-item price.</li>
-    <li>We print &amp; post a <b>real sample</b> to your address, and you can <b>track it live</b> from the print house to your door.</li>
-  </ol>
-  <div style="margin-top:6px;font-size:11px;color:#0369a1">💡 <b>Tip:</b> This is the exact way to check your flyer looks right before mailing to customers. If it isn't right, adjust it with <b>Edit / Position</b> and send another sample. you see the real printed result before anyone else does.</div>
-</div>
-<p style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:12px">Not sure how your letter or leaflet will look when it arrives? <b>Send yourself a real sample.</b> We print and post it to <b>your own address</b>, and you can follow the live delivery tracking from the moment it leaves the print house. You pay the normal per-item price (£0.30 during testing).</p>
+<p style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:12px">Send a real printed sample to <b>your own address</b> to check it looks right before mailing to customers, and follow the live tracking. Costs the normal per-item price (£0.30 during testing).</p>
 <div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px">
 <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px">Deliver to my address</div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
