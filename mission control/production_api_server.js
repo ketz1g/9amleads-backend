@@ -2279,10 +2279,13 @@ async sendMailpiece(mailType, recipient, files, format) {
         }
         // Send the customer's EXACT design at the chosen Stannp size. The artwork
         // is upscaled to the format's 300 DPI template so it fills the whole sheet
-        // edge-to-edge with NO content cut. clearzone=true makes Stannp overlay the
-        // white address zone at PRINT time (so the recipient address is
-        // machine-readable) WITHOUT modifying the customer's design.
-        var postcardParams = Object.assign({}, rcpt, { size: flyerSize, tags: rcpt.tags || '9amleads', padding: 0, clearzone: true });
+        // edge-to-edge with NO content cut. WE bake the white address zone into the
+        // artwork ourselves (prepareA5Artwork) so the design is positioned clear of
+        // it and the header is never cut. clearzone=false stops Stannp from adding
+        // a SECOND white overlay at its own position/size (which was covering the
+        // top of the flyer design); the recipient address still prints on our baked
+        // white zone.
+        var postcardParams = Object.assign({}, rcpt, { size: flyerSize, tags: rcpt.tags || '9amleads', padding: 0, clearzone: false });
         if (front && front.file_data) postcardParams.front = this.stripDataPrefix(front.file_data);
         if (back && back.file_data) postcardParams.back = this.stripDataPrefix(back.file_data);
         var res2 = await this.stannpRequest('/postcards/create', postcardParams);
