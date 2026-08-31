@@ -94,10 +94,10 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 <div style="margin-top:12px">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
 <label class="label" style="margin-bottom:0">Cover Letter Text <span style="color:var(--muted);font-weight:400">(optional. leaflet-only sends don't need one)</span></label>
-<span id="letter-counter" style="font-size:11px;font-weight:700;color:var(--success);white-space:nowrap">0 / 2,800 characters · 0 / 450 words</span>
+<span id="letter-counter" style="font-size:11px;font-weight:700;color:var(--success);white-space:nowrap">0 / 2,000 characters · 0 / 300 words</span>
 </div>
 <textarea class="input" id="t-content" rows="8" oninput="updateLetterPreviewLive()" placeholder="Dear [name],&#10;&#10;We are your local removal specialists...&#10;&#10;Kind regards,&#10;[Your Company]"></textarea>
-<div style="font-size:10px;color:var(--muted);margin-top:4px">Tip: if you paste a letter that includes markdown formatting (*, **, #), we clean it automatically when you save and print. <b style="color:var(--text2)">One A4 page fits up to ~450 words / ~2,800 characters.</b></div>
+<div style="font-size:10px;color:var(--muted);margin-top:4px">Tip: if you paste a letter that includes markdown formatting (*, **, #), we clean it automatically when you save and print. <b style="color:var(--text2)">One A4 page fits up to ~300 words / ~2,000 characters.</b></div>
 </div>
 <div style="display:flex;gap:10px;margin-top:12px">
 <button class="btn btn-primary" onclick="saveTemplate()" style="flex:1"><i class="fas fa-save"></i> Save Cover Letter</button>
@@ -125,7 +125,7 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
   <!-- Guidance -->
   <div style="flex:1;min-width:240px;font-size:11px;color:var(--text2);line-height:1.7">
     <b style="color:#0ea5e9">The blue box (top-left)</b> is the <b>envelope window</b> — the recipient's address prints there, so keep it clear.<br><br>
-    <b>Your letter fills one side of A4.</b> Keep it to <b style="color:var(--success)">~450 words / ~2,800 characters</b> (the counter below flags when it's too long). The preview updates live as you write.<br><br>
+    <b>Your letter fills one side of A4.</b> Keep it to <b style="color:var(--success)">~300 words / ~2,000 characters</b> (the counter below flags when it's too long). The preview updates live as you write.<br><br>
     <b>Symbols &amp; icons:</b> ✓, •, £ and other common symbols print correctly. Colour emojis (😀) can't be printed, so keep to plain text for a clean result.
   </div>
 </div>
@@ -402,13 +402,13 @@ function saveTemplate(){
   var name=document.getElementById('t-name').value||('Cover Letter '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}));
   var body={name:name,type:document.getElementById('t-type').value,ai_generated_text:document.getElementById('t-content').value};
   if(!body.ai_generated_text){toast('Write a cover letter first');return;}
-  // Match the print: characters are the reliable measure (a ~350-word letter runs
-  // ~2,500-2,800 chars depending on word length). Allow up to 2,800 chars / 450
-  // words — comfortably one A4 page.
+  // Match the print: characters are the reliable measure (a ~300-word letter runs
+  // ~1,900-2,000 chars depending on word length). Allow up to 2,000 chars / 300
+  // words — fits one A4 page comfortably.
   var saveClean=cleanLetterPreviewText(body.ai_generated_text);
   var saveChars=saveClean.length, saveWords=saveClean?saveClean.split(/\s+/).filter(function(w){return w.length>0;}).length:0;
-  if(saveChars>2800||saveWords>450){
-    toast('✕ Letter is too long — max 2,800 characters / 450 words so it fits one A4 page. Please shorten it.');
+  if(saveChars>2000||saveWords>300){
+    toast('✕ Letter is too long — max 2,000 characters / 300 words so it fits one A4 page. Please shorten it.');
     var sc=document.getElementById('letter-counter'); if(sc)sc.style.color='#dc2626';
     return;
   }
@@ -422,7 +422,7 @@ function saveTemplate(){
       var lp=document.getElementById('letter-preview-box'); if(lp)lp.style.display='block';
       var bodyEl=document.getElementById('lp-letter-body'); if(bodyEl)bodyEl.textContent=cleanLetterPreviewText(body.ai_generated_text)||'(letter is empty)';
       var cEl=document.getElementById('letter-counter');
-      if(cEl){var cl=cleanLetterPreviewText(body.ai_generated_text);cEl.textContent=cl.length+' / 2,800 characters · '+(cl?cl.split(/\s+/).filter(function(w){return w.length>0;}).length:0)+' / 450 words';}
+      if(cEl){var cl=cleanLetterPreviewText(body.ai_generated_text);cEl.textContent=cl.length+' / 2,000 characters · '+(cl?cl.split(/\s+/).filter(function(w){return w.length>0;}).length:0)+' / 300 words';}
       checkLetterFit();
       // ALSO save this letter as the setup's active cover letter so it's what
       // actually gets sent (the send reads the setup template text, not a
@@ -564,8 +564,8 @@ function updateLetterPreviewLive(){
   var clean=cleanLetterPreviewText(text);
   var cc=clean.length, wc=clean?clean.split(/\s+/).filter(function(w){return w.length>0;}).length:0;
   if(cEl){
-    cEl.textContent=cc+' / 2,800 characters · '+wc+' / 450 words';
-    cEl.style.color = (cc>2800||wc>450) ? '#dc2626' : ((cc>2600||wc>430) ? '#b45309' : '#15803d');
+    cEl.textContent=cc+' / 2,000 characters · '+wc+' / 300 words';
+    cEl.style.color = (cc>2000||wc>300) ? '#dc2626' : ((cc>1900||wc>285) ? '#b45309' : '#15803d');
   }
   if(!box||!bodyEl)return;
   // Always keep the preview in sync with what's in the editor, even while the
@@ -600,15 +600,15 @@ function checkLetterFit(){
   var bodyEl=document.getElementById('lp-letter-body');
   if(!statusEl||!bodyEl)return;
   var text=bodyEl.textContent||'';
-  // SAFE LETTER SPEC: characters are the reliable measure — a ~350-word letter
-  // runs ~2,500-2,800 chars depending on word length, and one A4 page prints up
-  // to ~2,800 chars comfortably. Allow 2,800 chars / 450 words.
+  // SAFE LETTER SPEC: characters are the reliable measure — a ~300-word letter
+  // runs ~1,900-2,000 chars depending on word length, and one A4 page prints up
+  // to ~2,000 chars comfortably. Allow 2,000 chars / 300 words.
   var charCount = text.trim().length;
   var wordCount = text.trim().split(/\s+/).filter(function(w){return w.length>0;}).length;
-  var tooLong = charCount > 2800 || wordCount > 450;
-  var maxWords = 450, maxChars = 2800;
+  var tooLong = charCount > 2000 || wordCount > 300;
+  var maxWords = 300, maxChars = 2000;
   // AUTO-FIT: the preview is LARGE and uses a readable ~10px font. Letters up to
-  // the limit (~2,600 chars) fit on the preview page at that size, so nothing is
+  // the limit (~2,000 chars) fit on the preview page at that size, so nothing is
   // shrunk to unreadable micro-text. If an over-limit letter still overflows we
   // keep it scrollable so the full text is always readable.
   bodyEl.style.fontSize='10px';
@@ -626,7 +626,7 @@ function checkLetterFit(){
   if(tooLong){
     statusEl.textContent='✕ ' + wordCount + ' words / ' + charCount + ' chars — too long for one A4 page (max ' + maxWords + ' words / ' + maxChars + ' chars). Shorten it.';
     statusEl.style.color='#dc2626';
-  } else if(charCount > 2600 || wordCount > 430){
+  } else if(charCount > 1900 || wordCount > 285){
     statusEl.textContent='~' + wordCount + ' words / ' + charCount + ' chars — near the limit (max ' + maxWords + ' words / ' + maxChars + ' chars). Consider shortening slightly for comfort.';
     statusEl.style.color='#b45309';
   } else {
@@ -670,8 +670,8 @@ function loadLetterPreview(){
     if(cEl){
       var cl=cleanLetterPreviewText(countTxt);
       var cc=cl.length, wc=cl?cl.split(/\s+/).filter(function(w){return w.length>0;}).length:0;
-      cEl.textContent=cc+' / 2,800 characters · '+wc+' / 450 words';
-      cEl.style.color = (cc>2800||wc>450) ? '#dc2626' : ((cc>2600||wc>430) ? '#b45309' : '#15803d');
+      cEl.textContent=cc+' / 2,000 characters · '+wc+' / 300 words';
+      cEl.style.color = (cc>2000||wc>300) ? '#dc2626' : ((cc>1900||wc>285) ? '#b45309' : '#15803d');
     }
   });
 }
