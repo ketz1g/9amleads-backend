@@ -4305,7 +4305,10 @@ app.post('/api/admin/partner/cleanup-test', adminAuth, (req, res) => {
       if (!cm || cm.status === 'released') continue;
       var cust = custsC.find(function(x){ return x.id === cm.customer_id; });
       var partner = partnersC.find(function(x){ return x.id === cm.partner_id; });
-      var isTest = (cust && (String(cust.signup_ip || '') === 'bulk-test' || /test|\.1788\d*@|@9amleads\.com/i.test(String(cust.email || '')))) || !partner || String(partner.status || '') === 'paused';
+      // Release: bulk-test customer, a test-style email, a paused/deleted partner,
+      // OR a commission whose customer no longer exists (cannot be a real current
+      // referral — demo runs reference customers that were later removed).
+      var isTest = !cust || (cust && (String(cust.signup_ip || '') === 'bulk-test' || /test|\.1788\d*@|@9amleads\.com/i.test(String(cust.email || '')))) || !partner || String(partner.status || '') === 'paused';
       if (isTest) { cm.status = 'released'; cm.released_at = new Date().toISOString(); cm.release_reason = 'test/demo commission cleanup'; released++; }
       else kept++;
     }
