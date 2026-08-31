@@ -14931,6 +14931,44 @@ app.post('/api/admin/pool/enrich-addresses', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/backfill-delivered-addresses — retro-fill town/city/county on
+// ALREADY-DELIVERED lead rows (the customer's dashboard history) so every moving
+// lead shows the FULL printable address (door + street + town/county + postcode),
+// not just "2 Sussex Road, E6 2PS". Pool enrichment fixes future deliveries; this
+// fixes the records customers already received/see. Idempotent.
+app.post('/api/admin/backfill-delivered-addresses', adminAuth, (req, res) => {
+  try {
+    var prod = (req.body && req.body.product) || 'moving';
+    var rows = db.prepare('SELECT id, customer_id, data, delivered FROM leads WHERE product = ?').all(prod);
+    var updated = 0;
+    var nowIso = new Date().toISOString();
+    for (var bi = 0; bi < rows.length; bi++) {
+      var row = rows[bi];
+      var d = null; try { d = JSON.parse(row.data || '{}'); } catch(e) {}
+      if (!d || typeof d !== 'object') continue;
+      if (row.delivered && (d.product !== prod && !d.product)) d.product = prod;
+      var before = (d.town || '') + '|' + (d.city || '') + '|' + (d.county || '') + '|' + (d.fullAddress || '');
+      try { ensureFullLeadAddress(d); } catch(e) {}
+      // Rebuild the full printable address from the parts.
+      var _parts = [];
+      if (d.building_number) _parts.push(d.building_number + (d.street ? ' ' + d.street : ''));
+      else if (d.street) _parts.push(d.street);
+      else if (d.address && !/,/.test(String(d.address || ''))) _parts.push(d.address);
+      if (d.town) _parts.push(d.town);
+      if (d.county) _parts.push(d.county);
+      if (d.postcode) _parts.push(d.postcode);
+      var _fa = _parts.filter(Boolean).join(', ');
+      if (_fa) { d.fullAddress = _fa; if (!d.address || !/,/.test(String(d.address || ''))) d.address = _fa; }
+      var after = (d.town || '') + '|' + (d.city || '') + '|' + (d.county || '') + '|' + (d.fullAddress || '');
+      if (before !== after) {
+        db.prepare('UPDATE leads SET data = ? WHERE id = ?').run(JSON.stringify(d), row.id);
+        updated++;
+      }
+    }
+    res.json({ success: true, product: prod, rows: rows.length, updated: updated });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // DIAGNOSTIC: dump pool area distribution for a product
 app.get('/api/admin/pool-areas', adminAuth, (req, res) => {
   try {

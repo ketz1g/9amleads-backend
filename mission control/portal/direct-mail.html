@@ -998,11 +998,18 @@ function loadLeads(){
     leads.forEach(function(l){
       var dd=typeof l.data==='string'?JSON.parse(l.data||'{}'):(l.data||{});
       var nm=(dd.name||dd.contact_name||'');
-      var addr=dd.address_line1||dd.address||dd.street||dd.company||dd.deceasedAddress||dd.tenderTitle||'';
+      // Prefer the FULL printable address (door + street + town/county + postcode)
+      // so recipients show "1 Wynches Farm Drive, St. Albans, Hertfordshire, AL4 0XH"
+      // rather than a bare street. Falls back to the address_line1/address fields.
+      var fa=dd.fullAddress||'';
+      var addr=fa||dd.address_line1||dd.address||dd.street||dd.company||dd.deceasedAddress||dd.tenderTitle||'';
       var pc=dd.postcode||dd.location||'';
       var city=dd.city||dd.town||'';
+      var county=dd.county||'';
+      // If the fallback address is street-only but town/county exist, build the full line.
+      if(!fa && addr && (city||county) && !/,\s*[A-Za-z]/.test(addr)) addr=addr+(city?', '+city:'')+(county?', '+county:'');
       var label=nm?(nm+' · '+(addr||'Lead')):(addr||'Lead');
-      var sub=[pc,city].filter(Boolean).join(', ');
+      var sub=[pc,county,city].filter(Boolean).join(', ');
       var isSel=selectedLeads.has(l.id);
       html+='<div class="recipient" data-lead-id="'+l.id+'" style="cursor:pointer;'+(isSel?'border-color:var(--accent);background:#f0f7ff':'')+'" onclick="toggleLead(\''+l.id+'\',this)">'+
         '<div><div class="addr">'+label.substring(0,60)+'</div><div class="meta">'+(sub||'')+'</div></div>'+
