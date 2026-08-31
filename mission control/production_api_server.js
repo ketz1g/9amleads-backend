@@ -362,10 +362,13 @@ function ensureFullLeadAddress(l) {
     }
     // street — parse from address text if missing
     if (!l.street) l.street = extractMovingStreet(a);
-    // POSTCODE — many probate (and some other) leads carry the postcode embedded
-    // in the address text but leave the postcode FIELD empty, which breaks area
-    // matching. If the field is missing, extract a real UK postcode from the text.
-    if (!l.postcode && a) {
+    // POSTCODE — many probate (and some other) leads carry a real UK postcode
+    // embedded in the address text but leave the postcode FIELD empty OR with a
+    // garbage value (e.g. a name or "ROAD" from funeral-notice data), which breaks
+    // area matching. If the field is missing or invalid, extract a real UK
+    // postcode from the address text.
+    var _pcOk = l.postcode && /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(l.postcode).trim());
+    if (!_pcOk && a) {
       var _pcMatch = String(a).match(/\b[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}\b/i);
       if (_pcMatch) {
         var _pcRaw = _pcMatch[0].toUpperCase().replace(/[^A-Z0-9]/g, '');
