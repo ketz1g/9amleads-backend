@@ -695,6 +695,14 @@ function loadProductPool(prod) {
       arr = arr.map(function(l) {
         var _srcAddr = l.address || l.fullAddress || l.deceasedAddress || '';
         if (l && _srcAddr) {
+          // EXTRACT POSTCODE from the RAW address BEFORE normalisation strips it,
+          // so leads whose postcode field is empty/garbage still get a real,
+          // mailable postcode (then the mailable-address filter keeps them).
+          if (!(l.postcode && /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(l.postcode).trim()))) {
+            var _allPC = [l.address, l.fullAddress, l.deceasedAddress, l.location].filter(Boolean).join(' ');
+            var _mPC = _allPC ? String(_allPC).match(/\b[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}\b/i) : null;
+            if (_mPC) { var _rPC = _mPC[0].toUpperCase().replace(/[^A-Z0-9]/g, ''); l.postcode = _rPC.slice(0, _rPC.length - 3) + ' ' + _rPC.slice(-3); }
+          }
           // FULL-ADDRESS GUARANTEE (ALL products): capture town/city/county from the
           // RAW address BEFORE normalisation strips it down to street-only. Older
           // scrapes left these empty even though the address text contains them
@@ -724,6 +732,16 @@ function loadProductPool(prod) {
         }
         return l;
       });
+  // MAILABLE-ADDRESS GUARANTEE: a lead without a valid UK postcode cannot be
+  // printed/posted to, so it must never be delivered (tenders are national and
+  // are handled without a postcode). This also cleans legacy probate junk where
+  // the postcode field holds a name or "ROAD" from old funeral-notice scrapes.
+  if (prod !== 'tenders') {
+    arr = arr.filter(function(l) {
+      var _pcOk = l.postcode && /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(l.postcode).trim());
+      return !!_pcOk;
+    });
+  }
   // DEDUPE: the pool accumulates the same property/listing multiple times
   // (Rightmove + OnTheMarket + re-scrapes create duplicate entries with
   // different ids). Dedupe by normalized URL, falling back to normalized
