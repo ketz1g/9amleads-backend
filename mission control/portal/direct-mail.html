@@ -109,13 +109,13 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 <div id="letter-preview-box" style="display:none;margin-top:16px;border:1px solid var(--border);border-radius:10px;padding:14px;background:#fff">
 <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:8px"><span><i class="fas fa-envelope" style="color:var(--accent);margin-right:4px"></i> Your Letter Preview <span style="color:var(--success);font-weight:700">One-Sided A4 · Address Window Shown</span></span><button class="btn btn-outline btn-sm" onclick="deleteActiveLetter()" style="white-space:nowrap"><i class="fas fa-trash"></i> Delete Letter</button></div>
 <div style="display:flex;gap:14px;flex-wrap:wrap">
-  <!-- The A4 page (portrait, fixed aspect) -->
-  <div style="flex:0 0 360px">
-    <div style="background:#fff;border:1px solid #cbd5e1;border-radius:4px;width:360px;height:520px;overflow:hidden;box-shadow:0 2px 12px rgba(15,23,42,0.10);padding:18px 24px;position:relative">
+  <!-- The A4 page (portrait, fixed aspect) — big + readable -->
+  <div style="flex:0 0 540px">
+    <div style="background:#fff;border:1px solid #cbd5e1;border-radius:4px;width:540px;height:764px;overflow:hidden;box-shadow:0 2px 12px rgba(15,23,42,0.10);padding:22px 26px;position:relative">
       <!-- Address window (section across the top; ~40mm tall) -->
-      <div style="background:#f1f5f9;border:1.5px solid #0ea5e9;border-radius:4px;width:210px;height:72px;position:absolute;top:18px;left:20px;display:flex;align-items:center;justify-content:center;font-size:6.5px;color:#0ea5e9;font-weight:700;text-align:center;z-index:2">RECIPIENT<br>ADDRESS<br>(printed here)</div>
+      <div style="background:#f1f5f9;border:1.5px solid #0ea5e9;border-radius:4px;width:280px;height:92px;position:absolute;top:22px;left:24px;display:flex;align-items:center;justify-content:center;font-size:8px;color:#0ea5e9;font-weight:700;text-align:center;z-index:2">RECIPIENT<br>ADDRESS<br>(printed here)</div>
       <!-- Letter body (starts just below the address window; fit judged by character count) -->
-      <div style="font-size:9px;line-height:1.5;color:#1e293b;white-space:pre-wrap;margin-top:96px;overflow-y:auto;max-height:390px" id="lp-letter-body">Your cover letter text appears here.</div>
+      <div style="font-size:10px;line-height:1.6;color:#1e293b;white-space:pre-wrap;margin-top:126px;overflow-y:auto;max-height:600px" id="lp-letter-body">Your cover letter text appears here.</div>
       <!-- Page edge indicator line -->
       <div style="position:absolute;bottom:0;left:0;right:0;height:2px;background:#cbd5e1"></div>
     </div>
@@ -604,20 +604,21 @@ function checkLetterFit(){
   var wordCount = text.trim().split(/\s+/).filter(function(w){return w.length>0;}).length;
   var tooLong = charCount > 2600 || wordCount > 350;
   var maxWords = 350, maxChars = 2600;
-  // AUTO-FIT: shrink the preview font so the WHOLE letter is visible on the A4
-  // page (no scrollbar / nothing cut off) whenever it fits one A4 side. Only
-  // letters that are over the limit keep scrolling + show the red warning.
-  if(!tooLong){
-    bodyEl.style.overflowY='hidden';
-    bodyEl.style.fontSize='9px';
-    var tries=24;
-    while(bodyEl.scrollHeight>bodyEl.clientHeight && tries>0 && parseFloat(bodyEl.style.fontSize||9)>3){
-      bodyEl.style.fontSize=(parseFloat(bodyEl.style.fontSize||9)-0.4)+'px';
-      tries--;
-    }
-  } else {
+  // AUTO-FIT: the preview is LARGE and uses a readable ~10px font. Letters up to
+  // the limit (~2,600 chars) fit on the preview page at that size, so nothing is
+  // shrunk to unreadable micro-text. If an over-limit letter still overflows we
+  // keep it scrollable so the full text is always readable.
+  bodyEl.style.fontSize='10px';
+  bodyEl.style.lineHeight='1.6';
+  if(tooLong){
     bodyEl.style.overflowY='auto';
-    bodyEl.style.fontSize='9px';
+  } else {
+    bodyEl.style.overflowY='hidden';
+    var tries2=6;
+    while(bodyEl.scrollHeight>bodyEl.clientHeight && tries2>0 && parseFloat(bodyEl.style.fontSize||10)>9){
+      bodyEl.style.fontSize=(parseFloat(bodyEl.style.fontSize||10)-0.25)+'px';
+      tries2--;
+    }
   }
   if(tooLong){
     statusEl.textContent='✕ ' + wordCount + ' words / ' + charCount + ' chars — too long for one A4 page (max ' + maxWords + ' words / ' + maxChars + ' chars). Shorten it.';
