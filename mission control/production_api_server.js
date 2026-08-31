@@ -25600,6 +25600,27 @@ function syncCustomers(product) {
             // accounts (residential + commercial) via the rented Rightmove actor.
             // Cost-controlled (low maxProperties, memory=256, list-only) so it stays
             // cheap, and it scales with real demand. Runs every scrape (06:00 UK).
+            // APIFY COST GATE: only launch when moving supply is actually low. When
+            // the free Rightmove scrape + PAF enrichment already cover the customers
+            // (fresh 48h supply >= 40 AND every active area has >= 20 mailable leads),
+            // skip the Apify run and save the credits. Commercial still forces Apify.
+            var _needDeep = true;
+            try {
+              if (!mvWantCommercial) {
+                var _mvPoolG = [];
+                try { _mvPoolG = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'moving-leads.json'), 'utf-8')); if (!Array.isArray(_mvPoolG)) _mvPoolG = []; } catch(eG) { _mvPoolG = []; }
+                var _cut48G = new Date(Date.now() - 48 * 3600000).toISOString();
+                var _freshG = _mvPoolG.filter(function(pl) { return (pl.firstVisibleDate || pl.scrapedAt || '') >= _cut48G; }).length;
+                var _areasLowG = (mvAreas || []).some(function(ar) {
+                  return _mvPoolG.filter(function(pl) {
+                    var pcG = String(pl.postcode || '').trim();
+                    return /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(pcG) && extractPostcodeArea(pcG) === ar;
+                  }).length < 20;
+                });
+                _needDeep = _freshG < 40 || _areasLowG;
+              }
+            } catch(eG2) { _needDeep = true; }
+            if (_needDeep) {
             try {
               var workerFileD = path.join(__dirname, 'scrape_moving_deep.js');
               var maxPropsD = process.env.MOVING_MAX_PROPS || '50';
@@ -25608,6 +25629,9 @@ function syncCustomers(product) {
               childD.unref();
               console.log('[SCRAPER] Deep Apify (Rightmove) worker launched: ' + (childD.pid || '?') + ', maxProps=' + maxPropsD);
             } catch(wErrD) { console.log('[SCRAPER] Deep worker launch error:', wErrD.message); }
+            } else {
+              console.log('[SCRAPER] Deep Apify worker SKIPPED - moving supply healthy (fresh=' + (typeof _freshG !== 'undefined' ? _freshG : '?') + ', areas low=' + (typeof _areasLowG !== 'undefined' ? _areasLowG : '?') + ')');
+            }
 
             // Gather the postcode areas of ALL moving customers so the scraper
             // targets every area they chose (not just London/whatever the old
