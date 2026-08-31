@@ -156,12 +156,12 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 
 <!-- Final print preview with whited-out address zone + download -->
 <div id="final-print-preview" style="display:none;margin-top:16px;border:1px solid var(--border);border-radius:10px;padding:14px;background:#f8fafc">
-<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px"><i class="fas fa-print" style="color:var(--accent);margin-right:4px"></i> Your Print-Ready Leaflet <span style="color:var(--success);font-weight:700">(address zone on back top. no content lost)</span></div>
+<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px"><i class="fas fa-print" style="color:var(--accent);margin-right:4px"></i> Your Print-Ready Leaflet <span style="color:var(--success);font-weight:700">(white address zone baked in — no content lost)</span></div>
 <div style="padding:10px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:12px;color:#15803d;line-height:1.6;margin-bottom:10px">
-<i class="fas fa-check-circle" style="margin-right:4px"></i><b>Nothing is cut off.</b> Your back design is automatically scaled to fit neatly below the white address zone (top of the back) with a safe margin at the bottom — so the bottom of your leaflet always prints fully. We've handled the layout for you.
+<i class="fas fa-check-circle" style="margin-right:4px"></i><b>Nothing is cut off.</b> Your back design is automatically scaled to fit neatly below/around the white address zone with a safe margin — so the bottom of your leaflet always prints fully. We've handled the layout for you.
 </div>
-<p style="font-size:11px;color:var(--text2);margin-bottom:10px">The white address zone sits at the <b>top of the back</b> for Royal Mail. Your full design is preserved on the <b>front</b>, and on the <b>back</b> it's positioned below the zone automatically. If you'd like finer control, use <b>Edit</b> on the back preview and drag/stretch the design to taste — the preview always shows exactly what will print.</p>
-<p style="font-size:11px;color:#0369a1;background:#eff6ff;border:1px solid #bae6fd;border-radius:8px;padding:8px 10px;margin-bottom:10px"><i class="fas fa-edit" style="margin-right:4px"></i><b>Tip:</b> Your back design is automatically positioned below the address zone so nothing is cut off. If you'd like to tweak it, click <b>Edit</b> on the <b>Back. Print-Ready</b> preview above — drag to move and stretch the handles to taste. The preview updates as you adjust it.</p>
+<p style="font-size:11px;color:var(--text2);margin-bottom:10px">The white address zone — where Royal Mail prints the recipient address — stays clean white on the <b>back</b> (on the right for landscape, top-left for portrait). Your full design is preserved on the <b>front</b>, and on the <b>back</b> it's positioned around the zone automatically. If you'd like finer control, use <b>Edit</b> on the back preview and drag/stretch the design to taste — the preview always shows exactly what will print.</p>
+<p style="font-size:11px;color:#0369a1;background:#eff6ff;border:1px solid #bae6fd;border-radius:8px;padding:8px 10px;margin-bottom:10px"><i class="fas fa-edit" style="margin-right:4px"></i><b>Tip:</b> Your back design is automatically positioned around the white address zone so nothing is cut off. If you'd like to tweak it, click <b>Edit</b> on the <b>Back. Print-Ready</b> preview above — drag to move and stretch the handles to taste. The preview updates as you adjust it.</p>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
   <div style="border:1px solid var(--border);border-radius:10px;padding:8px;background:#fff;text-align:center">
     <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:8px">Front. Print-Ready <span style="color:var(--success);font-weight:400">(full design)</span> <span id="fp-front-label" style="font-weight:400;color:var(--muted)"></span> <button id="fp-front-edit" onclick="fpEditFront()" style="display:none;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;color:var(--accent);border:1px solid var(--border);background:#fff;cursor:pointer"><i class="fas fa-crop-alt"></i> Edit</button></div>
@@ -173,7 +173,7 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
     <a class="btn btn-outline btn-sm" style="display:flex;justify-content:center;font-size:11px;margin-top:6px" id="fp-download-orig" target="_blank" rel="noopener"><i class="fas fa-file-image"></i> Download My Original</a>
   </div>
   <div style="border:1px solid var(--border);border-radius:10px;padding:8px;background:#fff;text-align:center">
-    <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:8px">Back. Print-Ready <span style="color:var(--success);font-weight:400">(address area at top)</span> <button id="fp-back-edit" onclick="fpEditBack()" style="display:none;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;color:var(--accent);border:1px solid var(--border);background:#fff;cursor:pointer"><i class="fas fa-crop-alt"></i> Edit</button></div>
+    <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:8px">Back. Print-Ready <span style="color:var(--success);font-weight:400">(white address zone)</span> <button id="fp-back-edit" onclick="fpEditBack()" style="display:none;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;color:var(--accent);border:1px solid var(--border);background:#fff;cursor:pointer"><i class="fas fa-crop-alt"></i> Edit</button></div>
     <div style="position:relative;display:inline-block;max-width:100%;border:1px solid #334155;border-radius:6px;padding:0">
       <img id="fp-back-img" alt="Final print preview (back, white address zone)" style="max-width:100%;max-height:250px;border-radius:4px;display:block">
       <div id="fp-back-err" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#fee2e2;border:1px solid #fecaca;border-radius:6px;padding:8px 12px;font-size:11px;font-weight:700;color:#b91c1c;white-space:nowrap;z-index:5">Back preview could not load — please refresh (Ctrl+F5)</div>
@@ -182,7 +182,7 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
     <a class="btn btn-outline btn-sm" style="display:flex;justify-content:center;font-size:11px;margin-top:8px" id="fp-download-back"><i class="fas fa-download"></i> Download My Back</a>
   </div>
 </div>
-<div style="font-size:10px;color:var(--muted);margin-top:10px">Download Print-Ready = exactly what we send to print (white address zone on the top of the back). Download My Original = your uploaded design, untouched. Use <b>Edit</b> and the green line to fine-tune the position.</div>
+<div style="font-size:10px;color:var(--muted);margin-top:10px">Download Print-Ready = exactly what we send to print (white address zone baked in). Download My Original = your uploaded design, untouched. Use <b>Edit</b> and the green line to fine-tune the position.</div>
 </div>
 
 <!-- Design tips + how the white space works -->
@@ -196,7 +196,7 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
     • <b>Drag the flyer</b> to move it around the page<br>
     • <b>Drag any blue square (handle)</b> to stretch it up/down or left/right<br>
     • Use <b>+ / − / scroll wheel</b> to scale the whole design<br>
-    • On the <b>Back</b>, don't drag your design into the <b>blue address box at the top</b> — it stays white for the recipient's address<br>
+    • On the <b>Back</b>, don't drag your design into the <b>white address zone</b> shown on the preview — it stays clean white for the recipient's address<br>
     • Click <b>Save Positioned Flyer</b> when it looks right<br>
     The print matches exactly what you position. you're in full control.
   </div>
