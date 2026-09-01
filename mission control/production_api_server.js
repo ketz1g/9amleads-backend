@@ -15425,7 +15425,7 @@ app.post('/api/admin/audit-stannp-addresses', adminAuth, async (req, res) => {
         var ck = cust ? cust.email : row.customer_id;
         if (!issuesByCustomer[ck]) issuesByCustomer[ck] = [];
         issuesByCustomer[ck].push({ product: prod, lead_id: row.id, issues: leadIssues, address: d.fullAddress || d.address || '' });
-        if (out.examples.length < 12) out.examples.push({ product: prod, customer: ck, lead_id: row.id, issues: leadIssues, address: rcptF.address_line1 + ', ' + rcptF.city + ', ' + rcptF.postcode });
+        if (out.examples.length < 12) out.examples.push({ product: prod, customer: ck, lead_id: row.id, issues: leadIssues, address: rcptF.address_line1 + ', ' + rcptF.city + ', ' + rcptF.postcode, fields: { town: d.town, city: d.city, address: d.address, fullAddress: d.fullAddress, postcode: d.postcode, street: d.street, building_number: d.building_number } });
       } else out.ready++;
       if (doFix && before !== JSON.stringify(d)) { row.data = JSON.stringify(d); out.fixed++; }
       out.checked++;
