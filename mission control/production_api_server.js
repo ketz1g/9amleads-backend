@@ -15734,9 +15734,12 @@ app.post('/api/newbusiness/bulk/checkout', authMiddleware, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/newbusiness/bulk/send — confirm & send the purchased pack via print & post
+// POST /api/newbusiness/bulk/send — confirm & send the purchased pack via print & post.
+// Body { dry_run: true } validates everything (materials, leads, mail type) and
+// reports readiness WITHOUT creating a campaign or firing any real Stannp mail.
 app.post('/api/newbusiness/bulk/send', authMiddleware, async (req, res) => {
   try {
+    var dryRun = !!(req.body && req.body.dry_run);
     var c = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
     if (!c) return res.status(404).json({ error: 'User not found' });
     var pack = getCustomerBulkPack(c);
@@ -15772,6 +15775,10 @@ app.post('/api/newbusiness/bulk/send', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'Bulk packs are posted as A5 leaflets, so you need BOTH your leaflet front AND leaflet back uploaded first. Add them in Print & Post > Step 2, then come back to send your pack.' });
     }
     var mailType = 'flyer_a5';
+    // DRY RUN: report readiness without creating a campaign or firing real Stannp mail
+    if (dryRun) {
+      return res.json({ success: true, dry_run: true, ready: true, count: leads.length, mail_type: mailType, materials_ready: true, message: 'Ready to send ' + leads.length + ' A5 leaflets (front + back) via Print & Post.' });
+    }
     // Build campaign + recipients (all reserved leads)
     var campaignId = 'bulk_' + uuidv4();
     var nowIso = new Date().toISOString();
