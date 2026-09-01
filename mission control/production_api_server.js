@@ -12827,20 +12827,27 @@ cron.schedule('20 6 * * *', async () => {
     req2.write(body2); req2.end();
   } catch(e) { console.log('[06:05 UK] Distributor error:', e.message); }
 }, { timezone: 'Europe/London' });
-// SCRAPE WATCHDOG (07:30 UK) — if the 06:00 scrape never wrote today's moving pool
-// (stall/crash/block), auto re-trigger it so the 09:00 delivery still has fresh
-// supply. Alerts hello@9amleads.com so a silent failure never surprises anyone.
+// SCRAPE WATCHDOG (07:30 UK) — if ANY product pool (moving/probate/planning/
+// newbusiness/tenders) was not written today, auto re-trigger the full scrape so
+// the 09:00 delivery still has fresh supply. Previously only the MOVING pool was
+// checked, so a silent newbusiness (or other) scrape failure never got caught.
+// Alerts hello@9amleads.com so a silent failure never surprises anyone.
 cron.schedule('30 7 * * *', async () => {
   try {
-    var swPoolFile = path.join(DATA_DIR, PRODUCT_LEAD_FILES.moving ? PRODUCT_LEAD_FILES.moving.file : 'moving-leads.json');
-    var swMtime = 0;
-    try { swMtime = fs.statSync(swPoolFile).mtimeMs; } catch(e) {}
     function ukDateStr(ms) { try { return new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(ms)); } catch(e) { return new Date(ms).toISOString().split('T')[0]; } }
-    if (swMtime > 0 && ukDateStr(swMtime) === ukDateStr(Date.now())) {
-      console.log('[SCRAPE-WATCHDOG] Moving pool written today — OK');
+    var stalePools = [];
+    Object.keys(PRODUCT_LEAD_FILES || {}).forEach(function(prod) {
+      var f = PRODUCT_LEAD_FILES[prod] && PRODUCT_LEAD_FILES[prod].file;
+      if (!f) return;
+      var mt = 0;
+      try { mt = fs.statSync(path.join(DATA_DIR, f)).mtimeMs; } catch(e) {}
+      if (!(mt > 0 && ukDateStr(mt) === ukDateStr(Date.now()))) stalePools.push(prod);
+    });
+    if (!stalePools.length) {
+      console.log('[SCRAPE-WATCHDOG] All pools written today — OK');
       return;
     }
-    console.log('[SCRAPE-WATCHDOG] Moving pool NOT written today — auto re-triggering scrape');
+    console.log('[SCRAPE-WATCHDOG] Stale pools: ' + stalePools.join(', ') + ' — auto re-triggering scrape');
     try {
       const http = require('http');
       // No product filter: the re-triggered scrape covers ALL lead types (moving,
@@ -12851,7 +12858,7 @@ cron.schedule('30 7 * * *', async () => {
       swReq.write(swBody); swReq.end();
     } catch(sw2) { console.log('[SCRAPE-WATCHDOG] re-trigger call error:', sw2.message); }
     try {
-      await sendBrevoEmail('hello@9amleads.com', '9amLeads alert: 06:00 scrape failed - auto re-triggered', '<div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px"><h2 style="color:#f59e0b;margin:0 0 10px;font-size:18px">The 06:00 lead scrape did not complete on time</h2><p style="font-size:14px;line-height:1.6;color:#cbd5e1">The system <b>automatically re-triggered it</b> so your 09:00 delivery stays on track. No action needed unless you see this alert again tomorrow.</p></div>');
+      await sendBrevoEmail('hello@9amleads.com', '9amLeads alert: 06:00 scrape failed - auto re-triggered', '<div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px"><h2 style="color:#f59e0b;margin:0 0 10px;font-size:18px">The 06:00 lead scrape did not complete on time</h2><p style="font-size:14px;line-height:1.6;color:#cbd5e1">Stale pools: <b>' + stalePools.join(', ') + '</b>. The system <b>automatically re-triggered it</b> so your 09:00 delivery stays on track. No action needed unless you see this alert again tomorrow.</p></div>');
     } catch(sw3) { console.log('[SCRAPE-WATCHDOG] alert error:', sw3.message); }
   } catch(e) { console.log('[SCRAPE-WATCHDOG] error:', e.message); }
 }, { timezone: 'Europe/London' });
