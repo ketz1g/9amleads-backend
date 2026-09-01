@@ -15375,21 +15375,22 @@ app.post('/api/admin/audit-stannp-addresses', adminAuth, async (req, res) => {
           var _m = _addr.match(/\b[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}\b/i);
           if (_m) { var _pr = _m[0].toUpperCase().replace(/[^A-Z0-9]/g, ''); d.postcode = _pr.slice(0, _pr.length - 3) + ' ' + _pr.slice(-3); _pc = String(d.postcode).replace(/\s+/g, ''); }
         }
-        // town: parse from address text, else cached town-from-postcode (free).
-        if (!d.town && !d.city) {
-          var _tc = parseTownCountyFromAddress(_addr, d.postcode || '');
-          if (_tc && _tc.town) { d.town = _tc.town; d.city = _tc.town; }
-          else { try { var _gt = require('./rightmove_scraper_v2').getTownForPostcode(d.postcode || ''); if (_gt) { d.town = _gt; d.city = _gt; } } catch(e) {} }
-        }
-        // TOWN SANITIZER: a 1-2 letter "town" that is really a postcode area
+        // TOWN SANITIZER: a 1-2 letter town/city that is really a postcode area
         // ("L", "N", "SW" leaked into the address as a city segment) is garbage.
-        // Replace it with the cached town-from-postcode so Stannp gets a real town.
-        if (d.town && /^[A-Z]{1,2}$/.test(String(d.town).trim()) && d.postcode) {
+        // Run it FIRST (covers the stored city field too) so the town derivation
+        // below can replace it with a real town-from-postcode.
+        if (/^[A-Z]{1,2}$/.test(String(d.city || d.town || '').trim()) && d.postcode) {
           try {
             var _gt2 = require('./rightmove_scraper_v2').getTownForPostcode(d.postcode);
             if (_gt2) { d.town = _gt2; d.city = _gt2; }
             else { delete d.town; delete d.city; }
           } catch(e) { delete d.town; delete d.city; }
+        }
+        // town: parse from address text, else cached town-from-postcode (free).
+        if (!d.town && !d.city) {
+          var _tc = parseTownCountyFromAddress(_addr, d.postcode || '');
+          if (_tc && _tc.town && !/^[A-Z]{1,2}$/.test(_tc.town)) { d.town = _tc.town; d.city = _tc.town; }
+          else { try { var _gt = require('./rightmove_scraper_v2').getTownForPostcode(d.postcode || ''); if (_gt) { d.town = _gt; d.city = _gt; } } catch(e) {} }
         }
         if (!d.county && d.postcode) { var _cy = countyFromPostcode(d.postcode); if (_cy) d.county = _cy; }
         // premise + street
@@ -22957,6 +22958,12 @@ function buildStannpRecipientFromLead(parsed) {
   if (address_line1 && !_hasNum(address_line1) && bldAddr && _hasNum(bldAddr)) address_line1 = bldAddr;
   var postcode = parsed.postcode || '';
   var city = parsed.city || parsed.town || spl.city;
+  // GARBAGE-CITY GUARD: a 1-2 letter "city" is a postcode area leaked into the
+  // address ("L", "N", "SW") — never send that to Stannp. Replace with the cached
+  // town-from-postcode (free), else the split address's last part, else drop it.
+  if (city && /^[A-Z]{1,2}$/.test(String(city).trim())) {
+    try { var _gtC = require('./rightmove_scraper_v2').getTownForPostcode(postcode); if (_gtC) city = _gtC; else city = spl.city || ''; } catch(e) { city = spl.city || ''; }
+  }
   // TOWN FALLBACK: if the address has no town/area, derive it from the postcode
   // (cached Postcoder town — zero extra cost, reuses the PAF cache). Print & Post
   // needs a town for reliable Royal Mail routing.
