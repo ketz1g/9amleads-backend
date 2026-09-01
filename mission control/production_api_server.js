@@ -13807,6 +13807,16 @@ cron.schedule('10 8 * * 1-5', function() { try { sendDailyDeliveryPreview('post'
 cron.schedule('45 9 * * 1-5', function() {
   try { normaliseAllDeliveredStannpAddresses(); } catch(e) { console.log('[STANNP-NORMALISE-CRON] ' + e.message); }
 }, { timezone: 'Europe/London' });
+// DAILY POOL PRUNE (10:00 UK): delete any pool lead unused for 3+ days so we never
+// build a backlog of stale leads (we scrape fresh every day). All products.
+cron.schedule('0 10 * * *', function() {
+  try { pruneStalePoolLeads(); } catch(e) { console.log('[POOL-PRUNE-CRON] ' + e.message); }
+}, { timezone: 'Europe/London' });
+// POST /api/admin/prune-pools — manually trigger the pool cleanup now.
+app.post('/api/admin/prune-pools', adminAuth, (req, res) => {
+  try { res.json({ success: true, ...pruneStalePoolLeads() }); }
+  catch(e) { res.status(500).json({ error: e.message }); }
+});
 // POST /api/admin/email-preview — manually trigger the pre-delivery email now.
 app.post('/api/admin/email-preview', adminAuth, (req, res) => {
   try {
@@ -15373,6 +15383,57 @@ app.post('/api/admin/backfill-delivered-addresses', adminAuth, (req, res) => {
     res.json({ success: true, product: prod, rows: leads.length, updated: updated });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+
+// ===== POOL PRUNE (no unused-lead backlog) =====
+// Leads are scraped daily, so any pool lead NOT used within 3 days (72h) is deleted
+// — fresh = 24h, fallback = 48h, gone after 72h. Monday keeps Friday-9am-and-later
+// leads so weekend supply still fills Monday's accounts, then ages out. Applies to
+// EVERY product pool (moving/probate/newbusiness/planning/tenders).
+function pruneStalePoolLeads() {
+  try {
+    var pruned = {}, totalBefore = 0, totalAfter = 0;
+    Object.keys(PRODUCT_LEAD_FILES || {}).forEach(function(prod) {
+      var f = PRODUCT_LEAD_FILES[prod] && PRODUCT_LEAD_FILES[prod].file;
+      if (!f) return;
+      var file = path.join(DATA_DIR, f);
+      var raw = null;
+      try { raw = JSON.parse(fs.readFileSync(file, 'utf-8')); } catch(e) {}
+      if (!raw) return;
+      var container = null, arr = null;
+      if (Array.isArray(raw)) arr = raw;
+      else if (raw && typeof raw === 'object') {
+        container = raw;
+        arr = [];
+        Object.keys(raw).forEach(function(k) { if (k.indexOf('_') !== 0 && Array.isArray(raw[k])) raw[k].forEach(function(x) { arr.push({ _key: k, _item: x }); }); });
+      }
+      if (!arr || !arr.length) return;
+      var cutoff = require('./freshness').getPruneCutoffIso(Date.now());
+      var kept = [], removed = 0;
+      arr.forEach(function(e) {
+        var l = e._item || e;
+        var d = pickFreshDate(l) || '';
+        if (!d) { try { d = String(l.scrapedAt || l.firstListedAt || l.createdAt || l.created_at || ''); } catch(_) {} }
+        if (d && d < cutoff) { removed++; return; }
+        kept.push(e);
+      });
+      totalBefore += arr.length;
+      totalAfter += kept.length;
+      if (removed > 0) {
+        if (container) {
+          var rebuilt = {};
+          Object.keys(container).forEach(function(k) { if (k.indexOf('_') === 0) rebuilt[k] = container[k]; });
+          kept.forEach(function(e) { if (!rebuilt[e._key]) rebuilt[e._key] = []; rebuilt[e._key].push(e._item); });
+          fs.writeFileSync(file, JSON.stringify(rebuilt, null, 2));
+        } else {
+          fs.writeFileSync(file, JSON.stringify(kept, null, 2));
+        }
+        pruned[prod] = removed;
+        console.log('[POOL-PRUNE] ' + prod + ': removed ' + removed + ' stale lead(s) (kept ' + kept.length + ')');
+      }
+    });
+    return { removed: pruned, total_before: totalBefore, total_after: totalAfter };
+  } catch(e) { console.log('[POOL-PRUNE] error: ' + e.message); return { error: e.message }; }
+}
 
 // ===== STANNP ADDRESS NORMALISER (shared) =====
 // Idempotent normalisation that makes a lead's stored data Stannp-ready: extracts a
