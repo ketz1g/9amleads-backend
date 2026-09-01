@@ -15358,6 +15358,17 @@ function normalizeStannpAddress(d) {
   try {
     if (!d || typeof d !== 'object') return d;
     ensureFullLeadAddress(d);
+    // HARD STRING CLEAN: strip embedded unspaced postcode tokens ("LE30UW",
+    // "GL516QL") and duplicated leading numbers ("72 72 Oxford Road") from the raw
+    // address string so the rebuild can never carry them forward.
+    var _raw0 = String(d.address || d.fullAddress || '');
+    var _rawClean = _raw0.split(',').map(function(x){ return String(x).trim(); }).filter(function(x){ return x && !/^[A-Z]{1,2}\d[A-Z\d]{2,5}$/i.test(x); }).join(', ');
+    _rawClean = _rawClean.replace(/^((?:Flat|Apartment|Unit|Suite|Maisonette|Room)\s+[A-Z0-9\-]+)\s+\1\b/i, '$1').replace(/^(\d{1,5}[A-Za-z]?)\s+\1\b/i, '$1');
+    if (_rawClean && _rawClean !== _raw0) {
+      d.address = _rawClean;
+      if (String(d.fullAddress || '').trim() === _raw0.trim()) d.fullAddress = _rawClean;
+      _raw0 = _rawClean;
+    }
     var _addr = String(d.address || d.fullAddress || '');
     if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/.test(String(d.postcode || '').trim())) {
       var _m = _addr.match(/\b[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}\b/i);
