@@ -15590,6 +15590,34 @@ function getCustomerBulkPack(customer) {
   return p;
 }
 
+// MASKED ADDRESS for the PRE-PAYMENT preview: enough to judge lead quality (company,
+// town, outward postcode) but never a mailable address — door number hidden, street
+// name partly masked, full postcode hidden. Full addresses are only revealed after
+// payment in the dashboard bulk section.
+function maskBulkAddress(l) {
+  var out = { company: String(l.name || l.companyName || l.company_name || 'Unknown company').toUpperCase() };
+  try {
+    var rcpt = buildStannpRecipientFromLead(l);
+    var line1 = String(rcpt.address_line1 || l.street || '').trim();
+    var town = String(rcpt.city || l.town || l.city || '').trim();
+    var pc = String(rcpt.postcode || l.postcode || '').trim().toUpperCase();
+    // strip a leading door number / flat ("71-75 Shelton Street" -> "Shelton Street")
+    var street = line1.replace(/^\s*(flat\s+[A-Z0-9\-]+|apartment\s+[A-Z0-9\-]+|unit\s+[A-Z0-9\-]+|\d{1,5}[A-Za-z]?(?:[-\u2013]\d{1,5}[A-Za-z]?)?)\s*[,]?\s*/i, '').replace(/,.*$/, '').trim();
+    // mask the street name: keep the first word's first 2 letters, mask the rest
+    street = street.replace(/\b([A-Za-z]{2})[A-Za-z']*/g, '$1\u2022\u2022\u2022\u2022');
+    if (!street) street = 'address withheld';
+    var outward = pc.match(/^[A-Z]{1,2}\d[A-Z0-9]?/);
+    out.town = town || '';
+    out.street_masked = street;
+    out.postcode_masked = (outward ? outward[0] : '') + ' \u2022\u2022';
+  } catch(e) { out.town = ''; out.street_masked = 'address withheld'; out.postcode_masked = '\u2022\u2022'; }
+  return out;
+}
+function maskedBulkPreview(n) {
+  n = n || 6;
+  return getBulkEligibleLeads().slice(0, n).map(maskBulkAddress);
+}
+
 // POST /api/admin/bulk-seed — backdate `count` newest newbusiness pool leads to 4 days
 // old so they become bulk-eligible (the reserve fills naturally over time; this lets
 // us top it up / test on demand). Body: { count }
@@ -15647,13 +15675,20 @@ app.get('/api/newbusiness/bulk', authMiddleware, (req, res) => {
     }
     var materials = (function() {
       try {
-        var front = db.prepare("SELECT COUNT(*) AS count FROM direct_mail_materials WHERE customer_id = ? AND type IN ('flyer_front','letter')").get(c.id);
-        return (front && front.count > 0);
+        // Bulk postage is A5 LEAFLET only — the customer needs BOTH a flyer front
+        // AND a flyer back uploaded before they can send.
+        var front = db.prepare("SELECT COUNT(*) AS count FROM direct_mail_materials WHERE customer_id = ? AND type = 'flyer_front'").get(c.id);
+        var back = db.prepare("SELECT COUNT(*) AS count FROM direct_mail_materials WHERE customer_id = ? AND type = 'flyer_back'").get(c.id);
+        return (front && front.count > 0) && (back && back.count > 0);
       } catch(e) { return false; }
     })();
     res.json({
       success: true, eligible: eligible, plan: c.plan, product: c.product,
+      leaflet_only: true,
       available: eligible ? getBulkEligibleLeads().length : 0,
+      // PRE-PAYMENT masked preview (never a mailable address) + full reserved leads
+      // (only shown once a pack is purchased)
+      preview: !pack ? maskedBulkPreview(6) : [],
       pack: pack ? { count: pack.count, purchased_at: pack.purchased_at, status: pack.status, sent: pack.sent || 0 } : null,
       reserved_count: reserved.length, reserved: reserved,
       materials_ready: materials,
@@ -15725,29 +15760,18 @@ app.post('/api/newbusiness/bulk/send', authMiddleware, async (req, res) => {
     var arr = readPoolFile('newbusiness');
     var leads = (arr || []).filter(function(l) { return l.bulk_reserved_by === c.id && !l.bulk_sold; });
     if (!leads.length) return res.status(400).json({ error: 'No reserved leads found for this pack.' });
-    // materials: at least a flyer front OR letter must exist (like one-click print & post)
-    var matCheck = null;
+    // Bulk postage is A5 LEAFLET ONLY: the customer must have BOTH a flyer front AND
+    // a flyer back uploaded before they can send. No letters in bulk packs.
+    var hasFlyerFront = false, hasFlyerBack = false;
     try {
-      matCheck = db.prepare("SELECT id, type FROM direct_mail_materials WHERE customer_id = ? AND type IN ('flyer_front','letter') ORDER BY created_at DESC LIMIT 1").get(c.id);
+      hasFlyerFront = !!db.prepare("SELECT id FROM direct_mail_materials WHERE customer_id = ? AND type = 'flyer_front' LIMIT 1").get(c.id);
+      hasFlyerBack = !!db.prepare("SELECT id FROM direct_mail_materials WHERE customer_id = ? AND type = 'flyer_back' LIMIT 1").get(c.id);
     } catch(e) {}
-    if (!matCheck) {
-      return res.status(400).json({ error: 'You need your marketing materials loaded first. Add a flyer or letter in Print & Post > Step 2, then come back to send your pack.' });
+    if (!hasFlyerFront || !hasFlyerBack) {
+      var missing = !hasFlyerFront ? 'leaflet front' : 'leaflet back';
+      return res.status(400).json({ error: 'Bulk packs are posted as A5 leaflets, so you need BOTH your leaflet front AND leaflet back uploaded first. Add them in Print & Post > Step 2, then come back to send your pack.' });
     }
-    // Choose a mail type that the customer's materials can actually fulfil:
-    // letter (most reliable — auto-generates a PDF) or flyer_plus_letter if they have
-    // both a flyer front AND a letter/letter-body. Never promise a flyer they can't print.
-    var hasFlyer = false, hasLetter = false;
-    try {
-      hasFlyer = !!db.prepare("SELECT id FROM direct_mail_materials WHERE customer_id = ? AND type = 'flyer_front' LIMIT 1").get(c.id);
-      hasLetter = !!db.prepare("SELECT id FROM direct_mail_materials WHERE customer_id = ? AND type = 'letter' LIMIT 1").get(c.id);
-    } catch(e) {}
-    if (!hasLetter) {
-      try {
-        var lBody = db.prepare("SELECT cover_letter FROM customer_business_profiles WHERE customer_id = ?").get(c.id);
-        if (lBody && lBody.cover_letter) hasLetter = true;
-      } catch(e) {}
-    }
-    var mailType = (hasFlyer && hasLetter) ? 'flyer_plus_letter' : (hasFlyer ? 'flyer_a5' : 'letter_a4');
+    var mailType = 'flyer_a5';
     // Build campaign + recipients (all reserved leads)
     var campaignId = 'bulk_' + uuidv4();
     var nowIso = new Date().toISOString();
