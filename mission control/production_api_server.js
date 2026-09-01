@@ -15396,24 +15396,30 @@ app.post('/api/admin/audit-stannp-addresses', adminAuth, async (req, res) => {
         // premise + street
         if (!d.building_number && !d.buildingNumber) { var _bn = extractMovingDoorNumber(_addr); if (_bn) { d.building_number = _bn; d.buildingNumber = _bn; } }
         if (!d.street) d.street = extractMovingStreet(_addr);
-        // STREET SANITIZER: a "street" that contains commas (or equals the whole
-        // address) is the full address leaked into the field — re-derive the real
-        // street from the address text so line1 is clean, not a comma-joined blob.
-        if (d.street) {
-          var _st = String(d.street).trim();
-          if (_st.indexOf(',') !== -1 || _st.toLowerCase() === _addr.trim().toLowerCase()) {
-            var _rs = extractMovingStreet(_addr);
-            if (_rs) d.street = _rs; else delete d.street;
+        // STREET/BUILDING SANITIZERS: a "street" that contains commas (or equals the
+        // whole address) is the full address leaked into the field. Re-derive the real
+        // street + building number by finding the address SEGMENT that is actually a
+        // street (has a street suffix). A named property ("Will Farm") stays as line1.
+        var _streetParts = (function() {
+          var _segs = String(d.address || d.fullAddress || '').split(',').map(function(x){ return String(x).trim(); }).filter(Boolean);
+          for (var si = 0; si < _segs.length; si++) {
+            var _seg = _segs[si];
+            var _numM = _seg.match(/^\s*((?:Flat|Apartment|Unit|Suite|Maisonette|Room)\s+[A-Z0-9\-]+|\d{1,5}[A-Za-z]?(?:[-\u2013]\d{1,5}[A-Za-z]?)?)\s+(.+)$/i);
+            var _name = _numM ? _numM[2] : _seg;
+            if (hasStreetName(_name)) {
+              return { building_number: _numM ? String(_numM[1]).replace(/,\s*$/, '').trim() : '', street: _name.trim() };
+            }
           }
+          return null;
+        })();
+        if (_streetParts) {
+          if (_streetParts.street) d.street = _streetParts.street;
+          if (_streetParts.building_number) { d.building_number = _streetParts.building_number; d.buildingNumber = _streetParts.building_number; }
         }
-        // BUILDING-NUMBER SANITIZER: same leak guard.
-        if (d.building_number || d.buildingNumber) {
-          var _bnr = String(d.building_number || d.buildingNumber).trim();
-          if (_bnr.indexOf(',') !== -1 || _bnr.length > 12) {
-            var _rn = extractMovingDoorNumber(_addr);
-            if (_rn) { d.building_number = _rn; d.buildingNumber = _rn; } else { delete d.building_number; delete d.buildingNumber; }
-          }
-        }
+        // If no numbered street segment was found, drop the polluted street field so
+        // the rebuild falls back to the first segment (named property / area line).
+        if (d.street && (String(d.street).indexOf(',') !== -1 || String(d.street).trim().toLowerCase() === _addr.trim().toLowerCase())) delete d.street;
+        if ((d.building_number || d.buildingNumber) && String(d.building_number || d.buildingNumber).indexOf(',') !== -1) { delete d.building_number; delete d.buildingNumber; }
         // clean duplicated leading segments
         var _p = String(d.address || d.fullAddress || '').replace(/^((?:Flat|Apartment|Unit|Maisonette|Room)\s+\d+[A-Za-z]?)\s+\1\b/i, '$1').replace(/^(\d+[A-Za-z]?)\s+(\1-\d+[A-Za-z]?)\b/i, '$2');
         // rebuild a clean printable full address: premise+street, town, county, postcode
