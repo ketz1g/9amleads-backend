@@ -723,7 +723,11 @@ function loadProductPool(prod) {
           }
           if (l.fullAddress) {
             var _c2 = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(l.fullAddress)));
-            if (prod === 'moving') _c2 = normaliseMovingAddress(_c2);
+            // IMPORTANT: do NOT run normaliseMovingAddress on fullAddress — that
+            // returns only the numbered street and DROPS the town/county/postcode,
+            // breaking the full-address guarantee (delivery requires door + street +
+            // town + county + postcode). The street-only normalise stays on the
+            // `address` field only.
             l.fullAddress = _c2;
           }
           if (l.deceasedAddress) {
