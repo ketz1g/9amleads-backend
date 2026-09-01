@@ -1213,9 +1213,20 @@ function pushBackupToGitHub() {
       if (!BACKUP_TOKEN) { global.__lastGithubPush = { at: new Date().toISOString(), ok: false, reason: 'no token' }; resolve(false); return; }
       var content = JSON.stringify(_dbData, null, 2);
       var stamp = new Date().toISOString().replace(/[:T]/g, '-').substring(0, 19);
-      // GZIP the backup: the raw JSON is ~60MB, over the GitHub contents-API limit.
-      // gzip brings it to ~5MB, well within limits.
-      var gz = require('zlib').gzipSync(Buffer.from(content, 'utf-8'));
+      // STRIP bulky binary (base64 artwork file_data) from the pushed copy — the
+      // materials are large (60MB DB is mostly file_data) and regenerable from the
+      // source uploads. The GitHub copy keeps every business record (customers,
+      // leads, subscriptions, settings) but not the image payloads, so it fits the
+      // contents-API size limit and pushes quickly.
+      var pushCopy = { __stripped: 'material file_data omitted (regenerable) - full local backup has everything', _src: '9amleads-backend', saved_at: stamp };
+      try {
+        var src = _dbData;
+        var cp = JSON.parse(JSON.stringify(src, function(k, v) { return (k === 'file_data') ? undefined : v; }));
+        pushCopy = cp;
+        pushCopy.__meta = { customers: (cp.customers || []).length, leads: (cp.leads || []).length, materials: (cp.direct_mail_materials || []).length, saved_at: stamp };
+      } catch(e) {}
+      // GZIP the pushed copy to shrink it further.
+      var gz = require('zlib').gzipSync(Buffer.from(JSON.stringify(pushCopy), 'utf-8'));
       var path = 'backups/database-' + stamp + '.json.gz';
       var d = JSON.stringify({ message: 'DB backup ' + stamp, content: gz.toString('base64'), branch: 'main' });
       var req = require('https').request({ hostname: 'api.github.com', path: '/repos/' + BACKUP_GITHUB_REPO + '/contents/' + path, method: 'PUT', headers: { 'Authorization': 'Bearer ' + BACKUP_TOKEN, 'User-Agent': '9amLeads', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(d) }, timeout: 60000 }, function(res) {
