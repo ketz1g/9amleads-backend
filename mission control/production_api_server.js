@@ -15154,8 +15154,10 @@ app.post('/api/admin/backfill-delivered-addresses', adminAuth, (req, res) => {
       // Rebuild the full printable address from the parts (supports moving,
       // probate deceasedAddress, newbusiness & planning).
       var _parts = [];
-      var _prem = String(d.address || '');
+      var _prem = String(d.address || d.fullAddress || '');
       try { _prem = _prem.replace(new RegExp(String(d.postcode || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '').trim(); } catch(e) {}
+      // Clean duplicated leading flat/unit numbers ("Flat 22 Flat 22 Parkdale").
+      _prem = String(_prem || '').replace(/^((?:Flat|Apartment|Unit|Maisonette|Room)\s+\d+[A-Za-z]?)\s+\1\b/i, '$1').replace(/,\s*$/, '').trim();
       if (d.building_number) _parts.push(d.building_number + (d.street ? ' ' + d.street : ''));
       else if (d.street) _parts.push(d.street);
       else if (_prem && !/,/.test(_prem)) _parts.push(_prem);
