@@ -15407,17 +15407,33 @@ app.post('/api/admin/audit-stannp-addresses', adminAuth, async (req, res) => {
         if (d.county) _parts.push(d.county);
         if (d.postcode) _parts.push(d.postcode);
         if (_parts.length) { var _fa = _parts.filter(Boolean).join(', '); d.fullAddress = dedupeAddressSegments(_fa); d.address = _fa; }
-        // Set address_line1/address1 used by buildStannpRecipientFromLead when present
-        if (d.building_number || d.street) { var _l1 = ((d.building_number || d.buildingNumber) ? (d.building_number || d.buildingNumber) + ' ' : '') + (d.street || ''); if (_l1.trim()) { d.address_line1 = _l1.trim(); d.address1 = _l1.trim(); } }
+        // Set a clean single-line address_line1/address1 for Stannp's address1 field:
+        // premise+street, else street, else the FIRST segment (named property such as
+        // "Will Farm" / "Penstraze Business Centre"). NEVER a comma-joined full address.
+        var _l1 = '';
+        if (d.building_number || d.buildingNumber) _l1 = ((d.building_number || d.buildingNumber) + ' ' + (d.street || '')).trim();
+        else if (d.street) _l1 = d.street;
+        if (!_l1) {
+          var _first = String(d.address || d.fullAddress || '').split(',')[0].trim();
+          if (_first && !/^[A-Z]{1,2}$/.test(_first)) _l1 = _first;
+        }
+        if (_l1) { d.address_line1 = _l1; d.address1 = _l1; }
       } catch(e2) {}
-      // Stannp readiness checks
+      // Stannp readiness checks. A named property ("Will Farm", "Penstraze Business
+      // Centre") is a valid UK mail premise even without a numbered street, so accept
+      // a premise descriptor too. A bare person's name with no street is UNPOSTABLE.
       var rcptF = buildStannpRecipientFromLead(d);
-      var hasPremise = /^\s*(flat|apartment|unit|maisonette|suite|room)\b|\d/.test(String(rcptF.address_line1 || '')) && (rcptF.address_line1 || '').trim().length > 2;
-      var hasStreet = hasStreetName(rcptF.address_line1 || '');
+      var line1 = String(rcptF.address_line1 || '').trim();
+      var hasPremise = (line1.length > 2) && (
+        /^\s*\d[0-9A-Za-z\/\-\s]*/.test(line1) ||
+        /^\s*(flat|apartment|unit|maisonette|suite|room)\b/i.test(line1) ||
+        /\b(farm|house|hall|lodge|court|centre|center|business|manor|cottage|barn|mill|croft|villa|mews|gardens?|park|studio|school|surgery|estate|works|building|block|tower|garden|row|wharf|mills|acre)\b/i.test(line1)
+      );
+      var hasStreet = hasStreetName(line1);
       var pcValid = /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/.test(String(rcptF.postcode || '').trim());
       var hasTown = (rcptF.city || '').trim().length >= 2;
       if (!hasPremise) { leadIssues.push('missing_premise'); out.issues.missing_premise++; }
-      if (!hasStreet) { leadIssues.push('missing_street'); out.issues.missing_street++; }
+      if (!hasPremise && !hasStreet) { leadIssues.push('missing_street'); out.issues.missing_street++; }
       if (!hasTown) { leadIssues.push('missing_town'); out.issues.missing_town++; }
       if (!rcptF.postcode || !rcptF.postcode.trim()) { leadIssues.push('no_postcode'); out.issues.no_postcode++; }
       else if (!pcValid) { leadIssues.push('invalid_postcode'); out.issues.invalid_postcode++; }
