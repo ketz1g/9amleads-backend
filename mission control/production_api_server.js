@@ -15574,8 +15574,8 @@ app.get('/api/newbusiness/bulk', authMiddleware, (req, res) => {
     }
     var materials = (function() {
       try {
-        var front = db.prepare("SELECT COUNT(*) AS n FROM direct_mail_materials WHERE customer_id = ? AND type IN ('flyer_front','letter')").get(c.id);
-        return (front && front.n > 0);
+        var front = db.prepare("SELECT COUNT(*) AS count FROM direct_mail_materials WHERE customer_id = ? AND type IN ('flyer_front','letter')").get(c.id);
+        return (front && front.count > 0);
       } catch(e) { return false; }
     })();
     res.json({
