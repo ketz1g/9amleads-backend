@@ -1210,19 +1210,19 @@ function writeLocalBackup() {
 function pushBackupToGitHub() {
   return new Promise(function(resolve) {
     try {
-      if (!BACKUP_TOKEN) { resolve(false); return; }
+      if (!BACKUP_TOKEN) { global.__lastGithubPush = { at: new Date().toISOString(), ok: false, reason: 'no token' }; resolve(false); return; }
       var content = JSON.stringify(_dbData, null, 2);
       var stamp = new Date().toISOString().replace(/[:T]/g, '-').substring(0, 19);
       var path = 'backups/database-' + stamp + '.json';
       // Use the GitHub contents API (create/update file)
       var d = JSON.stringify({ message: 'DB backup ' + stamp, content: Buffer.from(content).toString('base64'), branch: 'main' });
       var req = require('https').request({ hostname: 'api.github.com', path: '/repos/' + BACKUP_GITHUB_REPO + '/contents/' + path, method: 'PUT', headers: { 'Authorization': 'Bearer ' + BACKUP_TOKEN, 'User-Agent': '9amLeads', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(d) }, timeout: 30000 }, function(res) {
-        var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { if (res.statusCode < 300) { console.log('[BACKUP] Pushed to GitHub: ' + path); resolve(true); } else { console.log('[BACKUP] GitHub push HTTP ' + res.statusCode + ': ' + b.substring(0, 100)); resolve(false); } });
+        var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { if (res.statusCode < 300) { global.__lastGithubPush = { at: new Date().toISOString(), ok: true, status: res.statusCode, repo: BACKUP_GITHUB_REPO, path: path }; console.log('[BACKUP] Pushed to GitHub: ' + path); resolve(true); } else { global.__lastGithubPush = { at: new Date().toISOString(), ok: false, status: res.statusCode, body: b.substring(0, 120) }; console.log('[BACKUP] GitHub push HTTP ' + res.statusCode + ': ' + b.substring(0, 100)); resolve(false); } });
       });
-      req.on('error', function(e) { console.log('[BACKUP] GitHub push error:', e.message); resolve(false); });
+      req.on('error', function(e) { global.__lastGithubPush = { at: new Date().toISOString(), ok: false, reason: e.message }; console.log('[BACKUP] GitHub push error:', e.message); resolve(false); });
       req.setTimeout(30000, function() { req.destroy(); resolve(false); });
       req.write(d); req.end();
-    } catch(e) { console.log('[BACKUP] GitHub push error:', e.message); resolve(false); }
+    } catch(e) { global.__lastGithubPush = { at: new Date().toISOString(), ok: false, reason: e.message }; console.log('[BACKUP] GitHub push error:', e.message); resolve(false); }
   });
 }
 
@@ -26595,7 +26595,7 @@ app.get('/api/admin/fulfilment-report', adminAuth, (req, res) => {
 app.post('/api/admin/backup', adminAuth, async (req, res) => {
   try {
     var file = await runFullBackup();
-    res.json({ success: true, local_file: file, note: 'Backup written locally and pushed to GitHub (' + BACKUP_GITHUB_REPO + ')' });
+    res.json({ success: true, local_file: file, note: 'Backup written locally and pushed to GitHub (' + BACKUP_GITHUB_REPO + ')', github_push: global.__lastGithubPush || null });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 app.get('/api/admin/backup', adminAuth, (req, res) => {
