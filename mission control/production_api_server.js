@@ -15280,8 +15280,27 @@ app.get('/api/admin/pool-leads', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// DIAGNOSTIC: dump pool area distribution for a product
 
+// DIAGNOSTIC: dump raw lead data for matching delivered leads (email + address fragment)
+app.get('/api/admin/dump-lead-raw', adminAuth, (req, res) => {
+  try {
+    var em = String((req.query && req.query.email) || '').toLowerCase().trim();
+    var frag = String((req.query && req.query.match) || '').toLowerCase().trim();
+    var dbR = getDb();
+    var cust = (dbR.customers || []).find(function(c) { return String(c.email || '').toLowerCase().trim() === em; });
+    var out = [];
+    (dbR.leads || []).forEach(function(row) {
+      if (cust && row.customer_id !== cust.id) return;
+      var d = null; try { d = JSON.parse(row.data || '{}'); } catch(e) {}
+      if (!d || typeof d !== 'object') return;
+      if (frag && !String(d.fullAddress || d.address || '').toLowerCase().includes(frag)) return;
+      out.push({ id: row.id, product: row.product, delivered: row.delivered, status: row.status, customer_id: row.customer_id, data: d });
+    });
+    res.json({ success: true, count: out.length, leads: out.slice(0, 5) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// DIAGNOSTIC: dump pool area distribution for a product
 // POST /api/admin/pool/enrich-addresses — back-fill town/city/county + door/street
 // on ALL existing pool leads and persist to the pool file. Ensures every lead has
 // the full address (Print & Post guarantee). Idempotent.
