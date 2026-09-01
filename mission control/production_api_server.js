@@ -15396,6 +15396,24 @@ app.post('/api/admin/audit-stannp-addresses', adminAuth, async (req, res) => {
         // premise + street
         if (!d.building_number && !d.buildingNumber) { var _bn = extractMovingDoorNumber(_addr); if (_bn) { d.building_number = _bn; d.buildingNumber = _bn; } }
         if (!d.street) d.street = extractMovingStreet(_addr);
+        // STREET SANITIZER: a "street" that contains commas (or equals the whole
+        // address) is the full address leaked into the field — re-derive the real
+        // street from the address text so line1 is clean, not a comma-joined blob.
+        if (d.street) {
+          var _st = String(d.street).trim();
+          if (_st.indexOf(',') !== -1 || _st.toLowerCase() === _addr.trim().toLowerCase()) {
+            var _rs = extractMovingStreet(_addr);
+            if (_rs) d.street = _rs; else delete d.street;
+          }
+        }
+        // BUILDING-NUMBER SANITIZER: same leak guard.
+        if (d.building_number || d.buildingNumber) {
+          var _bnr = String(d.building_number || d.buildingNumber).trim();
+          if (_bnr.indexOf(',') !== -1 || _bnr.length > 12) {
+            var _rn = extractMovingDoorNumber(_addr);
+            if (_rn) { d.building_number = _rn; d.buildingNumber = _rn; } else { delete d.building_number; delete d.buildingNumber; }
+          }
+        }
         // clean duplicated leading segments
         var _p = String(d.address || d.fullAddress || '').replace(/^((?:Flat|Apartment|Unit|Maisonette|Room)\s+\d+[A-Za-z]?)\s+\1\b/i, '$1').replace(/^(\d+[A-Za-z]?)\s+(\1-\d+[A-Za-z]?)\b/i, '$2');
         // rebuild a clean printable full address: premise+street, town, county, postcode
