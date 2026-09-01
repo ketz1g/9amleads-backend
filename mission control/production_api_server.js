@@ -7679,8 +7679,8 @@ app.get('/api/admin/debug-customer-leads', adminAuth, (req, res) => {
       month_delivered: dlv.filter(function(l){ return (l.delivered_at||'').startsWith(month); }).length,
       unique_today: dlv.filter(function(l){ return (l.delivered_at||'').startsWith(today); }).map(function(l){ try{ var d=JSON.parse(l.data||'{}'); return d.url || d.fullAddress; }catch(e){ return l.id; } }).filter(function(v,i,a){ return a.indexOf(v) === i; }).length,
       dropped: leads.filter(function(l){ var d0={}; try{ d0=JSON.parse(l.data||'{}'); }catch(e){} return d0.rejected || l.status==='removed'; }).map(function(l){ return { status: l.status, rejected: (function(){ try{ return !!JSON.parse(l.data||'{}').rejected; }catch(e){ return false; } })(), address: (function(){ try{ return JSON.parse(l.data||'{}').fullAddress; }catch(e){ return ''; } })(), del_at: l.delivered_at }; }),
-      all_data: dlv.map(function(l){ return { status: l.status, rejected: (function(){ try{ return !!JSON.parse(l.data||'{}').rejected; }catch(e){ return false; } })(), address: (function(){ try{ return JSON.parse(l.data||'{}').fullAddress; }catch(e){ return ''; } })() }; }),
-      sample: dlv.slice(0, 5).map(function(l){ return { delivered_at: l.delivered_at, status: l.status, delivered: l.delivered, address: (function(){ try{ return JSON.parse(l.data||'{}').fullAddress; }catch(e){ return ''; } })() }; })
+      all_data: dlv.map(function(l){ return { id: l.id, status: l.status, rejected: (function(){ try{ return !!JSON.parse(l.data||'{}').rejected; }catch(e){ return false; } })(), address: (function(){ try{ return JSON.parse(l.data||'{}').fullAddress; }catch(e){ return ''; } })() }; }),
+      sample: dlv.slice(0, 5).map(function(l){ return { id: l.id, delivered_at: l.delivered_at, status: l.status, delivered: l.delivered, address: (function(){ try{ return JSON.parse(l.data||'{}').fullAddress; }catch(e){ return ''; } })() }; })
     });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
