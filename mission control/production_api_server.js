@@ -15517,6 +15517,44 @@ function getCustomerBulkPack(customer) {
   return p;
 }
 
+// POST /api/admin/bulk-seed — backdate `count` newest newbusiness pool leads to 4 days
+// old so they become bulk-eligible (the reserve fills naturally over time; this lets
+// us top it up / test on demand). Body: { count }
+app.post('/api/admin/bulk-seed', adminAuth, (req, res) => {
+  try {
+    var count = parseInt(req.body && req.body.count, 10) || 50;
+    var arr = readPoolFile('newbusiness');
+    var candidates = (arr || []).filter(function(l) { return l && !l.bulk_reserved && !l.bulk_sold && l.incorporationDate; }).slice(0, count);
+    var f = PRODUCT_LEAD_FILES.newbusiness.file;
+    var file = path.join(DATA_DIR, f);
+    var raw = null;
+    try { raw = JSON.parse(fs.readFileSync(file, 'utf-8')); } catch(e) {}
+    var ids = {}; candidates.forEach(function(c) { ids[c.id || c.company_number] = 1; });
+    var backdated = 0;
+    var newInc = new Date(Date.now() - 4 * 24 * 3600000).toISOString().split('T')[0];
+    function mark(l) { if (l && ids[l.id || l.company_number]) { l.incorporationDate = newInc; l.bulk_seeded = 1; backdated++; } }
+    if (Array.isArray(raw)) { raw.forEach(mark); fs.writeFileSync(file, JSON.stringify(raw, null, 2)); }
+    else if (raw && typeof raw === 'object') { Object.keys(raw).forEach(function(k) { if (Array.isArray(raw[k])) raw[k].forEach(mark); }); fs.writeFileSync(file, JSON.stringify(raw, null, 2)); }
+    res.json({ success: true, backdated: backdated, available: getBulkEligibleLeads().length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/bulk-grant — grant a bulk pack to a customer (reserve leads + set
+// pack, mimicking a paid Stripe webhook). For testing / manual grants. Body: { email, count }
+app.post('/api/admin/bulk-grant', adminAuth, (req, res) => {
+  try {
+    var em = String(req.body && req.body.email || '').toLowerCase().trim();
+    var count = parseInt(req.body && req.body.count, 10) || 50;
+    var c = db.prepare('SELECT * FROM customers WHERE email = ?').get(em);
+    if (!c) return res.status(404).json({ error: 'Customer not found' });
+    var reserve = reserveBulkLeads(count, c.id);
+    if (!reserve.ok) return res.status(400).json({ error: reserve.error, available: reserve.available });
+    db.prepare('UPDATE customers SET bulk_pack = ? WHERE id = ?').run(JSON.stringify({ count: count, purchased_at: new Date().toISOString(), status: 'pending', sent: 0, reserved_count: reserve.leads.length }), c.id);
+    saveDb();
+    res.json({ success: true, granted: count, reserved: reserve.leads.length, email: em });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/newbusiness/bulk — eligibility + inventory + purchased pack status
 app.get('/api/newbusiness/bulk', authMiddleware, (req, res) => {
   try {
