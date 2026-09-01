@@ -8963,7 +8963,7 @@ app.get('/api/admin/delivery-preview', adminAuth, async (req, res) => {
   try {
     var emailFilter = String((req.query && req.query.email) || '').toLowerCase().trim();
     var dbP = getDb();
-    var customers = (dbP.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!emailFilter || String(c.email||'').toLowerCase() === emailFilter); });
+    var customers = (dbP.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && !isLeadsPaused(c) && (!emailFilter || String(c.email||'').toLowerCase() === emailFilter); });
     var out = [];
     var _previewSeen = {};
     for (var pi = 0; pi < customers.length; pi++) {
