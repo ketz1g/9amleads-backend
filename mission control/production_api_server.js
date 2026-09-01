@@ -10650,6 +10650,36 @@ app.post('/api/admin/otm-scrape', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/pool/import - merge externally-generated leads into a product
+// pool (used to load leads scraped from a residential IP when the Render IP is
+// blocked by Rightmove/OTM). Body: { product, leads: [...] }. Merges + dedupes.
+app.post('/api/admin/pool/import', adminAuth, (req, res) => {
+  try {
+    var prod = String((req.body && req.body.product) || 'moving');
+    var newLeads = (req.body && Array.isArray(req.body.leads)) ? req.body.leads : [];
+    if (!newLeads.length) return res.status(400).json({ error: 'leads array required' });
+    var fn = path.join(DATA_DIR, PRODUCT_LEAD_FILES[prod] ? PRODUCT_LEAD_FILES[prod].file : (prod + '-leads.json'));
+    var pool = [];
+    try { pool = JSON.parse(fs.readFileSync(fn, 'utf-8')); if (!Array.isArray(pool)) pool = []; } catch(e) { pool = []; }
+    var seen = {};
+    pool.forEach(function(l) { if (l.id) seen[l.id] = 1; else if (l.url) seen['u:' + String(l.url).split('#')[0].split('?')[0]] = 1; });
+    var added = 0;
+    newLeads.forEach(function(l) {
+      if (!l) return;
+      if (!l.id) l.id = 'IMP_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+      var k = l.id || ('u:' + String(l.url || '').split('#')[0].split('?')[0]);
+      if (seen[k]) return;
+      seen[k] = 1;
+      if (!l.scrapedAt) l.scrapedAt = new Date().toISOString();
+      if (!l.firstVisibleDate) l.firstVisibleDate = new Date().toISOString();
+      pool.push(l);
+      added++;
+    });
+    fs.writeFileSync(fn, JSON.stringify(pool, null, 2));
+    res.json({ success: true, product: prod, added: added, pool_total: pool.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // Daily OnTheMarket supply run (NO Apify credits needed). Gathers every active
 // moving customer's postcode areas and appends fresh OTM leads to the moving pool,
 // so the 9am delivery always has supply even when the Apify/Rightmove worker fails.
