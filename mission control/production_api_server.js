@@ -27259,13 +27259,29 @@ app.post('/api/admin/delete-customer', adminAuth, (req, res) => {
 
 // GET /api/admin/backups — list local database backups (hourly snapshots) so a
 // mistakenly deleted customer can be recovered from a pre-deletion backup.
+// POST /api/admin/backups/prune - delete OLD local database backups to free disk
+// space (the 1GB Render disk fills up with ~60MB hourly snapshots). Keeps the most
+// recent N (default 3). CRITICAL when ENOSPC blocks pool/database writes.
+app.post('/api/admin/backups/prune', adminAuth, (req, res) => {
+  try {
+    var keep = parseInt((req.body && req.body.keep) || '3', 10);
+    var files = [];
+    try { files = fs.readdirSync(BACKUP_DIR).filter(function(f) { return f.startsWith('database-') && f.endsWith('.json') && f.indexOf('CORRUPT') === -1; }).sort(); } catch(e) {}
+    var del = [];
+    for (var i = 0; i < files.length - keep; i++) {
+      var p = path.join(BACKUP_DIR, files[i]);
+      try { fs.unlinkSync(p); del.push(files[i]); } catch(e) {}
+    }
+    res.json({ success: true, kept: files.slice(-keep), deleted: del.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/admin/backups', adminAuth, (req, res) => {
   try {
     var files = [];
     try { files = fs.readdirSync(BACKUP_DIR).filter(function(f) { return f.startsWith('database-') && f.endsWith('.json'); }).sort(); } catch(e) {}
     res.json({ success: true, dir: BACKUP_DIR, backups: files.map(function(f) {
-      var p = path.join(BACKUP_DIR, f);
-      var st = 0; try { st = fs.statSync(p).size; } catch(e) {}
+      var p = path.join(BACKUP_DIR, f);      var st = 0; try { st = fs.statSync(p).size; } catch(e) {}
       var ct = 0; try { var raw = JSON.parse(fs.readFileSync(p, 'utf-8')); ct = (raw.customers || []).length; } catch(e) {}
       return { file: f, size: st, customers: ct };
     }) });
