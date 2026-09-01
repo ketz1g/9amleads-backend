@@ -1256,6 +1256,17 @@ async function runFullBackup() {
     var local = writeLocalBackup();
     await pushBackupToGitHub();
     setTimeout(pruneRemoteBackups, 2000);
+    // PRUNE LOCAL BACKUPS: keep only the newest N so the 1GB Render disk never
+    // fills up (each hourly snapshot is ~60MB; without pruning the disk fills in
+    // ~17 hours and ENOSPC blocks every write — pool files AND the database). The
+    // authoritative copy lives on GitHub, so keeping a few local copies is enough.
+    try {
+      var _keep = parseInt(process.env.BACKUP_LOCAL_KEEP || '6', 10);
+      var _files = [];
+      try { _files = fs.readdirSync(BACKUP_DIR).filter(function(f){ return f.startsWith('database-') && f.endsWith('.json') && f.indexOf('CORRUPT') === -1; }).sort(); } catch(e) {}
+      var _del = _files.length - _keep;
+      for (var _bi = 0; _bi < _del; _bi++) { try { fs.unlinkSync(path.join(BACKUP_DIR, _files[_bi])); } catch(e) {} }
+    } catch(eP) {}
     return local;
   } catch(e) { console.log('[BACKUP] Full backup error:', e.message); return null; }
 }
@@ -12921,31 +12932,47 @@ function clearStuckPausedFlags() {
 function autoRefillLowPools() {
   try {
     var dbc = getDb();
-    // Count fresh leads per product (<48h). If a pool is critically low (<10 usable),
-    // trigger the scraper for that product automatically.
+    // Count FRESH (48h) mailable leads per product POOL (the actual supply), not the
+    // delivered-leads table. If a pool is critically low, trigger that product's
+    // scraper. COOLDOWN: each product is only auto-triggered at most once per
+    // AUTO_HEAL_COOLDOWN_MS (default 3h) so a source that can't produce (e.g. a
+    // blocked scraper) doesn't get hammered every 15 minutes.
     var floors = { moving: 20, probate: 10, newbusiness: 15, planning: 20, tenders: 8 };
     var now = Date.now();
+    var cutoff = new Date(now - 48 * 3600000).toISOString();
+    var cooldownMs = parseInt(process.env.AUTO_HEAL_COOLDOWN_MS || String(3 * 3600000), 10);
     var counts = { moving: 0, probate: 0, newbusiness: 0, planning: 0, tenders: 0 };
-    (dbc.leads || []).forEach(function(l) {
-      var p = l.product || 'moving';
-      if (!counts[p]) counts[p] = 0;
-      var ts = null;
-      try { var d = typeof l.data === 'string' ? JSON.parse(l.data||'{}') : (l.data||{}); ts = d.scrapedAt || d.firstVisibleDate || l.created_at || d.firstVisible; } catch(e) {}
-      if (ts && (now - new Date(ts).getTime()) < 48*3600000) counts[p]++;
+    Object.keys(PRODUCT_LEAD_FILES).forEach(function(prod) {
+      try {
+        var _fp = path.join(DATA_DIR, PRODUCT_LEAD_FILES[prod].file);
+        var _arr = [];
+        try { _arr = JSON.parse(fs.readFileSync(_fp, 'utf-8')); if (!Array.isArray(_arr)) _arr = []; } catch(e) { _arr = []; }
+        var _c = 0;
+        _arr.forEach(function(pl) {
+          if (!(pl.postcode && /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(pl.postcode).trim()))) return; // mailable only
+          var ts = pl.scrapedAt || pl.firstVisibleDate || pl.updateDate || pl.first_seen_at || '';
+          if (ts && ts >= cutoff) _c++;
+        });
+        counts[prod] = _c;
+      } catch(e) {}
     });
+    if (!dbc.auto_heal_triggers) dbc.auto_heal_triggers = {};
     var triggered = [];
     Object.keys(floors).forEach(function(prod) {
       if (counts[prod] < floors[prod]) {
-        // Trigger scraper for this product
+        var lastTrig = dbc.auto_heal_triggers[prod] || 0;
+        if (now - lastTrig < cooldownMs) return; // cooldown: skip re-triggering
+        dbc.auto_heal_triggers[prod] = now;
         try {
           var scrBody = JSON.stringify({ product: prod, force: true });
           var scrReq = require('https').request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD || '9amAdmin2024!'), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(scrBody) } }, function(res){ res.resume(); });
           scrReq.on('error', function(){}); scrReq.write(scrBody); scrReq.end();
           triggered.push(prod + ':' + counts[prod]);
-          console.log('[AUTO-HEAL] Auto-triggered scraper for ' + prod + ' (fresh ' + counts[prod] + ' < floor ' + floors[prod] + ')');
+          console.log('[AUTO-HEAL] Auto-triggered scraper for ' + prod + ' (pool ' + counts[prod] + ' < floor ' + floors[prod] + ')');
         } catch(se) { console.log('[AUTO-HEAL] scrape trigger error ' + prod + ':', se.message); }
       }
     });
+    if (Object.keys(dbc.auto_heal_triggers).length) saveDb();
     if (triggered.length) recordError('auto-heal', 'Auto-triggered scrapers for low pools: ' + triggered.join(','));
     return triggered;
   } catch(e) { return []; }
