@@ -283,7 +283,15 @@ async function collectOnTheMarketLeads(params) {
       const batch = freshToResolve.slice(idx, idx + concurrency);
       const results = await Promise.all(batch.map(function(l) { return httpGetRetry('www.onthemarket.com', l.url, { retries: 2, delayMs: 2000 }); }));
       results.forEach(function(r, bi) {
-        resolved[idx + bi] = parseDetailPostcode(r.body);
+        // Use the robust parser (postcode + full address). If the detail JSON
+        // postcode is missing, fall back to a UK postcode found anywhere in the
+        // detail body so a listing is never dropped for a missing field.
+        let da = parseDetailAddress(r.body);
+        if (!da.postcode) {
+          const pcAny = String(r.body || '').match(/\b[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}\b/i);
+          if (pcAny) { const pr = pcAny[0].toUpperCase().replace(/[^A-Z0-9]/g, ''); da.postcode = pr.slice(0, pr.length - 3) + ' ' + pr.slice(-3); }
+        }
+        resolved[idx + bi] = da;
       });
       idx += concurrency;
       if (idx < freshToResolve.length) await sleep(1200);
