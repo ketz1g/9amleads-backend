@@ -15140,9 +15140,11 @@ app.post('/api/admin/backfill-delivered-addresses', adminAuth, (req, res) => {
       // Rebuild the full printable address from the parts (supports moving,
       // probate deceasedAddress, newbusiness & planning).
       var _parts = [];
+      var _prem = String(d.address || '');
+      try { _prem = _prem.replace(new RegExp(String(d.postcode || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '').trim(); } catch(e) {}
       if (d.building_number) _parts.push(d.building_number + (d.street ? ' ' + d.street : ''));
       else if (d.street) _parts.push(d.street);
-      else if (d.address && !/,/.test(String(d.address || ''))) _parts.push(d.address);
+      else if (_prem && !/,/.test(_prem)) _parts.push(_prem);
       else if (d.deceasedAddress && !/,/.test(String(d.deceasedAddress || ''))) _parts.push(d.deceasedAddress);
       if (d.town) _parts.push(d.town);
       if (d.county) _parts.push(d.county);
