@@ -18457,7 +18457,9 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
       }
       event = JSON.parse(payload);
     } else {
-      event = req.body;
+      // FAIL CLOSED: if the webhook secret isn't configured we must NOT accept the
+      // event — otherwise a forged webhook could flip a customer to paid. Reject.
+      return res.status(503).json({ error: 'Webhook verification not configured' });
     }
 
     if (event.type === 'checkout.session.completed') {
