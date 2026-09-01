@@ -238,6 +238,7 @@ table tr:hover td{background:rgba(255,255,255,.02)}
     <nav>
       <a class="active" onclick="navigate('overview')"><i class="fas fa-chart-pie"></i><span>Dashboard</span></a>
       <a onclick="navigate('leads')"><i class="fas fa-list"></i><span>My Leads</span><span class="badge-count" id="leadCount">0</span></a>
+      <a onclick="navigate('bulk')"><i class="fas fa-envelope-open-text"></i><span>Bulk Postage</span></a>
       <a onclick="navigate('analytics')"><i class="fas fa-chart-line"></i><span>Analytics</span></a>
       <a onclick="navigate('settings')"><i class="fas fa-cog"></i><span>Settings</span></a>
       <a onclick="navigate('subscription')"><i class="fas fa-credit-card"></i><span>Subscription</span></a>
@@ -350,6 +351,81 @@ table tr:hover td{background:rgba(255,255,255,.02)}
       <div class="two-col">
         <div class="card"><div class="card-header"><h3><i class="fas fa-calendar-week" style="color:var(--accent)"></i> Weekly Performance</h3></div><div id="weeklyBreakdown"></div></div>
         <div class="card"><div class="card-header"><h3><i class="fas fa-tag" style="color:var(--accent)"></i> Top Areas</h3></div><div id="topAreas"></div></div>
+      </div>
+    </div>
+
+    <!-- BULK POSTAGE PAGE (newbusiness Pro exclusive) -->
+    <div class="page" id="page-bulk">
+      <header><div class="header-left"><h1>Bulk Postage</h1><div class="subtitle">Exclusive UK lead packs — printed & posted</div></div></header>
+      <div id="bulkLoading" style="padding:40px;text-align:center;color:var(--muted)">Loading bulk postage options...</div>
+      <div id="bulkContent" style="display:none">
+        <!-- Upgrade prompt (not Pro) -->
+        <div id="bulkUpgrade" class="card" style="display:none;text-align:center;padding:30px">
+          <div style="font-size:40px;margin-bottom:10px">&#128272;</div>
+          <h3 style="margin:0 0 8px">Exclusive Lead Packs are a Pro feature</h3>
+          <p style="color:var(--muted);font-size:13px;max-width:480px;margin:0 auto 16px;line-height:1.6" id="bulkUpgradeMsg">Upgrade to Pro to unlock bulk postage packs — 50 or 100 exclusive never-sent UK leads, printed &amp; posted with your own marketing materials.</p>
+          <a href="/portal/upgrade.html" class="btn btn-primary">Upgrade to Pro</a>
+        </div>
+
+        <!-- Buy state (eligible, no pack) -->
+        <div id="bulkBuy" style="display:none">
+          <div class="delivery-banner" style="background:linear-gradient(135deg,rgba(74,222,128,.08),rgba(96,165,250,.08))">
+            <div class="del-icon"><i class="fas fa-envelope-open-text"></i></div>
+            <div class="del-info">
+              <strong style="color:var(--text)">Exclusive Lead Archive</strong><br>
+              <span style="color:var(--muted)">Never-sent UK new business leads, reserved for 9amLeads only. We print &amp; post your marketing to every single one. <b id="bulkAvailable" style="color:#4ade80">0 leads ready now</b>.</span>
+            </div>
+          </div>
+          <div class="two-col">
+            <div class="card" style="text-align:center;padding:26px">
+              <div style="font-size:34px;font-weight:800;font-family:'Outfit',sans-serif">50</div>
+              <div style="color:var(--muted);font-size:12px;margin:4px 0 14px">exclusive UK leads<br>printed &amp; posted</div>
+              <div style="font-size:30px;font-weight:800;font-family:'Outfit',sans-serif">&#163;100</div>
+              <div style="font-size:11px;color:var(--muted);margin:6px 0 16px">one-time · &#163;2 per lead</div>
+              <button class="btn btn-primary" onclick="buyBulk(50)">Buy 50 leads</button>
+            </div>
+            <div class="card" style="text-align:center;padding:26px;border-color:rgba(74,222,128,.4)">
+              <div style="font-size:34px;font-weight:800;font-family:'Outfit',sans-serif">100</div>
+              <div style="color:var(--muted);font-size:12px;margin:4px 0 14px">exclusive UK leads<br>printed &amp; posted</div>
+              <div style="font-size:30px;font-weight:800;font-family:'Outfit',sans-serif">&#163;200</div>
+              <div style="font-size:11px;color:var(--muted);margin:6px 0 16px">one-time · &#163;2 per lead</div>
+              <button class="btn" style="background:#4ade80;color:#052e16;border:none" onclick="buyBulk(100)">Buy 100 leads</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3><i class="fas fa-circle-info" style="color:var(--accent)"></i> How it works</h3></div>
+            <div style="font-size:13px;color:var(--muted);line-height:1.8">
+              1. <b style="color:var(--text)">Buy a pack</b> — 50 or 100 exclusive never-sent UK new business leads.<br>
+              2. <b style="color:var(--text)">Review</b> — check each company and address before we post.<br>
+              3. <b style="color:var(--text)">Confirm &amp; Post</b> — we print and mail your marketing materials to every lead.<br>
+              <span style="font-size:12px">Your flyer/letter must be loaded in <b>Print &amp; Post</b> first (Step 2). New leads mature into the archive as they age 3-7 days without being sent.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Review + Send state (pack purchased, leads reserved) -->
+        <div id="bulkReview" style="display:none">
+          <div class="card">
+            <div class="card-header"><h3><i class="fas fa-box-open" style="color:#4ade80"></i> Your pack — <span id="bulkPackCount">0</span> exclusive UK leads</h3></div>
+            <p style="font-size:13px;color:var(--muted);margin:0 0 14px" id="bulkMaterialsHint">These leads were never sent to anyone else. Review them, then we print &amp; post your materials to every one.</p>
+            <div id="bulkMaterialsWarning" class="delivery-banner" style="display:none;background:rgba(250,204,21,.08)">
+              <div class="del-icon"><i class="fas fa-triangle-exclamation" style="color:#facc15"></i></div>
+              <div class="del-info"><span style="font-size:13px;color:#facc15">No marketing materials loaded yet. Add a flyer or letter in <b>Print &amp; Post</b> (Step 2) to send your pack.</span></div>
+            </div>
+            <div style="max-height:380px;overflow:auto;border:1px solid var(--border);border-radius:10px" id="bulkLeadsList"></div>
+            <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
+              <button class="btn" style="background:#4ade80;color:#052e16;border:none" id="bulkSendBtn" onclick="sendBulk()"><i class="fas fa-paper-plane"></i> Confirm &amp; Send all to Print &amp; Post</button>
+              <span style="font-size:12px;color:var(--muted);align-self:center">One click posts every lead in this pack.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sent state -->
+        <div id="bulkSent" class="card" style="display:none;text-align:center;padding:30px">
+          <div style="font-size:40px;margin-bottom:10px;color:#4ade80">&#10004;</div>
+          <h3 style="margin:0 0 8px">Your pack is on its way!</h3>
+          <p style="color:var(--muted);font-size:13px;max-width:440px;margin:0 auto;line-height:1.6">Your <b id="bulkSentCount">0</b> exclusive leads are being printed &amp; posted. Track progress in <b>Print &amp; Post</b>.</p>
+        </div>
       </div>
     </div>
 
@@ -930,8 +1006,9 @@ function navigate(page) {
   document.querySelector(`.sidebar a[onclick*="${page}"]`)?.classList.add('active');
   document.getElementById('page-' + page)?.classList.add('active');
   document.getElementById('pageTitle2').textContent = page.charAt(0).toUpperCase() + page.slice(1);
-  const subs = { overview: PRODUCT.subtitle, leads: 'Manage your ' + PRODUCT.leadType.toLowerCase(), analytics: 'Track performance', settings: 'Account settings', subscription: 'Billing & plan' };
+  const subs = { overview: PRODUCT.subtitle, leads: 'Manage your ' + PRODUCT.leadType.toLowerCase(), analytics: 'Track performance', settings: 'Account settings', subscription: 'Billing & plan', bulk: 'Exclusive UK lead packs — printed & posted' };
   document.getElementById('pageSubtitle').textContent = subs[page] || '';
+  if (page === 'bulk') loadBulkStatus();
 }
 
 function generateSampleData() {
@@ -971,6 +1048,73 @@ function generateSampleData() {
   return data[productKey] || data.moving;
 }
 
+// === BULK POSTAGE (newbusiness Pro exclusive) ===
+function bulkAuthHeaders() {
+  return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('9am_token') };
+}
+function loadBulkStatus() {
+  var el = document.getElementById('page-bulk');
+  if (!el) return;
+  document.getElementById('bulkLoading').style.display = 'block';
+  document.getElementById('bulkContent').style.display = 'none';
+  fetch(API_URL + '/api/newbusiness/bulk', { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('9am_token') } })
+    .then(function(r) { return r.json(); })
+    .then(function(s) {
+      document.getElementById('bulkLoading').style.display = 'none';
+      document.getElementById('bulkContent').style.display = 'block';
+      document.getElementById('bulkUpgrade').style.display = s.eligible ? 'none' : 'block';
+      document.getElementById('bulkUpgradeMsg').textContent = s.upgrade_hint || '';
+      document.getElementById('bulkBuy').style.display = (s.eligible && !s.pack) ? 'block' : 'none';
+      document.getElementById('bulkReview').style.display = (s.eligible && s.pack && s.pack.status !== 'sent') ? 'block' : 'none';
+      document.getElementById('bulkSent').style.display = (s.eligible && s.pack && s.pack.status === 'sent') ? 'block' : 'none';
+      document.getElementById('bulkAvailable').textContent = s.available + ' leads ready now';
+      if (s.eligible && s.pack && s.pack.status !== 'sent') {
+        document.getElementById('bulkPackCount').textContent = s.reserved_count || s.pack.count;
+        var warn = document.getElementById('bulkMaterialsWarning');
+        warn.style.display = s.materials_ready ? 'none' : 'block';
+        var list = document.getElementById('bulkLeadsList');
+        list.innerHTML = (s.reserved || []).length ? s.reserved.map(function(l) {
+          return '<div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px"><b>' + esc(l.company) + '</b> <span style="color:var(--muted)">· incorporated ' + (l.incorporationDate || 'recently') + '</span><br><span style="color:var(--muted);font-size:12px">' + esc(l.address) + '</span></div>';
+        }).join('') : '<div style="padding:16px;color:var(--muted);font-size:13px">Your reserved leads are being finalised. They will appear here shortly.</div>';
+      }
+    })
+    .catch(function() {
+      document.getElementById('bulkLoading').style.display = 'none';
+      document.getElementById('bulkContent').style.display = 'block';
+      document.getElementById('bulkBuy').style.display = 'none';
+      document.getElementById('bulkUpgrade').style.display = 'none';
+      var c = document.getElementById('bulkReview');
+      if (c) { c.style.display = 'block'; c.innerHTML = '<div class="card" style="padding:20px;color:var(--muted)">Could not load bulk postage. Please sign in again.</div>'; }
+    });
+}
+function esc(s) { return String(s || '').replace(/[&<>"']/g, function(ch) { return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[ch]; }); }
+function buyBulk(count) {
+  if (!confirm('Buy ' + count + ' exclusive UK leads printed & posted for \u00a3' + (count === 100 ? 200 : 100) + '?')) return;
+  fetch(API_URL + '/api/newbusiness/bulk/checkout', {
+    method: 'POST', headers: bulkAuthHeaders(), body: JSON.stringify({ count: count })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.checkout_url) { window.location.href = d.checkout_url; }
+    else { alert(d.error || 'Could not start checkout.'); }
+  })
+  .catch(function() { alert('Could not start checkout.'); });
+}
+function sendBulk() {
+  if (!confirm('Send ALL leads in this pack to Print & Post now? This posts your marketing materials to every address and cannot be undone.')) return;
+  document.getElementById('bulkSendBtn').disabled = true;
+  document.getElementById('bulkSendBtn').textContent = 'Sending...';
+  fetch(API_URL + '/api/newbusiness/bulk/send', {
+    method: 'POST', headers: bulkAuthHeaders(), body: JSON.stringify({})
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.success) { alert(d.message || 'Pack sent!'); loadBulkStatus(); }
+    else { alert(d.error || 'Send failed.'); document.getElementById('bulkSendBtn').disabled = false; document.getElementById('bulkSendBtn').textContent = 'Confirm & Send all to Print & Post'; }
+  })
+  .catch(function() { alert('Send failed.'); document.getElementById('bulkSendBtn').disabled = false; document.getElementById('bulkSendBtn').textContent = 'Confirm & Send all to Print & Post'; });
+}
+
 // === INIT ===
 window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('loginLogo').textContent = '9';
@@ -989,6 +1133,10 @@ window.addEventListener('DOMContentLoaded', () => {
         currentUser = customer;
         localStorage.setItem('9am_session', JSON.stringify(customer));
         enterDashboard();
+        // Stripe redirect back from a bulk pack purchase — show + refresh the bulk page
+        if (window.location.search.indexOf('bulk_paid=success') !== -1) {
+          try { navigate('bulk'); } catch(e) {}
+        }
         return;
       }
       fallbackToLocal();

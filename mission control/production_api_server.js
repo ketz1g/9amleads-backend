@@ -15407,7 +15407,13 @@ function pruneStalePoolLeads() {
         Object.keys(raw).forEach(function(k) { if (k.indexOf('_') !== 0 && Array.isArray(raw[k])) raw[k].forEach(function(x) { arr.push({ _key: k, _item: x }); }); });
       }
       if (!arr || !arr.length) return;
-      var cutoff = require('./freshness').getPruneCutoffIso(Date.now());
+      // NEWBUSINESS BULK RESERVE: newbusiness pool leads are held up to 7 days so the
+      // 3-7 day-old never-delivered surplus becomes a sellable "Exclusive UK Lead
+      // Archive" for Pro customers (bulk print & post packs). All other products
+      // prune at the standard 3-day floor (no backlog of unused leads).
+      var _cutMs = Date.now();
+      var _cutHrs = (prod === 'newbusiness') ? 7 * 24 : 3 * 24;
+      var cutoff = new Date(_cutMs - _cutHrs * 3600000).toISOString();
       var kept = [], removed = 0;
       arr.forEach(function(e) {
         var l = e._item || e;
@@ -15434,6 +15440,223 @@ function pruneStalePoolLeads() {
     return { removed: pruned, total_before: totalBefore, total_after: totalAfter };
   } catch(e) { console.log('[POOL-PRUNE] error: ' + e.message); return { error: e.message }; }
 }
+
+// ===== NEWBUSINESS BULK LEADS (Exclusive Lead Archive) =====
+// Pro newbusiness customers can buy a one-off pack of 50 (£100) / 100 (£200)
+// EXCLUSIVE UK-wide never-delivered leads that are 3-7 days old (the surplus the
+// daily 9am delivery didn't use), printed & posted with their own materials.
+// Only newbusiness (deep national pool) supports this; tenders/planning/probate
+// do not (too thin). Free trial / starter: disabled, prompt to upgrade.
+
+function readPoolFile(prod) {
+  var f = PRODUCT_LEAD_FILES[prod] && PRODUCT_LEAD_FILES[prod].file;
+  if (!f) return [];
+  var raw = null;
+  try { raw = JSON.parse(fs.readFileSync(path.join(DATA_DIR, f), 'utf-8')); } catch(e) {}
+  var arr = [];
+  if (Array.isArray(raw)) arr = raw;
+  else if (raw && typeof raw === 'object') {
+    Object.keys(raw).forEach(function(k) { if (k.indexOf('_') !== 0 && Array.isArray(raw[k])) raw[k].forEach(function(x) { arr.push(x); }); });
+  }
+  return arr;
+}
+
+// Leads 3-7 days old, never delivered, Stannp-ready (valid postcode + usable address).
+function getBulkEligibleLeads() {
+  var arr = readPoolFile('newbusiness');
+  var now = Date.now();
+  var lo = now - 7 * 24 * 3600000, hi = now - 3 * 24 * 3600000;
+  var out = [];
+  (arr || []).forEach(function(l) {
+    if (!l || l.bulk_reserved || l.bulk_sold) return;
+    var d = pickFreshDate(l) || '';
+    var t = toIsoDate(d) ? new Date(d).getTime() : 0;
+    if (!(t >= lo && t <= hi)) return;
+    var pc = String(l.postcode || '').toUpperCase().trim();
+    if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/.test(pc)) return;
+    var addr = l.fullAddress || l.address || '';
+    if (!addr || addr.trim().length < 8) return;
+    var rcpt = buildStannpRecipientFromLead(l);
+    if (!rcpt || !rcpt.address_line1 || !rcpt.postcode) return;
+    if (!(/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(rcpt.postcode).trim()))) return;
+    out.push(l);
+  });
+  return out;
+}
+
+// Reserve `count` eligible leads for a customer (marks them so the daily delivery +
+// other buyers never get them). Returns the reserved leads.
+function reserveBulkLeads(count, customerId) {
+  var eligible = getBulkEligibleLeads();
+  if (eligible.length < count) return { ok: false, error: 'Not enough exclusive leads available right now. Try again in a day or two as new leads mature.', available: eligible.length };
+  var chosen = eligible.slice(0, count);
+  var f = PRODUCT_LEAD_FILES.newbusiness.file;
+  var file = path.join(DATA_DIR, f);
+  var raw = null;
+  try { raw = JSON.parse(fs.readFileSync(file, 'utf-8')); } catch(e) {}
+  var container = null;
+  if (Array.isArray(raw)) {
+    var ids = {}; chosen.forEach(function(c) { ids[c.id || c.company_number] = 1; });
+    raw.forEach(function(l) { if (l && ids[l.id || l.company_number]) { l.bulk_reserved = 1; l.bulk_reserved_by = customerId; l.bulk_reserved_at = new Date().toISOString(); } });
+    fs.writeFileSync(file, JSON.stringify(raw, null, 2));
+  } else if (raw && typeof raw === 'object') {
+    container = raw;
+    Object.keys(raw).forEach(function(k) {
+      if (k.indexOf('_') !== 0 && Array.isArray(raw[k])) {
+        raw[k].forEach(function(l) { if (l && ids[l.id || l.company_number]) { l.bulk_reserved = 1; l.bulk_reserved_by = customerId; l.bulk_reserved_at = new Date().toISOString(); } });
+      }
+    });
+    fs.writeFileSync(file, JSON.stringify(container, null, 2));
+  }
+  return { ok: true, leads: chosen };
+}
+
+function getCustomerBulkPack(customer) {
+  var p = (customer && customer.bulk_pack) || null;
+  if (p && typeof p === 'string') { try { p = JSON.parse(p); } catch(e) { p = null; } }
+  return p;
+}
+
+// GET /api/newbusiness/bulk — eligibility + inventory + purchased pack status
+app.get('/api/newbusiness/bulk', authMiddleware, (req, res) => {
+  try {
+    var c = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!c) return res.status(404).json({ error: 'User not found' });
+    var plan = String(c.plan || '').toLowerCase();
+    var eligible = c.product === 'newbusiness' && (plan === 'pro' || plan === 'enterprise' || plan === 'pro-plan');
+    var pack = getCustomerBulkPack(c);
+    var reserved = [];
+    if (pack && pack.status !== 'sent') {
+      // load the reserved leads so the customer can review them
+      var arr = readPoolFile('newbusiness');
+      reserved = (arr || []).filter(function(l) { return l.bulk_reserved_by === c.id; }).map(function(l) {
+        var rcpt = buildStannpRecipientFromLead(l);
+        return { id: l.id || l.company_number, company: l.name || l.companyName || l.company_name || '', address: rcpt.address_line1 + ', ' + (rcpt.city || '') + ', ' + rcpt.postcode, postcode: rcpt.postcode, incorporationDate: l.incorporationDate || l.incorporated_on || '' };
+      });
+    }
+    var materials = (function() {
+      try {
+        var front = db.prepare("SELECT COUNT(*) AS n FROM direct_mail_materials WHERE customer_id = ? AND type IN ('flyer_front','letter')").get(c.id);
+        return (front && front.n > 0);
+      } catch(e) { return false; }
+    })();
+    res.json({
+      success: true, eligible: eligible, plan: c.plan, product: c.product,
+      available: eligible ? getBulkEligibleLeads().length : 0,
+      pack: pack ? { count: pack.count, purchased_at: pack.purchased_at, status: pack.status, sent: pack.sent || 0 } : null,
+      reserved_count: reserved.length, reserved: reserved,
+      materials_ready: materials,
+      upgrade_hint: !eligible ? 'Bulk postage packs are a Pro feature. Upgrade to Pro to unlock exclusive lead packs.' : ''
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/newbusiness/bulk/checkout — create a Stripe one-time checkout for a pack
+app.post('/api/newbusiness/bulk/checkout', authMiddleware, async (req, res) => {
+  try {
+    var count = parseInt(req.body && req.body.count, 10);
+    if (count !== 50 && count !== 100) return res.status(400).json({ error: 'Choose a 50 or 100 lead pack.' });
+    var c = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!c) return res.status(404).json({ error: 'User not found' });
+    var plan = String(c.plan || '').toLowerCase();
+    if (c.product !== 'newbusiness') return res.status(400).json({ error: 'Bulk packs are only available for New Business customers.' });
+    if (!(plan === 'pro' || plan === 'enterprise' || plan === 'pro-plan')) return res.status(400).json({ error: 'Bulk postage packs are a Pro feature. Upgrade to Pro to unlock exclusive lead packs.' });
+    var pack = getCustomerBulkPack(c);
+    if (pack && pack.status !== 'sent' && pack.status !== 'expired') return res.status(400).json({ error: 'You already have a pack waiting to be sent (' + pack.count + ' leads). Send it first, or it expires in 7 days.' });
+    if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe not configured' });
+    var eligible = getBulkEligibleLeads();
+    if (eligible.length < count) return res.status(400).json({ error: 'Not enough exclusive leads available right now (' + eligible.length + ' ready). New leads mature into the archive within a few days — check back soon.', available: eligible.length });
+    var amountPence = count === 100 ? 20000 : 10000;
+    var baseUrl = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
+    var sessionBody = {
+      mode: 'payment',
+      customer_email: c.email,
+      'line_items[0][price_data][currency]': 'gbp',
+      'line_items[0][price_data][product_data][name]': 'Exclusive Lead Archive: ' + count + ' UK New Business Leads (printed & posted)',
+      'line_items[0][price_data][product_data][description]': count + ' exclusive never-sent UK leads · print & post included',
+      'line_items[0][price_data][unit_amount]': String(amountPence),
+      'line_items[0][quantity]': '1',
+      success_url: baseUrl + '/newbusiness/dashboard.html?bulk_paid=success',
+      cancel_url: baseUrl + '/newbusiness/dashboard.html?bulk_paid=cancel',
+      'metadata[customer_id]': c.id,
+      'metadata[type]': 'bulk_leads',
+      'metadata[bulk_count]': String(count)
+    };
+    var session = await stripeApiRequest('POST', 'checkout/sessions', sessionBody);
+    if (session.url) res.json({ success: true, checkout_url: session.url });
+    else res.status(400).json({ error: session.error && session.error.message || 'Checkout creation failed' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/newbusiness/bulk/send — confirm & send the purchased pack via print & post
+app.post('/api/newbusiness/bulk/send', authMiddleware, async (req, res) => {
+  try {
+    var c = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!c) return res.status(404).json({ error: 'User not found' });
+    var pack = getCustomerBulkPack(c);
+    if (!pack) return res.status(400).json({ error: 'No bulk pack purchased yet. Buy a pack first.' });
+    if (pack.status === 'sent') return res.status(400).json({ error: 'This pack has already been sent.' });
+    var arr = readPoolFile('newbusiness');
+    var leads = (arr || []).filter(function(l) { return l.bulk_reserved_by === c.id && !l.bulk_sold; });
+    if (!leads.length) return res.status(400).json({ error: 'No reserved leads found for this pack.' });
+    // materials: at least a flyer front OR letter must exist (like one-click print & post)
+    var matCheck = null;
+    try {
+      matCheck = db.prepare("SELECT id, type FROM direct_mail_materials WHERE customer_id = ? AND type IN ('flyer_front','letter') ORDER BY created_at DESC LIMIT 1").get(c.id);
+    } catch(e) {}
+    if (!matCheck) {
+      return res.status(400).json({ error: 'You need your marketing materials loaded first. Add a flyer or letter in Print & Post > Step 2, then come back to send your pack.' });
+    }
+    // Choose a mail type that the customer's materials can actually fulfil:
+    // letter (most reliable — auto-generates a PDF) or flyer_plus_letter if they have
+    // both a flyer front AND a letter/letter-body. Never promise a flyer they can't print.
+    var hasFlyer = false, hasLetter = false;
+    try {
+      hasFlyer = !!db.prepare("SELECT id FROM direct_mail_materials WHERE customer_id = ? AND type = 'flyer_front' LIMIT 1").get(c.id);
+      hasLetter = !!db.prepare("SELECT id FROM direct_mail_materials WHERE customer_id = ? AND type = 'letter' LIMIT 1").get(c.id);
+    } catch(e) {}
+    if (!hasLetter) {
+      try {
+        var lBody = db.prepare("SELECT cover_letter FROM customer_business_profiles WHERE customer_id = ?").get(c.id);
+        if (lBody && lBody.cover_letter) hasLetter = true;
+      } catch(e) {}
+    }
+    var mailType = (hasFlyer && hasLetter) ? 'flyer_plus_letter' : (hasFlyer ? 'flyer_a5' : 'letter_a4');
+    // Build campaign + recipients (all reserved leads)
+    var campaignId = 'bulk_' + uuidv4();
+    var nowIso = new Date().toISOString();
+    var dmTbl = db.prepare('SELECT name FROM sqlite_master WHERE type="table" AND name="direct_mail_campaigns"').get();
+    if (!dmTbl) return res.status(500).json({ error: 'Print & Post not initialised' });
+    db.prepare('INSERT INTO direct_mail_campaigns (id,customer_id,name,mail_type,status,stripe_payment_status,created_at,updated_at,format_id,recipient_count,price) VALUES (?,?,?,?,?,?,?,?,?,?,?)')
+      .run(campaignId, c.id, 'Bulk Leads Pack (' + leads.length + ' UK leads)', mailType, 'paid', 'paid', nowIso, nowIso, '', String(leads.length), String(leads.length * 2));
+    var insertR = db.prepare('INSERT INTO direct_mail_recipients (id,customer_id,campaign_id,name,company,address_line1,address_line2,city,postcode,country,lead_id,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)');
+    leads.forEach(function(l) {
+      var rcpt = buildStannpRecipientFromLead(l);
+      if (!rcpt || !rcpt.postcode) return;
+      insertR.run(uuidv4(), c.id, campaignId, rcpt.name || 'Homeowner', rcpt.company || '', rcpt.address_line1 || '', '', rcpt.city || '', String(rcpt.postcode).toUpperCase(), 'United Kingdom', String(l.id || l.company_number || ''), 'pending', nowIso);
+    });
+    // fire the send in the background; return campaign id + count now
+    var sendP = sendDmCampaign(campaignId, c.id);
+    sendP.then(function(sr) {
+      console.log('[BULK] Send result for ' + c.email + ' (' + campaignId + '): ' + JSON.stringify(sr).substring(0, 200));
+      if (sr && sr.success) {
+        // mark reserved leads as sold (permanently excluded from future delivery/sales)
+        var f = PRODUCT_LEAD_FILES.newbusiness.file;
+        var file = path.join(DATA_DIR, f);
+        var raw = null;
+        try { raw = JSON.parse(fs.readFileSync(file, 'utf-8')); } catch(e) {}
+        var ids = {}; leads.forEach(function(l) { ids[l.id || l.company_number] = 1; });
+        function markSold(l) { if (l && ids[l.id || l.company_number]) { l.bulk_sold = 1; l.bulk_sold_at = new Date().toISOString(); } }
+        if (Array.isArray(raw)) { raw.forEach(markSold); fs.writeFileSync(file, JSON.stringify(raw, null, 2)); }
+        else if (raw && typeof raw === 'object') { Object.keys(raw).forEach(function(k) { if (Array.isArray(raw[k])) raw[k].forEach(markSold); }); fs.writeFileSync(file, JSON.stringify(raw, null, 2)); }
+        pack.status = 'sent'; pack.sent = leads.length; pack.sent_at = new Date().toISOString();
+        db.prepare('UPDATE customers SET bulk_pack = ? WHERE id = ?').run(JSON.stringify(pack), c.id);
+        saveDb();
+      }
+    }).catch(function(se) { console.log('[BULK] send error for ' + c.email + ': ' + se.message); });
+    res.json({ success: true, campaign_id: campaignId, count: leads.length, status: 'sending', message: 'Your ' + leads.length + ' lead pack is being printed & posted now. Check Print & Post for status.' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 
 // ===== STANNP ADDRESS NORMALISER (shared) =====
 // Idempotent normalisation that makes a lead's stored data Stannp-ready: extracts a
@@ -18956,6 +19179,26 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
         return res.json({ received: true });
       }
 
+      // BULK LEADS PACK (newbusiness Exclusive Lead Archive)
+      if (type === 'bulk_leads') {
+        var bCount = parseInt(session.metadata?.bulk_count, 10) || 0;
+        var bCust = db.prepare('SELECT * FROM customers WHERE id = ?').get(customerId);
+        if (!bCust) return res.json({ received: true });
+        if (bCount !== 50 && bCount !== 100) { console.log('[WEBHOOK] Bad bulk_count:', bCount); return res.json({ received: true }); }
+        var reserve = reserveBulkLeads(bCount, customerId);
+        if (!reserve.ok) {
+          console.log('[WEBHOOK] Bulk reserve failed for ' + bCust.email + ': ' + reserve.error);
+          // Still record the pack so the customer isn't charged with nothing; they can
+          // review/send once supply matures, or get a refund.
+          db.prepare('UPDATE customers SET bulk_pack = ? WHERE id = ?').run(JSON.stringify({ count: bCount, purchased_at: new Date().toISOString(), status: 'pending', sent: 0, reserved_count: 0, note: reserve.error }), customerId);
+        } else {
+          db.prepare('UPDATE customers SET bulk_pack = ? WHERE id = ?').run(JSON.stringify({ count: bCount, purchased_at: new Date().toISOString(), status: 'pending', sent: 0, reserved_count: reserve.leads.length }), customerId);
+          console.log('[WEBHOOK] Bulk pack granted: ' + bCust.email + ' (' + bCount + ' leads)');
+        }
+        saveDb();
+        return res.json({ received: true });
+      }
+
       // Handle direct mail campaign payment
       if (type === 'direct_mail_campaign') {
         var campaignId = session.metadata?.campaign_id;
@@ -21305,6 +21548,11 @@ function generateLeadEmailHTML(customer, leads) {
   body += '<td style="padding:0 5px"><a href="https://www.facebook.com/share/1SBwDAUuxh/" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.08);line-height:30px;text-align:center;text-decoration:none"><span style="color:#ffffff;font-size:11px;font-weight:700">fb</span></a></td>';
   body += '<td style="padding:0 5px"><a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.08);line-height:30px;text-align:center;text-decoration:none"><span style="color:#ffffff;font-size:11px;font-weight:700">tt</span></a></td>';
   body += '<td style="padding:0 5px"><a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.08);line-height:30px;text-align:center;text-decoration:none"><span style="color:#ffffff;font-size:11px;font-weight:700">ig</span></a></td>';
+  // BULK POSTAGE REMINDER (newbusiness Pro only): one-off exclusive lead packs
+  var _bulkPlanE = String(customer.plan || '').toLowerCase();
+  if (customer.product === 'newbusiness' && (_bulkPlanE === 'pro' || _bulkPlanE === 'enterprise' || _bulkPlanE === 'pro-plan')) {
+    body += '<tr><td style="background:linear-gradient(135deg,#ecfdf5,#f0fdf4);padding:16px 30px;border-top:1px solid #d1fae5"><table cellpadding="0" cellspacing="0"><tr><td style="vertical-align:top;font-size:20px;padding-right:10px">&#128230;</td><td style="font-family:Inter,Arial,sans-serif;font-size:13px;line-height:1.6;color:#065f46"><strong>Pro perk — Bulk Postage</strong><br>Fancy a bigger push? Buy <strong>50 exclusive UK leads (£100)</strong> or <strong>100 (£200)</strong> — never-sent leads we print &amp; post with your own marketing. <a href="https://www.9amleads.com/portal/bulk.html" style="color:#047857;font-weight:700;text-decoration:underline">View Bulk Postage</a></td></tr></table></td></tr>';
+  }
   // Honest tenders note (public by nature + volume reality)
   if (customer.product === 'tenders') {
     body += '<tr><td style="background:#ffffff;padding:0 30px 16px;color:#64748b;font-size:11px;line-height:1.7;text-align:center">Tender opportunities are public by law. Other businesses can see the same notices on the official portals. Your 9amLeads feed is curated to your business and never re-sold; responding first with a strong submission is how you win. Note: some areas publish fewer tenders than others.</td></tr>';
