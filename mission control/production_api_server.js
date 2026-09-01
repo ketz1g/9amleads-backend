@@ -15402,6 +15402,10 @@ function normalizeStannpAddress(d) {
         else { delete d.town; delete d.city; }
       } catch(e) { delete d.town; delete d.city; }
     }
+    // COMPACT-POSTCODE TOWN: a town/city that is an unspaced postcode token
+    // ("LE30UW", "GL516QL") is garbage from the source scrape — drop it so the
+    // rebuild never carries it as a town and a real town/county is derived.
+    if (/^[A-Z]{1,2}\d[A-Z\d]{2,5}$/i.test(String(d.city || d.town || '').trim())) { delete d.town; delete d.city; }
     // town: parse from address text, else cached town-from-postcode (free).
     if (!d.town && !d.city) {
       var _tc = parseTownCountyFromAddress(_addr, d.postcode || '');
