@@ -15262,6 +15262,68 @@ app.get('/api/admin/test-zoopla-actor', adminAuth, (req, res) => {
     req2.write(body); req2.end();
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+// POST /api/admin/leads/fix-and-trim — fix a customer's delivered lead addresses
+// (extract postcode from the address text, attach county-from-postcode, rebuild
+// fullAddress = street + town/county + postcode) and optionally trim TODAY's
+// delivered leads down to `keep_today` (marks the newest extras as removed).
+// Body: { email, keep_today }  — keep_today 0 = don't trim.
+app.post('/api/admin/leads/fix-and-trim', adminAuth, (req, res) => {
+  try {
+    var email = String((req.body && req.body.email) || '').toLowerCase().trim();
+    var keepToday = parseInt((req.body && req.body.keep_today) || '0', 10);
+    if (!email) return res.status(400).json({ error: 'email required' });
+    var dbF = getDb();
+    var cust = (dbF.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    var today = new Date().toISOString().split('T')[0];
+    var fixed = 0, removed = 0;
+    var todayLeads = [];
+    (dbF.leads || []).forEach(function(l) {
+      if (l.customer_id !== cust.id) return;
+      if (l.delivered && (l.delivered_at || '').startsWith(today)) todayLeads.push(l);
+    });
+    // Trim today's delivered leads down to keep_today (remove the newest extras).
+    if (keepToday > 0 && todayLeads.length > keepToday) {
+      var toRemove = todayLeads.slice(0, todayLeads.length - keepToday);
+      toRemove.forEach(function(tr) { tr.status = 'removed'; removed++; });
+    }
+    // Fix addresses on all delivered (non-removed) leads.
+    (dbF.leads || []).forEach(function(l) {
+      if (l.customer_id !== cust.id) return;
+      if (l.status === 'removed') return;
+      var d = null; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
+      if (!d || typeof d !== 'object') return;
+      var before = (d.town || '') + '|' + (d.county || '') + '|' + (d.postcode || '') + '|' + (d.fullAddress || '');
+      try {
+        // Extract a real postcode from the address text if the field is empty.
+        var _allAddr = [d.address, d.fullAddress, d.deceasedAddress].filter(Boolean).join(' ');
+        if (!(d.postcode && /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(d.postcode).trim()))) {
+          var _pm = _allAddr.match(/\b[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}\b/i);
+          if (_pm) { var _pr = _pm[0].toUpperCase().replace(/[^A-Z0-9]/g, ''); d.postcode = _pr.slice(0, _pr.length - 3) + ' ' + _pr.slice(-3); }
+        }
+        if (!d.county && d.postcode) { var _cnty = countyFromPostcode(d.postcode); if (_cnty) d.county = _cnty; }
+        if (!d.town && d.county) { /* county only is acceptable ("town OR county") */ }
+        // Rebuild the printable address: street (strip postcode) + town/county + postcode.
+        var _prem = String(d.address || d.fullAddress || '');
+        if (d.postcode) { try { _prem = _prem.replace(new RegExp(String(d.postcode).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '').trim(); } catch(e) {} }
+        var _parts2 = [];
+        if (d.building_number) _parts2.push(d.building_number + (d.street ? ' ' + d.street : ''));
+        else if (d.street) _parts2.push(d.street);
+        else if (_prem) _parts2.push(_prem.replace(/,\s*$/, '').trim());
+        if (d.town) _parts2.push(d.town);
+        if (d.county) _parts2.push(d.county);
+        if (d.postcode) _parts2.push(d.postcode);
+        var _fa2 = _parts2.filter(Boolean).join(', ');
+        if (_fa2) { d.fullAddress = dedupeAddressSegments(_fa2); d.address = d.fullAddress; }
+      } catch(e) {}
+      var after = (d.town || '') + '|' + (d.county || '') + '|' + (d.postcode || '') + '|' + (d.fullAddress || '');
+      if (before !== after) { l.data = JSON.stringify(d); fixed++; }
+    });
+    if (fixed > 0 || removed > 0) saveDb();
+    res.json({ success: true, email: email, fixed: fixed, removed: removed, today_after_trim: keepToday > 0 ? keepToday : todayLeads.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/leads/purge-undelivered — remove all UNDELIVERED leads for a
 // customer (test-data reset). Keeps delivered history. Body: { email }
 app.post('/api/admin/leads/purge-undelivered', adminAuth, (req, res) => {
