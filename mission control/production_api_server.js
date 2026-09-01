@@ -15634,6 +15634,21 @@ app.post('/api/newbusiness/bulk/send', authMiddleware, async (req, res) => {
     var pack = getCustomerBulkPack(c);
     if (!pack) return res.status(400).json({ error: 'No bulk pack purchased yet. Buy a pack first.' });
     if (pack.status === 'sent') return res.status(400).json({ error: 'This pack has already been sent.' });
+    if (pack.status === 'sending') return res.status(400).json({ error: 'Your pack is already being printed & posted. Check Print & Post for live status.' });
+    // If a previous send attempt already created a campaign, reuse it (never create a
+    // duplicate paid order at our print partner).
+    if (pack.campaign_id) {
+      var existingCamp = null;
+      try { existingCamp = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ? AND customer_id = ?').get(pack.campaign_id, c.id); } catch(e) {}
+      if (existingCamp && (existingCamp.status === 'completed' || existingCamp.status === 'dispatched')) {
+        return res.status(400).json({ error: 'This pack has already been printed & posted. Check Print & Post for status.' });
+      }
+      if (existingCamp) {
+        // re-fire the send on the existing campaign (guarded against duplicates inside)
+        fireBulkSend(c, pack, existingCamp.id, leads);
+        return res.json({ success: true, campaign_id: existingCamp.id, count: leads.length, status: 'sending', message: 'Your ' + leads.length + ' lead pack is being printed & posted now. Check Print & Post for status.' });
+      }
+    }
     var arr = readPoolFile('newbusiness');
     var leads = (arr || []).filter(function(l) { return l.bulk_reserved_by === c.id && !l.bulk_sold; });
     if (!leads.length) return res.status(400).json({ error: 'No reserved leads found for this pack.' });
@@ -15673,28 +15688,57 @@ app.post('/api/newbusiness/bulk/send', authMiddleware, async (req, res) => {
       if (!rcpt || !rcpt.postcode) return;
       insertR.run(uuidv4(), c.id, campaignId, rcpt.name || 'Homeowner', rcpt.company || '', rcpt.address_line1 || '', '', rcpt.city || '', String(rcpt.postcode).toUpperCase(), 'United Kingdom', String(l.id || l.company_number || ''), 'pending', nowIso);
     });
-    // fire the send in the background; return campaign id + count now
-    var sendP = sendDmCampaign(campaignId, c.id);
-    sendP.then(function(sr) {
-      console.log('[BULK] Send result for ' + c.email + ' (' + campaignId + '): ' + JSON.stringify(sr).substring(0, 200));
-      if (sr && sr.success) {
-        // mark reserved leads as sold (permanently excluded from future delivery/sales)
+    // mark the pack as sending now + remember the campaign, so a second click can't
+    // create a duplicate paid order (sendDmCampaign is also concurrency-guarded).
+    pack.status = 'sending'; pack.campaign_id = campaignId;
+    db.prepare('UPDATE customers SET bulk_pack = ? WHERE id = ?').run(JSON.stringify(pack), c.id);
+    saveDb();
+    fireBulkSend(c, pack, campaignId, leads);
+    res.json({ success: true, campaign_id: campaignId, count: leads.length, status: 'sending', message: 'Your ' + leads.length + ' lead pack is being printed & posted now. Check Print & Post for status.' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Fire the background Stannp send for a bulk pack campaign. On success the reserved
+// pool leads are marked sold (never re-sold / never delivered) and the pack is marked
+// sent. On failure the pack returns to 'pending' so the customer can retry (reusing
+// the same campaign — never a duplicate order).
+function fireBulkSend(c, pack, campaignId, leads) {
+  var sendP = sendDmCampaign(campaignId, c.id);
+  sendP.then(function(sr) {
+    console.log('[BULK] Send result for ' + c.email + ' (' + campaignId + '): ' + JSON.stringify(sr).substring(0, 250));
+    if (sr && sr.success) {
+      try {
         var f = PRODUCT_LEAD_FILES.newbusiness.file;
         var file = path.join(DATA_DIR, f);
         var raw = null;
         try { raw = JSON.parse(fs.readFileSync(file, 'utf-8')); } catch(e) {}
-        var ids = {}; leads.forEach(function(l) { ids[l.id || l.company_number] = 1; });
+        var ids = {}; (leads || []).forEach(function(l) { ids[l.id || l.company_number] = 1; });
         function markSold(l) { if (l && ids[l.id || l.company_number]) { l.bulk_sold = 1; l.bulk_sold_at = new Date().toISOString(); } }
         if (Array.isArray(raw)) { raw.forEach(markSold); fs.writeFileSync(file, JSON.stringify(raw, null, 2)); }
         else if (raw && typeof raw === 'object') { Object.keys(raw).forEach(function(k) { if (Array.isArray(raw[k])) raw[k].forEach(markSold); }); fs.writeFileSync(file, JSON.stringify(raw, null, 2)); }
-        pack.status = 'sent'; pack.sent = leads.length; pack.sent_at = new Date().toISOString();
-        db.prepare('UPDATE customers SET bulk_pack = ? WHERE id = ?').run(JSON.stringify(pack), c.id);
+      } catch(fe) { console.log('[BULK] mark-sold error:', fe.message); }
+      try {
+        var freshPack = getCustomerBulkPack(c) || pack;
+        freshPack.status = 'sent'; freshPack.sent = (leads || []).length; freshPack.sent_at = new Date().toISOString();
+        db.prepare('UPDATE customers SET bulk_pack = ? WHERE id = ?').run(JSON.stringify(freshPack), c.id);
         saveDb();
-      }
-    }).catch(function(se) { console.log('[BULK] send error for ' + c.email + ': ' + se.message); });
-    res.json({ success: true, campaign_id: campaignId, count: leads.length, status: 'sending', message: 'Your ' + leads.length + ' lead pack is being printed & posted now. Check Print & Post for status.' });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
+        console.log('[BULK] Pack marked sent for ' + c.email + ' (' + (leads || []).length + ' leads)');
+      } catch(pe) { console.log('[BULK] pack-mark error:', pe.message); }
+    } else {
+      // send failed (e.g. provider down) — allow a retry, reusing the same campaign
+      try {
+        var rp = getCustomerBulkPack(c) || pack;
+        if (rp.status === 'sending') { rp.status = 'pending'; db.prepare('UPDATE customers SET bulk_pack = ? WHERE id = ?').run(JSON.stringify(rp), c.id); saveDb(); }
+      } catch(pe2) {}
+    }
+  }).catch(function(se) {
+    console.log('[BULK] send error for ' + c.email + ': ' + se.message);
+    try {
+      var ep = getCustomerBulkPack(c) || pack;
+      if (ep.status === 'sending') { ep.status = 'pending'; db.prepare('UPDATE customers SET bulk_pack = ? WHERE id = ?').run(JSON.stringify(ep), c.id); saveDb(); }
+    } catch(pe3) {}
+  });
+}
 
 // ===== STANNP ADDRESS NORMALISER (shared) =====
 // Idempotent normalisation that makes a lead's stored data Stannp-ready: extracts a
