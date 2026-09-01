@@ -13783,6 +13783,15 @@ function sendDailyDeliveryPreview(when) {
 }
 cron.schedule('30 6 * * 1-5', function() { try { sendDailyDeliveryPreview('pre'); } catch(e) {} });
 cron.schedule('10 8 * * 1-5', function() { try { sendDailyDeliveryPreview('post'); } catch(e) {} });
+// POST /api/admin/email-preview — manually trigger the pre-delivery email now.
+app.post('/api/admin/email-preview', adminAuth, (req, res) => {
+  try {
+    var when = (req.body && req.body.when) || 'pre';
+    sendDailyDeliveryPreview(when).then(function(rows) {
+      res.json({ success: true, emailed: rows.length, short: rows.filter(function(r) { return r.count < r.promised; }).map(function(r) { return r.email + ' (' + r.count + '/' + r.promised + ')'; }) });
+    }).catch(function(e) { res.status(500).json({ error: e.message }); });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 
 // STANNP LOW-BALANCE ALERT — checks the print-credit balance every 30 minutes and
 // emails the owner if it drops below the threshold, so real customer orders never
