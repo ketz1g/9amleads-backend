@@ -20388,6 +20388,22 @@ app.get('/api/health', (req, res) => {
     expired_trials: expiredTrials.count,
     paid_customers: paidCustomers.count,
     leads: leadCount.count,
+    // DISK MONITOR: report free disk space on the data volume so we can see (and
+    // alert on) the disk filling up BEFORE it hits ENOSPC and blocks every write.
+    disk: (function() {
+      try {
+        var fsd = require('fs');
+        if (fsd.statfs) {
+          var st = fsd.statfsSync(DATA_DIR);
+          var totalB = st.blocks * st.bsize, freeB = st.bfree * st.bsize;
+          return { total_gb: +(totalB / 1073741824).toFixed(2), free_gb: +(freeB / 1073741824).toFixed(2), free_pct: Math.round((freeB / totalB) * 100) };
+        }
+        var allFiles = fsd.readdirSync(DATA_DIR);
+        var sum = 0;
+        allFiles.forEach(function(f) { try { sum += fsd.statSync(path.join(DATA_DIR, f)).size; } catch(e) {} });
+        return { data_dir_mb: Math.round(sum / 1048576) };
+      } catch(e) { return { err: e.message }; }
+    })(),
     brevo_configured: !!BREVO_API_KEY,
     postcoder_configured: (process.env.POSTCODER_ENABLED === 'true' || process.env.POSTCODER_ENABLED === '1') && !!process.env.POSTCODER_API_KEY,
     stripe_configured: !!STRIPE_SECRET_KEY,
