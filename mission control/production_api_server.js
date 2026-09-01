@@ -15394,10 +15394,18 @@ function normalizeStannpAddress(d) {
       var _segs = String(d.address || d.fullAddress || '').split(',').map(function(x){ return String(x).trim(); }).filter(Boolean);
       for (var si = 0; si < _segs.length; si++) {
         var _seg = _segs[si];
+        // drop embedded unspaced postcode segments ("LE30UW", "GL516QL") — not real
+        // address lines; the field postcode is the authoritative one.
+        if (/^[A-Z]{1,2}\d[A-Z\d]{2,5}$/i.test(_seg)) continue;
         var _numM = _seg.match(/^\s*((?:Flat|Apartment|Unit|Suite|Maisonette|Room)\s+[A-Z0-9\-]+|\d{1,5}[A-Za-z]?(?:[-\u2013]\d{1,5}[A-Za-z]?)?)\s+(.+)$/i);
         var _name = _numM ? _numM[2] : _seg;
         if (hasStreetName(_name)) {
-          return { building_number: _numM ? String(_numM[1]).replace(/,\s*$/, '').trim() : '', street: _name.trim() };
+          var _bn = _numM ? String(_numM[1]).replace(/,\s*$/, '').trim() : '';
+          // strip a duplicated leading door number ("72 72 Oxford Road" -> "72 Oxford Road")
+          if (_bn) _name = _name.replace(new RegExp('^' + _bn.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s+', 'i'), '');
+          _name = _name.trim();
+          if (!_name) continue;
+          return { building_number: _bn, street: _name };
         }
       }
       return null;
