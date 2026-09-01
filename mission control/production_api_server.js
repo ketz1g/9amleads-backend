@@ -29918,10 +29918,22 @@ app.listen(PORT, () => {
   }
   // CRASH / RESTART ALERT: if the server boots, email the owner. If this happens
   // outside a deploy, the process crashed and auto-restarted (Render restarts it).
+  // THROTTLED to once per 6 hours (default) — Render restarts on every deploy /
+  // sleep-wake, so without throttling the owner gets flooded with "restarted"
+  // emails. Only a restart with no recent deploy/crash history is worth emailing,
+  // and even then at most once per window.
   try {
     var bootEmail = process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com';
-    sendBrevoEmail({ email: bootEmail, name: '9amLeads Owner' }, '9amLeads server restarted',
-      '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="font-family:Outfit,sans-serif;color:#f59e0b;margin:0 0 8px">Server restarted</h1><p style="color:#ccc;line-height:1.7">The 9amLeads backend just started up at ' + new Date().toISOString() + ' UK.</p><p style="color:#ccc;line-height:1.7">If this was an intentional deploy, ignore this. If not, the process crashed and auto-restarted - check Render logs and the auto-heal watchdog status.</p></div>').catch(function(){});
+    var dbB = getDb();
+    var minGap = parseInt(process.env.BOOT_ALERT_MIN_HOURS || '6', 10) * 3600000;
+    var nowB = Date.now();
+    var lastBootAlert = (dbB.__last_boot_alert || 0);
+    if (nowB - lastBootAlert > minGap) {
+      sendBrevoEmail({ email: bootEmail, name: '9amLeads Owner' }, '9amLeads server restarted',
+        '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="font-family:Outfit,sans-serif;color:#f59e0b;margin:0 0 8px">Server restarted</h1><p style="color:#ccc;line-height:1.7">The 9amLeads backend just started up at ' + new Date().toISOString() + ' UK.</p><p style="color:#ccc;line-height:1.7">If this was an intentional deploy, ignore this. If not, the process crashed and auto-restarted - check Render logs and the auto-heal watchdog status.</p></div>').catch(function(){});
+      dbB.__last_boot_alert = nowB;
+      saveDb();
+    }
   } catch(e) {}
   console.log('\n========================================');
   console.log('  9amLeads Production API Server');
