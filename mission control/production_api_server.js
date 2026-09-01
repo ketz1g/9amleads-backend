@@ -17692,6 +17692,29 @@ _deliverDiag[cust.email].products = products;
           }
           if (_normAny) { try { saveDb(); } catch(_ns) {} }
         }
+        // STANNP ADDRESS NORMALISE (non-moving): moving leads are already normalised
+        // by the moving-specific pass above + hard-gated to door-numbered addresses.
+        // Run the shared print-and-post normaliser on probate / newbusiness / planning
+        // leads RIGHT BEFORE the email + dashboard commit, so their addresses are clean
+        // the instant they land at 9am (the 09:45 cron remains only as a safety net).
+        // Idempotent — a no-op for already-clean leads, never touches tenders.
+        if (Array.isArray(custLeads) && custLeads.length) {
+          try {
+            var _snChanged = false;
+            for (var _sn = 0; _sn < custLeads.length; _sn++) {
+              var _snProd = String((custLeads[_sn] && custLeads[_sn].product) || cust.product || '');
+              if (_snProd === 'moving' || _snProd === 'tenders') continue;
+              try {
+                var _snd = JSON.parse(custLeads[_sn].data || '{}');
+                if (!_snd || typeof _snd !== 'object') continue;
+                var _snBefore = JSON.stringify(_snd);
+                normalizeStannpAddress(_snd);
+                if (JSON.stringify(_snd) !== _snBefore) { custLeads[_sn].data = JSON.stringify(_snd); _snChanged = true; }
+              } catch(_snE) {}
+            }
+            if (_snChanged) { try { saveDb(); } catch(_snS) {} }
+          } catch(_snOuter) { console.log('[DELIVERY] stannp normalise error:', _snOuter.message); }
+        }
         // BULLETPROOF FINAL HARD-CAP: under NO circumstances may a customer receive
         // more than their promised daily quota in one email/batch. Every top-up,
         // fill, quality-review, PAF and guarantee pass above can re-grow custLeads,
