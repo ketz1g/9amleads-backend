@@ -15264,6 +15264,28 @@ app.get('/api/admin/test-zoopla-actor', adminAuth, (req, res) => {
     req2.write(body); req2.end();
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+// POST /api/admin/leads/update-address — fix a specific delivered lead's address.
+// Body: { email, lead_id, address }
+app.post('/api/admin/leads/update-address', adminAuth, (req, res) => {
+  try {
+    var email = String((req.body && req.body.email) || '').toLowerCase().trim();
+    var leadId = String((req.body && req.body.lead_id) || '');
+    var addr = String((req.body && req.body.address) || '').trim();
+    if (!email || !leadId || !addr) return res.status(400).json({ error: 'email, lead_id and address required' });
+    var dbU = getDb();
+    var cust = (dbU.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    var lead = (dbU.leads || []).find(function(l) { return l.customer_id === cust.id && l.id === leadId; });
+    if (!lead) return res.status(404).json({ error: 'Lead not found' });
+    var d = null; try { d = JSON.parse(lead.data || '{}'); } catch(e) {}
+    if (!d || typeof d !== 'object') d = {};
+    d.address = addr; d.fullAddress = addr;
+    lead.data = JSON.stringify(d);
+    saveDb();
+    res.json({ success: true, lead_id: leadId, address: addr });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/leads/fix-and-trim — fix a customer's delivered lead addresses
 // (extract postcode from the address text, attach county-from-postcode, rebuild
 // fullAddress = street + town/county + postcode) and optionally trim TODAY's
