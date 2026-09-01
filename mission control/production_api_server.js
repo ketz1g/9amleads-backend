@@ -15183,8 +15183,9 @@ app.post('/api/admin/backfill-delivered-addresses', adminAuth, (req, res) => {
       var _parts = [];
       var _prem = String(d.address || d.fullAddress || '');
       try { _prem = _prem.replace(new RegExp(String(d.postcode || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '').trim(); } catch(e) {}
-      // Clean duplicated leading flat/unit numbers ("Flat 22 Flat 22 Parkdale").
-      _prem = String(_prem || '').replace(/^((?:Flat|Apartment|Unit|Maisonette|Room)\s+\d+[A-Za-z]?)\s+\1\b/i, '$1').replace(/,\s*$/, '').trim();
+      // Clean duplicated leading flat/unit numbers ("Flat 22 Flat 22 Parkdale") and
+      // duplicated door ranges ("71 71-75 Shelton Street").
+      _prem = String(_prem || '').replace(/^((?:Flat|Apartment|Unit|Maisonette|Room)\s+\d+[A-Za-z]?)\s+\1\b/i, '$1').replace(/^(\d+[A-Za-z]?)\s+(\1-\d+[A-Za-z]?)\b/i, '$2').replace(/,\s*$/, '').trim();
       if (d.building_number) _parts.push(d.building_number + (d.street ? ' ' + d.street : ''));
       else if (d.street) _parts.push(d.street);
       else if (_prem && !/,/.test(_prem)) _parts.push(_prem);
@@ -15357,8 +15358,9 @@ app.post('/api/admin/leads/fix-and-trim', adminAuth, (req, res) => {
         // Rebuild the printable address: street (strip postcode) + town/county + postcode.
         var _prem = String(d.address || d.fullAddress || '');
         if (d.postcode) { try { _prem = _prem.replace(new RegExp(String(d.postcode).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '').trim(); } catch(e) {} }
-        // Clean duplicated leading flat/unit numbers ("Flat 22 Flat 22 Parkdale").
-        _prem = String(_prem || '').replace(/^((?:Flat|Apartment|Unit|Maisonette|Room)\s+\d+[A-Za-z]?)\s+\1\b/i, '$1');
+        // Clean duplicated leading flat/unit numbers ("Flat 22 Flat 22 Parkdale")
+        // and duplicated door ranges ("71 71-75 Shelton Street").
+        _prem = String(_prem || '').replace(/^((?:Flat|Apartment|Unit|Maisonette|Room)\s+\d+[A-Za-z]?)\s+\1\b/i, '$1').replace(/^(\d+[A-Za-z]?)\s+(\1-\d+[A-Za-z]?)\b/i, '$2');
         var _parts2 = [];
         if (d.building_number) _parts2.push(d.building_number + (d.street ? ' ' + d.street : ''));
         else if (d.street) _parts2.push(d.street);
