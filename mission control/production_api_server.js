@@ -20437,7 +20437,32 @@ app.get('/api/health', (req, res) => {
         configured: !!BREVO_API_KEY,
         emails_sent_today: brevoSentToday()
       },
-      supply_48h: getPoolSupply()
+      supply_48h: getPoolSupply(),
+      // SUPPLY HEALTH SUMMARY: per product, is the fresh (48h) mailable pool big
+      // enough for ALL active (non-paused, valid-trial) customers' daily needs?
+      supply_health: (function() {
+        try {
+          var dbS = getDb();
+          var sup = getPoolSupply() || {};
+          var need = { moving: 0, probate: 0, newbusiness: 0, planning: 0, tenders: 0 };
+          var activeByProd = {};
+          (dbS.customers || []).forEach(function(c) {
+            if (!c.plan || c.plan === 'cancelled' || isLeadsPaused(c)) return;
+            if (c.trial_ends && new Date(c.trial_ends) <= new Date()) return; // expired trial
+            var p = c.product || 'moving';
+            var lim = getPlanLimit(p, c.plan, c.coverage) || 5;
+            need[p] = (need[p] || 0) + lim;
+            activeByProd[p] = (activeByProd[p] || 0) + 1;
+          });
+          var out = {};
+          Object.keys(need).forEach(function(p) {
+            var fresh = (sup[p] && sup[p].fresh_48h) || 0;
+            var ok = fresh >= need[p];
+            out[p] = { active_customers: activeByProd[p] || 0, daily_need: need[p], fresh_48h: fresh, ok: ok };
+          });
+          return out;
+        } catch(e) { return { err: e.message }; }
+      })()
     }
   });
 });
