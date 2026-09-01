@@ -13755,7 +13755,7 @@ function sendDailyDeliveryPreview(when) {
   return new Promise(function(resolve) {
     try {
       var dbD2 = getDb();
-      var customers = (dbD2.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && !isLeadsPaused(c); });
+      var customers = (dbD2.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && !isLeadsPaused(c) && !/test\.|@9amleads\.com|\.1788\d*@/i.test(String(c.email || '')); });
       var rows = [];
       var _seen = {};
       var processIdx = 0;
