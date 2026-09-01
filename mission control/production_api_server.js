@@ -9367,7 +9367,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
   }
   var fallbackCount = out.filter(function(o) { return !o.in_area; }).length;
   var fallbackNote = fallbackCount ? (fallbackCount + ' lead' + (fallbackCount > 1 ? 's' : '') + ' from closest postcode' + (fallbackCount > 1 ? 's' : '') + ' (your chosen areas were short this morning)') : '';
-  return { email: cust.email, company: cust.company || '', product: cust.product, plan: cust.plan, areas: areas, promised: limit, count: out.length, leads: out, fallback_count: fallbackCount, fallback_note: fallbackNote, error: out.length < limit ? 'supply low in ' + areas.join(', ') : '', debug: (cust.email === 'info@afsremovals.com') ? { pool_total: pool.length, interleaved: interleaved.length, candidate_errors: candidateErrors } : undefined };
+  return { email: cust.email, company: cust.company || '', product: cust.product, plan: cust.plan, areas: areas, promised: limit, count: out.length, leads: out, fallback_count: fallbackCount, fallback_note: fallbackNote, error: out.length < limit ? 'supply low in ' + areas.join(', ') : '', debug: (cust.email === 'info@afsremovals.com') ? { pool_total: pool.length, interleaved: interleaved.length, candidates: candidates.length, selected: selected.length, candidate_errors: candidateErrors, firstCandidates: candidates.slice(0, 3).map(function(cl) { return { addr: String(cl.fullAddress || cl.address || '').slice(0, 40), pc: cl.postcode, commercial: isCommercialLead(cl), matched: areas.indexOf(extractPostcodeArea(cl.postcode || cl.address || '')) !== -1 }; }) } : undefined };
 }
 
 // ===== POST-SCRAPE PAF ENRICHMENT =====
