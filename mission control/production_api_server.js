@@ -25981,22 +25981,15 @@ function syncCustomers(product) {
             // (nameOrNumber + postalCode null), so leads fail the premise gate; and
             // detail-mode crawls every property page (~1000/area) - too slow + expensive,
             // especially on US-only proxies. Moving supply = Rightmove + Postcoder PAF.
-            // ===== ONTHEMARKET SOURCE (TEMPORARILY DISABLED 2026-08-19) =====
-            // OTM worked locally but stalled the full scrape twice from the Render
-            // IP (list/detail fetches hang long enough to stall the whole pipeline).
-            // Restored the proven Rightmove-only scrape for the customer delivery
-            // deadline. OTM is re-enabled ONLY via its own bounded step (not inside
-            // the blocking scrape) once the hang is root-caused.
-            /*
+            // ===== ONTHEMARKET SOURCE (Apify-free backup) =====
+            // OTM adds fresh listings without Apify (which is now unused). The
+            // scraper has retry/backoff + our moduleWithTimeout guard, so a hang
+            // can never stall the pipeline. Wrapped in a timeout for safety.
             try {
               var otmMaxAreas = parseInt(process.env.OTM_MAX_AREAS || '20', 10);
               var otmDetailCap = parseInt(process.env.OTM_DETAIL_CAP || '150', 10);
               var otmScraper = require('./onthemarket_scraper');
-              // FRESHNESS MATCHES THE DELIVERY POLICY: 24h primary ("Added today"),
-              // 48h fallback ("Added today" + "Added yesterday"). Leads older than
-              // 48h are NOT added - the pool stays genuinely fresh so the exact-count
-              // guarantee is met with listings the customer can actually chase.
-              var otmLeads = await otmScraper.collectOnTheMarketLeads({ areas: mvAreas, maxPerArea: 30, maxDays: 1, detailCap: otmDetailCap });
+              var otmLeads = await moduleWithTimeout(otmScraper.collectOnTheMarketLeads({ areas: mvAreas, maxPerArea: 30, maxDays: 2, detailCap: otmDetailCap }), 4 * 60000, 'OTM moving scrape');
               if (otmLeads && otmLeads.length > 0) {
                 var otmSeen = {};
                 (leads || []).forEach(function(l) { if (l.postcode && l.address) otmSeen[String((l.postcode + '|' + l.address)).toLowerCase().replace(/\s+/g, '')] = 1; });
@@ -26005,12 +25998,11 @@ function syncCustomers(product) {
                   var ok = String((ol.postcode || '') + '|' + (ol.address || '')).toLowerCase().replace(/\s+/g, '');
                   if (ok && !otmSeen[ok]) { otmSeen[ok] = 1; (leads || []).push(ol); otmAdded++; }
                 });
-                console.log('[SCRAPER] OnTheMarket added ' + otmAdded + ' leads to moving pool (total=' + (leads ? leads.length : 0) + ')');
+                console.log('[SCRAPER] OnTheMarket added ' + otmAdded + ' leads to moving pool');
               } else {
-                console.log('[SCRAPER] OnTheMarket: 0 leads (areas: ' + (mvAreas || []).join(',') + ')');
+                console.log('[SCRAPER] OnTheMarket: 0 leads');
               }
             } catch(otmErr) { console.log('[SCRAPER] OnTheMarket error:', otmErr.message); }
-            */
             if (!leads || leads.length === 0) {  console.log('[SCRAPER] Rightmove: 0 real leads today'); }
           } catch(e) { console.log('[SCRAPER] Rightmove error:', e.message); leads = []; }
         } else if (product === 'probate') {
@@ -26144,7 +26136,22 @@ function syncCustomers(product) {
           var propStore = require('./property_store');
           leads = (leads || []).map(function(pl) { return propStore.enrichLead(pl); });
         } catch(pe) { console.log('[SCRAPER] Property store error:', pe.message); }
-        if (!leads || leads.length === 0) { leads = []; }
+        // MERGE into the existing pool — NEVER overwrite. A 0-result scrape (e.g.
+        // Rightmove blocking the Render IP) must not wipe existing supply. New
+        // leads are added on top; existing leads are kept as fallback. Fresh leads
+        // sort first; capped at 6000 so the pool stays healthy.
+        if (leads && leads.length > 0) {
+          var _prevPool = [];
+          try { _prevPool = JSON.parse(fs.readFileSync(poolPath, 'utf-8')); if (!Array.isArray(_prevPool)) _prevPool = []; } catch(eP) { _prevPool = []; }
+          var _seenP = {};
+          var _mergedP = [];
+          function _pk(pl) { return pl.id || String(pl.url || '').split('#')[0].split('?')[0] || (String(pl.address || '') + '|' + String(pl.postcode || '')); }
+          leads.forEach(function(pl) { var k = _pk(pl); if (k && !_seenP[k]) { _seenP[k] = 1; _mergedP.push(pl); } });
+          _prevPool.forEach(function(pl) { var k = _pk(pl); if (k && !_seenP[k]) { _seenP[k] = 1; _mergedP.push(pl); } });
+          _mergedP.sort(function(a, b) { return new Date(b.firstVisibleDate || b.scrapedAt || 0) - new Date(a.firstVisibleDate || a.scrapedAt || 0); });
+          if (_mergedP.length > 6000) _mergedP = _mergedP.slice(0, 6000);
+          leads = _mergedP;
+        }
         fs.writeFileSync(poolPath, JSON.stringify(leads, null, 2));
         // Only mark "scraped today" if we actually got leads. If a source returns
         // 0 (e.g. PLOTA key not yet configured, Gazette blocked), DON'T lock the
