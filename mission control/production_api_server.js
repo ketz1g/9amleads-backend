@@ -8986,7 +8986,7 @@ app.get('/api/admin/delivery-preview', adminAuth, async (req, res) => {
       var dNow = (pv.leads || []).filter(function(l) { return l.has_door_number; }).length;
       var dPaf = (pv.leads || []).filter(function(l) { return l.paf_candidate; }).length;
       var dFail = (pv.leads || []).filter(function(l) { return l.paf_failed; }).length;
-      out.push({ email: pv.email, company: pv.company, product: pv.product, plan: pv.plan, areas: pv.areas, promised: pv.promised, preview_count: pv.count, fallback_count: pv.fallback_count, fallback_note: pv.fallback_note, door_now: dNow, door_paf: dPaf, door_fail: dFail, leads: pv.leads, error: pv.error || '' });
+      out.push({ email: pv.email, company: pv.company, product: pv.product, plan: pv.plan, areas: pv.areas, promised: pv.promised, preview_count: pv.count, fallback_count: pv.fallback_count, fallback_note: pv.fallback_note, door_now: dNow, door_paf: dPaf, door_fail: dFail, leads: pv.leads, error: pv.error || '', debug: pv.debug });
     }
     res.json({ success: true, generated_at: new Date().toISOString(), note: 'Preview based on the current pool - run after the 6am scrape for the most accurate 9am preview.', last_preverify: dbP.seo_last_preverify || null, customers: out });
   } catch(e) { res.status(500).json({ error: e.message }); }
