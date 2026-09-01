@@ -15306,6 +15306,8 @@ app.post('/api/admin/leads/fix-and-trim', adminAuth, (req, res) => {
         // Rebuild the printable address: street (strip postcode) + town/county + postcode.
         var _prem = String(d.address || d.fullAddress || '');
         if (d.postcode) { try { _prem = _prem.replace(new RegExp(String(d.postcode).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '').trim(); } catch(e) {} }
+        // Clean duplicated leading flat/unit numbers ("Flat 22 Flat 22 Parkdale").
+        _prem = String(_prem || '').replace(/^((?:Flat|Apartment|Unit|Maisonette|Room)\s+\d+[A-Za-z]?)\s+\1\b/i, '$1');
         var _parts2 = [];
         if (d.building_number) _parts2.push(d.building_number + (d.street ? ' ' + d.street : ''));
         else if (d.street) _parts2.push(d.street);
