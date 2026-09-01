@@ -9804,6 +9804,20 @@ app.post('/api/admin/deep-scrape', adminAuth, (req, res) => {
 });
 
 // POST /api/admin/extend-trial - add N days to a customer's free trial.
+// POST /api/admin/set-trial-end - set a customer's trial_ends directly (admin).
+app.post('/api/admin/set-trial-end', adminAuth, (req, res) => {
+  try {
+    var email = String((req.body && req.body.email) || '').toLowerCase().trim();
+    var trialEnds = String((req.body && req.body.trial_ends) || '');
+    if (!email || !trialEnds) return res.status(400).json({ error: 'email and trial_ends required' });
+    var cust = db.prepare('SELECT * FROM customers WHERE email = ?').get(email);
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    db.prepare('UPDATE customers SET trial_ends = ? WHERE id = ?').run(trialEnds, cust.id);
+    saveDb();
+    res.json({ success: true, email: email, trial_ends: trialEnds });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/admin/extend-trial', adminAuth, (req, res) => {
   try {
     var customerId = (req.body && req.body.customer_id) || '';
