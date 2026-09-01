@@ -11145,7 +11145,8 @@ function emailTypeFromSubject(subject) {
   var s = String(subject || '');
   if (/9amLeads|Daily Opportunities|lead sheet/i.test(s) && /Daily/i.test(s)) return 'daily_lead';
   if (/print.?post|mailing|posted|on the way|dispatched|delivered/i.test(s)) return 'print_post';
-  if (/alert|failed|error|warning/i.test(s)) return 'alert';
+  if (/alert|failed|error|warning|reserve ready/i.test(s)) return 'alert';
+  if (/bulk postage|bulk\b|exclusive lead/i.test(s)) return 'bulk';
   if (/preview|tomorrow/i.test(s)) return 'preview';
   if (/welcome|trial|started/i.test(s)) return 'onboarding';
   if (/invoice|payment|receipt|billing|subscription/i.test(s)) return 'billing';
