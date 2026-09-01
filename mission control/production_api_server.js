@@ -13681,6 +13681,109 @@ cron.schedule('15 * * * *', async () => {
   try { await runFullBackup(); } catch(e) { console.log('[BACKUP] Cron error:', e.message); }
 });
 
+// ===== HEALTH ALERTING =====
+// Catch issues BEFORE they bite: every 30 min, check disk space, pool supply for
+// tomorrow's delivery, GitHub backup push status and recent errors — and email the
+// owner if anything is wrong. Throttled per issue (~4h) so it never spams.
+var _sentAlerts = {};
+function sendAlertIfStale(key, subject, html, cooldownMs) {
+  cooldownMs = cooldownMs || 4 * 3600000;
+  var now = Date.now();
+  if (_sentAlerts[key] && (now - _sentAlerts[key]) < cooldownMs) return false;
+  try {
+    sendBrevoEmail({ email: process.env.OWNER_EMAIL || 'ketzman1g@gmail.com', name: 'Owner' }, subject, html);
+    _sentAlerts[key] = now;
+    return true;
+  } catch(e) { return false; }
+}
+function runHealthAlerts() {
+  try {
+    var issues = [];
+    // 1. Disk space
+    try {
+      var fsd = require('fs');
+      if (fsd.statfs) {
+        var st = fsd.statfsSync(DATA_DIR);
+        var freePct = Math.round((st.bfree / st.blocks) * 100);
+        if (freePct < 20) issues.push('Disk free is ' + freePct + '% (below 20%) — backups/writes may stop');
+      }
+    } catch(e) {}
+    // 2. Pool supply short for tomorrow (active valid-trial customers)
+    try {
+      var dbA2 = getDb();
+      var need = { moving: 0, probate: 0, newbusiness: 0, planning: 0, tenders: 0 };
+      (dbA2.customers || []).forEach(function(c) {
+        if (!c.plan || c.plan === 'cancelled' || isLeadsPaused(c)) return;
+        if (c.trial_ends && new Date(c.trial_ends) <= new Date()) return;
+        var p = c.product || 'moving';
+        need[p] = (need[p] || 0) + (getPlanLimit(p, c.plan, c.coverage) || 5);
+      });
+      var sup = getPoolSupply() || {};
+      Object.keys(need).forEach(function(p) {
+        if (need[p] > 0) {
+          var fresh = (sup[p] && sup[p].fresh_48h) || 0;
+          if (fresh < need[p]) issues.push(p + ' pool supply low: ' + fresh + ' fresh vs ' + need[p] + ' needed for tomorrow');
+        }
+      });
+    } catch(e) {}
+    // 3. GitHub backup push failed recently
+    try {
+      var ghp = global.__lastGithubPush;
+      if (ghp && ghp.ok === false && (Date.now() - new Date(ghp.at).getTime()) < 24 * 3600000) {
+        issues.push('Off-server GitHub backup FAILED: ' + (ghp.reason || ghp.body || ghp.status));
+      }
+    } catch(e) {}
+    // 4. Recent delivery/scraper errors
+    try {
+      var recent = (global.__lastErrors || []).filter(function(e) { return e && e.at && (Date.now() - new Date(e.at).getTime()) < 6 * 3600000; }).slice(0, 3);
+      if (recent.length) issues.push('Recent errors: ' + recent.map(function(e) { return e.message; }).join(' | '));
+    } catch(e) {}
+    if (issues.length) {
+      var html = '<div style="font-family:Arial;color:#e2e8f0;background:#0b1120;padding:20px"><h2>⚠ 9amLeads — issues detected</h2><ul style="color:#fecaca;line-height:1.8">' + issues.map(function(i) { return '<li>' + i + '</li>'; }).join('') + '</ul><p style="color:#94a3b8;font-size:12px">Check /api/health and the admin delivery preview.</p></div>';
+      sendAlertIfStale('health-issues', '9amLeads alert: issues detected', html, 4 * 3600000);
+      console.log('[ALERT] Emailed owner: ' + issues.join('; '));
+    }
+  } catch(e) { console.log('[ALERT] check error:', e.message); }
+}
+cron.schedule('*/30 * * * *', function() { try { runHealthAlerts(); } catch(e) {} });
+
+// ===== DAILY DELIVERY PRE-CHECK + POST SUMMARY =====
+// 07:30 UK (06:30 UTC) pre-check: email the owner the 9am delivery preview summary
+// so they know by breakfast whether any customer will be short. 09:10 UK (08:10 UTC)
+// post-delivery: email the actual delivered counts. Mon-Fri only.
+function sendDailyDeliveryPreview(when) {
+  return new Promise(function(resolve) {
+    try {
+      var dbD2 = getDb();
+      var customers = (dbD2.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && !isLeadsPaused(c); });
+      var rows = [];
+      var _seen = {};
+      var processIdx = 0;
+      function next() {
+        if (processIdx >= customers.length) { finish(); return; }
+        var c = customers[processIdx++];
+        deliveryPreviewForCustomer(c, _seen).then(function(pv) {
+          rows.push({ email: pv.email, product: pv.product, promised: pv.promised, count: pv.count, error: pv.error });
+          next();
+        }).catch(function() { rows.push({ email: c.email, product: c.product, promised: (getPlanLimit(c.product, c.plan, c.coverage) || 5), count: 0, error: 'preview error' }); next(); });
+      }
+      function finish() {
+        var short = rows.filter(function(r) { return r.count < r.promised; });
+        var ok = rows.filter(function(r) { return r.count >= r.promised; });
+        var html = '<div style="font-family:Arial;color:#e2e8f0;background:#0b1120;padding:20px"><h2>📬 9amLeads ' + (when === 'pre' ? 'pre-delivery check' : 'delivery summary') + '</h2>' +
+          '<h3 style="color:#4ade80">✓ ' + ok.length + ' customer(s) covered</h3>' +
+          (short.length ? '<h3 style="color:#f87171">⚠ ' + short.length + ' customer(s) short</h3><ul style="color:#fecaca;line-height:1.7">' + short.map(function(r) { return '<li>' + r.email + ' (' + r.product + '): ' + r.count + '/' + r.promised + (r.error ? ' — ' + r.error : '') + '</li>'; }).join('') + '</ul>' : '') +
+          '<p style="color:#94a3b8;font-size:12px">Details: admin dashboard → delivery preview.</p></div>';
+        sendBrevoEmail({ email: process.env.OWNER_EMAIL || 'ketzman1g@gmail.com', name: 'Owner' }, '9amLeads ' + (when === 'pre' ? 'pre-delivery check' : 'delivery summary') + ' (' + ok.length + ' ok' + (short.length ? ', ' + short.length + ' short' : '') + ')', html);
+        resolve(rows);
+      }
+      next();
+    } catch(e) { console.log('[PRE-CHECK] error:', e.message); resolve([]); }
+  });
+}
+cron.schedule('30 6 * * 1-5', function() { try { sendDailyDeliveryPreview('pre'); } catch(e) {} });
+cron.schedule('10 8 * * 1-5', function() { try { sendDailyDeliveryPreview('post'); } catch(e) {} });
+
 // STANNP LOW-BALANCE ALERT — checks the print-credit balance every 30 minutes and
 // emails the owner if it drops below the threshold, so real customer orders never
 // fail silently because our print partner credit ran out. Only alerts once per
