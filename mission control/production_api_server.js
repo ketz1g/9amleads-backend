@@ -15663,7 +15663,7 @@ app.post('/api/newbusiness/bulk/send', authMiddleware, async (req, res) => {
     // Build campaign + recipients (all reserved leads)
     var campaignId = 'bulk_' + uuidv4();
     var nowIso = new Date().toISOString();
-    var dmTbl = db.prepare('SELECT name FROM sqlite_master WHERE type="table" AND name="direct_mail_campaigns"').get();
+    var dmTbl = getDb() && getDb().direct_mail_campaigns;
     if (!dmTbl) return res.status(500).json({ error: 'Print & Post not initialised' });
     db.prepare('INSERT INTO direct_mail_campaigns (id,customer_id,name,mail_type,status,stripe_payment_status,created_at,updated_at,format_id,recipient_count,price) VALUES (?,?,?,?,?,?,?,?,?,?,?)')
       .run(campaignId, c.id, 'Bulk Leads Pack (' + leads.length + ' UK leads)', mailType, 'paid', 'paid', nowIso, nowIso, '', String(leads.length), String(leads.length * 2));
