@@ -15381,6 +15381,16 @@ app.post('/api/admin/audit-stannp-addresses', adminAuth, async (req, res) => {
           if (_tc && _tc.town) { d.town = _tc.town; d.city = _tc.town; }
           else { try { var _gt = require('./rightmove_scraper_v2').getTownForPostcode(d.postcode || ''); if (_gt) { d.town = _gt; d.city = _gt; } } catch(e) {} }
         }
+        // TOWN SANITIZER: a 1-2 letter "town" that is really a postcode area
+        // ("L", "N", "SW" leaked into the address as a city segment) is garbage.
+        // Replace it with the cached town-from-postcode so Stannp gets a real town.
+        if (d.town && /^[A-Z]{1,2}$/.test(String(d.town).trim()) && d.postcode) {
+          try {
+            var _gt2 = require('./rightmove_scraper_v2').getTownForPostcode(d.postcode);
+            if (_gt2) { d.town = _gt2; d.city = _gt2; }
+            else { delete d.town; delete d.city; }
+          } catch(e) { delete d.town; delete d.city; }
+        }
         if (!d.county && d.postcode) { var _cy = countyFromPostcode(d.postcode); if (_cy) d.county = _cy; }
         // premise + street
         if (!d.building_number && !d.buildingNumber) { var _bn = extractMovingDoorNumber(_addr); if (_bn) { d.building_number = _bn; d.buildingNumber = _bn; } }
