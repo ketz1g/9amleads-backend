@@ -11113,6 +11113,7 @@ function sendBrevoEmail(to, subject, htmlContent) {
         res.on('end', () => {
           if (res.statusCode < 300) {
             bumpBrevoSentToday();
+            logCustomerEmail(to, subject);
             try { resolve(JSON.parse(body)); } catch(e) { resolve({}); }
           } else if ((res.statusCode === 429 || res.statusCode >= 500) && attemptNum < 4) {
             var delay = 1000 * Math.pow(2, attemptNum - 1);
@@ -11133,6 +11134,61 @@ function sendBrevoEmail(to, subject, htmlContent) {
     attempt(1);
   });
 }
+
+// ===== CUSTOMER EMAIL HISTORY =====
+// Every email successfully sent to a customer is recorded so the founder can see,
+// per customer, which emails they've received through the week (the daily 9am lead
+// sheet, delivery previews, alerts, Print & Post receipts, etc.) and spot any
+// wrong/mis-routed emails. Stored in the DB `email_log` array (bounded to the most
+// recent 1500 entries) and surfaced on the admin customer view.
+function emailTypeFromSubject(subject) {
+  var s = String(subject || '');
+  if (/9amLeads|Daily Opportunities|lead sheet/i.test(s) && /Daily/i.test(s)) return 'daily_lead';
+  if (/print.?post|mailing|posted|on the way|dispatched|delivered/i.test(s)) return 'print_post';
+  if (/alert|failed|error|warning/i.test(s)) return 'alert';
+  if (/preview|tomorrow/i.test(s)) return 'preview';
+  if (/welcome|trial|started/i.test(s)) return 'onboarding';
+  if (/invoice|payment|receipt|billing|subscription/i.test(s)) return 'billing';
+  if (/prospect|outreach/i.test(s)) return 'marketing';
+  return 'other';
+}
+function logCustomerEmail(to, subject) {
+  try {
+    var em = to && (typeof to === 'object' ? to.email : to) ? (typeof to === 'object' ? to.email : to) : '';
+    if (!em) return;
+    var dbL = getDb();
+    if (!dbL.email_log) dbL.email_log = [];
+    dbL.email_log.push({
+      id: uuidv4(),
+      email: String(em).toLowerCase().trim(),
+      name: to && typeof to === 'object' ? (to.name || '') : '',
+      subject: String(subject || ''),
+      type: emailTypeFromSubject(subject),
+      at: new Date().toISOString()
+    });
+    if (dbL.email_log.length > 1500) dbL.email_log.splice(0, dbL.email_log.length - 1500);
+    saveDb();
+  } catch(e) { console.log('[EMAIL-LOG] log error:', e.message); }
+}
+
+// GET /api/admin/customer-emails?email=X — the customer's recent email history
+app.get('/api/admin/customer-emails', adminAuth, (req, res) => {
+  try {
+    var em = String((req.query && req.query.email) || '').toLowerCase().trim();
+    if (!em) return res.status(400).json({ error: 'email required' });
+    var dbE = getDb();
+    var log = (dbE.email_log || []).filter(function(e) { return String(e.email || '').toLowerCase() === em; });
+    // dedupe by (subject, at-minute) — resends/retries of the same email shouldn't flood
+    var seen = {}, out = [];
+    log.slice().reverse().forEach(function(e) {
+      var k = e.subject + '|' + String(e.at || '').substring(0, 16);
+      if (seen[k]) return;
+      seen[k] = 1;
+      out.push(e);
+    });
+    res.json({ success: true, email: em, count: out.length, emails: out.slice(0, 60) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 
 // #11: send a transactional SMS via Brevo (SMS delivery of 9am leads, opt-in only).
 // Uses BREVO_SMS_API_KEY. Enabled via partner config 'sms_delivery_enabled'.
@@ -15739,6 +15795,39 @@ function fireBulkSend(c, pack, campaignId, leads) {
     } catch(pe3) {}
   });
 }
+
+// ===== BULK RESERVE READY ALERT =====
+// Once enough 3-7 day-old exclusive newbusiness leads have matured into the bulk
+// reserve to sell a pack (50, then 100), email the founder so they know it's live
+// and ready to sell. Alerts once per threshold (never re-spams).
+function checkBulkReserveReady() {
+  try {
+    var dbB = getDb();
+    if (!dbB.bulk_alerted) dbB.bulk_alerted = {};
+    var count = getBulkEligibleLeads().length;
+    var fired = [];
+    if (count >= 50 && !dbB.bulk_alerted.at50) { dbB.bulk_alerted.at50 = new Date().toISOString(); fired.push('50'); }
+    if (count >= 100 && !dbB.bulk_alerted.at100) { dbB.bulk_alerted.at100 = new Date().toISOString(); fired.push('100'); }
+    if (fired.length) {
+      saveDb();
+      var html = '<div style="font-family:Inter,Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px"><h2 style="color:#4ade80;margin:0 0 10px;font-size:18px">Bulk Postage reserve is ready! \uD83D\uDCE6</h2><p style="font-size:14px;line-height:1.6;color:#cbd5e1">The Exclusive Lead Archive now has <b style="color:#4ade80">' + count + ' exclusive UK new-business leads</b> matured (3\u20137 days old, never sent). That means a <b>50-pack (\u00a3100)</b>' + (count >= 100 ? ' and a <b>100-pack (\u00a3200)</b>' : '') + ' can be sold right now to Pro new-business customers.</p><p style="font-size:13px;color:#94a3b8;line-height:1.6">Customers buy in the dashboard (Bulk Postage), review the exact leads, then we print &amp; post their materials. It\'s fully automated.</p></div>';
+      sendBrevoEmail({ email: 'hello@9amleads.com', name: '9amLeads Founder' }, 'Bulk Postage reserve ready: ' + count + ' exclusive UK leads', html);
+      console.log('[BULK-ALERT] reserve ready: ' + count + ' leads (thresholds fired: ' + fired.join(',') + ')');
+    } else {
+      console.log('[BULK-ALERT] reserve at ' + count + ' (no new threshold)');
+    }
+    return { count: count, fired: fired };
+  } catch(e) { console.log('[BULK-ALERT] error: ' + e.message); return { error: e.message }; }
+}
+// Check after the 11:00 UK daily (post-prune) so the count reflects the day's scrapes.
+cron.schedule('0 11 * * *', function() {
+  try { checkBulkReserveReady(); } catch(e) { console.log('[BULK-ALERT-CRON] ' + e.message); }
+}, { timezone: 'Europe/London' });
+// POST /api/admin/bulk-check — manually run the reserve-ready check now
+app.post('/api/admin/bulk-check', adminAuth, (req, res) => {
+  try { res.json({ success: true, ...checkBulkReserveReady() }); }
+  catch(e) { res.status(500).json({ error: e.message }); }
+});
 
 // ===== STANNP ADDRESS NORMALISER (shared) =====
 // Idempotent normalisation that makes a lead's stored data Stannp-ready: extracts a
