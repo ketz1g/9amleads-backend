@@ -15341,6 +15341,90 @@ app.post('/api/admin/backfill-delivered-addresses', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ===== STANNP ADDRESS AUDIT + FIX =====
+// POST /api/admin/audit-stannp-addresses — scan EVERY delivered dashboard lead for
+// every product EXCEPT tenders and report whether it can be printed & posted by
+// Stannp (correct premise + street + town + valid UK postcode). With `fix: true` it
+// also normalises each lead's data (door number, street, town, county, postcode,
+// rebuilt fullAddress) so buildStannpRecipientFromLead yields clean Stannp fields.
+// Body: { fix?: boolean, product?: 'moving'|'probate'|'newbusiness'|'planning' }
+app.post('/api/admin/audit-stannp-addresses', adminAuth, async (req, res) => {
+  try {
+    var doFix = !!(req.body && req.body.fix);
+    var prodFilter = (req.body && req.body.product) || '';
+    var dbA = getDb();
+    var prods = ['moving', 'probate', 'newbusiness', 'planning'];
+    var out = { total: 0, checked: 0, ready: 0, issues: { missing_premise: 0, missing_street: 0, missing_town: 0, invalid_postcode: 0, no_postcode: 0, garbage: 0 }, fixed: 0, examples: [] };
+    var issuesByCustomer = {};
+    (dbA.leads || []).forEach(function(row) {
+      var prod = String(row.product || '');
+      if (prodFilter && prod !== prodFilter) return;
+      if (prods.indexOf(prod) === -1) return;
+      if (!row.delivered && row.status !== 'delivered') return;
+      out.total++;
+      var d = null; try { d = JSON.parse(row.data || '{}'); } catch(e) {}
+      if (!d || typeof d !== 'object') { out.checked++; out.issues.garbage++; return; }
+      var before = JSON.stringify(d);
+      var leadIssues = [];
+      // Normalise fields (idempotent, mirrors ensureFullLeadAddress + fix-and-trim).
+      try {
+        ensureFullLeadAddress(d);
+        var _addr = String(d.address || d.fullAddress || '');
+        var _pc = String(d.postcode || '').toUpperCase().replace(/\s+/g, '');
+        if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/.test(String(d.postcode || '').trim())) {
+          var _m = _addr.match(/\b[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}\b/i);
+          if (_m) { var _pr = _m[0].toUpperCase().replace(/[^A-Z0-9]/g, ''); d.postcode = _pr.slice(0, _pr.length - 3) + ' ' + _pr.slice(-3); _pc = String(d.postcode).replace(/\s+/g, ''); }
+        }
+        // town: parse from address text, else cached town-from-postcode (free).
+        if (!d.town && !d.city) {
+          var _tc = parseTownCountyFromAddress(_addr, d.postcode || '');
+          if (_tc && _tc.town) { d.town = _tc.town; d.city = _tc.town; }
+          else { try { var _gt = require('./rightmove_scraper_v2').getTownForPostcode(d.postcode || ''); if (_gt) { d.town = _gt; d.city = _gt; } } catch(e) {} }
+        }
+        if (!d.county && d.postcode) { var _cy = countyFromPostcode(d.postcode); if (_cy) d.county = _cy; }
+        // premise + street
+        if (!d.building_number && !d.buildingNumber) { var _bn = extractMovingDoorNumber(_addr); if (_bn) { d.building_number = _bn; d.buildingNumber = _bn; } }
+        if (!d.street) d.street = extractMovingStreet(_addr);
+        // clean duplicated leading segments
+        var _p = String(d.address || d.fullAddress || '').replace(/^((?:Flat|Apartment|Unit|Maisonette|Room)\s+\d+[A-Za-z]?)\s+\1\b/i, '$1').replace(/^(\d+[A-Za-z]?)\s+(\1-\d+[A-Za-z]?)\b/i, '$2');
+        // rebuild a clean printable full address: premise+street, town, county, postcode
+        var _parts = [];
+        if (d.building_number || d.buildingNumber) _parts.push((d.building_number || d.buildingNumber) + (d.street ? ' ' + d.street : ''));
+        else if (d.street) _parts.push(d.street);
+        else if (_p && !/,/.test(_p)) _parts.push(_p);
+        if (d.town) _parts.push(d.town);
+        if (d.county) _parts.push(d.county);
+        if (d.postcode) _parts.push(d.postcode);
+        if (_parts.length) { var _fa = _parts.filter(Boolean).join(', '); d.fullAddress = dedupeAddressSegments(_fa); if (!d.address || !/,/.test(String(d.address || ''))) d.address = _fa; }
+        // Set address_line1/address1 used by buildStannpRecipientFromLead when present
+        if (d.building_number || d.street) { var _l1 = ((d.building_number || d.buildingNumber) ? (d.building_number || d.buildingNumber) + ' ' : '') + (d.street || ''); if (_l1.trim()) { d.address_line1 = _l1.trim(); d.address1 = _l1.trim(); } }
+      } catch(e2) {}
+      // Stannp readiness checks
+      var rcptF = buildStannpRecipientFromLead(d);
+      var hasPremise = /^\s*(flat|apartment|unit|maisonette|suite|room)\b|\d/.test(String(rcptF.address_line1 || '')) && (rcptF.address_line1 || '').trim().length > 2;
+      var hasStreet = hasStreetName(rcptF.address_line1 || '');
+      var pcValid = /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/.test(String(rcptF.postcode || '').trim());
+      var hasTown = (rcptF.city || '').trim().length >= 2;
+      if (!hasPremise) { leadIssues.push('missing_premise'); out.issues.missing_premise++; }
+      if (!hasStreet) { leadIssues.push('missing_street'); out.issues.missing_street++; }
+      if (!hasTown) { leadIssues.push('missing_town'); out.issues.missing_town++; }
+      if (!rcptF.postcode || !rcptF.postcode.trim()) { leadIssues.push('no_postcode'); out.issues.no_postcode++; }
+      else if (!pcValid) { leadIssues.push('invalid_postcode'); out.issues.invalid_postcode++; }
+      if (leadIssues.length) {
+        var cust = (dbA.customers || []).find(function(c) { return c.id === row.customer_id; });
+        var ck = cust ? cust.email : row.customer_id;
+        if (!issuesByCustomer[ck]) issuesByCustomer[ck] = [];
+        issuesByCustomer[ck].push({ product: prod, lead_id: row.id, issues: leadIssues, address: d.fullAddress || d.address || '' });
+        if (out.examples.length < 12) out.examples.push({ product: prod, customer: ck, lead_id: row.id, issues: leadIssues, address: rcptF.address_line1 + ', ' + rcptF.city + ', ' + rcptF.postcode });
+      } else out.ready++;
+      if (doFix && before !== JSON.stringify(d)) { row.data = JSON.stringify(d); out.fixed++; }
+      out.checked++;
+    });
+    if (doFix && out.fixed > 0) saveDb();
+    res.json({ success: true, fix: doFix, ...out, issues_by_customer: issuesByCustomer });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // DIAGNOSTIC: dump pool area distribution for a product
 app.get('/api/admin/pool-areas', adminAuth, (req, res) => {
   try {
