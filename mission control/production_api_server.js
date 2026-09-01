@@ -15392,6 +15392,12 @@ app.post('/api/admin/audit-stannp-addresses', adminAuth, async (req, res) => {
           if (_tc && _tc.town && !/^[A-Z]{1,2}$/.test(_tc.town)) { d.town = _tc.town; d.city = _tc.town; }
           else { try { var _gt = require('./rightmove_scraper_v2').getTownForPostcode(d.postcode || ''); if (_gt) { d.town = _gt; d.city = _gt; } } catch(e) {} }
         }
+        // TOWN-IS-A-STREET GUARD: a parsed town that ends in a street suffix is
+        // actually the STREET name (house-name addresses like "Mansewood, Dalrymple
+        // Street, Stranraer") — replace with the county/town so Stannp gets a town.
+        if (d.town && /\b(road|street|avenue|lane|drive|close|court|crescent|gardens|grove|terrace|way|walk|hill|place|mews|rise|row|park|square|green|broadway|path|view|gate|parade|way)\b$/i.test(String(d.town))) {
+          try { var _gt3 = require('./rightmove_scraper_v2').getTownForPostcode(d.postcode); if (_gt3) { d.town = _gt3; d.city = _gt3; } else { delete d.town; delete d.city; } } catch(e) { delete d.town; delete d.city; }
+        }
         if (!d.county && d.postcode) { var _cy = countyFromPostcode(d.postcode); if (_cy) d.county = _cy; }
         // premise + street
         if (!d.building_number && !d.buildingNumber) { var _bn = extractMovingDoorNumber(_addr); if (_bn) { d.building_number = _bn; d.buildingNumber = _bn; } }
@@ -15447,11 +15453,14 @@ app.post('/api/admin/audit-stannp-addresses', adminAuth, async (req, res) => {
       // Centre") is a valid UK mail premise even without a numbered street, so accept
       // a premise descriptor too. A bare person's name with no street is UNPOSTABLE.
       var rcptF = buildStannpRecipientFromLead(d);
-      var line1 = String(rcptF.address_line1 || '').trim();
+      var line1Raw = String(rcptF.address_line1 || '').trim();
+      // "C/O 4-5 Hauley Road" / "care of ..." is a valid mail premise — strip the
+      // care-of prefix before checking for a premise marker.
+      var line1 = line1Raw.replace(/^(c\/o|c\/0|care\s+of)\s+/i, '');
       var hasPremise = (line1.length > 2) && (
         /^\s*\d[0-9A-Za-z\/\-\s]*/.test(line1) ||
         /^\s*(flat|apartment|unit|maisonette|suite|room)\b/i.test(line1) ||
-        /\b(farm|house|hall|lodge|court|centre|center|business|manor|cottage|barn|mill|croft|villa|mews|gardens?|park|studio|school|surgery|estate|works|building|block|tower|garden|row|wharf|mills|acre)\b/i.test(line1)
+        /\b(farm|house|hall|lodge|court|centre|center|business|manor|cottage|barn|mill|croft|villa|mews|gardens?|park|studio|school|surgery|estate|works|building|block|tower|garden|row|wharf|mills|acre|post office|garage)\b/i.test(line1)
       );
       var hasStreet = hasStreetName(line1);
       var pcValid = /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/.test(String(rcptF.postcode || '').trim());
