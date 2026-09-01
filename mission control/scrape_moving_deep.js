@@ -349,11 +349,24 @@ function scrapeAreaApify(areaCode, outcodeId, maxProps, type) {
       var seen = new Set();
       var merged = [];
       allLeads.forEach(function(l) { var k = l.id || l.address || l.postcode || ''; if (k && !seen.has(k)) { seen.add(k); merged.push(l); } });
-      prevPool.forEach(function(l) { var k = l.id || l.address || l.postcode || ''; if (k && !seen.has(k) && isFresh(l)) { seen.add(k); merged.push(l); } });
-      merged = merged.filter(isFresh).slice(0, 6000);
+      // Keep FRESH previous-pool leads first, then older leads as FALLBACK so a
+      // 0-result or low-freshness scrape can NEVER empty the pool (an empty pool
+      // means no 9am delivery). Fresh leads are prioritized; older valid leads are
+      // kept as a safety net for the fallback delivery path.
+      var freshPrev = [];
+      var olderPrev = [];
+      prevPool.forEach(function(l) {
+        var k = l.id || l.address || l.postcode || '';
+        if (!k || seen.has(k)) return;
+        if (isFresh(l)) freshPrev.push(l); else olderPrev.push(l);
+      });
+      freshPrev.forEach(function(l) { var k = l.id || l.address || l.postcode || ''; if (!seen.has(k)) { seen.add(k); merged.push(l); } });
+      olderPrev.forEach(function(l) { var k = l.id || l.address || l.postcode || ''; if (!seen.has(k)) { seen.add(k); merged.push(l); } });
+      // Cap at 6000 total; never empty unless the pool genuinely has nothing.
+      if (merged.length > 6000) merged = merged.slice(0, 6000);
       fs.mkdirSync(DATA_DIR, { recursive: true });
       fs.writeFileSync(POOL_FILE, JSON.stringify(merged, null, 2));
-      log('[DEEP-SCRAPE] pool written: ' + merged.length + ' leads');
+      log('[DEEP-SCRAPE] pool written: ' + merged.length + ' leads (new=' + allLeads.length + ', prev-fresh=' + freshPrev.length + ', prev-older=' + olderPrev.length + ')');
       return merged;
     } catch(wErr) { log('[DEEP-SCRAPE] pool write error: ' + wErr.message); return null; }
   }
