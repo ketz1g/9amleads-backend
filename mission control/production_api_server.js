@@ -12932,6 +12932,9 @@ function clearStuckPausedFlags() {
     // Any paying customer stuck paused with no reason for > 24h gets unpaused.
     var cleared = 0;
     (dbj.customers || []).forEach(function(c) {
+      // NEVER auto-unpause test/seed accounts — they stay paused so the real
+      // customer pools aren't drained by the test fleet.
+      if (/test\.|@9amleads\.com|\.1788\d*@/i.test(String(c.email || ''))) return;
       if (c.plan && c.plan !== 'free_trial' && c.plan !== 'cancelled' && (c.leads_paused || c.auto_send_paused)) {
         if (!c.paused_at || (Date.now() - new Date(c.paused_at).getTime()) > 24*3600000) {
           var was = (c.leads_paused?'leads':'') + (c.auto_send_paused?'+auto_send':'');
