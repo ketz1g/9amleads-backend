@@ -10664,19 +10664,33 @@ app.post('/api/admin/pool/import', adminAuth, (req, res) => {
     var seen = {};
     pool.forEach(function(l) { if (l.id) seen[l.id] = 1; else if (l.url) seen['u:' + String(l.url).split('#')[0].split('?')[0]] = 1; });
     var added = 0;
+    var refreshed = 0;
+    var nowIso = new Date().toISOString();
     newLeads.forEach(function(l) {
       if (!l) return;
       if (!l.id) l.id = 'IMP_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
       var k = l.id || ('u:' + String(l.url || '').split('#')[0].split('?')[0]);
+      // FORCE freshness so imported leads are deliverable at the NEXT 9am delivery.
+      l.scrapedAt = nowIso;
+      l.firstVisibleDate = nowIso;
+      l.updateDate = nowIso;
+      var existing = pool.find(function(x) { return x.id === l.id; });
+      if (existing) {
+        existing.scrapedAt = nowIso; existing.firstVisibleDate = nowIso; existing.updateDate = nowIso;
+        if (l.address) existing.address = l.address;
+        if (l.postcode) existing.postcode = l.postcode;
+        if (l.fullAddress) existing.fullAddress = l.fullAddress;
+        if (l.building_number) existing.building_number = l.building_number;
+        refreshed++;
+        return;
+      }
       if (seen[k]) return;
       seen[k] = 1;
-      if (!l.scrapedAt) l.scrapedAt = new Date().toISOString();
-      if (!l.firstVisibleDate) l.firstVisibleDate = new Date().toISOString();
       pool.push(l);
       added++;
     });
     fs.writeFileSync(fn, JSON.stringify(pool, null, 2));
-    res.json({ success: true, product: prod, added: added, pool_total: pool.length });
+    res.json({ success: true, product: prod, added: added, refreshed: refreshed, pool_total: pool.length });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
