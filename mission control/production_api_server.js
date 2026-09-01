@@ -376,6 +376,13 @@ function ensureFullLeadAddress(l) {
         l.postcode = _pcRaw.slice(0, _pcRaw.length - 3) + ' ' + _pcRaw.slice(-3);
       }
     }
+    // COUNTY FALLBACK: run AFTER the postcode field is populated (the first check
+    // above runs before postcode extraction, so street-only leads never got a
+    // county). With a real postcode we can always attach at least a county.
+    if (!l.town && !l.city && !l.county && l.postcode) {
+      var _cnty2 = countyFromPostcode(l.postcode);
+      if (_cnty2) l.county = _cnty2;
+    }
     return l;
   } catch(e) { return l; }
 }
