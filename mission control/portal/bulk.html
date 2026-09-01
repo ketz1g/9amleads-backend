@@ -74,8 +74,13 @@ h3{font-size:15px;font-weight:700;margin-bottom:10px}
       <div class="banner" style="margin-bottom:16px">
         <div class="ic">📦</div>
         <div><b>Exclusive Lead Archive</b>
-          <div class="hint">Never-sent UK New Business leads, reserved for 9amLeads only. We print &amp; post your marketing materials to every single one. <b id="available" style="color:var(--green)">0 leads ready now</b>.</div>
+          <div class="hint">Never-sent UK New Business leads, reserved for 9amLeads only. We print &amp; post your <b>A5 leaflet</b> (front &amp; back) to every single one. <b id="available" style="color:var(--green)">0 leads ready now</b>.</div>
         </div>
+      </div>
+      <div id="previewBox" class="card" style="margin-bottom:16px">
+        <h3>&#128065; Preview (addresses masked until you buy)</h3>
+        <p class="hint" style="margin-bottom:10px">A sample of the companies in the archive right now. Full addresses are revealed in your dashboard once you purchase a pack.</p>
+        <div id="previewList"></div>
       </div>
       <div class="packs">
         <div class="pack">
@@ -97,9 +102,9 @@ h3{font-size:15px;font-weight:700;margin-bottom:10px}
         <h3>How it works</h3>
         <div class="hint">
           1. <b>Buy a pack</b> &mdash; 50 or 100 exclusive never-sent UK New Business leads.<br>
-          2. <b>Review</b> &mdash; check each company and address before we post.<br>
-          3. <b>Confirm &amp; Post</b> &mdash; we print &amp; mail your marketing materials to every lead.<br>
-          <span style="font-size:12px">Your flyer/letter must be loaded in <b>Print &amp; Post</b> first (Step 2). New leads mature into the archive as they age 3&ndash;7 days without being sent.</span>
+          2. <b>Full addresses revealed</b> in your dashboard once purchased.<br>
+          3. <b>Confirm &amp; Post</b> &mdash; we print &amp; post your <b>A5 leaflet (front &amp; back)</b> to every lead.<br>
+          <span style="font-size:12px">Your leaflet front and back must be loaded in <b>Print &amp; Post</b> first (Step 2). New leads mature into the archive as they age 3&ndash;7 days without being sent.</span>
         </div>
       </div>
     </div>
@@ -109,7 +114,7 @@ h3{font-size:15px;font-weight:700;margin-bottom:10px}
       <div class="card">
         <h3>&#128230; Your pack &mdash; <span id="packCount">0</span> exclusive UK leads</h3>
         <p class="hint" style="margin-bottom:12px">These leads were never sent to anyone else. Review them, then we print &amp; post your materials to every one.</p>
-        <div id="materialsWarn" class="warn" style="display:none">No marketing materials loaded yet. Add a flyer or letter in <b>Print &amp; Post</b> (Step 2) to send your pack.</div>
+        <div id="materialsWarn" class="warn" style="display:none">Bulk packs are posted as <b>A5 leaflets</b> — you need BOTH your <b>leaflet front AND leaflet back</b> loaded in Print &amp; Post (Step 2) before you can send your pack.</div>
         <div class="lead-list" id="leadsList"></div>
         <button class="btn btn-green" id="sendBtn" onclick="sendBulk()"><i class="fas fa-paper-plane"></i> Confirm &amp; Send all to Print &amp; Post</button>
         <span style="font-size:12px;color:var(--muted);margin-left:10px">One click posts every lead in this pack.</span>
@@ -154,6 +159,15 @@ function load(){
     document.getElementById('buyBox').style.display = hasPack ? 'none' : 'block';
     document.getElementById('reviewBox').style.display = hasPack ? 'block' : 'none';
     document.getElementById('sentBox').style.display = (!hasPack && s.pack && s.pack.status === 'sent') ? 'block' : 'none';
+    if (!hasPack) {
+      // MASKED PREVIEW pre-payment: company + town + masked street + outward postcode
+      var pl = document.getElementById('previewList');
+      if (pl) {
+        pl.innerHTML = (s.preview && s.preview.length) ? s.preview.map(function(p){
+          return '<div class="lead-row"><b>' + esc(p.company) + '</b><br><span class="addr">' + esc(p.street_masked || '') + ', ' + esc(p.town || '') + ', ' + esc(p.postcode_masked || '') + '</span></div>';
+        }).join('') : '<div class="hint" style="padding:16px">The archive is maturing — check back in a day or two.</div>';
+      }
+    }
     if (hasPack) {
       document.getElementById('packCount').textContent = s.reserved_count || s.pack.count;
       document.getElementById('materialsWarn').style.display = s.materials_ready ? 'none' : 'block';
