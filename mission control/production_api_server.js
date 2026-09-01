@@ -15405,7 +15405,7 @@ app.post('/api/admin/audit-stannp-addresses', adminAuth, async (req, res) => {
         if (d.town) _parts.push(d.town);
         if (d.county) _parts.push(d.county);
         if (d.postcode) _parts.push(d.postcode);
-        if (_parts.length) { var _fa = _parts.filter(Boolean).join(', '); d.fullAddress = dedupeAddressSegments(_fa); if (!d.address || !/,/.test(String(d.address || ''))) d.address = _fa; }
+        if (_parts.length) { var _fa = _parts.filter(Boolean).join(', '); d.fullAddress = dedupeAddressSegments(_fa); d.address = _fa; }
         // Set address_line1/address1 used by buildStannpRecipientFromLead when present
         if (d.building_number || d.street) { var _l1 = ((d.building_number || d.buildingNumber) ? (d.building_number || d.buildingNumber) + ' ' : '') + (d.street || ''); if (_l1.trim()) { d.address_line1 = _l1.trim(); d.address1 = _l1.trim(); } }
       } catch(e2) {}
