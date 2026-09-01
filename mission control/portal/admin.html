@@ -1467,12 +1467,12 @@ async function viewCustomerLeads(email) {
         const ed = await er.json();
         h += '<div style="margin-top:18px;border-top:2px solid #e2e8f0;padding-top:12px"><div style="font-weight:700;font-size:13px;margin-bottom:8px;color:#1e293b">Email History (' + ed.count + ')</div>';
         if (ed.emails && ed.emails.length) {
-          h += '<table style="width:100%;border-collapse:collapse"><tr style="background:#f8fafc"><th style="padding:6px;font-size:11px;text-align:left;color:#64748b">When (UK)</th><th style="padding:6px;font-size:11px;text-align:left;color:#64748b">Type</th><th style="padding:6px;font-size:11px;text-align:left;color:#64748b">Subject</th></tr>';
+          h += '<table style="width:100%;border-collapse:collapse"><tr style="background:#f8fafc"><th style="padding:6px;font-size:11px;text-align:left;color:#64748b">When (UK)</th><th style="padding:6px;font-size:11px;text-align:left;color:#64748b">Type</th><th style="padding:6px;font-size:11px;text-align:left;color:#64748b">Subject</th><th style="padding:6px;font-size:11px;text-align:left;color:#64748b"></th></tr>';
           ed.emails.forEach(function(e) {
             var uk = '-';
             try { uk = new Date(e.at).toLocaleString('en-GB', { timeZone: 'Europe/London', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch(e2) { uk = e.at || '-'; }
-            var cls = e.type === 'daily_lead' ? '#22c55e' : (e.type === 'alert' ? '#dc2626' : (e.type === 'print_post' ? '#7c3aed' : (e.type === 'billing' ? '#d97706' : '#64748b')));
-            h += '<tr><td style="padding:6px;font-size:11px;white-space:nowrap">' + uk + '</td><td style="padding:6px;font-size:11px"><span style="color:' + cls + ';font-weight:600">' + (e.type || 'other') + '</span></td><td style="padding:6px;font-size:11px">' + esc(e.subject || '') + '</td></tr>';
+            var cls = e.type === 'daily_lead' ? '#22c55e' : (e.type === 'alert' ? '#dc2626' : (e.type === 'print_post' ? '#7c3aed' : (e.type === 'billing' ? '#d97706' : (e.type === 'bulk' ? '#0891b2' : '#64748b'))));
+            h += '<tr><td style="padding:6px;font-size:11px;white-space:nowrap">' + uk + '</td><td style="padding:6px;font-size:11px"><span style="color:' + cls + ';font-weight:600">' + (e.type || 'other') + '</span></td><td style="padding:6px;font-size:11px">' + esc(e.subject || '') + '</td><td style="padding:6px;font-size:11px;text-align:right">' + (e.has_html ? '<button class="btn btn-sm btn-outline" onclick="viewEmailContent(\'' + e.id + '\')">View</button>' : '<span style="color:#94a3b8;font-size:10px">no body</span>') + '</td></tr>';
           });
           h += '</table>';
         } else {
@@ -1483,6 +1483,26 @@ async function viewCustomerLeads(email) {
     } catch(eh) {}
     buildModal('Customer Dashboard: ' + email, h);
   } catch (e) { buildModal('Leads', '<div style="color:#ef4444">Error: ' + e.message + '</div>'); }
+}
+
+async function viewEmailContent(id) {
+  try {
+    var r = await fetch(API + '/api/admin/customer-email?id=' + encodeURIComponent(id), { headers: adminHeaders() });
+    var d = await r.json();
+    if (!d.success || !d.html) { alert(d.error || 'This email has no saved body.'); return; }
+    var overlay = document.getElementById('emailViewOverlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'emailViewOverlay';
+      overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,.6);z-index:99999;display:flex;align-items:flex-start;justify-content:center;padding:30px 20px;overflow:auto';
+      document.body.appendChild(overlay);
+    }
+    overlay.innerHTML = '<div style="background:#fff;border-radius:14px;max-width:760px;width:100%;padding:20px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="font-size:14px;font-family:Outfit,sans-serif;color:#1e293b"><b>' + esc(d.subject || '') + '</b><div style="font-size:11px;color:#64748b;margin-top:2px">' + esc(d.email || '') + ' &middot; ' + (function(){ try { return new Date(d.at).toLocaleString('en-GB', { timeZone:'Europe/London', dateStyle:'medium', timeStyle:'short' }); } catch(e){ return d.at || ''; } })() + '</div></div>' +
+      '<button onclick="document.getElementById(\'emailViewOverlay\').style.display=\'none\'" style="background:none;border:none;color:#94a3b8;font-size:22px;cursor:pointer">&times;</button></div>' +
+      '<iframe srcdoc="' + esc(d.html).replace(/"/g, '&quot;') + '" style="width:100%;height:72vh;border:1px solid #e2e8f0;border-radius:10px;background:#fff"></iframe></div>';
+    overlay.style.display = 'flex';
+  } catch (e) { alert('Could not load email content: ' + e.message); }
 }
 
 async function loadRejectedLeads() {

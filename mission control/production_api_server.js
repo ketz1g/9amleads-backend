@@ -11113,7 +11113,7 @@ function sendBrevoEmail(to, subject, htmlContent) {
         res.on('end', () => {
           if (res.statusCode < 300) {
             bumpBrevoSentToday();
-            logCustomerEmail(to, subject);
+            logCustomerEmail(to, subject, htmlContent);
             try { resolve(JSON.parse(body)); } catch(e) { resolve({}); }
           } else if ((res.statusCode === 429 || res.statusCode >= 500) && attemptNum < 4) {
             var delay = 1000 * Math.pow(2, attemptNum - 1);
@@ -11153,7 +11153,7 @@ function emailTypeFromSubject(subject) {
   if (/prospect|outreach/i.test(s)) return 'marketing';
   return 'other';
 }
-function logCustomerEmail(to, subject) {
+function logCustomerEmail(to, subject, htmlContent) {
   try {
     var em = to && (typeof to === 'object' ? to.email : to) ? (typeof to === 'object' ? to.email : to) : '';
     if (!em) return;
@@ -11165,14 +11165,18 @@ function logCustomerEmail(to, subject) {
       name: to && typeof to === 'object' ? (to.name || '') : '',
       subject: String(subject || ''),
       type: emailTypeFromSubject(subject),
+      html: String(htmlContent || '').substring(0, 60000),
       at: new Date().toISOString()
     });
-    if (dbL.email_log.length > 1500) dbL.email_log.splice(0, dbL.email_log.length - 1500);
+    // Bound the log (full HTML is heavy) — keep the most recent 400 entries.
+    if (dbL.email_log.length > 400) dbL.email_log.splice(0, dbL.email_log.length - 400);
     saveDb();
   } catch(e) { console.log('[EMAIL-LOG] log error:', e.message); }
 }
 
 // GET /api/admin/customer-emails?email=X — the customer's recent email history
+// (id + subject + type + time only — the body is fetched on demand by id so the
+// admin list stays light).
 app.get('/api/admin/customer-emails', adminAuth, (req, res) => {
   try {
     var em = String((req.query && req.query.email) || '').toLowerCase().trim();
@@ -11185,9 +11189,21 @@ app.get('/api/admin/customer-emails', adminAuth, (req, res) => {
       var k = e.subject + '|' + String(e.at || '').substring(0, 16);
       if (seen[k]) return;
       seen[k] = 1;
-      out.push(e);
+      out.push({ id: e.id, subject: e.subject, type: e.type, at: e.at, has_html: !!e.html });
     });
-    res.json({ success: true, email: em, count: out.length, emails: out.slice(0, 60) });
+    res.json({ success: true, email: em, count: out.length, emails: out.slice(0, 80) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/customer-email?id=X — fetch ONE email's full content for viewing
+app.get('/api/admin/customer-email', adminAuth, (req, res) => {
+  try {
+    var id = String((req.query && req.query.id) || '');
+    if (!id) return res.status(400).json({ error: 'id required' });
+    var dbF = getDb();
+    var e = (dbF.email_log || []).find(function(x) { return x.id === id; });
+    if (!e) return res.status(404).json({ error: 'Email not found' });
+    res.json({ success: true, email: e.email, subject: e.subject, type: e.type, at: e.at, html: e.html || '' });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
