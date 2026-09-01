@@ -13793,6 +13793,13 @@ function sendDailyDeliveryPreview(when) {
 }
 cron.schedule('30 6 * * 1-5', function() { try { sendDailyDeliveryPreview('pre'); } catch(e) {} });
 cron.schedule('10 8 * * 1-5', function() { try { sendDailyDeliveryPreview('post'); } catch(e) {} });
+// POST-DELIVERY STANNP NORMALISE (09:45 UK, weekdays): after the 9am send, normalise
+// every delivered non-tender lead's address so ALL dashboard leads are print & post
+// ready without manual fixes. Idempotent + self-healing — covers moving, probate,
+// newbusiness and planning (never tenders).
+cron.schedule('45 9 * * 1-5', function() {
+  try { normaliseAllDeliveredStannpAddresses(); } catch(e) { console.log('[STANNP-NORMALISE-CRON] ' + e.message); }
+}, { timezone: 'Europe/London' });
 // POST /api/admin/email-preview — manually trigger the pre-delivery email now.
 app.post('/api/admin/email-preview', adminAuth, (req, res) => {
   try {
@@ -15341,6 +15348,136 @@ app.post('/api/admin/backfill-delivered-addresses', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ===== STANNP ADDRESS NORMALISER (shared) =====
+// Idempotent normalisation that makes a lead's stored data Stannp-ready: extracts a
+// clean premise + street, derives a real town/county from the postcode, rebuilds a
+// clean printable fullAddress, and sets a single-line address_line1. Runs on every
+// delivered lead AFTER each 9am delivery (cron) so future leads are always print &
+// post ready without manual fixes. Mirrors the inline logic of the audit endpoint.
+function normalizeStannpAddress(d) {
+  try {
+    if (!d || typeof d !== 'object') return d;
+    ensureFullLeadAddress(d);
+    var _addr = String(d.address || d.fullAddress || '');
+    if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/.test(String(d.postcode || '').trim())) {
+      var _m = _addr.match(/\b[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}\b/i);
+      if (_m) { var _pr = _m[0].toUpperCase().replace(/[^A-Z0-9]/g, ''); d.postcode = _pr.slice(0, _pr.length - 3) + ' ' + _pr.slice(-3); }
+    }
+    // TOWN SANITIZER: a 1-2 letter town/city that is really a postcode area
+    // ("L", "N", "SW" leaked into the address as a city segment) is garbage.
+    if (/^[A-Z]{1,2}$/.test(String(d.city || d.town || '').trim()) && d.postcode) {
+      try {
+        var _gt2 = require('./rightmove_scraper_v2').getTownForPostcode(d.postcode);
+        if (_gt2) { d.town = _gt2; d.city = _gt2; }
+        else { delete d.town; delete d.city; }
+      } catch(e) { delete d.town; delete d.city; }
+    }
+    // town: parse from address text, else cached town-from-postcode (free).
+    if (!d.town && !d.city) {
+      var _tc = parseTownCountyFromAddress(_addr, d.postcode || '');
+      if (_tc && _tc.town && !/^[A-Z]{1,2}$/.test(_tc.town)) { d.town = _tc.town; d.city = _tc.town; }
+      else { try { var _gt = require('./rightmove_scraper_v2').getTownForPostcode(d.postcode || ''); if (_gt) { d.town = _gt; d.city = _gt; } } catch(e) {} }
+    }
+    // TOWN-IS-A-STREET GUARD: a parsed town that ends in a street suffix is actually
+    // the STREET name (house-name addresses) — replace with the town-from-postcode.
+    if (d.town && /\b(road|street|avenue|lane|drive|close|court|crescent|gardens|grove|terrace|way|walk|hill|place|mews|rise|row|park|square|green|broadway|path|view|gate|parade|way)\b$/i.test(String(d.town))) {
+      try { var _gt3 = require('./rightmove_scraper_v2').getTownForPostcode(d.postcode); if (_gt3) { d.town = _gt3; d.city = _gt3; } else { delete d.town; delete d.city; } } catch(e) { delete d.town; delete d.city; }
+    }
+    if (!d.county && d.postcode) { var _cy = countyFromPostcode(d.postcode); if (_cy) d.county = _cy; }
+    // premise + street
+    if (!d.building_number && !d.buildingNumber) { var _bn = extractMovingDoorNumber(_addr); if (_bn) { d.building_number = _bn; d.buildingNumber = _bn; } }
+    if (!d.street) d.street = extractMovingStreet(_addr);
+    // STREET/BUILDING SANITIZERS: a "street" that contains commas (or equals the whole
+    // address) is the full address leaked into the field. Re-derive the real street +
+    // building number by finding the address SEGMENT that is actually a street.
+    var _streetParts = (function() {
+      var _segs = String(d.address || d.fullAddress || '').split(',').map(function(x){ return String(x).trim(); }).filter(Boolean);
+      for (var si = 0; si < _segs.length; si++) {
+        var _seg = _segs[si];
+        var _numM = _seg.match(/^\s*((?:Flat|Apartment|Unit|Suite|Maisonette|Room)\s+[A-Z0-9\-]+|\d{1,5}[A-Za-z]?(?:[-\u2013]\d{1,5}[A-Za-z]?)?)\s+(.+)$/i);
+        var _name = _numM ? _numM[2] : _seg;
+        if (hasStreetName(_name)) {
+          return { building_number: _numM ? String(_numM[1]).replace(/,\s*$/, '').trim() : '', street: _name.trim() };
+        }
+      }
+      return null;
+    })();
+    if (_streetParts) {
+      if (_streetParts.street) d.street = _streetParts.street;
+      if (_streetParts.building_number) { d.building_number = _streetParts.building_number; d.buildingNumber = _streetParts.building_number; }
+    }
+    // Drop polluted street/building fields (the full address leaked into them).
+    if (d.street && (String(d.street).indexOf(',') !== -1 || String(d.street).trim().toLowerCase() === _addr.trim().toLowerCase())) delete d.street;
+    if ((d.building_number || d.buildingNumber) && String(d.building_number || d.buildingNumber).indexOf(',') !== -1) { delete d.building_number; delete d.buildingNumber; }
+    // clean duplicated leading segments
+    var _p = String(d.address || d.fullAddress || '').replace(/^((?:Flat|Apartment|Unit|Maisonette|Room)\s+\d+[A-Za-z]?)\s+\1\b/i, '$1').replace(/^(\d+[A-Za-z]?)\s+(\1-\d+[A-Za-z]?)\b/i, '$2');
+    // rebuild a clean printable full address: premise+street, town, county, postcode
+    var _parts = [];
+    if (d.building_number || d.buildingNumber) _parts.push((d.building_number || d.buildingNumber) + (d.street ? ' ' + d.street : ''));
+    else if (d.street) _parts.push(d.street);
+    else if (_p && !/,/.test(_p)) _parts.push(_p);
+    if (d.town) _parts.push(d.town);
+    if (d.county) _parts.push(d.county);
+    if (d.postcode) _parts.push(d.postcode);
+    if (_parts.length) { var _fa = _parts.filter(Boolean).join(', '); d.fullAddress = dedupeAddressSegments(_fa); d.address = _fa; }
+    // Set a clean single-line address_line1/address1 for Stannp's address1 field.
+    var _l1 = '';
+    if (d.building_number || d.buildingNumber) _l1 = ((d.building_number || d.buildingNumber) + ' ' + (d.street || '')).trim();
+    else if (d.street) _l1 = d.street;
+    if (!_l1) {
+      var _first = String(d.address || d.fullAddress || '').split(',')[0].trim();
+      if (_first && !/^[A-Z]{1,2}$/.test(_first)) _l1 = _first;
+    }
+    if (_l1) { d.address_line1 = _l1; d.address1 = _l1; }
+  } catch(e) {}
+  return d;
+}
+
+// Stannp readiness issues for a (normalized) lead. Returns { rcptF, issues }.
+function stannpReadiness(d) {
+  var issues = [];
+  var rcptF = buildStannpRecipientFromLead(d);
+  var line1Raw = String(rcptF.address_line1 || '').trim();
+  var line1 = line1Raw.replace(/^(c\/o|c\/0|care\s+of)\s+/i, '');
+  var hasPremise = (line1.length > 2) && (
+    /^\s*\d[0-9A-Za-z\/\-\s]*/.test(line1) ||
+    /^\s*(flat|apartment|unit|maisonette|suite|room)\b/i.test(line1) ||
+    /\b(farm|house|hall|lodge|court|centre|center|business|manor|cottage|barn|mill|croft|villa|mews|gardens?|park|studio|school|surgery|estate|works|building|block|tower|garden|row|wharf|mills|acre|post office|garage)\b/i.test(line1)
+  );
+  var hasStreet = hasStreetName(line1);
+  var pcValid = /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/.test(String(rcptF.postcode || '').trim());
+  var hasTown = (rcptF.city || '').trim().length >= 2;
+  if (!hasPremise) issues.push('missing_premise');
+  if (!hasPremise && !hasStreet) issues.push('missing_street');
+  if (!hasTown) issues.push('missing_town');
+  if (!rcptF.postcode || !rcptF.postcode.trim()) issues.push('no_postcode');
+  else if (!pcValid) issues.push('invalid_postcode');
+  return { rcptF: rcptF, issues: issues };
+}
+
+// POST-DELIVERY SAFETY NET: normalise every delivered non-tender lead so future
+// dashboard leads are always Stannp-ready (runs daily 09:45 UK after the 9am send).
+function normaliseAllDeliveredStannpAddresses() {
+  try {
+    var dbN = getDb();
+    var prods = ['moving', 'probate', 'newbusiness', 'planning'];
+    var changed = 0, scanned = 0;
+    (dbN.leads || []).forEach(function(row) {
+      if (prods.indexOf(String(row.product || '')) === -1) return;
+      if (!row.delivered && row.status !== 'delivered') return;
+      var d = null; try { d = JSON.parse(row.data || '{}'); } catch(e) {}
+      if (!d || typeof d !== 'object') return;
+      scanned++;
+      var before = JSON.stringify(d);
+      normalizeStannpAddress(d);
+      if (before !== JSON.stringify(d)) { row.data = JSON.stringify(d); changed++; }
+    });
+    if (changed > 0) { saveDb(); console.log('[STANNP-NORMALISE] cleaned ' + changed + ' delivered lead(s) (' + scanned + ' scanned)'); }
+    else console.log('[STANNP-NORMALISE] no changes (' + scanned + ' delivered leads already clean)');
+    return { scanned: scanned, changed: changed };
+  } catch(e) { console.log('[STANNP-NORMALISE] error: ' + e.message); return { error: e.message }; }
+}
+
 // ===== STANNP ADDRESS AUDIT + FIX =====
 // POST /api/admin/audit-stannp-addresses — scan EVERY delivered dashboard lead for
 // every product EXCEPT tenders and report whether it can be printed & posted by
@@ -15366,110 +15503,17 @@ app.post('/api/admin/audit-stannp-addresses', adminAuth, async (req, res) => {
       if (!d || typeof d !== 'object') { out.checked++; out.issues.garbage++; return; }
       var before = JSON.stringify(d);
       var leadIssues = [];
-      // Normalise fields (idempotent, mirrors ensureFullLeadAddress + fix-and-trim).
-      try {
-        ensureFullLeadAddress(d);
-        var _addr = String(d.address || d.fullAddress || '');
-        var _pc = String(d.postcode || '').toUpperCase().replace(/\s+/g, '');
-        if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/.test(String(d.postcode || '').trim())) {
-          var _m = _addr.match(/\b[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}\b/i);
-          if (_m) { var _pr = _m[0].toUpperCase().replace(/[^A-Z0-9]/g, ''); d.postcode = _pr.slice(0, _pr.length - 3) + ' ' + _pr.slice(-3); _pc = String(d.postcode).replace(/\s+/g, ''); }
-        }
-        // TOWN SANITIZER: a 1-2 letter town/city that is really a postcode area
-        // ("L", "N", "SW" leaked into the address as a city segment) is garbage.
-        // Run it FIRST (covers the stored city field too) so the town derivation
-        // below can replace it with a real town-from-postcode.
-        if (/^[A-Z]{1,2}$/.test(String(d.city || d.town || '').trim()) && d.postcode) {
-          try {
-            var _gt2 = require('./rightmove_scraper_v2').getTownForPostcode(d.postcode);
-            if (_gt2) { d.town = _gt2; d.city = _gt2; }
-            else { delete d.town; delete d.city; }
-          } catch(e) { delete d.town; delete d.city; }
-        }
-        // town: parse from address text, else cached town-from-postcode (free).
-        if (!d.town && !d.city) {
-          var _tc = parseTownCountyFromAddress(_addr, d.postcode || '');
-          if (_tc && _tc.town && !/^[A-Z]{1,2}$/.test(_tc.town)) { d.town = _tc.town; d.city = _tc.town; }
-          else { try { var _gt = require('./rightmove_scraper_v2').getTownForPostcode(d.postcode || ''); if (_gt) { d.town = _gt; d.city = _gt; } } catch(e) {} }
-        }
-        // TOWN-IS-A-STREET GUARD: a parsed town that ends in a street suffix is
-        // actually the STREET name (house-name addresses like "Mansewood, Dalrymple
-        // Street, Stranraer") — replace with the county/town so Stannp gets a town.
-        if (d.town && /\b(road|street|avenue|lane|drive|close|court|crescent|gardens|grove|terrace|way|walk|hill|place|mews|rise|row|park|square|green|broadway|path|view|gate|parade|way)\b$/i.test(String(d.town))) {
-          try { var _gt3 = require('./rightmove_scraper_v2').getTownForPostcode(d.postcode); if (_gt3) { d.town = _gt3; d.city = _gt3; } else { delete d.town; delete d.city; } } catch(e) { delete d.town; delete d.city; }
-        }
-        if (!d.county && d.postcode) { var _cy = countyFromPostcode(d.postcode); if (_cy) d.county = _cy; }
-        // premise + street
-        if (!d.building_number && !d.buildingNumber) { var _bn = extractMovingDoorNumber(_addr); if (_bn) { d.building_number = _bn; d.buildingNumber = _bn; } }
-        if (!d.street) d.street = extractMovingStreet(_addr);
-        // STREET/BUILDING SANITIZERS: a "street" that contains commas (or equals the
-        // whole address) is the full address leaked into the field. Re-derive the real
-        // street + building number by finding the address SEGMENT that is actually a
-        // street (has a street suffix). A named property ("Will Farm") stays as line1.
-        var _streetParts = (function() {
-          var _segs = String(d.address || d.fullAddress || '').split(',').map(function(x){ return String(x).trim(); }).filter(Boolean);
-          for (var si = 0; si < _segs.length; si++) {
-            var _seg = _segs[si];
-            var _numM = _seg.match(/^\s*((?:Flat|Apartment|Unit|Suite|Maisonette|Room)\s+[A-Z0-9\-]+|\d{1,5}[A-Za-z]?(?:[-\u2013]\d{1,5}[A-Za-z]?)?)\s+(.+)$/i);
-            var _name = _numM ? _numM[2] : _seg;
-            if (hasStreetName(_name)) {
-              return { building_number: _numM ? String(_numM[1]).replace(/,\s*$/, '').trim() : '', street: _name.trim() };
-            }
-          }
-          return null;
-        })();
-        if (_streetParts) {
-          if (_streetParts.street) d.street = _streetParts.street;
-          if (_streetParts.building_number) { d.building_number = _streetParts.building_number; d.buildingNumber = _streetParts.building_number; }
-        }
-        // If no numbered street segment was found, drop the polluted street field so
-        // the rebuild falls back to the first segment (named property / area line).
-        if (d.street && (String(d.street).indexOf(',') !== -1 || String(d.street).trim().toLowerCase() === _addr.trim().toLowerCase())) delete d.street;
-        if ((d.building_number || d.buildingNumber) && String(d.building_number || d.buildingNumber).indexOf(',') !== -1) { delete d.building_number; delete d.buildingNumber; }
-        // clean duplicated leading segments
-        var _p = String(d.address || d.fullAddress || '').replace(/^((?:Flat|Apartment|Unit|Maisonette|Room)\s+\d+[A-Za-z]?)\s+\1\b/i, '$1').replace(/^(\d+[A-Za-z]?)\s+(\1-\d+[A-Za-z]?)\b/i, '$2');
-        // rebuild a clean printable full address: premise+street, town, county, postcode
-        var _parts = [];
-        if (d.building_number || d.buildingNumber) _parts.push((d.building_number || d.buildingNumber) + (d.street ? ' ' + d.street : ''));
-        else if (d.street) _parts.push(d.street);
-        else if (_p && !/,/.test(_p)) _parts.push(_p);
-        if (d.town) _parts.push(d.town);
-        if (d.county) _parts.push(d.county);
-        if (d.postcode) _parts.push(d.postcode);
-        if (_parts.length) { var _fa = _parts.filter(Boolean).join(', '); d.fullAddress = dedupeAddressSegments(_fa); d.address = _fa; }
-        // Set a clean single-line address_line1/address1 for Stannp's address1 field:
-        // premise+street, else street, else the FIRST segment (named property such as
-        // "Will Farm" / "Penstraze Business Centre"). NEVER a comma-joined full address.
-        var _l1 = '';
-        if (d.building_number || d.buildingNumber) _l1 = ((d.building_number || d.buildingNumber) + ' ' + (d.street || '')).trim();
-        else if (d.street) _l1 = d.street;
-        if (!_l1) {
-          var _first = String(d.address || d.fullAddress || '').split(',')[0].trim();
-          if (_first && !/^[A-Z]{1,2}$/.test(_first)) _l1 = _first;
-        }
-        if (_l1) { d.address_line1 = _l1; d.address1 = _l1; }
-      } catch(e2) {}
-      // Stannp readiness checks. A named property ("Will Farm", "Penstraze Business
-      // Centre") is a valid UK mail premise even without a numbered street, so accept
-      // a premise descriptor too. A bare person's name with no street is UNPOSTABLE.
-      var rcptF = buildStannpRecipientFromLead(d);
-      var line1Raw = String(rcptF.address_line1 || '').trim();
-      // "C/O 4-5 Hauley Road" / "care of ..." is a valid mail premise — strip the
-      // care-of prefix before checking for a premise marker.
-      var line1 = line1Raw.replace(/^(c\/o|c\/0|care\s+of)\s+/i, '');
-      var hasPremise = (line1.length > 2) && (
-        /^\s*\d[0-9A-Za-z\/\-\s]*/.test(line1) ||
-        /^\s*(flat|apartment|unit|maisonette|suite|room)\b/i.test(line1) ||
-        /\b(farm|house|hall|lodge|court|centre|center|business|manor|cottage|barn|mill|croft|villa|mews|gardens?|park|studio|school|surgery|estate|works|building|block|tower|garden|row|wharf|mills|acre|post office|garage)\b/i.test(line1)
-      );
-      var hasStreet = hasStreetName(line1);
-      var pcValid = /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/.test(String(rcptF.postcode || '').trim());
-      var hasTown = (rcptF.city || '').trim().length >= 2;
-      if (!hasPremise) { leadIssues.push('missing_premise'); out.issues.missing_premise++; }
-      if (!hasPremise && !hasStreet) { leadIssues.push('missing_street'); out.issues.missing_street++; }
-      if (!hasTown) { leadIssues.push('missing_town'); out.issues.missing_town++; }
-      if (!rcptF.postcode || !rcptF.postcode.trim()) { leadIssues.push('no_postcode'); out.issues.no_postcode++; }
-      else if (!pcValid) { leadIssues.push('invalid_postcode'); out.issues.invalid_postcode++; }
+      // Normalise fields (idempotent, shared with the post-delivery cron).
+      if (doFix) normalizeStannpAddress(d);
+      // Stannp readiness checks (shared).
+      var _read = stannpReadiness(d);
+      var rcptF = _read.rcptF;
+      leadIssues = _read.issues;
+      out.issues.missing_premise += leadIssues.indexOf('missing_premise') !== -1 ? 1 : 0;
+      out.issues.missing_street += leadIssues.indexOf('missing_street') !== -1 ? 1 : 0;
+      out.issues.missing_town += leadIssues.indexOf('missing_town') !== -1 ? 1 : 0;
+      out.issues.no_postcode += leadIssues.indexOf('no_postcode') !== -1 ? 1 : 0;
+      out.issues.invalid_postcode += leadIssues.indexOf('invalid_postcode') !== -1 ? 1 : 0;
       if (leadIssues.length) {
         var cust = (dbA.customers || []).find(function(c) { return c.id === row.customer_id; });
         var ck = cust ? cust.email : row.customer_id;
