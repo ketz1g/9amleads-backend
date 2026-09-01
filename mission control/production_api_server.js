@@ -9177,6 +9177,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
   var candidates = [];
   var seen = {};
   var _sharedSeen = sharedSeen || {};
+  var candidateErrors = (cust.email === 'info@afsremovals.com') ? [] : null;
   // A property lead is only deliverable (Print & Post) with a confirmed door number
   // AND a full postcode — mirrors the delivery door-number gate exactly.
   function mailOK(addr, pc) { return hasUsablePremiseAddress(addr, pc) && /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(pc || '').trim()); }
@@ -9196,7 +9197,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
       if (ukwide || (areas.indexOf(pcArea) !== -1 && (movingType !== 'residential' || !isCommercialLead(l)) && (movingType !== 'commercial' || isCommercialLead(l)))) matched = true;
       if (matched) {
         var vReason = validateMovingLead({ fullAddress: l.fullAddress || l.address || '', postcode: l.postcode || '', url: l.url || '' });
-        if (vReason) continue;
+        if (vReason) { if (candidateErrors) candidateErrors.push('area=' + pcArea + ' addr=' + String(l.fullAddress || l.address || '').slice(0, 40) + ' -> ' + vReason); continue; }
       }
     } else {
       if (ukwide) matched = true;
@@ -9355,7 +9356,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
   }
   var fallbackCount = out.filter(function(o) { return !o.in_area; }).length;
   var fallbackNote = fallbackCount ? (fallbackCount + ' lead' + (fallbackCount > 1 ? 's' : '') + ' from closest postcode' + (fallbackCount > 1 ? 's' : '') + ' (your chosen areas were short this morning)') : '';
-  return { email: cust.email, company: cust.company || '', product: cust.product, plan: cust.plan, areas: areas, promised: limit, count: out.length, leads: out, fallback_count: fallbackCount, fallback_note: fallbackNote, error: out.length < limit ? 'supply low in ' + areas.join(', ') : '' };
+  return { email: cust.email, company: cust.company || '', product: cust.product, plan: cust.plan, areas: areas, promised: limit, count: out.length, leads: out, fallback_count: fallbackCount, fallback_note: fallbackNote, error: out.length < limit ? 'supply low in ' + areas.join(', ') : '', debug: (cust.email === 'info@afsremovals.com') ? { pool_total: pool.length, interleaved: interleaved.length, candidate_errors: candidateErrors } : undefined };
 }
 
 // ===== POST-SCRAPE PAF ENRICHMENT =====
