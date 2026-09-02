@@ -114,12 +114,15 @@ async function load() {
     var rows = '';
     (d.leads || []).forEach(function(l) {
       var st = l.status === 'delivered' ? '<span class="badge badge-delivered">delivered</span>' : (l.rejected ? '<span class="badge badge-rejected" style="background:#f87171;color:#fff">rejected</span>' : '<span class="badge badge-pending">pending</span>');
+      var ok = l.has_door_or_flat_number ? '<span style="color:#22c55e">✓</span>' : '<span style="color:#ef4444">✗</span>';
+      var pcFull = l.full_postcode ? '<span style="color:#22c55e">✓</span>' : '<span style="color:#ef4444">✗</span>';
+      var url = l.url ? '<a href="' + esc(l.url) + '" target="_blank" rel="noopener" style="color:#0ea5e9;font-size:11px">open</a>' : '<span style="color:#94a3b8">-</span>';
       var act = '';
       if (!l.delivered) {
 act += '<button class="btn btn-outline btn-sm" onclick="rejectLeadAdmin(\'' + l.id + '\')">Reject &amp; Replace</button> '; 
         act += '<button class="btn btn-outline btn-sm" onclick="replacePendingLead(\'' + l.id + '\')">Replace</button>';
       }
-      rows += '<tr><td>' + st + '</td><td>' + esc((l.address || '-').replace(/\n+/g, ', ')) + '</td><td>' + esc(l.postcode || '-') + '</td><td>' + ok + '</td><td>' + pc + '</td><td>' + url + '</td><td>' + act + '</td></tr>';
+      rows += '<tr><td>' + st + '</td><td>' + esc((l.address || '-').replace(/\n+/g, ', ')) + '</td><td>' + esc(l.postcode || '-') + '</td><td>' + ok + '</td><td>' + pcFull + '</td><td>' + url + '</td><td>' + act + '</td></tr>';
     });
     if (!rows) rows = '<tr><td colspan="7" class="sub" style="padding:16px">No leads for this customer.</td></tr>';
     document.getElementById('leadRows').innerHTML = rows;
