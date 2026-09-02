@@ -3752,7 +3752,7 @@ function runAffiliateAutoPayout() {
       var bankOk = !!(aff.kyc && aff.kyc.bank_sort_code && aff.kyc.bank_account_number);
       if (!kycOk || !bankOk) {
         ownerLines.push('HELD: ' + (aff.name || aff.email) + ' - \u00a3' + dueTotal.toFixed(2) + ' awaiting KYC approval / bank details');
-        continue;
+        return;
       }
       // Create a payout record + mark commissions paid (founder executes the BACS
       // transfer from the payout list; Stripe Connect automation can be added later).
