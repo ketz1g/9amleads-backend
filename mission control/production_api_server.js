@@ -10224,7 +10224,7 @@ app.post('/api/admin/top-up-today', adminAuth, (req, res) => {
       if (!matchedT) continue;
       var fvT = pickFreshDate(pl); if (!fvT) continue;
       if (fvT < freshCutoff) continue;
-      var keyT = pl.url || ('a:' + String(pl.address || pl.fullAddress || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30));
+      var keyT = pl.url || ('a:' + _tuAddrKey(pl.fullAddress || pl.address || '', pl.postcode || ''));
       if (usedKeys[keyT]) continue;
       picked = pl;
       break;
