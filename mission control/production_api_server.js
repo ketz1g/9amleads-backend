@@ -16120,7 +16120,14 @@ app.post('/api/admin/boost-seed', adminAuth, (req, res) => {
     var raw = null; try { raw = JSON.parse(fs.readFileSync(file, 'utf-8')); } catch(e) {}
     var ids = {}; chosen.forEach(function(c) { ids[c.id || c.url || c.company_number || 1] = 1; });
     var done = 0;
-    function mark(l) { if (l && ids[l.id || l.url || c.company_number || 1]) { l.boost_seeded = 1; l.boost_age = months + 'm'; l.firstVisibleDate = dateStr + 'T00:00:00.000Z'; done++; } }
+    function mark(l) {
+      if (l && ids[l.id || l.url || l.company_number || 1]) {
+        // Overwrite EVERY pickFreshDate date field so the lead genuinely reads as old.
+        ['firstVisibleDate', 'addedOn', 'publishedDate', 'receivedDate', 'grantDate', 'dateSubmitted', 'incorporationDate', 'updateDate'].forEach(function(f) { if (l[f]) l[f] = dateStr + 'T00:00:00.000Z'; });
+        l.boost_seeded = 1; l.boost_age = months + 'm'; l.scrapedAt = dateStr + 'T00:00:00.000Z';
+        done++;
+      }
+    }
     if (Array.isArray(raw)) { raw.forEach(mark); fs.writeFileSync(file, JSON.stringify(raw, null, 2)); }
     else if (raw && typeof raw === 'object') { Object.keys(raw).forEach(function(k) { if (Array.isArray(raw[k])) raw[k].forEach(mark); }); fs.writeFileSync(file, JSON.stringify(raw, null, 2)); }
     res.json({ success: true, seeded: done, available_1m: getBoostArchiveLeads(prod, '1m', 0).length, available_2m: getBoostArchiveLeads(prod, '2m', 0).length });
