@@ -10,9 +10,17 @@ const sc = require('./probate_leads_scraper.js');
 async function main() {
   console.log('[PROBATE-DAILY] starting ' + new Date().toISOString());
   let leads = [];
-  try {
-    leads = await sc.collectProbateLeads({ maxItems: 60, useApifyFirst: false });
-  } catch (e) { console.log('[PROBATE-DAILY] scrape error: ' + e.message); }
+  // RETRY LOOP: the Gazette WAF intermittently 403s datacenter IPs (Render, GitHub
+  // Actions). Retry with backoff a few times — a pause often clears the block.
+  for (var attempt = 1; attempt <= 4 && leads.length === 0; attempt++) {
+    try {
+      leads = await sc.collectProbateLeads({ maxItems: 60, useApifyFirst: false });
+    } catch (e) { console.log('[PROBATE-DAILY] scrape error (attempt ' + attempt + '): ' + e.message); }
+    if (leads.length === 0 && attempt < 4) {
+      console.log('[PROBATE-DAILY] empty on attempt ' + attempt + ', waiting ' + (attempt * 20) + 's before retry...');
+      await new Promise(function(r) { setTimeout(r, attempt * 20000); });
+    }
+  }
   console.log('[PROBATE-DAILY] collected ' + (leads || []).length + ' probate leads');
   let home = 0, sol = 0, withPc = 0, withName = 0;
   (leads || []).forEach(function(l) {
