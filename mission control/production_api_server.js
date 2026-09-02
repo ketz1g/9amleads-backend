@@ -11134,19 +11134,26 @@ app.post('/api/admin/pool/import', adminAuth, (req, res) => {
       if (!l) return;
       if (!l.id) l.id = 'IMP_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
       var k = l.id || ('u:' + String(l.url || '').split('#')[0].split('?')[0]);
-      // FORCE freshness so imported leads are deliverable at the NEXT 9am delivery.
-      // BUT preserve the SOURCE's real listing date into sourceListedDate first, so
-      // the Boost archive can age leads by when the property actually first appeared
-      // (long-running listings = genuine 1-2-month-old archive) without breaking the
-      // delivery freshness window.
+      // FRESHNESS = the SOURCE's real first-listed date, NOT our scrape time.
+      // Forcing firstVisibleDate/updateDate to "now" made every re-scraped (incl.
+      // long-running, months-old) listing look fresh and get delivered to 24/48h
+      // subscribers — which CONFLICTS with the fresh-lead promise AND the Boost
+      // archive. So honour the portal's real date when provided; only fall back to
+      // "now" for sources that don't give one. scrapedAt stays = our scrape time.
       if (l.firstVisibleDate && !l.sourceListedDate) l.sourceListedDate = l.firstVisibleDate;
       l.scrapedAt = nowIso;
-      l.firstVisibleDate = nowIso;
-      l.updateDate = nowIso;
+      if (l.sourceListedDate) { l.firstVisibleDate = l.sourceListedDate; if (!l.updateDate) delete l.updateDate; }
+      else { l.firstVisibleDate = nowIso; l.updateDate = nowIso; }
       var existing = pool.find(function(x) { return x.id === l.id; });
       if (existing) {
         if (!existing.sourceListedDate && l.sourceListedDate) existing.sourceListedDate = l.sourceListedDate;
-        existing.scrapedAt = nowIso; existing.firstVisibleDate = nowIso; existing.updateDate = nowIso;
+        existing.scrapedAt = nowIso;
+        // Refresh an existing lead's date fields ONLY if the new data is newer (a real
+        // re-listing/update), never regress an old listing back to "fresh" on a re-scrape.
+        var newReal = l.sourceListedDate ? new Date(l.sourceListedDate).getTime() : 0;
+        var oldReal = existing.sourceListedDate ? new Date(existing.sourceListedDate).getTime() : 0;
+        if (l.sourceListedDate && newReal >= oldReal) { existing.firstVisibleDate = l.sourceListedDate; if (existing.updateDate && new Date(existing.updateDate).getTime() < newReal) delete existing.updateDate; }
+        else if (!existing.sourceListedDate) { existing.firstVisibleDate = nowIso; existing.updateDate = nowIso; }
         if (l.address) existing.address = l.address;
         if (l.postcode) existing.postcode = l.postcode;
         if (l.fullAddress) existing.fullAddress = l.fullAddress;
@@ -16658,6 +16665,40 @@ function fireBoostSend(c, pack, campaignId, leads) {
     }
   }).catch(function() {});
 }
+
+// GET /api/admin/bulk-pools — availability in every bulk/archive pool so the founder
+// can monitor Boost (moving/probate 1m/2m) and New Business bulk (3-7d) inventory.
+app.get('/api/admin/bulk-pools', adminAuth, (req, res) => {
+  try {
+    function bands(prod) {
+      var arr = readPoolFile(prod) || [];
+      var now = Date.now();
+      var out = { total: arr.length, '0-2d': 0, '3-7d': 0, '1m': 0, '2m': 0, reserved: 0, sold: 0 };
+      arr.forEach(function(l) {
+        if (!l) return;
+        if (l.boost_sold || l.bulk_sold) { out.sold++; return; }
+        if (l.boost_reserved || l.bulk_reserved) { out.reserved++; return; }
+        var d = l.sourceListedDate || pickFreshDate(l) || '';
+        var t = d ? new Date(d).getTime() : 0;
+        if (!t) return;
+        var age = (now - t) / 86400000;
+        if (age <= 2) out['0-2d']++;
+        else if (age <= 7) out['3-7d']++;
+        else if (age >= 28 && age <= 35) out['1m']++;
+        else if (age >= 58 && age <= 65) out['2m']++;
+      });
+      return out;
+    }
+    res.json({
+      success: true,
+      generated_at: new Date().toISOString(),
+      moving: bands('moving'),
+      probate: bands('probate'),
+      newbusiness: bands('newbusiness'),
+      note: '1m = 28-35 days old, 2m = 58-65 days old. These archive leads are excluded from the daily 24/48h fresh delivery.'
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 
 // ===== STANNP ADDRESS NORMALISER (shared) =====
 // Idempotent normalisation that makes a lead's stored data Stannp-ready: extracts a
