@@ -9392,7 +9392,15 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
     if (cust.product === 'moving') {
       try { var _copyM = Object.assign({}, c); _copyM.address = _dispA; _copyM.fullAddress = _dispA; enrichMovingLeadTown(_copyM); if (_copyM.fullAddress) _dispA = _copyM.fullAddress; } catch(e) {}
     }
-    return { address: _dispA, postcode: pc, url: c.url || '', county: c.county || '', source: c.source || '', has_door_number: hasDoor, paf_candidate: pafCandidate, paf_failed: pafFailed, in_area: inArea, name: c.name || c.companyName || c.company_name || '', company_number: c.companyNumber || c.company_number || '', incorporation_date: c.incorporationDate || c.date_of_creation || '', sic_code: c.sicCode || (Array.isArray(c.sic_codes) ? c.sic_codes.join(', ') : (c.sic_codes || '')), verified_link: (c.url || (c.companyNumber ? 'https://find-and-update.company-information.service.gov.uk/company/' + c.companyNumber : '')) };
+    return { address: _dispA, postcode: pc, url: c.url || '', county: c.county || '', source: c.source || '', has_door_number: hasDoor, paf_candidate: pafCandidate, paf_failed: pafFailed, in_area: inArea, name: c.name || c.companyName || c.company_name || '', company_number: c.companyNumber || c.company_number || '', incorporation_date: c.incorporationDate || c.date_of_creation || '', sic_code: c.sicCode || (Array.isArray(c.sic_codes) ? c.sic_codes.join(', ') : (c.sic_codes || '')), verified_link: (c.url || (c.companyNumber ? 'https://find-and-update.company-information.service.gov.uk/company/' + c.companyNumber : '')),
+      // PROBATE (option 1): the product is the deceased's last address (the property).
+      // Executor-direct (home) leads are flagged as a premium bonus so the customer can
+      // prioritise writing straight to the executor's home; via-solicitor leads are sent
+      // to the deceased's address, NOT the solicitor's office.
+      deceased: c.name || '', deceased_address: (c.deceasedAddress || c.fullAddress || c.address || ''),
+      executor_name: c.executorName || '', executor_address: c.executorAddress || '',
+      executor_home: c.executorType === 'home', solicitor: c.solicitor || '',
+      probate_date: c.grantDate || c.dateOfDeath || '' };
   });
   // HARD DISTANCE GATE (moving): regardless of how a lead was selected (in-area match,
   // fallback, preview replacement), an out-of-area moving lead MUST be within a
