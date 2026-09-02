@@ -3743,7 +3743,7 @@ function runAffiliateAutoPayout() {
     var ownerLines = [];
     (dbc.affiliates || []).forEach(function(aff) {
       if (!aff || aff.status !== 'active') return;
-      var dueComms = (dbc.partner_commissions || []).filter(function(cm) { return cm.partner_id === aff.id && cm.status === 'approved'; });
+      var dueComms = (dbc.partner_commissions || []).filter(function(cm) { return cm.partner_id === aff.id && cm.status === 'approved' && !cm.payout_id; });
       if (!dueComms.length) return;
       var dueTotal = dueComms.reduce(function(a, cm) { return a + Number(cm.commission_amount || 0); }, 0);
       if (dueTotal <= 0) return;
@@ -3754,20 +3754,21 @@ function runAffiliateAutoPayout() {
         ownerLines.push('HELD: ' + (aff.name || aff.email) + ' - \u00a3' + dueTotal.toFixed(2) + ' awaiting KYC approval / bank details');
         return;
       }
-      // Create a payout record + mark commissions paid (founder executes the BACS
-      // transfer from the payout list; Stripe Connect automation can be added later).
-      var payout = { id: uuidv4(), affiliate_id: aff.id, amount: dueTotal, status: 'paid', date: new Date().toISOString(), method: 'bank_transfer', reference: 'weekly-payout', note: 'Weekly payout - 2nd invoice commission cleared', bank: (aff.kyc.bank_name || '') + ' / ' + (aff.kyc.bank_sort_code || '') + ' / ' + (aff.kyc.bank_account_number || ''), account_holder: aff.kyc.bank_account_holder || '' };
+      // Create a payout record marked 'ready' (awaiting the founder's bank transfer).
+      // Commissions keep status 'approved' but are tagged payout_id so the next run
+      // does not re-queue them. They only become 'paid' once the founder confirms.
+      var payout = { id: uuidv4(), affiliate_id: aff.id, amount: dueTotal, status: 'ready', created_at: new Date().toISOString(), method: 'bank_transfer', reference: 'weekly-payout', note: '2nd invoice commission cleared', affiliate_email: aff.email, affiliate_name: aff.name, bank: (aff.kyc.bank_name || '') + ' / ' + (aff.kyc.bank_sort_code || '') + ' / ' + (aff.kyc.bank_account_number || ''), account_holder: aff.kyc.bank_account_holder || '' };
       aff.payouts = aff.payouts || [];
       aff.payouts.push(payout);
-      dueComms.forEach(function(cm) { cm.status = 'paid'; cm.paid_at = new Date().toISOString(); cm.payout_id = payout.id; });
+      dueComms.forEach(function(cm) { cm.payout_id = payout.id; cm.payout_ready_at = new Date().toISOString(); });
       paid += dueComms.length;
-      ownerLines.push('PAY: ' + aff.name + ' (' + aff.email + ') \u00a3' + dueTotal.toFixed(2) + ' -> ' + (aff.kyc.bank_name || '') + ' sort ' + aff.kyc.bank_sort_code + ' acct ' + aff.kyc.bank_account_number + ' holder ' + (aff.kyc.bank_account_holder || ''));
+      ownerLines.push('PAY: ' + (aff.name || aff.email) + ' (' + aff.email + ') \u00a3' + dueTotal.toFixed(2) + ' -> ' + (aff.kyc.bank_name || '') + ' sort ' + aff.kyc.bank_sort_code + ' acct ' + aff.kyc.bank_account_number + ' holder ' + (aff.kyc.bank_account_holder || ''));
     });
     saveDb();
     // Email the founder the weekly action list so they can execute the transfers.
     if (ownerLines.length) {
       try {
-        var _payHtml = '<div style="font-family:Inter,Arial,sans-serif;max-width:540px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px"><h2 style="color:#4ade80;margin:0 0 10px;font-size:18px">Affiliate payouts due (weekly run)</h2><p style="font-size:13px;color:#cbd5e1;line-height:1.7;margin:0 0 12px">These affiliate commissions have cleared (2nd invoice paid) and are ready to pay by bank transfer:</p><ul style="margin:0;padding-left:18px;font-size:13px;line-height:2;color:#e2e8f0">' + ownerLines.map(function(x){ return '<li>' + x.replace(/</g, '&lt;').replace(/&/g, '&amp;') + '</li>'; }).join('') + '</ul><p style="font-size:12px;color:#94a3b8;margin-top:12px">Marked paid in the system. Transfer via your bank or add Stripe Connect later for fully automatic payment.</p></div>';
+        var _payHtml = '<div style="font-family:Inter,Arial,sans-serif;max-width:540px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px"><h2 style="color:#f59e0b;margin:0 0 10px;font-size:18px">Affiliate payouts READY to pay</h2><p style="font-size:13px;color:#cbd5e1;line-height:1.7;margin:0 0 12px">These affiliate commissions have cleared (2nd invoice paid) and are ready to transfer. Confirm each in the Admin &gt; Affiliate payouts once you have sent the money:</p><ul style="margin:0;padding-left:18px;font-size:13px;line-height:2;color:#e2e8f0">' + ownerLines.map(function(x){ return '<li>' + x.replace(/</g, '&lt;').replace(/&/g, '&amp;') + '</li>'; }).join('') + '</ul></div>';
         sendBrevoEmail({ email: process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com', name: '9amLeads Owner' }, 'Affiliate payouts due: ' + ownerLines.filter(function(l){return l.indexOf('PAY:') === 0;}).length + ' to pay', _payHtml);
       } catch(eP) { console.log('[AFFILIATE] payout email error:', eP.message); }
     }
@@ -4220,6 +4221,48 @@ app.post('/api/admin/affiliate/run-automation', adminAuth, (req, res) => {
 app.post('/api/admin/affiliate/run-auto-payout', adminAuth, (req, res) => {
   try { res.json({ success: true, result: runAffiliateAutoPayout() }); }
   catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/affiliate/payouts — every affiliate payout awaiting the founder's
+// bank transfer (status 'ready'), plus recent history, so admin can see who to pay.
+app.get('/api/admin/affiliate/payouts', adminAuth, (req, res) => {
+  try {
+    var dbA = getDb();
+    var ready = [], history = [];
+    (dbA.affiliates || []).forEach(function(aff) {
+      (aff.payouts || []).forEach(function(p) {
+        var row = { id: p.id, affiliate: aff.name || aff.email, email: p.affiliate_email || aff.email, amount: p.amount, status: p.status, created_at: p.created_at || p.date || '', bank: p.bank || '', account_holder: p.account_holder || (aff.kyc && aff.kyc.bank_account_holder) || '' };
+        if (p.status === 'ready') ready.push(row); else if (p.status === 'paid') history.push(row);
+      });
+    });
+    ready.sort(function(a,b){ return String(a.created_at).localeCompare(String(b.created_at)); });
+    res.json({ success: true, ready_total: ready.reduce(function(a,p){return a+Number(p.amount||0);},0), ready: ready, history: history.slice(0,20) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/affiliate/payouts/confirm — mark a ready payout as SENT after the
+// founder has transferred the money. Flips the payout to 'paid', marks its
+// commissions paid, and emails the affiliate "your £25 has been sent".
+app.post('/api/admin/affiliate/payouts/confirm', adminAuth, (req, res) => {
+  try {
+    var id = String((req.body && req.body.id) || '');
+    if (!id) return res.status(400).json({ error: 'payout id required' });
+    var dbA = getDb();
+    var aff = (dbA.affiliates || []).find(function(a) { return (a.payouts || []).some(function(p) { return p.id === id; }); });
+    if (!aff) return res.status(404).json({ error: 'Payout not found' });
+    var payout = aff.payouts.find(function(p) { return p.id === id; });
+    if (!payout) return res.status(404).json({ error: 'Payout not found' });
+    if (payout.status === 'paid') return res.json({ success: true, note: 'Already confirmed paid.' });
+    payout.status = 'paid'; payout.paid_at = new Date().toISOString();
+    (dbA.partner_commissions || []).forEach(function(cm) { if (cm.payout_id === id && cm.status !== 'paid') { cm.status = 'paid'; cm.paid_at = new Date().toISOString(); } });
+    saveDb();
+    // Tell the affiliate their money is on the way.
+    try {
+      var _ch = '<div style="font-family:Inter,Arial,sans-serif;max-width:540px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px"><h2 style="color:#4ade80;margin:0 0 10px;font-size:19px">\u00a3' + Number(payout.amount || 0).toFixed(2) + ' is on its way!</h2><p style="font-size:14px;line-height:1.7;color:#cbd5e1">Your commission payout of <b style="color:#fff">\u00a3' + Number(payout.amount || 0).toFixed(2) + '</b> has been sent to your bank account. It should arrive within 1-3 working days.</p><p style="font-size:13px;color:#94a3b8">Thanks for being part of 9amLeads.</p></div>';
+      sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' }, '\u00a3' + Number(payout.amount || 0).toFixed(2) + ' payout sent - thank you!', _ch);
+    } catch(eCh) {}
+    res.json({ success: true, payout: payout });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // ===== PAYOUTS (admin; tracking only - no automatic money movement) =====
