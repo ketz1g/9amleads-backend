@@ -16132,7 +16132,7 @@ app.post('/api/admin/boost-seed', adminAuth, (req, res) => {
     var target = Date.now() - (months === 2 ? 61 : 31) * 86400000;
     var dateStr = new Date(target).toISOString().split('T')[0];
     var arr = readPoolFile(prod);
-    var candidates = (arr || []).filter(function(l) { return l && !l.boost_reserved && !l.boost_sold && !l.bulk_reserved; });
+    var candidates = (arr || []).filter(function(l) { return l && !l.boost_reserved && !l.boost_sold && !l.bulk_reserved && !l.boost_seeded; });
     var count = Math.min(parseInt(req.body && req.body.count, 10) || 120, candidates.length);
     var chosen = candidates.slice(0, count);
     var file = path.join(DATA_DIR, PRODUCT_LEAD_FILES[prod].file);
