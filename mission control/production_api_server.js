@@ -11085,6 +11085,10 @@ function sendBrevoEmail(to, subject, htmlContent) {
   // (spam filters reward text alternatives; a reply address builds sender trust).
   var senderFrom = 'hello@9amleads.com';
   var senderName = '9amLeads';
+  // NO EM/EN DASHES IN EMAILS: strip U+2014 / U+2013 to a plain hyphen so the copy
+  // renders consistently across mail clients and matches our house style.
+  subject = String(subject || '').replace(/[\u2013\u2014]/g, '-');
+  htmlContent = String(htmlContent || '').replace(/[\u2013\u2014]/g, '-');
   const data = JSON.stringify({
     sender: { name: senderName, email: senderFrom },
     replyTo: to.replyTo ? { email: to.replyTo.email, name: to.replyTo.name || 'Customer' } : { email: 'hello@9amleads.com', name: '9amLeads Support' },
@@ -21854,7 +21858,7 @@ function generateLeadEmailHTML(customer, leads) {
   // BULK POSTAGE REMINDER (newbusiness Pro only): one-off exclusive lead packs
   var _bulkPlanE = String(customer.plan || '').toLowerCase();
   if (customer.product === 'newbusiness' && (_bulkPlanE === 'pro' || _bulkPlanE === 'enterprise' || _bulkPlanE === 'pro-plan')) {
-    body += '<tr><td style="background:linear-gradient(135deg,#ecfdf5,#f0fdf4);padding:16px 30px;border-top:1px solid #d1fae5"><table cellpadding="0" cellspacing="0"><tr><td style="vertical-align:top;font-size:20px;padding-right:10px">&#128230;</td><td style="font-family:Inter,Arial,sans-serif;font-size:13px;line-height:1.6;color:#065f46"><strong>Pro perk — Bulk Postage</strong><br>Fancy a bigger push? Buy <strong>50 exclusive UK leads (£100)</strong> or <strong>100 (£200)</strong> — never-sent leads we print &amp; post with your own marketing. <a href="https://www.9amleads.com/portal/bulk.html" style="color:#047857;font-weight:700;text-decoration:underline">View Bulk Postage</a></td></tr></table></td></tr>';
+    body += '<tr><td style="background-color:#f0fdf4;padding:22px 30px;border-top:4px solid #86efac"><table cellpadding="0" cellspacing="0" width="100%"><tr><td style="font-size:26px;vertical-align:top;line-height:1;padding-right:12px">\uD83D\uDCE6</td><td style="font-family:Inter,Arial,sans-serif;color:#166534"><div style="font-size:15px;font-weight:800;color:#14532d;margin-bottom:6px">Pro perk: Bulk Postage</div><div style="font-size:13px;line-height:1.6;color:#166534;margin-bottom:14px">Boost your sales with exclusive UK new business leads that have never been sent to anyone. We print and post your own A5 leaflet to every single one.</div><table cellpadding="0" cellspacing="0"><tr><td style="background:#ffffff;border:1px solid #bbf7d0;border-radius:8px;padding:7px 12px;font-size:12px;color:#14532d"><strong>50 leads</strong>&nbsp;&nbsp;&pound;100</td><td style="width:8px"></td><td style="background:#ffffff;border:1px solid #bbf7d0;border-radius:8px;padding:7px 12px;font-size:12px;color:#14532d"><strong>100 leads</strong>&nbsp;&nbsp;&pound;200</td><td style="width:10px"></td><td><a href="https://www.9amleads.com/portal/bulk.html" style="display:inline-block;background:#16a34a;color:#ffffff;font-weight:800;font-size:13px;padding:9px 18px;border-radius:8px;text-decoration:none;white-space:nowrap">View Bulk Postage</a></td></tr></table></td></tr></table></td></tr>';
   }
   // Honest tenders note (public by nature + volume reality)
   if (customer.product === 'tenders') {
