@@ -27401,7 +27401,13 @@ function syncCustomers(product) {
           leads.forEach(function(pl) { var k = _pk(pl); if (k && !_seenP[k]) { _seenP[k] = 1; _mergedP.push(pl); } });
           _prevPool.forEach(function(pl) { var k = _pk(pl); if (k && !_seenP[k]) { _seenP[k] = 1; _mergedP.push(pl); } });
           _mergedP.sort(function(a, b) { return new Date(b.firstVisibleDate || b.scrapedAt || 0) - new Date(a.firstVisibleDate || a.scrapedAt || 0); });
-          if (_mergedP.length > 6000) _mergedP = _mergedP.slice(0, 6000);
+          // COMMITTED-LEAD GUARD: never let the cap drop a lead that is bulk_reserved
+          // (already sold/committed to a customer's pack) or bulk_sold. A paying
+          // customer's reserved pack must survive every scrape/prune, or their review
+          // list would silently empty.
+          var _committed = [], _uncommitted = [];
+          _mergedP.forEach(function(_pl) { if (_pl && (_pl.bulk_reserved || _pl.bulk_sold)) _committed.push(_pl); else _uncommitted.push(_pl); });
+          if (_mergedP.length > 6000) _mergedP = _committed.concat(_uncommitted).slice(0, Math.max(6000, _committed.length));
           leads = _mergedP;
         }
         fs.writeFileSync(poolPath, JSON.stringify(leads, null, 2));
