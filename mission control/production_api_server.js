@@ -10224,8 +10224,12 @@ app.post('/api/admin/top-up-today', adminAuth, (req, res) => {
       if (!matchedT) continue;
       var fvT = pickFreshDate(pl); if (!fvT) continue;
       if (fvT < freshCutoff) continue;
-      var keyT = pl.url || ('a:' + _tuAddrKey(pl.fullAddress || pl.address || '', pl.postcode || ''));
-      if (usedKeys[keyT]) continue;
+      // Check BOTH the url key AND the address key: a pool lead may carry a different
+      // portal URL than the copy already delivered, but the SAME property address —
+      // the address key (postcode/region-normalised) catches that cross-source dup.
+      if (pl.url && usedKeys['u:' + pl.url]) continue;
+      var addrKeyT = 'a:' + _tuAddrKey(pl.fullAddress || pl.address || '', pl.postcode || '');
+      if (usedKeys[addrKeyT]) continue;
       picked = pl;
       break;
     }
