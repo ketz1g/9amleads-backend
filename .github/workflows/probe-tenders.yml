@@ -1,0 +1,18 @@
+name: probe-tenders
+
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe tender sources from Actions
+        run: |
+          ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36"
+          echo "--- Contracts Finder HTML ---"
+          curl -s -o /tmp/cf.html -w "HTTP %{http_code} bytes %{size_download}\n" -A "$ua" "https://www.contractsfinder.service.gov.uk/search/results?keywords=construction&tenderStage=2&statuses=current&page=1"
+          grep -c 'search-result' /tmp/cf.html || true
+          echo "--- Find a Tender HTML ---"
+          curl -s -o /tmp/fts.html -w "HTTP %{http_code} bytes %{size_download}\n" -A "$ua" "https://www.find-tender.service.gov.uk/Search/Results?NoticeType=ContractNotice&NoticeStatus=Open"
+          grep -c 'search-result' /tmp/fts.html || true
