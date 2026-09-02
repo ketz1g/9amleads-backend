@@ -15962,12 +15962,15 @@ function pruneStalePoolLeads() {
         Object.keys(raw).forEach(function(k) { if (k.indexOf('_') !== 0 && Array.isArray(raw[k])) raw[k].forEach(function(x) { arr.push({ _key: k, _item: x }); }); });
       }
       if (!arr || !arr.length) return;
-      // NEWBUSINESS BULK RESERVE: newbusiness pool leads are held up to 7 days so the
-      // 3-7 day-old never-delivered surplus becomes a sellable "Exclusive UK Lead
-      // Archive" for Pro customers (bulk print & post packs). All other products
-      // prune at the standard 3-day floor (no backlog of unused leads).
+      // RETENTION WINDOWS:
+      // - newbusiness: held up to 7 days (3-7d exclusive bulk reserve)
+      // - moving & probate: held up to 65 days so older "Boost Your Business"
+      //   archive leads (1-month / 2-month old) can be sold as shared bulk packs.
+      //   Old leads never enter the daily 9am delivery (freshness-gated), so holding
+      //   them is just archive storage for bulk sales.
+      // - planning/tenders: standard 3-day floor (no backlog).
       var _cutMs = Date.now();
-      var _cutHrs = (prod === 'newbusiness') ? 7 * 24 : 3 * 24;
+      var _cutHrs = (prod === 'newbusiness') ? 7 * 24 : (prod === 'moving' || prod === 'probate') ? 65 * 24 : 3 * 24;
       var cutoff = new Date(_cutMs - _cutHrs * 3600000).toISOString();
       var kept = [], removed = 0;
       arr.forEach(function(e) {
@@ -16418,6 +16421,165 @@ app.post('/api/admin/normalise-pool', adminAuth, (req, res) => {
     res.json({ success: true, product: prod, scanned: scanned, changed: changed });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+
+// ===== BOOST YOUR BUSINESS (bulk archive packs: moving + probate) =====
+// Like the New Business bulk packs, but for MOVING + PROBATE using OLDER leads the
+// customer chooses: 1-month-old or 2-month-old. Never delivered to any daily
+// customer, but packs are SHARED (other buyers may receive the same archive leads).
+// Print & post included (A5 leaflet front + back).
+var BOOST_PACKS = {
+  probate: { 50: 9900, 100: 15900, 200: 24900 },
+  moving:  { 50: 4900, 100: 8900, 200: 14900 }
+};
+var BOOST_AGE_MS = { '1m': 31 * 86400000, '2m': 61 * 86400000 };
+
+// Archive leads for a product aged ~1 month (~28-34d) or ~2 months (~58-64d).
+function getBoostArchiveLeads(product, ageKey, count) {
+  var arr = readPoolFile(product);
+  var centre = BOOST_AGE_MS[ageKey] || BOOST_AGE_MS['1m'];
+  var lo = centre - 3 * 86400000, hi = centre + 3 * 86400000;
+  var now = Date.now();
+  var out = [];
+  (arr || []).forEach(function(l) {
+    if (!l || l.bulk_reserved || l.bulk_sold || l.boost_reserved || l.boost_sold) return;
+    var d = pickFreshDate(l) || String(l.scrapedAt || l.createdAt || l.firstVisibleDate || '');
+    var t = d ? new Date(d).getTime() : 0;
+    if (!(t && t >= now - hi && t <= now - lo)) return;
+    // need a mailable address
+    var pc = String(l.postcode || '').toUpperCase().trim();
+    if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/.test(pc)) return;
+    var addr = l.fullAddress || l.address || l.deceasedAddress || '';
+    if (!addr || addr.trim().length < 8) return;
+    if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/.test(pc)) return;
+    out.push(l);
+  });
+  return out.slice(0, count || out.length);
+}
+function reserveBoostLeads(product, ageKey, count, customerId) {
+  var eligible = getBoostArchiveLeads(product, ageKey, 0);
+  if (eligible.length < count) return { ok: false, available: eligible.length, error: 'Not enough archive leads in this age band right now (' + eligible.length + ' available). Choose another age or pack, or try again in a few days.' };
+  var chosen = eligible.slice(0, count);
+  var file = path.join(DATA_DIR, PRODUCT_LEAD_FILES[product].file);
+  var raw = null;
+  try { raw = JSON.parse(fs.readFileSync(file, 'utf-8')); } catch(e) {}
+  var ids = {}; chosen.forEach(function(c) { ids[c.id || c.url || c.company_number || 1] = 1; });
+  function mark(l) { if (l && ids[l.id || l.url || l.company_number || 1]) { l.boost_reserved = 1; l.boost_reserved_by = customerId; l.boost_reserved_at = new Date().toISOString(); } }
+  if (Array.isArray(raw)) { raw.forEach(mark); fs.writeFileSync(file, JSON.stringify(raw, null, 2)); }
+  else if (raw && typeof raw === 'object') { Object.keys(raw).forEach(function(k) { if (Array.isArray(raw[k])) raw[k].forEach(mark); }); fs.writeFileSync(file, JSON.stringify(raw, null, 2)); }
+  return { ok: true, leads: chosen };
+}
+
+// GET /api/boost — availability + any purchased boost pack
+app.get('/api/boost', authMiddleware, (req, res) => {
+  try {
+    var c = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!c) return res.status(404).json({ error: 'User not found' });
+    var available = {};
+    ['moving', 'probate'].forEach(function(p) { available[p] = { '1m': getBoostArchiveLeads(p, '1m', 0).length, '2m': getBoostArchiveLeads(p, '2m', 0).length }; });
+    var pack = null;
+    try { pack = c.boost_pack ? JSON.parse(c.boost_pack) : null; } catch(e) {}
+    res.json({ success: true, product: c.product, available: available, packs: BOOST_PACKS, pack: pack });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/boost/checkout — create a Stripe checkout. Body: { product, age, count }
+app.post('/api/boost/checkout', authMiddleware, async (req, res) => {
+  try {
+    var product = String((req.body && req.body.product) || '').toLowerCase();
+    var age = String((req.body && req.body.age) || '1m');
+    var count = parseInt(req.body && req.body.count, 10);
+    if (['moving', 'probate'].indexOf(product) === -1) return res.status(400).json({ error: 'Choose Moving or Probate.' });
+    if (!BOOST_PACKS[product] || !BOOST_PACKS[product][count]) return res.status(400).json({ error: 'Choose a 50, 100 or 200 lead pack.' });
+    if (age !== '1m' && age !== '2m') return res.status(400).json({ error: 'Choose 1 month or 2 months old.' });
+    var c = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!c) return res.status(404).json({ error: 'User not found' });
+    if (c.product !== product) return res.status(400).json({ error: 'Boost packs are for your own lead type. Switch your product or ask support.' });
+    if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe not configured' });
+    var avail = getBoostArchiveLeads(product, age, 0).length;
+    if (avail < count) return res.status(400).json({ error: 'Not enough ' + (age === '1m' ? '1-month' : '2-month') + '-old archive leads right now (' + avail + '). Try the other age or a smaller pack.', available: avail });
+    var amountPence = BOOST_PACKS[product][count];
+    var baseUrl = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
+    var label = product === 'probate' ? 'Probate' : 'Moving';
+    var sessionBody = {
+      mode: 'payment',
+      customer_email: c.email,
+      'line_items[0][price_data][currency]': 'gbp',
+      'line_items[0][price_data][product_data][name]': 'Boost Your Business: ' + count + ' ' + (age === '1m' ? '1-month' : '2-month') + '-old ' + label + ' leads',
+      'line_items[0][price_data][product_data][description]': count + ' archive ' + label + ' leads (never sent to customers) - printed & posted',
+      'line_items[0][price_data][unit_amount]': String(amountPence),
+      'line_items[0][quantity]': '1',
+      success_url: baseUrl + '/portal/boost.html?paid=success',
+      cancel_url: baseUrl + '/portal/boost.html?paid=cancel',
+      'metadata[type]': 'boost_leads',
+      'metadata[boost_product]': product,
+      'metadata[boost_age]': age,
+      'metadata[boost_count]': String(count),
+      'metadata[customer_id]': c.id
+    };
+    var session = await stripeApiRequest('POST', 'checkout/sessions', sessionBody);
+    if (session.url) res.json({ success: true, checkout_url: session.url });
+    else res.status(400).json({ error: session.error && session.error.message || 'Checkout creation failed' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/boost/send — confirm & send the purchased boost pack (A5 leaflet).
+app.post('/api/boost/send', authMiddleware, async (req, res) => {
+  try {
+    var c = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!c) return res.status(404).json({ error: 'User not found' });
+    var pack = null; try { pack = c.boost_pack ? JSON.parse(c.boost_pack) : null; } catch(e) {}
+    if (!pack) return res.status(400).json({ error: 'No boost pack purchased yet.' });
+    if (pack.status === 'sent') return res.status(400).json({ error: 'This pack has already been sent.' });
+    if (pack.status === 'sending') return res.status(400).json({ error: 'Your pack is already being printed & posted.' });
+    var product = pack.product;
+    // A5 leaflet materials required (front + back) like the New Business bulk packs
+    var hasFront = false, hasBack = false;
+    try { hasFront = !!db.prepare("SELECT id FROM direct_mail_materials WHERE customer_id = ? AND type='flyer_front' LIMIT 1").get(c.id); } catch(e) {}
+    try { hasBack = !!db.prepare("SELECT id FROM direct_mail_materials WHERE customer_id = ? AND type='flyer_back' LIMIT 1").get(c.id); } catch(e) {}
+    if (!hasFront || !hasBack) return res.status(400).json({ error: 'Boost packs are posted as A5 leaflets, so you need your leaflet front AND back uploaded in Print & Post (Step 2) first.' });
+    var arr = readPoolFile(product);
+    var leads = (arr || []).filter(function(l) { return l.boost_reserved_by === c.id && !l.boost_sold; });
+    if (!leads.length) return res.status(400).json({ error: 'No reserved leads found for this pack.' });
+    // Create a direct-mail campaign + recipients, then send (reuse existing path).
+    var campaignId = 'boost_' + uuidv4();
+    var nowIso = new Date().toISOString();
+    db.prepare('INSERT INTO direct_mail_campaigns (id,customer_id,name,mail_type,status,stripe_payment_status,created_at,updated_at,format_id,recipient_count,price) VALUES (?,?,?,?,?,?,?,?,?,?,?)')
+      .run(campaignId, c.id, 'Boost Pack (' + leads.length + ' ' + product + ' leads)', 'flyer_a5', 'paid', 'paid', nowIso, nowIso, '', String(leads.length), String(leads.length * 1.5));
+    var insertR = db.prepare('INSERT INTO direct_mail_recipients (id,customer_id,campaign_id,name,company,address_line1,address_line2,city,postcode,country,lead_id,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)');
+    leads.forEach(function(l) {
+      var rcpt = buildStannpRecipientFromLead(l);
+      if (!rcpt || !rcpt.postcode) return;
+      insertR.run(uuidv4(), c.id, campaignId, rcpt.name || (product === 'probate' ? 'The Executor of ' + (l.name || '') : 'Homeowner'), rcpt.company || '', rcpt.address_line1 || '', '', rcpt.city || '', String(rcpt.postcode).toUpperCase(), 'United Kingdom', String(l.id || l.url || ''), 'pending', nowIso);
+    });
+    pack.status = 'sending'; pack.campaign_id = campaignId;
+    db.prepare('UPDATE customers SET boost_pack = ? WHERE id = ?').run(JSON.stringify(pack), c.id);
+    saveDb();
+    fireBoostSend(c, pack, campaignId, leads);
+    res.json({ success: true, campaign_id: campaignId, count: leads.length, status: 'sending', message: 'Your ' + leads.length + ' lead pack is being printed & posted now.' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+function fireBoostSend(c, pack, campaignId, leads) {
+  var sendP = sendDmCampaign(campaignId, c.id);
+  sendP.then(function(sr) {
+    if (sr && sr.success) {
+      try {
+        var file = path.join(DATA_DIR, PRODUCT_LEAD_FILES[pack.product].file);
+        var raw = null; try { raw = JSON.parse(fs.readFileSync(file, 'utf-8')); } catch(e) {}
+        var ids = {}; (leads || []).forEach(function(l) { ids[l.id || l.url || 1] = 1; });
+        function markSold(l) { if (l && ids[l.id || l.url || 1]) { l.boost_sold = 1; l.boost_sold_at = new Date().toISOString(); } }
+        if (Array.isArray(raw)) { raw.forEach(markSold); fs.writeFileSync(file, JSON.stringify(raw, null, 2)); }
+        else if (raw && typeof raw === 'object') { Object.keys(raw).forEach(function(k) { if (Array.isArray(raw[k])) raw[k].forEach(markSold); }); fs.writeFileSync(file, JSON.stringify(raw, null, 2)); }
+      } catch(e) {}
+      try {
+        var fp = null; try { fp = c.boost_pack ? JSON.parse(c.boost_pack) : pack; } catch(e) { fp = pack; }
+        fp.status = 'sent'; fp.sent = (leads || []).length;
+        db.prepare('UPDATE customers SET boost_pack = ? WHERE id = ?').run(JSON.stringify(fp), c.id); saveDb();
+      } catch(e) {}
+    } else {
+      try { var rp = c.boost_pack ? JSON.parse(c.boost_pack) : pack; if (rp.status === 'sending') { rp.status = 'pending'; db.prepare('UPDATE customers SET boost_pack = ? WHERE id = ?').run(JSON.stringify(rp), c.id); saveDb(); } } catch(e) {}
+    }
+  }).catch(function() {});
+}
 
 // ===== STANNP ADDRESS NORMALISER (shared) =====
 // Idempotent normalisation that makes a lead's stored data Stannp-ready: extracts a
@@ -19987,6 +20149,22 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
           db.prepare('UPDATE customers SET extra_postcodes = ? WHERE id = ?').run(String(newExtra), customerId);
           saveDb();
           console.log('[WEBHOOK] Extra area purchased:', custRecord.email, 'now has', newExtra, 'extra areas');
+        }
+        return res.json({ received: true });
+      }
+
+      // BOOST YOUR BUSINESS (moving + probate archive packs, print & post)
+      if (type === 'boost_leads') {
+        var bsProd = String(session.metadata?.boost_product || '').toLowerCase();
+        var bsAge = String(session.metadata?.boost_age || '1m');
+        var bsCount = parseInt(session.metadata?.boost_count, 10) || 0;
+        var bsCust = db.prepare('SELECT * FROM customers WHERE id = ?').get(customerId);
+        if (bsCust && ['moving', 'probate'].indexOf(bsProd) !== -1 && BOOST_PACKS[bsProd] && BOOST_PACKS[bsProd][bsCount]) {
+          var reserve = reserveBoostLeads(bsProd, bsAge, bsCount, customerId);
+          var bsPack = { product: bsProd, age: bsAge, count: bsCount, purchased_at: new Date().toISOString(), status: 'pending', sent: 0, reserved_count: reserve.ok ? reserve.leads.length : 0, note: reserve.ok ? '' : reserve.error };
+          db.prepare('UPDATE customers SET boost_pack = ? WHERE id = ?').run(JSON.stringify(bsPack), customerId);
+          saveDb();
+          console.log('[WEBHOOK] Boost pack granted: ' + bsCust.email + ' ' + bsProd + ' ' + bsAge + ' x' + bsCount + (reserve.ok ? '' : ' (reserve short)'));
         }
         return res.json({ received: true });
       }
