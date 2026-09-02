@@ -2046,6 +2046,14 @@ class StannpProvider extends DirectMailProvider {
   stannpRequest(endpoint, params, method) {
     return new Promise(function(resolve, reject) {
       if (!STANNP_API_KEY) return reject(new Error('STANNP_API_KEY not configured'));
+      // TEST MODE (STANNP_TEST_MODE=1): simulate a successful Stannp create so the
+      // whole bulk/Print & Post pipeline (materials, artwork prep, campaign + recipients,
+      // tracking + proof status) can be rehearsed FREE with ZERO risk of a real charge or
+      // an error slipping to a customer. Nothing is sent to Stannp.
+      if (String(process.env.STANNP_TEST_MODE || '') === '1' && /create$/i.test(endpoint)) {
+        console.log('[STANNP-TEST] simulated ' + endpoint + ' (no real mail created)');
+        return resolve({ success: true, data: { id: 'test_' + Date.now() + '_' + Math.floor(Math.random() * 9999), cost: 0, status: 'processing' }, test: true });
+      }
       const https = require('https');
       var bodyData = Object.assign({}, params || {});
       var encoded = Object.keys(bodyData).map(function(k) { return encodeURIComponent(k) + '=' + encodeURIComponent(bodyData[k]); }).join('&');
