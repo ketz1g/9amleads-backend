@@ -23624,7 +23624,14 @@ async function sendDmCampaignInner(campaignId, customerId) {
         // The clean letter BODY (no sender/date) for the A4 PDF layout.
         rcptWithPages.letter_body = _clean.body;
       }
-      var pieceResult = await provider.sendMailpiece(mailType, rcptWithPages, pieceFiles, chosenFormat);
+      var pieceResult = null;
+      try {
+        pieceResult = await provider.sendMailpiece(mailType, rcptWithPages, pieceFiles, chosenFormat);
+      } catch(sendErr) {
+        console.log('[DM-SEND] recipient ' + si + ' threw: ' + (sendErr && sendErr.message || sendErr));
+        try { db.prepare('INSERT INTO direct_mail_provider_logs (id,customer_id,campaign_id,provider,endpoint,request_body,response_body,status_code,success,error_message,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(uuidv4(), customerId, campaign.id, provider.name, 'sendMailpiece', JSON.stringify({ recipient: si }), '', 500, 0, String(sendErr && sendErr.message || sendErr).substring(0, 500), new Date().toISOString()); } catch(le) {}
+        pieceResult = { success: false, error: String(sendErr && sendErr.message || sendErr).substring(0, 300) };
+      }
       if (pieceResult && pieceResult.success) {
         // A 'flyer_plus_letter' order produces TWO Stannp mailpieces (letter + flyer).
         // Each is tracked as its own recipient row so the customer sees two separate
