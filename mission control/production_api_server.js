@@ -13721,8 +13721,19 @@ async function resendFailedEmails() {
     var q = (feDb.failed_emails || []).slice();
     if (!q.length) return;
     var sent = 0, stillFailing = [];
+    var todayE = new Date().toISOString().split('T')[0];
     for (var fi = 0; fi < q.length; fi++) {
       var m = q[fi];
+      // DUPLICATE-EMAIL GUARD: never re-send a daily email to a customer who already
+      // received one today. A send that succeeded but was ALSO queued (crash/restart
+      // during the delivery) must not produce a second copy in the customer's inbox.
+      try {
+        var _cust = (feDb.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === String(m.email || '').toLowerCase(); });
+        if (_cust && _cust.last_email_date === todayE) {
+          console.log('[EMAIL-CATCHUP] skip ' + m.email + ' — already emailed today');
+          continue;
+        }
+      } catch(ge) {}
       try {
         await sendBrevoEmail({ email: m.email, name: m.name || 'Customer' }, m.subject, m.html);
         sent++;
