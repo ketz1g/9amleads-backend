@@ -1,0 +1,28 @@
+name: probate-daily
+
+on:
+  schedule:
+    # 05:00 UTC weekdays (~06:00 UK in summer, 05:00 in winter) — before the 9am UK
+    # delivery, after the night's Gazette notices publish.
+    - cron: '0 5 * * 1-5'
+  workflow_dispatch:
+
+jobs:
+  scrape-import:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install dotenv
+        run: npm install dotenv --no-save --no-audit --no-fund
+        working-directory: 'mission control'
+      - name: Scrape + import real UK Gazette probate leads
+        env:
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: node probate_daily_run.js
+        working-directory: 'mission control'
+        timeout-minutes: 10
