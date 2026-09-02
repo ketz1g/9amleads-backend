@@ -1,0 +1,27 @@
+name: tenders-daily
+
+on:
+  schedule:
+    # 05:10 UTC weekdays (~06:10 UK in summer) — fresh public tenders before 9am UK.
+    - cron: '10 5 * * 1-5'
+  workflow_dispatch:
+
+jobs:
+  scrape-import:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install dotenv
+        run: npm install dotenv --no-save --no-audit --no-fund
+        working-directory: 'mission control'
+      - name: Scrape + import public tenders (Contracts Finder + Find a Tender)
+        env:
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: node tenders_daily_run.js
+        working-directory: 'mission control'
+        timeout-minutes: 15
