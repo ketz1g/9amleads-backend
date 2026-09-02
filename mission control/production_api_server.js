@@ -16586,13 +16586,30 @@ function bulkPackTotal(count, mailType) { return (BULK_MAIL_RATES[mailType] || B
 // we can test, but customers see "coming soon" until we promote.
 function bulkPoolsLive() { return String(process.env.BULK_POOLS_LIVE || '') === '1'; }
 var BOOST_AGE_MS = { '1m': 31 * 86400000, '2m': 61 * 86400000 };
+// 'tm' = "this month": never-sent leads from ~3 days old (just past the fresh 0-2 day
+// window that daily 9am subscription deliveries rely on) up to just under a month.
+// Held as an explicit range; 1m/2m stay centred bands as before.
+var BOOST_AGE_RANGES = { 'tm': { loDays: 3, hiDays: 27 } };
+function boostAgeLabel(ageKey) {
+  return ageKey === 'tm' ? 'this-month' : ageKey === '1m' ? '1-month' : '2-month';
+}
+function boostAgeName(ageKey) {
+  return ageKey === 'tm' ? 'This month' : ageKey === '1m' ? '1 month old' : '2 months old';
+}
 
-// Archive leads for a product aged ~1 month (~28-34d) or ~2 months (~58-64d).
+// Archive leads for a product: 'tm' = this month (up to ~1 month old, never sent),
+// '1m' = ~1 month (~28-34d) or '2m' = ~2 months (~58-64d).
 function getBoostArchiveLeads(product, ageKey, count) {
   var arr = readPoolFile(product);
-  var centre = BOOST_AGE_MS[ageKey] || BOOST_AGE_MS['1m'];
-  var lo = centre - 3 * 86400000, hi = centre + 3 * 86400000;
   var now = Date.now();
+  var range = BOOST_AGE_RANGES[ageKey];
+  var lo, hi;
+  if (range) {
+    lo = range.loDays * 86400000; hi = range.hiDays * 86400000;
+  } else {
+    var centre = BOOST_AGE_MS[ageKey] || BOOST_AGE_MS['1m'];
+    lo = centre - 3 * 86400000; hi = centre + 3 * 86400000;
+  }
   var out = [];
   (arr || []).forEach(function(l) {
     if (!l || l.bulk_reserved || l.bulk_sold || l.boost_reserved || l.boost_sold) return;
@@ -16674,7 +16691,7 @@ app.get('/api/boost', authMiddleware, (req, res) => {
     var c = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
     if (!c) return res.status(404).json({ error: 'User not found' });
     var available = {};
-    ['moving', 'probate'].forEach(function(p) { available[p] = { '1m': getBoostArchiveLeads(p, '1m', 0).length, '2m': getBoostArchiveLeads(p, '2m', 0).length }; });
+    ['moving', 'probate'].forEach(function(p) { available[p] = { 'tm': getBoostArchiveLeads(p, 'tm', 0).length, '1m': getBoostArchiveLeads(p, '1m', 0).length, '2m': getBoostArchiveLeads(p, '2m', 0).length }; });
     var pack = null;
     try { pack = c.boost_pack ? JSON.parse(c.boost_pack) : null; } catch(e) {}
     res.json({ success: true, product: c.product, available: available, sizes: BOOST_PACK_SIZES, mail_rates: BULK_MAIL_RATES, live: bulkPoolsLive(), pack: pack });
@@ -16691,13 +16708,13 @@ app.post('/api/boost/checkout', authMiddleware, async (req, res) => {
     if (['moving', 'probate'].indexOf(product) === -1) return res.status(400).json({ error: 'Choose Moving or Probate.' });
     if (!BOOST_PACK_SIZES[product] || BOOST_PACK_SIZES[product].indexOf(count) === -1) return res.status(400).json({ error: 'Choose a valid pack size for ' + product + '.' });
     if (!BULK_MAIL_RATES[mailType]) return res.status(400).json({ error: 'Choose what to post: leaflet, letter, or leaflet + letter.' });
-    if (age !== '1m' && age !== '2m') return res.status(400).json({ error: 'Choose 1 month or 2 months old.' });
+    if (['tm', '1m', '2m'].indexOf(age) === -1) return res.status(400).json({ error: 'Choose This month (up to a month old), 1 month old or 2 months old.' });
     var c = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
     if (!c) return res.status(404).json({ error: 'User not found' });
     if (c.product !== product) return res.status(400).json({ error: 'Boost packs are for your own lead type. Switch your product or ask support.' });
     if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe not configured' });
     var avail = getBoostArchiveLeads(product, age, 0).length;
-    if (avail < count) return res.status(400).json({ error: 'Not enough ' + (age === '1m' ? '1-month' : '2-month') + '-old archive leads right now (' + avail + '). Try the other age or a smaller pack.', available: avail });
+    if (avail < count) return res.status(400).json({ error: 'Not enough ' + boostAgeLabel(age).replace('-', ' ') + '-old archive leads right now (' + avail + '). Try another age or a smaller pack.', available: avail });
     var amountPence = bulkPackTotal(count, mailType);
     var baseUrl = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
     var label = product === 'probate' ? 'Probate' : 'Moving';
@@ -16706,7 +16723,7 @@ app.post('/api/boost/checkout', authMiddleware, async (req, res) => {
       mode: 'payment',
       customer_email: c.email,
       'line_items[0][price_data][currency]': 'gbp',
-      'line_items[0][price_data][product_data][name]': 'Boost Your Business: ' + count + ' ' + (age === '1m' ? '1-month' : '2-month') + '-old ' + label + ' leads (' + typeLabel + ')',
+      'line_items[0][price_data][product_data][name]': 'Boost Your Business: ' + count + ' ' + boostAgeLabel(age) + '-old ' + label + ' leads (' + typeLabel + ')',
       'line_items[0][price_data][product_data][description]': count + ' archive ' + label + ' leads - print & post · ' + typeLabel,
       'line_items[0][price_data][unit_amount]': String(amountPence),
       'line_items[0][quantity]': '1',
@@ -16815,7 +16832,7 @@ app.get('/api/admin/bulk-pools', adminAuth, (req, res) => {
     function bands(prod) {
       var arr = readPoolFile(prod) || [];
       var now = Date.now();
-      var out = { total: arr.length, '0-2d': 0, '3-7d': 0, '1m': 0, '2m': 0, reserved: 0, sold: 0 };
+      var out = { total: arr.length, '0-2d': 0, '3-7d': 0, tm: 0, '1m': 0, '2m': 0, reserved: 0, sold: 0 };
       arr.forEach(function(l) {
         if (!l) return;
         if (l.boost_sold || l.bulk_sold) { out.sold++; return; }
@@ -16824,10 +16841,17 @@ app.get('/api/admin/bulk-pools', adminAuth, (req, res) => {
         var t = d ? new Date(d).getTime() : 0;
         if (!t) return;
         var age = (now - t) / 86400000;
-        if (age <= 2) out['0-2d']++;
-        else if (age <= 7) out['3-7d']++;
-        else if (age >= 28 && age <= 35) out['1m']++;
-        else if (age >= 58 && age <= 65) out['2m']++;
+        if (prod === 'newbusiness') {
+          // New Business bulk reserve is the 3-7 day window; no 1m/2m archive bands.
+          if (age <= 2) out['0-2d']++;
+          else if (age <= 7) out['3-7d']++;
+        } else {
+          // Moving / Probate boost bands: this month (3-27d) + 1 month + 2 months.
+          if (age <= 2) out['0-2d']++;
+          else if (age < 28) out.tm++;
+          else if (age <= 35) out['1m']++;
+          else if (age >= 58 && age <= 65) out['2m']++;
+        }
       });
       return out;
     }
@@ -16837,7 +16861,7 @@ app.get('/api/admin/bulk-pools', adminAuth, (req, res) => {
       moving: bands('moving'),
       probate: bands('probate'),
       newbusiness: bands('newbusiness'),
-      note: '1m = 28-35 days old, 2m = 58-65 days old. These archive leads are excluded from the daily 24/48h fresh delivery.' + (released ? ' Released ' + released + ' stale reservation(s).' : '')
+      note: 'Moving/Probate: tm = This month (3-27 days, never sent) · 1m = 28-35d · 2m = 58-65d. New Business: 3-7d = bulk reserve. Archive bands never touch the daily 24/48h fresh feed.' + (released ? ' Released ' + released + ' stale reservation(s).' : '')
     });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });

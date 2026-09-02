@@ -444,21 +444,22 @@ async function loadBulkPoolPage() {
       const b = d[p] || {};
       const fresh = b['0-2d'] || 0, res = b.reserved || 0, sold = b.sold || 0;
       const nbd = p === 'newbusiness' ? (b['3-7d'] || 0) : 0;
+      const ageTm = p === 'newbusiness' ? 0 : (b['tm'] || 0);
       const age1m = b['1m'] || 0, age2m = b['2m'] || 0;
-      const saleable = p === 'newbusiness' ? nbd : age1m + age2m;
+      const saleable = p === 'newbusiness' ? nbd : ageTm + age1m + age2m;
       const readyTxt = saleable >= 200 ? '200-pack ready' : saleable >= 100 ? '100-pack ready' : saleable >= 50 ? '50-pack ready' : 'below pack size';
       const readyColor = saleable >= 50 ? '#16a34a' : saleable > 0 ? '#eab308' : '#94a3b8';
       function cell(label, v, min) { return '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;text-align:center"><div style="font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:.4px">' + label + '</div><div style="font-size:18px;font-weight:900;color:' + (v >= min ? '#16a34a' : v > 0 ? '#eab308' : '#94a3b8') + '">' + v + '</div></div>'; }
       return '<div class="card" style="margin-bottom:16px"><h3 style="color:' + (colors[p] || '#1e293b') + '">' + names[p] + ' <span style="font-size:11px;color:#64748b">(total ' + b.total + ')</span></h3>' +
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px">' +
-        (p === 'newbusiness' ? cell('Bulk 3-7d', nbd, 50) : '') +
+        (p === 'newbusiness' ? cell('Bulk 3-7d', nbd, 50) : cell('This month', ageTm, 50)) +
         cell('1-month old', age1m, 50) + cell('2-month old', age2m, 50) +
         cell('Fresh 0-2d (daily)', fresh, 0) + cell('Reserved', res, 0) + cell('Sold', sold, 0) +
         '</div>' +
         '<div style="margin-top:8px;font-size:12px;font-weight:800;color:' + readyColor + '">' + readyTxt + '</div>' +
         '</div>';
     }).join('');
-    el.innerHTML = '<div style="font-size:11px;color:#64748b;margin-bottom:10px">Last updated: ' + updated + ' · 1m = 28-35 days old · 2m = 58-65 days old · these archive leads never enter the 24/48h subscription delivery.</div>' + cards +
+    el.innerHTML = '<div style="font-size:11px;color:#64748b;margin-bottom:10px">Last updated: ' + updated + ' · This month = 3-27 days old (never sent) · 1m = 28-35 days old · 2m = 58-65 days old · archive bands never enter the 24/48h subscription delivery.</div>' + cards +
       '<button class="btn btn-outline btn-sm" onclick="loadBulkPoolPage()" style="margin-top:4px"><i class="fas fa-refresh"></i> Refresh</button>';
   } catch (e) { el.innerHTML = '<div style="color:#ef4444;font-size:13px">Error loading bulk pool: ' + esc(e.message) + '</div>'; }
 }
@@ -1415,14 +1416,15 @@ async function loadBulkPools() {
     const colors = { moving: '#ff6b35', probate: '#a855f7', newbusiness: '#06b6d4' };
     el.innerHTML = ['moving', 'probate', 'newbusiness'].map(function(p) {
       const b = d[p] || {};
+      const ageTm = p === 'newbusiness' ? 0 : (b['tm'] || 0);
       const age1m = b['1m'] || 0, age2m = b['2m'] || 0, nbd = p === 'newbusiness' ? (b['3-7d'] || 0) : 0;
-      const saleable = p === 'newbusiness' ? nbd : (age1m + age2m);
+      const saleable = p === 'newbusiness' ? nbd : (ageTm + age1m + age2m);
       const canSell = saleable >= 50 ? '#16a34a' : saleable > 0 ? '#eab308' : '#94a3b8';
       return '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:12px">' +
         '<div style="font-size:11px;font-weight:700;color:' + (colors[p] || '#1e293b') + '">' + names[p] + '</div>' +
         '<div style="font-size:10px;color:#64748b;margin:4px 0 8px">total pool ' + b.total + ' · fresh(0-2d) ' + (b['0-2d'] || 0) + ' · reserved ' + (b.reserved || 0) + '</div>' +
         '<div style="display:flex;gap:8px;font-size:12px;flex-wrap:wrap">' +
-        (p === 'newbusiness' ? '<span><b>3-7d bulk</b>: <b style="color:' + (nbd >= 50 ? '#16a34a' : '#94a3b8') + '">' + nbd + '</b></span>' : '') +
+        (p === 'newbusiness' ? '<span><b>3-7d bulk</b>: <b style="color:' + (nbd >= 50 ? '#16a34a' : '#94a3b8') + '">' + nbd + '</b></span>' : '<span><b>This month</b>: <b style="color:' + (ageTm >= 50 ? '#16a34a' : ageTm > 0 ? '#eab308' : '#94a3b8') + '">' + ageTm + '</b></span>') +
         '<span><b>1m</b>: <b style="color:' + (age1m >= 50 ? '#16a34a' : age1m > 0 ? '#eab308' : '#94a3b8') + '">' + age1m + '</b></span>' +
         '<span><b>2m</b>: <b style="color:' + (age2m >= 50 ? '#16a34a' : age2m > 0 ? '#eab308' : '#94a3b8') + '">' + age2m + '</b></span>' +
         '</div>' +
