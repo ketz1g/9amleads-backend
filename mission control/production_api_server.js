@@ -10197,7 +10197,15 @@ app.post('/api/admin/top-up-today', adminAuth, (req, res) => {
     var nowIso = new Date().toISOString();
     var freshCutoff = getFreshCutoffIso();
     var usedKeys = {};
-    (dbT.leads || []).forEach(function(l) { if (l.customer_id === cust.id) { try { var dd = JSON.parse(l.data || '{}'); var du = dd.url || ''; if (du) usedKeys['u:' + du] = 1; var da = dd.fullAddress || dd.address || ''; var dp = dd.postcode || ''; if (da && dp) usedKeys['a:' + String(da).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 26) + '|' + String(dp).toUpperCase().replace(/[^A-Z0-9]/g, '')] = 1; } catch(e) {} } });
+    // Normalise away county/region words ("Greater London", "Cheshire") so a delivered
+    // lead and its pool copy always share the SAME dedup key regardless of whether one
+    // carries the county and the other doesn't.
+    function _tuAddrKey(addr, pc) {
+      var a = String(addr || '').toLowerCase().replace(/\b(greater london|england|scotland|wales|northern ireland|cheshire|merseyside|greater manchester|lancashire|kent|essex|surrey|hertfordshire|middlesex|buckinghamshire|oxfordshire|cambridgeshire|bedfordshire|suffolk|norfolk|humberside|tyne and wear|west midlands|south yorkshire|west yorkshire|north yorkshire|east sussex|west sussex|hampshire|berkshire|dorset|devon|cornwall|somerset|wiltshire|gloucestershire|worcestershire|warwickshire|staffordshire|shropshire|herefordshire|leicestershire|northamptonshire|rutland|derbyshire|nottinghamshire|lincolnshire|northumberland|durham|cumbria)\b/g, ' ').replace(/[^a-z0-9]/g, '');
+      var p = String(pc || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+      return (a || '').substring(0, 26) + '|' + p;
+    }
+    (dbT.leads || []).forEach(function(l) { if (l.customer_id === cust.id) { try { var dd = JSON.parse(l.data || '{}'); var du = dd.url || ''; if (du) usedKeys['u:' + du] = 1; usedKeys['a:' + _tuAddrKey(dd.fullAddress || dd.address || '', dd.postcode || '')] = 1; } catch(e) {} } });
     // Global exclusivity: never give a lead already delivered to ANOTHER customer.
     (dbT.leads || []).forEach(function(l) { if (l.customer_id !== cust.id && l.delivered) { try { var dd = JSON.parse(l.data || '{}'); var du = dd.url || ''; if (du) usedKeys['u:' + du] = 1; } catch(e) {} } });
     var picked = null;
