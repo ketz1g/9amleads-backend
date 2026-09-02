@@ -3225,7 +3225,7 @@ function partnerConfig() {
       sales_partner_trial_days: 14,
       standard_trial_days: 7,
       attribution_window_days: 30,
-      commission_clearance_days: 30,
+      commission_clearance_days: 5,
       commission_qualification_days: 30,
       sales_partner_commission_duration_months: null,
       affiliate_qualifying_payment_count: 1,
@@ -3243,7 +3243,7 @@ function partnerConfig() {
   var defaults = {
     affiliate_one_off_amount: 25, sales_partner_monthly_amount: 25, affiliate_trial_days: 14,
     sales_partner_trial_days: 14, standard_trial_days: 7, attribution_window_days: 30,
-    commission_clearance_days: 30, commission_qualification_days: 30,
+    commission_clearance_days: 5, commission_qualification_days: 30,
     sales_partner_commission_duration_months: null, affiliate_qualifying_payment_count: 1,
     partners_open: true, attribution_first_click_wins: true,
     affiliate_commission_model: 'one_off', retention_followup_days: 14, affiliate_min_payout: 50, association_bonus_amount: 5, two_tier_bonus_amount: 10, sms_delivery_enabled: false
@@ -3737,22 +3737,41 @@ function runAffiliateAutoPayout() {
   try {
     var dbc = getDb();
     var cfg = partnerConfig();
-    var minPayout = Number(cfg.affiliate_min_payout || 50);
+    // NO £50 MINIMUM: a single £25 commission is paid out as soon as it clears (the
+    // affiliate's 2nd-invoice payment settles in ~5 days). Runs WEEKLY (or manual).
     var paid = 0;
+    var ownerLines = [];
     (dbc.affiliates || []).forEach(function(aff) {
       if (!aff || aff.status !== 'active') return;
       var dueComms = (dbc.partner_commissions || []).filter(function(cm) { return cm.partner_id === aff.id && cm.status === 'approved'; });
+      if (!dueComms.length) return;
       var dueTotal = dueComms.reduce(function(a, cm) { return a + Number(cm.commission_amount || 0); }, 0);
-      if (dueTotal < minPayout) return;
-      // Create a payout record + mark commissions paid.
-      var payout = { id: uuidv4(), affiliate_id: aff.id, amount: dueTotal, status: 'paid', date: new Date().toISOString(), method: 'bank_transfer', reference: 'auto-payout', note: 'Monthly auto-payout' };
+      if (dueTotal <= 0) return;
+      // Require approved KYC + bank details so the money has somewhere to go.
+      var kycOk = !!(aff.kyc && aff.kyc.status === 'approved');
+      var bankOk = !!(aff.kyc && aff.kyc.bank_sort_code && aff.kyc.bank_account_number);
+      if (!kycOk || !bankOk) {
+        ownerLines.push('HELD: ' + (aff.name || aff.email) + ' - \u00a3' + dueTotal.toFixed(2) + ' awaiting KYC approval / bank details');
+        continue;
+      }
+      // Create a payout record + mark commissions paid (founder executes the BACS
+      // transfer from the payout list; Stripe Connect automation can be added later).
+      var payout = { id: uuidv4(), affiliate_id: aff.id, amount: dueTotal, status: 'paid', date: new Date().toISOString(), method: 'bank_transfer', reference: 'weekly-payout', note: 'Weekly payout - 2nd invoice commission cleared', bank: (aff.kyc.bank_name || '') + ' / ' + (aff.kyc.bank_sort_code || '') + ' / ' + (aff.kyc.bank_account_number || ''), account_holder: aff.kyc.bank_account_holder || '' };
       aff.payouts = aff.payouts || [];
       aff.payouts.push(payout);
       dueComms.forEach(function(cm) { cm.status = 'paid'; cm.paid_at = new Date().toISOString(); cm.payout_id = payout.id; });
       paid += dueComms.length;
+      ownerLines.push('PAY: ' + aff.name + ' (' + aff.email + ') \u00a3' + dueTotal.toFixed(2) + ' -> ' + (aff.kyc.bank_name || '') + ' sort ' + aff.kyc.bank_sort_code + ' acct ' + aff.kyc.bank_account_number + ' holder ' + (aff.kyc.bank_account_holder || ''));
     });
     saveDb();
-    return { commissions_paid: paid };
+    // Email the founder the weekly action list so they can execute the transfers.
+    if (ownerLines.length) {
+      try {
+        var _payHtml = '<div style="font-family:Inter,Arial,sans-serif;max-width:540px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px"><h2 style="color:#4ade80;margin:0 0 10px;font-size:18px">Affiliate payouts due (weekly run)</h2><p style="font-size:13px;color:#cbd5e1;line-height:1.7;margin:0 0 12px">These affiliate commissions have cleared (2nd invoice paid) and are ready to pay by bank transfer:</p><ul style="margin:0;padding-left:18px;font-size:13px;line-height:2;color:#e2e8f0">' + ownerLines.map(function(x){ return '<li>' + x.replace(/</g, '&lt;').replace(/&/g, '&amp;') + '</li>'; }).join('') + '</ul><p style="font-size:12px;color:#94a3b8;margin-top:12px">Marked paid in the system. Transfer via your bank or add Stripe Connect later for fully automatic payment.</p></div>';
+        sendBrevoEmail({ email: process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com', name: '9amLeads Owner' }, 'Affiliate payouts due: ' + ownerLines.filter(function(l){return l.indexOf('PAY:') === 0;}).length + ' to pay', _payHtml);
+      } catch(eP) { console.log('[AFFILIATE] payout email error:', eP.message); }
+    }
+    return { commissions_paid: paid, action_lines: ownerLines.length };
   } catch(e) { return { commissions_paid: paid, error: e.message }; }
 }
 // Wire affiliate automation into the daily partner job (runs post-delivery).
@@ -5868,9 +5887,14 @@ app.post('/api/affiliate/kyc', affiliateAuth, (req, res) => {
     var idType = String(req.body.id_type || '').trim().substring(0, 40);
     var bankName = String(req.body.bank_name || '').trim().substring(0, 120);
     var bankHolder = String(req.body.bank_account_holder || '').trim().substring(0, 120);
+    var sortCode = String(req.body.bank_sort_code || '').trim().replace(/[^0-9]/g, '');
+    var accountNo = String(req.body.bank_account_number || '').trim().replace(/[^0-9]/g, '');
     var idB64 = String(req.body.id_image || '');
     var acceptTc = !!req.body.accept_tc;
     if (!legalName || !idType || !bankName || !bankHolder) return res.status(400).json({ error: 'Please complete all fields: legal name, ID type, bank name and bank account holder.' });
+    // UK bank details required for payout (6-digit sort code + 8-digit account number).
+    if (!sortCode || sortCode.length !== 6) return res.status(400).json({ error: 'Enter your 6-digit bank sort code (e.g. 20-00-00).' });
+    if (!accountNo || accountNo.length !== 8) return res.status(400).json({ error: 'Enter your 8-digit bank account number.' });
     if (!acceptTc) return res.status(400).json({ error: 'You must accept the Affiliate Agreement (Terms & Conditions) to be eligible for payout.' });
     if (idB64.length < 50) return res.status(400).json({ error: 'Please upload a clear photo or scan of your ID (driving licence or passport).' });
     if (normalizeName(legalName) !== normalizeName(bankHolder)) {
@@ -5884,6 +5908,8 @@ app.post('/api/affiliate/kyc', affiliateAuth, (req, res) => {
     aff.kyc.id_type = idType;
     aff.kyc.bank_name = bankName;
     aff.kyc.bank_account_holder = bankHolder;
+    aff.kyc.bank_sort_code = sortCode;
+    aff.kyc.bank_account_number = accountNo;
     aff.kyc.id_uploaded = idB64;
     aff.kyc.id_uploaded_at = new Date().toISOString();
     aff.kyc.tc_accepted = true;

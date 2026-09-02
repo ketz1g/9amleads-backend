@@ -336,7 +336,7 @@ tr:last-child td{border-bottom:none}
 </div>
 <div class="hero">
 <h1>Welcome back, <span id="a-name">Affiliate</span> 👋</h1>
-<p>Share your code below. Every customer who uses it for <b>any lead type</b> gets a <b>14-day free trial</b>. You earn <b>£25</b> for every customer who pays their second invoice, around a month after they sign up. Use the <b>Tools</b> tab for ready-made phone scripts, emails, SMS and social posts to help your referrals start the free trial.</p>
+<p>Share your code below. Every customer who uses it for <b>any lead type</b> gets a <b>14-day free trial</b>. You earn <b>£25</b> for every customer who pays their second invoice, paid within about a week of it clearing. Use the <b>Tools</b> tab for ready-made phone scripts, emails, SMS and social posts to help your referrals start the free trial.</p>
 <div class="code"><span class="lbl">Your code:</span> <b id="a-code"></b> <button onclick="copyCode()">Copy</button></div>
 <div class="code" style="margin-top:10px"><span class="lbl">Your share link:</span> <b id="a-link" style="font-size:12px;color:#38bdf8"></b> <button onclick="copyLink()">Copy</button></div>
 <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
@@ -348,7 +348,7 @@ tr:last-child td{border-bottom:none}
 </div>
 <div class="qr-wrap">
 <img id="qr-img" alt="Share link QR code" style="display:none">
-<div class="qr-note">Show this QR code to a business owner. They scan it, sign up with your code, and you get the £25 around a month later, once they pay their second invoice.</div>
+<div class="qr-note">Show this QR code to a business owner. They scan it, sign up with your code, and you get the £25 within about a week of their second invoice clearing.</div>
 </div>
 </div>
 
@@ -397,7 +397,7 @@ tr:last-child td{border-bottom:none}
 <div class="payout-card">
 <div class="p-head"><div><div class="lbl">Your next payout</div><div class="val" id="c-next-payout">£0</div></div><div class="lbl" id="c-payout-pct">0% of £50</div></div>
 <div class="bar"><div class="fill" id="c-payout-bar" style="width:0%"></div></div>
-<div class="p-sub" id="c-payout-sub">Commissions are paid once your approved earnings reach the £50 minimum, on the monthly cycle.</div>
+<div class="p-sub" id="c-payout-sub">Commissions are paid as they clear - usually within a week of the customer's second invoice. No minimum.</div>
 </div>
 <div class="cards">
 <div class="card"><div class="lbl">Referrals</div><div class="val" id="c-refs">0</div><div class="sub">customers who signed up with your code</div></div>
@@ -418,7 +418,7 @@ tr:last-child td{border-bottom:none}
 <ol class="howto" style="padding-left:18px">
 <li><b>Share your code</b>. Give your name or code to anyone starting with 9amLeads.</li>
 <li><b>They get a 14-day free trial</b>. Instead of the standard 7 days, used at signup for any lead type.</li>
-<li><b>You earn £25 per sign-up</b>. Paid around a month after they sign up, once they pay their second invoice.</li>
+<li><b>You earn £25 per sign-up</b>. Paid within about a week of their second invoice clearing.</li>
 <li><b>Paid after qualifying</b>. Your £25 clears after the qualifying period and is paid out on the monthly cycle.</li>
 </ol>
 <p style="font-size:12px;color:#94a3b8;margin-top:14px">Tip: open the <a href="#" onclick="go('tools');return false" style="color:#0ea5e9">Tools tab</a> for phone scripts, emails, SMS and social posts for every lead type. Ready to copy and use.</p>
@@ -527,7 +527,7 @@ tr:last-child td{border-bottom:none}
 </div>
 <div class="tool-sec">
 <h3>4. Get them to their second invoice (about a month in)</h3>
-<div class="step"><b>Your commission = the second paid invoice</b>You earn £25 around a month after they sign up, once a customer pays their second invoice. Help them through the first week of paid use and your commission clears soon after.</div>
+<div class="step"><b>Your commission = the second paid invoice</b>You earn £25 within about a week of a customer paying their second invoice. Help them through the first week of paid use and your commission clears soon after.</div>
 <div class="step"><b>Check in after their first payment</b>A quick "How are the leads looking?" message after their first paid week helps them see value. And get them to that second invoice that earns your £25.</div>
 <div class="step"><b>Fix problems fast</b>If they say leads aren't working: suggest a different lead type, better postcode areas, or point them to the outreach toolkit. A small fix keeps them subscribed.</div>
 <div class="step"><b>Congratulate their wins</b>"Glad the leads are working!" Referrals who feel your support stay longer. And refer more customers to you.</div>
@@ -637,6 +637,10 @@ tr:last-child td{border-bottom:none}
 <div id="kyc-preview" style="margin-top:8px"></div></div>
 <div class="fg"><label>Bank name</label><input type="text" id="kyc-bank" placeholder="e.g. Barclays" style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px"></div>
 <div class="fg"><label>Bank account holder name (exactly as on the account)</label><input type="text" id="kyc-bankholder" placeholder="Must match the legal name above" style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px"></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+<div class="fg" style="margin:0"><label>Sort code</label><input type="text" id="kyc-sortcode" placeholder="e.g. 20-00-00" maxlength="8" style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px"></div>
+<div class="fg" style="margin:0"><label>Account number</label><input type="text" id="kyc-accountno" placeholder="8 digits" maxlength="8" style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px"></div>
+</div>
 <div id="kyc-match" style="font-size:11.5px;margin-top:4px;color:#6b7280">Enter the same name in both fields so they match.</div>
 <div class="fg" style="margin-top:14px"><label style="display:flex;gap:8px;align-items:flex-start;font-size:11.5px;color:#c6cfdd;cursor:pointer"><input type="checkbox" id="kyc-tc" style="margin-top:2px"> I have read and accept the <a href="#" onclick="showKycTerms();return false" style="color:#0ea5e9">9amLeads Affiliate Agreement</a> (Terms &amp; Conditions). I confirm that the information I have provided is accurate, that my name on the ID matches my bank account, and that I will not engage in fraudulent or misleading referral activity.</label></div>
 <div style="display:flex;gap:8px;margin-top:14px"><button class="btn" id="kyc-submit-btn" onclick="submitKyc()">Submit for verification</button></div>
@@ -698,15 +702,15 @@ tr:last-child td{border-bottom:none}
 <h3>📖 How it works</h3>
 <ol>
 <li>Share your code. Every customer who signs up with it gets a <b style="color:#e2e8f0">14-day free trial</b>.</li>
-<li>You earn <b style="color:#e2e8f0">£25</b> for every customer who pays their second invoice, around a month after sign-up.</li>
+<li>You earn <b style="color:#e2e8f0">£25</b> for every customer who pays their second invoice, paid within about a week-up.</li>
 <li>Track everyone in the <b style="color:#e2e8f0">Leads</b> tab and convert them with the <b style="color:#e2e8f0">Tools</b> and <b style="color:#e2e8f0">Playbook</b>.</li>
 <li>Commissions are paid out on a monthly cycle.</li>
 </ol>
 </div>
 <div class="m-sec">
 <h3>❓ Common questions</h3>
-<div class="q">When do I start earning?</div><div class="a">Around a month after they sign up, once they pay their second invoice. Tracked live in your dashboard.</div>
-<div class="q">How much do I earn?</div><div class="a">£25 per paying customer, paid once around a month after they sign up (their second invoice). No cap on the number of customers you refer.</div>
+<div class="q">When do I start earning?</div><div class="a">Within about a week of their second invoice clearing. Tracked live in your dashboard.</div>
+<div class="q">How much do I earn?</div><div class="a">£25 per paying customer, paid within about a week of their second invoice up (their second invoice). No cap on the number of customers you refer.</div>
 <div class="q">Do my referrals really get 14 days free?</div><div class="a">Yes. Any customer who uses your code gets 14 days free instead of the standard 7.</div>
 <div class="q">Where are my scripts and templates?</div><div class="a">Open the Tools tab and pick a lead type. Everything is ready to copy.</div>
 </div>
@@ -1213,7 +1217,7 @@ var AFF_TIPS=[
   {icon:"💡",title:"Lead with the 14-day code.",text:"Normally it's a 7-day trial. With your code they get 14 days free, no card, cancel anytime. That line closes more signups than anything else."},
   {icon:"📞",title:"Call within the first hour.",text:"The customer who hears from you first trusts you first. When a referral signs up, message or call them the same day."},
   {icon:"📈",title:"Track your pipeline.",text:"Your Leads tab shows every referral at each stage. Watch who's in trial and nudge them toward their first paid week."},
-  {icon:"💸",title:"Your £25 lands on their 2nd invoice.",text:"That's about a month after they sign up. Help them through the first paid week and your commission clears."},
+  {icon:"💸",title:"Your £25 lands within about a week of their 2nd invoice.",text:"Help them through the first paid week and your commission clears."},
   {icon:"🖨️",title:"Mention auto Print & Post.",text:"We send their leaflets and letters for them, tracked live. It's a service competitors don't offer — use it in your pitch."},
   {icon:"✅",title:"Never let a trial go cold.",text:"Follow up on day 1, day 3 and day 7. Most sign-ups come from the second or third message."},
   {icon:"🤝",title:"Ask happy customers for referrals.",text:"A customer who loves their leads knows other businesses. Ask them to share your code too."},
@@ -1266,6 +1270,8 @@ function loadKyc(){
     var idt=document.getElementById('kyc-idtype'); if(idt&&k.id_type)idt.value=k.id_type;
     var bank=document.getElementById('kyc-bank'); if(bank&&k.bank_name)bank.value=k.bank_name;
     var bh=document.getElementById('kyc-bankholder'); if(bh&&k.bank_account_holder)bh.value=k.bank_account_holder;
+  var bs=document.getElementById('kyc-sortcode'); if(bs&&k.bank_sort_code)bs.value=k.bank_sort_code;
+  var ba=document.getElementById('kyc-accountno'); if(ba&&k.bank_account_number)ba.value=k.bank_account_number;
     var tc=document.getElementById('kyc-tc'); if(tc&&k.tc_accepted)tc.checked=true;
     var btn=document.getElementById('kyc-submit-btn');
     if(btn&&(k.status==='pending_review'||k.status==='approved')){btn.disabled=true;btn.style.opacity='.4';btn.textContent=k.status==='approved'?'Already verified':(k.status==='pending_review'?'Under review':'Re-submit');}
@@ -1314,15 +1320,19 @@ function submitKyc(){
   var idType=(document.getElementById('kyc-idtype')||{}).value;
   var bank=(document.getElementById('kyc-bank')||{}).value.trim();
   var holder=(document.getElementById('kyc-bankholder')||{}).value.trim();
+  var sortcode=(document.getElementById('kyc-sortcode')||{}).value.trim().replace(/[^0-9]/g,'');
+  var accountno=(document.getElementById('kyc-accountno')||{}).value.trim().replace(/[^0-9]/g,'');
   var tc=!!(document.getElementById('kyc-tc')||{}).checked;
   if(!legal){errEl.textContent='Enter your legal name as it appears on your ID';errEl.style.display='block';return;}
   if(!idType){errEl.textContent='Choose your ID type (driving licence or passport)';errEl.style.display='block';return;}
   if(!_kycImageB64){errEl.textContent='Please upload a clear photo of your ID';errEl.style.display='block';return;}
   if(!bank||!holder){errEl.textContent='Enter your bank name and bank account holder';errEl.style.display='block';return;}
+  if(sortcode.length!==6){errEl.textContent='Enter your 6-digit sort code (e.g. 20-00-00)';errEl.style.display='block';return;}
+  if(accountno.length!==8){errEl.textContent='Enter your 8-digit bank account number';errEl.style.display='block';return;}
   if(!tc){errEl.textContent='You must accept the Affiliate Agreement to be eligible for payout';errEl.style.display='block';return;}
   var btn=document.getElementById('kyc-submit-btn');
   if(btn){btn.disabled=true;btn.textContent='Submitting...';}
-  api('POST','/affiliate/kyc',{legal_name:legal,id_type:idType,bank_name:bank,bank_account_holder:holder,id_image:_kycImageB64,accept_tc:tc}).then(function(d){
+  api('POST','/affiliate/kyc',{legal_name:legal,id_type:idType,bank_name:bank,bank_account_holder:holder,bank_sort_code:sortcode,bank_account_number:accountno,id_image:_kycImageB64,accept_tc:tc}).then(function(d){
     if(btn){btn.disabled=false;btn.textContent='Submit for verification';}
     if(d.success){
       var r=document.getElementById('kyc-result');
@@ -1526,8 +1536,7 @@ function renderPayoutProgress(payout, aff){
   document.getElementById('c-payout-pct').textContent=pct+'% of £'+th;
   document.getElementById('c-payout-bar').style.width=pct+'%';
   var sub=document.getElementById('c-payout-sub');
-  if(pct>=100){ sub.innerHTML='<b style="color:#34d399">Ready to pay!</b> Your approved earnings have reached the £'+th+' minimum. Payouts run on the monthly cycle.'; }
-  else { sub.innerHTML='Commissions are paid once your approved earnings reach the £'+th+' minimum, on the monthly cycle. Each qualifying sign-up earns you £'+rate+'.'; }
+  if(sub) sub.innerHTML='<b style="color:#34d399">Paid as commissions clear.</b> Each customer\'s 2nd invoice pays you \u00a3'+rate+' within about a week. No minimum.';
 }
 function renderPipeline(pl){
   var order=['referral_pending','earning','approved','paid'];
