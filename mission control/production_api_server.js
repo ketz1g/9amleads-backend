@@ -16103,6 +16103,30 @@ function maskedBulkPreview(n) {
   return getBulkEligibleLeads().slice(0, n).map(maskBulkAddress);
 }
 
+// POST /api/admin/boost-seed — backdate pool leads into the 1-month / 2-month archive
+// age bands so Boost packs can be tested (and topped up). Body: { product, months }
+app.post('/api/admin/boost-seed', adminAuth, (req, res) => {
+  try {
+    var prod = String((req.body && req.body.product) || 'probate');
+    var months = parseInt(req.body && req.body.months, 10) || 1;
+    if (['moving', 'probate'].indexOf(prod) === -1) return res.status(400).json({ error: 'moving or probate only' });
+    var target = Date.now() - (months === 2 ? 61 : 31) * 86400000;
+    var dateStr = new Date(target).toISOString().split('T')[0];
+    var arr = readPoolFile(prod);
+    var candidates = (arr || []).filter(function(l) { return l && !l.boost_reserved && !l.boost_sold && !l.bulk_reserved; });
+    var count = Math.min(parseInt(req.body && req.body.count, 10) || 120, candidates.length);
+    var chosen = candidates.slice(0, count);
+    var file = path.join(DATA_DIR, PRODUCT_LEAD_FILES[prod].file);
+    var raw = null; try { raw = JSON.parse(fs.readFileSync(file, 'utf-8')); } catch(e) {}
+    var ids = {}; chosen.forEach(function(c) { ids[c.id || c.url || c.company_number || 1] = 1; });
+    var done = 0;
+    function mark(l) { if (l && ids[l.id || l.url || c.company_number || 1]) { l.boost_seeded = 1; l.boost_age = months + 'm'; l.firstVisibleDate = dateStr + 'T00:00:00.000Z'; done++; } }
+    if (Array.isArray(raw)) { raw.forEach(mark); fs.writeFileSync(file, JSON.stringify(raw, null, 2)); }
+    else if (raw && typeof raw === 'object') { Object.keys(raw).forEach(function(k) { if (Array.isArray(raw[k])) raw[k].forEach(mark); }); fs.writeFileSync(file, JSON.stringify(raw, null, 2)); }
+    res.json({ success: true, seeded: done, available_1m: getBoostArchiveLeads(prod, '1m', 0).length, available_2m: getBoostArchiveLeads(prod, '2m', 0).length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/bulk-seed — backdate `count` newest newbusiness pool leads to 4 days
 // old so they become bulk-eligible (the reserve fills naturally over time; this lets
 // us top it up / test on demand). Body: { count }
