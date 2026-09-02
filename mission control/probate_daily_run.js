@@ -30,8 +30,13 @@ async function main() {
     if (/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(l.postcode || ''))) withPc++;
   });
   console.log('[PROBATE-DAILY] stats: executor_home=' + home + ' via_solicitor=' + sol + ' with_postcode=' + withPc);
-  if (!leads || !leads.length) { console.log('[PROBATE-DAILY] nothing to import'); return; }
-  const body = JSON.stringify({ product: 'probate', leads: leads });
+  // PRODUCT RULE: probate leads must be EXECUTOR-DIRECT (the executor applied in
+  // person and their HOME address is published) so the customer writes straight to
+  // the executor. Solicitor-routed notices are DROPPED — never imported.
+  var homeOnly = (leads || []).filter(function(l) { return l.executorType === 'home'; });
+  console.log('[PROBATE-DAILY] executor-home leads only: ' + homeOnly.length + ' (dropped ' + (leads.length - homeOnly.length) + ' solicitor/no-executor)');
+  if (!homeOnly.length) { console.log('[PROBATE-DAILY] no executor-home leads today'); return; }
+  const body = JSON.stringify({ product: 'probate', leads: homeOnly });
   const key = process.env.ADMIN_PASSWORD;
   const host = process.env.RENDER_HOST || 'nineamleads-backend.onrender.com';
   const result = await new Promise(function(resolve) {
