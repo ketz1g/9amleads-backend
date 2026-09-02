@@ -1,0 +1,72 @@
+name: Uptime Monitor
+
+on:
+  schedule:
+    # Every 5 minutes - check health endpoints externally (outside Render)
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  check-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check backend health (Render)
+        id: health
+        run: |
+          HTTP_CODE=$(curl -s -o /tmp/backend_body.txt -w "%{http_code}" --max-time 30 "https://nineamleads-backend.onrender.com/api/health")
+          echo "HTTP_CODE=$HTTP_CODE" >> $GITHUB_ENV
+          echo "BODY=$(cat /tmp/backend_body.txt)" >> $GITHUB_ENV
+          echo "Backend HTTP $HTTP_CODE"
+
+      - name: Check public site (Netlify)
+        id: site
+        run: |
+          SITE_CODE=$(curl -s -o /tmp/site_body.txt -w "%{http_code}" --max-time 30 "https://9amleads.com/")
+          echo "SITE_CODE=$SITE_CODE" >> $GITHUB_ENV
+          echo "Site HTTP $SITE_CODE"
+
+      - name: Determine outage
+        id: status
+        run: |
+          if [ "$HTTP_CODE" != "200" ] || [ "$SITE_CODE" != "200" ]; then
+            echo "OUTAGE=yes" >> $GITHUB_ENV
+            echo "Outage detected (backend=$HTTP_CODE, site=$SITE_CODE)"
+          else
+            echo "OUTAGE=no" >> $GITHUB_ENV
+            echo "All systems operational"
+          fi
+
+      - name: Open alert issue if outage
+        if: env.OUTAGE == 'yes'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { repo, owner } = context.repo;
+            const backend = process.env.HTTP_CODE;
+            const site = process.env.SITE_CODE;
+            const title = `🔴 9amLeads outage (backend HTTP ${backend}, site HTTP ${site})`;
+            const issueBody = `**Outage detected.**\n\n- Backend (nineamleads-backend.onrender.com): HTTP **${backend}**\n- Public site (9amleads.com): HTTP **${site}**\n- Time: ${new Date().toISOString()}\n\nThis may affect the 09:00 lead delivery, daily emails, and the portal. Check the Render and Netlify dashboards.`;
+            const { data: issues } = await github.rest.issues.listForRepo({ owner, repo, state: 'open', labels: ['uptime-alert'] });
+            if (issues.some(i => i.title.includes('outage'))) {
+              console.log('Alert already open, skipping.');
+            } else {
+              const issue = await github.rest.issues.create({ owner, repo, title, body: issueBody, labels: ['uptime-alert'] });
+              console.log('Opened issue #' + issue.data.number);
+            }
+
+      - name: Close alert issue if recovered
+        if: env.OUTAGE == 'no'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { repo, owner } = context.repo;
+            const { data: issues } = await github.rest.issues.listForRepo({ owner, repo, state: 'open', labels: ['uptime-alert'] });
+            for (const issue of issues) {
+              if (issue.title.includes('outage')) {
+                await github.rest.issues.update({ owner, repo, issue_number: issue.number, state: 'closed', state_reason: 'completed' });
+                console.log('Closed issue #' + issue.number);
+              }
+            }
