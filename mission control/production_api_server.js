@@ -10175,6 +10175,62 @@ app.post('/api/admin/set-customer-lead-total', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/top-up-today — if a customer's TODAY count is under their daily
+// promise (e.g. a delivery shortfall), deliver one fresh in-area lead stamped TODAY
+// so their dashboard shows the full promised count. Body: { email }
+app.post('/api/admin/top-up-today', adminAuth, (req, res) => {
+  try {
+    var email = String((req.body && req.body.email) || '').toLowerCase().trim();
+    if (!email) return res.status(400).json({ error: 'email required' });
+    var dbT = getDb();
+    var cust = (dbT.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    var dailyLimit = getPlanLimit(cust.product, cust.plan, cust.coverage) || 5;
+    var today = new Date().toISOString().split('T')[0];
+    var todayCount = (dbT.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0; }).length;
+    if (todayCount >= dailyLimit) return res.json({ success: true, email: email, note: 'Already at daily promise (' + todayCount + '/' + dailyLimit + ')', added: 0 });
+    var areas = [];
+    try { areas = JSON.parse(cust.target_areas || '[]'); } catch(e) { areas = []; }
+    if (!areas.length) { try { var cfgT = JSON.parse(cust.product_config || '{}'); areas = (cfgT[cust.product] && cfgT[cust.product].target_areas) ? JSON.parse(cfgT[cust.product].target_areas) : []; } catch(e2) { areas = []; } }
+    var pool = loadProductPool(cust.product);
+    var interleaved = interleavePoolByAreas(pool, areas);
+    var nowIso = new Date().toISOString();
+    var freshCutoff = getFreshCutoffIso();
+    var usedKeys = {};
+    (dbT.leads || []).forEach(function(l) { if (l.customer_id === cust.id) { try { var dd = JSON.parse(l.data || '{}'); var du = dd.url || ''; if (du) usedKeys['u:' + du] = 1; var da = dd.fullAddress || dd.address || ''; var dp = dd.postcode || ''; if (da && dp) usedKeys['a:' + String(da).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 26) + '|' + String(dp).toUpperCase().replace(/[^A-Z0-9]/g, '')] = 1; } catch(e) {} } });
+    // Global exclusivity: never give a lead already delivered to ANOTHER customer.
+    (dbT.leads || []).forEach(function(l) { if (l.customer_id !== cust.id && l.delivered) { try { var dd = JSON.parse(l.data || '{}'); var du = dd.url || ''; if (du) usedKeys['u:' + du] = 1; } catch(e) {} } });
+    var picked = null;
+    for (var ti = 0; ti < interleaved.length; ti++) {
+      var pl = interleaved[ti];
+      try { if (cust.product === 'moving') { var vrT = validateMovingLead({ fullAddress: pl.fullAddress || pl.address || '', postcode: pl.postcode || '', url: pl.url || '' }); if (vrT) continue; } } catch(e) { continue; }
+      var pcAreaT = extractPostcodeArea(pl.postcode || pl.address || pl.fullAddress || '');
+      var matchedT = false;
+      if (/all.?uk|uk.?wide|nationwide|whole.?uk/i.test((areas || []).join(' '))) matchedT = true;
+      else if (cust.product === 'moving') matchedT = areas.indexOf(pcAreaT) !== -1;
+      else matchedT = areas.some(function(a) { return String(a).toLowerCase().replace(/[\s-]+/g,'-') === String(pl.county || '').toLowerCase().replace(/[\s-]+/g,'-'); });
+      if (!matchedT) continue;
+      var fvT = pickFreshDate(pl); if (!fvT) continue;
+      if (fvT < freshCutoff) continue;
+      var keyT = pl.url || ('a:' + String(pl.address || pl.fullAddress || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30));
+      if (usedKeys[keyT]) continue;
+      picked = pl;
+      break;
+    }
+    if (!picked) return res.status(400).json({ error: 'No fresh in-area lead available to top up today. Try again later.' });
+    var dT = { address: picked.address || picked.fullAddress || '', fullAddress: picked.fullAddress || picked.address || '', postcode: picked.postcode || '', url: picked.url || '', street: picked.street || '', building_number: picked.building_number || '', source: picked.source || '', firstVisibleDate: picked.firstVisibleDate || nowIso, scrapedAt: nowIso };
+    if (!dT.town && picked.town) dT.town = picked.town;
+    if (!dT.city && picked.city) dT.city = picked.city;
+    if (!dT.county && picked.county) dT.county = picked.county;
+    if (cust.product === 'moving') { try { enrichMovingLeadTown(dT); } catch(e) {} }
+    else { try { normalizeStannpAddress(dT); } catch(e) {} }
+    var delivAt = today + 'T09:00:00.000Z';
+    dbT.leads.push({ id: uuidv4(), customer_id: cust.id, product: cust.product, data: JSON.stringify(dT), status: 'delivered', delivered: 1, created_at: nowIso, delivered_at: delivAt, release_at: delivAt });
+    saveDb();
+    res.json({ success: true, email: email, added: 1, lead: (dT.fullAddress || dT.address || '') + ', ' + (dT.postcode || ''), today_count: todayCount + 1, daily_limit: dailyLimit });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/purge-pending — remove ALL a customer's PENDING (not-yet-delivered)
 // leads so the dashboard shows only their real DELIVERED history + today's batch.
 // Pending rows accumulate as junk from force re-deliveries / failed gate passes /
