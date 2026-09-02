@@ -1,0 +1,18 @@
+name: probe-rightmove
+
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe Rightmove from Actions
+        run: |
+          ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36"
+          echo "--- Rightmove property-for-sale ---"
+          curl -s -o /tmp/rm.html -w "HTTP %{http_code} bytes %{size_download}\n" -A "$ua" "https://www.rightmove.co.uk/property-for-sale/find.html?searchType=SALE&locationIdentifier=POSTCODE%5E1841&radius=1.0"
+          grep -c 'propertyCard' /tmp/rm.html || true
+          echo "--- Rightmove search api ---"
+          curl -s -o /tmp/rm2.json -w "HTTP %{http_code} bytes %{size_download}\n" -A "$ua" "https://www.rightmove.co.uk/api/_search?locationIdentifier=POSTCODE%5E1841&numberOfPropertiesPerPage=24&radius=1.0&sortType=6&index=0&channel=BUY"
+          head -c 120 /tmp/rm2.json || true
