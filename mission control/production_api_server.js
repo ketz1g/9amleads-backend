@@ -1633,7 +1633,24 @@ class DirectMailProvider {
     }
   }
 
-  async prepareA5Artwork(file, targetW, targetH, isBack) {
+  // ARTWORK PREP with MEMO: a bulk pack sends the SAME flyer front/back to every
+  // recipient, so prepare each artwork file ONCE and reuse it — otherwise a 100-1000
+  // lead pack re-runs hundreds of identical heavy image ops and overloads the server.
+  async prepareA5Artwork(file, targetW, targetH, isBack) {
+    try {
+      if (!file || !file.file_data) return { error: 'No file to prepare', file: file };
+      var _b64 = String(file.file_data); if (_b64.indexOf(',') !== -1) _b64 = _b64.split(',')[1];
+      if (!_b64) return { error: 'Empty file data', file: file };
+      if (!this._artMemo) this._artMemo = {};
+      var _k = ((targetW || 1819) + 'x' + (targetH || 2551) + (isBack ? '-b' : '-f')) + '|' + require('crypto').createHash('md5').update(_b64).digest('hex');
+      if (this._artMemo[_k]) return this._artMemo[_k];
+      var _o = await this._prepareA5ArtworkInner(file, targetW, targetH, isBack);
+      this._artMemo[_k] = _o;
+      if (Object.keys(this._artMemo).length > 30) this._artMemo = {};
+      return _o;
+    } catch(e) { return { error: e.message, file: file }; }
+  }
+  async _prepareA5ArtworkInner(file, targetW, targetH, isBack) {
     try {
       if (!file || !file.file_data) return { error: 'No file to prepare', file: file };
       var dataUri = String(file.file_data);
