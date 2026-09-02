@@ -458,12 +458,11 @@ function updateMovingTypeLabel() {
 </div>
 
 <div class="faq-s">
-<div class="faq-q"><strong>How many leads will I get?</strong> It depends on your plan and lead type. Moving &amp; New Business: up to 5/day on Starter, 10/day on Pro, 15/day on Enterprise. Probate: 2/5/10. Planning &amp; Tenders: 1/3/5. Daily volumes vary by your areas and availability.</div>
 <div class="faq-q"><strong>When do I receive my leads?</strong> Your fresh opportunities are delivered to your account and inbox every weekday morning at 9am.</div>
 <div class="faq-q"><strong>Is a card required for the trial?</strong> No. Your 7-day free trial needs no card and nothing is charged automatically. Add a card later only if you want your leads to keep flowing after the trial.</div>
 <div class="faq-q"><strong>Can I change my areas?</strong> Yes. Update your postcode areas or counties anytime from your dashboard settings.</div>
 <div class="faq-q"><strong>How fresh are the leads?</strong> Opportunities are prioritised from the last 24 hours of live public data.</div>
-<div class="faq-q"><strong>Are the leads shared with other customers?</strong> You receive your own daily allocation and are never sent the same opportunity twice. Opportunities come from public data, so whoever responds first wins the work.</div>
+<div class="faq-q"><strong>Are the leads shared with other customers?</strong> Leads come from public data, so other firms can see the same opportunities too. We deliver them to you fresh each morning so you can respond first and win the work.</div>
 <div class="faq-q"><strong>What if my trial ends?</strong> Your delivery pauses until you upgrade, but your account and existing leads stay available. Upgrade from your dashboard anytime.</div>
 <div class="faq-q"><strong>Can I cancel?</strong> Yes, cancel anytime. Weekly plans with no long-term contract.</div>
 </div>
@@ -1161,10 +1160,11 @@ function doSignup() {
     var regionVal = document.getElementById('region-select')?.value;
     if (regionVal && regionVal !== 'all-uk') { targetAreas = [regionVal]; }
   }
-  // Enforce a minimum of counties/areas when county coverage is used
-  // (planning/probate/tenders/new business). TENDERS need only 2 areas (they are
-  // national opportunities); other county products need 3. All UK bypasses it.
-  var countyMin = (getSelectedLeadTypes().indexOf('tenders') !== -1 || getSelectedLeadTypes().indexOf('probate') !== -1) ? 2 : 3;
+  // Enforce a minimum of counties/areas when county coverage is used. The BACKEND
+  // requires at least 3 areas for every product (unless All UK), so the form must
+  // match exactly — otherwise a customer who picks 2 clears the form but is rejected
+  // on submit ("couldn't sign up").
+  var countyMin = 3;
   if (selectedCoverage === 'county' && targetAreas.length > 0 && targetAreas.length < countyMin) {
     document.getElementById('signup-error').textContent = 'Please select at least ' + countyMin + ' counties/areas (or choose All UK)';
     document.getElementById('signup-error').style.display = 'block'; button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false; return;
