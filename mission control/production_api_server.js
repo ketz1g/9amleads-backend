@@ -4897,14 +4897,17 @@ app.post('/api/auth/signup', async (req, res) => {
     }
 
     // OTHER lead types (probate/planning/newbusiness/tenders), ANY coverage
-    // (postcode or county): must choose at least 3 areas/counties so delivery has
-    // enough supply — unless they're all-uk or on an unlimited plan.
+    // (postcode or county): must choose a minimum number of areas/counties so
+    // delivery has enough supply — unless they're all-uk or on an unlimited plan.
+    // Probate & tenders are shared, county-wide products where TWO counties already
+    // cover a wide area (minimum 2); planning/newbusiness need 3.
     var signupProdOther = String(product || '').toLowerCase();
     var planKeyOther = String(planName || plan || 'free_trial').toLowerCase();
     var isUnlimitedOther = (planKeyOther === 'pro' || planKeyOther === 'enterprise');
     var allUkOther = (areas || []).some(function(a){ return /all.?uk|uk.?wide|nationwide|whole.?uk/i.test(String(a)); });
-    if (!isUnlimitedOther && signupProdOther !== 'moving' && (areas || []).length > 0 && (areas || []).length < 3 && !allUkOther) {
-      return res.status(400).json({ error: 'Please choose at least 3 areas or counties for your ' + signupProdOther + ' leads (you selected ' + (areas || []).length + ').', too_few_areas: true, min_areas: 3 });
+    var minOther = (signupProdOther === 'probate' || signupProdOther === 'tenders') ? 2 : 3;
+    if (!isUnlimitedOther && signupProdOther !== 'moving' && (areas || []).length > 0 && (areas || []).length < minOther && !allUkOther) {
+      return res.status(400).json({ error: 'Please choose at least ' + minOther + ' areas or counties for your ' + signupProdOther + ' leads (you selected ' + (areas || []).length + ').', too_few_areas: true, min_areas: minOther });
     }
 
     var signupIp = req.ip || req.connection?.remoteAddress || '';
