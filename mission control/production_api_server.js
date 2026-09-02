@@ -10430,6 +10430,29 @@ app.post('/api/admin/top-up-today', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/affiliate-sample-emails — email the founder samples of every email
+// an affiliate receives (welcome on approval, referral signed up, £25 earned on the
+// 2nd invoice, and the daily follow-up digest) so they can review the copy.
+app.post('/api/admin/affiliate-sample-emails', adminAuth, async (req, res) => {
+  try {
+    var to = String((req.body && req.body.email) || 'ketzman1g@gmail.com');
+    var code = 'SAMPLE9';
+    function wrap(title, inner) {
+      return '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f1f5f9;font-family:Inter,Arial,sans-serif"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 12px"><table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%"><tr><td style="background:#0f172a;padding:20px 30px;text-align:center;border-bottom:3px solid #38bdf8"><div style="font-family:Outfit,Arial,sans-serif;font-size:22px;font-weight:900;color:#38bdf8">9am<span style="color:#38bdf8">Leads</span> Affiliates</div></td></tr><tr><td style="background:#ffffff;padding:26px 30px;border-left:1px solid #e2e8f0;border-right:1px solid #e2e8f0">' + inner + '</td></tr><tr><td style="background:#0f172a;padding:16px 30px;text-align:center;border-radius:0 0 14px 14px"><span style="color:#94a3b8;font-size:11px">9amLeads Affiliate Programme &middot; hello@9amleads.com</span></td></tr></table></td></tr></table></body></html>';
+    }
+    // 1) Welcome (on approval)
+    await sendBrevoEmail({ email: to, name: 'Sample Affiliate' }, 'Welcome to the 9amLeads Affiliate Programme (SAMPLE)', wrap('<h2 style="margin:0 0 10px;font-size:19px;color:#0f172a">Congratulations - you have been approved as a 9amLeads affiliate! \uD83C\uDF89</h2><p style="font-size:14px;line-height:1.7;color:#334155;margin:0 0 8px">Your code is <b style="background:#f1f5f9;padding:3px 8px;border-radius:6px;color:#0ea5e9">' + code + '</b>. Share it with businesses - every signup gets 14 days free, and you earn \u00a325 when they pay their second invoice.</p><p style="font-size:13px;color:#64748b;margin:0 0 6px">Use the Tools tab for ready-made scripts, or open your dashboard to start.</p>'));
+    // 2) Referral signed up
+    await sendBrevoEmail({ email: to, name: 'Sample Affiliate' }, 'A referral just signed up - follow up to close it (SAMPLE)', wrap('<h2 style="color:#0ea5e9;margin:0 0 10px;font-size:19px">\uD83D\uDE4C Your referral just signed up!</h2><p style="font-size:14px;line-height:1.7;color:#334155"><b>Acme Removals Ltd</b> started their free 14-day Moving trial using your code <b style="color:#0ea5e9">' + code + '</b>.</p><p style="font-size:13px;line-height:1.6;color:#64748b;margin:0 0 12px">They may not upgrade right away, so follow up over the next few days. You earn \u00a325 when they pay their second invoice.</p><a href="https://www.9amleads.com/portal/affiliate.html" style="display:inline-block;background:#0ea5e9;color:#fff;font-weight:700;padding:11px 18px;border-radius:8px;text-decoration:none;font-size:13px">Open my dashboard</a>'));
+    // 3) £25 earned (2nd invoice)
+    await sendBrevoEmail({ email: to, name: 'Sample Affiliate' }, '\uD83C\uDF89 You earned £25.00 - commission earned (SAMPLE)', wrap('<div style="font-size:34px;margin-bottom:6px">\uD83C\uDF89</div><h2 style="color:#16a34a;margin:0 0 10px;font-size:19px">You earned £25.00!</h2><p style="font-size:14px;line-height:1.7;color:#334155">A customer you referred <b>Acme Removals Ltd</b> has paid their second invoice, so your commission is now <b>pending</b> and will clear into your next payout.</p><p style="font-size:13px;color:#64748b;line-height:1.6">Track it anytime in your <a href="https://www.9amleads.com/portal/affiliate.html" style="color:#0ea5e9">affiliate dashboard</a>.</p>'));
+    // 4) Daily follow-up digest
+    var rows = '<li><b>Acme Removals Ltd</b> (Earning) - 07111 222 333</li><li><b>Abbey Builders</b> (Prospect) - 07700 900123</li>';
+    await sendBrevoEmail({ email: to, name: 'Sample Affiliate' }, '\u23F0 2 follow-up reminders today (SAMPLE)', wrap('<h2 style="color:#f59e0b;margin:0 0 8px;font-size:19px">\u23F0 Your follow-ups for today</h2><p style="font-size:13px;color:#dc2626;font-weight:700;margin:8px 0 4px">Overdue (1)</p><ul style="margin:0 0 10px;padding-left:18px;color:#334155;font-size:13px;line-height:1.8"><li><b>Abbey Builders</b> (Prospect) - 07700 900123</li></ul><p style="font-size:13px;color:#16a34a;font-weight:700;margin:8px 0 4px">Due today (1)</p><ul style="margin:0 0 10px;padding-left:18px;color:#334155;font-size:13px;line-height:1.8"><li><b>Acme Removals Ltd</b> (Earning) - 07111 222 333</li></ul><p style="font-size:13px;color:#64748b;line-height:1.6;margin-top:10px">Call them, add a note, and set the next reminder. <a href="https://www.9amleads.com/portal/affiliate.html" style="color:#0ea5e9">Open my follow-up list</a></p>'));
+    res.json({ success: true, emailed: to });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/test-probate-email — email a REAL probate lead (from the pool) to a
 // given address in exactly the daily probate customer email format, so the founder can
 // see what a probate customer receives. Body: { email }
