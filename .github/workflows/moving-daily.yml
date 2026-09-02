@@ -1,0 +1,28 @@
+name: moving-daily
+
+on:
+  schedule:
+    # 05:40 UTC weekdays (~06:40 UK in summer) — fresh Rightmove properties before 9am,
+    # after the OnTheMarket scrape on Render.
+    - cron: '40 5 * * 1-5'
+  workflow_dispatch:
+
+jobs:
+  scrape-import:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install dotenv
+        run: npm install dotenv --no-save --no-audit --no-fund
+        working-directory: 'mission control'
+      - name: Scrape + import Rightmove moving leads
+        env:
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: node moving_daily_run.js
+        working-directory: 'mission control'
+        timeout-minutes: 20
