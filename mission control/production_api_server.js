@@ -9063,6 +9063,31 @@ app.post('/api/admin/enrich-moving', adminAuth, async (req, res) => {
 // POST /api/admin/paf-probate — manually run the post-scrape PAF enrichment on the
 // probate pool (adds door numbers to door-less probate leads so probate customers
 // get mailable addresses).
+app.post('/api/admin/probe-probate', adminAuth, async (req, res) => {
+  try {
+    var https = require('https');
+    function probe(host, path, label, accept) {
+      return new Promise(function(resolve) {
+        var req = https.request({ hostname: host, path: path, method: 'GET', headers: { 'Accept': accept || 'text/html', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36', 'Accept-Language': 'en-GB,en;q=0.9' }, timeout: 20000 }, function(resp) {
+          var b = ''; resp.on('data', function(c) { b += c; }); resp.on('end', function() {
+            resolve({ label: label, http: resp.statusCode, bytes: b.length, articles: (b.split('<article id="item-').length - 1), hasPerson: /Address of Deceased/.test(b), snippet: b.replace(/\s+/g, ' ').substring(0, 90) });
+          });
+        });
+        req.on('error', function(e) { resolve({ label: label, err: e.message }); });
+        req.setTimeout(20000, function() { req.destroy(); resolve({ label: label, err: 'timeout' }); });
+        req.end();
+      });
+    }
+    var out = {};
+    out.gazette_search = await probe('www.thegazette.co.uk', '/all-notices/notice?notice-type=deceased-estates&results-page-size=10&sort-by=latest-date', 'Gazette search');
+    out.gazette_notice = await probe('www.thegazette.co.uk', '/notice/4609972/data.json?view=linked-data&_metadata=all', 'Gazette data.json', 'application/json');
+    out.govuk = await probe('www.gov.uk', '/search/wills-and-probate', 'gov.uk search');
+    res.json({ success: true, run_at: new Date().toISOString(), ...out });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+// POST /api/admin/paf-probate — manually run the post-scrape PAF enrichment on the
+// probate pool (adds door numbers to door-less probate leads so probate customers
+// get mailable addresses).
 app.post('/api/admin/paf-probate', adminAuth, async (req, res) => {
   try {
     var r = await runProbatePafPostScrape();
