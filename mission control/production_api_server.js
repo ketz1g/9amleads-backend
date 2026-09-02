@@ -10286,6 +10286,25 @@ app.post('/api/admin/top-up-today', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/test-probate-email — email a REAL probate lead (from the pool) to a
+// given address in exactly the daily probate customer email format, so the founder can
+// see what a probate customer receives. Body: { email }
+app.post('/api/admin/test-probate-email', adminAuth, async (req, res) => {
+  try {
+    var toEmail = String((req.body && req.body.email) || '').toLowerCase().trim() || 'ketzman1g@gmail.com';
+    // Pull a fresh probate pool lead — prefer an executor-home one, else any usable.
+    var arr = readPoolFile('probate');
+    var pick = arr.find(function(l) { return l && l.executorType === 'home'; }) || arr.find(function(l) { return l && (l.name || l.executorName); }) || (arr[0] || null);
+    if (!pick) return res.status(404).json({ error: 'No probate leads in pool' });
+    // Reuse the REAL daily probate email template so it looks exactly like the customer's.
+    var fakeCust = { email: toEmail, name: 'Sample Probate Customer', company: 'Sample Probate Customer', product: 'probate', plan: 'starter', leads_per_day: 1, target_areas: pick.region || 'Kent', coverage: 'county' };
+    var fakeLead = { id: uuidv4(), customer_id: 'sample', product: 'probate', status: 'delivered', data: JSON.stringify(pick) };
+    var html = generateLeadEmailHTML(fakeCust, [fakeLead]);
+    await sendBrevoEmail({ email: toEmail, name: 'Sample Probate Customer' }, '9amLeads - Sample Probate Lead', html);
+    res.json({ success: true, emailed: toEmail, lead: (pick.name || '') + ' @ ' + (pick.deceasedAddress || pick.fullAddress || '') + ' | executor_home=' + (pick.executorType === 'home') });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/send-missed-lead-email — send a customer a short "we missed a lead,
 // here it is" apology email (for when a delivery under-sent by a lead). Body:
 // { email, lead_id }  (lead_id = a today lead to feature as the missed one).
