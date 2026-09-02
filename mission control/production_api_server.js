@@ -10247,6 +10247,36 @@ app.post('/api/admin/top-up-today', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/send-missed-lead-email — send a customer a short "we missed a lead,
+// here it is" apology email (for when a delivery under-sent by a lead). Body:
+// { email, lead_id }  (lead_id = a today lead to feature as the missed one).
+app.post('/api/admin/send-missed-lead-email', adminAuth, async (req, res) => {
+  try {
+    var email = String((req.body && req.body.email) || '').toLowerCase().trim();
+    var leadId = String((req.body && req.body.lead_id) || '').trim();
+    if (!email || !leadId) return res.status(400).json({ error: 'email and lead_id required' });
+    var dbM = getDb();
+    var cust = (dbM.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    var lead = (dbM.leads || []).find(function(l) { return l.customer_id === cust.id && l.id === leadId; });
+    if (!lead) return res.status(404).json({ error: 'Lead not found for this customer' });
+    var ld = {}; try { ld = JSON.parse(lead.data || '{}'); } catch(e) {}
+    // Mint a magic link to the dashboard.
+    var _tk = ''; try { _tk = jwt.sign({ id: cust.id, email: cust.email, product: cust.product }, JWT_SECRET, { expiresIn: '48h' }); } catch(te) {}
+    var dashUrl = 'https://www.9amleads.com/portal/dashboard.html?token=' + encodeURIComponent(_tk) + '&email=' + encodeURIComponent(cust.email || '');
+    var fullAddr = ld.fullAddress || ld.address || ld.deceasedAddress || 'Unknown address';
+    var pc = String(ld.postcode || '').toUpperCase();
+    var price = ld.priceLabel || (ld.price ? '\u00a3' + Number(ld.price).toLocaleString() : '');
+    var beds = ld.bedrooms ? ld.bedrooms + (ld.bedrooms === 1 ? ' bed' : ' beds') : '';
+    var url = ld.url || '';
+    var extra = [fullAddr, pc, price, beds].filter(Boolean).join(' &middot; ');
+    var leadBlock = '<table cellpadding="0" cellspacing="0" width="100%" style="background:#ffffff;border:1px solid #e2e8f0;border-radius:12px"><tr><td style="padding:16px 20px"><div style="font-size:13px;font-weight:700;color:#1e293b">' + String(extra || '').replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</div>' + (url ? '<div style="font-size:12px;color:#0ea5e9;margin-top:4px"><a href="' + url + '" style="color:#0ea5e9;text-decoration:underline">View the listing</a></div>' : '') + '</td></tr></table>';
+    var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background-color:#f1f5f9;font-family:Inter,Arial,sans-serif;color:#1e293b"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 16px"><table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%"><tr><td style="background-color:#0f172a;padding:24px 30px;border-radius:16px 16px 0 0;text-align:center;border-bottom:3px solid #38bdf8"><div style="font-family:Outfit,Arial,sans-serif;font-size:24px;font-weight:900;color:#38bdf8">9am<span style="color:#38bdf8">Leads</span></div><div style="font-size:10px;color:#94a3b8;letter-spacing:1.2px;text-transform:uppercase;margin-top:4px">An extra lead for you</div></td></tr><tr><td style="background:#ffffff;padding:28px 30px"><h2 style="margin:0 0 10px;font-size:18px;color:#0f172a">We missed one, and we\u2019re sorry &#128583;</h2><p style="font-size:14px;line-height:1.7;color:#334155;margin:0 0 6px">A lead that should have been in your 9am email was held up this morning. It\u2019s now in your dashboard and we\u2019ve included it below.</p><p style="font-size:14px;line-height:1.7;color:#334155;margin:0 0 18px">Sorry for the inconvenience. Your full set of leads is always in your dashboard.</p>' + leadBlock + '<table cellpadding="0" cellspacing="0" style="margin-top:18px"><tr><td><a href="' + dashUrl + '" style="display:inline-block;background:#0ea5e9;background-image:linear-gradient(135deg,#0ea5e9,#2563eb);color:#ffffff;font-weight:800;font-size:13px;padding:11px 18px;border-radius:8px;text-decoration:none">Open your dashboard</a></td></tr></table></td></tr><tr><td style="background:#0f172a;padding:18px 30px;border-radius:0 0 16px 16px;text-align:center"><span style="color:#94a3b8;font-size:11px">9amLeads &middot; hello@9amleads.com &middot; <a href="https://www.9amleads.com" style="color:#38bdf8;text-decoration:none">9amleads.com</a></span></td></tr></table></td></tr></table></body></html>';
+    await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, 'One more lead for you today', html);
+    res.json({ success: true, email: cust.email, lead: extra });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/purge-pending — remove ALL a customer's PENDING (not-yet-delivered)
 // leads so the dashboard shows only their real DELIVERED history + today's batch.
 // Pending rows accumulate as junk from force re-deliveries / failed gate passes /
