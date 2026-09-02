@@ -69,9 +69,9 @@ h3{font-size:15px;font-weight:700;margin-bottom:10px}
       <div id="availAge" class="avail"></div>
       <h3 style="margin-top:6px">3. What should we post?</h3>
       <div class="seg">
-        <button class="on" data-m="leaflet" onclick="setMail('leaflet')">&#128230; A5 Leaflet &middot; &pound;3/lead</button>
-        <button data-m="letter" onclick="setMail('letter')">&#128196; A4 Letter &middot; &pound;2.50/lead</button>
-        <button data-m="both" onclick="setMail('both')">&#128196;&#128230; Leaflet + Letter &middot; &pound;4.50/lead</button>
+        <button class="on" data-m="leaflet" onclick="setMail('leaflet')">&#128230; A5 Leaflet &middot; &pound;2.49/lead</button>
+        <button data-m="letter" onclick="setMail('letter')">&#128196; A4 Letter &middot; &pound;1.99/lead</button>
+        <button data-m="both" onclick="setMail('both')">&#128196;&#128230; Leaflet + Letter &middot; &pound;3.99/lead</button>
       </div>
       <h3 style="margin-top:6px">4. Pick your pack (printed &amp; posted)</h3>
       <div class="packs" id="packsBox"></div>
@@ -104,7 +104,7 @@ function render(){
   var av=D.available[ST.product][ST.age];
   document.getElementById('availAge').innerHTML=(ST.age==='1m'?'1-month':'2-month')+'-old '+ST.product+' available: <b>'+av+'</b>';
   var sizes=(D.sizes&&D.sizes[ST.product])||[];
-  var rate=(D.mail_rates&&D.mail_rates[ST.mail])||300;
+  var rate=(D.mail_rates&&D.mail_rates[ST.mail])||249;
   var box=document.getElementById('packsBox');
   var lbl=ST.product==='probate'?'probate leads':'moving leads';
   box.innerHTML=sizes.map(function(cnt){

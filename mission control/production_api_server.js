@@ -2085,50 +2085,74 @@ class StannpProvider extends DirectMailProvider {
 
 
   stannpRequest(endpoint, params, method) {
-    return new Promise(function(resolve, reject) {
-      if (!STANNP_API_KEY) return reject(new Error('STANNP_API_KEY not configured'));
-      // TEST MODE (STANNP_TEST_MODE=1): simulate a successful Stannp create so the
-      // whole bulk/Print & Post pipeline (materials, artwork prep, campaign + recipients,
-      // tracking + proof status) can be rehearsed FREE with ZERO risk of a real charge or
-      // an error slipping to a customer. Nothing is sent to Stannp.
-      if (String(process.env.STANNP_TEST_MODE || '') === '1' && /create$/i.test(endpoint)) {
-        console.log('[STANNP-TEST] simulated ' + endpoint + ' (no real mail created)');
-        return resolve({ success: true, data: { id: 'test_' + Date.now() + '_' + Math.floor(Math.random() * 9999), cost: 0, status: 'processing' }, test: true });
-      }
-      const https = require('https');
-      var bodyData = Object.assign({}, params || {});
-      var encoded = Object.keys(bodyData).map(function(k) { return encodeURIComponent(k) + '=' + encodeURIComponent(bodyData[k]); }).join('&');
-      var url = STANNP_BASE_URL.replace(/\/+$/, '') + '/' + endpoint.replace(/^\/+/, '');
-      var parsed = new URL(url);
-      var httpMethod = method || 'POST';
-      var headers = {
-        'Authorization': 'Basic ' + Buffer.from(STANNP_API_KEY + ':').toString('base64'),
-        'Content-Type': 'application/x-www-form-urlencoded'
-      };
-      if (httpMethod === 'GET') {
-        // For GET requests with a query string, append to path
-        if (encoded) parsed.search = (parsed.search ? parsed.search + '&' : '?') + encoded;
-        headers['Content-Length'] = 0;
-      } else {
-        headers['Content-Length'] = Buffer.byteLength(encoded);
-      }
-      var req = https.request({
-        hostname: parsed.hostname, path: parsed.pathname + (parsed.search || ''), method: httpMethod,
-        headers: headers
-      }, function(r) {
-        var b = ''; r.on('data', function(c) { b += c; });
-        r.on('end', function() {
-          try {
-            var parsed2 = JSON.parse(b);
-            // Stannp returns { success: true, data: ... } or { success: false, error: ... }
-            resolve(parsed2);
-          } catch(e) { resolve({ success: false, error: 'Failed to parse Stannp response: ' + b.substring(0, 200) }); }
+    // Retry policy: transient failures only. Deterministic Stannp rejections
+    // (validation errors returned as success:false JSON, HTTP 4xx) are NEVER
+    // retried. We retry transport errors and HTTP 5xx up to maxAttempts times with
+    // a short backoff. /create endpoints get one extra attempt only (a create whose
+    // response was lost is not re-sent aggressively to avoid double mailpieces).
+    var maxAttempts = (/create$/i.test(endpoint)) ? 2 : 3;
+    var self = this;
+    function attempt(n) {
+      return new Promise(function(resolve, reject) {
+        if (!STANNP_API_KEY) return reject(new Error('STANNP_API_KEY not configured'));
+        // TEST MODE (STANNP_TEST_MODE=1): simulate a successful Stannp create so the
+        // whole bulk/Print & Post pipeline (materials, artwork prep, campaign + recipients,
+        // tracking + proof status) can be rehearsed FREE with ZERO risk of a real charge or
+        // an error slipping to a customer. Nothing is sent to Stannp.
+        if (String(process.env.STANNP_TEST_MODE || '') === '1' && /create$/i.test(endpoint)) {
+          console.log('[STANNP-TEST] simulated ' + endpoint + ' (no real mail created)');
+          return resolve({ success: true, data: { id: 'test_' + Date.now() + '_' + Math.floor(Math.random() * 9999), cost: 0, status: 'processing' }, test: true });
+        }
+        const https = require('https');
+        var bodyData = Object.assign({}, params || {});
+        var encoded = Object.keys(bodyData).map(function(k) { return encodeURIComponent(k) + '=' + encodeURIComponent(bodyData[k]); }).join('&');
+        var url = STANNP_BASE_URL.replace(/\/+$/, '') + '/' + endpoint.replace(/^\/+/, '');
+        var parsed = new URL(url);
+        var httpMethod = method || 'POST';
+        var headers = {
+          'Authorization': 'Basic ' + Buffer.from(STANNP_API_KEY + ':').toString('base64'),
+          'Content-Type': 'application/x-www-form-urlencoded'
+        };
+        if (httpMethod === 'GET') {
+          if (encoded) parsed.search = (parsed.search ? parsed.search + '&' : '?') + encoded;
+          headers['Content-Length'] = 0;
+        } else {
+          headers['Content-Length'] = Buffer.byteLength(encoded);
+        }
+        function retryLater(errMsg, code) {
+          if (n >= maxAttempts) return;
+          var delay = 800 * n;
+          if (n > 1) console.log('[STANNP] retry ' + n + '/' + (maxAttempts - 1) + ' for ' + endpoint + (errMsg ? ' (' + errMsg + ')' : ''));
+          setTimeout(function() {
+            attempt(n + 1).then(resolve, reject);
+          }, delay);
+        }
+        var req = https.request({
+          hostname: parsed.hostname, path: parsed.pathname + (parsed.search || ''), method: httpMethod,
+          headers: headers
+        }, function(r) {
+          var b = ''; r.on('data', function(c) { b += c; });
+          r.on('end', function() {
+            var status = r.statusCode || 0;
+            try {
+              var parsed2 = JSON.parse(b);
+              if (parsed2.httpStatus === undefined) { try { parsed2.httpStatus = status; } catch(se) {} }
+              // HTTP 5xx = Stannp-side failure; safe + worthwhile to retry.
+              if (status >= 500 && status < 600) return retryLater('HTTP ' + status, status);
+              return resolve(parsed2);
+            } catch(e) {
+              // 5xx with a non-JSON body (proxy/load-balancer error page): retry too.
+              if (status >= 500 && status < 600) return retryLater('HTTP ' + status + ' non-JSON', status);
+              return resolve({ success: false, error: 'Failed to parse Stannp response: ' + b.substring(0, 200), httpStatus: status });
+            }
+          });
         });
+        req.on('error', function(e) { retryLater(e && e.message || 'network', 0); if (n >= maxAttempts) reject(new Error('Stannp request failed: ' + (e && e.message || ''))); });
+        if (httpMethod !== 'GET') req.write(encoded);
+        req.end();
       });
-      req.on('error', function(e) { reject(new Error('Stannp request failed: ' + (e && e.message || ''))); });
-      if (httpMethod !== 'GET') req.write(encoded);
-      req.end();
-    });
+    }
+    return attempt(1);
   }
 
   async validateAddresses(addresses) {
@@ -16552,7 +16576,7 @@ app.post('/api/admin/normalise-pool', adminAuth, (req, res) => {
 // Bulk packs priced per lead by MAIL TYPE (print & post included), mirroring the
 // single Print & Post offers: A5 leaflet £3.00 / A4 letter £2.50 / leaflet+letter £4.50.
 // Cost to us: leaflet £1.18, letter £1.02, both £2.20 (Stannp).
-var BULK_MAIL_RATES = { leaflet: 300, letter: 250, both: 450 }; // pence per lead
+var BULK_MAIL_RATES = { leaflet: 249, letter: 199, both: 399 }; // pence per lead — bulk/boost volume discount sits UNDER single on-demand rates
 var BOOST_PACK_SIZES = { moving: [100, 250, 500, 1000], probate: [50, 100, 200, 500] };
 var NB_BULK_SIZES = [100, 250, 500, 1000];
 function bulkPackTotal(count, mailType) { return (BULK_MAIL_RATES[mailType] || BULK_MAIL_RATES.leaflet) * (count || 0); }
@@ -23084,10 +23108,12 @@ var PRINT_POST_PRICES = {
   // Per-item prices charged to customer (GBP), priced against Stannp's actual
   // Royal Mail Standard rates so we stay profitable. A letter is cheaper than a
   // leaflet — Stannp's own rates reflect this (A4 letter £1.02, A5 postcard £1.18).
-  // Margins: letter £0.47, leaflet £0.81, pack £0.79 per item.
-  flyer_a5: { label: 'A5 Leaflet', customer: 1.99, stannp: 1.18 },
-  letter_a4: { label: 'A4 Letter', customer: 1.49, stannp: 1.02 },
-  flyer_plus_letter: { label: 'A5 Leaflet + A4 Letter', customer: 2.99, stannp: 2.20 },
+  // Single (on-demand, post-now) sits ABOVE the bulk/boost pack rates so buying a
+  // 50-1000 pack reads as a genuine volume discount. Margins (single):
+  // leaflet +£1.81, letter +£1.47, pack +£2.29 per item.
+  flyer_a5: { label: 'A5 Leaflet', customer: 2.99, stannp: 1.18 },
+  letter_a4: { label: 'A4 Letter', customer: 2.49, stannp: 1.02 },
+  flyer_plus_letter: { label: 'A5 Leaflet + A4 Letter', customer: 4.49, stannp: 2.20 },
   // Postage included in above prices (Royal Mail Standard)
   markup_percent: function(item) { return Math.round((this[item].customer - this[item].stannp) / this[item].stannp * 100); }
 };
@@ -23180,11 +23206,11 @@ function cleanMailText(text) {
 // downloadable design template. Used by the dashboard format selector so
 // customers can pick portrait / landscape / enveloped / letter.
 var DM_FORMATS = [
-  { id: 'flyer_a5_portrait', label: 'A5 Portrait Leaflet', size: 'A5-PORT', kind: 'flyer', width: 1819, height: 2551, mm: '148×210mm', safe: '148×210mm', template: 'a5-leaflet-portrait.pdf', price: 1.99, desc: 'Classic A5 flyer, portrait. Full colour, 300gsm.' },
-  { id: 'flyer_a5_landscape', label: 'A5 Landscape Leaflet', size: 'A5', kind: 'flyer', width: 2551, height: 1819, mm: '210×148mm', safe: '210×148mm', template: 'a5-leaflet.pdf', price: 1.99, desc: 'A5 flyer, landscape orientation.' },
-  { id: 'flyer_a5_enveloped', label: 'A5 Leaflet in Envelope', size: 'A5-ENV', kind: 'flyer', width: 2551, height: 1819, mm: '210×148mm', safe: '210×148mm', template: 'a5-enveloped-postcard.pdf', price: 1.99, desc: 'A5 leaflet sent inside a windowed envelope. More premium feel.' },
-  { id: 'flyer_plus_letter', label: 'Leaflet + Letter', size: 'A5-PORT', kind: 'flyer_plus_letter', width: 1819, height: 2551, mm: 'A5 leaflet + A4 letter', safe: '148×210mm + 210×297mm', template: 'a5-leaflet-portrait.pdf', price: 2.99, desc: 'A5 leaflet with a personalised A4 letter. Great for a fuller introduction.' },
-  { id: 'letter_a4', label: 'A4 Letter', size: 'letter', kind: 'letter', width: 0, height: 0, mm: '210×297mm', safe: '210×297mm', template: 'a4-letter.pdf', price: 1.49, desc: 'Professional A4 letter with windowed envelope.' }
+  { id: 'flyer_a5_portrait', label: 'A5 Portrait Leaflet', size: 'A5-PORT', kind: 'flyer', width: 1819, height: 2551, mm: '148×210mm', safe: '148×210mm', template: 'a5-leaflet-portrait.pdf', price: 2.99, desc: 'Classic A5 flyer, portrait. Full colour, 300gsm.' },
+  { id: 'flyer_a5_landscape', label: 'A5 Landscape Leaflet', size: 'A5', kind: 'flyer', width: 2551, height: 1819, mm: '210×148mm', safe: '210×148mm', template: 'a5-leaflet.pdf', price: 2.99, desc: 'A5 flyer, landscape orientation.' },
+  { id: 'flyer_a5_enveloped', label: 'A5 Leaflet in Envelope', size: 'A5-ENV', kind: 'flyer', width: 2551, height: 1819, mm: '210×148mm', safe: '210×148mm', template: 'a5-enveloped-postcard.pdf', price: 2.99, desc: 'A5 leaflet sent inside a windowed envelope. More premium feel.' },
+  { id: 'flyer_plus_letter', label: 'Leaflet + Letter', size: 'A5-PORT', kind: 'flyer_plus_letter', width: 1819, height: 2551, mm: 'A5 leaflet + A4 letter', safe: '148×210mm + 210×297mm', template: 'a5-leaflet-portrait.pdf', price: 4.49, desc: 'A5 leaflet with a personalised A4 letter. Great for a fuller introduction.' },
+  { id: 'letter_a4', label: 'A4 Letter', size: 'letter', kind: 'letter', width: 0, height: 0, mm: '210×297mm', safe: '210×297mm', template: 'a4-letter.pdf', price: 2.49, desc: 'Professional A4 letter with windowed envelope.' }
 ];
 
 // GET /api/direct-mail/pricing — return Print & Post prices and formats
@@ -23651,7 +23677,14 @@ async function sendDmCampaignInner(campaignId, customerId) {
     var sentIds = [];
     var failedIds = [];
     var errors = [];
-    for (var si = 0; si < validAddresses.length; si++) {
+    // Pacing: for big campaigns process in waves of 25 with a short pause between
+    // waves. Keeps the instance responsive and memory flat on a 512MB box even for
+    // 1000-recipient packs (real sends also yield per recipient via their network call).
+    var totalToSend = validAddresses.length;
+    for (var si = 0; si < totalToSend; si++) {
+      if (totalToSend > 25 && si > 0 && si % 25 === 0) {
+        await new Promise(function(slp) { setTimeout(slp, 1500); });
+      }
       var rcpt = validAddresses[si].original;
       var pieceFiles = files;
       if (!pieceFiles.length) {
@@ -23727,6 +23760,20 @@ async function sendDmCampaignInner(campaignId, customerId) {
       }
     }
     var providerCampaignId = sentIds.length ? sentIds.join(',') : '';
+    // A campaign that finishes with SOME recipients failed (after automatic retries)
+    // must never leave a paid-for lead unsent silently — alert the founder so they can
+    // re-run just the failures for the customer (fulfilment guarantee).
+    if (failedIds.length > 0 && sentIds.length > 0) {
+      try {
+        var _c2 = null; try { _c2 = db.prepare('SELECT * FROM customers WHERE id = ?').get(customerId); } catch(e) {}
+        var custEmail = (_c2 && _c2.email) || '?';
+        function _escH(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+        sendBrevoEmail({ email: process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com', name: '9amLeads Admin' }, 'Print & Post partial failure - campaign ' + campaign.id.substring(0, 8),
+          '<p>A <b>Print &amp; Post campaign</b> reached Stannp but <b style="color:#b91c1c">' + failedIds.length + ' of ' + recipientCount + '</b> recipients failed after automatic retries.</p>' +
+          '<p><b>Customer:</b> ' + _escH(custEmail) + '<br/><b>Campaign:</b> ' + _escH(campaign.id) + '<br/><b>Mail type:</b> ' + _escH(mailType) + '<br/><b>Sent OK:</b> ' + sentIds.length + '</p>' +
+          '<p>Re-send the failed items for this customer so they get their full pack.</p>');
+      } catch(afErr) { console.log('[DM-SEND] founder alert failed:', afErr.message); }
+    }
     if (sentIds.length === 0) {
       db.prepare('UPDATE direct_mail_campaigns SET status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('failed', new Date().toISOString(), campaign.id, customerId);
       db.prepare('INSERT INTO direct_mail_provider_logs (id,customer_id,campaign_id,provider,endpoint,request_body,response_body,status_code,success,error_message,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(uuidv4(), customerId, campaign.id, provider.name, 'sendMailpiece', JSON.stringify({ mailType: mailType, recipients: recipientCount }), JSON.stringify({ success: false, errors: errors }), 500, 0, errors.join(' | '), new Date().toISOString());

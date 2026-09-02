@@ -550,10 +550,10 @@ function bulkOpenMail() {
   document.getElementById('mp-addr').innerHTML = '<b>' + n + ' lead' + (n!==1?'s':'') + '</b> selected for bulk print &amp; post.';
   document.getElementById('mp-error').style.display = 'none';
   var items = [
-    {t:'letter_a4',n:'A4 Letter',d:'A personal introduction letter',p:'£1.49 each',total:'£'+(n*1.49).toFixed(2)},
-    {t:'flyer_a5',n:'A5 Leaflet',d:'Full-colour leaflet (needs an uploaded design)',p:'£1.99 each',total:'£'+(n*1.99).toFixed(2)},
-    {t:'flyer_a5_enveloped',n:'A5 Leaflet in Envelope',d:'Premium leaflet in a windowed envelope',p:'£2.75 each',total:'£'+(n*2.75).toFixed(2)},
-    {t:'flyer_plus_letter',n:'Leaflet + Letter',d:'Leaflet with a letter inside',p:'£2.99 each',total:'£'+(n*2.99).toFixed(2)}
+    {t:'letter_a4',n:'A4 Letter',d:'A personal introduction letter',p:'£2.49 each',total:'£'+(n*2.49).toFixed(2)},
+    {t:'flyer_a5',n:'A5 Leaflet',d:'Full-colour leaflet (needs an uploaded design)',p:'£2.99 each',total:'£'+(n*2.99).toFixed(2)},
+    {t:'flyer_a5_enveloped',n:'A5 Leaflet in Envelope',d:'Premium leaflet in a windowed envelope',p:'£2.99 each',total:'£'+(n*2.99).toFixed(2)},
+    {t:'flyer_plus_letter',n:'Leaflet + Letter',d:'Leaflet with a letter inside',p:'£4.49 each',total:'£'+(n*4.49).toFixed(2)}
   ];
   var html = '';
   items.forEach(function(it){
@@ -594,7 +594,7 @@ function bulkSelectRepeat(el,mode){
 function bulkConfirm(){
   // Show a clear confirm with the CORRECT multi-lead × mailings total
   var mailType = _selectedMailType || 'letter_a4';
-  var pricePerItem = mailType==='flyer_a5'?1.99 : mailType==='flyer_a5_enveloped'?2.75 : mailType==='flyer_plus_letter'?2.99 : 1.49;
+  var pricePerItem = mailType==='flyer_a5'?2.99 : mailType==='flyer_a5_enveloped'?2.99 : mailType==='flyer_plus_letter'?4.49 : 2.49;
   var label = mailType==='flyer_a5'?'A5 Leaflet':mailType==='flyer_a5_enveloped'?'A5 Leaflet in Envelope':mailType==='flyer_plus_letter'?'Leaflet + Letter':'A4 Letter';
   var intervals = _repeatMode==='three' ? [0,14,30] : [0];
   var scheduleHtml = '';
@@ -711,10 +711,10 @@ function sendPrintPost(leadId){
   _selectedMailType='';
   _repeatMode='once';
   var items=[
-    {t:'letter_a4',n:'A4 Letter',d:'A personal introduction letter, ready to send',p:'£1.49',rec:true},
-    {t:'flyer_a5',n:'A5 Leaflet',d:'Full-colour leaflet (needs an uploaded design)',p:'£1.99'},
-    {t:'flyer_a5_enveloped',n:'A5 Leaflet in Envelope',d:'Premium leaflet in a windowed envelope',p:'£2.75'},
-    {t:'flyer_plus_letter',n:'Leaflet + Letter',d:'Leaflet with a letter inside',p:'£2.99'}
+    {t:'letter_a4',n:'A4 Letter',d:'A personal introduction letter, ready to send',p:'£2.49',rec:true},
+    {t:'flyer_a5',n:'A5 Leaflet',d:'Full-colour leaflet (needs an uploaded design)',p:'£2.99'},
+    {t:'flyer_a5_enveloped',n:'A5 Leaflet in Envelope',d:'Premium leaflet in a windowed envelope',p:'£2.99'},
+    {t:'flyer_plus_letter',n:'Leaflet + Letter',d:'Leaflet with a letter inside',p:'£4.49'}
   ];
   var html='';
   items.forEach(function(it){
@@ -771,7 +771,7 @@ function mpContinue(){
   // Route to bulk flow when sending selected leads (one or more)
   if (_bulkCount >= 1) { bulkConfirm(); return; }
   var mailType = _selectedMailType || 'letter_a4';
-  var pricePerItem = mailType==='flyer_a5'?1.99 : mailType==='flyer_a5_enveloped'?2.75 : mailType==='flyer_plus_letter'?2.99 : 1.49;
+  var pricePerItem = mailType==='flyer_a5'?2.99 : mailType==='flyer_a5_enveloped'?2.99 : mailType==='flyer_plus_letter'?4.49 : 2.49;
   var label = mailType==='flyer_a5'?'A5 Leaflet':mailType==='flyer_a5_enveloped'?'A5 Leaflet in Envelope':mailType==='flyer_plus_letter'?'Leaflet + Letter':'A4 Letter';
   var intervals = _repeatMode==='three' ? [0,14,30] : [0];
   var scheduleHtml = '';

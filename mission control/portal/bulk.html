@@ -85,16 +85,16 @@ h3{font-size:15px;font-weight:700;margin-bottom:10px}
       <div class="card" style="margin-top:0">
         <h3>What should we post?</h3>
         <div class="seg" style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="mbtn on" data-m="leaflet" onclick="setBulkMail('leaflet')" style="padding:9px 16px;border-radius:9px;border:1px solid #e5e7eb;background:#fff;font-size:12.5px;font-weight:700;cursor:pointer;color:#6b7280">&#128230; A5 Leaflet &middot; &pound;3/lead</button>
-          <button class="mbtn" data-m="letter" onclick="setBulkMail('letter')" style="padding:9px 16px;border-radius:9px;border:1px solid #e5e7eb;background:#fff;font-size:12.5px;font-weight:700;cursor:pointer;color:#6b7280">&#128196; A4 Letter &middot; &pound;2.50/lead</button>
-          <button class="mbtn" data-m="both" onclick="setBulkMail('both')" style="padding:9px 16px;border-radius:9px;border:1px solid #e5e7eb;background:#fff;font-size:12.5px;font-weight:700;cursor:pointer;color:#6b7280">&#128196;&#128230; Leaflet + Letter &middot; &pound;4.50/lead</button>
+          <button class="mbtn on" data-m="leaflet" onclick="setBulkMail('leaflet')" style="padding:9px 16px;border-radius:9px;border:1px solid #e5e7eb;background:#fff;font-size:12.5px;font-weight:700;cursor:pointer;color:#6b7280">&#128230; A5 Leaflet &middot; &pound;2.49/lead</button>
+          <button class="mbtn" data-m="letter" onclick="setBulkMail('letter')" style="padding:9px 16px;border-radius:9px;border:1px solid #e5e7eb;background:#fff;font-size:12.5px;font-weight:700;cursor:pointer;color:#6b7280">&#128196; A4 Letter &middot; &pound;1.99/lead</button>
+          <button class="mbtn" data-m="both" onclick="setBulkMail('both')" style="padding:9px 16px;border-radius:9px;border:1px solid #e5e7eb;background:#fff;font-size:12.5px;font-weight:700;cursor:pointer;color:#6b7280">&#128196;&#128230; Leaflet + Letter &middot; &pound;3.99/lead</button>
         </div>
       </div>
       <div class="packs" id="packsBox">
-        <div class="pack"><div class="num">100</div><div class="lbl">exclusive UK leads<br>printed &amp; posted</div><div class="price" id="pr100">&pound;300</div><div class="per" id="pp100">one-time &middot; &pound;3 per lead</div><button class="btn btn-primary" onclick="buyBulk(100)">Buy 100 leads</button></div>
-        <div class="pack featured"><div class="num">250</div><div class="lbl">exclusive UK leads<br>printed &amp; posted</div><div class="price" id="pr250">&pound;750</div><div class="per" id="pp250">one-time &middot; &pound;3 per lead</div><button class="btn btn-green" onclick="buyBulk(250)">Buy 250 leads</button></div>
-        <div class="pack"><div class="num">500</div><div class="lbl">exclusive UK leads<br>printed &amp; posted</div><div class="price" id="pr500">&pound;1,500</div><div class="per" id="pp500">one-time &middot; &pound;3 per lead</div><button class="btn btn-primary" onclick="buyBulk(500)">Buy 500 leads</button></div>
-        <div class="pack"><div class="num">1000</div><div class="lbl">exclusive UK leads<br>printed &amp; posted</div><div class="price" id="pr1000">&pound;3,000</div><div class="per" id="pp1000">one-time &middot; &pound;3 per lead</div><button class="btn btn-primary" onclick="buyBulk(1000)">Buy 1000 leads</button></div>
+        <div class="pack"><div class="num">100</div><div class="lbl">exclusive UK leads<br>printed &amp; posted</div><div class="price" id="pr100">&pound;249</div><div class="per" id="pp100">one-time &middot; &pound;2.49 per lead</div><button class="btn btn-primary" onclick="buyBulk(100)">Buy 100 leads</button></div>
+        <div class="pack featured"><div class="num">250</div><div class="lbl">exclusive UK leads<br>printed &amp; posted</div><div class="price" id="pr250">&pound;622.50</div><div class="per" id="pp250">one-time &middot; &pound;2.49 per lead</div><button class="btn btn-green" onclick="buyBulk(250)">Buy 250 leads</button></div>
+        <div class="pack"><div class="num">500</div><div class="lbl">exclusive UK leads<br>printed &amp; posted</div><div class="price" id="pr500">&pound;1,245</div><div class="per" id="pp500">one-time &middot; &pound;2.49 per lead</div><button class="btn btn-primary" onclick="buyBulk(500)">Buy 500 leads</button></div>
+        <div class="pack"><div class="num">1000</div><div class="lbl">exclusive UK leads<br>printed &amp; posted</div><div class="price" id="pr1000">&pound;2,490</div><div class="per" id="pp1000">one-time &middot; &pound;2.49 per lead</div><button class="btn btn-primary" onclick="buyBulk(1000)">Buy 1000 leads</button></div>
       </div>
       <div class="card" style="margin-top:16px">
         <h3>How it works</h3>
@@ -178,7 +178,7 @@ function load(){
   })
   .catch(function(){ lo.style.display='none'; co.style.display='block'; document.getElementById('upgradeBox').style.display='block'; document.getElementById('upgradeMsg').textContent='Could not load bulk postage. Please sign in again.'; });
 }
-var BULK_MAIL = 'leaflet', BULK_RATES = { leaflet: 300, letter: 250, both: 450 };
+var BULK_MAIL = 'leaflet', BULK_RATES = { leaflet: 249, letter: 199, both: 399 };
 function setBulkMail(m){
   BULK_MAIL = m;
   document.querySelectorAll('.mbtn').forEach(function(b){ b.classList.toggle('on', b.dataset.m === m); b.style.background = b.dataset.m === m ? '#0ea5e9' : '#fff'; b.style.borderColor = b.dataset.m === m ? '#0ea5e9' : '#e5e7eb'; b.style.color = b.dataset.m === m ? '#fff' : '#6b7280'; });
