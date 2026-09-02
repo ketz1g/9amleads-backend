@@ -11135,11 +11135,17 @@ app.post('/api/admin/pool/import', adminAuth, (req, res) => {
       if (!l.id) l.id = 'IMP_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
       var k = l.id || ('u:' + String(l.url || '').split('#')[0].split('?')[0]);
       // FORCE freshness so imported leads are deliverable at the NEXT 9am delivery.
+      // BUT preserve the SOURCE's real listing date into sourceListedDate first, so
+      // the Boost archive can age leads by when the property actually first appeared
+      // (long-running listings = genuine 1-2-month-old archive) without breaking the
+      // delivery freshness window.
+      if (l.firstVisibleDate && !l.sourceListedDate) l.sourceListedDate = l.firstVisibleDate;
       l.scrapedAt = nowIso;
       l.firstVisibleDate = nowIso;
       l.updateDate = nowIso;
       var existing = pool.find(function(x) { return x.id === l.id; });
       if (existing) {
+        if (!existing.sourceListedDate && l.sourceListedDate) existing.sourceListedDate = l.sourceListedDate;
         existing.scrapedAt = nowIso; existing.firstVisibleDate = nowIso; existing.updateDate = nowIso;
         if (l.address) existing.address = l.address;
         if (l.postcode) existing.postcode = l.postcode;
@@ -16492,7 +16498,10 @@ function getBoostArchiveLeads(product, ageKey, count) {
   var out = [];
   (arr || []).forEach(function(l) {
     if (!l || l.bulk_reserved || l.bulk_sold || l.boost_reserved || l.boost_sold) return;
-    var d = pickFreshDate(l) || String(l.scrapedAt || l.createdAt || l.firstVisibleDate || '');
+    // Age = when the property/notice REALLY appeared (sourceListedDate from the portal,
+    // else pickFreshDate) — NOT when we scraped it. Long-running listings are genuine
+    // 1-2-month-old archive leads even if scraped today.
+    var d = l.sourceListedDate || pickFreshDate(l) || String(l.scrapedAt || l.createdAt || l.firstVisibleDate || '');
     var t = d ? new Date(d).getTime() : 0;
     if (!(t && t >= now - hi && t <= now - lo)) return;
     // need a mailable address
