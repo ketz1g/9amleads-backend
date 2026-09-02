@@ -9361,7 +9361,13 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
     } else {
       inArea = areas.some(function(a) { return extractPostcodeArea(a) === leadArea; });
     }
-    return { address: c.address || c.fullAddress || c.deceasedAddress || '', postcode: pc, url: c.url || '', county: c.county || '', source: c.source || '', has_door_number: hasDoor, paf_candidate: pafCandidate, paf_failed: pafFailed, in_area: inArea, name: c.name || c.companyName || c.company_name || '', company_number: c.companyNumber || c.company_number || '', incorporation_date: c.incorporationDate || c.date_of_creation || '', sic_code: c.sicCode || (Array.isArray(c.sic_codes) ? c.sic_codes.join(', ') : (c.sic_codes || '')), verified_link: (c.url || (c.companyNumber ? 'https://find-and-update.company-information.service.gov.uk/company/' + c.companyNumber : '')) };
+    var _dispA = c.fullAddress || c.address || c.deceasedAddress || '';
+    // MOVING DISPLAY: re-attach the town/county (the pool stores the normalised street
+    // line) so the preview shows "55 Victoria Street, Chester, Cheshire, CH2 1NN".
+    if (cust.product === 'moving') {
+      try { var _copyM = Object.assign({}, c); _copyM.address = _dispA; _copyM.fullAddress = _dispA; enrichMovingLeadTown(_copyM); if (_copyM.fullAddress) _dispA = _copyM.fullAddress; } catch(e) {}
+    }
+    return { address: _dispA, postcode: pc, url: c.url || '', county: c.county || '', source: c.source || '', has_door_number: hasDoor, paf_candidate: pafCandidate, paf_failed: pafFailed, in_area: inArea, name: c.name || c.companyName || c.company_name || '', company_number: c.companyNumber || c.company_number || '', incorporation_date: c.incorporationDate || c.date_of_creation || '', sic_code: c.sicCode || (Array.isArray(c.sic_codes) ? c.sic_codes.join(', ') : (c.sic_codes || '')), verified_link: (c.url || (c.companyNumber ? 'https://find-and-update.company-information.service.gov.uk/company/' + c.companyNumber : '')) };
   });
   // HARD DISTANCE GATE (moving): regardless of how a lead was selected (in-area match,
   // fallback, preview replacement), an out-of-area moving lead MUST be within a
@@ -15985,6 +15991,56 @@ function normalizeStannpAddress(d) {
   return d;
 }
 
+// MOVING TOWN/COUNTY ENRICHMENT: the moving delivery normalises each lead's printable
+// address down to the street line ("55 Victoria Street") to guarantee it starts with
+// the door number — but that DROPS the town/county. This re-attaches a town and county
+// (from any fields the lead kept, else cached town-from-postcode, else the postcode's
+// county — which always exists) so every moving address shows "55 Victoria Street,
+// Chester, Cheshire, CH2 1NN". Idempotent: skips addresses that already carry an area.
+function enrichMovingLeadTown(ld) {
+  try {
+    if (!ld || typeof ld !== 'object') return ld;
+    var full = String(ld.fullAddress || ld.address || ld.deceasedAddress || '');
+    var pc = String(ld.postcode || '').toUpperCase().replace(/\s+/g, '');
+    if (pc.length >= 6) pc = pc.slice(0, pc.length - 3) + ' ' + pc.slice(-3);
+    if (!full || !pc) return ld;
+    var segments = full.split(',').map(function(s){ return String(s).trim(); }).filter(Boolean);
+    var pcCompact = pc.replace(/\s+/g, '');
+    var tail = segments.slice(1).filter(function(s){ return s && s.replace(/\s+/g, '') !== pcCompact; });
+    if (tail.length >= 1) return ld; // already has a town / area — leave it
+    var streetSeg = (segments[0] || full).replace(/\s*[A-Z]{1,2}\d[A-Z0-9]?\s?\d[A-Z]{2}\s*$/i, '').trim();
+    if (!streetSeg || !hasStreetName(streetSeg)) return ld;
+    var town = ld.town || ld.city || '';
+    if (!town) {
+      try {
+        var _rmt = require('./rightmove_scraper_v2').getTownForPostcode(pc);
+        if (_rmt) {
+          var _rt = String(_rmt).trim();
+          // reject when the "town" is really the postcode itself (the area fallback
+          // returns the raw code) or an outward code.
+          if (_rt.toUpperCase().replace(/[^A-Z0-9]/g, '') !== pcCompact && !/^[A-Z]{1,2}\d[A-Z0-9]?$/.test(_rt) && !/^[A-Z]{1,2}\d[A-Z\d]{2,5}$/i.test(_rt)) town = _rt;
+        }
+      } catch(e) {}
+    }
+    var county = ld.county || '';
+    if (!county && pc) { try { county = countyFromPostcode(pc); } catch(e) {} }
+    var REGION = /^(England|Scotland|Wales|Northern Ireland|South East England|South West England|East of England|East Midlands|West Midlands|North West England|North East England|Yorkshire and the Humber|Greater London|UK)$/i;
+    if (REGION.test(String(town).trim())) town = '';
+    if (REGION.test(String(county).trim())) county = '';
+    var parts = [streetSeg];
+    var lowerParts = streetSeg.toLowerCase();
+    if (town && lowerParts.indexOf(String(town).toLowerCase()) === -1) { parts.push(town); lowerParts += ' | ' + town.toLowerCase(); }
+    if (county && lowerParts.indexOf(String(county).toLowerCase()) === -1 && town.toLowerCase() !== String(county).toLowerCase()) parts.push(county);
+    if (pc && lowerParts.indexOf(pcCompact.toLowerCase()) === -1) parts.push(pc);
+    var rebuilt = dedupeAddressSegments(parts.filter(Boolean).join(', '));
+    if (rebuilt && rebuilt !== full) {
+      ld.fullAddress = rebuilt;
+      if (!ld.address || String(ld.address).split(',').length < 2) ld.address = rebuilt;
+    }
+  } catch(e) {}
+  return ld;
+}
+
 // Stannp readiness issues for a (normalized) lead. Returns { rcptF, issues }.
 function stannpReadiness(d) {
   var issues = [];
@@ -18244,23 +18300,24 @@ _deliverDiag[cust.email].products = products;
           }
           if (_normAny) { try { saveDb(); } catch(_ns) {} }
         }
-        // STANNP ADDRESS NORMALISE (non-moving): moving leads are already normalised
-        // by the moving-specific pass above + hard-gated to door-numbered addresses.
-        // Run the shared print-and-post normaliser on probate / newbusiness / planning
-        // leads RIGHT BEFORE the email + dashboard commit, so their addresses are clean
-        // the instant they land at 9am (the 09:45 cron remains only as a safety net).
-        // Idempotent — a no-op for already-clean leads, never touches tenders.
+        // STANNP ADDRESS NORMALISE + MOVING TOWN ENRICH: run RIGHT BEFORE the email +
+        // dashboard commit so every delivered lead shows a complete address the
+        // instant it lands at 9am. Non-moving products get normalizeStannpAddress;
+        // MOVING gets enrichMovingLeadTown (the moving path already hard-gates to
+        // door-numbered street + postcode, and re-attaches the town/county that
+        // normaliseMovingAddress stripped). Never touches tenders. Idempotent.
         if (Array.isArray(custLeads) && custLeads.length) {
           try {
             var _snChanged = false;
             for (var _sn = 0; _sn < custLeads.length; _sn++) {
               var _snProd = String((custLeads[_sn] && custLeads[_sn].product) || cust.product || '');
-              if (_snProd === 'moving' || _snProd === 'tenders') continue;
+              if (_snProd === 'tenders') continue;
               try {
                 var _snd = JSON.parse(custLeads[_sn].data || '{}');
                 if (!_snd || typeof _snd !== 'object') continue;
                 var _snBefore = JSON.stringify(_snd);
-                normalizeStannpAddress(_snd);
+                if (_snProd === 'moving') enrichMovingLeadTown(_snd);
+                else normalizeStannpAddress(_snd);
                 if (JSON.stringify(_snd) !== _snBefore) { custLeads[_sn].data = JSON.stringify(_snd); _snChanged = true; }
               } catch(_snE) {}
             }
