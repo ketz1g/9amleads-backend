@@ -99,6 +99,7 @@ tbody tr:hover td{background:#f8fafc}
 <button onclick="switchTab('customers')"><i class="fas fa-users"></i> Customers <span id="custCountBadge" style="display:inline-block;background:#eff6ff;color:#0ea5e9;font-size:10px;font-weight:700;border-radius:20px;padding:1px 7px;margin-left:2px">-</span></button>
 <button onclick="switchTab('health')"><i class="fas fa-heart-pulse"></i> Health</button>
 <button onclick="switchTab('fulfilment')"><i class="fas fa-clipboard-check"></i> Fulfilment</button>
+<button onclick="switchTab('bulkpool')"><i class="fas fa-boxes-stacked"></i> Bulk Pool</button>
 <button onclick="switchTab('rejected')"><i class="fas fa-times-circle"></i> Rejected</button>
 <button onclick="switchTab('analytics')"><i class="fas fa-chart-pie"></i> Analytics</button>
 <button onclick="switchTab('partners')"><i class="fas fa-handshake"></i> Partners</button>
@@ -111,6 +112,12 @@ tbody tr:hover td{background:#f8fafc}
 </div>
 
 <div class="container">
+
+<!-- ============ BULK POOL ============ -->
+<div class="tab-panel" id="tab-bulkpool">
+<div class="hero"><div class="hero-text"><h1>📦 Bulk &amp; Boost Pool</h1><p>Archive lead inventory for Bulk Postage &amp; Boost packs. These leads are <b>excluded from the daily 24/48h subscription delivery</b>.</p></div></div>
+<div id="bulkPoolPage"><div style="color:#64748b;font-size:13px;padding:10px">Loading...</div></div>
+</div>
 
 <!-- ============ OVERVIEW ============ -->
 <div class="tab-panel active" id="tab-overview">
@@ -422,6 +429,39 @@ function openQuietAreas() {
 }
 
 // Tab navigation (clean, dashboard-style)
+async function loadBulkPoolPage() {
+  const el = document.getElementById('bulkPoolPage');
+  if (!el) return;
+  el.innerHTML = '<div style="color:#64748b;font-size:13px;padding:10px">Loading...</div>';
+  try {
+    const r = await fetch(API + '/api/admin/bulk-pools', { headers: adminHeaders() });
+    const d = await r.json();
+    if (!d.success) { el.innerHTML = '<div style="color:#ef4444;font-size:13px">Could not load bulk pool data.</div>'; return; }
+    const updated = (d.generated_at || '').replace('T', ' ').substring(0, 16) + ' UTC';
+    const colors = { moving: '#ff6b35', probate: '#a855f7', newbusiness: '#06b6d4' };
+    const names = { moving: 'Moving', probate: 'Probate', newbusiness: 'New Business' };
+    const cards = ['moving', 'probate', 'newbusiness'].map(function(p) {
+      const b = d[p] || {};
+      const fresh = b['0-2d'] || 0, res = b.reserved || 0, sold = b.sold || 0;
+      const nbd = p === 'newbusiness' ? (b['3-7d'] || 0) : 0;
+      const age1m = b['1m'] || 0, age2m = b['2m'] || 0;
+      const saleable = p === 'newbusiness' ? nbd : age1m + age2m;
+      const readyTxt = saleable >= 200 ? '200-pack ready' : saleable >= 100 ? '100-pack ready' : saleable >= 50 ? '50-pack ready' : 'below pack size';
+      const readyColor = saleable >= 50 ? '#16a34a' : saleable > 0 ? '#eab308' : '#94a3b8';
+      function cell(label, v, min) { return '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;text-align:center"><div style="font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:.4px">' + label + '</div><div style="font-size:18px;font-weight:900;color:' + (v >= min ? '#16a34a' : v > 0 ? '#eab308' : '#94a3b8') + '">' + v + '</div></div>'; }
+      return '<div class="card" style="margin-bottom:16px"><h3 style="color:' + (colors[p] || '#1e293b') + '">' + names[p] + ' <span style="font-size:11px;color:#64748b">(total ' + b.total + ')</span></h3>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px">' +
+        (p === 'newbusiness' ? cell('Bulk 3-7d', nbd, 50) : '') +
+        cell('1-month old', age1m, 50) + cell('2-month old', age2m, 50) +
+        cell('Fresh 0-2d (daily)', fresh, 0) + cell('Reserved', res, 0) + cell('Sold', sold, 0) +
+        '</div>' +
+        '<div style="margin-top:8px;font-size:12px;font-weight:800;color:' + readyColor + '">' + readyTxt + '</div>' +
+        '</div>';
+    }).join('');
+    el.innerHTML = '<div style="font-size:11px;color:#64748b;margin-bottom:10px">Last updated: ' + updated + ' · 1m = 28-35 days old · 2m = 58-65 days old · these archive leads never enter the 24/48h subscription delivery.</div>' + cards +
+      '<button class="btn btn-outline btn-sm" onclick="loadBulkPoolPage()" style="margin-top:4px"><i class="fas fa-refresh"></i> Refresh</button>';
+  } catch (e) { el.innerHTML = '<div style="color:#ef4444;font-size:13px">Error loading bulk pool: ' + esc(e.message) + '</div>'; }
+}
 function switchTab(name) {
   document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
   var el = document.getElementById('tab-' + name);
@@ -433,6 +473,7 @@ function switchTab(name) {
   if (name === 'partners') loadPartnerAdmin('partners');
   if (name === 'rejected') loadRejected();
   if (name === 'analytics') loadAnalytics();
+  if (name === 'bulkpool') loadBulkPoolPage();
   window.scrollTo(0, 0);
 }
 
