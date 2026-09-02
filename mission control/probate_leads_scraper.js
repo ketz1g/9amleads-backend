@@ -275,15 +275,55 @@ function parseGazetteLinkedData(body) {
   }
   const fullName = [estateOf.firstName, estateOf.familyName].filter(Boolean).join(' ');
   const deceasedName = [estateOf.title, estateOf.firstName, estateOf.familyName].filter(Boolean).join(' ').trim() || fullName;
+  // ===== EXECUTOR + ADDRESS + HOME-vs-SOLICITOR CLASSIFICATION =====
   const claimDeadline = isAbout.hasClaimDeadline || '';
+  // The Gazette's structured data names the personal representative (executor) and
+  // their address for service of claims. When a SOLICITOR handled the estate (the
+  // majority), that name is the firm and the address is the firm's office — writing
+  // there reaches the estate but via the solicitor. When the executor applied in
+  // person (no solicitor), the name is the executor and the address IS their HOME —
+  // the golden lead (a probate company can write direct). Classify every notice so a
+  // customer knows whether they're getting a home address or a solicitor-care-of one.
   let solicitor = '';
   let executorName = '';
+  let executorAddress = '';
+  let executorType = ''; // 'home' | 'solicitor' | ''
+  const execRep = isAbout.hasPersonalRepresentative;
+  let repName = '', repAddr = '';
+  if (Array.isArray(execRep) && execRep.length) { repName = execRep[0].name || execRep[0].legalName || ''; repAddr = execRep[0].adr || {}; }
+  else if (execRep && typeof execRep === 'object') { repName = execRep.name || execRep.legalName || ''; repAddr = execRep.adr || {}; }
+  if (repName || (repAddr && (repAddr.streetAddress || repAddr.locality))) {
+    repName = String(repName || '').trim();
+    const raStreet = String(repAddr.streetAddress || repAddr.street || '').trim();
+    const raLoc = String(repAddr.locality || repAddr.town || '').trim();
+    const raRegion = String(repAddr.region || '').trim();
+    const raPc = String(repAddr.postalCode || repAddr.postcode || '').trim().toUpperCase();
+    executorAddress = [raStreet, raLoc, raRegion, raPc].filter(Boolean).join(', ');
+    const isFirm = /\b(solicitors?|& ?co\.?|chambers|llp|ltd|plc|limited|law|legal|partners?|associates?|estates?|group|hugh james|weightmans|slater|sills|sills &|freeths|womble|davisons|milners|co-operative legal|james legal|wace morgan)\b/i.test(repName) || /\b(chambers|solicitors?|llp|ltd|& ?co|law)\b/i.test(raStreet) || /\bc\/o\b/i.test(repName + ' ' + executorAddress);
+    if (isFirm) { solicitor = repName || solicitor; executorType = 'solicitor'; }
+    else { executorName = repName || executorName; executorType = executorAddress ? 'home' : ''; }
+  }
+  // TEXT-REGEX FALLBACK (used only when structured data omitted the rep): Gazette
+  // Trustee-Act notices read "...the undersigned, JOHN SMITH, of 12 High Street...,
+  // Solicitors for the Executors". Parse that when no structured rep is present.
   const tt = (pt.tt || '').toString() || '';
   const noticeText = typeof tt === 'string' ? tt.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : '';
-  const solMatch = noticeText.match(/(?:solicitor[s]?[:\s]+|solicitors?\s+(?:for|of)\s+)([A-Z][A-Za-z'& ]{3,60})/);
-  if (solMatch) solicitor = solMatch[1].trim();
-  const execMatch = noticeText.match(/(?:executor[s]?|personal representatives?|administrator[s]?)[:\s]+([A-Z][A-Za-z'& .]{3,60})/);
-  if (execMatch) executorName = execMatch[1].trim();
+  if (!executorName && !executorAddress) {
+    const solMatch = noticeText.match(/(?:solicitor[s]?[:\s]+|solicitors?\s+(?:for|of)\s+)([A-Z][A-Za-z'& ]{3,60})/);
+    if (solMatch) solicitor = solMatch[1].trim();
+    const execMatch = noticeText.match(/(?:executor[s]?|personal representatives?|administrator[s]?)[:\s]+([A-Z][A-Za-z'& .]{3,60})/);
+    if (execMatch) executorName = execMatch[1].trim();
+    const undersigned = noticeText.match(/undersigned[,\s]+((?:[A-Z][A-Za-z'&.\-]+(?:\s+[A-Z][A-Za-z'&.\-]+){0,3}))\s+(?:of|at)\s+([^,]+(?:,\s*[^,]+){0,4})/i);
+    if (undersigned) {
+      if (!/solicitor|& co|llp|ltd|chambers/i.test(undersigned[1])) { if (!executorName) executorName = undersigned[1].trim(); }
+      executorAddress = String(undersigned[2] || '').replace(/\s+/g, ' ').trim();
+    }
+    const afterAddr = noticeText.indexOf(executorAddress) > -1 ? noticeText.substring(noticeText.indexOf(executorAddress) + executorAddress.length, noticeText.indexOf(executorAddress) + executorAddress.length + 80) : '';
+    const isSol = /\b(solicitors?\s+(?:for|of)\s+the\s+executors|solicitors?\s+for\s+the\s+said|solicitors?\s*$|& co\.?|chambers|llp|ltd)\b/i.test(afterAddr + ' ' + executorAddress) || /solicitors?\s+(?:for|of)\s+the\s+(?:executors|deceased)/i.test(noticeText);
+    if (executorAddress && !isSol) executorType = 'home';
+    else if (executorAddress) executorType = 'solicitor';
+    if (!executorAddress && solicitor) executorType = 'solicitor';
+  }
   // If we ended up with a street (decomposed or single-string), use it. When the
   // JSON gave ONLY a postcode/name and the street is missing, prefer the HTML
   // fallback (caller checks `street`).
@@ -300,6 +340,8 @@ function parseGazetteLinkedData(body) {
     dateOfDeath: estateOf.dateOfDeath || '',
     solicitor: solicitor,
     executorName: executorName,
+    executorAddress: executorAddress,
+    executorType: executorType,
     claimDeadline: claimDeadline,
     noticeText: noticeText.substring(0, 400)
   };
@@ -429,6 +471,8 @@ async function enrichGazetteLeads(leads, limit) {
           if (detail.dateOfDeath) lead.dateOfDeath = detail.dateOfDeath;
           if (detail.solicitor) lead.solicitor = detail.solicitor;
           if (detail.executorName) lead.executorName = detail.executorName;
+          if (detail.executorAddress) lead.executorAddress = detail.executorAddress;
+          if (detail.executorType) lead.executorType = detail.executorType;
           if (detail.noticeText) lead.description = detail.noticeText;
           lead.locality = detail.locality || '';
           lead.region = detail.region || '';
