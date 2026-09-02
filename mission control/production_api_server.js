@@ -3455,6 +3455,20 @@ function processPartnerCommissions() {
       }
     });
     saveDb();
+    // NOTIFY AFFILIATE when a new commission is earned (£25 on the customer's 2nd
+    // invoice). `created` only holds genuinely-new commissions (idempotent engine),
+    // so each one is emailed exactly once.
+    try {
+      (created || []).forEach(function(cmN) {
+        var paN = (dbc.affiliates || []).find(function(x) { return x.id === cmN.partner_id; });
+        if (!paN || !paN.email) return;
+        var cuN = (dbc.customers || []).find(function(x) { return x.id === cmN.customer_id; });
+        var affRateN = Number(paN.commission_amount) || Number(Number(cmN.commission_amount) || 25);
+        var affAmtTxt = '\u00a3' + Number(affRateN || 25).toFixed(2);
+        var _aHtml = '<div style="font-family:Inter,Arial,sans-serif;max-width:540px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px"><div style="font-size:34px;margin-bottom:6px">\uD83C\uDF89</div><h2 style="color:#4ade80;margin:0 0 10px;font-size:19px">You earned ' + affAmtTxt + '!</h2><p style="font-size:14px;line-height:1.7;color:#cbd5e1">A customer you referred <b style="color:#fff">' + escHtml(cuN && (cuN.company || cuN.email) || 'your referral') + '</b> has paid their second invoice, so your commission is now pending and will clear into your next payout.</p><p style="font-size:13px;color:#94a3b8;line-height:1.6">Track it anytime in your dashboard: <a href="https://www.9amleads.com/portal/affiliate.html" style="color:#38bdf8">affiliate dashboard &rarr;</a></p></div>';
+        sendBrevoEmail({ email: paN.email, name: paN.name || 'Affiliate' }, '\uD83C\uDF89 You earned ' + affAmtTxt + ' - commission earned', _aHtml);
+      });
+    } catch(eN) { console.log('[AFFILIATE] commission notify error:', eN.message); }
     return { created: created.length };
   } catch(e) { return { created: created.length, error: e.message }; }
 }
@@ -4922,6 +4936,15 @@ app.post('/api/auth/signup', async (req, res) => {
       affRef ? 'referral_pending' : null, affRef ? affiliatePayoutDue : null
     );
 
+    // NOTIFY THE AFFILIATE: their referral just signed up for their free trial, so
+    // they know to start following up. Only when a real (active) affiliate referred them.
+    if (affRef && affRef.email) {
+      try {
+        var _snHtml = '<div style="font-family:Inter,Arial,sans-serif;max-width:540px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px"><h2 style="color:#38bdf8;margin:0 0 10px;font-size:19px">\uD83D\uDE4C Your referral just signed up!</h2><p style="font-size:14px;line-height:1.7;color:#cbd5e1"><b style="color:#fff">' + escHtml(company || name || email) + '</b> started their free ' + (trialDays || 14) + '-day ' + escHtml(product || '') + ' trial using your code <b style="color:#38bdf8">' + escHtml(affRef.code || '') + '</b>.</p><p style="font-size:13px;line-height:1.6;color:#94a3b8">They may not upgrade right away, so follow up over the next few days. You earn \u00a3' + Number(affRef.commission_amount || cfgTrial.affiliate_one_off_amount || 25) + ' when they pay their second invoice. Add them to your follow-up list in the dashboard and set a reminder.</p><p><a href="https://www.9amleads.com/portal/affiliate.html" style="display:inline-block;background:#0ea5e9;color:#fff;font-weight:700;padding:11px 18px;border-radius:8px;text-decoration:none;font-size:13px">Open my dashboard</a></p></div>';
+        sendBrevoEmail({ email: affRef.email, name: affRef.name || 'Affiliate' }, '\uD83D\uDE4C A referral just signed up - follow up to close it', _snHtml);
+      } catch(eSN) { console.log('[AFFILIATE] signup notify error:', eSN.message); }
+    }
+
     // PARTNER ATTRIBUTION: record the referral permanently (first-valid-wins).
     // New customers can only be attributed once; existing accounts are never
     // overwritten by a referral (partners cannot claim existing customers).
@@ -5436,6 +5459,127 @@ app.get('/api/affiliate/dashboard', affiliateAuth, (req, res) => {
     });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+
+// ===== AFFILIATE FOLLOW-UP CRM (prospects, notes, reminders) =====
+function affiliatePeople(aff) {
+  var db = getDb();
+  var fu = (db.affiliate_followups || []).filter(function(f) { return f.affiliate_id === aff.id; });
+  var byCust = {};
+  fu.forEach(function(f) { if (f.customer_id) byCust[f.customer_id] = f; });
+  var refs = (db.customers || []).filter(function(c) { return c.affiliate_id === aff.id || String(c.affiliate_code || '').toLowerCase() === String(aff.code || '').toLowerCase(); });
+  var people = refs.map(function(c) {
+    var f = byCust[c.id] || null;
+    var commissions = (db.partner_commissions || []).filter(function(cm) { return cm.partner_id === aff.id && cm.customer_id === c.id; });
+    var st = 'referral_pending';
+    if (commissions.some(function(cm) { return cm.status === 'paid'; })) st = 'paid';
+    else if (commissions.some(function(cm) { return cm.status === 'approved'; })) st = 'approved';
+    else if (commissions.length || customerIsPaying(c)) st = 'earning';
+    else if (c.affiliate_payout_status === 'paid') st = 'paid';
+    else if (c.plan === 'free_trial') st = 'trial';
+    return { id: 'cust_' + c.id, source: 'customer', customer_id: c.id, company: c.company || '', name: c.contact_name || c.company || '', email: c.email || '', phone: c.phone || '', product: c.product || '', plan: c.plan || '', status: st, created_at: c.created_at || '', notes: (f && f.notes) || [], reminder_at: (f && f.reminder_at) || null, last_contacted: (f && f.last_contacted) || null };
+  });
+  var prospects = fu.filter(function(f) { return !f.customer_id; }).map(function(f) {
+    return { id: 'prosp_' + f.id, source: 'prospect', customer_id: null, company: f.company || f.name || '', name: f.name || '', email: f.email || '', phone: f.phone || '', product: f.product || '', plan: '', status: 'prospect', created_at: f.created_at || '', notes: f.notes || [], reminder_at: f.reminder_at || null, last_contacted: f.last_contacted || null };
+  });
+  return people.concat(prospects);
+}
+app.get('/api/affiliate/followups', affiliateAuth, (req, res) => {
+  try {
+    var aff = req.affiliate;
+    var people = affiliatePeople(aff);
+    people.sort(function(a, b) { return String(b.created_at || '').localeCompare(String(a.created_at || '')); });
+    var todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+    var dueToday = people.filter(function(p) { return p.reminder_at && new Date(p.reminder_at) <= new Date(Date.now() + 24 * 3600000); });
+    var overdue = people.filter(function(p) { return p.reminder_at && new Date(p.reminder_at) < todayStart; });
+    var later = people.filter(function(p) { return p.reminder_at && new Date(p.reminder_at) > new Date(Date.now() + 24 * 3600000); });
+    var counts = { prospect: 0, trial: 0, referral_pending: 0, earning: 0, approved: 0, paid: 0 };
+    people.forEach(function(p) { counts[p.status] = (counts[p.status] || 0) + 1; });
+    res.json({ success: true, people: people, due_today: dueToday.length, overdue: overdue.length, counts: counts, reminders: { today: dueToday, overdue: overdue, later: later } });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+app.post('/api/affiliate/followups/prospect', affiliateAuth, (req, res) => {
+  try {
+    var aff = req.affiliate;
+    var company = String((req.body && req.body.company) || (req.body && req.body.name) || '').trim();
+    var name = String((req.body && req.body.name) || '').trim();
+    var email = String((req.body && req.body.email) || '').trim().toLowerCase();
+    var phone = String((req.body && req.body.phone) || '').trim();
+    var product = String((req.body && req.body.product) || '').trim();
+    var reminderAt = (req.body && req.body.reminder_at) || null;
+    if (!company && !name && !email) return res.status(400).json({ error: 'Add a company or contact name.' });
+    var db = getDb();
+    if (!db.affiliate_followups) db.affiliate_followups = [];
+    var entry = { id: uuidv4(), affiliate_id: aff.id, customer_id: null, company: company || name, name: name || company, email: email, phone: phone, product: product, notes: [], reminder_at: reminderAt, last_contacted: null, created_at: new Date().toISOString() };
+    db.affiliate_followups.push(entry);
+    saveDb();
+    res.json({ success: true, prospect: { id: 'prosp_' + entry.id, source: 'prospect', company: entry.company, name: entry.name, email: entry.email, phone: entry.phone, product: entry.product, status: 'prospect', notes: [], reminder_at: entry.reminder_at, created_at: entry.created_at } });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+app.post('/api/affiliate/followups/:id/note', affiliateAuth, (req, res) => {
+  try {
+    var aff = req.affiliate;
+    var id = String(req.params.id || '');
+    var db = getDb();
+    if (!db.affiliate_followups) db.affiliate_followups = [];
+    var customerId = id.indexOf('cust_') === 0 ? id.substring(5) : null;
+    var prospectId = id.indexOf('prosp_') === 0 ? id.substring(6) : null;
+    var entry = null;
+    if (customerId) entry = db.affiliate_followups.find(function(f) { return f.affiliate_id === aff.id && f.customer_id === customerId; });
+    else if (prospectId) entry = db.affiliate_followups.find(function(f) { return f.affiliate_id === aff.id && f.id === prospectId; });
+    if (!entry && customerId) { entry = { id: uuidv4(), affiliate_id: aff.id, customer_id: customerId, company: '', notes: [], reminder_at: null, last_contacted: null, created_at: new Date().toISOString() }; db.affiliate_followups.push(entry); }
+    if (!entry) return res.status(404).json({ error: 'Record not found' });
+    var text = String((req.body && req.body.note) || '').trim();
+    if (text) entry.notes.push({ at: new Date().toISOString(), text: text });
+    entry.last_contacted = new Date().toISOString();
+    if ((req.body && req.body.reminder_at)) entry.reminder_at = req.body.reminder_at;
+    if ((req.body && req.body.clear_reminder)) entry.reminder_at = null;
+    saveDb();
+    res.json({ success: true, notes: entry.notes, reminder_at: entry.reminder_at, last_contacted: entry.last_contacted });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+app.post('/api/affiliate/followups/:id/reminder', affiliateAuth, (req, res) => {
+  try {
+    var aff = req.affiliate;
+    var id = String(req.params.id || '');
+    var db = getDb();
+    if (!db.affiliate_followups) db.affiliate_followups = [];
+    var customerId = id.indexOf('cust_') === 0 ? id.substring(5) : null;
+    var prospectId = id.indexOf('prosp_') === 0 ? id.substring(6) : null;
+    var entry = null;
+    if (customerId) entry = db.affiliate_followups.find(function(f) { return f.affiliate_id === aff.id && f.customer_id === customerId; });
+    else if (prospectId) entry = db.affiliate_followups.find(function(f) { return f.affiliate_id === aff.id && f.id === prospectId; });
+    if (!entry) return res.status(404).json({ error: 'Record not found' });
+    entry.reminder_at = (req.body && req.body.reminder_at) || null;
+    saveDb();
+    res.json({ success: true, reminder_at: entry.reminder_at });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// DAILY AFFILIATE FOLLOW-UP DIGEST (08:15 UK): email each active affiliate their
+// overdue + today follow-ups once a day, so they never forget to call a warm lead.
+function sendAffiliateFollowupDigests() {
+  try {
+    var dbD = getDb();
+    var todayKey = new Date().toISOString().split('T')[0];
+    (dbD.affiliates || []).forEach(function(aff) {
+      if (!partnerStatusActive(aff) || !aff.email) return;
+      if (dbD.affiliate_reminder_sent && dbD.affiliate_reminder_sent[aff.id + '|' + todayKey]) return;
+      var people = affiliatePeople(aff);
+      var todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+      var todayStartMs = todayStart.getTime();
+      var overdue = people.filter(function(p) { return p.reminder_at && new Date(p.reminder_at).getTime() < todayStartMs; });
+      var dueToday = people.filter(function(p) { return p.reminder_at && new Date(p.reminder_at).getTime() >= todayStartMs && new Date(p.reminder_at).getTime() <= Date.now() + 24 * 3600000; });
+      if (!overdue.length && !dueToday.length) return;
+      var rows = function(list) { return list.map(function(p) { return '<li><b>' + escHtml(p.company || p.name || 'Contact') + '</b>' + (p.status ? ' (' + p.status + ')' : '') + ' - ' + escHtml(p.phone || p.email || 'no contact') + '</li>'; }).join(''); };
+      var _dHtml = '<div style="font-family:Inter,Arial,sans-serif;max-width:540px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px"><h2 style="color:#f59e0b;margin:0 0 8px;font-size:19px">\u23F0 Your follow-ups for today</h2>' + (overdue.length ? '<p style="font-size:13px;color:#f87171;font-weight:700;margin:8px 0 4px">Overdue (' + overdue.length + ')</p><ul style="margin:0 0 10px;padding-left:18px;color:#e2e8f0;font-size:13px;line-height:1.8">' + rows(overdue) + '</ul>' : '') + (dueToday.length ? '<p style="font-size:13px;color:#4ade80;font-weight:700;margin:8px 0 4px">Due today (' + dueToday.length + ')</p><ul style="margin:0 0 10px;padding-left:18px;color:#e2e8f0;font-size:13px;line-height:1.8">' + rows(dueToday) + '</ul>' : '') + '<p style="font-size:13px;color:#94a3b8;line-height:1.6;margin-top:10px">Call them, add a note, and set the next reminder. <a href="https://www.9amleads.com/portal/affiliate.html" style="color:#38bdf8">Open my follow-up list</a></p></div>';
+      sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' }, '\u23F0 ' + (dueToday.length + overdue.length) + ' follow-up reminder' + (dueToday.length + overdue.length === 1 ? '' : 's') + ' today', _dHtml);
+      if (!dbD.affiliate_reminder_sent) dbD.affiliate_reminder_sent = {};
+      dbD.affiliate_reminder_sent[aff.id + '|' + todayKey] = new Date().toISOString();
+    });
+    saveDb();
+  } catch(e) { console.log('[AFFILIATE] followup digest error:', e.message); }
+}
+cron.schedule('15 8 * * 1-5', function() { sendAffiliateFollowupDigests(); }, { timezone: 'Europe/London' });
 
 // #2: Recruitment email funnel — capture a prospect from the affiliates page and
 // send a welcome email + follow-up sequence (day 3 and day 7). Stores prospects in
