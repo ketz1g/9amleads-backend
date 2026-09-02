@@ -235,7 +235,7 @@ __showByHash();
 <span style="text-align:right"><span style="font-size:11px;color:#0ea5e9;font-weight:700">£25</span><span style="font-size:9px;color:#6b7280">/wk</span></span>
 </label>
 <label class="prod-cb" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer">
-<input type="checkbox" value="probate" onchange="calcTotal()"> <span style="flex:1"><strong style="color:#f1f5f9">⚖️ Probate</strong><br><span style="font-size:9px;color:#6b7280">Gazette · up to 2/day · County</span></span>
+<input type="checkbox" value="probate" onchange="calcTotal()"> <span style="flex:1"><strong style="color:#f1f5f9">⚖️ Probate</strong><br><span style="font-size:9px;color:#6b7280">Official register · 1/day · Counties</span></span>
 <span style="text-align:right"><span style="font-size:11px;color:#f59e0b;font-weight:700">£25</span><span style="font-size:9px;color:#6b7280">/wk</span></span>
 </label>
 <label class="prod-cb" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer">
@@ -1160,11 +1160,11 @@ function doSignup() {
     var regionVal = document.getElementById('region-select')?.value;
     if (regionVal && regionVal !== 'all-uk') { targetAreas = [regionVal]; }
   }
-  // Enforce a minimum of counties/areas when county coverage is used. The BACKEND
-  // requires at least 3 areas for every product (unless All UK), so the form must
-  // match exactly — otherwise a customer who picks 2 clears the form but is rejected
-  // on submit ("couldn't sign up").
-  var countyMin = 3;
+  // Enforce a minimum of counties/areas when county coverage is used. Probate and
+  // tenders are shared, county-wide sparse products where TWO counties already cover
+  // a wide area, so they need a minimum of 2 (the BACKEND accepts 2 for these too).
+  // Other products need 3. All UK bypasses it.
+  var countyMin = (getSelectedLeadTypes().indexOf('tenders') !== -1 || getSelectedLeadTypes().indexOf('probate') !== -1) ? 2 : 3;
   if (selectedCoverage === 'county' && targetAreas.length > 0 && targetAreas.length < countyMin) {
     document.getElementById('signup-error').textContent = 'Please select at least ' + countyMin + ' counties/areas (or choose All UK)';
     document.getElementById('signup-error').style.display = 'block'; button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false; return;

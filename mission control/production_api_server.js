@@ -4817,11 +4817,14 @@ app.post('/api/auth/signup', async (req, res) => {
     // ukwide coverage so the delivery knows to skip area matching on the next run.
     var ukAreas = areas.some(function(a){ return /all.?uk|uk.?wide|nationwide|whole.?uk/i.test(String(a)); });
     if (ukAreas || String(coverage || '').toLowerCase() === 'ukwide') { areas = ['All UK']; coverage = 'ukwide'; }
-    else if (areas.length < 3) {
-      // MINIMUM 3 AREAS: every customer must pick at least 3 areas/postcodes so we
-      // can deliver a steady daily supply. No upper limit — they can choose as many
-      // as they like (their plan allows the max).
-      return res.status(400).json({ error: 'Please choose at least 3 areas or postcodes so we can deliver a steady daily supply of leads. You can select as many as you like (or choose All of UK).' });
+    else {
+      // MINIMUM AREAS: probate/tenders are shared, county-wide products where two
+      // counties already cover a wide area (minimum 2). Every other product needs at
+      // least 3 so we can deliver a steady daily supply. No upper limit.
+      var minAreas = (product === 'probate' || product === 'tenders') ? 2 : 3;
+      if (areas.length < minAreas) {
+        return res.status(400).json({ error: 'Please choose at least ' + minAreas + (product === 'probate' || product === 'tenders' ? ' counties/areas' : ' areas or postcodes') + ' so we can deliver a steady daily supply of leads. You can select as many as you like (or choose All of UK).' });
+      }
     }
     // PROBATE USES AREAS (counties/regions), NOT postcodes — probate supply is
     // national and sparse, so a single postcode area starves the customer. Enforce
