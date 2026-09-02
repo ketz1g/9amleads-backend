@@ -5266,6 +5266,7 @@ app.get('/api/auth/me', authMiddleware, (req, res) => {
     phone: customer.phone,
     product: customer.product,
     lead_type: customer.lead_type,
+    bulk_pools_live: bulkPoolsLive(),
     business_type: customer.business_type,
     plan: customer.plan,
     trial_ends: customer.trial_ends,
@@ -16232,6 +16233,7 @@ app.get('/api/newbusiness/bulk', authMiddleware, (req, res) => {
     })();
     res.json({
       success: true, eligible: eligible, plan: c.plan, product: c.product,
+      live: bulkPoolsLive(),
       sizes: NB_BULK_SIZES, mail_rates: BULK_MAIL_RATES,
       available: eligible ? getBulkEligibleLeads().length : 0,
       // PRE-PAYMENT masked preview (never a mailable address) + full reserved leads
@@ -16505,6 +16507,11 @@ var BULK_MAIL_RATES = { leaflet: 300, letter: 250, both: 450 }; // pence per lea
 var BOOST_PACK_SIZES = { moving: [100, 250, 500, 1000], probate: [50, 100, 200, 500] };
 var NB_BULK_SIZES = [100, 250, 500, 1000];
 function bulkPackTotal(count, mailType) { return (BULK_MAIL_RATES[mailType] || BULK_MAIL_RATES.leaflet) * (count || 0); }
+// LAUNCH GATE: bulk/Boost storefronts stay OFF until the archive pools have enough
+// inventory. Set BULK_POOLS_LIVE=1 in Render env to turn the customer storefronts on
+// (the admin Bulk Pool monitor is always available). Backend endpoints still work so
+// we can test, but customers see "coming soon" until we promote.
+function bulkPoolsLive() { return String(process.env.BULK_POOLS_LIVE || '') === '1'; }
 var BOOST_AGE_MS = { '1m': 31 * 86400000, '2m': 61 * 86400000 };
 
 // Archive leads for a product aged ~1 month (~28-34d) or ~2 months (~58-64d).
@@ -16555,7 +16562,7 @@ app.get('/api/boost', authMiddleware, (req, res) => {
     ['moving', 'probate'].forEach(function(p) { available[p] = { '1m': getBoostArchiveLeads(p, '1m', 0).length, '2m': getBoostArchiveLeads(p, '2m', 0).length }; });
     var pack = null;
     try { pack = c.boost_pack ? JSON.parse(c.boost_pack) : null; } catch(e) {}
-    res.json({ success: true, product: c.product, available: available, sizes: BOOST_PACK_SIZES, mail_rates: BULK_MAIL_RATES, pack: pack });
+    res.json({ success: true, product: c.product, available: available, sizes: BOOST_PACK_SIZES, mail_rates: BULK_MAIL_RATES, live: bulkPoolsLive(), pack: pack });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 

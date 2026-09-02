@@ -1926,12 +1926,12 @@ document.querySelectorAll('.modal').forEach(function(m){
         var _bulkCard = document.getElementById('bulk-postage-card');
         if (_bulkCard) {
           var _bulkPlan = String(data.plan || '').toLowerCase();
-          var _bulkShow = data.product === 'newbusiness' && (_bulkPlan === 'pro' || _bulkPlan === 'enterprise' || _bulkPlan === 'pro-plan');
+          var _bulkShow = data.product === 'newbusiness' && (_bulkPlan === 'pro' || _bulkPlan === 'enterprise' || _bulkPlan === 'pro-plan') && data.bulk_pools_live;
           _bulkCard.style.display = _bulkShow ? 'flex' : 'none';
         }
         var _boostCard = document.getElementById('boost-card');
         if (_boostCard) {
-          var _boostShow = data.product === 'moving' || data.product === 'probate';
+          var _boostShow = (data.product === 'moving' || data.product === 'probate') && data.bulk_pools_live;
           _boostCard.style.display = _boostShow ? 'flex' : 'none';
         }
       } catch(e) {}
