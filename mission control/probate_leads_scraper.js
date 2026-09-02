@@ -299,9 +299,23 @@ function parseGazetteLinkedData(body) {
     const raRegion = String(repAddr.region || '').trim();
     const raPc = String(repAddr.postalCode || repAddr.postcode || '').trim().toUpperCase();
     executorAddress = [raStreet, raLoc, raRegion, raPc].filter(Boolean).join(', ');
-    const isFirm = /\b(solicitors?|& ?co\.?|chambers|llp|ltd|plc|limited|law|legal|partners?|associates?|estates?|group|hugh james|weightmans|slater|sills|sills &|freeths|womble|davisons|milners|co-operative legal|james legal|wace morgan)\b/i.test(repName) || /\b(chambers|solicitors?|llp|ltd|& ?co|law)\b/i.test(raStreet) || /\bc\/o\b/i.test(repName + ' ' + executorAddress);
+    // STRICT PERSON-vs-FIRM test: 'home' only for a genuine PERSON executor applying
+    // in person. Any firm indicator (wills/probate/law/legal/solicitors/llp/& /and/)
+    // OR a care-of address means it's a solicitor-route lead -> NOT executor-home.
+    // Person names must carry a title (Mr/Mrs/Ms/Miss/Dr/Prof/Rev) or be a plain
+    // First-Last with a recognisable first name - initials-only entries are rejected
+    // as ambiguous (they are usually firm abbreviations).
+    var isFirm = /\b(solicitors?|wills?|probate|estate|law|legal|llp|ltd|limited|plc|chambers|&|and|co\.?|associates?|partners?|group|hugh james|weightmans|freeths|womble|davisons|milners|co-operative|slater|stallard|wace morgan)\b/i.test(repName) || /\b(chambers|solicitors?|llp|ltd|& ?co|law|wills|probate)\b/i.test(raStreet) || /\bc\/o\b/i.test(repName + ' ' + executorAddress) || /^[A-Z]{2,4}\s+[A-Z][a-z]+/.test(repName.trim());
     if (isFirm) { solicitor = repName || solicitor; executorType = 'solicitor'; }
-    else { executorName = repName || executorName; executorType = executorAddress ? 'home' : ''; }
+    else if (/^\s*(mr|mrs|ms|miss|dr|prof|rev|mr?s)\b/i.test(repName) || /\b(mr|mrs|ms|miss|dr|prof|rev)\b/i.test(repName)) {
+      // A titled PERSON applying personally -> executor home.
+      executorName = repName || executorName; executorType = executorAddress ? 'home' : '';
+    } else {
+      // No title, no firm word: ambiguous — DO NOT mark as executor-home (the product
+      // rule is executor-direct only, so uncertain leads are excluded rather than
+      // risk a solicitor firm slipping through as a "home" executor).
+      solicitor = repName || solicitor; executorType = 'solicitor';
+    }
   }
   // TEXT-REGEX FALLBACK (used only when structured data omitted the rep): Gazette
   // Trustee-Act notices read "...the undersigned, JOHN SMITH, of 12 High Street...,
