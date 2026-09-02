@@ -16249,7 +16249,8 @@ app.get('/api/newbusiness/bulk', authMiddleware, (req, res) => {
 app.post('/api/newbusiness/bulk/checkout', authMiddleware, async (req, res) => {
   try {
     var count = parseInt(req.body && req.body.count, 10);
-    if (count !== 50 && count !== 100) return res.status(400).json({ error: 'Choose a 50 or 100 lead pack.' });
+    var NB_BULK_PACKS = { 100: 10000, 250: 20000, 500: 45000, 1000: 75000 };
+    if (!NB_BULK_PACKS[count]) return res.status(400).json({ error: 'Choose a 100, 250, 500 or 1000 lead pack.' });
     var c = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
     if (!c) return res.status(404).json({ error: 'User not found' });
     var plan = String(c.plan || '').toLowerCase();
@@ -16260,7 +16261,7 @@ app.post('/api/newbusiness/bulk/checkout', authMiddleware, async (req, res) => {
     if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe not configured' });
     var eligible = getBulkEligibleLeads();
     if (eligible.length < count) return res.status(400).json({ error: 'Not enough exclusive leads available right now (' + eligible.length + ' ready). New leads mature into the archive within a few days — check back soon.', available: eligible.length });
-    var amountPence = count === 100 ? 20000 : 10000;
+    var amountPence = NB_BULK_PACKS[count];
     var baseUrl = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
     var sessionBody = {
       mode: 'payment',
@@ -16491,8 +16492,8 @@ app.post('/api/admin/normalise-pool', adminAuth, (req, res) => {
 // customer, but packs are SHARED (other buyers may receive the same archive leads).
 // Print & post included (A5 leaflet front + back).
 var BOOST_PACKS = {
-  probate: { 50: 9900, 100: 15900, 200: 24900 },
-  moving:  { 50: 4900, 100: 8900, 200: 14900 }
+  moving:  { 100: 10000, 250: 20000, 500: 45000, 1000: 75000 },
+  probate: { 50: 15000, 100: 25000, 200: 45000, 500: 75000 }
 };
 var BOOST_AGE_MS = { '1m': 31 * 86400000, '2m': 61 * 86400000 };
 
