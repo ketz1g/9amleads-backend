@@ -197,8 +197,11 @@ tbody tr:hover td{background:#f8fafc}
 <div id="healthIssues"></div>
 <div id="healthSystem" style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:#64748b"></div>
 <div id="healthProducts" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-top:14px"></div>
+<div style="margin-top:18px;font-weight:800;font-size:13px;color:#1e293b">🚀 Bulk &amp; Boost pools <span style="font-weight:400;font-size:11px;color:#64748b">(archive leads for bulk packs — never used for the daily 24/48h delivery)</span></div>
+<div id="bulkPools" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-top:10px"></div>
 </div>
 </div>
+
 
 <!-- ============ FULFILMENT ============ -->
 <div class="tab-panel" id="tab-fulfilment">
@@ -1359,6 +1362,33 @@ async function loadHealth() {
     }).join('');
     document.getElementById('healthProducts').innerHTML = prodHtml;
   } catch(e) { /* health check non-critical */ }
+  loadBulkPools();
+}
+async function loadBulkPools() {
+  try {
+    const r = await fetch(API + '/api/admin/bulk-pools', { headers: adminHeaders() });
+    const d = await r.json();
+    const el = document.getElementById('bulkPools');
+    if (!d.success) { el.innerHTML = '<span style="font-size:12px;color:#64748b">Bulk pool data unavailable.</span>'; return; }
+    const names = { moving: 'Moving', probate: 'Probate', newbusiness: 'New Business' };
+    const colors = { moving: '#ff6b35', probate: '#a855f7', newbusiness: '#06b6d4' };
+    el.innerHTML = ['moving', 'probate', 'newbusiness'].map(function(p) {
+      const b = d[p] || {};
+      const age1m = b['1m'] || 0, age2m = b['2m'] || 0, nbd = p === 'newbusiness' ? (b['3-7d'] || 0) : 0;
+      const saleable = p === 'newbusiness' ? nbd : (age1m + age2m);
+      const canSell = saleable >= 50 ? '#16a34a' : saleable > 0 ? '#eab308' : '#94a3b8';
+      return '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:12px">' +
+        '<div style="font-size:11px;font-weight:700;color:' + (colors[p] || '#1e293b') + '">' + names[p] + '</div>' +
+        '<div style="font-size:10px;color:#64748b;margin:4px 0 8px">total pool ' + b.total + ' · fresh(0-2d) ' + (b['0-2d'] || 0) + ' · reserved ' + (b.reserved || 0) + '</div>' +
+        '<div style="display:flex;gap:8px;font-size:12px;flex-wrap:wrap">' +
+        (p === 'newbusiness' ? '<span><b>3-7d bulk</b>: <b style="color:' + (nbd >= 50 ? '#16a34a' : '#94a3b8') + '">' + nbd + '</b></span>' : '') +
+        '<span><b>1m</b>: <b style="color:' + (age1m >= 50 ? '#16a34a' : age1m > 0 ? '#eab308' : '#94a3b8') + '">' + age1m + '</b></span>' +
+        '<span><b>2m</b>: <b style="color:' + (age2m >= 50 ? '#16a34a' : age2m > 0 ? '#eab308' : '#94a3b8') + '">' + age2m + '</b></span>' +
+        '</div>' +
+        '<div style="font-size:10px;margin-top:6px;color:' + canSell + ';font-weight:700">' + (saleable >= 200 ? '200-pack ready' : saleable >= 100 ? '100-pack ready' : saleable >= 50 ? '50-pack ready' : 'below pack size') + '</div>' +
+        '</div>';
+    }).join('');
+  } catch(e) {}
 }
 
 async function fixClearBounce(customerId) {
