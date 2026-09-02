@@ -34,6 +34,30 @@ const DATA_DIR = (function() {
 const DB_FILE = path.join(DATA_DIR, 'database.json');
 const PUBLIC_URL = process.env.PUBLIC_URL || 'https://www.9amleads.com';
 
+// ---- Process-level crash capture. A fatal error (unhandled rejection / uncaught
+// exception) in a background job must NEVER silently kill the server. Log it to a
+// file so the cause can be read afterwards, and keep the process alive where safe.
+(function installCrashGuards() {
+  var crashFile = path.join(DATA_DIR, 'crash_log.json');
+  function recordCrash(kind, err) {
+    try {
+      var arr = [];
+      try { arr = JSON.parse(fs.readFileSync(crashFile, 'utf-8')); if (!Array.isArray(arr)) arr = []; } catch(e) {}
+      arr.push({ kind: kind, at: new Date().toISOString(), message: String((err && err.message) || err).substring(0, 1000), stack: String((err && err.stack) || '').substring(0, 2000) });
+      if (arr.length > 50) arr = arr.slice(-50);
+      fs.writeFileSync(crashFile, JSON.stringify(arr, null, 2));
+    } catch(e) {}
+  }
+  process.on('uncaughtException', function(err) {
+    recordCrash('uncaughtException', err);
+    console.error('[CRASH] uncaughtException:', err && err.stack || err);
+  });
+  process.on('unhandledRejection', function(reason) {
+    recordCrash('unhandledRejection', reason && reason.message ? reason : (reason || 'unknown rejection'));
+    console.error('[CRASH] unhandledRejection:', reason && reason.stack || reason);
+  });
+})();
+
 // Postcode district data
 const POSTCODE_DISTRICTS_FILE = path.join(DATA_DIR, 'uk-postcode-districts.json');
 const POSTCODE_AREAS_FILE = path.join(DATA_DIR, 'uk-postcode-areas.json');
@@ -16577,6 +16601,16 @@ function reserveBoostLeads(product, ageKey, count, customerId) {
   else if (raw && typeof raw === 'object') { Object.keys(raw).forEach(function(k) { if (Array.isArray(raw[k])) raw[k].forEach(mark); }); fs.writeFileSync(file, JSON.stringify(raw, null, 2)); }
   return { ok: true, leads: chosen };
 }
+
+// GET /api/admin/crash-log — read the recorded uncaught errors/rejections (debug aid)
+app.get('/api/admin/crash-log', adminAuth, (req, res) => {
+  try {
+    var crashFile = path.join(DATA_DIR, 'crash_log.json');
+    var arr = [];
+    try { arr = JSON.parse(fs.readFileSync(crashFile, 'utf-8')); if (!Array.isArray(arr)) arr = []; } catch(e) {}
+    res.json({ crashes: arr });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 
 // GET /api/boost — availability + any purchased boost pack
 app.get('/api/boost', authMiddleware, (req, res) => {
