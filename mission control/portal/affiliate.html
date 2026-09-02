@@ -323,6 +323,7 @@ tr:last-child td{border-bottom:none}
 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
 <a href="#overview" onclick="go('overview');return false" class="aff-cta" style="background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff">🏠 Overview</a>
 <a href="#leads" onclick="go('leads');return false" class="aff-cta">📥 My Leads</a>
+<a href="#followups" onclick="go('followups');return false" class="aff-cta">📞 Follow-ups</a>
 <a href="#tools" onclick="go('tools');return false" class="aff-cta">🧰 Tools</a>
 <a href="#playbook" onclick="go('playbook');return false" class="aff-cta">📖 Playbook</a>
 <a href="#rewards" onclick="go('rewards');return false" class="aff-cta">🎡 Rewards</a>
@@ -354,6 +355,7 @@ tr:last-child td{border-bottom:none}
 <div class="tabs">
 <div class="tab on" data-t="overview" onclick="go('overview')">Overview</div>
 <div class="tab" data-t="leads" onclick="go('leads')">Leads <span class="n" id="leads-count">0</span></div>
+<div class="tab" data-t="followups" onclick="go('followups')">Follow-ups <span class="n" id="fu-badge" style="display:none;background:rgba(249,115,22,.9)">0</span></div>
 <div class="tab" data-t="tools" onclick="go('tools')">Tools</div>
 <div class="tab" data-t="playbook" onclick="go('playbook')">Playbook</div>
 <div class="tab" data-t="refs" onclick="go('refs')">Referrals</div>
@@ -653,6 +655,33 @@ tr:last-child td{border-bottom:none}
 <div class="panel"><h2>All referrals</h2><div id="refs-table-wrap"></div></div>
 </section>
 
+<!-- FOLLOW-UPS -->
+<section id="view-followups" style="display:none">
+<div class="panel">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+<h2 style="margin:0">My follow-up list</h2>
+<button class="btn-mini" onclick="toggleProspectForm()" style="font-size:13px;padding:9px 18px;background:linear-gradient(135deg,#f59e0b,#f97316);color:#fff;border:none;border-radius:9px">➕ Add a prospect I'm working</button>
+</div>
+<p class="muted" style="font-size:12px;margin-top:6px">Everyone you've referred or are calling, with notes and reminders so no warm lead slips away.</p>
+</div>
+<div id="prospect-form" style="display:none" class="panel">
+<h3 style="margin:0 0 12px;font-size:15px">New prospect</h3>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px">
+<input id="fp-company" placeholder="Company" style="padding:9px 11px;background:#0b0d14;border:1px solid #1e2030;border-radius:8px;color:#e2e8f0;font-size:13px">
+<input id="fp-name" placeholder="Contact name (optional)" style="padding:9px 11px;background:#0b0d14;border:1px solid #1e2030;border-radius:8px;color:#e2e8f0;font-size:13px">
+<input id="fp-phone" placeholder="Phone" style="padding:9px 11px;background:#0b0d14;border:1px solid #1e2030;border-radius:8px;color:#e2e8f0;font-size:13px">
+<input id="fp-email" placeholder="Email (optional)" style="padding:9px 11px;background:#0b0d14;border:1px solid #1e2030;border-radius:8px;color:#e2e8f0;font-size:13px">
+<select id="fp-product" style="padding:9px 11px;background:#0b0d14;border:1px solid #1e2030;border-radius:8px;color:#e2e8f0;font-size:13px"><option value="">Lead type…</option><option value="moving">Moving</option><option value="newbusiness">New Business</option><option value="probate">Probate</option><option value="planning">Planning</option><option value="tenders">Tenders</option></select>
+<input type="datetime-local" id="fp-remind" style="padding:8px 10px;background:#0b0d14;border:1px solid #1e2030;border-radius:8px;color:#e2e8f0;font-size:13px">
+</div>
+<div style="margin-top:10px;display:flex;gap:8px"><button class="btn" onclick="addProspect()">Save prospect</button><button class="btn-out" onclick="toggleProspectForm()">Cancel</button></div>
+<div class="err" id="fp-err"></div>
+</div>
+<div id="fu-reminder-strip"></div>
+<div id="fu-counts" style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0"></div>
+<div class="panel" style="padding:0;overflow:auto"><div id="fu-list-wrap"></div></div>
+</section>
+
 <!-- PAYOUTS -->
 <section id="view-payouts" style="display:none">
 <div class="panel"><h2>Payout history</h2><div id="payouts-wrap"><div class="muted">No payouts yet.</div></div></div>
@@ -895,12 +924,67 @@ var EMOJI={moving:'🚚',probate:'⚖️',newbusiness:'💼',planning:'🏗️',
 
 function go(t){
   document.querySelectorAll('.tab').forEach(function(x){x.classList.toggle('on',x.dataset.t===t);});
-  ['overview','leads','tools','playbook','refs','rewards','compliance','payouts'].forEach(function(v){document.getElementById('view-'+v).style.display=(v===t)?'block':'none';});
+  ['overview','leads','tools','playbook','refs','rewards','compliance','payouts','followups'].forEach(function(v){var el=document.getElementById('view-'+v);if(el)el.style.display=(v===t)?'block':'none';});
   if(t==='tools'&&!RES)loadResources();
   if(t==='leads'&&!LEADS)loadLeads();
   if(t==='payouts')loadPayouts();
+  if(t==='followups')loadFollowups();
 }
 
+// ===== FOLLOW-UP CRM =====
+var FU = null, FU_STATUS_COLORS = { prospect: '#f59e0b', trial: '#0ea5e9', referral_pending: '#94a3b8', earning: '#10b981', approved: '#34d399', paid: '#4ade80' };
+var FU_STATUS_LABEL = { prospect: 'Prospect', trial: 'Trial', referral_pending: 'Referred', earning: 'Earning', approved: 'Commission', paid: 'Paid out' };
+function toggleProspectForm(){var f=document.getElementById('prospect-form');f.style.display=f.style.display==='none'?'block':'none';document.getElementById('fp-err').style.display='none';}
+function fuContact(p){return p.phone||p.email||'-';}
+function fuWhen(iso){if(!iso)return '';try{return new Date(iso).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});}catch(e){return iso;}}
+function loadFollowups(){
+  api('GET','/affiliate/followups').then(function(d){
+    if(!d.success){return;}
+    FU=d;
+    // badge
+    var b=document.getElementById('fu-badge'),n=d.overdue+d.due_today;
+    b.style.display=n?'inline-flex':'none';b.textContent=n;
+    // reminder strip
+    var strip=document.getElementById('fu-reminder-strip');
+    var html='';
+    if(d.overdue.length){html+='<div class="panel" style="background:rgba(248,113,113,.08);border-color:rgba(248,113,113,.35);padding:12px 16px"><b style="color:#f87171">⏰ Overdue ('+d.overdue.length+')</b><div style="font-size:12.5px;color:#cbd5e1;margin-top:6px">'+d.overdue.map(function(p){return '<div style="padding:3px 0">📞 <b>'+esc(p.company||p.name)+'</b> - '+esc(fuContact(p))+' <span style="color:#94a3b8">(due '+fuWhen(p.reminder_at)+')</span></div>';}).join('')+'</div></div>';}
+    if(d.reminders.today.length){html+='<div class="panel" style="background:rgba(74,222,128,.08);border-color:rgba(74,222,128,.3);padding:12px 16px"><b style="color:#4ade80">📞 Due today ('+d.reminders.today.length+')</b><div style="font-size:12.5px;color:#cbd5e1;margin-top:6px">'+d.reminders.today.map(function(p){return '<div style="padding:3px 0"><b>'+esc(p.company||p.name)+'</b> - '+esc(fuContact(p))+' <span style="color:#94a3b8">(due '+fuWhen(p.reminder_at)+')</span></div>';}).join('')+'</div></div>';}
+    strip.innerHTML=html;
+    // counts chips
+    var chips=document.getElementById('fu-counts');chips.innerHTML=Object.keys(FU_STATUS_COLORS).map(function(s){var c=FU.counts[s]||0;return c?('<span style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)"><span style="color:'+FU_STATUS_COLORS[s]+'">●</span> '+FU_STATUS_LABEL[s]+' <b>'+c+'</b></span>'):'';}).join('');
+    // table
+    var w=document.getElementById('fu-list-wrap');
+    if(!d.people.length){w.innerHTML='<div class="muted" style="padding:20px;text-align:center">No customers or prospects yet. Share your code and add prospects you\'re working here.</div>';return;}
+    w.innerHTML='<table><thead><tr><th>Business</th><th>Lead type</th><th>Status</th><th>Contact</th><th>Next reminder</th><th>Notes</th><th style="text-align:right">Actions</th></tr></thead><tbody>'+d.people.map(function(p){
+      var color=FU_STATUS_COLORS[p.status]||'#94a3b8',lab=FU_STATUS_LABEL[p.status]||p.status;
+      var notes=p.notes&&p.notes.length?('<span title="'+esc(p.notes.map(function(n){return n.text;}).join(' • '))+'">'+p.notes.length+'</span>'):'0';
+      return '<tr><td><b>'+esc(p.company||p.name||p.email||'Contact')+'</b></td><td style="font-size:11px;color:#94a3b8">'+(p.product||'-')+'</td><td><span style="color:'+color+';font-weight:700">● '+esc(lab)+'</span></td><td style="font-size:12px">'+esc(fuContact(p))+'</td><td style="font-size:11px;white-space:nowrap">'+(p.reminder_at?'<span style="color:#f59e0b">'+fuWhen(p.reminder_at)+'</span>':'<span class="muted">-</span>')+'</td><td style="text-align:center;font-size:12px">'+notes+'</td><td style="text-align:right;white-space:nowrap"><button class="btn-mini" onclick="openNote(\''+p.id+'\',\''+esc(p.company||p.name||'').replace(/'/g,'')+'\')">📝 Note</button> <button class="btn-mini" onclick="openRemind(\''+p.id+'\')">⏰</button></td></tr>';
+    }).join('')+'</tbody></table>';
+  }).catch(function(){document.getElementById('fu-list-wrap').innerHTML='<div class="muted" style="padding:20px">Could not load follow-ups.</div>';});
+}
+function openNote(id,name){
+  var note=prompt('Add a follow-up note for '+name+' (call outcome, next step...):');
+  if(note===null)return;
+  if(!note.trim()){alert('Note empty.');return;}
+  api('POST','/affiliate/followups/'+id+'/note',{note:note}).then(function(d){if(d.success){loadFollowups();}else alert(d.error||'Could not save note.');});
+}
+function openRemind(id){
+  var pick=prompt('Set a follow-up reminder (format: YYYY-MM-DD HH:MM, or leave blank to clear):',new Date(Date.now()+3*86400000).toISOString().slice(0,10)+' 09:00');
+  if(pick===null)return;
+  var clear=(pick.trim()==='');
+  var iso=clear?null:new Date(pick.replace(' ','T')).toISOString();
+  api('POST','/affiliate/followups/'+id+'/reminder',{reminder_at:iso}).then(function(d){if(d.success){loadFollowups();}else alert(d.error||'Could not set reminder.');});
+}
+function addProspect(){
+  var company=document.getElementById('fp-company').value.trim(),name=document.getElementById('fp-name').value.trim(),phone=document.getElementById('fp-phone').value.trim(),email=document.getElementById('fp-email').value.trim(),product=document.getElementById('fp-product').value,rem=document.getElementById('fp-remind').value;
+  var e=document.getElementById('fp-err');
+  if(!company&&!name&&!email){e.textContent='Add a company or contact name.';e.style.display='block';return;}
+  var reminder_at=rem?new Date(rem).toISOString():null;
+  api('POST','/affiliate/followups/prospect',{company:company,name:name,phone:phone,email:email,product:product,reminder_at:reminder_at}).then(function(d){
+    if(d.success){document.getElementById('prospect-form').style.display='none';['fp-company','fp-name','fp-phone','fp-email'].forEach(function(id){document.getElementById(id).value='';});document.getElementById('fp-remind').value='';loadFollowups();}
+    else{e.textContent=d.error||'Could not save.';e.style.display='block';}
+  });
+}
 function init(){
   document.getElementById('dash-view').style.display='block';
   document.getElementById('login-view').style.display='none';
@@ -944,6 +1028,7 @@ function init(){
   loadLeads();
   loadKyc();
   affTip();
+  loadFollowups(); // badge with overdue + due-today counts on the Follow-ups tab
   var kf=document.getElementById('kyc-file'); if(kf)kf.addEventListener('change',onKycFile);
   var kl=document.getElementById('kyc-legal'); if(kl)kl.addEventListener('input',updateKycMatch);
   var kh=document.getElementById('kyc-bankholder'); if(kh)kh.addEventListener('input',updateKycMatch);
