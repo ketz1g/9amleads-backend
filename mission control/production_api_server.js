@@ -9011,7 +9011,7 @@ app.get('/api/admin/delivery-preview', adminAuth, async (req, res) => {
       var dFail = (pv.leads || []).filter(function(l) { return l.paf_failed; }).length;
       out.push({ email: pv.email, company: pv.company, product: pv.product, plan: pv.plan, areas: pv.areas, promised: pv.promised, preview_count: pv.count, fallback_count: pv.fallback_count, fallback_note: pv.fallback_note, door_now: dNow, door_paf: dPaf, door_fail: dFail, leads: pv.leads, error: pv.error || '', debug: pv.debug });
     }
-    res.json({ success: true, generated_at: new Date().toISOString(), note: 'Preview based on the current pool - run after the 6am scrape for the most accurate 9am preview.', last_preverify: dbP.seo_last_preverify || null, customers: out });
+    res.json({ success: true, generated_at: new Date().toISOString(), note: 'Preview based on the current pool - run after the 6am scrape for the most accurate 9am preview.', last_preverify: dbP.seo_last_preverify || null, guarantee: dbP.fulfilment_guarantee || null, customers: out });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -13831,10 +13831,17 @@ async function runFulfilmentGuarantee(label) {
     } else {
       console.log('[GUARANTEE] ' + label + ': All ' + gCusts.length + ' customers guaranteed their full count for 9am');
     }
+    // STORE the latest guarantee result so the admin delivery-preview shows the final,
+    // post-check state the moment the founder opens it (no waiting / re-guessing).
+    try {
+      var _gDb = getDb();
+      _gDb.fulfilment_guarantee = { last_run: new Date().toISOString(), label: label, ok: gShort.length === 0, customers_checked: gCusts.length, short: gShort };
+      saveDb();
+    } catch(sge) {}
   } catch(e) { console.log('[GUARANTEE] ' + label + ' error:', e.message); }
 }
-cron.schedule('30 7 * * 1-5', function() { runFulfilmentGuarantee('07:30'); }, { timezone: 'Europe/London' });
-cron.schedule('15 8 * * 1-5', function() { runFulfilmentGuarantee('08:15'); }, { timezone: 'Europe/London' });
+cron.schedule('15 7 * * 1-5', function() { runFulfilmentGuarantee('07:15'); }, { timezone: 'Europe/London' });
+cron.schedule('45 7 * * 1-5', function() { runFulfilmentGuarantee('07:45'); }, { timezone: 'Europe/London' });
 
 
 // DAILY HEALTH DIGEST: every weekday at 09:30 UK (after the 9am delivery) email
