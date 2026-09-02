@@ -74,6 +74,18 @@ a{color:#0ea5e9}
     </table>
   </div>
   <div style="font-size:11px;color:#5c6480;margin-top:10px">Tip: use the admin page search or this URL directly: /portal/admin-customer.html?email=customer@example.com</div>
+
+  <!-- EMAIL HISTORY -->
+  <div style="margin-top:22px">
+    <h2 style="font-size:15px;margin-bottom:4px">Email History</h2>
+    <div class="sub">Every email this customer has actually received (daily lead sheets, previews, alerts, Print &amp; Post, bulk packs, billing). Click <b>View</b> to open the full email content.</div>
+    <div class="card" style="padding:0;overflow:auto;margin-top:8px">
+      <table>
+        <thead><tr><th>When (UK)</th><th>Type</th><th>Subject</th><th></th></tr></thead>
+        <tbody id="emailRows"><tr><td colspan="4" class="sub" style="padding:16px">Loading email history...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
 </div>
 <script>
 var API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:8012' : '';
@@ -112,9 +124,42 @@ act += '<button class="btn btn-outline btn-sm" onclick="rejectLeadAdmin(\'' + l.
     if (!rows) rows = '<tr><td colspan="7" class="sub" style="padding:16px">No leads for this customer.</td></tr>';
     document.getElementById('leadRows').innerHTML = rows;
     document.getElementById('statusLine').innerHTML = '<span style="color:#22c55e">Loaded ' + (d.leads || []).length + ' leads.</span>';
+    loadEmailHistory();
   } catch(e) {
     document.getElementById('statusLine').innerHTML = '<span style="color:#ef4444">Error: ' + esc(e.message) + ' — check the admin password and try again.</span>';
   }
+}
+// EMAIL HISTORY for this customer (what they've received + click to view contents)
+var TYPE_COLORS = { daily_lead:'#22c55e', alert:'#dc2626', print_post:'#7c3aed', billing:'#d97706', bulk:'#0891b2', preview:'#0ea5e9', onboarding:'#64748b', marketing:'#64748b', other:'#64748b' };
+async function loadEmailHistory() {
+  try {
+    var r = await fetch(API + '/api/admin/customer-emails?email=' + encodeURIComponent(email), { headers: headers() });
+    var d = await r.json();
+    var tb = document.getElementById('emailRows');
+    if (!r.ok || !d.success) { tb.innerHTML = '<tr><td colspan="4" class="sub" style="padding:16px;color:#ef4444">Could not load email history.</td></tr>'; return; }
+    if (!d.emails || !d.emails.length) { tb.innerHTML = '<tr><td colspan="4" class="sub" style="padding:16px">No emails logged yet. Emails are recorded from the moment each one is sent — the daily 9am lead sheet will appear here after the next delivery.</td></tr>'; return; }
+    tb.innerHTML = d.emails.map(function(e){
+      var uk = '-';
+      try { uk = new Date(e.at).toLocaleString('en-GB', { timeZone:'Europe/London', day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }); } catch(e2){ uk = e.at || '-'; }
+      var color = TYPE_COLORS[e.type] || '#64748b';
+      var view = e.has_html ? '<button class="btn btn-outline btn-sm" onclick="viewEmailContent(\'' + e.id + '\')">View</button>' : '<span style="font-size:10px;color:#94a3b8">no body</span>';
+      return '<tr><td style="white-space:nowrap;font-size:12px">' + uk + '</td><td style="font-size:12px"><b style="color:' + color + '">' + esc(e.type || 'other') + '</b></td><td style="font-size:12px">' + esc(e.subject || '') + '</td><td style="text-align:right">' + view + '</td></tr>';
+    }).join('');
+  } catch(err) { document.getElementById('emailRows').innerHTML = '<tr><td colspan="4" class="sub" style="padding:16px;color:#ef4444">Error: ' + esc(err.message) + '</td></tr>'; }
+}
+async function viewEmailContent(id) {
+  try {
+    var r = await fetch(API + '/api/admin/customer-email?id=' + encodeURIComponent(id), { headers: headers() });
+    var d = await r.json();
+    if (!d.success || !d.html) { alert(d.error || 'This email has no saved body.'); return; }
+    var ov = document.getElementById('emailViewOverlay');
+    if (!ov) { ov = document.createElement('div'); ov.id = 'emailViewOverlay'; ov.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,.6);z-index:99999;display:flex;align-items:flex-start;justify-content:center;padding:30px 20px;overflow:auto'; document.body.appendChild(ov); }
+    ov.innerHTML = '<div style="background:#fff;border-radius:14px;max-width:760px;width:100%;padding:20px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="font-size:14px"><b>' + esc(d.subject || '') + '</b><div style="font-size:11px;color:#64748b;margin-top:2px">' + esc(d.email || '') + ' &middot; ' + (function(){ try { return new Date(d.at).toLocaleString('en-GB', { timeZone:'Europe/London', dateStyle:'medium', timeStyle:'short' }); } catch(e){ return d.at || ''; } })() + '</div></div>' +
+      '<button onclick="document.getElementById(\'emailViewOverlay\').style.display=\'none\'" style="background:none;border:none;color:#94a3b8;font-size:22px;cursor:pointer">&times;</button></div>' +
+      '<iframe srcdoc="' + esc(d.html).replace(/"/g, '&quot;') + '" style="width:100%;height:72vh;border:1px solid #e2e8f0;border-radius:10px;background:#fff"></iframe></div>';
+    ov.style.display = 'flex';
+  } catch(e) { alert('Could not load email content: ' + e.message); }
 }
 async function openCustomerDashboard() {
   if (!email) { alert('No customer email'); return; }
