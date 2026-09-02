@@ -299,21 +299,31 @@ function parseGazetteLinkedData(body) {
     const raRegion = String(repAddr.region || '').trim();
     const raPc = String(repAddr.postalCode || repAddr.postcode || '').trim().toUpperCase();
     executorAddress = [raStreet, raLoc, raRegion, raPc].filter(Boolean).join(', ');
-    // STRICT PERSON-vs-FIRM test: 'home' only for a genuine PERSON executor applying
-    // in person. Any firm indicator (wills/probate/law/legal/solicitors/llp/& /and/)
-    // OR a care-of address means it's a solicitor-route lead -> NOT executor-home.
-    // Person names must carry a title (Mr/Mrs/Ms/Miss/Dr/Prof/Rev) or be a plain
-    // First-Last with a recognisable first name - initials-only entries are rejected
-    // as ambiguous (they are usually firm abbreviations).
-    var isFirm = /\b(solicitors?|wills?|probate|estate|law|legal|llp|ltd|limited|plc|chambers|&|and|co\.?|associates?|partners?|group|hugh james|weightmans|freeths|womble|davisons|milners|co-operative|slater|stallard|wace morgan)\b/i.test(repName) || /\b(chambers|solicitors?|llp|ltd|& ?co|law|wills|probate)\b/i.test(raStreet) || /\bc\/o\b/i.test(repName + ' ' + executorAddress) || /^[A-Z]{2,4}\s+[A-Z][a-z]+/.test(repName.trim());
+    // PERSON-vs-FIRM discrimination. Firms dominate the Gazette deceased-estates
+    // feed (solicitors publish the creditor notices), so classify conservatively:
+    // 'home' ONLY for a genuine PERSON executor. Signals that it is a FIRM:
+    // firm keywords, initials-only names (JMW, DMH), '&'/'and'/'of', care-of, or a
+    // firm-style street (Chambers/Solicitors). Signals it is a PERSON: a personal
+    // title, OR a common UK first name as the leading word(s). Ambiguous bare
+    // surnames ("Blackhurst Swainson Goodier") are treated as firms (excluded).
+    var _commonFirst = /\b(alexander|alfred|alice|amber|amy|andrew|angela|ann|anna|anne|anthony|arthur|audrey|barbara|barry|ben|brian|bridget|catherine|charles|christine|christopher|colin|david|dennis|diana|donald|doris|dorothy|edith|edward|eileen|elizabeth|emily|emma|eric|frederick|fred|george|gerald|gillian|gordon|grace|graham|harold|harry|heather|helen|henry|ian|irene|iris|jack|james|janet|jane|jean|jennifer|john|joan|joanne|joseph|judith|julie|karen|kathleen|keith|kenneth|kevin|laura|lawrence|leonard|linda|lisa|liam|lillian|lily|lucy|lynda|margaret|maria|marie|mark|martin|mary|maureen|michael|michelle|muriel|nancy|nicholas|nicola|nigel|oliver|olivia|pamela|patricia|patrick|paul|paula|peter|philip|phyllis|rachel|raymond|rebecca|richard|rita|robert|roger|ronald|rose|ruth|sally|sandra|sarah|sharon|sheila|simon|stephen|steven|stuart|susan|sylvia|terence|teresa|thomas|timothy|tracey|trevor|valerie|vera|victoria|vincent|wanda|wayne|wendy|william|winston)\b/i;
+    var _title = /\b(mr|mrs|ms|miss|dr|prof|rev)\b/i;
+    var _firmWord = /\b(solicitors?|wills?|probate|estate|law|legal|llp|ltd|limited|plc|chambers|associates?|partners?|group|co\.?|company|services|trustees?|trust)\b/i;
+    var _careOf = /\bc\/o\b/i;
+    // BLACKLIST of known probate/solicitor firms that appear in the Gazette feed
+    // (often named after people, e.g. "Hugh James"), so they are never sold as a
+    // personal executor home. Grows as new firms are seen.
+    var _knownFirms = ['hugh james', 'weightmans', 'wace morgan', 'j m w', 'jmw', 'milners', 'davisons', 'davison', 'slater heelis', 'slater', 'blackhurst swainson goodier', 'dmh stallard', 'gowen', 'whitehead monckton', 'co-operative legal', 'birketts', 'freeths', 'womble bond', 'sills', 'steeles law', 'bradley', 'howes percival', 'lodders', 'parry carr', 'charlton', 'fisher', 'redkite', 'northern law', 'gepp', 'thompson', 'the wilkins', 'powells', 'briggs', 'barrett'];
+    var isInitialsOnly = /^[A-Z]{1,3}\s+(?:[A-Z][a-z]+|[A-Z][a-z'-]+\s+[A-Z][a-z'-]+)$/.test(repName.trim());
+    var isKnownFirm = _knownFirms.some(function(f) { return repName.toLowerCase().indexOf(f) !== -1; });
+    var isFirm = _firmWord.test(repName) || /[&]|(\band\b)|\bof\b/i.test(repName) || _careOf.test(repName + ' ' + executorAddress) || _firmWord.test(raStreet) || isInitialsOnly || isKnownFirm || /^[A-Z]{2,4}\s+[A-Z][a-z]+$/.test(repName.trim());
     if (isFirm) { solicitor = repName || solicitor; executorType = 'solicitor'; }
-    else if (/^\s*(mr|mrs|ms|miss|dr|prof|rev|mr?s)\b/i.test(repName) || /\b(mr|mrs|ms|miss|dr|prof|rev)\b/i.test(repName)) {
-      // A titled PERSON applying personally -> executor home.
+    else if (_title.test(repName) || _commonFirst.test(repName)) {
+      // A person (title or recognisable first name) applying personally -> executor home.
       executorName = repName || executorName; executorType = executorAddress ? 'home' : '';
     } else {
-      // No title, no firm word: ambiguous — DO NOT mark as executor-home (the product
-      // rule is executor-direct only, so uncertain leads are excluded rather than
-      // risk a solicitor firm slipping through as a "home" executor).
+      // Ambiguous (e.g. two surnames "Blackhurst Swainson Goodier") — exclude rather
+      // than risk a firm being sold as a "home" executor.
       solicitor = repName || solicitor; executorType = 'solicitor';
     }
   }
