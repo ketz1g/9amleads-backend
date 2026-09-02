@@ -16103,6 +16103,25 @@ function maskedBulkPreview(n) {
   return getBulkEligibleLeads().slice(0, n).map(maskBulkAddress);
 }
 
+// POST /api/admin/boost-grant — grant a boost pack (reserve archive leads + set pack),
+// mimicking the Stripe webhook, for testing / manual grants. Body: { email, product, age, count }
+app.post('/api/admin/boost-grant', adminAuth, (req, res) => {
+  try {
+    var em = String((req.body && req.body.email) || '').toLowerCase().trim();
+    var product = String((req.body && req.body.product) || '').toLowerCase();
+    var age = String((req.body && req.body.age) || '1m');
+    var count = parseInt(req.body && req.body.count, 10) || 50;
+    var c = db.prepare('SELECT * FROM customers WHERE email = ?').get(em);
+    if (!c) return res.status(404).json({ error: 'Customer not found' });
+    var reserve = reserveBoostLeads(product, age, count, c.id);
+    if (!reserve.ok) return res.status(400).json({ error: reserve.error, available: reserve.available });
+    var pack = { product: product, age: age, count: count, purchased_at: new Date().toISOString(), status: 'pending', sent: 0, reserved_count: reserve.leads.length };
+    db.prepare('UPDATE customers SET boost_pack = ? WHERE id = ?').run(JSON.stringify(pack), c.id);
+    saveDb();
+    res.json({ success: true, granted: count, reserved: reserve.leads.length, email: em });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/boost-seed — backdate pool leads into the 1-month / 2-month archive
 // age bands so Boost packs can be tested (and topped up). Body: { product, months }
 app.post('/api/admin/boost-seed', adminAuth, (req, res) => {
