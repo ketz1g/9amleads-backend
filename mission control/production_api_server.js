@@ -16602,6 +16602,38 @@ function reserveBoostLeads(product, ageKey, count, customerId) {
   return { ok: true, leads: chosen };
 }
 
+// Release stale boost reservations: (a) the reserving customer no longer exists
+// (deleted test/real account), or (b) the reservation is older than 48h and the
+// customer never completed checkout. Runs on every admin bulk-pools read so the
+// founder's availability monitor always shows sellable inventory.
+function releaseStaleBoostReservations() {
+  var released = 0;
+  Object.keys(PRODUCT_LEAD_FILES).forEach(function(product) {
+    var file = path.join(DATA_DIR, PRODUCT_LEAD_FILES[product].file);
+    var raw = null;
+    try { raw = JSON.parse(fs.readFileSync(file, 'utf-8')); } catch(e) {}
+    if (!raw) return;
+    var changed = false;
+    function sweep(l) {
+      if (!l || !l.boost_reserved || l.boost_sold || !l.boost_reserved_by) return;
+      var keep = true;
+      try { keep = !!db.prepare('SELECT id FROM customers WHERE id = ?').get(l.boost_reserved_by); } catch(e) { keep = false; }
+      if (!keep) { l.boost_reserved = 0; delete l.boost_reserved_by; delete l.boost_reserved_at; changed = true; released++; return; }
+      var ra = l.boost_reserved_at ? new Date(l.boost_reserved_at).getTime() : 0;
+      if (ra && Date.now() - ra > 48 * 3600000) {
+        // Customer still exists but abandoned the cart — free the lead up.
+        l.boost_reserved = 0; delete l.boost_reserved_by; delete l.boost_reserved_at; changed = true; released++;
+      }
+    }
+    if (Array.isArray(raw)) { raw.forEach(sweep); if (changed) fs.writeFileSync(file, JSON.stringify(raw, null, 2)); }
+    else if (raw && typeof raw === 'object') {
+      Object.keys(raw).forEach(function(k) { if (Array.isArray(raw[k])) raw[k].forEach(sweep); });
+      if (changed) fs.writeFileSync(file, JSON.stringify(raw, null, 2));
+    }
+  });
+  return released;
+}
+
 // GET /api/admin/crash-log — read the recorded uncaught errors/rejections (debug aid)
 app.get('/api/admin/crash-log', adminAuth, (req, res) => {
   try {
@@ -16755,6 +16787,7 @@ function fireBoostSend(c, pack, campaignId, leads) {
 // can monitor Boost (moving/probate 1m/2m) and New Business bulk (3-7d) inventory.
 app.get('/api/admin/bulk-pools', adminAuth, (req, res) => {
   try {
+    var released = releaseStaleBoostReservations();
     function bands(prod) {
       var arr = readPoolFile(prod) || [];
       var now = Date.now();
@@ -16780,7 +16813,7 @@ app.get('/api/admin/bulk-pools', adminAuth, (req, res) => {
       moving: bands('moving'),
       probate: bands('probate'),
       newbusiness: bands('newbusiness'),
-      note: '1m = 28-35 days old, 2m = 58-65 days old. These archive leads are excluded from the daily 24/48h fresh delivery.'
+      note: '1m = 28-35 days old, 2m = 58-65 days old. These archive leads are excluded from the daily 24/48h fresh delivery.' + (released ? ' Released ' + released + ' stale reservation(s).' : '')
     });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
