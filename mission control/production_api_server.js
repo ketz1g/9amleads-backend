@@ -13508,7 +13508,14 @@ cron.schedule('10 9 * * 1-5', async () => {
   try {
     var sDb = getDb();
     var todayS = new Date().toISOString().split('T')[0];
-    var sCusts = (sDb.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && !isLeadsPaused(c); });
+    // Only customers who are EXPECTING leads today get the reassurance notice.
+    // A free trial that has ENDED no longer receives daily leads — promising them
+    // "your leads are on the way" would be wrong (their trial is over, not delayed).
+    var sCusts = (sDb.customers || []).filter(function(c) {
+      if (!c.plan || c.plan === 'cancelled' || isLeadsPaused(c)) return false;
+      if (c.plan === 'free_trial' && c.trial_ends && new Date(c.trial_ends) <= new Date()) return false;
+      return true;
+    });
     var sNotified = {};
     try { if (sDb.notify_status && sDb.notify_status[todayS]) sNotified = sDb.notify_status[todayS]; } catch(e) {}
     for (var sci = 0; sci < sCusts.length; sci++) {
