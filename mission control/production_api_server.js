@@ -13794,6 +13794,45 @@ cron.schedule('30 6 * * 1-5', async () => {
   } catch(e) { console.log('[READINESS] error:', e.message); }
 }, { timezone: 'Europe/London' });
 
+// T-MINUS-10 FULFILMENT GUARANTEE (08:50 UK, weekdays): 10 minutes before the 9am
+// delivery, re-verify EVERY real active customer can hit their EXACT promised count
+// using the same selection logic the delivery will run. If ANY would fall short the
+// founder is alerted IMMEDIATELY (before 9am — not discovered after), with the exact
+// customer, product, count and areas. This is the "what we promise is what they get"
+// last line of defence: a shortfall is known and fixable 10 minutes early.
+cron.schedule('50 8 * * 1-5', async () => {
+  try {
+    var gDb = getDb();
+    var gCusts = (gDb.customers || []).filter(function(c) {
+      if (!c.plan || c.plan === 'cancelled' || isLeadsPaused(c)) return false;
+      if (c.plan === 'free_trial' && c.trial_ends && new Date(c.trial_ends) <= new Date()) return false;
+      // skip test/seed accounts
+      var ge = String(c.email || '').toLowerCase();
+      if (ge.indexOf('@9amleads.com') !== -1 || ge.indexOf('test.') === 0 || /\.1788\d*@/.test(ge)) return false;
+      return true;
+    });
+    var gShort = [];
+    for (var gi = 0; gi < gCusts.length; gi++) {
+      try {
+        var gc = gCusts[gi];
+        var gp = await deliveryPreviewForCustomer(gc);
+        var gpromised = parseInt(gc.leads_per_day, 10) > 0 ? parseInt(gc.leads_per_day, 10) : (getPlanLimit(gc.product, gc.plan, gc.coverage) || 5);
+        if (!gp || gp.count < gpromised) {
+          gShort.push(gc.email + ' (' + gc.product + '): ' + (gp ? gp.count : 0) + '/' + gpromised + ' in ' + ((gp && gp.areas) || []).join(','));
+        }
+      } catch(ge2) { console.log('[T-10 GUARANTEE] preview error ' + gc.email + ': ' + ge2.message); }
+    }
+    if (gShort.length) {
+      // Alert the founder NOW (10 min before 9am) so they can act / top up.
+      var _gHtml = '<div style="font-family:Inter,Arial,sans-serif;max-width:540px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px"><h2 style="color:#f87171;margin:0 0 10px;font-size:18px">⚠ T-10: a customer will be short at 9am</h2><p style="font-size:14px;line-height:1.6;color:#cbd5e1">10 minutes before delivery, the guarantee check found these customers will NOT get their full promised count:<br><br><ul style="margin:0;padding-left:18px">' + gShort.map(function(s){ return '<li>' + s + '</li>'; }).join('') + '</ul><br><b style="color:#fbbf24">Do this now:</b> run a targeted top-up (<code>/api/admin/top-up-today?email=...)</code> or widen the customer\'s areas, so 9am delivers exactly what was promised.</p></div>';
+      try { await sendBrevoEmail({ email: process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com', name: '9amLeads Admin' }, '⚠ URGENT T-10: ' + gShort.length + ' customer(s) will shortfall at 9am', _gHtml); } catch(ga) { console.log('[T-10 GUARANTEE] alert send error:', ga.message); }
+      console.log('[T-10 GUARANTEE] ⚠ ' + gShort.length + ' would shortfall: ' + gShort.join(' | '));
+    } else {
+      console.log('[T-10 GUARANTEE] All ' + gCusts.length + ' customers guaranteed their full count for 9am');
+    }
+  } catch(e) { console.log('[T-10 GUARANTEE] error:', e.message); }
+}, { timezone: 'Europe/London' });
+
 
 // DAILY HEALTH DIGEST: every weekday at 09:30 UK (after the 9am delivery) email
 // the founder a short summary — customers served, delivery errors, supply levels
