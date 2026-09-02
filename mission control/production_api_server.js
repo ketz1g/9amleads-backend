@@ -16249,7 +16249,7 @@ app.get('/api/newbusiness/bulk', authMiddleware, (req, res) => {
 app.post('/api/newbusiness/bulk/checkout', authMiddleware, async (req, res) => {
   try {
     var count = parseInt(req.body && req.body.count, 10);
-    var NB_BULK_PACKS = { 100: 10000, 250: 20000, 500: 45000, 1000: 75000 };
+    var NB_BULK_PACKS = { 100: 35000, 250: 87500, 500: 175000, 1000: 350000 };
     if (!NB_BULK_PACKS[count]) return res.status(400).json({ error: 'Choose a 100, 250, 500 or 1000 lead pack.' });
     var c = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
     if (!c) return res.status(404).json({ error: 'User not found' });
@@ -16491,9 +16491,10 @@ app.post('/api/admin/normalise-pool', adminAuth, (req, res) => {
 // customer chooses: 1-month-old or 2-month-old. Never delivered to any daily
 // customer, but packs are SHARED (other buyers may receive the same archive leads).
 // Print & post included (A5 leaflet front + back).
+// Bulk packs priced at £3.50/lead = £1.18 Stannp A5 print&post + £2.32 profit per lead.
 var BOOST_PACKS = {
-  moving:  { 100: 10000, 250: 20000, 500: 45000, 1000: 75000 },
-  probate: { 50: 15000, 100: 25000, 200: 45000, 500: 75000 }
+  moving:  { 100: 35000, 250: 87500, 500: 175000, 1000: 350000 },
+  probate: { 50: 17500, 100: 35000, 200: 70000, 500: 175000 }
 };
 var BOOST_AGE_MS = { '1m': 31 * 86400000, '2m': 61 * 86400000 };
 
