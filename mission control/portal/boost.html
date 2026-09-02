@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boost Your Business — Archive Lead Packs | 9amLeads</title>
+<style>
+:root{--bg:#f7f7f8;--card:#fff;--text:#111827;--muted:#6b7280;--border:#e5e7eb;--accent:#f97316;--green:#166534;--green-bg:#f0fdf4;--green-bd:#86efac;--radius:14px;--ff:'Inter',system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--ff);background:var(--bg);color:var(--text);line-height:1.5}
+.wrap{max-width:900px;margin:0 auto;padding:24px 16px 60px}
+.topbar{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+.topbar .brand{font-weight:800;font-size:18px;font-family:'Outfit',var(--ff)}
+.topbar .brand small{color:var(--accent)}
+.topbar .back{margin-left:auto;font-size:12px;color:var(--muted);text-decoration:none;border:1px solid var(--border);padding:6px 12px;border-radius:8px}
+h1{font-size:22px;font-weight:800;margin-bottom:4px;font-family:'Outfit',var(--ff)}
+.sub{color:var(--muted);font-size:13px;margin-bottom:18px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:16px}
+h3{font-size:15px;font-weight:700;margin-bottom:10px}
+.hint{font-size:12.5px;color:var(--muted);line-height:1.7}
+.btn{display:inline-flex;align-items:center;gap:8px;border:none;border-radius:10px;padding:12px 20px;font-size:14px;font-weight:700;font-family:var(--ff);cursor:pointer;transition:.15s}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#ea580c}
+.btn-green{background:#16a34a;color:#fff}
+.btn-green:hover{background:#15803d}
+.seg{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 16px}
+.seg button{padding:9px 18px;border-radius:9px;border:1px solid var(--border);background:#fff;font-size:13px;font-weight:700;cursor:pointer;color:var(--muted)}
+.seg button.on{background:#0ea5e9;border-color:#0ea5e9;color:#fff}
+.avail{font-size:12px;color:var(--muted);margin-bottom:8px}
+.avail b{color:#16a34a}
+.packs{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.pack{text-align:center;padding:22px;border:1px solid var(--border);border-radius:var(--radius);background:#fff}
+.pack .num{font-size:28px;font-weight:800;font-family:'Outfit',var(--ff)}
+.pack .lbl{color:var(--muted);font-size:11.5px;margin:4px 0 12px}
+.pack .price{font-size:26px;font-weight:800;font-family:'Outfit',var(--ff)}
+.pack .per{font-size:11px;color:var(--muted);margin:4px 0 14px}
+.pack button{width:100%}
+.lead-row{padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px}
+.lead-list{max-height:360px;overflow:auto;border:1px solid var(--border);border-radius:10px;margin:8px 0 16px}
+.warn{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px 14px;font-size:12.5px;color:#92400e;margin-bottom:14px;line-height:1.6}
+.banner{display:flex;align-items:flex-start;gap:14px;background:linear-gradient(135deg,rgba(14,165,233,.07),rgba(249,115,22,.06));border:1px solid rgba(14,165,233,.25);border-radius:var(--radius);padding:18px;margin-bottom:16px}
+.banner .ic{font-size:26px;line-height:1}
+#loading{text-align:center;padding:50px;color:var(--muted)}
+.sent .ic{font-size:42px;color:#16a34a;margin-bottom:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">9am<small>Leads</small> <span style="font-size:11px;color:var(--muted)">· Boost Your Business</span></div>
+    <a class="back" href="/portal/dashboard.html">&larr; Back to Dashboard</a>
+  </div>
+  <h1>Boost Your Business</h1>
+  <div class="sub">Buy older archive leads in bulk. Choose Moving or Probate, pick 1-month or 2-month-old leads, and we print &amp; post your A5 leaflet to every one.</div>
+  <div id="loading">Loading Boost...</div>
+  <div id="content" style="display:none">
+    <div class="banner">
+      <div class="ic">&#128640;</div>
+      <div><b>Archive lead packs</b>
+        <div class="hint">These leads have <b>never been sent to any customer</b>. Because they're older archive leads, other buyers may receive the same ones too &mdash; so act fast and be first to respond.</div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>1. Choose your lead type</h3>
+      <div class="seg"><button class="on" data-p="moving" onclick="setProduct('moving')">&#128230; Moving</button><button data-p="probate" onclick="setProduct('probate')">&#9878;&#65039; Probate</button></div>
+      <div id="availMoving" class="avail"></div>
+      <h3 style="margin-top:6px">2. Choose how old</h3>
+      <div class="seg"><button class="on" data-a="1m" onclick="setAge('1m')">1 month old</button><button data-a="2m" onclick="setAge('2m')">2 months old</button></div>
+      <div id="availAge" class="avail"></div>
+      <h3 style="margin-top:6px">3. Pick your pack (printed &amp; posted)</h3>
+      <div class="packs" id="packsBox"></div>
+    </div>
+    <div id="reviewBox" class="card" style="display:none">
+      <h3>&#128230; Your pack &mdash; <span id="packCount">0</span> archive leads</h3>
+      <div id="materialsWarn" class="warn" style="display:none">Boost packs are posted as <b>A5 leaflets</b> &mdash; you need BOTH your leaflet front AND back loaded in Print &amp; Post (Step 2) first.</div>
+      <div class="lead-list" id="leadsList"></div>
+      <button class="btn btn-green" id="sendBtn" onclick="sendBoost()">Confirm &amp; Send all to Print &amp; Post</button>
+    </div>
+    <div id="sentBox" class="card sent" style="display:none;text-align:center;padding:34px">
+      <div class="ic">&#10004;</div><h3 style="margin-bottom:8px">Your pack is on its way!</h3>
+      <p class="hint">Track progress in <b>Print &amp; Post</b>.</p>
+    </div>
+  </div>
+</div>
+<script>
+var API = window.location.hostname === 'localhost' ? 'http://localhost:8012' : '';
+function tok(){ return localStorage.getItem('9am_token') || ''; }
+function ah(){ return { 'Content-Type':'application/json', 'Authorization':'Bearer ' + tok() }; }
+function esc(s){ return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+var ST = { product:'moving', age:'1m', DATA:null, PACK:null };
+function setProduct(p){ ST.product=p; document.querySelectorAll('#content .seg button[data-p]').forEach(function(b){b.classList.toggle('on',b.dataset.p===p);}); render(); }
+function setAge(a){ ST.age=a; document.querySelectorAll('#content .seg button[data-a]').forEach(function(b){b.classList.toggle('on',b.dataset.a===a);}); render(); }
+function render(){
+  var D=ST.DATA; if(!D)return;
+  var mv=D.available.moving, pb=D.available.probate;
+  document.getElementById('availMoving').innerHTML='Moving available: <b>'+mv['1m']+'</b> (1m) / <b>'+mv['2m']+'</b> (2m)';
+  var av=D.available[ST.product][ST.age];
+  document.getElementById('availAge').innerHTML=(ST.age==='1m'?'1-month':'2-month')+'-old '+ST.product+' available: <b>'+av+'</b>';
+  var packs=D.packs[ST.product];
+  var box=document.getElementById('packsBox');
+  box.innerHTML=Object.keys(packs).map(function(cnt){
+    var pence=packs[cnt]; var lbl=ST.product==='probate'?'probate leads':'moving leads';
+    return '<div class="pack"><div class="num">'+cnt+'</div><div class="lbl">'+ST.age+'<br>'+lbl+'<br>printed &amp; posted</div><div class="price">£'+(pence/100).toFixed(2)+'</div><div class="per">one-time</div><button class="btn btn-primary" onclick="buy('+cnt+')">Buy '+cnt+'</button></div>';
+  }).join('');
+}
+function buy(count){
+  if(!confirm('Buy '+count+' '+ST.age+' '+ST.product+' archive leads printed & posted for £'+(ST.DATA.packs[ST.product][count]/100).toFixed(2)+'?'))return;
+  fetch(API+'/api/boost/checkout',{method:'POST',headers:ah(),body:JSON.stringify({product:ST.product,age:ST.age,count:count})})
+  .then(function(r){return r.json();}).then(function(d){ if(d.checkout_url)window.location.href=d.checkout_url; else alert(d.error||'Could not start checkout.'); })
+  .catch(function(){alert('Could not start checkout.');});
+}
+function load(){
+  if(!tok()){ window.location.href='/portal/'; return; }
+  fetch(API+'/api/boost',{headers:{'Authorization':'Bearer '+tok()}})
+  .then(function(r){return r.json();}).then(function(d){
+    if(!d.success){ alert(d.error||'Could not load Boost.'); return; }
+    document.getElementById('loading').style.display='none';
+    document.getElementById('content').style.display='block';
+    ST.DATA=d;
+    // If a customer product mismatches, default product to theirs
+    if(d.product==='moving'||d.product==='probate'){ ST.product=d.product; document.querySelectorAll('#content .seg button[data-p]').forEach(function(b){b.classList.toggle('on',b.dataset.p===d.product);}); }
+    render();
+    if(d.pack && d.pack.status!=='sent' && d.pack.status!=='sending'){
+      showReview(d.pack);
+    } else if(d.pack && d.pack.status==='sent'){
+      document.getElementById('sentBox').style.display='block';
+    }
+  }).catch(function(){document.getElementById('loading').textContent='Could not load Boost.';});
+}
+function showReview(pack){
+  document.getElementById('reviewBox').style.display='block';
+  document.getElementById('packCount').textContent=pack.reserved_count||pack.count;
+  // load reserved leads for the review (fetch fresh availability then list not available client-side) - show from purchase info
+  fetch(API+'/api/boost/reserved',{headers:{'Authorization':'Bearer '+tok()}}).then(function(r){return r.json();}).then(function(x){
+    if(x && x.leads){
+      document.getElementById('materialsWarn').style.display=x.materials_ready?'none':'block';
+      document.getElementById('leadsList').innerHTML=x.leads.map(function(l){return '<div class="lead-row"><b>'+esc(l.name||l.company||'Lead')+'</b><br><span class="hint" style="font-size:12px">'+esc(l.address||'')+'</span></div>';}).join('')||'<div class="hint" style="padding:14px">Loading reserved leads...</div>';
+    }
+  }).catch(function(){});
+}
+function sendBoost(){
+  if(!confirm('Send ALL leads in this pack to Print & Post now?'))return;
+  var b=document.getElementById('sendBtn'); b.disabled=true; b.textContent='Sending...';
+  fetch(API+'/api/boost/send',{method:'POST',headers:ah(),body:'{}'}).then(function(r){return r.json();}).then(function(d){
+    if(d.success){ alert(d.message||'Pack sent!'); location.reload(); }
+    else { alert(d.error||'Send failed.'); b.disabled=false; b.textContent='Confirm & Send all to Print & Post'; }
+  }).catch(function(){alert('Send failed.');b.disabled=false;b.textContent='Confirm & Send all to Print & Post';});
+}
+document.addEventListener('DOMContentLoaded',load);
+if(window.location.search.indexOf('paid=success')>-1){setTimeout(load,400);}
+</script>
+</body>
+</html>

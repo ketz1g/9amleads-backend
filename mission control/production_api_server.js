@@ -16522,6 +16522,25 @@ app.post('/api/boost/checkout', authMiddleware, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/boost/reserved — the purchased pack's reserved leads (full addresses) +
+// whether A5 leaflet materials are ready, so the customer can review before sending.
+app.get('/api/boost/reserved', authMiddleware, (req, res) => {
+  try {
+    var c = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!c) return res.status(404).json({ error: 'User not found' });
+    var pack = null; try { pack = c.boost_pack ? JSON.parse(c.boost_pack) : null; } catch(e) {}
+    if (!pack || pack.status === 'sent') return res.json({ success: true, leads: [] });
+    var arr = readPoolFile(pack.product);
+    var reserved = (arr || []).filter(function(l) { return l.boost_reserved_by === c.id && !l.boost_sold; }).map(function(l) {
+      var rcpt = buildStannpRecipientFromLead(l);
+      return { id: l.id || l.url || '', name: l.name || l.companyName || l.company_name || (pack.product === 'probate' ? 'Executor of estate' : ''), address: rcpt.address_line1 + ', ' + (rcpt.city || '') + ', ' + rcpt.postcode };
+    });
+    var mat = false;
+    try { var f = db.prepare("SELECT COUNT(*) AS count FROM direct_mail_materials WHERE customer_id = ? AND type='flyer_front'").get(c.id); var b = db.prepare("SELECT COUNT(*) AS count FROM direct_mail_materials WHERE customer_id = ? AND type='flyer_back'").get(c.id); mat = f && b && f.count > 0 && b.count > 0; } catch(e) {}
+    res.json({ success: true, leads: reserved, materials_ready: mat });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/boost/send — confirm & send the purchased boost pack (A5 leaflet).
 app.post('/api/boost/send', authMiddleware, async (req, res) => {
   try {
