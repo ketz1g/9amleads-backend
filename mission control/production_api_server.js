@@ -16081,9 +16081,38 @@ app.post('/api/admin/bulk-check', adminAuth, (req, res) => {
   catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/clean-probate-pool — remove funeral-notice / early-estate junk and
+// name-as-postcode garbage from the probate pool so only real probate leads remain
+// (accurate mailable count + clean reporting). Real Gazette leads are kept.
+app.post('/api/admin/clean-probate-pool', adminAuth, (req, res) => {
+  try {
+    var f = PRODUCT_LEAD_FILES.probate.file;
+    var file = path.join(DATA_DIR, f);
+    var pool = [];
+    try { pool = JSON.parse(fs.readFileSync(file, 'utf-8')); if (!Array.isArray(pool)) pool = []; } catch(e) { pool = []; }
+    var before = pool.length;
+    var removedByReason = { funeral: 0, name_postcode: 0, no_address: 0 };
+    var kept = pool.filter(function(l) {
+      if (!l) return false;
+      var src = String(l.source || '').toLowerCase();
+      // 1. Funeral notices / early-estate are NOT probate — remove outright.
+      if (/early[-_ ]?estate|funeral[-_ ]?notice|funeral|obituary|death[-_ ]?notice/.test(src)) { removedByReason.funeral++; return false; }
+      if (l.preProbate) { removedByReason.funeral++; return false; }
+      // 2. Name-as-postcode garbage ("JOHN", "PETE", "RITA" in the postcode field).
+      var pcRaw = String(l.postcode || '');
+      if (pcRaw && !/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(pcRaw.trim())) { removedByReason.name_postcode++; return false; }
+      // 3. Bare name with NO address at all (nothing mailable / no location).
+      var addrAll = String(l.deceasedAddress || l.fullAddress || l.address || l.deceased_address || '');
+      var nameOnly = String(l.name || '');
+      if (!addrAll.trim() && !l.postcode) { removedByReason.no_address++; return false; }
+      return true;
+    });
+    fs.writeFileSync(file, JSON.stringify(kept, null, 2));
+    res.json({ success: true, product: 'probate', before: before, after: kept.length, removed: before - kept.length, removed_by_reason: removedByReason });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/normalise-pool — clean + town/county-enrich a product's POOL leads
-// (moving: enrichMovingLeadTown; others: normalizeStannpAddress) so previews, delivery
-// and bulk reads all show complete addresses. Idempotent. Body: { product }
 app.post('/api/admin/normalise-pool', adminAuth, (req, res) => {
   try {
     var prod = String((req.body && req.body.product) || '').trim();
