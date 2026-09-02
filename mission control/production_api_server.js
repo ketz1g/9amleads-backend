@@ -27067,11 +27067,16 @@ function syncCustomers(product) {
           try {
             var planScraper = require('./planning_scraper');
             // Aggregate the postcode areas of ALL planning customers so the PLOTA
-            // query targets the places our customers actually want leads from
-            // (instead of a hardcoded default list that may miss London, etc.).
+            // query targets the places our customers actually want leads from.
+            // ALWAYS also sweep the major UK regions (Plota returns ~50 per city
+            // query) so the planning pool stays deep even when few/no planning
+            // customers are active — otherwise supply collapses to the thin free
+            // fallback (~60/day) and planning can't be sold.
             var planCusts = (getDb().customers || []).filter(function(c) { return c.product === 'planning' || ((c.biz_field3 || '').indexOf('planning') !== -1); });
             var planAreas = [];
             var planFilters = [];
+            var PLAN_DEFAULT_REGIONS = ['London', 'Birmingham', 'Manchester', 'Leeds', 'Glasgow', 'Cardiff', 'Bristol', 'Newcastle', 'Nottingham', 'Sheffield', 'Liverpool', 'Oxford', 'Cambridge', 'Plymouth', 'Brighton', 'Southampton', 'Reading', 'Watford', 'Milton Keynes', 'Essex', 'Kent', 'Surrey'];
+            planAreas = PLAN_DEFAULT_REGIONS.slice();
             planCusts.forEach(function(c) {
               var cfg = {};
               try { cfg = JSON.parse(c.product_config || '{}'); } catch(e) {}
@@ -27081,8 +27086,6 @@ function syncCustomers(product) {
               cAreas.forEach(function(a) { if (a && planAreas.indexOf(a) === -1) planAreas.push(a); });
               var f2 = {};
               try { f2 = JSON.parse(c.biz_field2 || '{}'); } catch(e) {}
-              // biz_field2 is stored per-product format: { planning: { f-app-type:[...] }, ... }
-              // (the portal writes leadFilters as { product: {...} }). Unwrap it for planning.
               var planFilt = f2.planning || f2;
               if (planFilt['f-app-type']) planFilters = planFilters.concat(planFilt['f-app-type']);
               else if (planFilt.applicationType) planFilters = planFilters.concat(planFilt.applicationType);
