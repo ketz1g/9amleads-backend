@@ -15883,6 +15883,33 @@ app.post('/api/admin/bulk-check', adminAuth, (req, res) => {
   catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/normalise-pool — clean + town/county-enrich a product's POOL leads
+// (moving: enrichMovingLeadTown; others: normalizeStannpAddress) so previews, delivery
+// and bulk reads all show complete addresses. Idempotent. Body: { product }
+app.post('/api/admin/normalise-pool', adminAuth, (req, res) => {
+  try {
+    var prod = String((req.body && req.body.product) || '').trim();
+    if (!PRODUCT_LEAD_FILES[prod]) return res.status(400).json({ error: 'valid product required: moving/probate/newbusiness/planning/tenders' });
+    var f = PRODUCT_LEAD_FILES[prod].file;
+    var file = path.join(DATA_DIR, f);
+    var raw = null;
+    try { raw = JSON.parse(fs.readFileSync(file, 'utf-8')); } catch(e) {}
+    if (!raw) return res.json({ success: true, scanned: 0, changed: 0 });
+    var changed = 0, scanned = 0;
+    function processLead(l) {
+      if (!l || typeof l !== 'object') return;
+      scanned++;
+      var before = JSON.stringify(l);
+      if (prod === 'moving') { enrichMovingLeadTown(l); try { normalizeStannpAddress(l); } catch(e) {} }
+      else { try { normalizeStannpAddress(l); } catch(e) {} }
+      if (JSON.stringify(l) !== before) changed++;
+    }
+    if (Array.isArray(raw)) { raw.forEach(processLead); fs.writeFileSync(file, JSON.stringify(raw, null, 2)); }
+    else if (raw && typeof raw === 'object') { Object.keys(raw).forEach(function(k) { if (k.indexOf('_') !== 0 && Array.isArray(raw[k])) raw[k].forEach(processLead); }); fs.writeFileSync(file, JSON.stringify(raw, null, 2)); }
+    res.json({ success: true, product: prod, scanned: scanned, changed: changed });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== STANNP ADDRESS NORMALISER (shared) =====
 // Idempotent normalisation that makes a lead's stored data Stannp-ready: extracts a
 // clean premise + street, derives a real town/county from the postcode, rebuilds a
