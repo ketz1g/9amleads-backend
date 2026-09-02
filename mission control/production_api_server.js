@@ -10201,7 +10201,11 @@ app.post('/api/admin/top-up-today', adminAuth, (req, res) => {
     // lead and its pool copy always share the SAME dedup key regardless of whether one
     // carries the county and the other doesn't.
     function _tuAddrKey(addr, pc) {
-      var a = String(addr || '').toLowerCase().replace(/\b(greater london|england|scotland|wales|northern ireland|cheshire|merseyside|greater manchester|lancashire|kent|essex|surrey|hertfordshire|middlesex|buckinghamshire|oxfordshire|cambridgeshire|bedfordshire|suffolk|norfolk|humberside|tyne and wear|west midlands|south yorkshire|west yorkshire|north yorkshire|east sussex|west sussex|hampshire|berkshire|dorset|devon|cornwall|somerset|wiltshire|gloucestershire|worcestershire|warwickshire|staffordshire|shropshire|herefordshire|leicestershire|northamptonshire|rutland|derbyshire|nottinghamshire|lincolnshire|northumberland|durham|cumbria)\b/g, ' ').replace(/[^a-z0-9]/g, '');
+      var a = String(addr || '').toLowerCase()
+        .replace(/\b[A-Z]{1,2}\d[A-Z0-9]?\s?\d[A-Z]{2}\b/g, '')               // full postcodes
+        .replace(/\b[A-Z]{1,2}\d[A-Z0-9]?\b/g, '')                             // outward codes
+        .replace(/\b(greater london|england|scotland|wales|northern ireland|cheshire|merseyside|greater manchester|lancashire|kent|essex|surrey|hertfordshire|middlesex|buckinghamshire|oxfordshire|cambridgeshire|bedfordshire|suffolk|norfolk|humberside|tyne and wear|west midlands|south yorkshire|west yorkshire|north yorkshire|east sussex|west sussex|hampshire|berkshire|dorset|devon|cornwall|somerset|wiltshire|gloucestershire|worcestershire|warwickshire|staffordshire|shropshire|herefordshire|leicestershire|northamptonshire|rutland|derbyshire|nottinghamshire|lincolnshire|northumberland|durham|cumbria)\b/g, ' ')
+        .replace(/[^a-z0-9]/g, '');
       var p = String(pc || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
       return (a || '').substring(0, 26) + '|' + p;
     }
