@@ -82,43 +82,27 @@ h3{font-size:15px;font-weight:700;margin-bottom:10px}
         <p class="hint" style="margin-bottom:10px">A sample of the companies in the archive right now. Full addresses are revealed in your dashboard once you purchase a pack.</p>
         <div id="previewList"></div>
       </div>
-      <div class="packs">
-        <div class="pack">
-          <div class="num">100</div>
-          <div class="lbl">exclusive UK leads<br>printed &amp; posted</div>
-          <div class="price">&pound;350</div>
-          <div class="per">one-time · &pound;3.50 per lead</div>
-          <button class="btn btn-primary" onclick="buyBulk(100)">Buy 100 leads</button>
+      <div class="card" style="margin-top:0">
+        <h3>What should we post?</h3>
+        <div class="seg" style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="mbtn on" data-m="leaflet" onclick="setBulkMail('leaflet')" style="padding:9px 16px;border-radius:9px;border:1px solid #e5e7eb;background:#fff;font-size:12.5px;font-weight:700;cursor:pointer;color:#6b7280">&#128230; A5 Leaflet &middot; &pound;3/lead</button>
+          <button class="mbtn" data-m="letter" onclick="setBulkMail('letter')" style="padding:9px 16px;border-radius:9px;border:1px solid #e5e7eb;background:#fff;font-size:12.5px;font-weight:700;cursor:pointer;color:#6b7280">&#128196; A4 Letter &middot; &pound;2.50/lead</button>
+          <button class="mbtn" data-m="both" onclick="setBulkMail('both')" style="padding:9px 16px;border-radius:9px;border:1px solid #e5e7eb;background:#fff;font-size:12.5px;font-weight:700;cursor:pointer;color:#6b7280">&#128196;&#128230; Leaflet + Letter &middot; &pound;4.50/lead</button>
         </div>
-        <div class="pack featured">
-          <div class="num">250</div>
-          <div class="lbl">exclusive UK leads<br>printed &amp; posted</div>
-          <div class="price">&pound;875</div>
-          <div class="per">one-time · &pound;3.50 per lead</div>
-          <button class="btn btn-green" onclick="buyBulk(250)">Buy 250 leads</button>
-        </div>
-        <div class="pack">
-          <div class="num">500</div>
-          <div class="lbl">exclusive UK leads<br>printed &amp; posted</div>
-          <div class="price">&pound;1,750</div>
-          <div class="per">one-time · &pound;3.50 per lead</div>
-          <button class="btn btn-primary" onclick="buyBulk(500)">Buy 500 leads</button>
-        </div>
-        <div class="pack">
-          <div class="num">1000</div>
-          <div class="lbl">exclusive UK leads<br>printed &amp; posted</div>
-          <div class="price">&pound;3,500</div>
-          <div class="per">one-time · &pound;3.50 per lead</div>
-          <button class="btn btn-primary" onclick="buyBulk(1000)">Buy 1000 leads</button>
-        </div>
+      </div>
+      <div class="packs" id="packsBox">
+        <div class="pack"><div class="num">100</div><div class="lbl">exclusive UK leads<br>printed &amp; posted</div><div class="price" id="pr100">&pound;300</div><div class="per" id="pp100">one-time &middot; &pound;3 per lead</div><button class="btn btn-primary" onclick="buyBulk(100)">Buy 100 leads</button></div>
+        <div class="pack featured"><div class="num">250</div><div class="lbl">exclusive UK leads<br>printed &amp; posted</div><div class="price" id="pr250">&pound;750</div><div class="per" id="pp250">one-time &middot; &pound;3 per lead</div><button class="btn btn-green" onclick="buyBulk(250)">Buy 250 leads</button></div>
+        <div class="pack"><div class="num">500</div><div class="lbl">exclusive UK leads<br>printed &amp; posted</div><div class="price" id="pr500">&pound;1,500</div><div class="per" id="pp500">one-time &middot; &pound;3 per lead</div><button class="btn btn-primary" onclick="buyBulk(500)">Buy 500 leads</button></div>
+        <div class="pack"><div class="num">1000</div><div class="lbl">exclusive UK leads<br>printed &amp; posted</div><div class="price" id="pr1000">&pound;3,000</div><div class="per" id="pp1000">one-time &middot; &pound;3 per lead</div><button class="btn btn-primary" onclick="buyBulk(1000)">Buy 1000 leads</button></div>
       </div>
       <div class="card" style="margin-top:16px">
         <h3>How it works</h3>
         <div class="hint">
-          1. <b>Buy a pack</b> &mdash; 50 or 100 exclusive never-sent UK New Business leads.<br>
-          2. <b>Full addresses revealed</b> in your dashboard once purchased.<br>
-          3. <b>Confirm &amp; Post</b> &mdash; we print &amp; post your <b>A5 leaflet (front &amp; back)</b> to every lead.<br>
-          <span style="font-size:12px">Your leaflet front and back must be loaded in <b>Print &amp; Post</b> first (Step 2). New leads mature into the archive as they age 3&ndash;7 days without being sent.</span>
+          1. <b>Buy a pack</b> &mdash; 100, 250, 500 or 1000 exclusive never-sent UK New Business leads.<br>
+          2. <b>Choose what we post</b> &mdash; your A5 leaflet, your A4 letter, or both.<br>
+          3. <b>Full addresses revealed</b> once purchased, then <b>Confirm &amp; Post</b>.<br>
+          <span style="font-size:12px">Your leaflet front/back (for leaflet packs) or cover letter (for letter packs) must be loaded in <b>Print &amp; Post</b> first (Step 2). New leads mature into the archive as they age 3&ndash;7 days without being sent.</span>
         </div>
       </div>
     </div>
@@ -194,9 +178,16 @@ function load(){
   })
   .catch(function(){ lo.style.display='none'; co.style.display='block'; document.getElementById('upgradeBox').style.display='block'; document.getElementById('upgradeMsg').textContent='Could not load bulk postage. Please sign in again.'; });
 }
+var BULK_MAIL = 'leaflet', BULK_RATES = { leaflet: 300, letter: 250, both: 450 };
+function setBulkMail(m){
+  BULK_MAIL = m;
+  document.querySelectorAll('.mbtn').forEach(function(b){ b.classList.toggle('on', b.dataset.m === m); b.style.background = b.dataset.m === m ? '#0ea5e9' : '#fff'; b.style.borderColor = b.dataset.m === m ? '#0ea5e9' : '#e5e7eb'; b.style.color = b.dataset.m === m ? '#fff' : '#6b7280'; });
+  var rate = BULK_RATES[m]; var gbp = (rate/100).toFixed(2);
+  [100,250,500,1000].forEach(function(c){ var el=document.getElementById('pr'+c), pl=document.getElementById('pp'+c); if(el)el.textContent='\u00a3'+(c*rate/100).toLocaleString(); if(pl)pl.textContent='one-time \u00b7 \u00a3'+gbp+' per lead'; });
+}
 function buyBulk(count){
-  if (!confirm('Buy ' + count + ' exclusive UK leads printed & posted for \u00a3' + (count===100?200:100) + '?')) return;
-  fetch(API + '/api/newbusiness/bulk/checkout', { method:'POST', headers:ah(), body: JSON.stringify({ count: count }) })
+  if (!confirm('Buy ' + count + ' exclusive UK leads (' + BULK_MAIL + ') printed & posted for \u00a3' + (count * BULK_RATES[BULK_MAIL] / 100).toLocaleString() + '?')) return;
+  fetch(API + '/api/newbusiness/bulk/checkout', { method:'POST', headers:ah(), body: JSON.stringify({ count: count, mail_type: BULK_MAIL }) })
   .then(function(r){ return r.json(); })
   .then(function(d){ if (d.checkout_url) window.location.href = d.checkout_url; else alert(d.error || 'Could not start checkout.'); })
   .catch(function(){ alert('Could not start checkout.'); });

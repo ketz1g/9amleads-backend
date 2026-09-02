@@ -16232,7 +16232,7 @@ app.get('/api/newbusiness/bulk', authMiddleware, (req, res) => {
     })();
     res.json({
       success: true, eligible: eligible, plan: c.plan, product: c.product,
-      leaflet_only: true,
+      sizes: NB_BULK_SIZES, mail_rates: BULK_MAIL_RATES,
       available: eligible ? getBulkEligibleLeads().length : 0,
       // PRE-PAYMENT masked preview (never a mailable address) + full reserved leads
       // (only shown once a pack is purchased)
@@ -16249,8 +16249,9 @@ app.get('/api/newbusiness/bulk', authMiddleware, (req, res) => {
 app.post('/api/newbusiness/bulk/checkout', authMiddleware, async (req, res) => {
   try {
     var count = parseInt(req.body && req.body.count, 10);
-    var NB_BULK_PACKS = { 100: 35000, 250: 87500, 500: 175000, 1000: 350000 };
-    if (!NB_BULK_PACKS[count]) return res.status(400).json({ error: 'Choose a 100, 250, 500 or 1000 lead pack.' });
+    var mailType = String((req.body && req.body.mail_type) || 'leaflet');
+    if (NB_BULK_SIZES.indexOf(count) === -1) return res.status(400).json({ error: 'Choose a 100, 250, 500 or 1000 lead pack.' });
+    if (!BULK_MAIL_RATES[mailType]) return res.status(400).json({ error: 'Choose what to post: leaflet, letter, or leaflet + letter.' });
     var c = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
     if (!c) return res.status(404).json({ error: 'User not found' });
     var plan = String(c.plan || '').toLowerCase();
@@ -16261,21 +16262,23 @@ app.post('/api/newbusiness/bulk/checkout', authMiddleware, async (req, res) => {
     if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe not configured' });
     var eligible = getBulkEligibleLeads();
     if (eligible.length < count) return res.status(400).json({ error: 'Not enough exclusive leads available right now (' + eligible.length + ' ready). New leads mature into the archive within a few days — check back soon.', available: eligible.length });
-    var amountPence = NB_BULK_PACKS[count];
+    var amountPence = bulkPackTotal(count, mailType);
+    var typeLabel = mailType === 'both' ? 'leaflet + letter' : mailType + ' only';
     var baseUrl = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
     var sessionBody = {
       mode: 'payment',
       customer_email: c.email,
       'line_items[0][price_data][currency]': 'gbp',
-      'line_items[0][price_data][product_data][name]': 'Exclusive Lead Archive: ' + count + ' UK New Business Leads (printed & posted)',
-      'line_items[0][price_data][product_data][description]': count + ' exclusive never-sent UK leads · print & post included',
+      'line_items[0][price_data][product_data][name]': 'Exclusive Lead Archive: ' + count + ' UK New Business Leads (' + typeLabel + ')',
+      'line_items[0][price_data][product_data][description]': count + ' exclusive never-sent UK leads · print & post · ' + typeLabel,
       'line_items[0][price_data][unit_amount]': String(amountPence),
       'line_items[0][quantity]': '1',
-      success_url: baseUrl + '/newbusiness/dashboard.html?bulk_paid=success',
-      cancel_url: baseUrl + '/newbusiness/dashboard.html?bulk_paid=cancel',
+      success_url: baseUrl + '/portal/bulk.html?bulk_paid=success',
+      cancel_url: baseUrl + '/portal/bulk.html?bulk_paid=cancel',
       'metadata[customer_id]': c.id,
       'metadata[type]': 'bulk_leads',
-      'metadata[bulk_count]': String(count)
+      'metadata[bulk_count]': String(count),
+      'metadata[bulk_mail_type]': mailType
     };
     var session = await stripeApiRequest('POST', 'checkout/sessions', sessionBody);
     if (session.url) res.json({ success: true, checkout_url: session.url });
@@ -16312,18 +16315,22 @@ app.post('/api/newbusiness/bulk/send', authMiddleware, async (req, res) => {
     var arr = readPoolFile('newbusiness');
     var leads = (arr || []).filter(function(l) { return l.bulk_reserved_by === c.id && !l.bulk_sold; });
     if (!leads.length) return res.status(400).json({ error: 'No reserved leads found for this pack.' });
-    // Bulk postage is A5 LEAFLET ONLY: the customer must have BOTH a flyer front AND
-    // a flyer back uploaded before they can send. No letters in bulk packs.
-    var hasFlyerFront = false, hasFlyerBack = false;
-    try {
-      hasFlyerFront = !!db.prepare("SELECT id FROM direct_mail_materials WHERE customer_id = ? AND type = 'flyer_front' LIMIT 1").get(c.id);
-      hasFlyerBack = !!db.prepare("SELECT id FROM direct_mail_materials WHERE customer_id = ? AND type = 'flyer_back' LIMIT 1").get(c.id);
-    } catch(e) {}
-    if (!hasFlyerFront || !hasFlyerBack) {
-      var missing = !hasFlyerFront ? 'leaflet front' : 'leaflet back';
-      return res.status(400).json({ error: 'Bulk packs are posted as A5 leaflets, so you need BOTH your leaflet front AND leaflet back uploaded first. Add them in Print & Post > Step 2, then come back to send your pack.' });
+    // Materials gate depends on the customer's chosen MAIL TYPE (mirrors Print & Post):
+    // leaflet needs flyer front + back; letter auto-generates (or uses uploaded letter);
+    // leaflet+letter needs the flyer AND the letter body. Requires materials before send.
+    var mailChoice = String((pack && pack.mail_type) || 'leaflet');
+    var hasFlyerFront = false, hasFlyerBack = false, hasLetterBody = false;
+    try { hasFlyerFront = !!db.prepare("SELECT id FROM direct_mail_materials WHERE customer_id = ? AND type='flyer_front' LIMIT 1").get(c.id); } catch(e) {}
+    try { hasFlyerBack = !!db.prepare("SELECT id FROM direct_mail_materials WHERE customer_id = ? AND type='flyer_back' LIMIT 1").get(c.id); } catch(e) {}
+    try { hasLetterBody = !!db.prepare("SELECT cover_letter FROM customer_business_profiles WHERE customer_id = ?").get(c.id); } catch(e) {}
+    if (mailChoice === 'letter' && !hasLetterBody) {
+      return res.status(400).json({ error: 'Letters auto-generate from your profile letter. Add a cover letter in Print & Post (Step 2) first, then send your pack.' });
     }
-    var mailType = 'flyer_a5';
+    if (mailChoice !== 'letter' && (!hasFlyerFront || !hasFlyerBack)) {
+      var missing = !hasFlyerFront ? 'leaflet front' : 'leaflet back';
+      return res.status(400).json({ error: 'Your ' + mailChoice + ' pack is posted as A5 leaflets, so you need BOTH your leaflet front AND leaflet back uploaded in Print & Post (Step 2) first.' });
+    }
+    var mailType = mailChoice === 'both' ? 'flyer_plus_letter' : mailChoice === 'letter' ? 'letter_a4' : 'flyer_a5';
     // DRY RUN: report readiness without creating a campaign or firing real Stannp mail
     if (dryRun) {
       return res.json({ success: true, dry_run: true, ready: true, count: leads.length, mail_type: mailType, materials_ready: true, message: 'Ready to send ' + leads.length + ' A5 leaflets (front + back) via Print & Post.' });
@@ -16491,11 +16498,13 @@ app.post('/api/admin/normalise-pool', adminAuth, (req, res) => {
 // customer chooses: 1-month-old or 2-month-old. Never delivered to any daily
 // customer, but packs are SHARED (other buyers may receive the same archive leads).
 // Print & post included (A5 leaflet front + back).
-// Bulk packs priced at £3.50/lead = £1.18 Stannp A5 print&post + £2.32 profit per lead.
-var BOOST_PACKS = {
-  moving:  { 100: 35000, 250: 87500, 500: 175000, 1000: 350000 },
-  probate: { 50: 17500, 100: 35000, 200: 70000, 500: 175000 }
-};
+// Bulk packs priced per lead by MAIL TYPE (print & post included), mirroring the
+// single Print & Post offers: A5 leaflet £3.00 / A4 letter £2.50 / leaflet+letter £4.50.
+// Cost to us: leaflet £1.18, letter £1.02, both £2.20 (Stannp).
+var BULK_MAIL_RATES = { leaflet: 300, letter: 250, both: 450 }; // pence per lead
+var BOOST_PACK_SIZES = { moving: [100, 250, 500, 1000], probate: [50, 100, 200, 500] };
+var NB_BULK_SIZES = [100, 250, 500, 1000];
+function bulkPackTotal(count, mailType) { return (BULK_MAIL_RATES[mailType] || BULK_MAIL_RATES.leaflet) * (count || 0); }
 var BOOST_AGE_MS = { '1m': 31 * 86400000, '2m': 61 * 86400000 };
 
 // Archive leads for a product aged ~1 month (~28-34d) or ~2 months (~58-64d).
@@ -16546,18 +16555,20 @@ app.get('/api/boost', authMiddleware, (req, res) => {
     ['moving', 'probate'].forEach(function(p) { available[p] = { '1m': getBoostArchiveLeads(p, '1m', 0).length, '2m': getBoostArchiveLeads(p, '2m', 0).length }; });
     var pack = null;
     try { pack = c.boost_pack ? JSON.parse(c.boost_pack) : null; } catch(e) {}
-    res.json({ success: true, product: c.product, available: available, packs: BOOST_PACKS, pack: pack });
+    res.json({ success: true, product: c.product, available: available, sizes: BOOST_PACK_SIZES, mail_rates: BULK_MAIL_RATES, pack: pack });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/boost/checkout — create a Stripe checkout. Body: { product, age, count }
+// POST /api/boost/checkout — create a Stripe checkout. Body: { product, age, count, mail_type }
 app.post('/api/boost/checkout', authMiddleware, async (req, res) => {
   try {
     var product = String((req.body && req.body.product) || '').toLowerCase();
     var age = String((req.body && req.body.age) || '1m');
     var count = parseInt(req.body && req.body.count, 10);
+    var mailType = String((req.body && req.body.mail_type) || 'leaflet');
     if (['moving', 'probate'].indexOf(product) === -1) return res.status(400).json({ error: 'Choose Moving or Probate.' });
-    if (!BOOST_PACKS[product] || !BOOST_PACKS[product][count]) return res.status(400).json({ error: 'Choose a 50, 100 or 200 lead pack.' });
+    if (!BOOST_PACK_SIZES[product] || BOOST_PACK_SIZES[product].indexOf(count) === -1) return res.status(400).json({ error: 'Choose a valid pack size for ' + product + '.' });
+    if (!BULK_MAIL_RATES[mailType]) return res.status(400).json({ error: 'Choose what to post: leaflet, letter, or leaflet + letter.' });
     if (age !== '1m' && age !== '2m') return res.status(400).json({ error: 'Choose 1 month or 2 months old.' });
     var c = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
     if (!c) return res.status(404).json({ error: 'User not found' });
@@ -16565,15 +16576,16 @@ app.post('/api/boost/checkout', authMiddleware, async (req, res) => {
     if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe not configured' });
     var avail = getBoostArchiveLeads(product, age, 0).length;
     if (avail < count) return res.status(400).json({ error: 'Not enough ' + (age === '1m' ? '1-month' : '2-month') + '-old archive leads right now (' + avail + '). Try the other age or a smaller pack.', available: avail });
-    var amountPence = BOOST_PACKS[product][count];
+    var amountPence = bulkPackTotal(count, mailType);
     var baseUrl = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
     var label = product === 'probate' ? 'Probate' : 'Moving';
+    var typeLabel = mailType === 'both' ? 'leaflet + letter' : mailType + ' only';
     var sessionBody = {
       mode: 'payment',
       customer_email: c.email,
       'line_items[0][price_data][currency]': 'gbp',
-      'line_items[0][price_data][product_data][name]': 'Boost Your Business: ' + count + ' ' + (age === '1m' ? '1-month' : '2-month') + '-old ' + label + ' leads',
-      'line_items[0][price_data][product_data][description]': count + ' archive ' + label + ' leads (never sent to customers) - printed & posted',
+      'line_items[0][price_data][product_data][name]': 'Boost Your Business: ' + count + ' ' + (age === '1m' ? '1-month' : '2-month') + '-old ' + label + ' leads (' + typeLabel + ')',
+      'line_items[0][price_data][product_data][description]': count + ' archive ' + label + ' leads - print & post · ' + typeLabel,
       'line_items[0][price_data][unit_amount]': String(amountPence),
       'line_items[0][quantity]': '1',
       success_url: baseUrl + '/portal/boost.html?paid=success',
@@ -16582,6 +16594,7 @@ app.post('/api/boost/checkout', authMiddleware, async (req, res) => {
       'metadata[boost_product]': product,
       'metadata[boost_age]': age,
       'metadata[boost_count]': String(count),
+      'metadata[boost_mail_type]': mailType,
       'metadata[customer_id]': c.id
     };
     var session = await stripeApiRequest('POST', 'checkout/sessions', sessionBody);
@@ -16619,11 +16632,15 @@ app.post('/api/boost/send', authMiddleware, async (req, res) => {
     if (pack.status === 'sent') return res.status(400).json({ error: 'This pack has already been sent.' });
     if (pack.status === 'sending') return res.status(400).json({ error: 'Your pack is already being printed & posted.' });
     var product = pack.product;
-    // A5 leaflet materials required (front + back) like the New Business bulk packs
-    var hasFront = false, hasBack = false;
+    // Materials gate depends on the chosen mail type (leaflet / letter / both).
+    var mailChoice = String(pack.mail_type || 'leaflet');
+    var hasFront = false, hasBack = false, hasLetterBody = false;
     try { hasFront = !!db.prepare("SELECT id FROM direct_mail_materials WHERE customer_id = ? AND type='flyer_front' LIMIT 1").get(c.id); } catch(e) {}
     try { hasBack = !!db.prepare("SELECT id FROM direct_mail_materials WHERE customer_id = ? AND type='flyer_back' LIMIT 1").get(c.id); } catch(e) {}
-    if (!hasFront || !hasBack) return res.status(400).json({ error: 'Boost packs are posted as A5 leaflets, so you need your leaflet front AND back uploaded in Print & Post (Step 2) first.' });
+    try { hasLetterBody = !!db.prepare("SELECT cover_letter FROM customer_business_profiles WHERE customer_id = ?").get(c.id); } catch(e) {}
+    if (mailChoice === 'letter' && !hasLetterBody) return res.status(400).json({ error: 'Letters auto-generate from your profile letter. Add a cover letter in Print & Post (Step 2) first.' });
+    if (mailChoice !== 'letter' && (!hasFront || !hasBack)) return res.status(400).json({ error: 'Your boost pack is posted as A5 leaflets, so you need your leaflet front AND back uploaded in Print & Post (Step 2) first.' });
+    var mailType = mailChoice === 'both' ? 'flyer_plus_letter' : mailChoice === 'letter' ? 'letter_a4' : 'flyer_a5';
     var arr = readPoolFile(product);
     var leads = (arr || []).filter(function(l) { return l.boost_reserved_by === c.id && !l.boost_sold; });
     if (!leads.length) return res.status(400).json({ error: 'No reserved leads found for this pack.' });
@@ -16631,7 +16648,7 @@ app.post('/api/boost/send', authMiddleware, async (req, res) => {
     var campaignId = 'boost_' + uuidv4();
     var nowIso = new Date().toISOString();
     db.prepare('INSERT INTO direct_mail_campaigns (id,customer_id,name,mail_type,status,stripe_payment_status,created_at,updated_at,format_id,recipient_count,price) VALUES (?,?,?,?,?,?,?,?,?,?,?)')
-      .run(campaignId, c.id, 'Boost Pack (' + leads.length + ' ' + product + ' leads)', 'flyer_a5', 'paid', 'paid', nowIso, nowIso, '', String(leads.length), String(leads.length * 1.5));
+      .run(campaignId, c.id, 'Boost Pack (' + leads.length + ' ' + product + ' leads)', mailType, 'paid', 'paid', nowIso, nowIso, '', String(leads.length), String(leads.length * (BULK_MAIL_RATES[mailChoice] || 300) / 100));
     var insertR = db.prepare('INSERT INTO direct_mail_recipients (id,customer_id,campaign_id,name,company,address_line1,address_line2,city,postcode,country,lead_id,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)');
     leads.forEach(function(l) {
       var rcpt = buildStannpRecipientFromLead(l);
@@ -20279,13 +20296,14 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
         var bsProd = String(session.metadata?.boost_product || '').toLowerCase();
         var bsAge = String(session.metadata?.boost_age || '1m');
         var bsCount = parseInt(session.metadata?.boost_count, 10) || 0;
+        var bsMail = String(session.metadata?.boost_mail_type || 'leaflet');
         var bsCust = db.prepare('SELECT * FROM customers WHERE id = ?').get(customerId);
-        if (bsCust && ['moving', 'probate'].indexOf(bsProd) !== -1 && BOOST_PACKS[bsProd] && BOOST_PACKS[bsProd][bsCount]) {
+        if (bsCust && BOOST_PACK_SIZES[bsProd] && BOOST_PACK_SIZES[bsProd].indexOf(bsCount) !== -1 && BULK_MAIL_RATES[bsMail]) {
           var reserve = reserveBoostLeads(bsProd, bsAge, bsCount, customerId);
-          var bsPack = { product: bsProd, age: bsAge, count: bsCount, purchased_at: new Date().toISOString(), status: 'pending', sent: 0, reserved_count: reserve.ok ? reserve.leads.length : 0, note: reserve.ok ? '' : reserve.error };
+          var bsPack = { product: bsProd, age: bsAge, count: bsCount, mail_type: bsMail, purchased_at: new Date().toISOString(), status: 'pending', sent: 0, reserved_count: reserve.ok ? reserve.leads.length : 0, note: reserve.ok ? '' : reserve.error };
           db.prepare('UPDATE customers SET boost_pack = ? WHERE id = ?').run(JSON.stringify(bsPack), customerId);
           saveDb();
-          console.log('[WEBHOOK] Boost pack granted: ' + bsCust.email + ' ' + bsProd + ' ' + bsAge + ' x' + bsCount + (reserve.ok ? '' : ' (reserve short)'));
+          console.log('[WEBHOOK] Boost pack granted: ' + bsCust.email + ' ' + bsProd + ' ' + bsAge + ' x' + bsCount + ' ' + bsMail + (reserve.ok ? '' : ' (reserve short)'));
         }
         return res.json({ received: true });
       }
@@ -20293,18 +20311,17 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
       // BULK LEADS PACK (newbusiness Exclusive Lead Archive)
       if (type === 'bulk_leads') {
         var bCount = parseInt(session.metadata?.bulk_count, 10) || 0;
+        var bMail = String(session.metadata?.bulk_mail_type || 'leaflet');
         var bCust = db.prepare('SELECT * FROM customers WHERE id = ?').get(customerId);
         if (!bCust) return res.json({ received: true });
-        if (bCount !== 50 && bCount !== 100) { console.log('[WEBHOOK] Bad bulk_count:', bCount); return res.json({ received: true }); }
+        if (NB_BULK_SIZES.indexOf(bCount) === -1 || !BULK_MAIL_RATES[bMail]) { console.log('[WEBHOOK] Bad bulk params:', bCount, bMail); return res.json({ received: true }); }
         var reserve = reserveBulkLeads(bCount, customerId);
         if (!reserve.ok) {
           console.log('[WEBHOOK] Bulk reserve failed for ' + bCust.email + ': ' + reserve.error);
-          // Still record the pack so the customer isn't charged with nothing; they can
-          // review/send once supply matures, or get a refund.
-          db.prepare('UPDATE customers SET bulk_pack = ? WHERE id = ?').run(JSON.stringify({ count: bCount, purchased_at: new Date().toISOString(), status: 'pending', sent: 0, reserved_count: 0, note: reserve.error }), customerId);
+          db.prepare('UPDATE customers SET bulk_pack = ? WHERE id = ?').run(JSON.stringify({ count: bCount, mail_type: bMail, purchased_at: new Date().toISOString(), status: 'pending', sent: 0, reserved_count: 0, note: reserve.error }), customerId);
         } else {
-          db.prepare('UPDATE customers SET bulk_pack = ? WHERE id = ?').run(JSON.stringify({ count: bCount, purchased_at: new Date().toISOString(), status: 'pending', sent: 0, reserved_count: reserve.leads.length }), customerId);
-          console.log('[WEBHOOK] Bulk pack granted: ' + bCust.email + ' (' + bCount + ' leads)');
+          db.prepare('UPDATE customers SET bulk_pack = ? WHERE id = ?').run(JSON.stringify({ count: bCount, mail_type: bMail, purchased_at: new Date().toISOString(), status: 'pending', sent: 0, reserved_count: reserve.leads.length }), customerId);
+          console.log('[WEBHOOK] Bulk pack granted: ' + bCust.email + ' (' + bCount + ' leads ' + bMail + ')');
         }
         saveDb();
         return res.json({ received: true });

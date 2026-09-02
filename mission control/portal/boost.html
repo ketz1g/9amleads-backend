@@ -67,7 +67,13 @@ h3{font-size:15px;font-weight:700;margin-bottom:10px}
       <h3 style="margin-top:6px">2. Choose how old</h3>
       <div class="seg"><button class="on" data-a="1m" onclick="setAge('1m')">1 month old</button><button data-a="2m" onclick="setAge('2m')">2 months old</button></div>
       <div id="availAge" class="avail"></div>
-      <h3 style="margin-top:6px">3. Pick your pack (printed &amp; posted)</h3>
+      <h3 style="margin-top:6px">3. What should we post?</h3>
+      <div class="seg">
+        <button class="on" data-m="leaflet" onclick="setMail('leaflet')">&#128230; A5 Leaflet &middot; &pound;3/lead</button>
+        <button data-m="letter" onclick="setMail('letter')">&#128196; A4 Letter &middot; &pound;2.50/lead</button>
+        <button data-m="both" onclick="setMail('both')">&#128196;&#128230; Leaflet + Letter &middot; &pound;4.50/lead</button>
+      </div>
+      <h3 style="margin-top:6px">4. Pick your pack (printed &amp; posted)</h3>
       <div class="packs" id="packsBox"></div>
     </div>
     <div id="reviewBox" class="card" style="display:none">
@@ -87,25 +93,29 @@ var API = window.location.hostname === 'localhost' ? 'http://localhost:8012' : '
 function tok(){ return localStorage.getItem('9am_token') || ''; }
 function ah(){ return { 'Content-Type':'application/json', 'Authorization':'Bearer ' + tok() }; }
 function esc(s){ return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
-var ST = { product:'moving', age:'1m', DATA:null, PACK:null };
+var ST = { product:'moving', age:'1m', mail:'leaflet', DATA:null, PACK:null };
 function setProduct(p){ ST.product=p; document.querySelectorAll('#content .seg button[data-p]').forEach(function(b){b.classList.toggle('on',b.dataset.p===p);}); render(); }
 function setAge(a){ ST.age=a; document.querySelectorAll('#content .seg button[data-a]').forEach(function(b){b.classList.toggle('on',b.dataset.a===a);}); render(); }
+function setMail(m){ ST.mail=m; document.querySelectorAll('#content .seg button[data-m]').forEach(function(b){b.classList.toggle('on',b.dataset.m===m);}); render(); }
 function render(){
   var D=ST.DATA; if(!D)return;
   var mv=D.available.moving, pb=D.available.probate;
   document.getElementById('availMoving').innerHTML='Moving available: <b>'+mv['1m']+'</b> (1m) / <b>'+mv['2m']+'</b> (2m)';
   var av=D.available[ST.product][ST.age];
   document.getElementById('availAge').innerHTML=(ST.age==='1m'?'1-month':'2-month')+'-old '+ST.product+' available: <b>'+av+'</b>';
-  var packs=D.packs[ST.product];
+  var sizes=(D.sizes&&D.sizes[ST.product])||[];
+  var rate=(D.mail_rates&&D.mail_rates[ST.mail])||300;
   var box=document.getElementById('packsBox');
-  box.innerHTML=Object.keys(packs).map(function(cnt){
-    var pence=packs[cnt]; var lbl=ST.product==='probate'?'probate leads':'moving leads';
-    return '<div class="pack"><div class="num">'+cnt+'</div><div class="lbl">'+ST.age+'<br>'+lbl+'<br>printed &amp; posted</div><div class="price">£'+(pence/100).toFixed(2)+'</div><div class="per">one-time</div><button class="btn btn-primary" onclick="buy('+cnt+')">Buy '+cnt+'</button></div>';
+  var lbl=ST.product==='probate'?'probate leads':'moving leads';
+  box.innerHTML=sizes.map(function(cnt){
+    var total=Math.round(cnt*rate)/100;
+    var can = av >= cnt;
+    return '<div class="pack" style="opacity:'+(can?1:.5)+'"><div class="num">'+cnt+'</div><div class="lbl">'+ST.age+'<br>'+lbl+'<br>printed &amp; posted</div><div class="price">£'+total.toFixed(2)+'</div><div class="per">one-time · £'+(rate/100).toFixed(2)+'/lead</div><button class="btn btn-primary" onclick="buy('+cnt+')"'+(can?'':' disabled')+'>Buy '+cnt+'</button>'+(can?'':'<div style="font-size:10px;color:#b45309;margin-top:6px">'+av+' available</div>')+'</div>';
   }).join('');
 }
 function buy(count){
-  if(!confirm('Buy '+count+' '+ST.age+' '+ST.product+' archive leads printed & posted for £'+(ST.DATA.packs[ST.product][count]/100).toFixed(2)+'?'))return;
-  fetch(API+'/api/boost/checkout',{method:'POST',headers:ah(),body:JSON.stringify({product:ST.product,age:ST.age,count:count})})
+  if(!confirm('Buy '+count+' '+ST.age+' '+ST.product+' archive leads ('+ST.mail+') printed & posted for £'+(Math.round(count*(ST.DATA.mail_rates[ST.mail])/100)/1).toFixed(2)+'?'))return;
+  fetch(API+'/api/boost/checkout',{method:'POST',headers:ah(),body:JSON.stringify({product:ST.product,age:ST.age,count:count,mail_type:ST.mail})})
   .then(function(r){return r.json();}).then(function(d){ if(d.checkout_url)window.location.href=d.checkout_url; else alert(d.error||'Could not start checkout.'); })
   .catch(function(){alert('Could not start checkout.');});
 }
