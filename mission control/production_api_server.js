@@ -13730,6 +13730,86 @@ var _testReportLock = false;
 var _testReportLockAt = 0;
 var __lastDeliveryFire = '';
 var __lastDeliveryDate = ''; // YYYY-MM-DD of the most recent delivery fire (daily watchdog)
+
+// NO OVER / NO UNDER GUARANTEE — the customer promise is "exactly your daily count in
+// your inbox at 9am". Two failure modes were seen: (1) the 9am run sometimes delivered
+// FEWER than promised with no re-fill, and (2) junk PENDING rows accumulated across days
+// and inflated dashboard counts. These two jobs make both impossible:
+//   autoFillDeliveryShortfalls()  — right after the 9am run, top every customer up to
+//                                   their exact promised count (fresh → older in-area,
+//                                   the disclosed nearest-area guarantee) and EMAIL the
+//                                   added leads immediately so inbox == dashboard == promise.
+//   purgeAllPendingRows()         — 09:12 UK daily: delete every undelivered row so stale
+//                                   pending junk can never inflate a dashboard again.
+function autoFillDeliveryShortfalls() {
+  try {
+    var dbA = getDb();
+    var today = new Date().toISOString().split('T')[0];
+    var http = require('http');
+    var auth = 'Bearer ' + (process.env.ADMIN_PASSWORD || '');
+    function post(path, bodyObj) {
+      return new Promise(function(resolve) {
+        var b = JSON.stringify(bodyObj || {});
+        var r = http.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: path, headers: { 'Authorization': auth, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(b) } }, function(resp) {
+          var d = ''; resp.on('data', function(c) { d += c; }); resp.on('end', function() { try { resolve(JSON.parse(d)); } catch(e) { resolve({}); } });
+        });
+        r.on('error', function() { resolve({}); });
+        r.write(b); r.end();
+      });
+    }
+    var tasks = [];
+    (dbA.customers || []).forEach(function(c) {
+      if (!c.plan || c.plan === 'cancelled' || isLeadsPaused(c)) return;
+      var promised = getPlanLimit(c.product, c.plan, c.coverage) || 0;
+      if (promised <= 0) return;
+      var have = (dbA.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0; }).length;
+      var need = promised - have;
+      if (need > 0) tasks.push({ email: c.email, need: need });
+    });
+    if (!tasks.length) { console.log('[AUTOFILL] no shortfalls today'); return; }
+    console.log('[AUTOFILL] shortfalls: ' + tasks.map(function(t){ return t.email + ' (' + t.need + ')'; }).join(', '));
+    var idx = 0, addedTotal = 0, stillShort = [];
+    function next() {
+      if (idx >= tasks.length) {
+        if (stillShort.length) { try { sendAdminAlert('⚠ Delivery shortfall remains (could not fully top up)', '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="color:#f87171;margin:0 0 8px">Still short after auto top-up</h1><p style="color:#ccc;line-height:1.7">These customers are still below their promised count — no unused in-area lead could be found:</p><ul style="color:#ccc;line-height:1.8">' + stillShort.map(function(s){ return '<li>' + s + '</li>'; }).join('') + '</ul></div>'); } catch(al) {} }
+        console.log('[AUTOFILL] complete: added ' + addedTotal + ' lead(s)' + (stillShort.length ? '; still short: ' + stillShort.join(', ') : ''));
+        return;
+      }
+      var t = tasks[idx++];
+      (async function() {
+        var addedLeads = 0;
+        for (var i = 0; i < t.need; i++) {
+          var r = await post('/api/admin/top-up-today', { email: t.email, allow_older: true });
+          if (r && r.success && r.added === 1) { addedLeads++; addedTotal++; }
+          else { stillShort.push(t.email + ' (' + (t.need - i) + ' still short)'); break; }
+        }
+        if (addedLeads > 0) {
+          // Email exactly the leads that were just added (newest delivered-today rows).
+          try {
+            var dbN = getDb();
+            var cust = (dbN.customers || []).find(function(x) { return String(x.email || '').toLowerCase() === t.email.toLowerCase(); });
+            var rows = (dbN.leads || []).filter(function(l) { return l.customer_id && cust && l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0; })
+              .sort(function(a, b) { return String(b.created_at || '').localeCompare(String(a.created_at || '')); }).slice(0, addedLeads);
+            for (var k = 0; k < rows.length; k++) { await post('/api/admin/send-missed-lead-email', { email: t.email, lead_id: rows[k].id }); }
+          } catch(emErr) { console.log('[AUTOFILL] email step error:', emErr.message); }
+        }
+        next();
+      })().catch(function() { next(); });
+    }
+    next();
+  } catch(e) { console.log('[AUTOFILL] error:', e.message); }
+}
+function purgeAllPendingRows() {
+  try {
+    var dbP = getDb();
+    var before = (dbP.leads || []).filter(function(l) { return !l.delivered; }).length;
+    if (before) {
+      dbP.leads = (dbP.leads || []).filter(function(l) { return l.delivered; });
+      saveDb();
+      console.log('[PURGE-PENDING] removed ' + before + ' stale undelivered row(s) across all customers');
+    }
+  } catch(e) { console.log('[PURGE-PENDING] error:', e.message); }
+}
 // ===== DELIVERY CRON: Mon-Fri 09:00 UK ===== (timezone: Europe/London)
 cron.schedule('0 9 * * 1-5', async () => {
   __deliveryFireCount++;
@@ -13745,7 +13825,13 @@ cron.schedule('0 9 * * 1-5', async () => {
     const http = require('http');
     var body = JSON.stringify({});
     var req = http.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD ) + '', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
-      var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() {      var dLog = b.substring(0, 200);      console.log('[09:00 UK] Delivery done:', dLog);      try { setTimeout(function() { sendDeliveryCompleteReport(); }, 1000); } catch(repE) { console.log('[09:00 UK] Post-delivery report error:', repE.message); }    });
+      var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() {            var dLog = b.substring(0, 200);
+      console.log('[09:00 UK] Delivery done:', dLog);
+      // GUARANTEE: immediately top up any customer who landed below their promised count
+      // and email them the added leads, so inbox == dashboard == promise every single day.
+      try { autoFillDeliveryShortfalls(); } catch(afE) { console.log('[09:00 UK] auto-fill error:', afE.message); }
+      // Let auto-fill finish before the founder's delivery report runs (20s grace).
+      try { setTimeout(function() { sendDeliveryCompleteReport(); }, 20000); } catch(repE) { console.log('[09:00 UK] Post-delivery report error:', repE.message); }    });
     });
     req.on('error', function(e) { console.log('[09:00 UK] Delivery request error:', e.message); });
     req.write(body); req.end();
@@ -14278,6 +14364,9 @@ async function runFulfilmentGuarantee(label) {
 }
 cron.schedule('15 7 * * 1-5', function() { runFulfilmentGuarantee('07:15'); }, { timezone: 'Europe/London' });
 cron.schedule('45 7 * * 1-5', function() { runFulfilmentGuarantee('07:45'); }, { timezone: 'Europe/London' });
+// 09:12 UK daily: purge stale PENDING (undelivered) rows so junk can never inflate a
+// customer's dashboard counts (the over-count root cause).
+cron.schedule('12 9 * * 1-5', function() { try { purgeAllPendingRows(); } catch(e) { console.log('[PURGE] cron error:', e.message); } }, { timezone: 'Europe/London' });
 
 
 // DAILY HEALTH DIGEST: every weekday at 09:30 UK (after the 9am delivery) email
