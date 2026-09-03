@@ -10687,13 +10687,25 @@ app.post('/api/admin/send-missed-lead-email', adminAuth, async (req, res) => {
     // Mint a magic link to the dashboard.
     var _tk = ''; try { _tk = jwt.sign({ id: cust.id, email: cust.email, product: cust.product }, JWT_SECRET, { expiresIn: '48h' }); } catch(te) {}
     var dashUrl = 'https://www.9amleads.com/portal/dashboard.html?token=' + encodeURIComponent(_tk) + '&email=' + encodeURIComponent(cust.email || '');
-    var fullAddr = ld.fullAddress || ld.address || ld.deceasedAddress || 'Unknown address';
+    var fullAddr = ld.fullAddress || ld.address || ld.deceasedAddress || '';
     var pc = String(ld.postcode || '').toUpperCase();
     var price = ld.priceLabel || (ld.price ? '\u00a3' + Number(ld.price).toLocaleString() : '');
     var beds = ld.bedrooms ? ld.bedrooms + (ld.bedrooms === 1 ? ' bed' : ' beds') : '';
     var url = ld.url || '';
-    var extra = [fullAddr, pc, price, beds].filter(Boolean).join(' &middot; ');
-    var leadBlock = '<table cellpadding="0" cellspacing="0" width="100%" style="background:#ffffff;border:1px solid #e2e8f0;border-radius:12px"><tr><td style="padding:16px 20px"><div style="font-size:13px;font-weight:700;color:#1e293b">' + String(extra || '').replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</div>' + (url ? '<div style="font-size:12px;color:#0ea5e9;margin-top:4px"><a href="' + url + '" style="color:#0ea5e9;text-decoration:underline">View the listing</a></div>' : '') + '</td></tr></table>';
+    // Build a clean address display. Never use raw HTML entities here — they get
+    // escaped below and show up as literal "&middot;" text in the inbox. Show the
+    // address on its own line, and only append the postcode if it is not already part
+    // of the address (avoids "...PR1 5JQ  PR1 5JQ").
+    function _escE(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+    var pcClean = String(pc).replace(/[^A-Z0-9]/g, '');
+    var addrHasPc = pcClean && new RegExp(pcClean).test(String(fullAddr).toUpperCase().replace(/[^A-Z0-9]/g, ''));
+    var addrLine = fullAddr ? _escE(fullAddr) : 'Address on file';
+    if (pc && !addrHasPc) addrLine += ' ' + _escE(pc);
+    var metaBits = [];
+    if (price) metaBits.push(_escE(price));
+    if (beds) metaBits.push(_escE(beds));
+    var extra = fullAddr + (pc && !addrHasPc ? ', ' + pc : '') + (price ? ' - ' + price : '') + (beds ? ' - ' + beds : '');
+    var leadBlock = '<table cellpadding="0" cellspacing="0" width="100%" style="background:#ffffff;border:1px solid #e2e8f0;border-radius:12px"><tr><td style="padding:16px 20px"><div style="font-size:13px;font-weight:700;color:#1e293b">' + addrLine + '</div>' + (metaBits.length ? '<div style="font-size:12px;color:#64748b;margin-top:4px">' + metaBits.join('  ') + '</div>' : '') + (url ? '<div style="font-size:12px;color:#0ea5e9;margin-top:4px"><a href="' + _escE(url) + '" style="color:#0ea5e9;text-decoration:underline">View the listing</a></div>' : '') + '</td></tr></table>';
     var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background-color:#f1f5f9;font-family:Inter,Arial,sans-serif;color:#1e293b"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 16px"><table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%"><tr><td style="background-color:#0f172a;padding:24px 30px;border-radius:16px 16px 0 0;text-align:center;border-bottom:3px solid #38bdf8"><div style="font-family:Outfit,Arial,sans-serif;font-size:24px;font-weight:900;color:#38bdf8">9am<span style="color:#38bdf8">Leads</span></div><div style="font-size:10px;color:#94a3b8;letter-spacing:1.2px;text-transform:uppercase;margin-top:4px">An extra lead for you</div></td></tr><tr><td style="background:#ffffff;padding:28px 30px"><h2 style="margin:0 0 10px;font-size:18px;color:#0f172a">We missed one, and we\u2019re sorry &#128583;</h2><p style="font-size:14px;line-height:1.7;color:#334155;margin:0 0 6px">A lead that should have been in your 9am email was held up this morning. It\u2019s now in your dashboard and we\u2019ve included it below.</p><p style="font-size:14px;line-height:1.7;color:#334155;margin:0 0 18px">Sorry for the inconvenience. Your full set of leads is always in your dashboard.</p>' + leadBlock + '<table cellpadding="0" cellspacing="0" style="margin-top:18px"><tr><td><a href="' + dashUrl + '" style="display:inline-block;background:#0ea5e9;background-image:linear-gradient(135deg,#0ea5e9,#2563eb);color:#ffffff;font-weight:800;font-size:13px;padding:11px 18px;border-radius:8px;text-decoration:none">Open your dashboard</a></td></tr></table></td></tr><tr><td style="background:#0f172a;padding:18px 30px;border-radius:0 0 16px 16px;text-align:center"><span style="color:#94a3b8;font-size:11px">9amLeads &middot; hello@9amleads.com &middot; <a href="https://www.9amleads.com" style="color:#38bdf8;text-decoration:none">9amleads.com</a></span></td></tr></table></td></tr></table></body></html>';
     await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, 'One more lead for you today', html);
     res.json({ success: true, email: cust.email, lead: extra });
@@ -13756,12 +13768,13 @@ function isEntitledForDelivery(c) {
   }
   return true;
 }
-function autoFillDeliveryShortfalls() {
+function autoFillDeliveryShortfalls(cbDone) {
   try {
     var dbA = getDb();
     var today = new Date().toISOString().split('T')[0];
     var http = require('http');
     var auth = 'Bearer ' + (process.env.ADMIN_PASSWORD || '');
+    function _done() { if (typeof cbDone === 'function') { try { cbDone(); } catch(e) {} } }
     function post(path, bodyObj) {
       return new Promise(function(resolve) {
         var b = JSON.stringify(bodyObj || {});
@@ -13782,13 +13795,14 @@ function autoFillDeliveryShortfalls() {
       var need = promised - have;
       if (need > 0) tasks.push({ email: c.email, need: need });
     });
-    if (!tasks.length) { console.log('[AUTOFILL] no shortfalls today'); return; }
+    if (!tasks.length) { console.log('[AUTOFILL] no shortfalls today'); _done(); return; }
     console.log('[AUTOFILL] shortfalls: ' + tasks.map(function(t){ return t.email + ' (' + t.need + ')'; }).join(', '));
     var idx = 0, addedTotal = 0, stillShort = [];
     function next() {
       if (idx >= tasks.length) {
         if (stillShort.length) { try { sendAdminAlert('⚠ Delivery shortfall remains (could not fully top up)', '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="color:#f87171;margin:0 0 8px">Still short after auto top-up</h1><p style="color:#ccc;line-height:1.7">These customers are still below their promised count — no unused in-area lead could be found:</p><ul style="color:#ccc;line-height:1.8">' + stillShort.map(function(s){ return '<li>' + s + '</li>'; }).join('') + '</ul></div>'); } catch(al) {} }
         console.log('[AUTOFILL] complete: added ' + addedTotal + ' lead(s)' + (stillShort.length ? '; still short: ' + stillShort.join(', ') : ''));
+        _done();
         return;
       }
       var t = tasks[idx++];
@@ -13813,7 +13827,7 @@ function autoFillDeliveryShortfalls() {
       })().catch(function() { next(); });
     }
     next();
-  } catch(e) { console.log('[AUTOFILL] error:', e.message); }
+  } catch(e) { console.log('[AUTOFILL] error:', e.message); if (typeof cbDone === 'function') { try { cbDone(); } catch(e2) {} } }
 }
 function purgeAllPendingRows() {
   try {
@@ -13922,11 +13936,18 @@ cron.schedule('0 9 * * 1-5', async () => {
     var req = http.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD ) + '', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
       var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() {            var dLog = b.substring(0, 200);
       console.log('[09:00 UK] Delivery done:', dLog);
-      // GUARANTEE: immediately top up any customer who landed below their promised count
-      // and email them the added leads, so inbox == dashboard == promise every single day.
-      try { autoFillDeliveryShortfalls(); } catch(afE) { console.log('[09:00 UK] auto-fill error:', afE.message); }
-      // Let auto-fill finish before the founder's delivery report runs (20s grace).
-      try { setTimeout(function() { sendDeliveryCompleteReport(); }, 20000); } catch(repE) { console.log('[09:00 UK] Post-delivery report error:', repE.message); }    });
+      // TIGHT GUARANTEE FINALISE: immediately after the 9am run, top up any customer who
+      // landed below their promised count (emailing each added lead), then run the full
+      // audit — dedupe same-day rows, re-send any missing daily email, purge pending rows,
+      // verify delivered == promised for every entitled customer and alert the founder on
+      // any breach — then send the founder the delivery report. Everything settles within
+      // ~2 minutes of 9am; nothing is deferred to 09:12/09:35 so issues surface instantly.
+      try {
+        autoFillDeliveryShortfalls(function() {
+          try { runFinalGuaranteeAudit(); } catch(af2E) { console.log('[09:00 UK] audit error:', af2E.message); }
+          try { setTimeout(function() { sendDeliveryCompleteReport(); }, 2000); } catch(repE2) { console.log('[09:00 UK] Post-delivery report error:', repE2.message); }
+        });
+      } catch(afE) { console.log('[09:00 UK] auto-fill error:', afE.message); try { setTimeout(function() { sendDeliveryCompleteReport(); }, 5000); } catch(e3) { console.log('[09:00 UK] report error:', e3.message); } }    });
     });
     req.on('error', function(e) { console.log('[09:00 UK] Delivery request error:', e.message); });
     req.write(body); req.end();
@@ -14459,12 +14480,9 @@ async function runFulfilmentGuarantee(label) {
 }
 cron.schedule('15 7 * * 1-5', function() { runFulfilmentGuarantee('07:15'); }, { timezone: 'Europe/London' });
 cron.schedule('45 7 * * 1-5', function() { runFulfilmentGuarantee('07:45'); }, { timezone: 'Europe/London' });
-// 09:12 UK daily: purge stale PENDING (undelivered) rows so junk can never inflate a
-// customer's dashboard counts (the over-count root cause).
-cron.schedule('12 9 * * 1-5', function() { try { purgeAllPendingRows(); } catch(e) { console.log('[PURGE] cron error:', e.message); } }, { timezone: 'Europe/London' });
-// 09:35 UK daily: full guarantee audit — verify delivered == promised for every active
-// customer, resend any missing daily email, remove same-day duplicates, alert on breach.
-cron.schedule('35 9 * * 1-5', function() { try { runFinalGuaranteeAudit(); } catch(e) { console.log('[GUARANTEE] cron error:', e.message); } }, { timezone: 'Europe/London' });
+// NOTE: the guarantee finalise (auto top-up + dedupe + email reconcile + pending purge +
+// audit + founder report) now runs IMMEDIATELY inside the 09:00 delivery job (see the
+// delivery cron), so nothing is deferred to later cron times.
 
 
 // DAILY HEALTH DIGEST: every weekday at 09:30 UK (after the 9am delivery) email
