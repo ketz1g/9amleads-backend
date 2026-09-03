@@ -5226,6 +5226,18 @@ app.post('/api/auth/signup', async (req, res) => {
 
     const token = generateToken(customer);
 
+    // FOUNDER ALERT: notify ketzman1g@gmail.com of every new PUBLIC sign-up so no new
+    // customer ever slips through silently. Admin-created + internal/test accounts skip.
+    try {
+      var _srcN = String(req.body.source || 'web').toLowerCase();
+      var _emN = String(customer.email || '').toLowerCase();
+      if (_srcN !== 'admin' && _emN.indexOf('@9amleads.com') === -1 && _emN.indexOf('@test.com') === -1) {
+        var _areasN = []; try { _areasN = JSON.parse(customer.target_areas || '[]'); } catch(pe) {}
+        function _hfe(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+        sendAdminAlert('🎉 New ' + (customer.lead_type || customer.product || '') + ' sign-up', '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:28px;max-width:520px;margin:0 auto"><h1 style="color:#4ade80;font-size:18px;margin:0 0 14px">🎉 New sign-up</h1><table style="width:100%;font-size:13px;color:#e2e8f0;line-height:2"><tr><td style="color:#94a3b8;width:130px">Company</td><td><b>' + _hfe(customer.company || '-') + '</b></td></tr><tr><td style="color:#94a3b8">Contact</td><td>' + _hfe(customer.contact_name || '-') + '</td></tr><tr><td style="color:#94a3b8">Email</td><td>' + _hfe(customer.email) + '</td></tr><tr><td style="color:#94a3b8">Lead type</td><td>' + _hfe(customer.lead_type || customer.product) + '</td></tr><tr><td style="color:#94a3b8">Plan</td><td>' + _hfe(customer.plan) + ' (' + trialDays + ' days)</td></tr><tr><td style="color:#94a3b8">Areas</td><td>' + _hfe(_areasN.join(', ') || 'All UK') + '</td></tr></table><p style="color:#94a3b8;font-size:12px;margin:12px 0 0">Manage them from Admin → Customers.</p></div>');
+      }
+    } catch(nae) { console.log('[SIGNUP] founder alert error:', nae.message); }
+
     // NOTE: No leads are pre-generated at signup. A brand-new account should show
     // ZERO leads in the dashboard until their first 09:00 UK delivery. The daily
     // delivery pipeline gathers, enriches (door number + street + postcode) and
@@ -5444,7 +5456,7 @@ app.post('/api/affiliate/register', async (req, res) => {
         '<p style="color:#ccc;line-height:1.7">Review at <a href="https://9amleads.com/portal/admin.html" style="color:#0ea5e9">admin dashboard &rarr; Affiliates</a> (listen to the voice test before approving).</p>' +
         '<p style="color:#888;font-size:13px;margin-top:24px">Admin: ' + (AFFILIATE_AUTO_ACTIVATE ? 'no action needed' : 'activate via Admin &rarr; Affiliates') + '</p>' +
         '</div>';
-      sendBrevoEmail({ email: 'hello@9amleads.com', name: '9amLeads Owner' }, 'New affiliate application: ' + String(name).trim(), adminHtml).catch(function() {});
+      sendBrevoEmail({ email: process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com', name: '9amLeads Owner' }, 'New affiliate application: ' + String(name).trim(), adminHtml).catch(function() {});
     } catch(eA) {}
     res.status(201).json({ success: true, affiliate: { id: aff.id, name: aff.name, code: aff.code, email: aff.email, status: aff.status }, message: 'Application received' + (AFFILIATE_AUTO_ACTIVATE ? ' and your account is now active. You can sign in immediately.' : '. We\'ll activate your affiliate account shortly.') });
   } catch(e) { res.status(500).json({ error: e.message }); }
