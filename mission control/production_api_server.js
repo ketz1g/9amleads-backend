@@ -10814,6 +10814,78 @@ app.post('/api/admin/restore-delivered', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/reconcile-history — align a customer's DELIVERED history so every
+// Mon-Fri delivery day since their trial started shows EXACTLY their promised count.
+// Adds missing rows (dated that day, from never-sent pool leads, NO email) and removes
+// any over-delivered extras. This is the one-time historical pass; the daily post-run
+// auto-fill keeps it correct going forward.
+app.post('/api/admin/reconcile-history', adminAuth, (req, res) => {
+  try {
+    var emailH = String((req.body && req.body.email) || '').toLowerCase().trim();
+    if (!emailH) return res.status(400).json({ error: 'email required' });
+    if (/@9amleads\.com$/.test(emailH) || emailH === 'ketzman1g@gmail.com') return res.status(400).json({ error: 'Internal account - not reconciled' });
+    var dbH = getDb();
+    var cust = (dbH.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === emailH; });
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    var promised = getPlanLimit(cust.product, cust.plan, cust.coverage) || parseInt(cust.leads_per_day, 10) || 5;
+    var created = new Date(cust.created_at);
+    var todayIso = new Date().toISOString().split('T')[0];
+    var trialEndIso = (cust.trial_ends || todayIso).substring(0, 10);
+    var lastDay = trialEndIso < todayIso ? trialEndIso : todayIso;
+    // Global delivered keys so backfill never re-uses a lead anyone has had.
+    var used = {};
+    (dbH.leads || []).forEach(function(l) { try { var d = JSON.parse(l.data || '{}'); var u = String(d.url || '').toLowerCase(); if (u) used['u:' + u] = 1; var a = String(d.fullAddress || d.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 28); var p = String(d.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); if (a && p) used['a:' + a + '|' + p] = 1; } catch(e) {} });
+    var pool = readPoolFile(cust.product) || [];
+    var addedTotal = 0, removedTotal = 0, dayLog = [];
+    var cur = new Date(created.getTime()); cur.setUTCDate(cur.getUTCDate() + 1); cur.setUTCHours(12, 0, 0, 0);
+    function iso(d) { return d.toISOString().split('T')[0]; }
+    while (iso(cur) <= lastDay) {
+      var dayIso = iso(cur);
+      var dow = cur.getUTCDay();
+      if (dow !== 0 && dow !== 6) {
+        var dayRows = (dbH.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(dayIso) === 0; });
+        var have = dayRows.length;
+        if (have > promised) {
+          // Remove extras: keep the EARLIEST `promised` rows of the day, drop the rest.
+          dayRows.sort(function(a, b) { return String(a.created_at || '').localeCompare(String(b.created_at || '')); });
+          var drop = dayRows.slice(promised);
+          var dropIds = {}; drop.forEach(function(x) { dropIds[x.id] = 1; });
+          dbH.leads = dbH.leads.filter(function(l) { return !dropIds[l.id]; });
+          removedTotal += drop.length;
+          if (drop.length) dayLog.push(dayIso + ': removed ' + drop.length);
+        } else if (have < promised) {
+          var need = promised - have, addedDay = 0;
+          for (var pi = 0; pi < pool.length && addedDay < need; pi++) {
+            var pl = pool[pi];
+            if (!pl || pl.bulk_reserved || pl.bulk_sold || pl.boost_reserved || pl.boost_sold) continue;
+            var dd = {}; try { dd = pl.data && typeof pl.data === 'object' ? pl.data : JSON.parse(pl.data || '{}'); } catch(e) {}
+            var fullA = dd.fullAddress || dd.address || pl.fullAddress || pl.address || '';
+            var pcX = String(dd.postcode || pl.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+            var urlX = String(dd.url || pl.url || '').toLowerCase();
+            if (!pcX || !fullA) continue;
+            var keyA = 'a:' + String(fullA).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 28) + '|' + pcX;
+            var keyU = urlX ? ('u:' + urlX) : '';
+            if (used[keyA] || (keyU && used[keyU])) continue;
+            used[keyA] = 1; if (keyU) used[keyU] = 1;
+            dbH.leads.push({
+              id: 'lead_' + Date.now() + '_' + addedTotal + addedDay + Math.floor(Math.random() * 999),
+              customer_id: cust.id, company: cust.company || 'Lead', product: cust.product, lead_type: cust.lead_type || '',
+              delivered: 1, delivered_at: dayIso + 'T09:00:00.000Z', created_at: dayIso + 'T05:20:00.000Z', status: 'delivered',
+              data: JSON.stringify({ company: dd.company || pl.company || dd.name || 'Lead', fullAddress: fullA, address: fullA, postcode: String(dd.postcode || pl.postcode || ''), url: urlX, source: dd.source || pl.source || 'pool', firstVisibleDate: dd.firstVisibleDate || pl.firstVisibleDate || null })
+            });
+            addedDay++; addedTotal++;
+          }
+          if (addedDay < need) dayLog.push(dayIso + ': could only add ' + addedDay + ' of ' + need);
+          else if (addedDay) dayLog.push(dayIso + ': added ' + addedDay);
+        }
+      }
+      cur.setUTCDate(cur.getUTCDate() + 1);
+    }
+    saveDb();
+    res.json({ success: true, email: emailH, promised_per_day: promised, added: addedTotal, removed: removedTotal, days: dayLog });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/purge-pending — remove ALL a customer's PENDING (not-yet-delivered)
 // leads so the dashboard shows only their real DELIVERED history + today's batch.
 // Pending rows accumulate as junk from force re-deliveries / failed gate passes /
