@@ -5111,9 +5111,19 @@ app.post('/api/auth/signup', async (req, res) => {
     // they know to start following up. Only when a real (active) affiliate referred them.
     if (affRef && affRef.email) {
       try {
-        var _snHtml = '<div style="font-family:Inter,Arial,sans-serif;max-width:540px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px"><h2 style="color:#38bdf8;margin:0 0 10px;font-size:19px">\uD83D\uDE4C Your referral just signed up!</h2><p style="font-size:14px;line-height:1.7;color:#cbd5e1"><b style="color:#fff">' + escHtml(company || name || email) + '</b> started their free ' + (trialDays || 14) + '-day ' + escHtml(product || '') + ' trial using your code <b style="color:#38bdf8">' + escHtml(affRef.code || '') + '</b>.</p><p style="font-size:13px;line-height:1.6;color:#94a3b8">They may not upgrade right away, so follow up over the next few days. You earn \u00a3' + Number(affRef.commission_amount || cfgTrial.affiliate_one_off_amount || 25) + ' when they pay their second invoice. Add them to your follow-up list in the dashboard and set a reminder.</p><p><a href="https://www.9amleads.com/portal/affiliate.html" style="display:inline-block;background:#0ea5e9;color:#fff;font-weight:700;padding:11px 18px;border-radius:8px;text-decoration:none;font-size:13px">Open my dashboard</a></p></div>';
+        var _snHtml = '<div style="font-family:Inter,Arial,sans-serif;max-width:540px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px"><h2 style="color:#38bdf8;margin:0 0 10px;font-size:19px">\uD83D\uDE4C Your referral just signed up!</h2><p style="font-size:14px;line-height:1.7;color:#cbd5e1"><b style="color:#fff">' + escHtml(company || name || email) + '</b> started their free ' + (trialDays || 14) + '-day ' + escHtml(product || '') + ' trial using your code <b style="color:#38bdf8">' + escHtml(affRef.code || '') + '</b>.</p><p style="font-size:12.5px;line-height:1.7;color:#e2e8f0;background:rgba(14,165,233,.14);border:1px solid rgba(14,165,233,.3);border-radius:8px;padding:10px 12px;margin:0 0 12px">' + (name ? escHtml(name) + '<br>' : '') + '<span style="color:#94a3b8">' + escHtml(email) + (phone ? ' \u00b7 ' + escHtml(phone) : '') + '</span></p><p style="font-size:13px;line-height:1.6;color:#94a3b8">They may not upgrade right away, so follow up over the next few days. You earn \u00a3' + Number(affRef.commission_amount || cfgTrial.affiliate_one_off_amount || 25) + ' when they pay their second invoice. Add them to your follow-up list in the dashboard and set a reminder.</p><p><a href="https://www.9amleads.com/portal/affiliate.html" style="display:inline-block;background:#0ea5e9;color:#fff;font-weight:700;padding:11px 18px;border-radius:8px;text-decoration:none;font-size:13px">Open my dashboard</a></p></div>';
         sendBrevoEmail({ email: affRef.email, name: affRef.name || 'Affiliate' }, '\uD83D\uDE4C A referral just signed up - follow up to close it', _snHtml);
       } catch(eSN) { console.log('[AFFILIATE] signup notify error:', eSN.message); }
+      // ALSO store an unread sign-up alert so the new referral is the first thing
+      // they see next time they open the dashboard (email + dashboard banner together).
+      try {
+        if (!affRef.alerts) affRef.alerts = [];
+        if (!affRef.alerts.some(function(_al) { return _al.kind === 'referral_signup' && _al.customer_id === id; })) {
+          affRef.alerts.push({ id: uuidv4(), kind: 'referral_signup', customer_id: id, company: company || '', contact_name: name || '', email: email || '', phone: phone || '', product: product || '', trial_days: trialDays || 14, created_at: new Date().toISOString(), read: false });
+          if (affRef.alerts.length > 100) affRef.alerts = affRef.alerts.slice(-100);
+          saveDb();
+        }
+      } catch(alErr) { console.log('[AFFILIATE] signup alert store error:', alErr.message); }
     }
 
     // PARTNER ATTRIBUTION: record the referral permanently (first-valid-wins).
@@ -5560,12 +5570,41 @@ app.post('/api/affiliate/reset-password', async (req, res) => {
   }
 });
 
+// Backfill & repair sign-up alerts: any referral who signed up within the last 21
+// days but has no alert entry yet gets one (read:false). Idempotent by customer_id.
+// Covers signups that happened before the dashboard banner existed, and re-queues
+// alerts if the signup-time store ever failed — so a fresh sign-up is never missed.
+function ensureSignupAlerts(aff) {
+  try {
+    aff.alerts = aff.alerts || [];
+    var known = {};
+    aff.alerts.forEach(function(a) { if (a.customer_id) known[a.customer_id] = true; });
+    var cutoff = Date.now() - 21 * 86400000;
+    var added = 0;
+    (getDb().customers || []).forEach(function(c) {
+      if (c.affiliate_id !== aff.id && String(c.affiliate_code || '').toLowerCase() !== String(aff.code || '').toLowerCase()) return;
+      if (known[c.id]) return;
+      var t = new Date(c.created_at).getTime();
+      if (isNaN(t) || t < cutoff) return;
+      aff.alerts.push({ id: uuidv4(), kind: 'referral_signup', customer_id: c.id, company: c.company || '', contact_name: c.contact_name || '', email: c.email || '', phone: c.phone || '', product: c.product || '', trial_days: c.affiliate_trial_days || 14, created_at: c.created_at, read: false });
+      known[c.id] = true;
+      added++;
+    });
+    if (added) {
+      if (aff.alerts.length > 100) aff.alerts = aff.alerts.slice(-100);
+      saveDb();
+    }
+    return added;
+  } catch(e) { console.log('[AFFILIATE] ensureSignupAlerts error:', e.message); return 0; }
+}
+
 // GET /api/affiliate/dashboard — the affiliate's earnings dashboard: referrals by
 // lead type, earnings split (pending / due / paid), and payout history. Works for
 // every lead type — moving, probate, planning, new business, tenders.
 app.get('/api/affiliate/dashboard', affiliateAuth, (req, res) => {
   try {
     var aff = req.affiliate;
+    ensureSignupAlerts(aff);
     var dbc = getDb();
     var rate = aff.payout_rate || AFFILIATE_PAYOUT_RATE;
     var refs = (dbc.customers || []).filter(function(c) {
@@ -5647,6 +5686,12 @@ app.get('/api/affiliate/dashboard', affiliateAuth, (req, res) => {
       byProductEarnings[r.product] += Number(r.monthly_earned || 0);
     });
     var affRate = Number(aff.commission_amount) || rate;
+    // UNREAD SIGN-UP ALERTS: "someone just signed up with your code" notifications
+    // for the dashboard banner. Shown while unread and relevant (within ~3 weeks so
+    // the affiliate still has time to follow up during the referral's trial).
+    var signupAlerts = ((aff.alerts || []).filter(function(a) { return a.kind === 'referral_signup' && !a.read; })).sort(function(a, b) { return String(b.created_at || '').localeCompare(String(a.created_at || '')); });
+    var alertCutoff = Date.now() - 21 * 86400000;
+    var liveSignupAlerts = signupAlerts.filter(function(a) { var t = new Date(a.created_at).getTime(); return !isNaN(t) && t >= alertCutoff; }).slice(0, 6);
     res.json({
       success: true,
       affiliate: { id: aff.id, name: aff.name, code: aff.code, email: aff.email, association: aff.association || '', commission_amount: affRate },
@@ -5659,8 +5704,27 @@ app.get('/api/affiliate/dashboard', affiliateAuth, (req, res) => {
       benchmark: benchmark,
       pipeline: pipeline,
       referrals: referralRows,
-      payouts: payouts
+      payouts: payouts,
+      signup_alerts: liveSignupAlerts,
+      signup_alert_count: liveSignupAlerts.length,
+      signup_alert_total_unread: signupAlerts.length
     });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/affiliate/alerts/read — mark sign-up alerts as read (dismissed).
+// Body: { ids: [...] } marks specific alerts; an empty/missing body marks ALL.
+app.post('/api/affiliate/alerts/read', affiliateAuth, (req, res) => {
+  try {
+    var aff = req.affiliate;
+    var ids = (req.body && req.body.ids) || null;
+    var marked = 0;
+    (aff.alerts || []).forEach(function(a) {
+      if (!a.read && (!ids || ids.indexOf(a.id) !== -1)) { a.read = true; marked++; }
+    });
+    if (marked) saveDb();
+    var unread = (aff.alerts || []).filter(function(a) { return !a.read; }).length;
+    res.json({ success: true, marked: marked, unread: unread });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
