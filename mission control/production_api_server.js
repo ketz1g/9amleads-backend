@@ -13745,6 +13745,17 @@ function isInternalAccount(c) {
   var e = String((c && c.email) || '').toLowerCase();
   return e.indexOf('@9amleads.com') !== -1 || e === 'ketzman1g@gmail.com';
 }
+// Same entitlement rule the 9am delivery uses (production_api_server 09:00 run):
+// a free-trial whose trial_ends is in the past is NOT owed leads. Paused/cancelled are
+// not owed. Everything else IS owed its exact promised count.
+function isEntitledForDelivery(c) {
+  if (!c || !c.plan || c.plan === 'cancelled') return false;
+  if (isLeadsPaused(c)) return false;
+  if (c.plan === 'free_trial' && c.trial_ends) {
+    try { var te = new Date(c.trial_ends); if (!isNaN(te.getTime()) && new Date() > te) return false; } catch(e) {}
+  }
+  return true;
+}
 function autoFillDeliveryShortfalls() {
   try {
     var dbA = getDb();
@@ -13764,7 +13775,7 @@ function autoFillDeliveryShortfalls() {
     var tasks = [];
     (dbA.customers || []).forEach(function(c) {
       if (isInternalAccount(c)) return;
-      if (!c.plan || c.plan === 'cancelled' || isLeadsPaused(c)) return;
+      if (!isEntitledForDelivery(c)) return;
       var promised = getPlanLimit(c.product, c.plan, c.coverage) || 0;
       if (promised <= 0) return;
       var have = (dbA.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0; }).length;
@@ -13847,7 +13858,7 @@ function reconcileTodayEmails() {
     var sent = 0;
     (dbR.customers || []).forEach(function(cust) {
       if (isInternalAccount(cust)) return;
-      if (!cust.plan || cust.plan === 'cancelled' || isLeadsPaused(cust)) return;
+      if (!isEntitledForDelivery(cust)) return;
       var rows = (dbR.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0; });
       if (!rows.length) return;
       if (cust.last_email_date === today) return; // main daily email already sent today
@@ -13877,7 +13888,7 @@ function runFinalGuaranteeAudit() {
     var today = new Date().toISOString().split('T')[0];
     (dbA.customers || []).forEach(function(c) {
       if (isInternalAccount(c)) return;
-      if (!c.plan || c.plan === 'cancelled' || isLeadsPaused(c)) return;
+      if (!isEntitledForDelivery(c)) return;
       var promised = getPlanLimit(c.product, c.plan, c.coverage) || 0;
       if (promised <= 0) return;
       var delivered = (dbA.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0; }).length;
