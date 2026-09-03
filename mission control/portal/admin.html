@@ -1229,8 +1229,17 @@ async function loadLeadMonitor() {
   }
 }
 
-function renderCustomers(customers) {
-  const tbody = document.getElementById('customerTable');
+function deleteCustomerAdmin(emailEnc) {
+  var email = decodeURIComponent(emailEnc);
+  if (!confirm('PERMANENTLY delete customer ' + email + '?\n\nThis removes their account, all their leads, email history and settings. This CANNOT be undone and is only needed for removing real customers/test accounts permanently.')) return;
+  if (!confirm('Are you absolutely sure? Type OK to confirm deletion of ' + email + '.')) return;
+  fetch(API + '/api/admin/delete-customer', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: JSON.stringify({ email: email }) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) { if (d.success) { alert('Customer deleted.'); loadData(); } else alert(d.error || 'Could not delete customer'); })
+    .catch(function(e) { alert('Error: ' + e.message); });
+}
+
+function renderCustomers(customers) {  const tbody = document.getElementById('customerTable');
   if (customers.length === 0) { tbody.innerHTML = '<tr><td colspan="11" class="empty">No customers found</td></tr>'; return; }
   tbody.innerHTML = customers.map(c => {
     const areas = c.target_areas ? JSON.parse(c.target_areas).slice(0, 3).join(', ') + (JSON.parse(c.target_areas).length > 3 ? '...' : '') : '';
@@ -1265,7 +1274,7 @@ function renderCustomers(customers) {
       '<td style="font-size:11px">' + bookedVal + ' <span style="color:#64748b">(' + convPct + '%)</span></td>' +
       '<td>' + hasCrm + '</td>' +
       '<td style="font-size:11px;color:#64748b">' + signupDate + '</td>' +
-      '<td><div style="display:flex;gap:4px"><a class="btn btn-view btn-sm" href="/portal/admin-customer.html?email=' + encodeURIComponent(c.email || '') + '" target="_blank" rel="noopener" title="View this customer\'s leads (new tab)"><i class="fas fa-list"></i> Leads</a><a class="btn btn-view btn-sm" href="/portal/admin-customer.html?email=' + encodeURIComponent(c.email || '') + '&action=dashboard" target="_blank" rel="noopener" title="Login as this customer - open their dashboard (new tab)" style="background:rgba(245,158,11,0.12)!important;color:#f59e0b!important;border-color:rgba(245,158,11,0.2)!important"><i class="fas fa-shield-alt"></i> Login as</a></div></td></tr>';
+      '<td><div style="display:flex;gap:4px;flex-wrap:wrap"><a class="btn btn-view btn-sm" href="/portal/admin-customer.html?email=' + encodeURIComponent(c.email || '') + '" target="_blank" rel="noopener" title="View this customer\'s leads (new tab)"><i class="fas fa-list"></i> Leads</a><a class="btn btn-view btn-sm" href="/portal/admin-customer.html?email=' + encodeURIComponent(c.email || '') + '&action=dashboard" target="_blank" rel="noopener" title="Login as this customer - open their dashboard (new tab)" style="background:rgba(245,158,11,0.12)!important;color:#f59e0b!important;border-color:rgba(245,158,11,0.2)!important"><i class="fas fa-shield-alt"></i> Login as</a><button class="btn btn-view btn-sm" style="background:rgba(239,68,68,0.1)!important;color:#ef4444!important;border-color:rgba(239,68,68,0.25)!important" onclick="deleteCustomerAdmin(\'' + encodeURIComponent(c.email || '') + '\')" title="Permanently delete this customer and all their data">Delete</button></div></td></tr>';
   }).join('');
 }
 
