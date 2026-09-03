@@ -865,7 +865,14 @@ function inRange(l, range) {
   if (!day) return true;
   var now = new Date();
   if (range === 'today') { return day === now.toISOString().split('T')[0]; }
-  if (range === 'week') { var w = new Date(now); w.setDate(w.getDate()-w.getDay()); return day >= w.toISOString().split('T')[0]; }
+  if (range === 'week') {
+    // Same month-aware rule as the dashboard KPI: week starts from the later of this
+    // week's Sunday or the 1st of the month, so "This week" can never exceed "This month".
+    var w = new Date(now); w.setHours(0, 0, 0, 0); w.setDate(w.getDate() - w.getDay());
+    var mo = new Date(now); mo.setHours(0, 0, 0, 0); mo.setDate(1);
+    var ws = (w > mo ? w : mo).toISOString().split('T')[0];
+    return day >= ws;
+  }
   if (range === 'month') { return day.substring(0,7) === now.toISOString().split('T')[0].substring(0,7); }
   return true;
 }
