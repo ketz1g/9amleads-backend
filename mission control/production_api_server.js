@@ -6076,8 +6076,8 @@ app.post('/api/affiliate/kyc', affiliateAuth, (req, res) => {
     if (!accountNo || accountNo.length !== 8) return res.status(400).json({ error: 'Enter your 8-digit bank account number.' });
     if (!acceptTc) return res.status(400).json({ error: 'You must accept the Affiliate Agreement (Terms & Conditions) to be eligible for payout.' });
     if (idB64.length < 50) return res.status(400).json({ error: 'Please upload a clear photo or scan of your ID (driving licence or passport).' });
-    if (normalizeName(legalName) !== normalizeName(bankHolder)) {
-      return res.status(400).json({ error: 'The legal name on your ID must match the bank account holder name exactly. Please check both and resubmit.' });
+    if (!namesMatchLegalBank(legalName, bankHolder)) {
+      return res.status(400).json({ error: 'The legal name on your ID must match the bank account holder name (same surname and matching first name). Please check both and resubmit.' });
     }
     if (aff.kyc && aff.kyc.status === 'approved') {
       return res.status(400).json({ error: 'Your ID has already been approved. No changes needed.' });
@@ -22287,6 +22287,34 @@ function normalizeDomain(url) {
 
 function normalizeName(name) {
   return (name || '').toLowerCase().replace(/[^a-z0-9]/g, '').trim();
+}
+
+// Anti-fraud name match for KYC: legal name (from ID) vs bank account holder must be
+// the SAME person, but we don't reject valid variations — titles (Mr/Mrs/Dr), a middle
+// name present on one but not the other, or a first-name initial ("K. Mandalia" vs
+// "Ketz Mandalia") are fine as long as the SURNAME matches exactly and the given names
+// overlap (full token or initial).
+function namesMatchLegalBank(a, b) {
+  var T = { 'mr': 1, 'mrs': 1, 'ms': 1, 'miss': 1, 'dr': 1, 'prof': 1, 'mx': 1, 'sir': 1, 'lady': 1 };
+  var tok = function(s) {
+    return String(s || '').toLowerCase().replace(/[^a-z ]/g, ' ').split(/\s+/).filter(Boolean).filter(function(t) { return !T[t]; });
+  };
+  var A = tok(a), B = tok(b);
+  if (!A.length || !B.length) return false;
+  var surA = A[A.length - 1], surB = B[B.length - 1];
+  if (surA !== surB) return false;
+  var givenA = A.slice(0, -1), givenB = B.slice(0, -1);
+  if (!givenA.length || !givenB.length) return false;
+  function covers(small, big) {
+    return small.every(function(g) {
+      if (g.length === 1) return big.some(function(y) { return y.charAt(0) === g; });
+      return big.some(function(x) {
+        if (x === g) return true;
+        return (x.length > 1 && g.length > 1) && (x.indexOf(g) === 0 || g.indexOf(x) === 0);
+      });
+    });
+  }
+  return covers(givenA, givenB) || covers(givenB, givenA);
 }
 
 // GET /api/scraped-businesses — return all known businesses (for dedup client-side)
