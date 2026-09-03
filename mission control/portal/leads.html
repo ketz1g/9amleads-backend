@@ -412,7 +412,7 @@ function rejectBtn(leadId, d){
   return '<button onclick="rejectLead(\'' + leadId + '\')" title="This lead is wrong (e.g. address). Reject it and we\'ll send a replacement." class="mail-btn" style="background:#ef4444;color:#fff"><i class="fas fa-times"></i> Reject &amp; Replace</button>';
 }
 function rejectLead(leadId){
-  if (!confirm('Reject &amp; Replace this lead? We will remove it and send you a replacement lead.')) return;
+  if (!confirm('Reject & Replace this lead? We will remove it and send you a replacement lead.')) return;
   fetch('/api/leads/reject', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _token }, body: JSON.stringify({ lead_id: leadId, reason: 'wrong address' }) })
     .then(function(r){ return r.json(); })
     .then(function(d){
@@ -640,7 +640,7 @@ function bulkPay(){
     } else {
       if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-lock"></i> Pay &amp; Send';}
       var errEl=document.getElementById('mp-error');
-      errEl.textContent=(d&&(d.error||d.message||d.reason))||'Could not start print &amp; post. Please try again.';
+      errEl.textContent=(d&&(d.error||d.message||d.reason))||'Could not start Post & Print. Please try again.';
       errEl.style.display='block';
       mpShowStep(1);
     }
@@ -831,7 +831,7 @@ function mpPay(){
     } else {
       if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-lock"></i> Pay &amp; Send';}
       var errEl=document.getElementById('mp-error');
-      errEl.textContent=(d&&(d.error||d.message||d.reason))||'Could not start print &amp; post. Please try again.';
+      errEl.textContent=(d&&(d.error||d.message||d.reason))||'Could not start Post & Print. Please try again.';
       errEl.style.display='block';
       mpShowStep(1);
     }

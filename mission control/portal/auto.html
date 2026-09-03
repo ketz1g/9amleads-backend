@@ -241,7 +241,7 @@ function autoPpCardReturn(){  var qp=new URLSearchParams(window.location.search)
   var saved=qp.get('auto_card');
   if(saved==='saved'){
     var status=document.getElementById('auto-pp-status');
-    if(status){status.style.color='#16a34a';status.textContent='✅ Card saved. Auto Print &amp; Post billing is ready.';}
+    if(status){status.style.color='#16a34a';status.textContent='✅ Card saved. Auto Post & Print billing is ready.';}
     try{history.replaceState(null,'',window.location.pathname+window.location.search.replace(/[?&]auto_card=[^&]*/g,'').replace(/^&/,'?'));}catch(e){}
   } else if(saved==='cancelled'){
     var status=document.getElementById('auto-pp-status');

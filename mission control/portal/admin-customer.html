@@ -1,5 +1,5 @@
 async function rejectLeadAdmin(leadId) {
-  if (!confirm('Reject &amp; Replace this lead? It will be marked rejected and a replacement will be sent with the next delivery.')) return;
+  if (!confirm('Reject & Replace this lead? It will be marked rejected and a replacement will be sent with the next delivery.')) return;
   try {
     var r = await fetch(API + '/api/admin/reject-lead', { method: 'POST', headers: headers(), body: JSON.stringify({ lead_id: leadId }) });
     var d = await r.json();
