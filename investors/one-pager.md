@@ -55,7 +55,7 @@
 
 ## Traction (real, live today)
 - ✅ **Product fully built and operating** — scrapers, daily 9am delivery, verification, Print & Post (live Stannp integration, real mail sent), **Auto-Send and Bulk Postage live**
-- ✅ **76 accounts** created; **8 firms actively trialing** across removals, accountancy, property and legal
+- ✅ **20 accounts** created; **8 firms actively trialing** across removals, accountancy, property and legal
 - ✅ **Daily delivery running** — moving/probate/planning/new-business/tenders all live
 - ✅ **First real orders shipped** through Stannp (letters + flyers printing correctly)
 - ✅ Self-healing infrastructure: uptime monitoring, auto-heal, backups

@@ -24,7 +24,7 @@
 
 ## 5. Traction (real today - update numbers)
 - Product fully built & shipping: all 5 verticals deliver daily; real mailed orders via our print partner.
-- **[76]** accounts created · **[8]** firms actively trialing · paid launch is this round's job.
+- **[20]** accounts created · **[8]** firms actively trialing · paid launch is this round's job.
 - Affiliate engine + rewards live; SEO content pipeline live (60+ guides, daily cadence, sitemap + IndexNow).
 - Marketing film + leaflets ready for the open market.
 - Self-healing infra: uptime monitor, auto-heal, automated backups.

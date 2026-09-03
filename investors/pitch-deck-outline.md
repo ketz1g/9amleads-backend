@@ -27,7 +27,7 @@
 
 ## Slide 6 — Traction (real, live)
 - Product **fully built & shipping** — daily 9am delivery, Print & Post (real mail via Stannp), affiliate programme
-- 76 accounts · 8 real trial firms · daily delivery running
+- 20 accounts · 8 real trial firms · daily delivery running
 - Screenshots: live dashboard, real sent order, delivery log.
 
 ## Slide 7 — Market

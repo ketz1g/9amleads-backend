@@ -14,10 +14,10 @@ Angels cross-check the deck against the one-pager and model. Right now the three
 **Fix:** pick **one** set (recommend the £150/mo ARPU one — it survives scrutiny better) and use it everywhere. The £110 figure on Slide 8 of the outline is a straggler.
 
 ## 🔴 2. "Paying" vs "trial" is muddled — your single biggest credibility risk
-Different files say: *"8 real paying-trial firms"*, *"8 real firms on trial"*, *"8 real trial firms"*, and the model says *"8 real firms, 50 trial accounts"*, plus *"76 accounts"*.
+Different files say: *"8 real paying-trial firms"*, *"8 real firms on trial"*, *"8 real trial firms"*, and the model says *"8 real firms, 50 trial accounts"*, plus *"20 accounts"*.
 An angel will ask in seconds: **how many pay, how much MRR, what's the conversion rate?** Ambiguity reads as hiding weakness.
 **Fix — put a clean funnel on Slide 6 and keep one definition everywhere:**
-- 76 total accounts created → X on free trial now → Y paying (Starter/Pro/Enterprise) → **£Z MRR** → last-3-months revenue £A.
+- 20 total accounts created → X on free trial now → Y paying (Starter/Pro/Enterprise) → **£Z MRR** → last-3-months revenue £A.
 - If you have real paid revenue, say it loudly with bank-statement proof. If trials are unpaid, never use "paying-trial".
 
 ## 🔴 3. No revenue-to-date anywhere
@@ -66,7 +66,7 @@ Slide 10 says *"take 9amLeads to 200 paying customers and £100k+ run-rate"* but
 
 ## If you change only three things
 1. **One consistent set of numbers** (ARPU £150/mo, CAC £150, payback ~1 month) across deck/one-pager/model.
-2. **An honest funnel with real revenue**: 76 accounts → X trials → Y paying → £Z MRR + 3-month revenue.
+2. **An honest funnel with real revenue**: 20 accounts → X trials → Y paying → £Z MRR + 3-month revenue.
 3. **Say "SEIS advance assurance filed"** on the Ask slide, and show the affiliate engine's actual numbers — not just its target.
 
 ## Suggested slide order tweak

@@ -8,7 +8,7 @@ Hi [First name],
 
 I'm the founder of **9amLeads** — we deliver fresh, in-area, door-numbered business opportunities (moving, probate, planning, new business, tenders) to UK trades & professional firms every morning at 9am.
 
-The product is **fully built and shipping** — daily delivery is live, and we print & post real letters and flyers through Stannp. 76 accounts so far, with 8 real firms on trial.
+The product is **fully built and shipping** — daily delivery is live, and we print & post real letters and flyers through Stannp. 20 accounts so far, with 8 real firms on trial.
 
 Two revenue streams: a **£25/week (£100/month)** subscription, plus Print & Post that **roughly doubles revenue per customer** (~£200/month with mailing; we keep ~£0.50-£0.80 per item mailed).
 

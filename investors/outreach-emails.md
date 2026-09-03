@@ -9,7 +9,7 @@
 >
 > I'm Ketz, founder of **9amLeads** — fresh, in-area, door-numbered business opportunities (moving, probate, planning, new business, tenders) delivered to UK trades & professional firms every morning at 9am.
 >
-> Fully built and **shipping now**: daily 9am delivery is live, real letters/flyers go out through Stannp (I can show you a real delivered one), and we have 76 accounts with 8 firms on paying trials. Two revenue streams — a £25/week subscription plus Print & Post that roughly doubles revenue per customer.
+> Fully built and **shipping now**: daily 9am delivery is live, real letters/flyers go out through Stannp (I can show you a real delivered one), and we have 20 accounts with 8 firms on paying trials. Two revenue streams — a £25/week subscription plus Print & Post that roughly doubles revenue per customer.
 >
 > We're raising **£25,000 for 10%** (post-money £250k), **SEIS advance assurance in place [or: being filed this week]** — your 50% income-tax relief makes the entry effectively £12,500. Funds go to marketing & sales to convert the warm trial pipeline.
 >
@@ -25,7 +25,7 @@
 >
 > Quick snapshot: B2B SaaS + print for UK trades. We scrape/verify five fresh lead sources (moves, probate, planning, new companies, tenders), enrich with door number + street + postcode, and deliver to each customer's dashboard at 9am — first contact wins the job. Customers pay ~£100–£396/month; Print & Post roughly doubles revenue per customer.
 >
-> Why now: product is done and shipping, the missing piece is marketing & sales. 76 accounts, 8 paying-trial firms, ~50 warm trials in the funnel. [Add regional hook: our customers are concentrated in [region] / we're active with [local trade body].]
+> Why now: product is done and shipping, the missing piece is marketing & sales. 20 accounts, 8 paying-trial firms, ~50 warm trials in the funnel. [Add regional hook: our customers are concentrated in [region] / we're active with [local trade body].]
 >
 > I've attached the one-pager and 12-month model. A 15-minute live demo is the fastest way to show quality (real dashboard + a posted letter).
 >
