@@ -45,14 +45,14 @@
 ## 9. Use of funds
 | Use | % | Amount |
 |---|---|---|
-| Social media marketing | 11% | £2,750 |
+| Social media marketing | 12% | £3,000 |
 | Email campaigns | 10% | £2,500 |
-| Flyer campaigns to newly formed businesses | 11% | £2,750 |
-| Boosting SEO + PPC | 11% | £2,750 |
+| Flyer campaigns to newly formed businesses | 12% | £3,000 |
+| Boosting SEO + PPC | 12% | £3,000 |
 | Advertising to recruit affiliates | 10% | £2,500 |
-| Buying backlinks | 11% | £2,750 |
-| Business events & shows | 11% | £2,750 |
-| Founder personal costs + running/maintaining the business | 25% | £6,250 |
+| Buying backlinks | 12% | £3,000 |
+| Business events & shows | 12% | £3,000 |
+| Founder personal costs + running/maintaining the business | 20% | £5,000 |
 | **Total** | **100%** | **£25,000** |
 
 ## 10. Key metrics we track
