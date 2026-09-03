@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>9amLeads - Final Investor Deck</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#060b16;--panel:#0d1526;--ink:#f4f8ff;--mut:#a7b4cf;--dim:#66748f;--cy:#38bdf8;--em:#34d399;--am:#fbbf24;--vi:#a78bfa;--line:rgba(148,163,184,.16);--line2:rgba(148,163,184,.34)}
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{background:#04070f;font-family:'Inter','Segoe UI',Arial,sans-serif;color:var(--ink);overflow:hidden}
+  .fit{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+  #stage{width:1280px;height:720px;position:relative;transform-origin:center;overflow:hidden;background:radial-gradient(1100px 460px at 88% -12%,rgba(56,189,248,.13),transparent 60%),radial-gradient(900px 460px at -8% 112%,rgba(52,211,153,.09),transparent 55%),#070d1a;box-shadow:0 40px 130px rgba(0,0,0,.55)}
+  .slide{position:absolute;inset:0;display:flex;flex-direction:column;padding:46px 68px 58px;opacity:0;visibility:hidden;transition:opacity .35s}
+  .slide.active{opacity:1;visibility:visible}
+  .disp,h1,h2,h3,h4{font-family:'Outfit',sans-serif}
+  h1{font-size:56px;font-weight:900;line-height:1.02;letter-spacing:-.02em}
+  h2{font-size:38px;font-weight:800;line-height:1.08;letter-spacing:-.01em}
+  .ac{background:linear-gradient(92deg,var(--cy),var(--em));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .eyebrow{display:inline-flex;align-items:center;gap:10px;font-size:11px;font-weight:800;letter-spacing:.24em;text-transform:uppercase;color:var(--cy);margin-bottom:12px}
+  .eyebrow::before{content:"";width:24px;height:2px;background:linear-gradient(90deg,var(--cy),transparent)}
+  .lead{color:var(--mut);font-size:18px;line-height:1.55;font-weight:500}
+  .sub{color:var(--mut);font-size:15px;line-height:1.55}
+  .dim{color:var(--dim)}
+  .row{display:flex;align-items:center;gap:14px}.wrap{flex-wrap:wrap}.center{justify-content:center}
+  .grid{display:grid;gap:16px}.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}
+  .card{background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.008));border:1px solid var(--line);border-radius:16px;padding:20px}
+  .card h3,.card h4{font-size:16px;font-weight:800;margin-bottom:8px}
+  .big{font-size:52px;font-weight:900;font-family:'Outfit',sans-serif;letter-spacing:-.02em}
+  .tag{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;border:1px solid var(--line2);background:rgba(255,255,255,.03);font-size:12px;font-weight:600;color:var(--mut)}
+  .tag b{color:var(--ink)}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 18px;border-radius:12px;font-size:13px;font-weight:800;text-decoration:none}
+  .btn.p{background:linear-gradient(135deg,#0ea5e9,#0891b2);color:#fff}.btn.g{background:linear-gradient(135deg,#34d399,#0f9d6e);color:#04231a}.btn.o{background:rgba(255,255,255,.06);border:1px solid var(--line2);color:var(--ink)}
+  .seis{display:inline-flex;align-items:center;gap:8px;background:rgba(52,211,153,.14);border:1px solid rgba(52,211,153,.4);color:#6ee7b7;font-size:11px;font-weight:800;padding:5px 11px;border-radius:999px}
+  .kbd{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);font-weight:700}
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:auto}
+  .footer{display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:14px;border-top:1px solid var(--line);font-size:11px;color:var(--dim)}
+  .brand{display:flex;align-items:center;gap:9px;font-family:'Outfit';font-weight:800;font-size:14px}
+  .logo{width:24px;height:24px;border-radius:7px;background:linear-gradient(135deg,#0ea5e9,#34d399);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#04121a}
+  .prog{position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(255,255,255,.05)}
+  .prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cy),var(--em))}
+  .hbar{display:flex;flex-direction:column;gap:11px}
+  .hbar .r{display:flex;align-items:center;gap:12px}
+  .hbar .lbl{width:160px;font-size:13px;color:var(--mut);text-align:right;flex-shrink:0}
+  .hbar .track{flex:1;height:20px;background:rgba(255,255,255,.05);border-radius:6px;overflow:hidden}
+  .hbar .fill{height:100%;border-radius:6px}
+  .hbar .val{width:76px;font-size:13px;font-weight:800}
+  .axis{display:flex;justify-content:space-between;color:var(--dim);font-size:11px;margin-top:7px}
+  .tbl{width:100%;border-collapse:collapse;font-size:13px}
+  .tbl th{color:var(--cy);font-size:10px;text-transform:uppercase;letter-spacing:.08em;text-align:left;padding:8px 10px;border-bottom:1px solid var(--line2)}
+  .tbl td{padding:8px 10px;border-bottom:1px solid rgba(148,163,184,.12);color:#dbe4f3}
+  .tbl tr:last-child td{border-bottom:0}
+  .stepflow{display:flex;align-items:stretch}
+  .step{flex:1;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:14px;padding:14px 10px;text-align:center}
+  .step .ic{width:44px;height:44px;margin:0 auto 8px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:19px}
+  .step small{display:block;margin-top:5px;color:var(--dim);font-size:10.5px;line-height:1.35}
+  .arrow{display:flex;align-items:center;color:var(--cy);font-size:17px;padding:0 5px}
+  .shot{width:100%;height:240px;border-radius:14px;border:1px solid var(--line2);background:repeating-linear-gradient(45deg,rgba(255,255,255,.02),rgba(255,255,255,.02) 12px,transparent 12px,transparent 24px),linear-gradient(160deg,#0c1526,#0a0f1e);display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .shot img{width:100%;height:100%;object-fit:cover;object-position:top}
+  .shot .ph{text-align:center;color:var(--dim);font-size:13px;line-height:1.6}
+  .dots{position:fixed;right:16px;top:50%;transform:translateY(-50%);z-index:60;display:flex;flex-direction:column;gap:8px}
+  .dots button{width:8px;height:8px;border-radius:50%;border:0;background:#26334d;cursor:pointer;padding:0}
+  .dots button.on{background:linear-gradient(135deg,var(--cy),var(--em))}
+  .navhint{position:fixed;left:16px;bottom:12px;z-index:60;font-size:11px;color:#33415c}
+  @media print{body{overflow:visible;background:#fff}.fit{position:static;display:block}#stage{width:1280px;height:auto;transform:none!important;overflow:visible}.slide{position:relative;visibility:visible!important;opacity:1!important;width:1280px;height:720px;page-break-after:always;break-after:page;overflow:hidden}.dots,.navhint,.prog{display:none!important}}
+</style>
+<style>
+  /* SCROLLABLE LAYOUT OVERRIDES - the deck reads as one continuous scrolling page */
+  body{overflow-y:auto;overflow-x:hidden}
+  .fit{position:static;display:block;height:auto}
+  #stage{position:static;width:100%;height:auto;transform:none!important;overflow:visible;box-shadow:none;background:transparent}
+  .slide{position:relative;visibility:visible!important;opacity:1!important;width:100%;max-width:1400px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:72px clamp(28px,6vw,110px) 64px;border-bottom:1px solid rgba(148,163,184,.08);background:radial-gradient(1100px 460px at 88% -12%,rgba(56,189,248,.10),transparent 60%),radial-gradient(900px 460px at -8% 112%,rgba(52,211,153,.07),transparent 55%),#070d1a}
+  .slide:last-of-type{border-bottom:0}
+  .topbar,.footer{margin-top:0}
+  .footer{margin-top:40px}
+  h1{font-size:clamp(38px,6vw,76px)}
+  h2{font-size:clamp(28px,3.6vw,46px)}
+  .dots,.navhint,.prog{display:none!important}
+  #scrollprogress{position:fixed;top:0;left:0;right:0;height:4px;z-index:99;background:linear-gradient(90deg,var(--cy),var(--em));width:0}
+  @media print{.slide{min-height:auto;page-break-after:always;break-after:page;max-width:none}#scrollprogress{display:none}}
+</style>
+</head>
+<body>
+<div id="scrollprogress"></div>
+<div class="fit"><div id="stage">
+<div class="prog"><i id="pbar"></i></div>
+
+<!-- 01 TITLE -->
+<section class="slide active">
+  <div class="row" style="justify-content:space-between">
+    <div class="brand"><span class="logo">9</span>9amLeads</div>
+    <div class="seis">SEIS ELIGIBLE · 50% INCOME-TAX RELIEF</div>
+  </div>
+  <div style="flex:1;display:flex;align-items:center;gap:52px">
+    <div style="flex:1.2">
+      <div class="eyebrow">Seed round · £25,000 for 10% · post-money £250,000</div>
+      <h1>Fresh local work.<br>Delivered at <span class="ac">9am</span>.</h1>
+      <p class="lead" style="margin:18px 0 24px;max-width:560px">9amLeads helps UK trades &amp; professional firms be <b style="color:var(--ink)">first to call</b> on new work - door-numbered opportunities for moving, probate, planning, new business &amp; tenders, every morning.</p>
+      <div class="row wrap" style="gap:10px">
+        <span class="tag">Product <b>built &amp; shipping</b></span>
+        <span class="tag">All 5 verticals live</span>
+        <span class="tag">14-day free trial · no card</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:26px">
+        <div class="metric" style="background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center"><div style="font-size:11px;color:var(--dim)">ACCOUNTS</div><div class="num" style="font-family:'Outfit';font-weight:900;font-size:30px">76</div></div>
+        <div class="metric" style="background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center"><div style="font-size:11px;color:var(--dim)">LIVE TRIALS</div><div class="num" style="font-family:'Outfit';font-weight:900;font-size:30px;color:var(--am)">8</div></div>
+        <div class="metric" style="background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center"><div style="font-size:11px;color:var(--dim)">VERTICALS</div><div class="num" style="font-family:'Outfit';font-weight:900;font-size:30px;color:var(--cy)">5</div></div>
+        <div class="metric" style="background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center"><div style="font-size:11px;color:var(--dim)">DAILY DELIVERY</div><div class="num" style="font-family:'Outfit';font-weight:900;font-size:30px;color:var(--em)">9:00</div></div>
+      </div>
+    </div>
+    <div style="flex:.8;position:relative;min-height:430px">
+      <div style="position:absolute;inset:0;transform:rotate(3deg);background:linear-gradient(160deg,rgba(14,165,233,.2),rgba(52,211,153,.06));border:1px solid var(--line2);border-radius:22px"></div>
+      <div style="position:absolute;inset:0;transform:rotate(-1.5deg);background:linear-gradient(160deg,#0e1a31,#0a1222);border:1px solid var(--line2);border-radius:22px;padding:20px;box-shadow:0 26px 70px rgba(0,0,0,.4)">
+        <div class="row" style="justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:12px"><b style="font-size:13px">☀️ Today · 9:00 am</b><span style="font-size:11px;color:var(--em);font-weight:800">▲ 5 new leads</span></div>
+        <div style="margin-top:12px;display:grid;gap:10px">
+          <div class="card" style="padding:12px 14px;display:flex;align-items:center;gap:12px;border-radius:12px"><span style="width:38px;height:38px;border-radius:10px;background:rgba(14,165,233,.16);display:flex;align-items:center;justify-content:center">🏠</span><div style="flex:1"><b style="font-size:13px">New listing · Croydon</b><div style="font-size:11px;color:var(--mut)">14 Acacia Ave · CR0 · 3-bed · listed today</div></div><span class="seis" style="font-size:9px;padding:3px 7px">MAIL</span></div>
+          <div class="card" style="padding:12px 14px;display:flex;align-items:center;gap:12px;border-radius:12px"><span style="width:38px;height:38px;border-radius:10px;background:rgba(251,191,36,.14);display:flex;align-items:center;justify-content:center">⚖️</span><div style="flex:1"><b style="font-size:13px">Probate · Kent</b><div style="font-size:11px;color:var(--mut)">Grant issued · estate value disclosed</div></div><span style="font-size:10px;color:var(--cy);font-weight:800">CALL</span></div>
+          <div class="card" style="padding:12px 14px;display:flex;align-items:center;gap:12px;border-radius:12px"><span style="width:38px;height:38px;border-radius:10px;background:rgba(52,211,153,.16);display:flex;align-items:center;justify-content:center">🏗️</span><div style="flex:1"><b style="font-size:13px">Planning · Leeds</b><div style="font-size:11px;color:var(--mut)">Extension app · LS6 · submitted</div></div><span style="font-size:10px;color:var(--em);font-weight:800">NEW</span></div>
+        </div>
+        <div style="margin-top:14px;text-align:center;font-size:11px;color:var(--dim)">Live dashboard · sign up free &amp; try it yourself</div>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><span>Ketz Mandalia · Founder · hello@9amleads.com</span><span class="pnum">01 / 17</span></div>
+</section>
+
+<!-- 02 PROBLEM -->
+<section class="slide">
+  <div class="row" style="justify-content:space-between"><div class="brand"><span class="logo">9</span>9amLeads</div><div class="crumb kbd">The problem</div></div>
+  <div style="flex:1;display:flex;align-items:center;gap:46px">
+    <div style="flex:1.05">
+      <h2>The winner is whoever calls <span class="ac">first</span>.</h2>
+      <p class="sub" style="margin-top:16px;max-width:500px;font-size:17px">Every week UK firms lose high-value work they never heard about - because the opportunity was stale by the time they found it. Cold-calling and outdated directories can't keep up with work that appears <b style="color:var(--ink)">today</b>.</p>
+      <div class="row wrap" style="gap:10px;margin-top:20px"><span class="tag">Hours lost cold-calling</span><span class="tag">Directories weeks old</span><span class="tag">No same-day source</span><span class="tag">Competition beats them to it</span></div>
+      <div class="card" style="margin-top:20px;padding:16px 18px;display:flex;align-items:center;gap:14px;border-color:rgba(56,189,248,.35)"><span style="font-size:22px">💡</span><span class="sub" style="color:#dbe4f3">The insight that built the company: <b style="color:var(--cy)">freshness is everything</b> - the firm that calls the morning the work appears wins it.</span></div>
+    </div>
+    <div style="flex:1">
+      <div class="grid g2">
+        <div class="card"><div class="kbd">Missed · one removal job</div><div class="big ac" style="font-size:44px;margin-top:6px">£1,500–2k</div><div class="sub" style="margin-top:6px">average value of one move to a removal firm</div></div>
+        <div class="card"><div class="kbd">Missed · one probate</div><div class="big ac" style="font-size:44px;margin-top:6px">£5–15k</div><div class="sub" style="margin-top:6px">fees in a single probate instruction</div></div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <div class="row" style="justify-content:space-between"><h3 style="margin:0">Quality of opportunity over time</h3><b class="num" style="font-size:14px;color:var(--cy)">Fresh beats stale</b></div>
+        <div style="display:flex;align-items:flex-end;gap:5%;height:130px;margin-top:14px;padding:0 4px">
+          <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:7px"><div style="width:100%;height:14%;background:#334155;border-radius:6px 6px 0 0"></div><span class="dim" style="font-size:10px">1 wk</span></div>
+          <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:7px"><div style="width:100%;height:26%;background:#334155;border-radius:6px 6px 0 0"></div><span class="dim" style="font-size:10px">3 d</span></div>
+          <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:7px"><div style="width:100%;height:52%;background:linear-gradient(180deg,#0ea5e9,#0369a1);border-radius:6px 6px 0 0"></div><span class="dim" style="font-size:10px">24 h</span></div>
+          <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:7px"><div style="width:100%;height:100%;background:linear-gradient(180deg,var(--em),#059669);border-radius:6px 6px 0 0;box-shadow:0 0 22px rgba(52,211,153,.3)"></div><span style="font-size:10px;color:var(--em);font-weight:800">9am today</span></div>
+        </div>
+        <div class="axis"><span>chance of winning the job</span><span>you call first = you win</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><span>High-value, repeat-purchase work in every vertical</span><span class="pnum">02 / 17</span></div>
+</section>
+
+<!-- 03 SOLUTION ENGINE -->
+<section class="slide">
+  <div class="row" style="justify-content:space-between"><div class="brand"><span class="logo">9</span>9amLeads</div><div class="crumb kbd">The solution</div></div>
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+    <h2>One automated engine, <span class="ac">five fresh sources</span>.</h2>
+    <p class="sub" style="margin:12px 0 24px;max-width:760px">We watch the places new work first appears, verify it, add the details that make it usable - and deliver it to each customer's dashboard at 9am, in their chosen areas, up to their daily limit.</p>
+    <div class="stepflow">
+      <div class="step"><div class="ic" style="background:rgba(56,189,248,.14)">🔍</div><b style="font-size:12.5px">1 · Source</b><small>moves · probate · planning · new companies · tenders</small></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="ic" style="background:rgba(52,211,153,.14)">✔</div><b style="font-size:12.5px">2 · Verify</b><small>real, live opportunities - checked daily</small></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="ic" style="background:rgba(167,139,250,.14)">📍</div><b style="font-size:12.5px">3 · Enrich</b><small>door number · street · town · postcode</small></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="ic" style="background:rgba(251,191,36,.14)">⏰</div><b style="font-size:12.5px">4 · Deliver</b><small>dashboard at 9:00 sharp · chosen areas</small></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="ic" style="background:rgba(52,211,153,.14)">📮</div><b style="font-size:12.5px">5 · Act</b><small>call, or mail a printed flyer in one click</small></div>
+    </div>
+    <div class="grid g3" style="margin-top:22px">
+      <div class="card"><h3>🥇 First-contact advantage</h3><div class="sub">The firm that acts this morning wins this morning's job.</div></div>
+      <div class="card"><h3>🏘️ Exactly their areas</h3><div class="sub">Postcode areas, counties, or All-UK - no paying for noise elsewhere.</div></div>
+      <div class="card"><h3>🔑 Actionable the second it lands</h3><div class="sub">Door-numbered, enriched and verified - no extra digging before calling.</div></div>
+    </div>
+  </div>
+  <div class="footer"><span>Runs 24/7 · automated collection, enrichment &amp; delivery</span><span class="pnum">03 / 17</span></div>
+</section>
+
+<!-- 04 FIVE VERTICALS -->
+<section class="slide">
+  <div class="row" style="justify-content:space-between"><div class="brand"><span class="logo">9</span>9amLeads</div><div class="crumb kbd">What we deliver</div></div>
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+    <h2>Five verticals, each a <span class="ac">real, high-value market</span>.</h2>
+    <div class="grid g3" style="margin-top:18px">
+      <div class="card" style="border-top:3px solid var(--cy)"><h3>🏠 Moving</h3><div class="sub" style="margin-bottom:8px">Newly listed homes &amp; offices - door-numbered for removal quotes.</div><div class="kbd" style="margin-top:6px">Example lead</div><div style="margin-top:4px;font-size:13px;color:#dbe4f3;line-height:1.5">14 Acacia Ave, Croydon CR0 · 3-bed listed today · seller moving within weeks</div><div style="margin-top:8px;font-size:12px;color:var(--cy);font-weight:700">≈ £1,500–£2,000 per job</div></div>
+      <div class="card" style="border-top:3px solid var(--am)"><h3>⚖️ Probate</h3><div class="sub" style="margin-bottom:8px">Fresh grants of probate for solicitors, valuers &amp; house-clearance firms.</div><div class="kbd" style="margin-top:6px">Example lead</div><div style="margin-top:4px;font-size:13px;color:#dbe4f3;line-height:1.5">Grant issued · Kent · executors ready to instruct</div><div style="margin-top:8px;font-size:12px;color:var(--am);font-weight:700">£5,000–£15,000 per instruction</div></div>
+      <div class="card" style="border-top:3px solid var(--em)"><h3>🏗️ Planning</h3><div class="sub" style="margin-bottom:8px">New planning applications for builders, architects &amp; trades.</div><div class="kbd" style="margin-top:6px">Example lead</div><div style="margin-top:4px;font-size:13px;color:#dbe4f3;line-height:1.5">Extension · Leeds LS6 · decision window open · homeowner needs quotes</div><div style="margin-top:8px;font-size:12px;color:var(--em);font-weight:700">project-sized jobs</div></div>
+      <div class="card" style="border-top:3px solid var(--vi)"><h3>💼 New business</h3><div class="sub" style="margin-bottom:8px">Companies registered today - needing accountants, insurance, websites &amp; IT.</div><div class="kbd" style="margin-top:6px">Example lead</div><div style="margin-top:4px;font-size:13px;color:#dbe4f3;line-height:1.5">"Oak &amp; Pine Ltd" incorporated today · 1 director · new to market</div><div style="margin-top:8px;font-size:12px;color:var(--vi);font-weight:700">~70,000 new firms / month</div></div>
+      <div class="card" style="border-top:3px solid #f472b6"><h3>📋 Tenders</h3><div class="sub" style="margin-bottom:8px">Public &amp; private tenders for IT, construction, cleaning &amp; more.</div><div class="kbd" style="margin-top:6px">Example lead</div><div style="margin-top:4px;font-size:13px;color:#dbe4f3;line-height:1.5">Council framework · cleaning &amp; maintenance · closes in 3 weeks</div><div style="margin-top:8px;font-size:12px;color:#f472b6;font-weight:700">recurring contract value</div></div>
+      <div class="card" style="border-top:3px solid #fbbf24;justify-content:center"><h3>📦 One platform, all five</h3><div class="sub">Customers choose their vertical(s), their areas, and their daily volume. One dashboard. One 9am delivery. Print &amp; Post on top.</div></div>
+    </div>
+  </div>
+  <div class="footer"><span>Example leads are editorial samples - real customers see live, verified data in their dashboard</span><span class="pnum">04 / 17</span></div>
+</section>
+
+<!-- 05 LIVE PRODUCT -->
+<section class="slide">
+  <div class="row" style="justify-content:space-between"><div class="brand"><span class="logo">9</span>9amLeads</div><div class="crumb kbd">Proof · try it yourself</div></div>
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+    <h2>Real product. <span class="ac">Don't take our word for it.</span></h2>
+    <div class="grid g3" style="margin-top:16px">
+      <div class="card" style="padding:14px"><div class="kbd" style="margin-bottom:8px">Live dashboard</div><div class="shot" id="shot1"><div class="ph">📸 Drop in your real dashboard screenshot as <br><b>img/shot-dashboard.png</b><br><span style="font-size:11px;color:#3a4a66">(auto-loads)</span></div></div></div>
+      <div class="card" style="padding:14px"><div class="kbd" style="margin-bottom:8px">Door-numbered lead detail</div><div class="shot" id="shot2"><div class="ph">📸 Drop in a real lead screenshot as <br><b>img/shot-lead.png</b></div></div></div>
+      <div class="card" style="padding:14px"><div class="kbd" style="margin-bottom:8px">Print &amp; Post · real sent mail</div><div class="shot" id="shot3"><div class="ph">📸 Drop in a real order / letter as <br><b>img/shot-mail.png</b></div></div></div>
+    </div>
+    <div class="grid g3" style="margin-top:12px">
+      <div class="card" style="display:flex;align-items:center;gap:10px;padding:14px"><span style="font-size:18px">👀</span><div><b style="font-size:14px">Customer side</b><div class="dim" style="font-size:12px">14-day free trial · no card</div></div><a class="btn p" style="padding:8px 14px;font-size:12px;margin-left:auto" href="https://www.9amleads.com/portal/" target="_blank">Try free ↗</a></div>
+      <div class="card" style="display:flex;align-items:center;gap:10px;padding:14px"><span style="font-size:18px">🤝</span><div><b style="font-size:14px">Affiliate side</b><div class="dim" style="font-size:12px">60-second sign-up</div></div><a class="btn g" style="padding:8px 14px;font-size:12px;margin-left:auto" href="https://www.9amleads.com/portal/affiliate.html" target="_blank">See it ↗</a></div>
+      <div class="card" style="display:flex;align-items:center;gap:10px;padding:14px"><span style="font-size:18px">📞</span><div><b style="font-size:14px">15-min live demo</b><div class="dim" style="font-size:12px">watch a real delivery together</div></div><span class="seis" style="margin-left:auto">Book it</span></div>
+    </div>
+  </div>
+  <div class="footer"><span>Every investor can verify before they commit - that's the point</span><span class="pnum">05 / 17</span></div>
+</section>
+
+<!-- 06 IMPACT -->
+<section class="slide">
+  <div class="row" style="justify-content:space-between"><div class="brand"><span class="logo">9</span>9amLeads</div><div class="crumb kbd">The impact</div></div>
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+    <h2>More than leads - <span class="ac">businesses win, families earn, jobs grow</span>.</h2>
+    <p class="sub" style="margin:14px 0 22px;max-width:820px">Every opportunity we deliver is a chance for a UK firm to win work it would otherwise miss - and that work pays the people behind the firm.</p>
+    <div class="grid g3">
+      <div class="card" style="text-align:center;padding:24px 18px"><div style="font-size:40px">🏆</div><h3 style="margin-top:10px">Businesses succeed</h3><div class="sub">Win work they'd never have seen. Save money on marketing and on hiring sales staff - the leads sell for them.</div></div>
+      <div class="card" style="text-align:center;padding:24px 18px;border-color:rgba(52,211,153,.35)"><div style="font-size:40px">🏠</div><h3 style="margin-top:10px">Families supported</h3><div class="sub">Won jobs support removal teams, solicitors &amp; builders and their families - and people who need <b style="color:var(--em)">extra income from home</b> can earn as agents &amp; affiliates.</div></div>
+      <div class="card" style="text-align:center;padding:24px 18px"><div style="font-size:40px">🤝</div><h3 style="margin-top:10px">Local jobs created</h3><div class="sub">Firms that grow <b>hire</b>. Every win compounds into more work, more staff and stronger local economies.</div></div>
+    </div>
+    <div style="margin-top:18px;padding:16px 20px;border-radius:14px;border:1px solid rgba(52,211,153,.4);background:linear-gradient(90deg,rgba(52,211,153,.12),rgba(56,189,248,.07));display:flex;align-items:center;gap:14px"><span style="font-size:22px">💬</span><span style="font-weight:700;color:#d1fae5;font-size:15px">"Every lead we deliver helps another UK business win - and the families who depend on them. We want 9amLeads to be one of the UK's most trusted platforms."</span></div>
+  </div>
+  <div class="footer"><span>A mission investors can be proud to back</span><span class="pnum">06 / 17</span></div>
+</section>
+
+<!-- 07 BUSINESS MODEL -->
+<section class="slide">
+  <div class="row" style="justify-content:space-between"><div class="brand"><span class="logo">9</span>9amLeads</div><div class="crumb kbd">Business model</div></div>
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+    <h2>Two revenue streams, <span class="ac">one recurring engine</span>.</h2>
+    <div class="grid" style="grid-template-columns:1.1fr .9fr;gap:16px;margin-top:16px">
+      <div>
+        <div class="grid g3" style="gap:12px">
+          <div class="card" style="text-align:center;padding:18px 10px"><div class="kbd">Starter</div><div class="big" style="font-size:38px">£100<span style="font-size:15px;color:var(--dim)">/mo</span></div><div class="dim" style="font-size:12px">£25 / week</div></div>
+          <div class="card" style="text-align:center;padding:18px 10px;border-color:rgba(56,189,248,.5)"><div class="kbd" style="color:var(--cy)">Pro · popular</div><div class="big ac" style="font-size:38px">£196<span style="font-size:15px;color:var(--dim)">/mo</span></div><div class="dim" style="font-size:12px">£49 / week</div></div>
+          <div class="card" style="text-align:center;padding:18px 10px"><div class="kbd">Enterprise</div><div class="big" style="font-size:38px">£396<span style="font-size:15px;color:var(--dim)">/mo</span></div><div class="dim" style="font-size:12px">£99 / week</div></div>
+        </div>
+        <div class="card" style="margin-top:12px;display:flex;align-items:center;gap:16px;padding:16px">
+          <div style="flex:1"><h3 style="margin:0">📬 Print &amp; Post</h3><div class="sub" style="margin-top:4px">Mail a flyer/letter to any lead in one click - high margin, real orders already shipping.</div></div>
+          <div style="text-align:center"><div style="font-size:11px;color:var(--dim);margin-bottom:6px">rev / customer / mo</div>
+            <div style="display:flex;align-items:flex-end;gap:12px;height:96px">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:5px"><div style="width:46px;height:64px;background:linear-gradient(180deg,var(--cy),#0284c7);border-radius:7px 7px 0 0"></div><span style="font-size:10px;color:var(--mut)">Sub</span></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:5px"><div style="width:46px;height:64px;background:linear-gradient(180deg,var(--em),#059669);border-radius:7px 7px 0 0"></div><div style="width:46px;height:52px;background:rgba(52,211,153,.22);border-radius:7px 7px 0 0;margin-top:-116px"></div><span style="font-size:10px;color:var(--em);font-weight:700">+P&amp;P</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="display:flex;flex-direction:column;justify-content:center;padding:22px">
+        <div class="kbd">Unit economics (target, blended)</div>
+        <div class="big ac" style="font-size:46px;margin-top:8px">£150<span style="font-size:16px;color:var(--dim)"> /customer/mo</span></div>
+        <div class="sub" style="margin-top:12px">Mix of Starter / Pro / Enterprise (≈ £158 blended at a 60/30/10 mix - we model a conservative £150).</div>
+        <div style="margin-top:14px;border-top:1px solid var(--line);padding-top:12px">
+          <div class="row" style="justify-content:space-between;font-size:14px"><span class="dim">Price / product</span><span>£1.99 flyer · £1.49 letter · £2.99 pack</span></div>
+          <div class="row" style="justify-content:space-between;font-size:14px;margin-top:8px"><span class="dim">Upgrades</span><span style="color:var(--em);font-weight:700">Starter → Pro → Enterprise</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><span>No paid members yet - launch is what this round funds</span><span class="pnum">07 / 17</span></div>
+</section>
+
+<!-- 08 SCALE MATH -->
+<section class="slide">
+  <div class="row" style="justify-content:space-between"><div class="brand"><span class="logo">9</span>9amLeads</div><div class="crumb kbd">Scale &amp; milestones</div></div>
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+    <h2>The maths at <span class="ac">£150 blended ARPU</span>.</h2>
+    <div class="grid" style="grid-template-columns:1.1fr .9fr;gap:16px;margin-top:16px">
+      <div class="card">
+        <table class="tbl">
+          <tr><th>Customers</th><th>Subscription /mo</th><th>+ Print &amp; Post ≈</th><th>≈ /yr</th></tr>
+          <tr><td><b>100</b></td><td>£15,000</td><td>~£30,000</td><td>-</td></tr>
+          <tr><td><b>300</b></td><td>£45,000</td><td>~£90,000</td><td>-</td></tr>
+          <tr><td><b>500</b></td><td>£75,000</td><td>~£150,000</td><td>-</td></tr>
+          <tr><td><b>1,000</b></td><td>£150,000</td><td>~£300,000</td><td>£1.8–3.6m</td></tr>
+        </table>
+        <div class="axis" style="margin-top:8px"><span>Print &amp; Post roughly doubles revenue per customer</span><span>targets, forward-looking</span></div>
+      </div>
+      <div class="card" style="justify-content:center">
+        <div class="kbd" style="margin-bottom:8px">Paying-customer path (model targets)</div>
+        <div style="display:flex;align-items:flex-end;gap:6%;height:150px;margin-top:10px;padding:0 4px">
+          <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px"><div style="width:100%;height:8px;background:linear-gradient(180deg,#64748b,#475569);border-radius:6px 6px 0 0"></div><span style="font-size:10px;color:var(--dim)">Now</span></div>
+          <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px"><div style="width:100%;height:30px;background:linear-gradient(180deg,var(--cy),#0369a1);border-radius:6px 6px 0 0"></div><span style="font-size:10px;color:var(--dim)">M3 · 100</span></div>
+          <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px"><div style="width:100%;height:58px;background:linear-gradient(180deg,var(--cy),#0369a1);border-radius:6px 6px 0 0"></div><span style="font-size:10px;color:var(--dim)">M6 · 300</span></div>
+          <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px"><div style="width:100%;height:84px;background:linear-gradient(180deg,var(--em),#047857);border-radius:6px 6px 0 0"></div><span style="font-size:10px;color:var(--em)">M9 · 500</span></div>
+          <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px"><div style="width:100%;height:150px;background:linear-gradient(180deg,var(--em),#047857);border-radius:6px 6px 0 0;box-shadow:0 0 26px rgba(52,211,153,.35)"></div><span style="font-size:10px;color:var(--em);font-weight:800">M12 · 1,000</span></div>
+        </div>
+        <div class="axis" style="margin-top:8px"><span>funded by round months 1–3, then revenue + affiliate engine</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><span>Detailed 12-month table in the appendix (slide 15)</span><span class="pnum">08 / 17</span></div>
+</section>
+
+<!-- 09 TRACTION -->
+<section class="slide">
+  <div class="row" style="justify-content:space-between"><div class="brand"><span class="logo">9</span>9amLeads</div><div class="crumb kbd">Traction · honest &amp; early</div></div>
+  <div style="flex:1;display:flex;align-items:center;gap:40px">
+    <div style="flex:1">
+      <h2>Built, shipping &amp; <span class="ac">ready to launch</span>.</h2>
+      <div class="card" style="margin-top:18px"><h3>✅ Live today</h3>
+        <div style="display:grid;gap:8px;margin-top:8px">
+          <div class="row" style="gap:10px"><span style="color:var(--em)">●</span><span class="sub">All 5 verticals collecting &amp; delivering daily</span></div>
+          <div class="row" style="gap:10px"><span style="color:var(--em)">●</span><span class="sub">Verification + door-number enrichment pipeline</span></div>
+          <div class="row" style="gap:10px"><span style="color:var(--em)">●</span><span class="sub">Real mail shipped via print partner (orders verified)</span></div>
+          <div class="row" style="gap:10px"><span style="color:var(--em)">●</span><span class="sub">Affiliate programme + rewards engine</span></div>
+          <div class="row" style="gap:10px"><span style="color:var(--em)">●</span><span class="sub">Self-healing infra: uptime watch, auto-heal, backups</span></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:12px;border-color:rgba(251,191,36,.4)"><h3>🎯 The honest bit</h3><div class="sub" style="margin-top:4px"><b style="color:var(--ink)">No paid members yet.</b> The expensive build is done and the free-trial funnel is flowing. This round flips on paid marketing &amp; conversion - that's the definition of a de-risked, early-stage entry.</div></div>
+    </div>
+    <div style="flex:.85">
+      <div class="card"><h3>Sign-up funnel today</h3>
+        <div style="display:grid;gap:10px;margin-top:14px">
+          <div style="display:flex;align-items:center;gap:12px"><span style="width:104px;font-size:12px;color:var(--mut)">Accounts created</span><div style="flex:1;height:34px;border-radius:8px;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.4);display:flex;align-items:center;padding:0 12px;font-weight:800">76</div></div>
+          <div style="display:flex;align-items:center;gap:12px"><span style="width:104px;font-size:12px;color:var(--mut)">Active trials</span><div style="flex:1;height:34px;border-radius:8px;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.4);display:flex;align-items:center;padding:0 12px;font-weight:800;color:#fcd34d">8 firms</div></div>
+          <div style="display:flex;align-items:center;gap:12px"><span style="width:104px;font-size:12px;color:var(--mut)">Paying now</span><div style="flex:1;height:34px;border-radius:8px;background:rgba(148,163,184,.06);border:1px solid var(--line);display:flex;align-items:center;padding:0 12px;font-weight:800;color:var(--dim)">0</div></div>
+        </div>
+        <div class="axis" style="margin-top:8px"><span>warm, self-serve pipeline</span><span>conversion is the round's job</span></div>
+      </div>
+      <div class="card" style="margin-top:14px;text-align:center"><div style="font-size:12px;color:var(--dim)">Any investor can replicate this funnel in 5 minutes:</div><div style="margin-top:6px" class="row center" style="justify-content:center;gap:8px"><span class="tag">Sign up</span><span style="color:var(--cy)">→</span><span class="tag">Watch a delivery</span><span style="color:var(--cy)">→</span><span class="tag">Judge for yourself</span></div></div>
+    </div>
+  </div>
+  <div class="footer"><span>Verification-first pitch: prove it before you back it</span><span class="pnum">09 / 17</span></div>
+</section>
+
+<!-- 10 AFFILIATE ENGINE -->
+<section class="slide">
+  <div class="row" style="justify-content:space-between"><div class="brand"><span class="logo">9</span>9amLeads</div><div class="crumb kbd">The growth engine</div></div>
+  <div style="flex:1;display:flex;align-items:center;gap:50px">
+    <div style="flex:1">
+      <h2>A referral flywheel<br>that <span class="ac">pays to grow us</span>.</h2>
+      <p class="sub" style="margin-top:14px">Businesses, agents and customers refer firms they know. Every warm sign-up feeds straight back into the funnel - and it's an income route for people who need <b style="color:var(--em)">work from home</b>.</p>
+      <div class="grid g2" style="margin-top:18px">
+        <div class="card" style="text-align:center"><div class="big ac" style="font-size:40px">£25</div><div class="dim" style="font-size:13px">per referred sign-up</div></div>
+        <div class="card" style="text-align:center"><div class="big" style="font-size:40px;color:var(--am)">£1,000</div><div class="dim" style="font-size:13px">rewards up to</div></div>
+      </div>
+      <div class="card" style="margin-top:12px"><h3>What referrals see in real time</h3><div class="sub">Instant dashboard alert + email the moment their lead signs up - referrers stay engaged and follow up to close.</div></div>
+    </div>
+    <div style="flex:.85;display:flex;justify-content:center">
+      <svg viewBox="0 0 420 420" width="330" height="330">
+        <defs><linearGradient id="fg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#34d399"/></linearGradient></defs>
+        <circle cx="210" cy="210" r="150" fill="none" stroke="rgba(148,163,184,.16)" stroke-width="1"/>
+        <g fill="none" stroke="url(#fg2)" stroke-width="4" stroke-linecap="round">
+          <path d="M210 60 A150 150 0 0 1 340 120"/><path d="M352 250 A150 150 0 0 1 250 360"/><path d="M70 250 A150 150 0 0 0 170 360"/><path d="M60 120 A150 150 0 0 1 210 60"/>
+        </g>
+        <text x="210" y="44" text-anchor="middle" font-size="13" font-weight="800" fill="#e8eefb">Refer a firm</text>
+        <text x="356" y="205" font-size="13" font-weight="800" fill="#6ee7b7">Earn £25</text>
+        <text x="210" y="406" text-anchor="middle" font-size="13" font-weight="800" fill="#e8eefb">14-day trial</text>
+        <text x="70" y="205" text-anchor="middle" font-size="13" font-weight="800" fill="#7dd3fc">They convert</text>
+        <circle cx="210" cy="210" r="62" fill="#0e1a31" stroke="rgba(148,163,184,.3)"/>
+        <text x="210" y="204" text-anchor="middle" font-size="14" font-weight="900" fill="#34d399">~£0 CAC</text>
+        <text x="210" y="226" text-anchor="middle" font-size="11" fill="#a7b4cf">scaling loop</text>
+      </svg>
+    </div>
+  </div>
+  <div class="footer"><span>The low-CAC lever behind the growth curve</span><span class="pnum">10 / 17</span></div>
+</section>
+
+<!-- 11 GREAT BUSINESS -->
+<section class="slide">
+  <div class="row" style="justify-content:space-between"><div class="brand"><span class="logo">9</span>9amLeads</div><div class="crumb kbd">Why it's a great business</div></div>
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+    <h2>Low-maintenance &amp; <span class="ac">mostly automated</span> - built to scale without a big team.</h2>
+    <div class="grid" style="grid-template-columns:repeat(4,1fr);gap:14px;margin-top:20px">
+      <div class="card"><h3>🔄 Runs itself</h3><div class="sub">Automated collection, enrichment &amp; 9am delivery - daily, hands-free.</div></div>
+      <div class="card"><h3>🧠 Intelligent engine</h3><div class="sub">Five source pipelines, verification and door-number enrichment - one of the UK's most automated lead platforms.</div></div>
+      <div class="card"><h3>🛡️ Self-healing</h3><div class="sub">Uptime watch, auto-heal and automated backups on our own infrastructure.</div></div>
+      <div class="card"><h3>📈 Recurring &amp; upgradable</h3><div class="sub">Weekly subscription cash-flow with natural Starter→Pro→Enterprise growth.</div></div>
+    </div>
+    <div class="card" style="margin-top:16px;padding:18px 22px">
+      <div class="row" style="justify-content:space-between"><h3 style="margin:0">Operational overhead vs typical lead-gen</h3><span class="seis">LOW OVERHEAD</span></div>
+      <div class="hbar" style="margin-top:14px">
+        <div class="r"><span class="lbl">Typical agency / lead-gen</span><div class="track"><div class="fill" style="width:82%;background:linear-gradient(90deg,#475569,#64748b)"></div></div><span class="val dim">high</span></div>
+        <div class="r"><span class="lbl">9amLeads · automated</span><div class="track"><div class="fill" style="width:22%;background:linear-gradient(90deg,var(--cy),var(--em));box-shadow:0 0 16px rgba(52,211,153,.4)"></div></div><span class="val ac">low</span></div>
+      </div>
+      <div class="axis"><span>staff, calling teams, manual sourcing</span><span>software + delivery engine</span></div>
+    </div>
+  </div>
+  <div class="footer"><span>Money goes to growth, not overhead</span><span class="pnum">11 / 17</span></div>
+</section>
+
+<!-- 12 MARKET -->
+<section class="slide">
+  <div class="row" style="justify-content:space-between"><div class="brand"><span class="logo">9</span>9amLeads</div><div class="crumb kbd">Market &amp; opportunity</div></div>
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+    <h2>A deep, underserved niche with <span class="ac">room to dominate</span>.</h2>
+    <div class="grid" style="grid-template-columns:1.05fr .95fr;gap:18px;margin-top:16px">
+      <div>
+        <div class="hbar">
+          <div class="r"><span class="lbl">UK removal firms</span><div class="track"><div class="fill" style="width:58%;background:linear-gradient(90deg,#0ea5e9,#38bdf8)"></div></div><span class="val">~9k</span></div>
+          <div class="r"><span class="lbl">Solicitors / legal</span><div class="track"><div class="fill" style="width:68%;background:linear-gradient(90deg,#0ea5e9,#38bdf8)"></div></div><span class="val">~10k</span></div>
+          <div class="r"><span class="lbl">Builders &amp; trades</span><div class="track"><div class="fill" style="width:100%;background:linear-gradient(90deg,var(--em),#34d399)"></div></div><span class="val">tens of k</span></div>
+          <div class="r"><span class="lbl">Accountants / B2B</span><div class="track"><div class="fill" style="width:100%;background:linear-gradient(90deg,var(--em),#34d399)"></div></div><span class="val">tens of k</span></div>
+        </div>
+        <div class="axis"><span>illustrative UK buyer pools (approx.)</span><span>each a repeat-purchase subscription market</span></div>
+      </div>
+      <div class="card" style="display:flex;flex-direction:column;justify-content:center">
+        <h3>Always-on supply</h3><div class="sub" style="margin-top:6px">~70,000 new companies every month · thousands of moves &amp; probate estates weekly · daily planning &amp; tender flow across the UK.</div>
+        <div style="border-top:1px solid var(--line);margin:14px 0"></div>
+        <h3>Depth-first strategy</h3><div class="sub" style="margin-top:6px">Dominate one vertical &amp; region first, then expand - automation adds new verticals at low marginal cost.</div>
+        <div style="border-top:1px solid var(--line);margin:14px 0"></div>
+        <h3>Ambition</h3><div class="sub" style="margin-top:6px">To be one of the UK's most trusted and best-known fresh-lead platforms.</div>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><span>High-value verticals where "first contact" wins</span><span class="pnum">12 / 17</span></div>
+</section>
+
+<!-- 13 THE ASK -->
+<section class="slide">
+  <div class="row" style="justify-content:space-between"><div class="brand"><span class="logo">9</span>9amLeads</div><div class="crumb kbd">The ask</div></div>
+  <div style="flex:1;display:flex;align-items:center;gap:44px">
+    <div style="flex:1.05">
+      <div class="eyebrow">Seed round</div>
+      <h2>£25,000 for 10%<br><span style="font-size:22px;color:var(--dim);font-weight:600">post-money £250,000 · founder keeps 90%</span></h2>
+      <div class="row wrap" style="gap:9px;margin-top:14px"><span class="seis">SEIS · 50% income-tax relief</span><span class="tag">Ordinary shares</span><span class="tag">No fancy structure</span></div>
+      <div class="card" style="margin-top:16px"><h3>💰 The investor's real cost with SEIS</h3><div class="row" style="gap:22px;margin-top:8px"><div style="text-align:center"><div class="dim" style="font-size:11px">STATED</div><div class="big" style="font-size:38px">£25,000</div></div><div style="font-size:24px;color:var(--dim)">→</div><div style="text-align:center"><div style="font-size:11px;color:var(--em)">AFTER 50% RELIEF</div><div class="big ac" style="font-size:38px">£12,500</div></div></div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px">
+        <div class="card" style="padding:14px"><h3 style="font-size:13px">What it buys</h3><div class="sub" style="font-size:12.5px">Marketing &amp; sales to convert the warm funnel + paid acquisition (~£150 CAC target) → 100 paying by M3, £22.5k/mo revenue (with P&amp;P).</div></div>
+        <div class="card" style="padding:14px"><h3 style="font-size:13px">Why it's a no-brainer entry</h3><div class="sub" style="font-size:12.5px">Try before you invest · product done (build risk gone) · SEIS halves the cost · money funds growth, not salaries · 12-month model + data room provided.</div></div>
+      </div>
+    </div>
+    <div style="flex:.8">
+      <div class="card" style="padding:24px">
+        <h3>Use of funds</h3>
+        <div class="hbar" style="margin-top:12px">
+          <div class="r"><span class="lbl">Digital marketing</span><div class="track"><div class="fill" style="width:48%;background:linear-gradient(90deg,#0ea5e9,#38bdf8)"></div></div><span class="val">£12k</span></div>
+          <div class="r"><span class="lbl">Sales / conversion</span><div class="track"><div class="fill" style="width:32%;background:linear-gradient(90deg,#34d399,#6ee7b7)"></div></div><span class="val">£8k</span></div>
+          <div class="r"><span class="lbl">P&amp;P sampling</span><div class="track"><div class="fill" style="width:12%;background:linear-gradient(90deg,#fbbf24,#fde68a)"></div></div><span class="val">£3k</span></div>
+          <div class="r"><span class="lbl">Contingency</span><div class="track"><div class="fill" style="width:8%;background:linear-gradient(90deg,#a78bfa,#c4b5fd)"></div></div><span class="val">£2k</span></div>
+        </div>
+        <div style="display:flex;justify-content:center;margin-top:12px"><div class="donutwrap" style="width:150px;height:150px;border-radius:50%;background:conic-gradient(var(--cy) 0 48%,var(--em) 48% 80%,var(--am) 80% 92%,var(--vi) 92% 100%);display:flex;align-items:center;justify-content:center;position:relative"><div style="position:absolute;inset:18px;border-radius:50%;background:#0d1526;display:flex;align-items:center;justify-content:center"><b style="font-size:15px">£25k</b></div></div></div>
+        <div class="axis" style="margin-top:10px"><span><span class="swatch" style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--cy)"></span> marketing</span><span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--em)"></span> sales</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><span>£25k sits well inside SEIS limits (company cap £250k lifetime)</span><span class="pnum">13 / 17</span></div>
+</section>
+
+<!-- 14 REASONS TO INVEST -->
+<section class="slide">
+  <div class="row" style="justify-content:space-between"><div class="brand"><span class="logo">9</span>9amLeads</div><div class="crumb kbd">The case for investing</div></div>
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding-top:8px">
+    <h2>14 reasons this is a <span class="ac">no-brainer</span>.</h2>
+    <p class="sub" style="margin:10px 0 20px;max-width:760px">Every claim below is verifiable today: create a free account, watch a real 9am delivery, and read the model yourself.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="card" style="display:flex;gap:12px;align-items:flex-start;padding:13px 16px"><span style="flex-shrink:0;width:28px;height:28px;border-radius:8px;background:rgba(56,189,248,.16);border:1px solid rgba(56,189,248,.4);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;color:#7dd3fc">1</span><div><b style="font-size:14.5px">Try before you back it</b><div class="sub" style="font-size:12.5px">14-day free trial plus a 60-second affiliate sign-up. Verify the real product yourself, first.</div></div></div>
+      <div class="card" style="display:flex;gap:12px;align-items:flex-start;padding:13px 16px"><span style="flex-shrink:0;width:28px;height:28px;border-radius:8px;background:rgba(56,189,248,.16);border:1px solid rgba(56,189,248,.4);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;color:#7dd3fc">2</span><div><b style="font-size:14.5px">Zero build risk</b><div class="sub" style="font-size:12.5px">The platform exists, runs and ships every day. You are not funding research; you are funding launch.</div></div></div>
+      <div class="card" style="display:flex;gap:12px;align-items:flex-start;padding:13px 16px"><span style="flex-shrink:0;width:28px;height:28px;border-radius:8px;background:rgba(56,189,248,.16);border:1px solid rgba(56,189,248,.4);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;color:#7dd3fc">3</span><div><b style="font-size:14.5px">SEIS makes it ~half price</b><div class="sub" style="font-size:12.5px">50% income-tax relief means £25,000 effectively costs ~£12,500, plus CGT benefits on a qualifying exit.</div></div></div>
+      <div class="card" style="display:flex;gap:12px;align-items:flex-start;padding:13px 16px"><span style="flex-shrink:0;width:28px;height:28px;border-radius:8px;background:rgba(56,189,248,.16);border:1px solid rgba(56,189,248,.4);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;color:#7dd3fc">4</span><div><b style="font-size:14.5px">A fair entry price</b><div class="sub" style="font-size:12.5px">£250k post-money for a working, five-vertical B2B SaaS leaves huge headroom on your paper.</div></div></div>
+      <div class="card" style="display:flex;gap:12px;align-items:flex-start;padding:13px 16px"><span style="flex-shrink:0;width:28px;height:28px;border-radius:8px;background:rgba(56,189,248,.16);border:1px solid rgba(56,189,248,.4);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;color:#7dd3fc">5</span><div><b style="font-size:14.5px">Recurring revenue engine</b><div class="sub" style="font-size:12.5px">Weekly subscription cash-flow with natural Starter to Pro to Enterprise upgrades as firms grow.</div></div></div>
+      <div class="card" style="display:flex;gap:12px;align-items:flex-start;padding:13px 16px"><span style="flex-shrink:0;width:28px;height:28px;border-radius:8px;background:rgba(56,189,248,.16);border:1px solid rgba(56,189,248,.4);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;color:#7dd3fc">6</span><div><b style="font-size:14.5px">Two revenue streams</b><div class="sub" style="font-size:12.5px">Print &amp; Post roughly doubles revenue per customer at healthy margins, with real orders shipping today.</div></div></div>
+      <div class="card" style="display:flex;gap:12px;align-items:flex-start;padding:13px 16px"><span style="flex-shrink:0;width:28px;height:28px;border-radius:8px;background:rgba(56,189,248,.16);border:1px solid rgba(56,189,248,.4);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;color:#7dd3fc">7</span><div><b style="font-size:14.5px">A low-CAC growth loop</b><div class="sub" style="font-size:12.5px">The affiliate/staff engine pays £25 per sign-up and rewards up to £1,000, feeding referrals back into the funnel.</div></div></div>
+      <div class="card" style="display:flex;gap:12px;align-items:flex-start;padding:13px 16px"><span style="flex-shrink:0;width:28px;height:28px;border-radius:8px;background:rgba(56,189,248,.16);border:1px solid rgba(56,189,248,.4);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;color:#7dd3fc">8</span><div><b style="font-size:14.5px">Automation means low overhead</b><div class="sub" style="font-size:12.5px">Mostly self-running collection, enrichment and delivery, so scaling does not demand a big team or big burn.</div></div></div>
+      <div class="card" style="display:flex;gap:12px;align-items:flex-start;padding:13px 16px"><span style="flex-shrink:0;width:28px;height:28px;border-radius:8px;background:rgba(56,189,248,.16);border:1px solid rgba(56,189,248,.4);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;color:#7dd3fc">9</span><div><b style="font-size:14.5px">A warm funnel is waiting</b><div class="sub" style="font-size:12.5px">76 accounts and 8 active trials are ready to convert the moment marketing and sales switch on.</div></div></div>
+      <div class="card" style="display:flex;gap:12px;align-items:flex-start;padding:13px 16px"><span style="flex-shrink:0;width:28px;height:28px;border-radius:8px;background:rgba(56,189,248,.16);border:1px solid rgba(56,189,248,.4);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;color:#7dd3fc">10</span><div><b style="font-size:14.5px">A moat across all five verticals</b><div class="sub" style="font-size:12.5px">Five source pipelines, verification and door-number enrichment plus print integration are hard to copy cheaply.</div></div></div>
+      <div class="card" style="display:flex;gap:12px;align-items:flex-start;padding:13px 16px"><span style="flex-shrink:0;width:28px;height:28px;border-radius:8px;background:rgba(56,189,248,.16);border:1px solid rgba(56,189,248,.4);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;color:#7dd3fc">11</span><div><b style="font-size:14.5px">A clean, simple deal</b><div class="sub" style="font-size:12.5px">Ordinary shares, one class, 90/10. No SAFEs, no preference stacks, no surprises in the small print.</div></div></div>
+      <div class="card" style="display:flex;gap:12px;align-items:flex-start;padding:13px 16px"><span style="flex-shrink:0;width:28px;height:28px;border-radius:8px;background:rgba(56,189,248,.16);border:1px solid rgba(56,189,248,.4);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;color:#7dd3fc">12</span><div><b style="font-size:14.5px">Founder-built and lean</b><div class="sub" style="font-size:12.5px">The entire stack was built in-house, so your money funds growth and conversion, not founder salaries.</div></div></div>
+      <div class="card" style="display:flex;gap:12px;align-items:flex-start;padding:13px 16px"><span style="flex-shrink:0;width:28px;height:28px;border-radius:8px;background:rgba(56,189,248,.16);border:1px solid rgba(56,189,248,.4);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;color:#7dd3fc">13</span><div><b style="font-size:14.5px">Radical transparency</b><div class="sub" style="font-size:12.5px">The full 12-month model, data room and honest risks are shared upfront. Ask anything; nothing is hidden.</div></div></div>
+      <div class="card" style="display:flex;gap:12px;align-items:flex-start;padding:13px 16px"><span style="flex-shrink:0;width:28px;height:28px;border-radius:8px;background:rgba(52,211,153,.2);border:1px solid rgba(52,211,153,.5);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;color:#6ee7b7">14</span><div><b style="font-size:14.5px">A mission worth backing</b><div class="sub" style="font-size:12.5px">Helping UK businesses win work, supporting families who need income from home, and creating local jobs.</div></div></div>
+    </div>
+    <div style="margin-top:18px;padding:14px 20px;border-radius:14px;border:1px solid rgba(52,211,153,.4);background:linear-gradient(90deg,rgba(52,211,153,.12),rgba(56,189,248,.07));text-align:center"><b style="color:#d1fae5">The one-liner: for an effective ~£12,500 (after SEIS), you own 10% of a live, automated, five-vertical SaaS with a warm funnel, two revenue streams and a founder who built it all himself.</b></div>
+  </div>
+  <div class="footer"><span>Every reason is verifiable today</span><span class="pnum">14 / 18</span></div>
+</section>
+
+<!-- 14 WHY NOW / CLOSE -->
+<section class="slide">
+  <div class="row" style="justify-content:space-between"><div class="brand"><span class="logo">9</span>9amLeads</div><div class="crumb kbd">Why now</div></div>
+  <div style="flex:1;display:flex;align-items:center;gap:46px">
+    <div style="flex:1.15">
+      <h2>Let's make 9amLeads<br><span class="ac">one of the best</span> in the UK.</h2>
+      <p class="lead" style="margin-top:14px">The product is built and shipping. The missing piece is marketing &amp; sales - exactly what this round funds.</p>
+      <div class="grid g2" style="margin-top:18px">
+        <div class="card"><h3>👀 Verify us first</h3><div class="sub">Create a free customer account or an affiliate account right now - see a real 9am delivery before you decide.</div></div>
+        <div class="card"><h3>🤝 15-minute demo</h3><div class="sub">A live dashboard, a real lead and a real posted letter. No slides required.</div></div>
+      </div>
+      <div class="row" style="gap:12px;margin-top:20px">
+        <a class="btn p" href="https://www.9amleads.com/portal/" target="_blank">Start the free trial ↗</a>
+        <a class="btn g" href="https://www.9amleads.com/portal/affiliate.html" target="_blank">See the affiliate side ↗</a>
+        <a class="btn o" href="mailto:hello@9amleads.com?subject=9amLeads%20investor%20-%20requesting%20data%20room">Request data room</a>
+      </div>
+    </div>
+    <div style="flex:.7">
+      <div class="card" style="text-align:center;padding:24px">
+        <div style="width:118px;height:118px;margin:0 auto 14px;border-radius:50%;overflow:hidden;border:3px solid rgba(56,189,248,.5)"><img src="img/ketan-photo.jpeg" alt="Ketz Mandalia" style="width:100%;height:100%;object-fit:cover"></div>
+        <h3>Ketz Mandalia</h3>
+        <div class="sub">Founder &amp; builder - scrapers, delivery engine, dashboards &amp; print integration all built in-house, single-handedly</div>
+        <div style="margin:10px 0;font-size:13px;color:var(--mut)">hello@9amleads.com · www.9amleads.com</div>
+        <div class="row center" style="justify-content:center"><span class="seis">SEIS-eligible</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><span>9amLeads · £25k for 10% · hello@9amleads.com</span><span class="pnum">14 / 17</span></div>
+</section>
+
+<!-- 15 APPENDIX · FINANCIALS -->
+<section class="slide">
+  <div class="row" style="justify-content:space-between"><div class="brand"><span class="logo">9</span>9amLeads</div><div class="crumb kbd">Appendix · 12-month model</div></div>
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+    <h2 style="font-size:30px">12-month projection <span class="ac">(blended £150 ARPU)</span></h2>
+    <div class="card" style="margin-top:14px;padding:10px 14px;overflow:hidden">
+      <table class="tbl" style="font-size:12px">
+        <tr><th>Month</th><th>New paying</th><th>Total paying</th><th>Subscription /mo</th><th>+ Print &amp; Post</th><th>Total /mo</th></tr>
+        <tr><td>1</td><td>20</td><td>20</td><td>£3,000</td><td>£1,500</td><td>£4,500</td></tr>
+        <tr><td>2</td><td>40</td><td>60</td><td>£9,000</td><td>£4,500</td><td>£13,500</td></tr>
+        <tr><td>3</td><td>40</td><td>100</td><td>£15,000</td><td>£7,500</td><td>£22,500</td></tr>
+        <tr><td>4</td><td>50</td><td>150</td><td>£22,500</td><td>£11,250</td><td>£33,750</td></tr>
+        <tr><td>5</td><td>70</td><td>220</td><td>£33,000</td><td>£16,500</td><td>£49,500</td></tr>
+        <tr><td>6</td><td>80</td><td>300</td><td>£45,000</td><td>£22,500</td><td>£67,500</td></tr>
+        <tr><td>7</td><td>60</td><td>360</td><td>£54,000</td><td>£27,000</td><td>£81,000</td></tr>
+        <tr><td>8</td><td>70</td><td>430</td><td>£64,500</td><td>£32,250</td><td>£96,750</td></tr>
+        <tr><td>9</td><td>70</td><td>500</td><td>£75,000</td><td>£37,500</td><td>£112,500</td></tr>
+        <tr><td>10</td><td>100</td><td>600</td><td>£90,000</td><td>£45,000</td><td>£135,000</td></tr>
+        <tr><td>11</td><td>200</td><td>800</td><td>£120,000</td><td>£60,000</td><td>£180,000</td></tr>
+        <tr><td style="border-top:2px solid var(--cy)"><b>12</b></td><td><b>200</b></td><td><b>1,000</b></td><td><b>£150,000</b></td><td><b>£75,000</b></td><td><b>~£225,000</b></td></tr>
+      </table>
+    </div>
+    <div class="grid g3" style="margin-top:12px">
+      <div class="card" style="padding:14px"><h3 style="font-size:14px">Assumptions</h3><div class="sub" style="font-size:12px">Blended ARPU £150/mo · ~8% early churn improving to ~5% · paid CAC ~£150 in months 1–3, then affiliate engine carries growth.</div></div>
+      <div class="card" style="padding:14px"><h3 style="font-size:14px">Cash &amp; break-even</h3><div class="sub" style="font-size:12px">£25k funds months 1–3 (~100 customers). From M3 the model is strongly cash-positive - growth thereafter is revenue + affiliate funded.</div></div>
+      <div class="card" style="padding:14px"><h3 style="font-size:14px">3-year view</h3><div class="sub" style="font-size:12px">1,000 (Y1) → 3,000 (Y2) → 7,000 (Y3) paying; ~£2m → ~£8m → ~£22m annual revenue (targets; Series A at 2–3k customers).</div></div>
+    </div>
+  </div>
+  <div class="footer"><span>Forward-looking model · full editable spreadsheet available in the data room</span><span class="pnum">15 / 17</span></div>
+</section>
+
+<!-- 16 APPENDIX · RISK -->
+<section class="slide">
+  <div class="row" style="justify-content:space-between"><div class="brand"><span class="logo">9</span>9amLeads</div><div class="crumb kbd">Appendix · Risk &amp; diligence</div></div>
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+    <h2 style="font-size:30px">Risk, honestly handled <span class="ac">before you ask</span>.</h2>
+    <div class="grid" style="grid-template-columns:repeat(3,1fr);gap:14px;margin-top:16px">
+      <div class="card"><h3>⚠️ Source dependency</h3><div class="sub">We rely on sources we don't own. <b style="color:var(--em)">Mitigation:</b> multiple sources per vertical, resilient fallbacks, and a roadmap toward first-party/opt-in data.</div></div>
+      <div class="card"><h3>⚠️ Trial → paid conversion</h3><div class="sub">No paid customers yet. <b style="color:var(--em)">Mitigation:</b> product is self-serve and verifiable; the round funds structured conversion (demos, follow-up, affiliate closes); benchmarks are conservative.</div></div>
+      <div class="card"><h3>⚠️ Competition / copycats</h3><div class="sub">Freshness + door-number quality + integrated print are hard to copy cheaply. <b style="color:var(--em)">Mitigation:</b> depth-first domination, brand + trade-body partnerships, fast iteration.</div></div>
+      <div class="card"><h3>⚠️ Churn assumptions</h3><div class="sub">Model assumes ~8%→5%. <b style="color:var(--em)">Mitigation:</b> weekly billing surfaces issues early; daily value creates habit; upsell path keeps accounts growing.</div></div>
+      <div class="card"><h3>⚠️ Single founder</h3><div class="sub">Built the entire platform solo. <b style="color:var(--em)">Mitigation:</b> automating aggressively + advisory support and a first-hire plan funded by the round's sales budget.</div></div>
+      <div class="card"><h3>⚠️ Small round / valuation</h3><div class="sub">£25k for 10% = £250k post. <b style="color:var(--em)">Mitigation:</b> fair for pre-revenue-with-product; SEIS relief halves investor cost; low burn means the round buys real milestones.</div></div>
+    </div>
+    <div class="row center" style="justify-content:center;margin-top:18px"><span class="tag">Data room: company &amp; legal</span><span class="tag">SEIS pack</span><span class="tag">Financial model (Excel)</span><span class="tag">Live product access</span><span class="tag">References</span></div>
+  </div>
+  <div class="footer"><span>Ask anything - every number is open to scrutiny</span><span class="pnum">16 / 17</span></div>
+</section>
+
+<!-- 17 APPENDIX · HOW TO INVEST -->
+<section class="slide">
+  <div class="row" style="justify-content:space-between"><div class="brand"><span class="logo">9</span>9amLeads</div><div class="crumb kbd">Appendix · How to invest</div></div>
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+    <h2 style="font-size:30px">How to invest - <span class="ac">simple, SEIS-clean</span>.</h2>
+    <div class="grid g2" style="margin-top:16px">
+      <div>
+        <div class="card"><h3>1 · See it</h3><div class="sub">Free trial or affiliate account - or a 15-minute live demo. Verify the product yourself.</div></div>
+        <div class="card" style="margin-top:12px"><h3>2 · Diligence</h3><div class="sub">One-pager, 12-month model (Excel), data room, HMRC SEIS advance assurance. All provided.</div></div>
+        <div class="card" style="margin-top:12px"><h3>3 · Docs</h3><div class="sub">Standard short-form subscription &amp; investment agreement (ordinary shares, SEIS-qualifying). No SAFE, no complexity.</div></div>
+        <div class="card" style="margin-top:12px"><h3>4 · Close</h3><div class="sub">Money lands in the company account; SEIS1 filed; you get SEIS2/3 certificates for your relief claim.</div></div>
+      </div>
+      <div class="card" style="justify-content:center">
+        <h3>Cap table after the round</h3>
+        <table class="tbl" style="margin-top:10px">
+          <tr><th>Shareholder</th><th>Shares</th><th>%</th></tr>
+          <tr><td>Founder</td><td>900</td><td><b>90%</b></td></tr>
+          <tr><td>Investors (£25k)</td><td>100</td><td><b>10%</b></td></tr>
+          <tr><td style="border-top:2px solid var(--cy)"><b>Total</b></td><td><b>1,000</b></td><td><b>100%</b></td></tr>
+        </table>
+        <div class="axis"><span>@ £250/share · all investors one class</span></div>
+        <div style="margin-top:16px;padding:14px;border-radius:12px;border:1px solid rgba(52,211,153,.35);background:rgba(52,211,153,.08)"><div style="font-size:13px;color:#d1fae5"><b>Small tickets welcome:</b> the round can close as one £25k investor or several £2.5–5k cheques - identical terms for everyone.</div></div>
+        <div class="row" style="gap:10px;margin-top:16px"><a class="btn p" href="mailto:hello@9amleads.com?subject=9amLeads%20investor%20-%20requesting%20the%20pitch%20pack" style="flex:1;justify-content:center">Request the pitch pack ↗</a></div>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><span>hello@9amleads.com · www.9amleads.com</span><span class="pnum">17 / 17</span></div>
+</section>
+
+</div></div>
+<div class="dots" id="dots"></div>
+<div class="navhint">← → / space navigate · print (Ctrl/Cmd+P) to PDF</div>
+
+<script>
+  // Auto-load real product screenshots if present (img/shot-*.png)
+  [['shot1','img/shot-dashboard.png'],['shot2','img/shot-lead.png'],['shot3','img/shot-mail.png']].forEach(function(pair){
+    var img=new Image();
+    img.onload=function(){var el=document.getElementById(pair[0]);if(el){el.innerHTML='';el.appendChild(img);}};
+    img.src=pair[1];
+  });
+  // Scroll progress bar
+  var bar=document.getElementById('scrollprogress');
+  function onScroll(){
+    var h=document.documentElement.scrollHeight-window.innerHeight;
+    var p=h>0?(window.scrollY/h*100):0;
+    if(bar)bar.style.width=p+'%';
+  }
+  document.addEventListener('scroll',onScroll,{passive:true});
+  window.addEventListener('resize',onScroll);
+  onScroll();
+  // Auto number the slides (footer page numbers)
+  (function(){
+    var pn=Array.prototype.slice.call(document.querySelectorAll('.pnum'));
+    pn.forEach(function(el,k){
+      el.textContent=String(k+1).padStart(2,'0')+' / '+pn.length;
+    });
+  })();
+</script>
+</body>
+</html>
