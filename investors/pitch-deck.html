@@ -108,6 +108,53 @@
   }
   @media print{.slide{min-height:auto;page-break-after:always;break-after:page;max-width:none}#scrollprogress{display:none}}
 </style>
+<style>
+  /* ===== TRUE MOBILE/ TABLET LAYOUT ===== */
+  @media screen and (max-width:900px){
+    .slide{padding:44px 20px 50px!important;min-height:auto}
+    h1{font-size:clamp(31px,9vw,46px)!important;line-height:1.05}
+    h2{font-size:clamp(25px,6.8vw,34px)!important}
+    .eyebrow{letter-spacing:.14em}
+    .lead{font-size:16.5px}
+    .sub{font-size:14.5px}
+    .card{padding:14px 13px}
+    /* Stack every card grid and every wide two-column split */
+    .grid,.grid.g2,.grid.g3,div[class*="grid"],
+    div[style*="grid-template-columns"],
+    div[style*="flex:1;display:flex"]{grid-template-columns:1fr!important;flex-direction:column!important;align-items:stretch!important;gap:12px!important}
+    /* But keep compact stat/plan tiles at 2-up instead of one long column */
+    section div[style*="repeat(4,1fr)"],section div[style*="repeat(3,1fr)"]{grid-template-columns:repeat(2,1fr)!important;gap:10px!important}
+    .stepflow{flex-direction:column}
+    .stepflow .arrow{transform:rotate(90deg);justify-content:center;padding:2px 0}
+    .row.wrap{width:100%}
+    .row.wrap .tag{flex:1 1 auto}
+    .btn{flex:1;justify-content:center;text-align:center}
+    .hbar .lbl{width:auto;text-align:left}
+    .hbar .r{flex-wrap:wrap}
+    .hbar .val{width:auto}
+    .tbl{display:block;overflow-x:auto;white-space:nowrap}
+    .metric{min-width:0}
+    .metric .num{font-size:24px!important}
+    .seis{white-space:normal}
+    svg{max-width:100%;height:auto}
+    .shot{height:auto}
+    .big{font-size:34px!important}
+    .footer{flex-direction:column;align-items:flex-start;row-gap:5px}
+    .dots,.navhint{display:none!important}
+  }
+  @media screen and (max-width:560px){
+    .slide{padding:34px 14px 40px}
+    h1{font-size:clamp(27px,8.5vw,34px)!important}
+    h2{font-size:clamp(22px,6.2vw,28px)!important}
+    .lead{font-size:15.5px}
+    .topbar{flex-direction:column;align-items:flex-start;row-gap:8px}
+    .topbar .seis{font-size:10px}
+    .card{border-radius:13px}
+    .tag{font-size:11px;padding:6px 9px}
+    section div[style*="repeat(4,1fr)"]{grid-template-columns:repeat(2,1fr)!important}
+  }
+  @media print{.slide{min-height:auto;page-break-after:always;break-after:page;max-width:none}}
+</style>
 </head>
 <body>
 <div id="scrollprogress"></div>
