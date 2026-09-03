@@ -130,8 +130,17 @@ footer a{color:var(--accent);text-decoration:underline}
 <a href="/portal/direct-mail.html" class="btn btn-primary" style="white-space:nowrap"><i class="fas fa-envelope-open-text"></i> Print &amp; Post</a>
 </div>
 
-<div class="grid-3">
-<a href="/portal/leads.html?range=today" title="View today's leads" style="text-decoration:none;color:inherit;display:block"><div class="card stat"><div class="icon" style="background:#eff6ff;color:var(--accent)">📊</div><div class="num" id="kpi-today">0</div><div class="lbl">Leads Today</div></div></a>
+<div style="margin-bottom:6px">
+<a href="/portal/leads.html?range=today" style="text-decoration:none;color:inherit;display:block">
+<div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:14px;padding:18px 22px;flex-wrap:wrap">
+<div style="display:flex;align-items:center;gap:16px">
+<div class="icon" style="background:#eff6ff;color:var(--accent)">📊</div>
+<div><div class="lbl" style="font-size:13px;color:var(--muted)">Leads delivered today</div><div class="num" id="kpi-today" style="font-size:36px;line-height:1">0</div></div>
+</div>
+<div style="font-size:13px;color:var(--accent);font-weight:700"><i class="fas fa-arrow-right"></i> View today's leads</div>
+</div>
+</a>
+<div id="today-preview" style="font-size:13px;color:var(--text2);margin:8px 2px 20px"></div>
 </div>
 
 <!-- QUICK TIPS (rotating, helps conversion) -->
@@ -1909,6 +1918,18 @@ document.querySelectorAll('.modal').forEach(function(m){
         _seenT[k]=1; return true;
       });
       var _kt=document.getElementById('kpi-today'); if(_kt) _kt.textContent = tl.length;
+      // Fill the space under the Today card with a preview of today's delivered leads.
+      var _pv = document.getElementById('today-preview');
+      if (_pv) {
+        try {
+          var _items = tl.slice(0, 5).map(function(l){ var d=(typeof l.data==='string')?{}:l.data; try{ if(typeof l.data==='string') d=JSON.parse(l.data); }catch(e){} return String(d.fullAddress || d.address || '').trim(); }).filter(Boolean);
+          if (_items.length) {
+            _pv.innerHTML = '<div style="color:#64748b;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Delivered today</div>' + _items.map(function(a){ return '<div style="padding:6px 2px;border-bottom:1px dashed #e2e8f0">' + a + '</div>'; }).join('') + '<div style="padding:6px 2px"><a href="/portal/leads.html?range=today" style="color:var(--accent);font-weight:700">See all today\u2019s leads \u2192</a></div>';
+          } else {
+            _pv.innerHTML = '<div style="background:#f8fafc;border:1px dashed #cbd5e1;border-radius:10px;padding:14px 16px;color:#64748b">Your next delivery is <b>tomorrow at 9am</b>. Today\u2019s leads, once delivered, appear here.</div>';
+          }
+        } catch(_pve) { _pv.innerHTML = ''; }
+      }
     } catch(e) {}
   };
   x.send();
