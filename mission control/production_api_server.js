@@ -529,7 +529,15 @@ var COUNTY_POSTCODE_MAP = {
   'yorkshire':['BD','HD','HG','HU','HX','LS','S','WF','YO'],'yorkshire-and-the-humber':['BD','HD','HG','HU','HX','LS','S','WF','YO'],
   'east-midlands':['DE','DN','LE','LN','NG','NN','PE'],'west-midlands-region':['B','CV','DY','HR','ST','SY','TF','WR','WS','WV'],
   'east-of-england':['AL','CB','CM','CO','HP','IP','LU','NR','PE','SG','SS'],  'south-east':['BN','CT','DA','GU','HP','KT','ME','MK','OX','PO','RG','RH','SL','SN','SO','SS','TN','TW'],
-  'south-west':['BA','BS','DT','EX','GL','PL','SN','SP','TA','TQ','TR'],'wales':['CF','LD','LL','NP','SA','SY']
+  'south-west':['BA','BS','DT','EX','GL','PL','SN','SP','TA','TQ','TR'],'wales':['CF','LD','LL','NP','SA','SY'],
+  // Additional county/area keys the signup picker offers for probate/planning/newbusiness
+  // (e.g. Merseyside, North Yorkshire). Kept in sync with the front-end county list so a
+  // chosen county both validates AND matches leads by its postcode areas.
+  'merseyside':['L','CH'],'north-yorkshire':['YO','HG','DL'],'south-yorkshire':['S','DN'],
+  'greater-manchester':['M','OL','BL','SK','WA','WN'],'west-yorkshire':['LS','WF','BD','HD','HX'],
+  'tyne-and-wear':['NE','SR'],'west-midlands':['B','CV','DY','WS','WV','WR','ST'],
+  'derbyshire':['DE','SK'],'durham':['DH','DL'],'isle-of-wight':['PO'],'leicestershire':['LE'],
+  'lincolnshire':['LN','DN','PE'],'northamptonshire':['NN'],'nottinghamshire':['NG','DN'],'rutland':['LE','PE']
 };
 
 // Approximate UK postcode-AREA centroids (lat, lng). Used ONLY to rank the delivery
