@@ -151,6 +151,39 @@ document.addEventListener('DOMContentLoaded', __showByHash);
 window.addEventListener('hashchange', __showByHash);
 __showByHash();
 </script>
+<script>
+// Email-verification result handling: after the verify link (…/?verified=true) the
+// portal should show the LOGIN form with a clear confirmation, not a blank signup
+// page. Also surface verification error states from the redirect.
+(function () {
+  function applyVerifyResult() {
+    var q = new URLSearchParams(window.location.search || '');
+    var sf = document.getElementById('signup-form'), lf = document.getElementById('login-form');
+    if (q.get('verified') === 'true') {
+      if (sf && lf) { sf.style.display = 'none'; lf.style.display = 'block'; }
+      try { window.location.hash = '#login'; } catch (e) {}
+      var ok = document.getElementById('login-ok');
+      if (!ok) {
+        ok = document.createElement('div');
+        ok.id = 'login-ok';
+        ok.style.cssText = 'background:#dcfce7;border:1px solid #86efac;color:#166534;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:10px;font-weight:600';
+        var le = document.getElementById('login-error');
+        if (le) le.parentNode.insertBefore(ok, le);
+        else if (lf) lf.insertBefore(ok, lf.firstChild);
+      }
+      ok.textContent = '✓ Email verified! Your account is confirmed — please sign in below.';
+    }
+    var err = q.get('error');
+    if (err) {
+      var msgs = { missing_token: 'That link is missing its verification token. Please log in or email us for help.', invalid_token: 'That verification link is invalid or has already been used. Please log in — if you still see a verification prompt, email us and we will sort it.', server_error: 'Something went wrong verifying your email. Email us and we will fix it right away.' };
+      var se = document.getElementById('signup-error');
+      if (se) { se.textContent = msgs[err] || ('Verification issue: ' + err); se.style.display = 'block'; }
+    }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyVerifyResult);
+  else applyVerifyResult();
+})();
+</script>
 <div style="position:fixed;top:16px;left:24px;z-index:10">
 <a href="/" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;color:#8890a8;font-size:12px;font-weight:600;text-decoration:none;border-radius:8px;background:rgba(14,165,233,0.03);border:1px solid rgba(14,165,233,0.08)"><i class="fas fa-arrow-left" style="font-size:10px"></i> 9amLeads</a>
 </div>
