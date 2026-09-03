@@ -1251,9 +1251,16 @@ var pLimit = getPostcodeAreaLimit();
         .then(function(cd) { if (cd.url) window.location.href = cd.url; else window.location.href = '/portal/dashboard.html?onboard=1'; })
         .catch(function() { window.location.href = '/portal/dashboard.html?onboard=1'; sessionStorage.setItem('login_token', d.token); });
       } else {
-        // Redirect to dashboard onboarding - card setup happens there
+        // Free trial: remind the customer to click the verification email we just sent,
+        // then take them to their dashboard (card setup happens there).
         localStorage.removeItem('payment_setup_done');
-        window.location.href = '/portal/dashboard.html?onboard=1';
+        if (d.customer && d.customer.email_verified === 0) {
+          success.innerHTML = '<b>Account created!</b> We\'ve emailed a verification link to <b>' + email + '</b> — please click it (check spam too) to activate your account.<br/><br/><button onclick="resendVerify(\'' + email.replace(/'/g,'') + '\')" style="padding:8px 14px;border:none;border-radius:8px;background:#0ea5e9;color:#fff;font-size:12px;font-weight:700;cursor:pointer">Re-send verification email</button>';
+        } else {
+          success.innerHTML = 'Account created! Redirecting...';
+        }
+        button.innerHTML = '<i class="fas fa-check"></i> Redirecting...';
+        setTimeout(function() { window.location.href = '/portal/dashboard.html?onboard=1'; }, 2000);
       }
     } else {
       error.textContent = d.error || 'Signup failed. Please try again.'; error.style.display = 'block';
@@ -1282,8 +1289,29 @@ function doLogin() {
         var custProducts = d.customer?.products || (d.customer?.biz_field3 ? (function(){ try { return JSON.parse(d.customer.biz_field3); } catch(e){ return [d.customer.product]; } })() : [d.customer?.product || 'moving']);
         localStorage.setItem('mld_portal_session', JSON.stringify({ token:d.token, clientId:d.customer?.id || email, name:d.customer?.name || email, plan:d.customer?.plan || 'free_trial', email:email, product:d.customer?.product || 'moving', products:custProducts }));
         window.location.href = '/portal/dashboard.html?onboard=1';
-      } else { error.style.display = 'block'; }
+      } else {
+        error.style.display = 'block';
+        if (d && d.needsVerification) {
+          error.innerHTML = 'Please verify your email first. We emailed a verification link to <b>' + (d.email || email) + '</b> — check your inbox and spam, then click the link.<br/><br/><button onclick="resendVerify(\'' + email.replace(/'/g,'') + '\')" style="padding:8px 14px;border:none;border-radius:8px;background:#0ea5e9;color:#fff;font-size:12px;font-weight:700;cursor:pointer">Re-send verification email</button>';
+        } else if (d && d.error) { error.textContent = d.error; }
+      }
     }).catch(function() { error.style.display = 'block'; });
+}
+
+function resendVerify(email) {
+  var e = document.getElementById('login-error');
+  e.style.display = 'block';
+  e.innerHTML = 'Sending...';
+  var em = email || (document.getElementById('l-email') ? document.getElementById('l-email').value.trim().toLowerCase() : '');
+  fetch(API + '/api/auth/resend-verification', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: em }) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      e.style.display = 'block';
+      if (d.already_verified) e.innerHTML = 'Your email is already verified — you can sign in now.';
+      else if (d.success) e.innerHTML = 'Verification email re-sent to <b>' + em + '</b> — check your inbox and spam, then click the link to activate.';
+      else e.innerHTML = d.error || 'Could not re-send. Email us at hello@9amleads.com for help.';
+    })
+    .catch(function() { e.innerHTML = 'Could not re-send. Email us at hello@9amleads.com for help.'; });
 }
 
 function showLogin() { document.getElementById('signup-form').style.display='none'; document.getElementById('login-form').style.display='block'; setHeroView('login'); }

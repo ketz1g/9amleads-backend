@@ -5312,6 +5312,24 @@ app.get('/api/auth/verify-email', async (req, res) => {
   }
 });
 
+// POST /api/auth/resend-verification — re-send the "Verify your account" email (new token)
+// so a customer who missed or lost the first one can activate and sign in.
+app.post('/api/auth/resend-verification', async (req, res) => {
+  try {
+    var emailR = String((req.body && req.body.email) || '').toLowerCase().trim();
+    if (!emailR) return res.status(400).json({ error: 'Email required' });
+    var customerR = db.prepare('SELECT * FROM customers WHERE email = ?').get(emailR);
+    if (!customerR) return res.status(404).json({ error: 'No account found for that email. Check you typed it correctly, or create a new account.' });
+    if (customerR.email_verified === 1) return res.json({ success: true, already_verified: true });
+    var ntok = require('crypto').randomBytes(32).toString('hex');
+    db.prepare('UPDATE customers SET verification_token = ? WHERE id = ?').run(ntok, customerR.id);
+    saveDb();
+    var vUrlR = PUBLIC_URL.replace(/\/+$/, '') + '/api/auth/verify-email?token=' + ntok;
+    await sendBrevoEmail({ email: customerR.email, name: customerR.contact_name || customerR.company }, 'Verify your 9amLeads account', '<div style="font-family:Inter,Arial,Helvetica,sans-serif;background:#f1f5f9;color:#1e293b;padding:28px 20px"><div style="max-width:600px;margin:0 auto"><table width="100%" cellpadding="0" cellspacing="0"><tbody>' + buildEmailHeader() + '<tr><td style="background:#ffffff;padding:28px 30px;color:#1e293b;text-align:center"><h2 style="font-size:20px;font-weight:800;color:#0f172a;margin:0 0 12px;text-align:center">Verify your email address</h2><p style="font-size:14px;color:#475569;line-height:1.7;margin:0 0 16px;text-align:center">Click the button below to confirm your email and activate your 9amLeads account:</p><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 16px"><a href="' + vUrlR + '" style="display:inline-block;padding:12px 32px;background-color:#0ea5e9;color:#ffffff;text-decoration:none;border-radius:50px;font-size:14px;font-weight:700">Verify Email</a></td></tr></table><p style="font-size:12px;color:#64748b;line-height:1.6;margin:0">If the button doesn\'t work, copy and paste this link into your browser:<br/><span style="color:#0ea5e9;word-break:break-all">' + vUrlR + '</span></p></td></tr>' + buildEmailFooter() + '</tbody></table></div></div>');
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/auth/login
 app.post('/api/auth/login', async (req, res) => {
   try {
