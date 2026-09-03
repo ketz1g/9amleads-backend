@@ -472,24 +472,10 @@ document.addEventListener('DOMContentLoaded', function(){
 
 <!-- Your Activity -->
 <div class="card" id="activity-card">
-<div class="sect-title"><i class="fas fa-bolt" style="color:var(--accent)"></i> Your Activity <span style="margin-left:auto;font-size:11px;color:var(--text2)" id="activity-updated">Updated just now</span></div>
-<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">
-<div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center">
-<div style="font-size:22px;font-weight:800;font-family:var(--ff-h);color:var(--accent)" id="act-leads-today">0</div>
-<div style="font-size:10px;color:var(--muted);font-weight:600">LEADS TODAY</div>
-</div>
-<div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center">
-<div style="font-size:22px;font-weight:800;font-family:var(--ff-h);color:var(--success)" id="act-leads-week">0</div>
-<div style="font-size:10px;color:var(--muted);font-weight:600">THIS WEEK</div>
-</div>
-<div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center">
-<div style="font-size:22px;font-weight:800;font-family:var(--ff-h);color:#8b5cf6" id="act-leads-month">0</div>
-<div style="font-size:10px;color:var(--muted);font-weight:600">THIS MONTH</div>
-</div>
-</div>
+<div class="sect-title"><i class="fas fa-bolt" style="color:var(--accent)"></i> Your Activity</div>
 <div id="activity-list" style="display:grid;gap:8px"></div>
 <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-<a href="/portal/leads.html" class="btn btn-primary btn-sm" style="flex:1;justify-content:center"><i class="fas fa-arrow-right"></i> View All My Leads</a>
+<a href="/portal/leads.html?range=today" class="btn btn-primary btn-sm" style="flex:1;justify-content:center"><i class="fas fa-arrow-right"></i> View All My Leads</a>
 <button class="btn btn-outline btn-sm" onclick="showModal('settings-modal');return false" style="flex:1;justify-content:center"><i class="fas fa-cog"></i> Plan &amp; Payments</button>
 </div>
 </div>
@@ -1789,17 +1775,13 @@ function loadActivity() {
     live = live.filter(function(l){ var d=(typeof l.data==='string')?null:l.data; try{ if(typeof l.data==='string') d=JSON.parse(l.data); }catch(e){} var u=String(d&&d.url||'').split('#')[0].split('?')[0].replace(/\/+$/,'').toLowerCase(); var a=String(d&&d.fullAddress||d&&d.address||'').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,28); var pc=String(d&&d.postcode||'').toUpperCase().replace(/[^A-Z0-9]/g,''); var k=u||(a+'|'+pc); if(!k) return true; if(_seenAct[k]) return false; _seenAct[k]=true; return true; });
     var todayN = live.filter(function(l){ return (l.delivered_at||'').startsWith(todayStr); }).length;
     var weekN = live.filter(function(l){ return (l.delivered_at||'') >= weekStart; }).length;
-    var monthN = live.filter(function(l){ return (l.delivered_at||'').startsWith(monthStr); }).length;
-    document.getElementById('act-leads-today').textContent = todayN;
-    document.getElementById('act-leads-week').textContent = weekN;
-    document.getElementById('act-leads-month').textContent = monthN;
 
     // AREA-HEALTH BANNER: if the last 7 days delivered well below the promised
     // daily count, suggest the customer update their areas/postcodes for a better
     // mix (keeps them getting full value + reduces churn).
     try {
       var lpd = parseInt((typeof _myUser !== 'undefined' && _myUser.leads_per_day) || (typeof window.__userLpd !== 'undefined' && window.__userLpd) || 5, 10);
-      var weekDelivered = leads.filter(function(l){ return l.delivered_at && l.delivered_at >= weekStart.toISOString(); }).length;
+      var weekDelivered = leadsList.filter(function(l){ return l.delivered_at && l.delivered_at >= weekStart; }).length;
       var expected = lpd * 7;
       var banner = document.getElementById('area-health-banner');
       if (banner && expected > 0 && weekDelivered < Math.round(expected * 0.8)) {
