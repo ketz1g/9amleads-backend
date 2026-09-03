@@ -41,13 +41,11 @@ Having AA **before** talking to angels is the single biggest close-rate lever fo
 - **Use of funds:**
 | Use | % | Amount |
 |---|---|---|
-| Social media marketing | 12% | £3,000 |
-| Email campaigns | 10% | £2,500 |
-| Flyer campaigns to newly formed businesses | 12% | £3,000 |
-| Boosting SEO + PPC | 12% | £3,000 |
-| Advertising to recruit affiliates | 10% | £2,500 |
-| Buying backlinks | 12% | £3,000 |
-| Business events & shows | 12% | £3,000 |
+| Social media marketing | 18% | £4,500 |
+| Email campaigns | 14% | £3,500 |
+| Flyer campaigns to newly formed businesses | 18% | £4,500 |
+| Boosting SEO + PPC | 18% | £4,500 |
+| Advertising to recruit affiliates | 12% | £3,000 |
 | Founder personal costs + running/maintaining the business | 20% | £5,000 |
 - **Risk to capital:** funds are spent on marketing/sales to convert the existing trial pipeline (~50 trial + 8 paying-trial accounts); returns depend on customer acquisition and retention — there is no asset backing or guaranteed return.
 
