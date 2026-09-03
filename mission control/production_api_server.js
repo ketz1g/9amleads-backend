@@ -4991,7 +4991,7 @@ app.post('/api/auth/signup', async (req, res) => {
     }
     // PROBATE USES AREAS (counties/regions), NOT postcodes — probate supply is
     // national and sparse, so a single postcode area starves the customer. Enforce
-    // county/region selection at sign-up (min 3, as many as they like).
+    // county/region selection at sign-up (min 2, as many as they like).
     if (product === 'probate' && !(ukAreas || coverage === 'ukwide')) {
       var probateRegionsS = ['East Midlands','East of England','London','North East','North West','South East','South West','West Midlands','Yorkshire and the Humber'];
       var badPAreas = areas.filter(function(a) {
@@ -4999,7 +4999,7 @@ app.post('/api/auth/signup', async (req, res) => {
         return !COUNTY_POSTCODE_MAP[k] && probateRegionsS.indexOf(a) === -1;
       });
       if (badPAreas.length) {
-        return res.status(400).json({ error: 'For probate leads, choose UK counties or regions (e.g. Kent, Greater London, South West), not single postcodes. Please pick at least 3 areas.' });
+        return res.status(400).json({ error: 'For probate leads, choose UK counties or regions (e.g. Kent, Greater London, South West), not single postcodes. Please pick at least 2 areas.' });
       }
       coverage = 'county';
     }
@@ -7175,8 +7175,8 @@ app.post('/api/auth/update-areas', authMiddleware, (req, res) => {
     if (!isPaidUnlimited && prodKey === 'moving' && clean.length < maxAreas) {
       return res.status(400).json({ error: 'Moving leads require exactly ' + maxAreas + ' postcode areas (you selected ' + clean.length + ').', too_few_areas: true, max_areas: maxAreas });
     }
-    if (!isPaidUnlimited && prodKey !== 'moving' && clean.length > 0 && clean.length < 3) {
-      return res.status(400).json({ error: 'Please keep at least 3 areas or counties for your ' + prodKey + ' leads (you selected ' + clean.length + ').', too_few_areas: true, min_areas: 3 });
+    if (!isPaidUnlimited && prodKey !== 'moving' && clean.length > 0 && clean.length < (prodKey === 'probate' || prodKey === 'tenders' ? 2 : 3)) {
+      return res.status(400).json({ error: 'Please keep at least ' + (prodKey === 'probate' || prodKey === 'tenders' ? 2 : 3) + ' areas or counties for your ' + prodKey + ' leads (you selected ' + clean.length + ').', too_few_areas: true, min_areas: (prodKey === 'probate' || prodKey === 'tenders' ? 2 : 3) });
     }
     // Coverage: infer from the chosen areas. Postcode-area codes (1-2 letters)
     // => 'postcode'; anything else (county/region names) => 'county'. This also
@@ -8463,10 +8463,10 @@ app.put('/api/settings', authMiddleware, (req, res) => {
     // PROBATE USES AREAS (counties/regions), NOT postcodes — probate supply is
     // national so a county/region gives a steady daily flow, whereas a single
     // postcode area starves the customer (probate is sparse). Enforce county/region
-    // selection and a minimum of 3 areas here (and on sign-up).
+    // selection and a minimum of 2 areas here (and on sign-up).
     if (customer.product === 'probate') {
-      if (!Array.isArray(target_areas) || target_areas.length < 3) {
-        return res.status(400).json({ error: 'Please choose at least 3 areas (counties or regions). You can select as many as you like.' });
+      if (!Array.isArray(target_areas) || target_areas.length < 2) {
+        return res.status(400).json({ error: 'Please choose at least 2 areas (counties or regions). You can select as many as you like.' });
       }
       var probateRegions = ['East Midlands','East of England','London','North East','North West','South East','South West','West Midlands','Yorkshire and the Humber'];
       var badPAreas = target_areas.filter(function(a) {

@@ -445,7 +445,7 @@ function updateMovingTypeLabel() {
   <div class="ar">
     <select id="s-county-select" style="width:100%;padding:9px 12px;background:#1e2030;border:1px solid #2a2d42;border-radius:6px;font-size:12px;color:#e2e8f0;font-family:inherit" onchange="addSpecialistCounty(this.value)"><option value="">Choose a county or area...</option></select>
   </div>
-  <div style="font-size:10px;color:#6b7280;line-height:1.6;margin-top:6px">New business, planning, probate and tenders leads are matched by county/area. Select at least 3 areas (2 for tenders) or choose All UK for best coverage &mdash; Pro &amp; Enterprise can go UK-wide.</div>
+  <div style="font-size:10px;color:#6b7280;line-height:1.6;margin-top:6px">New business, planning, probate and tenders leads are matched by county/area. Select at least 3 areas (2 for Probate &amp; Tenders) or choose All UK for best coverage &mdash; Pro &amp; Enterprise can go UK-wide.</div>
   <div style="font-size:10px;color:#6b7280;line-height:1.6;margin-top:6px"><b>&#8505;&#65039; Quiet days:</b> Lead availability varies by county. If no fresh leads are available in your exact chosen areas on any day, we deliver the leads <b>closest to your chosen areas</b> so you still receive your full daily count &mdash; never fewer than promised. See our Terms for full details.</div>
 </div>
 
@@ -865,18 +865,19 @@ function populateCountySelect() {
   // TENDERS: ONLY the 6 broad UK regions (+ All UK) — no individual counties.
   // Tenders are national opportunities, so a whole region (or All UK) gives the
   // customer the widest possible coverage instead of town/county-level limits.
-  // Other county products (planning/probate/newbusiness) keep counties + regions.
-  var regionOpts = [
-    'London','South England','East of England','West England','North England','Scotland','Wales','Northern Ireland'
-  ];
+  // PROBATE: counties + the official English regions the backend accepts (min 2).
+  // Planning/newbusiness: counties + broad regions (min 3).
+  var regionOpts = prod === 'probate'
+    ? ['East Midlands','East of England','London','North East','North West','South East','South West','West Midlands','Yorkshire and the Humber']
+    : ['London','South England','East of England','West England','North England','Scotland','Wales','Northern Ireland'];
   var regionHtml = regionOpts.map(function(r) {
-    return '<option value="' + r + '">' + r + '  · whole region</option>';
+    return '<option value="' + r + '">' + r + '  · ' + (prod === 'probate' ? 'region' : 'whole region') + '</option>';
   }).join('');
   var minSpan = document.getElementById('s-county-min'); if (minSpan) minSpan.textContent = (prod === 'tenders' || prod === 'probate') ? '2' : '3';
-  if (prod === 'tenders' || prod === 'probate') {
+  if (prod === 'tenders') {
     sel.innerHTML = '<option value="">Choose a region...</option>' + regionHtml + '<option value="all-uk">All UK</option>';
   } else {
-    sel.innerHTML = '<option value="">Choose a county, area or region...</option>' + regionHtml + SPECIALIST_COUNTIES.map(function(c) {
+    sel.innerHTML = '<option value="">Choose a county or region...</option>' + regionHtml + SPECIALIST_COUNTIES.map(function(c) {
       var count = _competitionAreas[c] || 0;
       var shared = count > 0 ? '  · shared with ' + count : '';
       return '<option value="' + c + '">' + c + shared + '</option>';
@@ -1184,7 +1185,7 @@ var pLimit = getPostcodeAreaLimit();
   // free/starter. these products use counties/areas, not postcodes.
   var countyMin2 = (getSelectedLeadTypes().indexOf('tenders') !== -1 || getSelectedLeadTypes().indexOf('probate') !== -1) ? 2 : 3;
   if (isCountyBased() && selectedCoverage !== 'ukwide' && targetAreas.length < countyMin2 && getPostcodeAreaLimit() < 999) {
-    document.getElementById('signup-error').textContent = 'Planning, Probate and Tenders use counties/areas. Please select at least 3 ' + areaLabelText() + ' (you selected ' + targetAreas.length + ').';
+    document.getElementById('signup-error').textContent = 'Planning, Probate and Tenders use counties/areas. Please select at least ' + countyMin2 + ' ' + areaLabelText() + ' (you selected ' + targetAreas.length + ').';
     document.getElementById('signup-error').style.display = 'block'; button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false; return;
   }
   var planRadio = document.querySelector('#s-plan-container input[type=radio]:checked');
