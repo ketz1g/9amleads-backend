@@ -135,6 +135,7 @@ tbody tr:hover td{background:#f8fafc}
 </div>
 </div>
 
+<div id="aff-verify-alert" style="margin-bottom:14px"></div>
 <div class="stats-grid" id="statsGrid"><div class="loading">Loading stats...</div></div>
 
 <div class="card" style="margin-bottom:18px">
@@ -1028,6 +1029,31 @@ function planBadge(plan) {
   return 'badge-paid';
 }
 
+// Overview alert: surface affiliate ID verifications / applications needing attention.
+function loadAffiliateVerifyAlert() {
+  var el = document.getElementById('aff-verify-alert');
+  if (!el) return;
+  fetch(API + '/api/admin/affiliates?t=' + Date.now(), { headers: adminHeaders() })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var needVerify = (d.affiliates || []).filter(function(a) { return a.kyc && a.kyc.status === 'pending_review'; });
+      var needApp = (d.affiliates || []).filter(function(a) { return a.status === 'pending'; });
+      var html = '';
+      needVerify.forEach(function(a) {
+        html += '<div style="background:#fffbeb;border:1px solid #f59e0b;border-radius:12px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">' +
+          '<div style="flex:1;min-width:200px"><b>🔎 Affiliate ID needs verifying:</b> ' + esc(a.name) + ' (' + esc(a.email) + ') <span style="color:#d97706;font-weight:700">· Verification pending</span></div>' +
+          '<button class="btn btn-sm" style="background:#f59e0b;color:#fff" onclick="switchTab(\'affiliates\');setTimeout(function(){reviewKyc(\'' + a.id + '\');},250)">Review ID</button></div>';
+      });
+      needApp.forEach(function(a) {
+        html += '<div style="background:#eff6ff;border:1px solid #0ea5e9;border-radius:12px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">' +
+          '<div style="flex:1;min-width:200px"><b>📝 New affiliate application:</b> ' + esc(a.name) + ' (' + esc(a.email) + ')</div>' +
+          '<button class="btn btn-sm" style="background:#0ea5e9;color:#fff" onclick="switchTab(\'affiliates\')">Review application</button></div>';
+      });
+      el.innerHTML = html;
+    })
+    .catch(function() { el.innerHTML = ''; });
+}
+
 async function loadData() {
   try {
     const statsResp = await fetch(API + '/api/admin/stats?t=' + Date.now(), { headers: adminHeaders() });
@@ -1062,6 +1088,7 @@ async function loadData() {
     loadFulfilment();
     loadHealth();
     loadAnalytics();
+    loadAffiliateVerifyAlert();
   } catch (e) {
     var badgeEl = document.getElementById('custCountBadge'); if (badgeEl) badgeEl.textContent = (stats.total_customers||0);
     var labelEl = document.getElementById('custCountLabel'); if (labelEl) labelEl.textContent = '(' + (stats.total_customers||0) + ' total). Everyone with an account on 9amLeads';
