@@ -4807,11 +4807,15 @@ app.use(express.static(FRONTEND_DIR, { index: 'index.html', setHeaders: function
   if (/\.(mp4|webm|png|jpg|jpeg|webp|gif|svg|css|js|woff2?|ttf)$/i.test(path)) res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
   } }));
 
-// ===== DYNAMIC SITEMAP ===== (serves fresh sitemap with all blog posts; must be before SPA fallback)
+// GET /sitemap.xml - dynamic sitemap including all public blog posts.
+// Posts whose publish_at time has passed count as public even before the hourly
+// publish cron flips their flag (a sleeping Render instance never runs the cron,
+// but it WILL serve this request - so scheduled posts must appear immediately).
 app.get('/sitemap.xml', (req, res) => {
   try {
+    promoteDueScheduledPosts();
     var dbData = getDb();
-    var posts = (dbData.blog_posts || []).filter(function(p) { return p.published; });
+    var posts = (dbData.blog_posts || []).filter(isPostPublic);
     var today = new Date().toISOString().split('T')[0];
     var urls = [
       '<url><loc>https://9amleads.com/</loc><priority>1.0</priority><changefreq>weekly</changefreq><lastmod>' + today + '</lastmod></url>',
@@ -4836,11 +4840,12 @@ app.get('/sitemap.xml', (req, res) => {
 });
 
 // ===== PUBLIC BLOG ROUTES ===== (must be before the SPA fallback below)
-// GET /blog — list all published posts
+// GET /blog — list all published posts (due scheduled posts count as live)
 app.get('/blog', (req, res) => {
   try {
+    promoteDueScheduledPosts();
     var dbData = getDb();
-    var posts = (dbData.blog_posts || []).filter(function(p) { return p.published; }).sort(function(a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); });
+    var posts = (dbData.blog_posts || []).filter(isPostPublic).sort(function(a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); });
     var cards = posts.map(function(p) {
       return '<a href="/blog/' + p.slug + '" style="display:block;text-decoration:none;color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:0;margin-bottom:16px;background:rgba(255,255,255,0.03);overflow:hidden"><img src="https://9amleads.com/blog/img/' + p.slug + '.png" alt="' + (p.title || '') + '" loading="lazy" style="width:100%;height:200px;object-fit:cover;display:block"><div style="padding:16px"><div style="font-size:11px;color:#0ea5e9;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;font-weight:700">' + (p.product_name || p.category || '') + '</div><div style="font-weight:700;margin-bottom:6px;font-size:18px;line-height:1.35">' + p.title + '</div><div style="font-size:13px;color:#999">' + (p.description || '') + '</div><div style="font-size:12px;color:#0ea5e9;margin-top:10px;font-weight:600">Read guide &rarr;</div></div></a>';
     }).join('') || '<p style="color:#888">No posts yet.</p>';
@@ -4852,9 +4857,10 @@ app.get('/blog', (req, res) => {
 // GET /blog/:slug — serve a generated post (public, no auth)
 app.get('/blog/:slug', (req, res) => {
   try {
+    promoteDueScheduledPosts();
     var dbData = getDb();
     var posts = dbData.blog_posts || [];
-    var post = posts.find(function(p) { return p.slug === req.params.slug && p.published; });
+    var post = posts.find(function(p) { return p.slug === req.params.slug && isPostPublic(p); });
     if (!post) {
       return res.status(404).send('<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Post not found</title></head><body style="background:#000;color:#fff;font-family:Inter,sans-serif;padding:40px;text-align:center"><h1>Post not found</h1><a href="/blog" style="color:#0ea5e9">Back to Blog</a></body></html>');
     }
@@ -26689,7 +26695,7 @@ var LEAD_TYPE_PAGES = { moving: '/movingleadsdaily/', probate: '/probateleads/',
 function writeSitemap() {
   try {
     var dbData = getDb();
-    var posts = (dbData.blog_posts || []).filter(function(p) { return p.published; }).sort(function(a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); });
+    var posts = (dbData.blog_posts || []).filter(isPostPublic).sort(function(a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); });
     var today = new Date().toISOString().split('T')[0];
     var urls = [
       '<url><loc>https://9amleads.com/</loc><priority>1.0</priority><changefreq>weekly</changefreq><lastmod>' + today + '</lastmod></url>',
@@ -26780,23 +26786,41 @@ function seedCuratedPosts() {
   return { added: added, refreshed: refreshed };
 }
 
+// A blog post is public if it's flagged published OR its publish_at time has passed.
+// Used at read time (sitemap, /blog, /blog/:slug) so scheduled posts go live even on
+// instances where the hourly publish cron never runs (e.g. a sleeping Render service).
+function isPostPublic(p) {
+  if (!p) return false;
+  if (p.published === true) return true;
+  return !!(p.publish_at && new Date(p.publish_at).getTime() <= Date.now());
+}
+
+// Flip any due scheduled posts to published (idempotent), refresh the sitemap and
+// notify search engines. Safe to call on every blog/sitemap request - no-ops fast.
+function promoteDueScheduledPosts() {
+  try {
+    var dbD = getDb();
+    if (!dbD.blog_posts) return 0;
+    var due = dbD.blog_posts.filter(function(p) { return p.published === false && p.publish_at && new Date(p.publish_at).getTime() <= Date.now(); });
+    if (!due.length) return 0;
+    due.forEach(function(p) { p.published = true; });
+    fs.writeFileSync(DB_FILE, JSON.stringify(dbD, null, 2));
+    try { writeSitemap(); } catch(eS) {}
+    console.log('[SEO] Published ' + due.length + ' scheduled posts: ' + due.map(function(p) { return p.slug; }).join(', '));
+    try { var hP = require('http'); hP.get('http://www.google.com/ping?sitemap=' + encodeURIComponent('https://9amleads.com/sitemap.xml'), function(g) { g.resume(); }); } catch(e1) {}
+    try { var sP = require('https'); sP.get('https://www.bing.com/ping?sitemap=' + encodeURIComponent('https://9amleads.com/sitemap.xml'), function(b) { b.resume(); }).on('error', function(){}); } catch(e2) {}
+    submitIndexNow(due.map(function(p) { return 'https://9amleads.com/blog/' + p.slug; }));
+    return due.length;
+  } catch(e) { return 0; }
+}
+
 // Publish any scheduled draft posts whose publish_at time has passed (checks hourly).
 // Also emails the owner when the blog queue runs low so more posts can be queued.
 function publishScheduledPosts() {
-  var dbData = getDb();
-  if (!dbData.blog_posts) return 0;
-  var now = Date.now();
-  var due = dbData.blog_posts.filter(function(p) { return p.published === false && p.publish_at && new Date(p.publish_at).getTime() <= now; });
-  if (!due.length) return 0;
-  due.forEach(function(p) { p.published = true; });
-  fs.writeFileSync(DB_FILE, JSON.stringify(dbData, null, 2));
-  writeSitemap();
-  try { var http = require('http'); http.get('http://www.google.com/ping?sitemap=' + encodeURIComponent('https://9amleads.com/sitemap.xml'), function(gres) { gres.resume(); }); } catch(e1) {}
-  try { var https = require('https'); https.get('https://www.bing.com/ping?sitemap=' + encodeURIComponent('https://9amleads.com/sitemap.xml'), function(bres) { bres.resume(); }).on('error', function(){}); } catch(e2) {}
-  console.log('[SEO] Published ' + due.length + ' scheduled posts: ' + due.map(function(p) { return p.slug; }).join(', '));
-  submitIndexNow(due.map(function(p) { return 'https://9amleads.com/blog/' + p.slug; }));
+  var n = promoteDueScheduledPosts();
+  if (n > 0) console.log('[SEO] Scheduled publish ran: ' + n + ' posts live');
   checkBlogQueueLow();
-  return due.length;
+  return n;
 }
 
 // Email the owner when the scheduled blog queue is nearly empty (at most once per day)
