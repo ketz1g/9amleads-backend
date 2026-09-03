@@ -23169,9 +23169,9 @@ function generateLeadEmailHTML(customer, leads) {
       // Deceased/company name as title, full address on one line as subtitle.
       // Publication/grant date shown first as a freshness indicator.
       title = d.deceasedName || 'Probate Estate';
-      var pAddr = d.deceasedAddress || d.address || '';
-      var pLoc = d.locality || d.city || '';
-      var pPc = d.postcode || '';
+      var pAddr = d.deceasedAddress || d.fullAddress || d.address || l.address || '';
+      var pLoc = d.locality || d.town || d.city || '';
+      var pPc = d.postcode || l.postcode || '';
       var pFull = [pAddr, pLoc].filter(Boolean).join(', ');
       if (pPc && pFull.toLowerCase().indexOf(pPc.toLowerCase()) === -1) pFull += (pFull ? ', ' : '') + pPc;
       var pPub = (d.grantDate || d.publishedDate || d.scrapedAt || '');
