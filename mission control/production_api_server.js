@@ -6892,7 +6892,7 @@ var __topUpInterval = setInterval(function() {
   try {
     var httpT2 = require('http');
     var bT2 = JSON.stringify({});
-    var rT2 = httpT2.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/top-up-all', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD ), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bT2) } }, function(s) { s.resume(); });
+    var rT2 = httpT2.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/top-up-all', headers: { 'Authorization': 'Bearer ' + (ADMIN_PASSWORD ), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bT2) } }, function(s) { s.resume(); });
     rT2.on('error', function(e) { console.log('[TOP-UP] auto top-up error:', e.message); });
     rT2.write(bT2); rT2.end();
   } catch(e) {}
@@ -13706,7 +13706,7 @@ cron.schedule('0 6 * * *', async () => {
       const http = require('http');
       var body = JSON.stringify({});
       var ok = await new Promise(function(resolve) {
-        var req = http.request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD ), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
+        var req = http.request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer ' + (ADMIN_PASSWORD ), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
           var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() { resolve(res.statusCode === 200 && b.indexOf('success') !== -1); });
         });
         req.on('error', function() { resolve(false); });
@@ -13762,7 +13762,7 @@ cron.schedule('15 6 * * 1-5', async () => {
       low2.forEach(function(prod) {
         try {
           var sb = JSON.stringify({ product: prod, force: true });
-          var sreq = require('http').request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD ) + '', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(sb) } }, function(sres) { sres.resume(); });
+          var sreq = require('http').request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer ' + (ADMIN_PASSWORD ) + '', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(sb) } }, function(sres) { sres.resume(); });
           sreq.on('error', function(){}); sreq.write(sb); sreq.end();
         } catch(se) {}
       });
@@ -13789,7 +13789,7 @@ cron.schedule('15 5 * * *', async () => {
   try {
     const httpF = require('http');
     var bF = JSON.stringify({});
-    var rF = httpF.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/funeral-scrape', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD ), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bF) } }, function(s) {
+    var rF = httpF.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/funeral-scrape', headers: { 'Authorization': 'Bearer ' + (ADMIN_PASSWORD ), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bF) } }, function(s) {
       var rb = ''; s.on('data', function(d) { rb += d; }); s.on('end', function() { console.log('[FUNERAL-CRON] done:', rb.substring(0, 200)); });
     });
     rF.on('error', function(e) { console.log('[FUNERAL-CRON] error:', e.message); });
@@ -13803,7 +13803,7 @@ cron.schedule('20 6 * * *', async () => {
   try {
     const http = require('http');
     var body2 = JSON.stringify({});
-    var req2 = http.request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/distribute', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD ) + '', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body2) } }, function(res) {
+    var req2 = http.request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/distribute', headers: { 'Authorization': 'Bearer ' + (ADMIN_PASSWORD ) + '', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body2) } }, function(res) {
       var b2 = ''; res.on('data', function(c) { b2 += c; }); res.on('end', function() { console.log('[06:05 UK] Distributor done:', b2.substring(0, 100)); });
     });
     req2.write(body2); req2.end();
@@ -13835,7 +13835,7 @@ cron.schedule('30 7 * * *', async () => {
       // No product filter: the re-triggered scrape covers ALL lead types (moving,
       // probate, planning, newbusiness, tenders) so every pool is fresh for 09:00.
       var swBody = JSON.stringify({});
-      var swReq = http.request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD ), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(swBody) } }, function(swRes) { var b=''; swRes.on('data', function(c){ b+=c; }); swRes.on('end', function(){ console.log('[SCRAPE-WATCHDOG] re-trigger result:', b.substring(0, 120)); }); });
+      var swReq = http.request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer ' + (ADMIN_PASSWORD ), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(swBody) } }, function(swRes) { var b=''; swRes.on('data', function(c){ b+=c; }); swRes.on('end', function(){ console.log('[SCRAPE-WATCHDOG] re-trigger result:', b.substring(0, 120)); }); });
       swReq.on('error', function(e){ console.log('[SCRAPE-WATCHDOG] re-trigger error:', e.message); });
       swReq.write(swBody); swReq.end();
     } catch(sw2) { console.log('[SCRAPE-WATCHDOG] re-trigger call error:', sw2.message); }
@@ -13854,7 +13854,7 @@ cron.schedule('5 9 * * 1-5', async () => {
     try {
       const http = require('http');
       var bsBody = JSON.stringify({});
-      var bsReq = http.request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD ), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bsBody) } }, function(bsRes) { var b=''; bsRes.on('data', function(c){ b+=c; }); bsRes.on('end', function(){ console.log('[BACKSTOP] delivery result:', b.substring(0, 150)); }); });
+      var bsReq = http.request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (ADMIN_PASSWORD ), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bsBody) } }, function(bsRes) { var b=''; bsRes.on('data', function(c){ b+=c; }); bsRes.on('end', function(){ console.log('[BACKSTOP] delivery result:', b.substring(0, 150)); }); });
       bsReq.on('error', function(e){ console.log('[BACKSTOP] delivery error:', e.message); });
       bsReq.write(bsBody); bsReq.end();
     } catch(bs2) { console.log('[BACKSTOP] delivery call error:', bs2.message); }
@@ -13980,7 +13980,7 @@ function autoRefillLowPools() {
         dbc.auto_heal_triggers[prod] = now;
         try {
           var scrBody = JSON.stringify({ product: prod, force: true });
-          var scrReq = require('https').request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD ), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(scrBody) } }, function(res){ res.resume(); });
+          var scrReq = require('https').request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer ' + (ADMIN_PASSWORD ), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(scrBody) } }, function(res){ res.resume(); });
           scrReq.on('error', function(){}); scrReq.write(scrBody); scrReq.end();
           triggered.push(prod + ':' + counts[prod]);
           console.log('[AUTO-HEAL] Auto-triggered scraper for ' + prod + ' (pool ' + counts[prod] + ' < floor ' + floors[prod] + ')');
@@ -14122,7 +14122,7 @@ function autoFillDeliveryShortfalls(cbDone) {
     var dbA = getDb();
     var today = new Date().toISOString().split('T')[0];
     var http = require('http');
-    var auth = 'Bearer ' + (process.env.ADMIN_PASSWORD || '');
+    var auth = 'Bearer ' + (ADMIN_PASSWORD || '');
     function _done() { if (typeof cbDone === 'function') { try { cbDone(); } catch(e) {} } }
     function post(path, bodyObj) {
       return new Promise(function(resolve) {
@@ -14272,7 +14272,9 @@ function runFinalGuaranteeAudit() {
 cron.schedule('0 9 * * 1-5', async () => {
   __deliveryFireCount++;
   __lastDeliveryFire = new Date().toISOString();
-  __lastDeliveryDate = new Date().toISOString().split('T')[0];
+  // NOTE: __lastDeliveryDate is NOT set here. It is set only AFTER the delivery
+  // call succeeds, so a failed/401 9am run does NOT suppress the 09:01 watchdog
+  // (which would otherwise think "already fired today" and never rescue customers).
   // EXACT 9AM DELIVERY: fire at 09:00:00 UK so leads land in the inbox AT 9am (the
   // promise). The run processes all customers; each email goes out in order.
   console.log('[09:00 UK] Running delivery...');
@@ -14282,9 +14284,12 @@ cron.schedule('0 9 * * 1-5', async () => {
     // 9am promise — they added ~30s of pre-delivery work previously.)
     const http = require('http');
     var body = JSON.stringify({});
-    var req = http.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD ) + '', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
+    var req = http.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (ADMIN_PASSWORD ) + '', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
       var b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() {            var dLog = b.substring(0, 200);
-      console.log('[09:00 UK] Delivery done:', dLog);
+      // Mark "fired today" ONLY on a genuine success (2xx). On a 401/500 the flag
+      // stays unset so the 09:01 watchdog re-triggers and customers still get leads.
+      if (res.statusCode >= 200 && res.statusCode < 300) __lastDeliveryDate = new Date().toISOString().split('T')[0];
+      console.log('[09:00 UK] Delivery done [' + res.statusCode + ']:', dLog);
       // TIGHT GUARANTEE FINALISE: immediately after the 9am run, top up any customer who
       // landed below their promised count (emailing each added lead), then run the full
       // audit — dedupe same-day rows, re-send any missing daily email, purge pending rows,
@@ -14330,7 +14335,7 @@ cron.schedule('0 9 * * 1-5', async () => {
 //   try {
 //     const httpT = require('http');
 //     var bT = JSON.stringify({ test_only: true });
-//     var rT = httpT.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD ), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bT) } }, function(s) {
+//     var rT = httpT.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (ADMIN_PASSWORD ), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bT) } }, function(s) {
 //       var rb = ''; s.on('data', function(d) { rb += d; }); s.on('end', function() { console.log('[TEST-DELIVERY-CRON] done:', rb.substring(0, 250)); });
 //     });
 //     rT.on('error', function(e) { console.log('[TEST-DELIVERY-CRON] error:', e.message); });
@@ -14359,7 +14364,7 @@ cron.schedule('45 6 * * 1-5', async () => {
         var prod = lbl.split(':')[0].trim();
         try {
           var spBody = JSON.stringify({ product: prod, force: true });
-          var spReq = require('https').request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD ), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(spBody) } }, function(res) { res.resume(); });
+          var spReq = require('https').request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer ' + (ADMIN_PASSWORD ), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(spBody) } }, function(res) { res.resume(); });
           spReq.on('error', function(){}); spReq.write(spBody); spReq.end();
         } catch(se) {}
       });
@@ -14449,7 +14454,7 @@ async function runDailyDeliveryReport() {
         fixed.push(prod + ' (had ' + fresh + ' fresh, min ' + fixThresh[prod] + ') — re-scraping');
         try {
           var rb = JSON.stringify({ product: prod, force: true });
-          var rreq = require('http').request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD ) + '', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(rb) } }, function(rres) { rres.resume(); });
+          var rreq = require('http').request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer ' + (ADMIN_PASSWORD ) + '', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(rb) } }, function(rres) { rres.resume(); });
           rreq.on('error', function(){}); rreq.write(rb); rreq.end();
         } catch(re) {}
       }
@@ -14768,7 +14773,7 @@ cron.schedule('30 6 * * 1-5', async () => {
             console.log('[READINESS] Auto-refreshing ' + prod + ' pool before 9am');
             var scrPath = '/api/admin/run-scrapers';
             var scrBody = JSON.stringify({ product: prod, force: true });
-            var scrReq = require('https').request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: scrPath, headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD ), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(scrBody) } }, function(scrRes) { scrRes.resume(); });
+            var scrReq = require('https').request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: scrPath, headers: { 'Authorization': 'Bearer ' + (ADMIN_PASSWORD ), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(scrBody) } }, function(scrRes) { scrRes.resume(); });
             scrReq.on('error', function(){}); scrReq.write(scrBody); scrReq.end();
           } catch(se) { console.log('[READINESS] auto-scrape error ' + prod + ':', se.message); }
         });
@@ -14915,7 +14920,7 @@ cron.schedule('1 9 * * 1-5', async () => {
     } catch(wnErr2) { console.log('[WATCHDOG] Delay notification error:', wnErr2.message); }
     const httpW = require('http');
     var bodyW = JSON.stringify({});
-    var wreq = httpW.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD ) + '', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyW) } }, function(wres) {
+    var wreq = httpW.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (ADMIN_PASSWORD ) + '', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyW) } }, function(wres) {
       var wb = ''; wres.on('data', function(c) { wb += c; }); wres.on('end', function() { console.log('[WATCHDOG] Re-trigger delivery done:', wb.substring(0, 200)); });
     });
     wreq.on('error', function(e) { console.log('[WATCHDOG] Re-trigger request error:', e.message); });
@@ -15139,7 +15144,7 @@ cron.schedule('15 9 * * 1-5', async () => {
         const vEmail = vIssues[vi].email;
         const http = require('http');
         var vb = JSON.stringify({ customer_email: vEmail, force: true });
-        var vreq = http.request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD ), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(vb) } }, function(vres) { var b=''; vres.on('data', function(ch){ b+=ch; }); vres.on('end', function(){ console.log('[VERIFY-9AM] top-up ' + vEmail + ' -> ' + b.substring(0, 80)); }); });
+        var vreq = http.request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (ADMIN_PASSWORD ), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(vb) } }, function(vres) { var b=''; vres.on('data', function(ch){ b+=ch; }); vres.on('end', function(){ console.log('[VERIFY-9AM] top-up ' + vEmail + ' -> ' + b.substring(0, 80)); }); });
         vreq.on('error', function(e){ console.log('[VERIFY-9AM] top-up error for ' + vEmail + ': ' + e.message); });
         vreq.write(vb); vreq.end();
       } catch(vt) { console.log('[VERIFY-9AM] top-up call error: ' + vt.message); }
@@ -16474,7 +16479,7 @@ cron.schedule('0 0 * * *', async () => {
           try {
             var httpMod = require('http');
             var bodyH = JSON.stringify({ product: hp, force: true });
-            var hreq = httpMod.request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer ' + (process.env.ADMIN_PASSWORD ) + '', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyH) } }, function(hres) { hres.resume(); });
+            var hreq = httpMod.request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer ' + (ADMIN_PASSWORD ) + '', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyH) } }, function(hres) { hres.resume(); });
             hreq.write(bodyH); hreq.end();
             fixes.push('Triggered re-scrape for empty pool: ' + hp);
           } catch(se) {}
@@ -26829,7 +26834,7 @@ function httpCallLocal(method, path, body) {
     try {
       var http = require('http');
       var data = body ? JSON.stringify(body) : null;
-      var req = http.request({ hostname: 'localhost', port: PORT, path: path, method: method, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (process.env.ADMIN_PASSWORD || 'Wemovehomes321!'), ...(data ? { 'Content-Length': Buffer.byteLength(data) } : {}) } }, function(r) {
+      var req = http.request({ hostname: 'localhost', port: PORT, path: path, method: method, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (ADMIN_PASSWORD || 'Wemovehomes321!'), ...(data ? { 'Content-Length': Buffer.byteLength(data) } : {}) } }, function(r) {
         var b = ''; r.on('data', function(c) { b += c; }); r.on('end', function() { try { resolve({ status: r.statusCode, json: JSON.parse(b) }); } catch(e) { resolve({ status: r.statusCode, raw: b }); } });
       });
       req.on('error', function() { resolve({ status: 0, raw: 'req error' }); });
@@ -30372,7 +30377,7 @@ app.post('/api/send-enquiry', async (req, res) => {
 app.post('/api/admin/release-postcodes', async (req, res) => {
   try {
     const auth = req.headers.authorization;
-    if (!auth || auth !== 'Bearer ' + (process.env.ADMIN_PASSWORD ) + '') return res.status(401).json({ error: 'Unauthorized' });
+    if (!auth || auth !== 'Bearer ' + (ADMIN_PASSWORD ) + '') return res.status(401).json({ error: 'Unauthorized' });
     const { codes } = req.body || {};
     const assignmentsData = loadAssignments();
     const map = assignmentsData.assignments || {};
@@ -30392,7 +30397,7 @@ app.post('/api/admin/release-postcodes', async (req, res) => {
 app.post('/api/admin/reset', async (req, res) => {
   try {
     const auth = req.headers.authorization;
-    if (!auth || auth !== 'Bearer ' + (process.env.ADMIN_PASSWORD ) + '') return res.status(401).json({ error: 'Unauthorized' });
+    if (!auth || auth !== 'Bearer ' + (ADMIN_PASSWORD ) + '') return res.status(401).json({ error: 'Unauthorized' });
     const dbData = getDb();
     dbData.customers = [];
     dbData.leads = [];
