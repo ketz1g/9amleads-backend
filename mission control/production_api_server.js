@@ -7107,6 +7107,20 @@ app.post('/api/admin/set-plan', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/delete-lead — permanently delete ONE lead row by id (admin tool).
+app.post('/api/admin/delete-lead', adminAuth, (req, res) => {
+  try {
+    var idD = String((req.body && (req.body.id || req.body.lead_id)) || '');
+    if (!idD) return res.status(400).json({ error: 'lead id required' });
+    var dbD = getDb();
+    var before = (dbD.leads || []).length;
+    dbD.leads = (dbD.leads || []).filter(function(l) { return l.id !== idD; });
+    if ((dbD.leads || []).length === before) return res.status(404).json({ error: 'Lead not found' });
+    saveDb();
+    res.json({ success: true, message: 'Lead deleted.' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/remove-leads-created-on — remove a customer's leads created on a
 // specific date (admin cleanup of test-delivery artifacts). Body: { email, date: 'YYYY-MM-DD' }
 app.post('/api/admin/remove-leads-created-on', adminAuth, (req, res) => {

@@ -18,6 +18,15 @@ async function replacePendingLead(leadId) {
     } else { alert('Replace failed: ' + (d.error || 'unknown')); }
   } catch(e) { alert('Error: ' + e.message); }
 }
+async function deleteLeadAdmin(leadId) {
+  if (!confirm('Permanently delete this lead? This removes it from the customer\'s history and it cannot be undone.')) return;
+  try {
+    var r = await fetch(API + '/api/admin/delete-lead', { method: 'POST', headers: headers(), body: JSON.stringify({ id: leadId }) });
+    var d = await r.json();
+    if (d.success) { alert(d.message || 'Lead deleted.'); loadCustomerLeads(); }
+    else { alert('Delete failed: ' + (d.error || 'unknown')); }
+  } catch(e) { alert('Error: ' + e.message); }
+}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -118,8 +127,9 @@ async function load() {
       var pcFull = l.full_postcode ? '<span style="color:#22c55e">✓</span>' : '<span style="color:#ef4444">✗</span>';
       var url = l.url ? '<a href="' + esc(l.url) + '" target="_blank" rel="noopener" style="color:#0ea5e9;font-size:11px">open</a>' : '<span style="color:#94a3b8">-</span>';
       var act = '';
+      act += '<button class="btn btn-outline btn-sm" style="border-color:#ef4444;color:#ef4444" onclick="deleteLeadAdmin(\'' + l.id + '\')" title="Permanently delete this lead">Delete</button> ';
       if (!l.delivered) {
-act += '<button class="btn btn-outline btn-sm" onclick="rejectLeadAdmin(\'' + l.id + '\')">Reject &amp; Replace</button> '; 
+ act += '<button class="btn btn-outline btn-sm" onclick="rejectLeadAdmin(\'' + l.id + '\')">Reject &amp; Replace</button> '; 
         act += '<button class="btn btn-outline btn-sm" onclick="replacePendingLead(\'' + l.id + '\')">Replace</button>';
       }
       rows += '<tr><td>' + st + '</td><td>' + esc((l.address || '-').replace(/\n+/g, ', ')) + '</td><td>' + esc(l.postcode || '-') + '</td><td>' + ok + '</td><td>' + pcFull + '</td><td>' + url + '</td><td>' + act + '</td></tr>';
