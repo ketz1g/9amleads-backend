@@ -7984,7 +7984,7 @@ app.get('/api/leads', authMiddleware, (req, res) => {
     return res.json({ gated: true, trial_ended: true, message: 'Your free trial has ended. Upgrade to a Starter, Pro or Enterprise package to unlock your leads again.', leads: [] });
   }
   const leads = db.prepare(
-    'SELECT * FROM leads WHERE customer_id = ? ORDER BY created_at DESC LIMIT 50'
+    'SELECT * FROM leads WHERE customer_id = ? ORDER BY created_at DESC LIMIT 500'
   ).all(req.user.id);
 
   const nowIso = new Date().toISOString();
@@ -8008,16 +8008,21 @@ app.get('/api/leads', authMiddleware, (req, res) => {
     // postcode still counts toward Today/Week/Month/All-Time). The address filter
     // exists to hide incomplete PENDING leads, never delivered history.
     .filter(function(l) { return l.delivered || leadHasUsableAddress(l, customer ? customer.product : l.product); })
-    // DEDUPE by URL/address+postcode: repeated/churned deliveries can leave duplicate
-    // rows for the same property (same URL, or same street+number+postcode from
-    // multiple scrapes). The customer must see each UNIQUE lead once, and the
-    // dashboard KPIs (today/week/month) must never be inflated by duplicates.
+    // DEDUPE by URL/address+postcode but ONLY WITHIN THE SAME DELIVERED DAY: catches
+    // accidental double-rows from the same 9am run, while letting a genuinely re-listed
+    // property (e.g. the same house advertised again a week later) count as the separate
+    // lead it is. Every emailed lead must show and count — Today/Week/Month/All-Time.
     .filter(function(l, idx, arr) {
-      var _k = (function() { try { var d = JSON.parse(l.data || '{}'); var u = String(d.url || '').split('#')[0].split('?')[0].replace(/\/+$/,'').toLowerCase().trim(); if (u) return 'u:' + u; var a = String(d.fullAddress || d.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 28); var pc = String(d.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); return 'a:' + a + '|' + pc; } catch(e) { return ''; } })();
+      function _leadKey(ld) {
+        try { var d = JSON.parse(ld.data || '{}'); var u = String(d.url || '').split('#')[0].split('?')[0].replace(/\/+$/,'').toLowerCase().trim(); if (u) return 'u:' + u; var a = String(d.fullAddress || d.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 28); var pc = String(d.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); return 'a:' + a + '|' + pc; } catch(e) { return ''; }
+      }
+      var _k = _leadKey(l);
       if (!_k) return true;
+      var _day = String(l.delivered_at || l.created_at || '').split('T')[0];
       for (var _j = 0; _j < idx; _j++) {
-        var _other = (function() { try { var d2 = JSON.parse(arr[_j].data || '{}'); var u2 = String(d2.url || '').split('#')[0].split('?')[0].replace(/\/+$/,'').toLowerCase().trim(); if (u2) return 'u:' + u2; var a2 = String(d2.fullAddress || d2.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 28); var pc2 = String(d2.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); return 'a:' + a2 + '|' + pc2; } catch(e) { return ''; } })();
-        if (_other && _other === _k) return false;
+        var _prevDay = String(arr[_j].delivered_at || arr[_j].created_at || '').split('T')[0];
+        if (_prevDay !== _day) continue; // different day = different legitimate delivery
+        if (_leadKey(arr[_j]) === _k) return false;
       }
       return true;
     })
