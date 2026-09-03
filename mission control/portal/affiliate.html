@@ -622,7 +622,7 @@ tr:last-child td{border-bottom:none}
 <p style="font-size:12.5px;color:#94a3b8;line-height:1.7">To pay you, we're required by law to verify your identity and your bank details. This is the same "know your customer" (KYC) check every legitimate payout service runs. It protects you, and it protects the programme from fraud.</p>
 <ul style="font-size:12.5px;color:#c6cfdd;line-height:1.8;padding-left:18px;margin:10px 0 0">
 <li><b>ID must be your driving licence or passport</b> (a clear photo or scan).</li>
-<li><b>The legal name on your ID must match the bank account holder</b> name exactly. Payments only go out to the verified person.</li>
+  <li><b>The legal name on your ID must match the bank account holder</b> name (same surname and a matching first name). Payments only go out to the verified person.</li>
 <li>Your details are stored securely and used only for payout verification.</li>
 <li><b>No payout is released until your ID is approved.</b></li>
 </ul>
@@ -1275,7 +1275,7 @@ function loadKyc(){
   var ba=document.getElementById('kyc-accountno'); if(ba&&k.bank_account_number)ba.value=k.bank_account_number;
     var tc=document.getElementById('kyc-tc'); if(tc&&k.tc_accepted)tc.checked=true;
     var btn=document.getElementById('kyc-submit-btn');
-    if(btn&&(k.status==='pending_review'||k.status==='approved')){btn.disabled=true;btn.style.opacity='.4';btn.textContent=k.status==='approved'?'Already verified':(k.status==='pending_review'?'Under review':'Re-submit');}
+    if(btn&&(k.status==='pending_review'||k.status==='approved')){btn.disabled=true;btn.style.opacity='.4';btn.textContent=k.status==='approved'?'Approved':(k.status==='pending_review'?'Verification pending':'Re-submit');}
     // Show a dashboard prompt banner if KYC not complete
     renderKycBanner(k);
   }).catch(function(){});
