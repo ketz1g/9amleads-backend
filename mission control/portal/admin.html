@@ -711,7 +711,8 @@ function loadAffiliates() {
           '<td>£' + a.earnings_paid + ' (' + a.counts.paid + ')</td>' +
           '<td>' + (a.counts.due ? '<button class="btn btn-outline btn-sm" onclick="payAffiliate(\'' + a.id + '\',\'' + esc(a.name) + '\')"><i class="fas fa-pound-sign"></i> Pay £' + a.earnings_due + '</button>' : '<span style="font-size:11px;color:#94a3b8">-</span>') + ' ' +
           (a.status === 'pending' ? '<button class="btn btn-sm" style="background:#16a34a;color:#fff" onclick="instantApprove(\'' + a.id + '\',\'' + esc(a.name) + '\')" title="Approve without opening the review">✓ Approve</button> ' : '') +
-          '<button class="btn btn-outline btn-sm" onclick="viewAffiliateDashboard(\'' + a.id + '\')" title="View this affiliate\'s dashboard"><i class="fas fa-eye"></i> View</button></td></tr>';
+          '<button class="btn btn-outline btn-sm" onclick="viewAffiliateDashboard(\'' + a.id + '\')" title="View this affiliate\'s dashboard"><i class="fas fa-eye"></i> View</button> ' +
+          '<button class="btn btn-outline btn-sm" style="background:rgba(239,68,68,0.1)!important;color:#ef4444!important;border-color:rgba(239,68,68,0.25)!important" onclick="deleteAffiliateAdmin(\'' + a.id + '\',\'' + esc(a.name) + '\')" title="Permanently delete this affiliate">Delete</button></td></tr>';
       });
       h += '</tbody></table>'; wrap.innerHTML = h;
     })
@@ -903,8 +904,14 @@ function runAffAutomation() {
     .then(function(d) { alert('Affiliate automation complete: nurture=' + (d.result.nurture.nurture_sent||0) + ', reactivation=' + (d.result.reactivation.reactivation_sent||0)); })
     .catch(function(e) { alert('Error: ' + e.message); });
 }
-function viewAffiliateDashboard(id) {
-  fetch(API + '/api/admin/affiliate-impersonate', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: JSON.stringify({ affiliate_id: id }) })
+function deleteAffiliateAdmin(id, name) {
+  if (!confirm('PERMANENTLY delete affiliate ' + (name || id) + '? This removes their account, identity documents, referrals and data. Cannot be undone.')) return;
+  fetch(API + '/api/admin/affiliates/delete', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: JSON.stringify({ affiliate_id: id }) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) { if (d.success) { alert('Affiliate deleted.'); loadAffiliates(); } else alert(d.error || 'Could not delete affiliate'); })
+    .catch(function(e) { alert('Error: ' + e.message); });
+}
+function viewAffiliateDashboard(id) {  fetch(API + '/api/admin/affiliate-impersonate', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: JSON.stringify({ affiliate_id: id }) })
     .then(function(r) { return r.json(); })
     .then(function(d) {
       if (d.token) { window.open('/portal/affiliate.html?token=' + encodeURIComponent(d.token), '_blank'); }
