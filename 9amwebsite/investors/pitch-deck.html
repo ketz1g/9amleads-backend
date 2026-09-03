@@ -139,19 +139,35 @@
     svg{max-width:100%;height:auto}
     .shot{height:auto}
     .big{font-size:34px!important}
-    .footer{flex-direction:column;align-items:flex-start;row-gap:5px}
+    .footer{flex-direction:column;align-items:flex-start;row-gap:5px;font-size:14px!important}
     .dots,.navhint{display:none!important}
+    /* Readability: small labels, chart captions, top crumbs & footers must stay legible */
+    .brand{font-size:17px!important}
+    .crumb,.kbd{font-size:12px!important;letter-spacing:.08em}
+    .axis{font-size:12.5px!important}
+    .dim{font-size:13.5px!important}
+    .sub{font-size:15px!important}
+    .lead{font-size:17px!important}
+    span[style*="font-size:10px"],div[style*="font-size:10px"],
+    span[style*="font-size:11px"],div[style*="font-size:11px"]{font-size:12.5px!important;line-height:1.5}
   }
   @media screen and (max-width:560px){
     .slide{padding:34px 14px 40px}
     h1{font-size:clamp(27px,8.5vw,34px)!important}
     h2{font-size:clamp(22px,6.2vw,28px)!important}
-    .lead{font-size:15.5px}
+    .lead{font-size:16px}
+    .sub{font-size:15px!important}
     .topbar{flex-direction:column;align-items:flex-start;row-gap:8px}
     .topbar .seis{font-size:10px}
     .card{border-radius:13px}
     .tag{font-size:11px;padding:6px 9px}
     section div[style*="repeat(4,1fr)"]{grid-template-columns:repeat(2,1fr)!important}
+    .footer{font-size:15px!important}
+    .brand{font-size:18px!important}
+    .crumb,.kbd{font-size:13px!important}
+    .axis{font-size:13.5px!important}
+    .dim{font-size:14px!important}
+    .metric .num{font-size:26px!important}
   }
   @media print{.slide{min-height:auto;page-break-after:always;break-after:page;max-width:none}}
 </style>
