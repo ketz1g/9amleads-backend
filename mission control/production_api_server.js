@@ -537,7 +537,14 @@ var COUNTY_POSTCODE_MAP = {
   'greater-manchester':['M','OL','BL','SK','WA','WN'],'west-yorkshire':['LS','WF','BD','HD','HX'],
   'tyne-and-wear':['NE','SR'],'west-midlands':['B','CV','DY','WS','WV','WR','ST'],
   'derbyshire':['DE','SK'],'durham':['DH','DL'],'isle-of-wight':['PO'],'leicestershire':['LE'],
-  'lincolnshire':['LN','DN','PE'],'northamptonshire':['NN'],'nottinghamshire':['NG','DN'],'rutland':['LE','PE']
+  'lincolnshire':['LN','DN','PE'],'northamptonshire':['NN'],'nottinghamshire':['NG','DN'],'rutland':['LE','PE'],
+  // Broad region labels the signup picker offers (planning/newbusiness/tenders/probate).
+  // Mapped to postcode areas so a chosen region both validates AND matches on delivery.
+  'south-england':['BN','BR','BS','CR','CT','DA','DT','E','EC','EX','GL','GU','HA','IG','KT','ME','MK','N','NW','OX','PL','PO','RG','RH','SE','SL','SM','SN','SO','SP','SW','TA','TN','TQ','TR','TW','W','WC'],
+  'west-england':['B','BA','BS','CV','DY','EX','GL','HR','PL','SN','SP','ST','SY','TA','TF','TQ','TR','WR','WS','WV'],
+  'north-england':['BB','BD','BL','CA','CH','CW','DH','DL','DN','FY','HD','HG','HU','HX','L','LA','LS','M','NE','OL','PR','S','SK','SR','TS','WA','WF','WN','YO'],
+  'scotland':['AB','DD','DG','EH','FK','G','IV','KA','KW','KY','ML','PA','PH','TD','ZE'],
+  'northern-ireland':['BT']
 };
 
 // Approximate UK postcode-AREA centroids (lat, lng). Used ONLY to rank the delivery
