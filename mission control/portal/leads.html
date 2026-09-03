@@ -98,12 +98,25 @@ footer a{color:var(--accent);text-decoration:underline}
 
 <div class="stats">
 <div class="stat"><div class="num" id="stat-today">0</div><div class="lbl">Today</div></div>
-<div style="display:flex;gap:8px;align-items:center;margin-left:auto;flex-wrap:wrap" id="date-nav">
+<div style="margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+<div class="tabs" id="view-tabs">
+<button class="tab active" data-view="day" onclick="setView('day')">Day</button>
+<button class="tab" data-view="week" onclick="setView('week')">This Week</button>
+<button class="tab" data-view="all" onclick="setView('all')">All Time</button>
+</div>
+<div id="day-nav" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
 <button class="btn btn-outline" onclick="stepDay(-1)" style="padding:7px 12px;font-size:12px"><i class="fas fa-chevron-left" style="font-size:10px"></i> Prev</button>
 <input type="date" id="day-picker" value="2026-09-03" onchange="pickDay(this.value)" style="padding:6px 8px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;font-family:inherit">
 <button class="btn btn-outline" onclick="stepDay(1)" style="padding:7px 12px;font-size:12px">Next <i class="fas fa-chevron-right" style="font-size:10px"></i></button>
 <button class="btn" onclick="goToday()" style="padding:7px 12px;font-size:12px">Today</button>
 <span id="date-label" style="font-size:12px;color:#64748b;font-weight:600">Today</span>
+</div>
+<div id="week-nav" style="display:none;gap:8px;align-items:center;flex-wrap:wrap">
+<button class="btn btn-outline" onclick="stepWeek(-1)" style="padding:7px 12px;font-size:12px"><i class="fas fa-chevron-left" style="font-size:10px"></i> Prev week</button>
+<span id="week-label" style="font-size:12.5px;color:#334155;font-weight:700"></span>
+<button class="btn btn-outline" onclick="stepWeek(1)" style="padding:7px 12px;font-size:12px">Next week <i class="fas fa-chevron-right" style="font-size:10px"></i></button>
+<button class="btn" onclick="goCurrentWeek()" style="padding:7px 12px;font-size:12px">This week</button>
+</div>
 </div>
 </div>
 
@@ -869,12 +882,49 @@ function refreshDayView() {
   if (dp) dp.value = tgt;
   if (typeof filterLeads === 'function') filterLeads();
 }
-function goToday() { viewDate = null; refreshDayView(); }
+function goToday() { viewDate = null; setView('day'); }
 function pickDay(v) { if (!v) return; viewDate = String(v).substring(0, 10); refreshDayView(); }
 function stepDay(n) {
   var base = viewDate ? new Date(viewDate + 'T12:00:00Z') : new Date();
   base.setDate(base.getDate() + n);
   pickDay(_isoD(base));
+}
+// ===== WEEK / ALL VIEWS (for bulk Print & Post over a whole week, previous weeks etc.) =====
+var viewMode = 'day';
+var weekOffset = 0;
+function _mondayOf(d) { var x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; }
+function weekRangeISO(offset) {
+  var m = _mondayOf(new Date()); m.setDate(m.getDate() - 7 * offset);
+  var e = new Date(m); e.setDate(e.getDate() + 6);
+  var s = _isoD(m), en = _isoD(e);
+  return { start: s, end: en };
+}
+function weekLabel(offset) {
+  var r = weekRangeISO(offset);
+  var fmt = function(iso) { var dt = new Date(iso + 'T12:00:00'); return dt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); };
+  var extra = offset === 0 ? 'This week' : (offset < 0 ? 'Last week' : 'Next week');
+  return extra + ' (' + fmt(r.start) + ' \u2013 ' + fmt(r.end) + ')';
+}
+function refreshWeekView() {
+  var wlEl = document.getElementById('week-label'); if (wlEl) wlEl.textContent = weekLabel(weekOffset) + ' \u2014 ' + _countInWeek(weekOffset) + ' leads';
+  if (typeof filterLeads === 'function') filterLeads();
+}
+function _countInWeek(offset) {
+  if (typeof allLeads === 'undefined' || !allLeads) return 0;
+  var r = weekRangeISO(offset);
+  return allLeads.filter(function(l){ var dd = (l.delivered_at || l.created_at || '').split('T')[0]; return dd >= r.start && dd <= r.end; }).length;
+}
+function goCurrentWeek() { weekOffset = 0; refreshWeekView(); }
+function stepWeek(n) { weekOffset += n; refreshWeekView(); }
+function setView(mode) {
+  viewMode = mode;
+  document.querySelectorAll('#view-tabs .tab').forEach(function(t){ t.classList.toggle('active', t.getAttribute('data-view') === mode); });
+  var dn = document.getElementById('day-nav'), wn = document.getElementById('week-nav');
+  if (dn) dn.style.display = mode === 'day' ? 'flex' : 'none';
+  if (wn) wn.style.display = mode === 'week' ? 'flex' : 'none';
+  if (mode === 'day') { currentRange = 'today'; refreshDayView(); }
+  else if (mode === 'week') { currentRange = 'week'; refreshWeekView(); }
+  else { currentRange = 'all'; if (typeof filterLeads === 'function') filterLeads(); }
 }
 function setRange(range) {
   currentRange = range;
@@ -892,9 +942,9 @@ function inRange(l, range) {
   var now = new Date();
   if (range === 'today') { var tgt = viewDate || now.toISOString().split('T')[0]; return day === tgt; }
   if (range === 'week') {
-    // Monday-start working week (deliveries Mon-Fri incl bank holidays)
-    var w = new Date(now); w.setHours(0, 0, 0, 0); w.setDate(w.getDate() - ((w.getDay() + 6) % 7));
-    return day >= w.toISOString().split('T')[0];
+    // Monday-start working week currently selected (This week / last week / etc.)
+    var r = weekRangeISO(weekOffset);
+    return day >= r.start && day <= r.end;
   }
   if (range === 'month') { return day.substring(0,7) === now.toISOString().split('T')[0].substring(0,7); }
   return true;
