@@ -869,6 +869,8 @@ function inRange(l, range) {
   if (range === 'month') { return day.substring(0,7) === now.toISOString().split('T')[0].substring(0,7); }
   return true;
 }
+// Dashboard stat cards deep-link here: /portal/leads.html?range=today|week|month|all
+(function(){ try { var _pr = new URLSearchParams(window.location.search).get('range'); if (_pr && ['today','week','month','all'].indexOf(_pr) !== -1) { setTimeout(function(){ if (typeof setRange === 'function') setRange(_pr); }, 80); } } catch(e){} })();
 function filterLeads() {
   var q = document.getElementById('search-input').value.toLowerCase();
   var status = document.getElementById('status-filter').value.toLowerCase();

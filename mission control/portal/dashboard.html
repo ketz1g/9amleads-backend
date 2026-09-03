@@ -131,9 +131,9 @@ footer a{color:var(--accent);text-decoration:underline}
 </div>
 
 <div class="grid-3">
-<div class="card stat"><div class="icon" style="background:#eff6ff;color:var(--accent)">📊</div><div class="num" id="kpi-today">0</div><div class="lbl">Leads Today</div></div>
-<div class="card stat"><div class="icon" style="background:#f0fdf4;color:var(--success)">📅</div><div class="num" id="kpi-week">0</div><div class="lbl">This Week</div></div>
-<div class="card stat"><div class="icon" style="background:#faf5ff;color:#8b5cf6">📈</div><div class="num" id="kpi-month">0</div><div class="lbl">This Month</div></div>
+<a href="/portal/leads.html?range=today" title="View today's leads" style="text-decoration:none;color:inherit"><div class="card stat"><div class="icon" style="background:#eff6ff;color:var(--accent)">📊</div><div class="num" id="kpi-today">0</div><div class="lbl">Leads Today</div></div></a>
+<a href="/portal/leads.html?range=week" title="View this week's leads" style="text-decoration:none;color:inherit"><div class="card stat"><div class="icon" style="background:#f0fdf4;color:var(--success)">📅</div><div class="num" id="kpi-week">0</div><div class="lbl">This Week</div></div></a>
+<a href="/portal/leads.html?range=month" title="View this month's leads" style="text-decoration:none;color:inherit"><div class="card stat"><div class="icon" style="background:#faf5ff;color:#8b5cf6">📈</div><div class="num" id="kpi-month">0</div><div class="lbl">This Month</div></div></a>
         </div>
 
 <!-- QUICK TIPS (rotating, helps conversion) -->
@@ -1897,7 +1897,11 @@ document.querySelectorAll('.modal').forEach(function(m){
       var _seenLive = {};
       live = live.filter(function(l){ var d=(typeof l.data==='string')?null:l.data; try{ if(typeof l.data==='string') d=JSON.parse(l.data); }catch(e){} var u=String(d&&d.url||'').split('#')[0].split('?')[0].replace(/\/+$/,'').toLowerCase(); var a=String(d&&d.fullAddress||d&&d.address||'').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,28); var pc=String(d&&d.postcode||'').toUpperCase().replace(/[^A-Z0-9]/g,''); var k=u||(a+'|'+pc); if(!k) return true; if(_seenLive[k]) return false; _seenLive[k]=true; return true; });
       var today = new Date().toISOString().split('T')[0];
-      var wStart = new Date(Date.now() - 6 * 86400000).toISOString().split('T')[0]; // last 7 days
+      // SAME definition as the My Leads page "This week" tab (see inRange in leads.html):
+      // this week = from the most recent SUNDAY. Keeping both on one definition means the
+      // dashboard KPI always equals the count of leads shown under My Leads -> This week.
+      var _wk = new Date(); _wk.setHours(0, 0, 0, 0); _wk.setDate(_wk.getDate() - _wk.getDay());
+      var wStart = _wk.toISOString().split('T')[0];
       var tl = live.filter(function(l){ return (l.delivered_at || '').startsWith(today); });
       var wl = live.filter(function(l){ return (l.delivered_at || '') >= wStart; });
       var ml = live.filter(function(l){ return (l.delivered_at || '').startsWith(today.substring(0,7)); });
