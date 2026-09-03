@@ -34,6 +34,7 @@
 |---|---|---|---|
 | 16 | **UKBAA** | Angel Hubs + "The Pitch" showcase applications | https://ukbaa.org.uk/membership/angel-hubs/ (email enquiries@ukbaa.org.uk) |
 | 17 | **EISA** | "Green Shoots" subsidised founder membership = investor networking | https://eisa.org.uk/contact |
+| **Simon Squibb** | Angel investor ("Pitch Your Dream" intake) | https://www.simonsquibb.com (pitch form on site) |
 | 18 | **Angel Capital Scotland** | Routes founders to member syndicates (Scotland) | https://angelcapital.scot (email info@angelcapital.scot) |
 
 ## Grants / non-dilutive (fill these too - they complement the equity)

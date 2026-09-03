@@ -28,6 +28,8 @@
 
 > **Third research pass (3 Sep 2026):** added SFC Capital, Oxford Technology Management, Anglia Capital Group, Keiretsu Forum UK above. Also verified but **not a £25k fit — do not email:** Ascension (info@ascension.vc, min cheque ~£100k+), Deepbridge Capital (info@deepbridge.com, large EIS tickets), Haatch (investors@haatch.com — investor-labelled; use the pitch form instead). Confirmed form-only (no public email): Angels Invest Wales (Wales-based only), Invest NI, Scottish Enterprise, Development Bank of Wales, university seed funds.
 
+> **Fourth research pass (3 Sep 2026): zero new public emails found.** Checked live across micro-EIS fund managers (Mercia, Puma, Seneca, Foresight, Bure Valley, Ironshield), more regional angel groups, co-investment/development funds, investor newsletters and named angels (incl. Simon Squibb) — every one is form-only, Cloudflare-obfuscated, investor-facing only, or dead. The surface of literally-published founder-intake emails is effectively exhausted at **16 verified direct recipients**. Further growth of the pipeline must come from the ~20 application forms + warm intros, not more email scraping.
+
 ## B. Free pitch/application forms (submit your deck — same as emailing, just via their intake)
 | Target | Fit | Exact form |
 |---|---|---|
