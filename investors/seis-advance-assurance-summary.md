@@ -39,12 +39,16 @@ Having AA **before** talking to angels is the single biggest close-rate lever fo
 - **New shares:** [e.g. 100 new Ordinary shares at £250 each — align with your cap-table file]
 - **Type:** Ordinary shares (SEIS-qualifying — no preferential rights, no redemption)
 - **Use of funds:**
-  | Use | Amount |
-  |---|---|
-  | Digital marketing (search, LinkedIn, trade bodies) | £12,000 |
-  | Sales/conversion follow-up & demos | £8,000 |
-  | Print & Post sampling & tools | £3,000 |
-  | Contingency / ops | £2,000 |
+| Use | % | Amount |
+|---|---|---|
+| Social media marketing | 11% | £2,750 |
+| Email campaigns | 10% | £2,500 |
+| Flyer campaigns to newly formed businesses | 11% | £2,750 |
+| Boosting SEO + PPC | 11% | £2,750 |
+| Advertising to recruit affiliates | 10% | £2,500 |
+| Buying backlinks | 11% | £2,750 |
+| Business events & shows | 11% | £2,750 |
+| Founder personal costs + running/maintaining the business | 25% | £6,250 |
 - **Risk to capital:** funds are spent on marketing/sales to convert the existing trial pipeline (~50 trial + 8 paying-trial accounts); returns depend on customer acquisition and retention — there is no asset backing or guaranteed return.
 
 ## Prospective investor(s)

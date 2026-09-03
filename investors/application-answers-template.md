@@ -43,12 +43,17 @@
 "Raising £25,000 for 10% equity (post-money £250,000). SEIS-eligible - effective cost to the investor ≈£12,500 after 50% income-tax relief. Clean cap table (founder 90%), ordinary shares, one class. Funds marketing & sales (not salaries) to convert the warm trial pipeline; path to ~100 paying customers ≈£30k/mo all-streams revenue by month 3, and 1,000 paying / ≈£300k/mo by month 12 (see 12-month model)."
 
 ## 9. Use of funds
-| Use | Amount |
-|---|---|
-| Digital marketing | £12,000 |
-| Sales / trial-to-paid conversion | £8,000 |
-| Print & Post sampling & tools | £3,000 |
-| Contingency / ops | £2,000 |
+| Use | % | Amount |
+|---|---|---|
+| Social media marketing | 11% | £2,750 |
+| Email campaigns | 10% | £2,500 |
+| Flyer campaigns to newly formed businesses | 11% | £2,750 |
+| Boosting SEO + PPC | 11% | £2,750 |
+| Advertising to recruit affiliates | 10% | £2,500 |
+| Buying backlinks | 11% | £2,750 |
+| Business events & shows | 11% | £2,750 |
+| Founder personal costs + running/maintaining the business | 25% | £6,250 |
+| **Total** | **100%** | **£25,000** |
 
 ## 10. Key metrics we track
 Accounts created · active free trials · trial→paid conversion · paying customers · MRR by stream · churn (target ~5-8%/mo early) · CAC by channel (~£150 paid; ~£0 affiliate) · print-stream attach rate · bulk pack orders.

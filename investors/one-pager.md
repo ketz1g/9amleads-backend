@@ -70,12 +70,17 @@
 **£25,000 for 10% equity** (post-money £250k).
 
 **Use of funds:**
-| Use | Amount |
-|---|---|
-| Digital marketing (search, LinkedIn, trade associations) | £12,000 |
-| Sales / conversion (trial → paid follow-up, demos) | £8,000 |
-| Print & Post sampling & tools | £3,000 |
-| Contingency / ops | £2,000 |
+| Use | % | Amount |
+|---|---|---|
+| Social media marketing | 11% | £2,750 |
+| Email campaigns | 10% | £2,500 |
+| Flyer campaigns to newly formed businesses | 11% | £2,750 |
+| Boosting SEO + PPC | 11% | £2,750 |
+| Advertising to recruit affiliates | 10% | £2,500 |
+| Buying backlinks | 11% | £2,750 |
+| Business events & shows | 11% | £2,750 |
+| Founder personal costs + running/maintaining the business | 25% | £6,250 |
+| **Total** | **100%** | **£25,000** |
 
 **What £25k buys:** ~£150/customer blended acquisition cost (paid channels) + the ~£0-CAC affiliate/staff engine → **~150-170 new paying customers from the £25k**, at **≈£300/mo all-streams value** that's **≈£45k-£50k/month all-streams revenue** — and it funds the growth to **1,000 customers / ≈£300k per month** by month 12.
 
