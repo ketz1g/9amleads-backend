@@ -951,7 +951,8 @@ function loadFollowups(){
     // reminder strip
     var strip=document.getElementById('fu-reminder-strip');
     var html='';
-    if(d.overdue.length){html+='<div class="panel" style="background:rgba(248,113,113,.08);border-color:rgba(248,113,113,.35);padding:12px 16px"><b style="color:#f87171">⏰ Overdue ('+d.overdue.length+')</b><div style="font-size:12.5px;color:#cbd5e1;margin-top:6px">'+d.overdue.map(function(p){return '<div style="padding:3px 0">📞 <b>'+esc(p.company||p.name)+'</b> - '+esc(fuContact(p))+' <span style="color:#94a3b8">(due '+fuWhen(p.reminder_at)+')</span></div>';}).join('')+'</div></div>';}
+    var ovArr=(d.reminders&&d.reminders.overdue)||[];
+    if(ovArr.length){html+='<div class="panel" style="background:rgba(248,113,113,.08);border-color:rgba(248,113,113,.35);padding:12px 16px"><b style="color:#f87171">⏰ Overdue ('+ovArr.length+')</b><div style="font-size:12.5px;color:#cbd5e1;margin-top:6px">'+ovArr.map(function(p){return '<div style="padding:3px 0">📞 <b>'+esc(p.company||p.name)+'</b> - '+esc(fuContact(p))+' <span style="color:#94a3b8">(due '+fuWhen(p.reminder_at)+')</span></div>';}).join('')+'</div></div>';}
     if(d.reminders.today.length){html+='<div class="panel" style="background:rgba(74,222,128,.08);border-color:rgba(74,222,128,.3);padding:12px 16px"><b style="color:#4ade80">📞 Due today ('+d.reminders.today.length+')</b><div style="font-size:12.5px;color:#cbd5e1;margin-top:6px">'+d.reminders.today.map(function(p){return '<div style="padding:3px 0"><b>'+esc(p.company||p.name)+'</b> - '+esc(fuContact(p))+' <span style="color:#94a3b8">(due '+fuWhen(p.reminder_at)+')</span></div>';}).join('')+'</div></div>';}
     strip.innerHTML=html;
     // counts chips
@@ -1528,13 +1529,12 @@ function togglePb(k){
   renderPb();
 }
 function renderPayoutProgress(payout, aff){
-  var th = (payout && payout.threshold) || 50;
   var tot = (payout && payout.approved_total) || 0;
-  var pct = (payout && payout.progress_pct) || 0;
   var rate = (aff && aff.commission_amount) || 25;
   document.getElementById('c-next-payout').textContent='£'+tot.toFixed(0);
-  document.getElementById('c-payout-pct').textContent=pct+'% of £'+th;
-  document.getElementById('c-payout-bar').style.width=pct+'%';
+  document.getElementById('c-payout-pct').textContent='cleared · paid weekly';
+  var pct = Math.min(100, Math.round((tot / Math.max(25, rate)) * 100));
+  document.getElementById('c-payout-bar').style.width=Math.max(4, pct)+'%';
   var sub=document.getElementById('c-payout-sub');
   if(sub) sub.innerHTML='<b style="color:#34d399">Paid as commissions clear.</b> Each customer\'s 2nd invoice pays you \u00a3'+rate+' within about a week. No minimum.';
 }

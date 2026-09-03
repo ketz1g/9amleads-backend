@@ -2988,6 +2988,11 @@ function affiliateAuth(req, res, next) {
     if (tok.role !== 'affiliate') return res.status(403).json({ error: 'Not an affiliate account' });
     var aff = (getDb().affiliates || []).find(function(a) { return a.id === tok.id; });
     if (!aff) return res.status(401).json({ error: 'Affiliate not found' });
+    // Re-validate account status on EVERY request: an issued 24h token must not let
+    // a paused/suspended/closed/rejected affiliate keep using their dashboard.
+    if (aff.status && ['pending', 'rejected', 'paused', 'suspended', 'closed'].indexOf(aff.status) !== -1) {
+      return res.status(403).json({ error: 'Your affiliate account is ' + aff.status + '.', status: aff.status });
+    }
     req.affiliate = aff;
     next();
   } catch(e) { return res.status(401).json({ error: 'Invalid token' }); }
@@ -3498,7 +3503,10 @@ function processPartnerCommissions() {
           // Affiliate £25 is earned when the referred customer pays their SECOND
           // subscription invoice (set by the invoice.paid webhook). Require that
           // marker here too so the daily engine never creates the commission early.
-          if (!affMonthly && String(c.affiliate_payout_status || '') !== 'pending' && String(c.affiliate_payout_status || '') !== 'due' && String(c.affiliate_payout_status || '') !== 'paid') return;
+          // NOTE: 'paid' is deliberately NOT allowed — once the legacy admin path has
+          // paid this referral, the commission engine must never re-create it (double-pay).
+          var _payGate = String(c.affiliate_payout_status || '');
+          if (!affMonthly && _payGate !== 'pending' && _payGate !== 'due') return;
           if (!dbc.partner_commissions) dbc.partner_commissions = [];
           if (affMonthly) {
             // 1) One-off £25 "sign-up" commission (created once per customer).
@@ -3900,16 +3908,18 @@ function wheelState(dbc, aff) {
     tier: tier, prizes: wheelPrizes(tier), can_spin: canSpin, since_last_spin: since };
 }
 function affiliateSpin(dbc, aff) {
+  if (!kycComplete(aff)) return { error: 'Complete Compliance (verified ID + accepted T&C) in the Compliance tab before you can claim wheel prizes.' };
   var st = wheelState(dbc, aff);
   if (!st.can_spin) return { error: 'Spin not available yet. ' + (50 - st.progress) + ' more retained signups needed.' };
   var prizes = st.prizes;
   var idx = Math.floor(Math.random() * prizes.length);
   var prize = prizes[idx];
+  var payoutId = uuidv4();
   aff.wheel_spins = (aff.wheel_spins || 0) + 1;
   aff.wheel_history = aff.wheel_history || [];
-  aff.wheel_history.push({ tier: st.tier, prize: prize, at: new Date().toISOString(), status: 'paid', note: 'Milestone ' + (aff.wheel_spins * 50) + ' retained' });
+  aff.wheel_history.push({ tier: st.tier, prize: prize, at: new Date().toISOString(), status: 'ready', payout_id: payoutId, note: 'Milestone ' + (aff.wheel_spins * 50) + ' retained' });
   aff.payouts = aff.payouts || [];
-  aff.payouts.push({ id: uuidv4(), amount: prize, status: 'paid', date: new Date().toISOString(), method: 'wheel', reference: 'wheel-t' + st.tier, note: 'Reward wheel win' });
+  aff.payouts.push({ id: payoutId, amount: prize, status: 'ready', created_at: new Date().toISOString(), date: new Date().toISOString(), method: 'wheel', reference: 'wheel-t' + st.tier, affiliate_email: aff.email, affiliate_name: aff.name || '', note: 'Reward wheel win' });
   return { prize: prize, tier: st.tier, total_spins: aff.wheel_spins, balance_added: prize, next_milestone: wheelMilestoneFor(Math.min(aff.wheel_spins + 1, 9999)) };
 }
 function affiliateWheelClawback(dbc, aff) {
@@ -3918,20 +3928,23 @@ function affiliateWheelClawback(dbc, aff) {
   var consumed = Math.floor(retained / 50);
   var hadSpins = aff.wheel_spins || 0;
   if (hadSpins > consumed) {
-    // Reverse the prizes won on the spins that are no longer earned. The retained
-    // count dropped (a counted customer refunded), so those wheel wins are clawed
-    // back: the spin is revoked, its prize is reversed from the balance, and the
-    // history entry is marked 'reversed'.
     var history = aff.wheel_history || [];
     for (var i = consumed; i < hadSpins; i++) {
       var h = history[i];
-      if (h && h.status === 'paid') {
+      if (h && h.status !== 'reversed') {
         h.status = 'reversed';
         h.reversed_at = new Date().toISOString();
-        // Reverse the credit as a negative balance adjustment (kept for audit).
+        // If the win was only 'ready' (never transferred), VOID that payout — no money
+        // moved, so no negative adjustment needed. If it was already paid out, push a
+        // negative reversal entry so the founder recovers the amount.
         aff.payouts = aff.payouts || [];
-        aff.payouts.push({ id: uuidv4(), amount: -1 * Number(h.prize || 0), status: 'reversed', date: new Date().toISOString(), method: 'wheel', reference: 'wheel-clawback', note: 'Reversed: customer refunded after spin won £' + (h.prize || 0) });
-        console.log('[WHEEL] Reversed prize £' + h.prize + ' for ' + aff.email);
+        var _pOut = h.payout_id ? aff.payouts.find(function(p){ return p.id === h.payout_id; }) : null;
+        if (_pOut && _pOut.status !== 'paid') {
+          _pOut.status = 'cancelled'; _pOut.cancelled_at = new Date().toISOString();
+        } else {
+          aff.payouts.push({ id: uuidv4(), amount: -1 * Number(h.prize || 0), status: 'reversed', date: new Date().toISOString(), method: 'wheel', reference: 'wheel-clawback', note: 'Reversed: customer refunded after spin won \u00a3' + (h.prize || 0) });
+        }
+        console.log('[WHEEL] Reversed prize \u00a3' + h.prize + ' for ' + aff.email);
       }
     }
     aff.wheel_spins = consumed;
@@ -3949,6 +3962,7 @@ function kycStatus(aff) {
   return { status: k.status || 'not_submitted', tc_accepted: !!k.tc_accepted, tc_accepted_at: k.tc_accepted_at || null,
     legal_name: k.legal_name || '', id_type: k.id_type || '', id_uploaded: !!k.id_uploaded,
     id_review_note: k.id_review_note || '', bank_name: k.bank_name || '', bank_account_holder: k.bank_account_holder || '',
+    bank_sort_code: k.bank_sort_code || '', bank_account_number: k.bank_account_number || '',
     submitted_at: k.submitted_at || null, reviewed_at: k.reviewed_at || null };
 }
 // Compute the combined KYC state for display: block payout until tc accepted + id approved.
@@ -5387,7 +5401,8 @@ app.post('/api/affiliate/register', async (req, res) => {
       score: scoreAffiliateApplication(survey),
       review_status: 'pending'
     };
-    var aff = { id: uuidv4(), name: String(name).trim(), email: em, code: code2, password_hash: passwordHash, payout_rate: AFFILIATE_PAYOUT_RATE, status: 'pending', created_at: new Date().toISOString(), payouts: [], association: String(req.body.association || '').trim().substring(0, 60) || '', recruited_by: String(req.body.recruited_by || req.body.recruiter_code || '').toUpperCase().substring(0, 40) || '', application: application, kyc: { status: 'not_submitted', tc_accepted: false, tc_accepted_at: null } };
+    var _autoActivate = process.env.AFFILIATE_AUTO_ACTIVATE === 'true';
+    var aff = { id: uuidv4(), name: String(name).trim(), email: em, code: code2, password_hash: passwordHash, payout_rate: AFFILIATE_PAYOUT_RATE, status: _autoActivate ? 'active' : 'pending', created_at: new Date().toISOString(), payouts: [], association: String(req.body.association || '').trim().substring(0, 60) || '', recruited_by: String(req.body.recruited_by || req.body.recruiter_code || '').toUpperCase().substring(0, 40) || '', application: application, kyc: { status: 'not_submitted', tc_accepted: false, tc_accepted_at: null } };
     affs.push(aff);
     saveDb();
     // Confirmation email to the affiliate (so they know their application arrived).
@@ -5396,7 +5411,7 @@ app.post('/api/affiliate/register', async (req, res) => {
         '<h1 style="font-family:Outfit,sans-serif;color:#0ea5e9;margin:0 0 10px">Welcome to the 9amLeads Affiliate Programme</h1>' +
         '<p style="color:#ccc;line-height:1.7">Hi ' + escHtml(String(name).trim()) + ',</p>' +
         '<p style="color:#ccc;line-height:1.7">Your affiliate application has been received' + (AFFILIATE_AUTO_ACTIVATE ? ' and your account is now <strong style="color:#fff">active</strong>' : ' and is being reviewed') + '.</p>' +
-        '<p style="color:#ccc;line-height:1.7">Your unique referral code is <strong style="color:#0ea5e9">' + escHtml(code2) + '</strong>. Customers enter this at signup and you earn <strong style="color:#fff">&pound;' + (aff.payout_rate || 25) + '</strong> for every qualifying referral, paid around a month after they sign up (their second invoice).</p>' +
+        '<p style="color:#ccc;line-height:1.7">Your unique referral code is <strong style="color:#0ea5e9">' + escHtml(code2) + '</strong>. Customers enter this at signup and you earn <strong style="color:#fff">&pound;' + (aff.payout_rate || 25) + '</strong> for every qualifying referral, once they pay their second invoice. We review and pay out weekly, so your money usually lands within a few weeks of them signing up.</p>' +
         '<p style="color:#ccc;line-height:1.7">Log in to your dashboard to track referrals and earnings: <a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">9amleads.com/portal/affiliate.html</a></p>' +
         '<p style="color:#888;font-size:13px;margin-top:24px">Questions? Reply to this email or contact hello@9amleads.com.</p>' +
         '</div>';
@@ -5431,6 +5446,7 @@ app.post('/api/affiliate/login', async (req, res) => {
     if (aff.status === 'pending') return res.status(403).json({ error: 'Your application is being reviewed. We\'ll email you once it\'s approved (usually within 24 hours).', pending: true });
     if (aff.status === 'rejected') return res.status(403).json({ error: 'Your application was not approved. Contact hello@9amleads.com if you think this is a mistake.', rejected: true });
     if (aff.status === 'paused') return res.status(403).json({ error: 'Your affiliate account is currently paused. Contact hello@9amleads.com.', paused: true });
+    if (aff.status === 'suspended' || aff.status === 'closed') return res.status(403).json({ error: 'Your affiliate account is ' + aff.status + '. Contact hello@9amleads.com if you think this is a mistake.', status: aff.status });
     aff.last_login_at = new Date().toISOString();
     try { saveDb(); } catch(e) {}
     res.json({ token: affiliateToken(aff), affiliate: { id: aff.id, name: aff.name, code: aff.code, email: aff.email } });
@@ -5624,13 +5640,14 @@ app.get('/api/affiliate/followups', affiliateAuth, (req, res) => {
     var aff = req.affiliate;
     var people = affiliatePeople(aff);
     people.sort(function(a, b) { return String(b.created_at || '').localeCompare(String(a.created_at || '')); });
-    var todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
-    var dueToday = people.filter(function(p) { return p.reminder_at && new Date(p.reminder_at) <= new Date(Date.now() + 24 * 3600000); });
-    var overdue = people.filter(function(p) { return p.reminder_at && new Date(p.reminder_at) < todayStart; });
-    var later = people.filter(function(p) { return p.reminder_at && new Date(p.reminder_at) > new Date(Date.now() + 24 * 3600000); });
+    var nowMs = Date.now();
+    // Reminder buckets (overdue = past due; today = upcoming within 24h; later = beyond).
+    var overdueArr = people.filter(function(p) { return p.reminder_at && new Date(p.reminder_at).getTime() <= nowMs; });
+    var dueTodayArr = people.filter(function(p) { var t = p.reminder_at ? new Date(p.reminder_at).getTime() : 0; return t && t > nowMs && t <= nowMs + 24 * 3600000; });
+    var laterArr = people.filter(function(p) { return p.reminder_at && new Date(p.reminder_at).getTime() > nowMs + 24 * 3600000; });
     var counts = { prospect: 0, trial: 0, referral_pending: 0, earning: 0, approved: 0, paid: 0 };
     people.forEach(function(p) { counts[p.status] = (counts[p.status] || 0) + 1; });
-    res.json({ success: true, people: people, due_today: dueToday.length, overdue: overdue.length, counts: counts, reminders: { today: dueToday, overdue: overdue, later: later } });
+    res.json({ success: true, people: people, due_today: dueTodayArr.length, overdue: overdueArr.length, counts: counts, reminders: { today: dueTodayArr, overdue: overdueArr, later: laterArr } });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 app.post('/api/affiliate/followups/prospect', affiliateAuth, (req, res) => {
@@ -6092,22 +6109,29 @@ app.get('/api/affiliate/payouts', affiliateAuth, (req, res) => {
     var aff = req.affiliate;
     var dbc = getDb();
     var rows = [];
-    // 1) Reward wheel wins (credited to balance immediately)
+    // 1) Reward wheel wins (status: 'paid' = transferred, 'ready' = queued for the next
+    // weekly payout, 'reversed' = clawed back after a refund). Cancelled = voided, hidden.
     (aff.wheel_history || []).forEach(function(h) {
-      rows.push({ id: h.id || ('wheel-' + h.at), kind: 'wheel', amount: Number(h.prize || 0), date: h.at, status: h.status || 'paid', note: h.note || ('Wheel of Fortune win (Tier ' + h.tier + ')') });
+      if (h.status === 'cancelled') return;
+      var amt = Number(h.prize || 0);
+      if (h.status === 'reversed') amt = -amt;
+      rows.push({ id: h.id || ('wheel-' + h.at), kind: 'wheel', amount: amt, date: h.at, status: h.status === 'ready' ? 'Ready' : (h.status === 'reversed' ? 'Reversed' : 'Paid'), note: h.note || ('Wheel of Fortune win (Tier ' + h.tier + ')') });
     });
     // 2) Commission payouts (paid partner commissions)
     var comms = (dbc.partner_commissions || []).filter(function(cm) { return cm.partner_id === aff.id && cm.status === 'paid'; });
     comms.forEach(function(cm) {
-      rows.push({ id: cm.id, kind: 'commission', amount: Number(cm.commission_amount || 0), date: cm.paid_at || cm.updated_at || cm.created_at, status: 'paid', note: 'Commission payout' });
+      rows.push({ id: cm.id, kind: 'commission', amount: Number(cm.commission_amount || 0), date: cm.paid_at || cm.updated_at || cm.created_at, status: 'Paid', note: 'Commission payout' });
     });
     // 3) Manual payouts recorded on the affiliate (bank transfer etc)
     (aff.payouts || []).forEach(function(p2) {
       if (p2.reference === 'wheel' || p2.method === 'wheel') return; // already covered above
-      rows.push({ id: p2.id || ('payout-' + p2.date), kind: 'payout', amount: Number(p2.amount || 0), date: p2.date, status: p2.status || 'paid', note: p2.note || 'Payout' });
+      if (p2.status === 'cancelled') return;
+      rows.push({ id: p2.id || ('payout-' + p2.date), kind: 'payout', amount: Number(p2.amount || 0), date: p2.date, status: p2.status === 'ready' ? 'Ready' : (p2.status || 'Paid'), note: p2.note || 'Payout' });
     });
     rows.sort(function(a,b){ return String(b.date||'').localeCompare(String(a.date||'')); });
-    // Totals
+    // Totals: commission ledger + wheel wins. Only genuinely-transferred wheel wins
+    // count as PAID; 'ready' wins count as pending (awaiting the weekly transfer);
+    // reversed/cancelled wins are excluded entirely (never earned).
     var totals = { paid: 0, pending: 0, lifetime: 0 };
     (dbc.partner_commissions || []).forEach(function(cm) {
       if (cm.partner_id !== aff.id) return;
@@ -6116,7 +6140,13 @@ app.get('/api/affiliate/payouts', affiliateAuth, (req, res) => {
       if (cm.status === 'paid') totals.paid += amt;
       else if (cm.status === 'approved' || cm.status === 'pending') totals.pending += amt;
     });
-    (aff.wheel_history || []).forEach(function(h){ totals.lifetime += Number(h.prize || 0); totals.paid += Number(h.prize || 0); });
+    (aff.wheel_history || []).forEach(function(h) {
+      if (h.status === 'reversed' || h.status === 'cancelled') return;
+      var amt = Number(h.prize || 0);
+      totals.lifetime += amt;
+      if (h.status === 'paid') totals.paid += amt;
+      else if (h.status === 'ready') totals.pending += amt;
+    });
     res.json({ success: true, payouts: rows, totals: totals });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -6553,6 +6583,18 @@ app.post('/api/admin/affiliates/pay', adminAuth, (req, res) => {
     (getDb().customers || []).forEach(function(c) {
       if (c.affiliate_id !== aff.id && String(c.affiliate_code || '').toLowerCase() !== String(aff.code || '').toLowerCase()) return;
       if (c.affiliate_payout_status !== 'due') return;
+      // DOUBLE-PAY GUARD: if the commission engine has already cleared this referral
+      // (commission approved/paid, or queued 'ready' for a bank transfer), the legacy
+      // 30-day button must NOT pay it a second time. The affiliate's real earnings now
+      // live in the commission ledger — pay those via Admin -> Affiliate payouts.
+      try {
+        var _covered = (getDb().partner_commissions || []).some(function(cm) {
+          return cm.partner_id === aff.id && cm.customer_id === c.id && cm.commission_type === 'one_off' && (cm.status === 'approved' || cm.status === 'paid' || cm.payout_id);
+        });
+        // Already paid (or queued) through the commission ledger — clear the legacy
+        // 'due' flag so it stops showing as ready-to-pay, but NEVER pay it twice.
+        if (_covered) { c.affiliate_payout_status = 'paid'; return; }
+      } catch(e) {}
       c.affiliate_payout_status = 'paid';
       c.affiliate_paid_at = nowIso;
       amount += rate;
@@ -6560,7 +6602,7 @@ app.post('/api/admin/affiliates/pay', adminAuth, (req, res) => {
     });
     if (paidRefs.length) {
       aff.payouts = aff.payouts || [];
-      aff.payouts.push({ id: uuidv4(), date: nowIso, amount: amount, referrals: paidRefs.length, refs: paidRefs });
+      aff.payouts.push({ id: uuidv4(), date: nowIso, amount: amount, status: 'paid', method: 'legacy', referrals: paidRefs.length, refs: paidRefs });
       saveDb();
     }
     res.json({ success: true, affiliate: aff.name, paid_referrals: paidRefs.length, amount_paid: amount, payout_id: paidRefs.length ? aff.payouts[aff.payouts.length - 1].id : null });
@@ -19958,12 +20000,21 @@ app.post('/api/stripe/webhook', async (req, res) => {
             try {
               var _pmts = (getDb().payments || []).filter(function(r){
                 if (r.product && r.product === 'direct_mail') return false; // Print & Post orders are not subscription payments
+                // Also ignore one-off purchases (lead top-ups, Boost/Bulk packs, single
+                // Print & Post) — only real subscription payments should count toward the
+                // referral's 2nd-invoice milestone.
+                var _subj = String((r.description || '') + ' ' + (r.plan || '') + ' ' + (r.product || '')).toLowerCase();
+                if (/(one-?off|top-?up|boost|bulk|direct.?mail|print.?post|single)/.test(_subj)) return false;
                 return (r.customer_id && r.customer_id === invCustomer.id) || (r.customer_email && r.customer_email === invCustomer.email);
               });
               _pmtCount = _pmts.length;
             } catch(pcErr) {}
             var invCount = _pmtCount + 1; // this invoice
-            if (invCustomer.affiliate_payout_status === 'referral_pending' && invCount >= 2) {
+            // 'converted' (paid via Stripe checkout) used to be a dead-end — nothing ever
+            // promoted it, so checkout-converted referrals never earned. Treat it the same
+            // as 'referral_pending': the 2nd PAID invoice is what earns the commission.
+            var _invSt = invCustomer.affiliate_payout_status || '';
+            if ((_invSt === 'referral_pending' || _invSt === 'converted') && invCount >= 2) {
               // 2nd paid invoice: the customer has renewed at least once -> commission earned.
               db.prepare('UPDATE customers SET affiliate_payout_status = ?, affiliate_payout_due = ? WHERE id = ?')
                 .run('pending',

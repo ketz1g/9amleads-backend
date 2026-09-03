@@ -297,12 +297,13 @@ tbody tr:hover td{background:#f8fafc}
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
 <div style="font-size:14px;font-weight:700;font-family:'Outfit',sans-serif"><i class="fas fa-handshake" style="color:#0ea5e9;margin-right:6px"></i> Affiliate Program</div>
 <div style="display:flex;gap:8px;flex-wrap:wrap">
-<button class="btn btn-outline btn-sm" onclick="runAffAutoPayout()" title="Pay all approved commissions meeting the £50 minimum"><i class="fas fa-money-check-alt"></i> Run auto-payout</button>
+<button class="btn btn-outline btn-sm" onclick="runAffAutoPayout()" title="Queue every cleared commission (2nd invoice paid, ~5-day clearance) as a ready-to-pay bank transfer"><i class="fas fa-money-check-alt"></i> Queue cleared commissions</button>
 <button class="btn btn-outline btn-sm" onclick="runAffAutomation()" title="Send pending nurture/reactivation emails now"><i class="fas fa-paper-plane"></i> Run automation</button>
 <button class="btn btn-primary btn-sm" onclick="createAffiliateForm()"><i class="fas fa-plus"></i> Add Affiliate</button>
 </div>
-<p style="font-size:12.5px;color:#475569;margin:0 0 10px">Referrals use an affiliate's name or code at signup → customer gets a <b>14-day trial</b> → affiliate earns <b>£25</b> once the customer pays their <b>second</b> invoice for a Starter/Pro/Enterprise package. Approved commissions auto-pay monthly when they reach the £50 minimum. Associations earn £30 (25 + £5 bonus).</p>
+<p style="font-size:12.5px;color:#475569;margin:0 0 10px">Referrals use an affiliate's name or code at signup → customer gets an extended trial → the affiliate earns <b>£25</b> once the customer pays their <b>second</b> invoice for a Starter/Pro/Enterprise package. Cleared commissions appear in the green payout queue below — <b>transfer the money, then click Confirm paid</b> (the affiliate is emailed automatically). No minimum. Wheel wins also queue here. Associations earn £30 (25 + £5 bonus).</p>
 <div id="affPendingWrap"></div>
+<div id="affPayoutQueueWrap"></div>
 <div class="table-wrap" id="affiliateTableWrap"><div class="loading">Loading affiliates...</div></div>
 </div>
 </div>
@@ -644,6 +645,7 @@ function loadRejected() {
           '<td><button class="btn btn-outline btn-sm" onclick="replaceRejectedLead(\'' + l.lead_id + '\')"><i class="fas fa-sync"></i> Replace</button></td></tr>';
       });
       h += '</tbody></table>'; wrap.innerHTML = h;
+      loadAffiliatePayoutQueue();
     })
     .catch(function(e) { wrap.innerHTML = '<div class="empty">Error: ' + e.message + '</div>'; });
 }
@@ -743,6 +745,32 @@ function payAffiliate(id, name) {
   fetch(API + '/api/admin/affiliates/pay', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: JSON.stringify({ affiliate_id: id }) })
     .then(function(r) { return r.json(); })
     .then(function(d) { alert('Paid £' + d.amount_paid + ' to ' + d.affiliate + ' (' + d.paid_referrals + ' referral' + (d.paid_referrals === 1 ? '' : 's') + ').'); loadAffiliates(); })
+    .catch(function(e) { alert('Error: ' + e.message); });
+}
+function loadAffiliatePayoutQueue() {
+  var el = document.getElementById('affPayoutQueueWrap');
+  if (!el) return;
+  fetch(API + '/api/admin/affiliate/payouts', { headers: adminHeaders() })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (!d.success || !d.ready || !d.ready.length) { el.innerHTML = ''; return; }
+      el.innerHTML = '<div style="background:#ecfdf5;border:1px solid #6ee7b7;border-radius:12px;padding:12px 14px;margin-bottom:14px">' +
+        '<div style="font-weight:800;color:#065f46;font-size:13px;margin-bottom:8px">💷 ' + d.ready.length + ' payout' + (d.ready.length > 1 ? 's' : '') + ' READY to transfer — total £' + Number(d.ready_total || 0).toFixed(2) + '</div>' +
+        '<div style="display:flex;flex-direction:column;gap:6px">' + d.ready.map(function(p) {
+          return '<div style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #d1fae5;border-radius:8px;padding:8px 10px;flex-wrap:wrap">' +
+            '<div style="flex:1;min-width:160px"><b>' + esc(p.affiliate) + '</b><div style="font-size:11px;color:#64748b">' + esc(p.email || '') + (p.account_holder ? ' · ' + esc(p.account_holder) : '') + (p.bank ? ' · ' + esc(p.bank) : '') + '</div></div>' +
+            '<div style="font-weight:800;color:#047857">£' + Number(p.amount || 0).toFixed(2) + '</div>' +
+            '<button class="btn btn-sm" style="background:#059669;color:#fff" onclick="confirmPayout(\'' + p.id + '\')">✓ Confirm paid (I sent it)</button>' +
+            '</div>';
+        }).join('') + '</div></div>';
+    })
+    .catch(function() { el.innerHTML = ''; });
+}
+function confirmPayout(id) {
+  if (!confirm('Confirm you have SENT this bank transfer? The affiliate will be emailed that their payout is on the way.')) return;
+  fetch(API + '/api/admin/affiliate/payouts/confirm', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: JSON.stringify({ id: id }) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) { if (d.success) { alert('Payout confirmed as sent.'); loadAffiliatePayoutQueue(); loadAffiliates(); } else alert(d.error || 'Could not confirm payout'); })
     .catch(function(e) { alert('Error: ' + e.message); });
 }
 function setAffAssociation(id, current) {
@@ -854,10 +882,15 @@ function instantApprove(id, name) {
     .catch(function(e) { alert('Error: ' + e.message); });
 }
 function runAffAutoPayout() {
-  if (!confirm('Run the monthly auto-payout now? This pays all APPROVED commissions that meet the £50 minimum for each affiliate.')) return;
+  if (!confirm('Queue all cleared commissions (2nd invoice paid, clearance passed) as ready-to-pay now? Nothing is transferred until you click "Confirm paid" on each payout.')) return;
   fetch(API + '/api/admin/affiliate/run-auto-payout', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: '{}' })
     .then(function(r) { return r.json(); })
-    .then(function(d) { alert('Auto-payout complete: ' + (d.result.commissions_paid || 0) + ' commission(s) marked paid.'); loadAffiliates(); })
+    .then(function(d) {
+      var n = (d.result && d.result.action_lines) || 0;
+      var msg = (d.result && d.result.commissions_paid) ? (d.result.commissions_paid + ' commission(s) queued as ready-to-pay.') : 'No new cleared commissions to queue.';
+      alert(msg + ' See the green payout queue above to transfer & confirm.');
+      loadAffiliates();
+    })
     .catch(function(e) { alert('Error: ' + e.message); });
 }
 function runAffAutomation() {
