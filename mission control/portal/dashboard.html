@@ -1898,13 +1898,10 @@ document.querySelectorAll('.modal').forEach(function(m){
       live = live.filter(function(l){ var d=(typeof l.data==='string')?null:l.data; try{ if(typeof l.data==='string') d=JSON.parse(l.data); }catch(e){} var u=String(d&&d.url||'').split('#')[0].split('?')[0].replace(/\/+$/,'').toLowerCase(); var a=String(d&&d.fullAddress||d&&d.address||'').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,28); var pc=String(d&&d.postcode||'').toUpperCase().replace(/[^A-Z0-9]/g,''); var k=u||(a+'|'+pc); if(!k) return true; if(_seenLive[k]) return false; _seenLive[k]=true; return true; });
       var today = new Date().toISOString().split('T')[0];
       // SAME definition as the My Leads page "This week" tab (inRange in leads.html):
-      // this week = from the most recent SUNDAY, but NEVER reaching back into a previous
-      // month (start = later of this week's start and the 1st of the month). This keeps
-      // "This week" <= "This month" so the numbers always look right (e.g. Mon 31 Aug is
-      // in August, so it can't inflate this week's card in September).
-      var _wk = new Date(); _wk.setHours(0, 0, 0, 0); _wk.setDate(_wk.getDate() - _wk.getDay());
-      var _mo = new Date(); _mo.setHours(0, 0, 0, 0); _mo.setDate(1);
-      var wStart = (_wk > _mo ? _wk : _mo).toISOString().split('T')[0];
+      // a MONDAY-start working week (deliveries run Mon-Fri, including bank holidays),
+      // so oath's Mon 31 Aug bank-holiday batch counts: Mon-Thu = 20, +Fri = 25.
+      var _wk = new Date(); _wk.setHours(0, 0, 0, 0); _wk.setDate(_wk.getDate() - ((_wk.getDay() + 6) % 7));
+      var wStart = _wk.toISOString().split('T')[0];
       var tl = live.filter(function(l){ return (l.delivered_at || '').startsWith(today); });
       var wl = live.filter(function(l){ return (l.delivered_at || '') >= wStart; });
       var ml = live.filter(function(l){ return (l.delivered_at || '').startsWith(today.substring(0,7)); });
