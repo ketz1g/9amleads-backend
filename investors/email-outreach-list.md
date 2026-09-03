@@ -15,6 +15,12 @@
 | Minerva Business Angels | Angel network (Warwick Science Park) | enquiries@minerva.uk.net (verify on warwicksciencepark.co.uk page first) | SEIS/EIS deals | warwicksciencepark.co.uk |
 | The FSE Group | Regional fund (mostly DEBT) | fundingenquiries@thefsegroup.com | Loans £25k+; only if you'll take debt | thefsegroup.com |
 | Angel Investment Network | Angel marketplace (200k+ angels) | info@angelinvestmentnetwork.co.uk | Free founder tier; SEIS angels | angelinvestmentnetwork.co.uk/contact |
+| Mint Ventures | Angel network (West Midlands, UKBAA) | info@mintventures.co.uk | Small deal sizes; welcomes founder enquiries | mintventures.co.uk/contact |
+| Archangels | Angel syndicate (Edinburgh) | investment@archangelsonline.com | SEIS/EIS deal enquiries | archangelsonline.com/contact-us |
+| Angels Den | Angel network (UK-wide) | info@angelsden.com | Sub-£50k SEIS tickets standard | angelsden.co.uk/contact |
+| SyndicateRoom | EIS/SEIS investor platform (Cambridge) | contactus@syndicateroom.com | Co-invests alongside angels on small rounds | syndicateroom.com |
+
+> **Second research pass (3 Sep 2026):** above 4 are newly verified public emails. Also confirmed but **larger-ticket / weaker fit for £25k — don't email for this round:** Parkwalk Advisors (enquiries@parkwalk.vc, EIS spinouts, larger tickets), Keiretsu Forum London (contact@keiretsuforum.co.uk), Adjuvo (info@adjuvo.com). **Northstar Ventures** (Newcastle, EIS/seed) has a public email but it is Cloudflare-obfuscated on its site — grab it from the live page if you want them.
 
 ## B. Free pitch/application forms (submit your deck — same as emailing, just via their intake)
 | Target | Fit | Exact form |
