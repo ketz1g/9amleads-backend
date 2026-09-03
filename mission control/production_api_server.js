@@ -4333,7 +4333,14 @@ app.get('/api/admin/affiliate/payouts', adminAuth, (req, res) => {
     var ready = [], history = [];
     (dbA.affiliates || []).forEach(function(aff) {
       (aff.payouts || []).forEach(function(p) {
-        var row = { id: p.id, affiliate: aff.name || aff.email, email: p.affiliate_email || aff.email, amount: p.amount, status: p.status, created_at: p.created_at || p.date || '', bank: p.bank || '', account_holder: p.account_holder || (aff.kyc && aff.kyc.bank_account_holder) || '' };
+        var kb = (aff.kyc || {});
+        var row = {
+          id: p.id, affiliate: aff.name || aff.email, email: p.affiliate_email || aff.email,
+          amount: p.amount, status: p.status, created_at: p.created_at || p.date || '',
+          bank_name: kb.bank_name || '', account_holder: kb.bank_account_holder || (p.account_holder || ''),
+          sort_code: kb.bank_sort_code || '', account_number: kb.bank_account_number || '',
+          legal_name: kb.legal_name || ''
+        };
         if (p.status === 'ready') ready.push(row); else if (p.status === 'paid') history.push(row);
       });
     });
@@ -6558,6 +6565,25 @@ app.delete('/api/affiliate/leads/:id', affiliateAuth, (req, res) => {
 
 // ===== ADMIN AFFILIATE MANAGEMENT =====
 // GET /api/admin/affiliates — list every affiliate with referral + payout totals.
+// GET /api/admin/affiliates/:id/kyc — full KYC detail for the review screen: the actual
+// ID image (base64) plus the bank details needed to pay this affiliate.
+app.get('/api/admin/affiliates/:id/kyc', adminAuth, (req, res) => {
+  try {
+    var dbK = getDb();
+    var affK = (dbK.affiliates || []).find(function(a) { return a.id === String(req.params.id || ''); });
+    if (!affK) return res.status(404).json({ error: 'Affiliate not found' });
+    var k = affK.kyc || {};
+    res.json({ success: true, kyc: {
+      legal_name: k.legal_name || '', id_type: k.id_type || '',
+      id_image: k.id_uploaded || '',
+      bank_name: k.bank_name || '', bank_account_holder: k.bank_account_holder || '',
+      bank_sort_code: k.bank_sort_code || '', bank_account_number: k.bank_account_number || '',
+      status: k.status || 'not_submitted', tc_accepted: !!k.tc_accepted,
+      id_review_note: k.id_review_note || '', submitted_at: k.submitted_at || null
+    } });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/admin/affiliates', adminAuth, (req, res) => {
   try {
     var affs = getDb().affiliates || [];

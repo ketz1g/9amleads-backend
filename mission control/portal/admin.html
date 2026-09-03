@@ -758,7 +758,10 @@ function loadAffiliatePayoutQueue() {
         '<div style="font-weight:800;color:#065f46;font-size:13px;margin-bottom:8px">💷 ' + d.ready.length + ' payout' + (d.ready.length > 1 ? 's' : '') + ' READY to transfer — total £' + Number(d.ready_total || 0).toFixed(2) + '</div>' +
         '<div style="display:flex;flex-direction:column;gap:6px">' + d.ready.map(function(p) {
           return '<div style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #d1fae5;border-radius:8px;padding:8px 10px;flex-wrap:wrap">' +
-            '<div style="flex:1;min-width:160px"><b>' + esc(p.affiliate) + '</b><div style="font-size:11px;color:#64748b">' + esc(p.email || '') + (p.account_holder ? ' · ' + esc(p.account_holder) : '') + (p.bank ? ' · ' + esc(p.bank) : '') + '</div></div>' +
+            '<div style="flex:1;min-width:200px"><b>' + esc(p.affiliate) + '</b>' +
+            '<div style="font-size:11px;color:#334155;margin-top:3px">' + esc(p.account_holder || p.legal_name || '') + (p.bank_name ? ' · ' + esc(p.bank_name) : '') + '</div>' +
+            '<div style="font-size:12px;color:#047857;font-weight:700;margin-top:2px">Sort ' + esc(p.sort_code || '') + ' · Account ' + esc(p.account_number || '') + '</div>' +
+            '</div>' +
             '<div style="font-weight:800;color:#047857">£' + Number(p.amount || 0).toFixed(2) + '</div>' +
             '<button class="btn btn-sm" style="background:#059669;color:#fff" onclick="confirmPayout(\'' + p.id + '\')">✓ Confirm paid (I sent it)</button>' +
             '</div>';
@@ -837,32 +840,32 @@ function decideApplication(id, decision) {
     .catch(function(e) { alert('Error: ' + e.message); });
 }
 function reviewKyc(id) {
-  fetch(API + '/api/admin/affiliates?t=' + Date.now(), { headers: adminHeaders() })
+  fetch(API + '/api/admin/affiliates/' + id + '/kyc?t=' + Date.now(), { headers: adminHeaders() })
     .then(function(r) { return r.json(); })
     .then(function(d) {
-      var a = (d.affiliates || []).find(function(x) { return x.id === id; });
-      if (!a) { alert('Affiliate not found'); return; }
-      var k = a.kyc || {};
-      var idHtml = k.id_uploaded
-        ? '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:12px;text-align:center"><div style="font-size:12px;font-weight:700;color:#334155;margin-bottom:6px">ID upload</div><img src="data:image/jpeg;base64,' + k.id_uploaded + '" style="max-width:100%;max-height:220px;border-radius:8px;border:1px solid #cbd5e1" alt="Affiliate ID"></div>'
+      if (!d.success) { alert(d.error || 'Could not load KYC'); return; }
+      var k = d.kyc || {};
+      var idHtml = k.id_image
+        ? '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:12px;text-align:center"><div style="font-size:12px;font-weight:700;color:#334155;margin-bottom:6px">ID upload (' + pEsc(k.id_type || 'document') + ')</div><img src="data:image/jpeg;base64,' + k.id_image + '" style="max-width:100%;max-height:240px;border-radius:8px;border:1px solid #cbd5e1" alt="Affiliate ID"></div>'
         : '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:12px;color:#64748b;font-size:12px">No ID uploaded yet.</div>';
       var content = idHtml +
         '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;margin-bottom:14px">' +
         '<div style="font-size:12px;margin-bottom:8px"><b>Legal name (ID):</b> ' + pEsc(k.legal_name || '-') + '</div>' +
-        '<div style="font-size:12px;margin-bottom:8px"><b>ID type:</b> ' + pEsc(k.id_type || '-') + '</div>' +
         '<div style="font-size:12px;margin-bottom:8px"><b>Bank:</b> ' + pEsc(k.bank_name || '-') + '</div>' +
-        '<div style="font-size:12px;margin-bottom:8px"><b>Bank account holder:</b> ' + pEsc(k.bank_account_holder || '-') + '</div>' +
-        '<div style="font-size:12px"><b>Name match:</b> ' + (pEsc(k.legal_name)===pEsc(k.bank_account_holder) ? '<span style="color:#16a34a;font-weight:700">MATCH</span>' : '<span style="color:#d97706;font-weight:700">CHECK</span>') + '</div>' +
-        '<div style="font-size:12px;margin-top:8px"><b>T&amp;C accepted:</b> ' + (k.tc_accepted ? '<span style="color:#16a34a;font-weight:700">Yes</span>' : '<span style="color:#ef4444;font-weight:700">No</span>') + '</div>' +
+        '<div style="font-size:12px;margin-bottom:8px"><b>Account holder:</b> ' + pEsc(k.bank_account_holder || '-') + '</div>' +
+        '<div style="font-size:12px;margin-bottom:8px"><b>Sort code:</b> ' + pEsc(k.bank_sort_code || '-') + ' &nbsp; <b>Account no.:</b> ' + pEsc(k.bank_account_number || '-') + '</div>' +
+        '<div style="font-size:12px;margin-bottom:8px"><b>Name match:</b> ' + (normalizeMatch(k.legal_name) === normalizeMatch(k.bank_account_holder) ? '<span style="color:#16a34a;font-weight:700">MATCH</span>' : '<span style="color:#d97706;font-weight:700">CHECK MANUALLY</span>') + '</div>' +
+        '<div style="font-size:12px"><b>T&amp;C accepted:</b> ' + (k.tc_accepted ? '<span style="color:#16a34a;font-weight:700">Yes</span>' : '<span style="color:#ef4444;font-weight:700">No</span>') + '</div>' +
         (k.status === 'rejected' && k.id_review_note ? '<div style="font-size:12px;color:#ef4444;margin-top:8px"><b>Reject reason:</b> ' + pEsc(k.id_review_note) + '</div>' : '') +
         '</div>' +
         '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input id="kyc-note" placeholder="Optional note (sent to affiliate)" style="flex:1;min-width:160px;padding:9px 11px;border:1px solid #cbd5e1;border-radius:8px;font-size:12px">' +
         '<button class="btn btn-primary btn-sm" onclick="decideKyc(\'' + id + '\',\'approve\')">✓ Approve ID</button>' +
         '<button class="btn btn-sm" style="background:#ef4444;color:#fff" onclick="decideKyc(\'' + id + '\',\'reject\')">✗ Reject ID</button></div>';
-      showModal('ID Verification · ' + pEsc(a.name), content, 520);
+      showModal('ID Verification · ' + pEsc(k.legal_name || 'Affiliate'), content, 540);
     })
     .catch(function(e) { alert('Error: ' + e.message); });
 }
+function normalizeMatch(n) { return String(n || '').toLowerCase().replace(/[^a-z]/g, ''); }
 function decideKyc(id, decision) {
   var note = (document.getElementById('kyc-note') || {}).value || '';
   if (decision === 'reject' && !confirm('Reject this ID? The affiliate will be emailed and cannot be paid until they re-submit.')) return;
