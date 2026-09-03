@@ -85,7 +85,7 @@ footer a{color:var(--accent);text-decoration:underline}
 </div>
 <div class="container">
 <div class="page-header">
-<div><h1><i class="fas fa-list" style="color:var(--accent);margin-right:6px"></i> My Leads</h1><div class="sub" id="date-label">All time</div></div>
+<div><h1><i class="fas fa-list" style="color:var(--accent);margin-right:6px"></i> My Leads</h1><div class="sub">Your delivered leads for each day — open any day with the calendar below.</div></div>
 <div style="display:flex;gap:8px">
 <a href="/portal/dashboard.html" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Dashboard</a>
 <button class="btn btn-primary" onclick="exportLeads()"><i class="fas fa-download"></i> Export</button>
@@ -98,16 +98,13 @@ footer a{color:var(--accent);text-decoration:underline}
 
 <div class="stats">
 <div class="stat"><div class="num" id="stat-today">0</div><div class="lbl">Today</div></div>
-<div class="stat"><div class="num" id="stat-week">0</div><div class="lbl">This Week</div></div>
-<div class="stat"><div class="num" id="stat-month">0</div><div class="lbl">This Month</div></div>
-<div class="stat"><div class="num" id="stat-total">0</div><div class="lbl">All Time</div></div>
+<div style="display:flex;gap:8px;align-items:center;margin-left:auto;flex-wrap:wrap" id="date-nav">
+<button class="btn btn-outline" onclick="stepDay(-1)" style="padding:7px 12px;font-size:12px"><i class="fas fa-chevron-left" style="font-size:10px"></i> Prev</button>
+<input type="date" id="day-picker" value="2026-09-03" onchange="pickDay(this.value)" style="padding:6px 8px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;font-family:inherit">
+<button class="btn btn-outline" onclick="stepDay(1)" style="padding:7px 12px;font-size:12px">Next <i class="fas fa-chevron-right" style="font-size:10px"></i></button>
+<button class="btn" onclick="goToday()" style="padding:7px 12px;font-size:12px">Today</button>
+<span id="date-label" style="font-size:12px;color:#64748b;font-weight:600">Today</span>
 </div>
-
-<div class="tabs" id="lead-tabs">
-<button class="tab active" data-range="today" onclick="setRange('today')"><i class="fas fa-sun" style="font-size:11px;margin-right:4px"></i>Today <span class="tab-count" id="tab-today">0</span></button>
-<button class="tab" data-range="week" onclick="setRange('week')"><i class="fas fa-calendar-week" style="font-size:11px;margin-right:4px"></i>This Week <span class="tab-count" id="tab-week">0</span></button>
-<button class="tab" data-range="month" onclick="setRange('month')"><i class="fas fa-calendar-alt" style="font-size:11px;margin-right:4px"></i>This Month <span class="tab-count" id="tab-month">0</span></button>
-<button class="tab" data-range="all" onclick="setRange('all')"><i class="fas fa-database" style="font-size:11px;margin-right:4px"></i>All Time <span class="tab-count" id="tab-all">0</span></button>
 </div>
 
 <div style="font-size:11px;color:#64748b;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;margin-bottom:10px;line-height:1.6"><b>ℹ️ Quiet days:</b> On days when fewer fresh leads are available in your exact postcode areas, we send you the leads <b>closest to your chosen postcodes</b> so you still get your full daily count. You are never sent the same opportunity twice.</div>
@@ -850,6 +847,35 @@ function mpPay(){
 function closeMailModal(){document.getElementById('mail-modal').className='modal-overlay';_pendingLeadId='';}
 function closeOnEsc(e){if(e.key==='Escape')closeMailModal();}
 var currentRange = 'today';
+// ===== SINGLE-DAY VIEW (calendar navigation) =====
+// The stats are kept deliberately simple: "Today" is the only headline number
+// (it always matches the 9am promise). Customers browse past days with the
+// calendar / prev-next arrows instead of week/month/all-time totals.
+var viewDate = null;
+function _isoD(d) { return d.toISOString().split('T')[0]; }
+function _todayISO() { return _isoD(new Date()); }
+function refreshDayView() {
+  var tgt = viewDate || _todayISO();
+  var lbl = document.getElementById('date-label');
+  if (lbl) {
+    if (viewDate) {
+      var dt = new Date(viewDate + 'T12:00:00');
+      lbl.textContent = 'Viewing: ' + dt.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+    } else {
+      lbl.textContent = 'Today';
+    }
+  }
+  var dp = document.getElementById('day-picker');
+  if (dp) dp.value = tgt;
+  if (typeof filterLeads === 'function') filterLeads();
+}
+function goToday() { viewDate = null; refreshDayView(); }
+function pickDay(v) { if (!v) return; viewDate = String(v).substring(0, 10); refreshDayView(); }
+function stepDay(n) {
+  var base = viewDate ? new Date(viewDate + 'T12:00:00Z') : new Date();
+  base.setDate(base.getDate() + n);
+  pickDay(_isoD(base));
+}
 function setRange(range) {
   currentRange = range;
   document.querySelectorAll('#lead-tabs .tab').forEach(function(t){
@@ -864,18 +890,17 @@ function inRange(l, range) {
   var day = leadCreatedDay(l);
   if (!day) return true;
   var now = new Date();
-  if (range === 'today') { return day === now.toISOString().split('T')[0]; }
+  if (range === 'today') { var tgt = viewDate || now.toISOString().split('T')[0]; return day === tgt; }
   if (range === 'week') {
-    // Same Monday-start working-week rule as the dashboard KPI (deliveries are Mon-Fri,
-    // including bank holidays): Mon 31 Aug counts, so this week = Mon..Thu = 20 (+Fri = 25).
+    // Monday-start working week (deliveries Mon-Fri incl bank holidays)
     var w = new Date(now); w.setHours(0, 0, 0, 0); w.setDate(w.getDate() - ((w.getDay() + 6) % 7));
     return day >= w.toISOString().split('T')[0];
   }
   if (range === 'month') { return day.substring(0,7) === now.toISOString().split('T')[0].substring(0,7); }
   return true;
 }
-// Dashboard stat cards deep-link here: /portal/leads.html?range=today|week|month|all
-(function(){ try { var _pr = new URLSearchParams(window.location.search).get('range'); if (_pr && ['today','week','month','all'].indexOf(_pr) !== -1) { setTimeout(function(){ if (typeof setRange === 'function') setRange(_pr); }, 80); } } catch(e){} })();
+// Dashboard "Today" stat deep-links here; any other range param is ignored (day view only).
+(function(){ try { var _pr = new URLSearchParams(window.location.search).get('range'); if (_pr === 'today' && typeof goToday === 'function') { setTimeout(goToday, 80); } } catch(e){} })();
 function filterLeads() {
   var q = document.getElementById('search-input').value.toLowerCase();
   var status = document.getElementById('status-filter').value.toLowerCase();
@@ -950,21 +975,9 @@ var _token = '';
       document.getElementById('trial-gate').style.display = 'none';
       allLeads = leads.sort(function(a,b){return(b.created_at||'').localeCompare(a.created_at||'');});
       var today = new Date().toISOString().split('T')[0];
-      // Count DELIVERED leads (the actual plan promise). created_at includes
-      // undelivered top-ups that would over-count "Today".
-      var dl = function(l){return (l.delivered_at||'').startsWith(today);};
-      var tl = allLeads.filter(dl);
-      var ml = allLeads.filter(function(l){return (l.delivered_at||'').startsWith(today.substring(0,7));});
-      var _wkw = new Date(); _wkw.setHours(0,0,0,0); _wkw.setDate(_wkw.getDate() - ((_wkw.getDay() + 6) % 7));
-      var wk = allLeads.filter(function(l){return (l.delivered_at||'') >= _wkw.toISOString().split('T')[0];});
+      // Single headline number: delivered TODAY (always equals the 9am promise).
+      var tl = allLeads.filter(function(l){return (l.delivered_at||'').startsWith(today);});
       document.getElementById('stat-today').textContent = tl.length;
-      document.getElementById('stat-week').textContent = wk.length;
-      document.getElementById('stat-month').textContent = ml.length;
-      document.getElementById('stat-total').textContent = allLeads.length;
-      document.getElementById('tab-today').textContent = tl.length;
-      document.getElementById('tab-week').textContent = wk.length;
-      document.getElementById('tab-month').textContent = ml.length;
-      document.getElementById('tab-all').textContent = allLeads.length;
       // Detect product: if ALL leads are tenders, hide the Print & Post actions
       // (tenders are applied for online, not via post).
       var prods = {};
@@ -974,7 +987,7 @@ var _token = '';
         var bbar = document.getElementById('bulk-bar');
         if (bbar) bbar.style.display = 'none';
       }
-      setRange('month');
+      goToday();
     } catch(e) {}
   };
   x.send();

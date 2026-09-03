@@ -131,10 +131,8 @@ footer a{color:var(--accent);text-decoration:underline}
 </div>
 
 <div class="grid-3">
-<a href="/portal/leads.html?range=today" title="View today's leads" style="text-decoration:none;color:inherit"><div class="card stat"><div class="icon" style="background:#eff6ff;color:var(--accent)">📊</div><div class="num" id="kpi-today">0</div><div class="lbl">Leads Today</div></div></a>
-<a href="/portal/leads.html?range=week" title="View this week's leads" style="text-decoration:none;color:inherit"><div class="card stat"><div class="icon" style="background:#f0fdf4;color:var(--success)">📅</div><div class="num" id="kpi-week">0</div><div class="lbl">This Week</div></div></a>
-<a href="/portal/leads.html?range=month" title="View this month's leads" style="text-decoration:none;color:inherit"><div class="card stat"><div class="icon" style="background:#faf5ff;color:#8b5cf6">📈</div><div class="num" id="kpi-month">0</div><div class="lbl">This Month</div></div></a>
-        </div>
+<a href="/portal/leads.html?range=today" title="View today's leads" style="text-decoration:none;color:inherit;display:block"><div class="card stat"><div class="icon" style="background:#eff6ff;color:var(--accent)">📊</div><div class="num" id="kpi-today">0</div><div class="lbl">Leads Today</div></div></a>
+</div>
 
 <!-- QUICK TIPS (rotating, helps conversion) -->
 <div class="card" style="margin-bottom:16px">
@@ -1894,20 +1892,23 @@ document.querySelectorAll('.modal').forEach(function(m){
       // DEDUPE live leads by URL/address so repeated/churned deliveries never inflate
       // the KPI counts (a duplicate "33 Devon Street" row must count once).
       // NOTE: /api/leads returns data as an already-parsed OBJECT, so guard both types.
-      var _seenLive = {};
-      live = live.filter(function(l){ var d=(typeof l.data==='string')?null:l.data; try{ if(typeof l.data==='string') d=JSON.parse(l.data); }catch(e){} var u=String(d&&d.url||'').split('#')[0].split('?')[0].replace(/\/+$/,'').toLowerCase(); var a=String(d&&d.fullAddress||d&&d.address||'').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,28); var pc=String(d&&d.postcode||'').toUpperCase().replace(/[^A-Z0-9]/g,''); var k=u||(a+'|'+pc); if(!k) return true; if(_seenLive[k]) return false; _seenLive[k]=true; return true; });
       var today = new Date().toISOString().split('T')[0];
-      // SAME definition as the My Leads page "This week" tab (inRange in leads.html):
-      // a MONDAY-start working week (deliveries run Mon-Fri, including bank holidays),
-      // so oath's Mon 31 Aug bank-holiday batch counts: Mon-Thu = 20, +Fri = 25.
-      var _wk = new Date(); _wk.setHours(0, 0, 0, 0); _wk.setDate(_wk.getDate() - ((_wk.getDay() + 6) % 7));
-      var wStart = _wk.toISOString().split('T')[0];
-      var tl = live.filter(function(l){ return (l.delivered_at || '').startsWith(today); });
-      var wl = live.filter(function(l){ return (l.delivered_at || '') >= wStart; });
-      var ml = live.filter(function(l){ return (l.delivered_at || '').startsWith(today.substring(0,7)); });
-      document.getElementById('kpi-today').textContent = tl.length;
-      document.getElementById('kpi-week').textContent = wl.length;
-      document.getElementById('kpi-month').textContent = ml.length;
+      // Single headline KPI: delivered TODAY (always equals the 9am promise), matching
+      // My Leads. Dedupe only WITHIN today (a same-day double row counts once; a genuine
+      // re-listing on another day is a separate lead and counts separately).
+      var _seenT = {};
+      var tl = live.filter(function(l){
+        if ((l.delivered_at || '').split('T')[0] !== today) return false;
+        var d=(typeof l.data==='string')?null:l.data; try{ if(typeof l.data==='string') d=JSON.parse(l.data); }catch(e){}
+        var u=String(d&&d.url||'').split('#')[0].split('?')[0].replace(/\/+$/,'').toLowerCase();
+        var a=String(d&&d.fullAddress||d&&d.address||'').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,28);
+        var pc=String(d&&d.postcode||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+        var k=(u||(a+'|'+pc));
+        if(!k) return true;
+        if(_seenT[k]) return false;
+        _seenT[k]=1; return true;
+      });
+      var _kt=document.getElementById('kpi-today'); if(_kt) _kt.textContent = tl.length;
     } catch(e) {}
   };
   x.send();
