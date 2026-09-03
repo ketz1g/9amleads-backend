@@ -13741,6 +13741,10 @@ var __lastDeliveryDate = ''; // YYYY-MM-DD of the most recent delivery fire (dai
 //                                   added leads immediately so inbox == dashboard == promise.
 //   purgeAllPendingRows()         — 09:12 UK daily: delete every undelivered row so stale
 //                                   pending junk can never inflate a dashboard again.
+function isInternalAccount(c) {
+  var e = String((c && c.email) || '').toLowerCase();
+  return e.indexOf('@9amleads.com') !== -1 || e === 'ketzman1g@gmail.com';
+}
 function autoFillDeliveryShortfalls() {
   try {
     var dbA = getDb();
@@ -13759,6 +13763,7 @@ function autoFillDeliveryShortfalls() {
     }
     var tasks = [];
     (dbA.customers || []).forEach(function(c) {
+      if (isInternalAccount(c)) return;
       if (!c.plan || c.plan === 'cancelled' || isLeadsPaused(c)) return;
       var promised = getPlanLimit(c.product, c.plan, c.coverage) || 0;
       if (promised <= 0) return;
@@ -13809,6 +13814,85 @@ function purgeAllPendingRows() {
       console.log('[PURGE-PENDING] removed ' + before + ' stale undelivered row(s) across all customers');
     }
   } catch(e) { console.log('[PURGE-PENDING] error:', e.message); }
+}
+// DAILY BULLETPROOF AUDIT (09:35 UK): after the 9am delivery + auto top-up + pending
+// purge, VERIFY the invariant "delivered today == promised, dashboard == inbox" for
+// every active customer, and fix/flag anything that deviates:
+//   1. auto-fill any remaining shortfall again (emails each added lead),
+//   2. remove same-day DUPLICATE delivered rows (double-run protection),
+//   3. resend the daily email if a customer has delivered leads but NO email went out
+//      today (so inbox == dashboard even if the first send failed),
+//   4. purge any leftover pending rows,
+//   5. alert the founder if any customer is still short (delivered < promised).
+function dedupeDailyDelivered() {
+  try {
+    var dbD = getDb();
+    var today = new Date().toISOString().split('T')[0];
+    var keep = {}, removed = 0;
+    dbD.leads = (dbD.leads || []).filter(function(l) {
+      if (!l.delivered || !l.delivered_at || l.delivered_at.indexOf(today) !== 0) return true;
+      var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
+      var key = String(l.customer_id) + '|' + String(d.url || '') + '|' + String(d.postcode || l.postcode || '').toUpperCase().replace(/\s+/g, '') + '|' + String(d.fullAddress || d.address || '');
+      if (keep[key]) { removed++; return false; }
+      keep[key] = 1; return true;
+    });
+    if (removed) { saveDb(); console.log('[DEDUPE-TODAY] removed ' + removed + ' duplicate delivered row(s)'); }
+    return removed;
+  } catch(e) { console.log('[DEDUPE-TODAY] error:', e.message); return 0; }
+}
+function reconcileTodayEmails() {
+  try {
+    var dbR = getDb();
+    var today = new Date().toISOString().split('T')[0];
+    var sent = 0;
+    (dbR.customers || []).forEach(function(cust) {
+      if (isInternalAccount(cust)) return;
+      if (!cust.plan || cust.plan === 'cancelled' || isLeadsPaused(cust)) return;
+      var rows = (dbR.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0; });
+      if (!rows.length) return;
+      if (cust.last_email_date === today) return; // main daily email already sent today
+      // Delivered rows exist but NO email went out today -> send one now (same template
+      // as the 9am email) so inbox == dashboard.
+      try {
+        var _subj = '9amLeads \u2022 Your Daily Opportunities for ' + (cust.coverage ? (COVERAGE_LABELS[cust.coverage] || cust.coverage) : 'your area') + ' on ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        var _html = generateLeadEmailHTML(cust, rows);
+        sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, _subj, _html).then(function() {
+          try { var dbS = getDb(); var cu = (dbS.customers || []).find(function(x){ return x.id === cust.id; }); if (cu) { cu.last_email_date = today; saveDb(); } } catch(e2) {}
+        }).catch(function(er) { console.log('[RECONCILE] email failed ' + cust.email + ': ' + (er && er.message || er)); });
+        sent++;
+        console.log('[RECONCILE] re-sent daily email to ' + cust.email + ' (' + rows.length + ' leads)');
+      } catch(ee) { console.log('[RECONCILE] build error ' + cust.email + ': ' + ee.message); }
+    });
+    return sent;
+  } catch(e) { console.log('[RECONCILE] error:', e.message); return 0; }
+}
+function runFinalGuaranteeAudit() {
+  var out = { ok: true, checked: 0, short: [], over: [], emails_resent: 0, duplicates_removed: 0, ran_at: new Date().toISOString(), rows: [] };
+  try {
+    try { autoFillDeliveryShortfalls(); } catch(e1) { console.log('[GUARANTEE] autofill error:', e1.message); }
+    out.duplicates_removed = dedupeDailyDelivered();
+    out.emails_resent = reconcileTodayEmails();
+    purgeAllPendingRows();
+    var dbA = getDb();
+    var today = new Date().toISOString().split('T')[0];
+    (dbA.customers || []).forEach(function(c) {
+      if (isInternalAccount(c)) return;
+      if (!c.plan || c.plan === 'cancelled' || isLeadsPaused(c)) return;
+      var promised = getPlanLimit(c.product, c.plan, c.coverage) || 0;
+      if (promised <= 0) return;
+      var delivered = (dbA.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0; }).length;
+      var pending = (dbA.leads || []).filter(function(l) { return l.customer_id === c.id && !l.delivered; }).length;
+      out.checked++;
+      var status = delivered === promised ? 'ok' : delivered < promised ? 'short' : 'over';
+      if (status !== 'ok') { out.ok = false; if (status === 'short') out.short.push(c.email + ' (' + delivered + '/' + promised + ')'); else out.over.push(c.email + ' (' + delivered + '/' + promised + ')'); }
+      out.rows.push({ email: c.email, product: c.product, plan: c.plan, promised: promised, delivered_today: delivered, pending: pending, status: status });
+    });
+    if (out.short.length) {
+      try { sendAdminAlert('⚠ GUARANTEE: ' + out.short.length + ' customer(s) below promised count', '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="color:#f87171;margin:0 0 8px">Delivery guarantee breach</h1><p style="color:#ccc;line-height:1.7">After the 9am run, auto top-up and reconciliation, these customers are still below their promised daily count:</p><ul style="color:#ccc;line-height:1.9">' + out.short.map(function(s){ return '<li>' + s + '</li>'; }).join('') + '</ul><p style="color:#888;font-size:13px">Check supply for their areas or contact them with a courtesy note.</p></div>'); } catch(al) {}
+    }
+    console.log('[GUARANTEE] audit: ok=' + out.ok + ' checked=' + out.checked + ' short=' + out.short.length + ' over=' + out.over.length + ' dupes=' + out.duplicates_removed + ' resent=' + out.emails_resent);
+    return out;
+  } catch(e) { console.log('[GUARANTEE] audit error:', e.message); out.ok = false; return out; }
 }
 // ===== DELIVERY CRON: Mon-Fri 09:00 UK ===== (timezone: Europe/London)
 cron.schedule('0 9 * * 1-5', async () => {
@@ -14367,6 +14451,9 @@ cron.schedule('45 7 * * 1-5', function() { runFulfilmentGuarantee('07:45'); }, {
 // 09:12 UK daily: purge stale PENDING (undelivered) rows so junk can never inflate a
 // customer's dashboard counts (the over-count root cause).
 cron.schedule('12 9 * * 1-5', function() { try { purgeAllPendingRows(); } catch(e) { console.log('[PURGE] cron error:', e.message); } }, { timezone: 'Europe/London' });
+// 09:35 UK daily: full guarantee audit — verify delivered == promised for every active
+// customer, resend any missing daily email, remove same-day duplicates, alert on breach.
+cron.schedule('35 9 * * 1-5', function() { try { runFinalGuaranteeAudit(); } catch(e) { console.log('[GUARANTEE] cron error:', e.message); } }, { timezone: 'Europe/London' });
 
 
 // DAILY HEALTH DIGEST: every weekday at 09:30 UK (after the 9am delivery) email
@@ -19505,7 +19592,17 @@ _deliverDiag[cust.email].products = products;
             } catch(fe2) { console.log('[DELIVERY] failed-email queue error:', fe2.message); }
           }
         } else {
-          console.log('[DELIVERY] ' + cust.email + ': already emailed today — topping up ' + custLeads.length + ' leads silently (no second email)');
+          // ALREADY EMAILED TODAY (e.g. a repeated/double run of the 9am job): do NOT
+          // deliver any further rows for this customer. Previously these candidates
+          // were marked delivered "silently" — which is exactly how customers ended up
+          // with MORE leads in their dashboard than in their inbox. "No more no less"
+          // means once today's email has gone out, the day is settled for this customer;
+          // any genuine shortfall is filled by the post-run auto-fill which emails each
+          // added lead individually.
+          if (custLeads.length) {
+            console.log('[DELIVERY] ' + cust.email + ': already emailed today — discarding ' + custLeads.length + ' extra candidate(s) to prevent over-delivery');
+            custLeads = [];
+          }
         }
         // Send to CRM webhook if configured
         if (cust.crm_webhook_url) {
@@ -26835,6 +26932,15 @@ app.get('/api/admin/delivery-audit', adminAuth, (req, res) => {
     var aud = (db.delivery_audit || []).slice(-20).reverse();
     res.json({ success: true, runs: aud });
   } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/guarantee-audit — run (and report) today's delivery guarantee audit:
+// verifies delivered == promised for every active customer, resends any missing daily
+// email, removes same-day duplicates, and lists any breach. This is the "no more, no
+// less" proof the founder can check any time after 9am.
+app.get('/api/admin/guarantee-audit', adminAuth, (req, res) => {
+  try { res.json(runFinalGuaranteeAudit()); }
+  catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // POST /api/admin/run-test — run the automated delivery test + email the report now.
