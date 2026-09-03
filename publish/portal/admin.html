@@ -1,55 +1,80 @@
 <!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<script>if(location.hostname==="www.9amleads.com"){location.replace("https://9amleads.com"+location.pathname+location.search);}</script>
 <title>Admin | 9amLeads</title>
 <meta name="robots" content="noindex, nofollow">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
+:root{--accent:#0ea5e9;--bg:#f8fafc;--card:#ffffff;--border:#e2e8f0;--text:#1e293b;--text2:#64748b;--muted:#94a3b8;--success:#22c55e;--warning:#f59e0b;--danger:#ef4444;--ff-h:'Outfit',sans-serif;--ff-b:'Inter',sans-serif}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Inter',sans-serif;background:#0a0a0f;color:#f1f5f9;min-height:100vh}
-.container{max-width:1200px;margin:0 auto;padding:24px}
-h1{font-size:26px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:4px}
-h1 span{color:#0ea5e9}
-.sub{color:#8890a8;font-size:13px;margin-bottom:20px}
-.card{background:#11131f;border:1px solid #1e2030;border-radius:14px;padding:20px;margin-bottom:16px}
-.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:20px}
-.stat-card{background:#11131f;border:1px solid #1e2030;border-radius:12px;padding:16px;text-align:center}
-.stat-card .num{font-size:28px;font-weight:900;font-family:'Outfit',sans-serif;color:#fff}
-.stat-card .label{font-size:11px;color:#5c6480;margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
-.search-bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
-.search-bar input,.search-bar select{padding:10px 14px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;font-size:13px;color:#f1f5f9;font-family:inherit;outline:none}
-.search-bar input:focus,.search-bar select:focus{border-color:#0ea5e9}
-.search-bar input{flex:1;min-width:200px}
+a{text-decoration:none}
+body{font-family:var(--ff-b);color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;line-height:1.5}
+.container{max-width:1120px;margin:0 auto;padding:28px 24px}
+/* Top bar (matches customer dashboard) */
+.top{background:#fff;border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;flex-wrap:wrap;gap:8px}
+.top .logo{font-family:var(--ff-h);font-size:20px;font-weight:900;color:var(--text)}.top .logo span{color:var(--accent)}
+.top .nav{display:flex;gap:2px;flex-wrap:wrap;align-items:center}
+.top .nav a,.top .nav button{background:none;border:none;font-family:var(--ff-b);font-size:13px;font-weight:500;color:var(--text2);padding:8px 13px;border-radius:8px;cursor:pointer;transition:.2s;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.top .nav a:hover,.top .nav button:hover{color:var(--text);background:#f1f5f9}
+.top .nav a.active,.top .nav button.active{color:var(--accent);background:#eff6ff;font-weight:600}
+/* Hero (matches customer dashboard) */
+.hero{background:linear-gradient(135deg,#eff6ff,#faf5ff);border:1px solid #e0e7ff;border-radius:16px;padding:28px 26px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.hero-text h1{font-family:var(--ff-h);font-size:22px;font-weight:800}
+.hero-text p{color:var(--text2);font-size:13px;line-height:1.6}
+.hero-actions{display:flex;gap:8px;flex-wrap:wrap}
+/* Cards */
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:18px}
+.card-title{font-size:14px;font-weight:700;font-family:var(--ff-h)}
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:20px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
+.stat-card .num{font-size:28px;font-weight:900;font-family:var(--ff-h);color:var(--text)}
+.stat-card .label{font-size:11px;color:var(--text2);margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
+/* Inputs */
+.input{padding:10px 14px;background:#fff;border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text);font-family:inherit;outline:none}
+.input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(14,165,233,.12)}
+/* Tables */
+.table-wrap{background:#fff;border:1px solid var(--border);border-radius:14px;overflow:auto}
 table{width:100%;border-collapse:collapse;font-size:13px}
-th{text-align:left;padding:10px 12px;color:#5c6480;font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #1e2030;font-weight:600;cursor:pointer;user-select:none}
-th:hover{color:#8890a8}
-th .sort-icon{font-size:8px;margin-left:4px;color:#3a4050}
-td{padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#c8cbd6}
-tr:hover td{background:rgba(255,255,255,0.02)}
-.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600}
-.badge-trial{background:rgba(14,165,233,0.1);color:#0ea5e9}
-.badge-paid{background:rgba(34,197,94,0.1);color:#22c55e}
-.badge-cancelled{background:rgba(239,68,68,0.1);color:#ef4444}
-.prod-moving{background:rgba(255,107,53,0.1);color:#ff6b35}
-.prod-probate{background:rgba(168,85,247,0.1);color:#a855f7}
-.prod-newbusiness{background:rgba(6,182,212,0.1);color:#06b6d4}
-.prod-planning{background:rgba(16,185,129,0.1);color:#10b981}
-.prod-tenders{background:rgba(99,102,241,0.1);color:#6366f1}
-.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:.2s;font-family:inherit;text-decoration:none}
-.btn-primary{background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff}
-.btn-view{background:rgba(14,165,233,0.1);color:#0ea5e9;border:1px solid rgba(14,165,233,0.2)}
-.btn-view:hover{background:rgba(14,165,233,0.2)}
-.btn-outline{background:transparent;border:1px solid #1e2030;color:#8890a8}
-.btn-outline:hover{border-color:#2a2d42;color:#c8cbd6}
-.btn-sm{padding:5px 10px;font-size:11px}
-.login-box{max-width:400px;margin:80px auto;background:#11131f;border:1px solid #1e2030;border-radius:16px;padding:32px;text-align:center}
-.login-box input{width:100%;padding:12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;font-size:14px;color:#f1f5f9;margin:16px 0 12px;outline:none;font-family:inherit}
-.login-box input:focus{border-color:#0ea5e9}
-.login-box .logo{font-size:24px;font-weight:900;font-family:'Outfit',sans-serif}
-.login-box .logo span{color:#0ea5e9}
-.error{color:#ef4444;font-size:13px;display:none;margin-bottom:8px}
-.loading{text-align:center;padding:40px;color:#5c6480;font-size:14px}
-.empty{text-align:center;padding:24px;color:#5c6480;font-size:13px}
+th{text-align:left;padding:11px 14px;color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);font-weight:600;cursor:pointer;user-select:none;white-space:nowrap;background:#fafbfc}
+th:hover{color:var(--text)}
+th .sort-icon{font-size:8px;margin-left:4px;color:var(--muted)}
+td{padding:11px 14px;border-bottom:1px solid #f1f5f9;color:var(--text);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#f8fafc}
+/* Badges */
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.3px}
+.badge-trial{background:#eff6ff;color:#0ea5e9}
+.badge-paid{background:#f0fdf4;color:#16a34a}
+.badge-cancelled{background:#fef2f2;color:#dc2626}
+.prod-moving{background:#fff7ed;color:#ea580c}
+.prod-probate{background:#faf5ff;color:#9333ea}
+.prod-newbusiness{background:#ecfeff;color:#0891b2}
+.prod-planning{background:#ecfdf5;color:#059669}
+.prod-tenders{background:#eef2ff;color:#4f46e5}
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:.2s;font-family:var(--ff-b)}
+.btn-primary{background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff}.btn-primary:hover{opacity:.92;transform:translateY(-1px)}
+.btn-outline{background:#fff;color:var(--text2);border:1px solid var(--border)}.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.btn-view{background:#eff6ff;color:#0ea5e9}.btn-view:hover{background:#dbeafe}
+.btn-sm{padding:5px 10px;font-size:11px;border-radius:6px}
+/* Login */
+.login-box{max-width:400px;margin:60px auto;background:#fff;border:1px solid var(--border);border-radius:16px;padding:36px;text-align:center;box-shadow:0 10px 30px rgba(15,23,42,.06)}
+.login-box .logo{font-size:24px;font-weight:900;font-family:var(--ff-h)}
+.login-box .logo span{color:var(--accent)}
+.login-box input{width:100%;padding:12px;background:#fff;border:1px solid var(--border);border-radius:8px;font-size:14px;color:var(--text);margin:16px 0 12px;outline:none;font-family:inherit}
+.login-box input:focus{border-color:var(--accent)}
+/* Tabs */
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+/* Misc */
+.error{color:var(--danger);font-size:13px;display:none;margin-bottom:8px}
+.loading{text-align:center;padding:40px;color:var(--muted);font-size:14px}
+.empty{text-align:center;padding:24px;color:var(--muted);font-size:13px}
 .pulse{animation:pulse 1.5s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 </style>
@@ -57,92 +82,909 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 <body>
 <div class="container" id="loginPage">
 <div class="login-box">
-<div class="logo">9am<span>Leads</span> Admin</div>
-<p style="color:#8890a8;font-size:13px;margin:8px 0">Enter admin password to continue</p>
-<input type="password" id="adminPass" placeholder="Admin password" onkeydown="if(event.key==='Enter')adminLogin()">
+<div class="logo">9am<span>Leads</span></div>
+<div id="versionTag" style="text-align:center;color:#94a3b8;font-size:11px;margin:-4px 0 8px">Admin</div>
+<p style="color:#64748b;font-size:13px;margin:8px 0">Enter the admin password to continue</p>
+<div style="position:relative"><input type="password" id="adminPass" placeholder="Admin password" style="padding-right:34px;box-sizing:border-box" onkeydown="if(event.key==='Enter')adminLogin()"><span onclick="var p=document.getElementById('adminPass');p.type=p.type==='password'?'text':'password';this.textContent=p.type==='password'?'\uD83D\uDC41':'Hide'" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:11px;color:#64748b;cursor:pointer;user-select:none;font-weight:600">&#128065;</span></div>
 <div id="loginError" class="error">Incorrect password</div>
 <button class="btn btn-primary" onclick="adminLogin()" style="width:100%;justify-content:center;padding:12px;font-size:14px"><i class="fas fa-lock"></i> Sign In</button>
 </div>
 </div>
 
-<div class="container" id="adminPage" style="display:none">
-<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:20px">
-<div><div style="display:flex;align-items:center;gap:8px"><div style="width:32px;height:32px;background:linear-gradient(135deg,#0ea5e9,#2563eb);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:900;font-family:'Outfit',sans-serif">9</div><h1 style="margin-bottom:0">9am<span>Leads</span> Admin</h1></div><p class="sub" style="margin-bottom:0">Customer management &amp; system overview</p></div>
-<div style="display:flex;gap:8px">
-<a href="/portal/" class="btn btn-outline btn-sm"><i class="fas fa-arrow-left"></i> Portal</a>
-<button class="btn btn-outline btn-sm" onclick="document.getElementById('blogSection').scrollIntoView({behavior:'smooth'})"><i class="fas fa-newspaper"></i> Blog</button>
-<button class="btn btn-outline btn-sm" onclick="adminLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+<div id="adminPage" style="display:none">
+<div class="top">
+<div class="logo">9am<span>Leads</span><span style="font-size:12px;font-weight:600;color:#94a3b8;margin-left:6px">Admin</span></div>
+<div class="nav">
+<button class="active" onclick="switchTab('overview')"><i class="fas fa-gauge-high"></i> Overview</button>
+<button onclick="switchTab('customers')"><i class="fas fa-users"></i> Customers <span id="custCountBadge" style="display:inline-block;background:#eff6ff;color:#0ea5e9;font-size:10px;font-weight:700;border-radius:20px;padding:1px 7px;margin-left:2px">-</span></button>
+<button onclick="switchTab('health')"><i class="fas fa-heart-pulse"></i> Health</button>
+<button onclick="switchTab('fulfilment')"><i class="fas fa-clipboard-check"></i> Fulfilment</button>
+<button onclick="switchTab('bulkpool')"><i class="fas fa-boxes-stacked"></i> Bulk Pool</button>
+<button onclick="switchTab('rejected')"><i class="fas fa-times-circle"></i> Rejected</button>
+<button onclick="switchTab('analytics')"><i class="fas fa-chart-pie"></i> Analytics</button>
+<button onclick="switchTab('partners')"><i class="fas fa-handshake"></i> Partners</button>
+<button onclick="switchTab('affiliates')"><i class="fas fa-handshake"></i> Affiliates</button>
+<button onclick="switchTab('rejected')"><i class="fas fa-ban"></i> Rejected Leads</button>
+<button onclick="openDeliveryPreview()" title="See which leads each customer will get at the next 9am"><i class="fas fa-eye"></i> Delivery Preview</button> <button onclick="openQuietAreas()" title="Which chosen postcode areas have had no leads for 3-5 days"><i class="fas fa-exclamation-triangle"></i> Quiet Areas</button> <a href="/portal/seo.html"><i class="fas fa-magnifying-glass"></i> SEO</a>
+<a href="/portal/"><i class="fas fa-arrow-right-to-bracket"></i> Portal</a>
+</div>
+<button class="btn btn-outline btn-sm" onclick="adminLogout()" style="white-space:nowrap"><i class="fas fa-sign-out-alt"></i> Logout</button>
+</div>
+
+<div class="container">
+
+<!-- ============ BULK POOL ============ -->
+<div class="tab-panel" id="tab-bulkpool">
+<div class="hero"><div class="hero-text"><h1>📦 Bulk &amp; Boost Pool</h1><p>Archive lead inventory for Bulk Postage &amp; Boost packs. These leads are <b>excluded from the daily 24/48h subscription delivery</b>.</p></div></div>
+<div id="bulkPoolPage"><div style="color:#64748b;font-size:13px;padding:10px">Loading...</div></div>
+</div>
+
+<!-- ============ OVERVIEW ============ -->
+<div class="tab-panel active" id="tab-overview">
+<div class="hero">
+<div class="hero-text">
+<h1><span id="greeting">Good morning</span> <span style="font-size:18px">👋</span></h1>
+<p id="heroDate" style="margin-bottom:4px"></p>
+<p>Your 9amLeads system at a glance. Jump to any tool from the menu above or the shortcuts below.</p>
+</div>
+<div class="hero-actions">
+<button class="btn btn-primary" onclick="switchTab('customers')"><i class="fas fa-users"></i> Customers</button>
+<button class="btn btn-outline" onclick="switchTab('health')"><i class="fas fa-heart-pulse"></i> System Health</button>
+<button class="btn btn-outline" onclick="switchTab('fulfilment')"><i class="fas fa-clipboard-check"></i> Fulfilment</button>
+<button class="btn btn-outline" onclick="switchTab('rejected')"><i class="fas fa-times-circle"></i> Rejected Leads</button>
 </div>
 </div>
 
-<div class="card" id="healthCard" style="margin-bottom:16px;display:none">
-<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-<div style="display:flex;align-items:center;gap:8px"><span id="healthIcon" style="width:10px;height:10px;border-radius:50%;display:inline-block"></span><strong style="font-size:15px">System Health</strong><span id="healthSummary" style="font-size:12px;color:#8890a8"></span></div>
-<span id="healthTimestamp" style="font-size:11px;color:#5c6480"></span>
-</div>
-<div id="healthIssues"></div>
-<div id="healthSystem" style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:#8890a8"></div>
-</div>
-
-<div class="card" id="blogSection">
-<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-<div class="card-title" style="margin:0"><i class="fas fa-newspaper" style="color:var(--accent)"></i> SEO Blog Engine</div>
-<div style="display:flex;gap:8px">
-<button class="btn btn-primary btn-sm" onclick="generateBlogPost()"><i class="fas fa-plus"></i> Generate</button>
-<button class="btn btn-sm" style="background:rgba(34,197,94,0.1);color:#22c55e;border:1px solid rgba(34,197,94,0.2)" onclick="generateAllPosts()"><i class="fas fa-forward"></i> Generate All</button>
-</div>
-</div>
-<div id="blogStatus" style="font-size:12px;color:#8890a8;margin-bottom:8px">Loading...</div>
-<div id="seoDashboard" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:12px"></div>
-<div id="blogList"></div>
-</div>
-
+<div id="aff-verify-alert" style="margin-bottom:14px"></div>
 <div class="stats-grid" id="statsGrid"><div class="loading">Loading stats...</div></div>
 
-<div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
-<input type="text" id="searchInput" placeholder="Search by name, email or company..." oninput="filterCustomers()" style="flex:1;min-width:200px;padding:10px 14px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;font-size:13px;color:#f1f5f9;font-family:inherit;outline:none">
-<select id="filterPlan" onchange="filterCustomers()" style="padding:10px 14px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;font-size:13px;color:#f1f5f9;font-family:inherit;outline:none"><option value="">All Plans</option><option value="free_trial">Free Trial</option><option value="starter">Starter</option><option value="pro">Pro</option><option value="enterprise">Enterprise</option><option value="cancelled">Cancelled</option></select>
-<select id="filterProduct" onchange="filterCustomers()" style="padding:10px 14px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;font-size:13px;color:#f1f5f9;font-family:inherit;outline:none"><option value="">All Products</option><option value="moving">Moving</option><option value="probate">Probate</option><option value="newbusiness">New Business</option><option value="planning">Planning</option><option value="tenders">Tenders</option></select>
-<button class="btn btn-outline btn-sm" onclick="exportCsv()" style="white-space:nowrap"><i class="fas fa-download"></i> Export CSV</button>
-<button class="btn btn-outline btn-sm" onclick="showImpersonationLogs()" style="white-space:nowrap"><i class="fas fa-shield-alt"></i> Impersonation Logs</button>
+<div class="card" style="margin-bottom:18px">
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+<div style="display:flex;align-items:center;gap:10px">
+<span id="healthStripIcon" style="width:10px;height:10px;border-radius:50%;display:inline-block;background:#94a3b8"></span>
+<span style="font-weight:700;font-size:14px">System Health</span>
+<span id="healthStripText" style="font-size:12px;color:#64748b">Checking...</span>
+</div>
+<div style="display:flex;align-items:center;gap:10px">
+<button class="btn btn-outline btn-sm" onclick="switchTab('health')">View Details</button>
+</div>
+</div>
+</div>
 </div>
 
-<div class="card" style="padding:0;overflow:auto">
+<!-- ============ CUSTOMERS ============ -->
+<div class="tab-panel" id="tab-customers">
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px"><div style="font-size:15px;font-weight:800;font-family:'Outfit',sans-serif">All Customers <span id="custCountLabel" style="font-size:12px;font-weight:600;color:#64748b">-</span></div></div>
+<div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+<input type="text" id="searchInput" placeholder="Search by name, email or company..." oninput="filterCustomers()" class="input" style="flex:1;min-width:200px">
+<select id="filterPlan" onchange="filterCustomers()" class="input"><option value="">All Plans</option><option value="free_trial">Free Trial</option><option value="starter">Starter</option><option value="pro">Pro</option><option value="enterprise">Enterprise</option><option value="cancelled">Cancelled</option></select>
+<select id="filterProduct" onchange="filterCustomers()" class="input"><option value="">All Products</option><option value="moving">Moving</option><option value="probate">Probate</option><option value="newbusiness">New Business</option><option value="planning">Planning</option><option value="tenders">Tenders</option></select>
+<button class="btn btn-outline btn-sm" onclick="exportCsv()"><i class="fas fa-download"></i> Export CSV</button>
+<button class="btn btn-outline btn-sm" onclick="showImpersonationLogs()"><i class="fas fa-shield-alt"></i> Impersonation Logs</button>
+</div>
+<div class="table-wrap" style="margin-bottom:18px">
 <table><thead><tr>
 <th onclick="sortBy('company')">Company<span class="sort-icon"></span></th>
 <th onclick="sortBy('email')">Email<span class="sort-icon"></span></th>
 <th>Products</th>
 <th onclick="sortBy('plan')">Plan<span class="sort-icon"></span></th>
+<th onclick="sortBy('trial_ends')">Trial End<span class="sort-icon"></span></th>
 <th>Areas</th>
 <th onclick="sortBy('lead_count')">Leads<span class="sort-icon"></span></th>
 <th onclick="sortBy('booked_count')">Booked<span class="sort-icon"></span></th>
 <th>CRM</th>
 <th onclick="sortBy('created_at')">Signup<span class="sort-icon"></span></th>
 <th></th>
-</tr></thead><tbody id="customerTable"><tr><td colspan="10" class="loading">Loading customers...</td></tr></tbody></table></div>
+</tr></thead><tbody id="customerTable"><tr><td colspan="11" class="loading">Loading customers...</td></tr></tbody></table>
+</div>
+<div class="card">
+<div class="card-title" style="margin-bottom:12px"><i class="fas fa-layer-group" style="color:#0ea5e9;margin-right:6px"></i> Customers by Plan</div>
+<div id="planBreakdown" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px"></div>
+</div>
 </div>
 
+<!-- ============ HEALTH ============ -->
+<div class="tab-panel" id="tab-health">
+<div class="card" id="healthCard" style="display:none;margin-bottom:16px">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+<div style="display:flex;align-items:center;gap:8px"><span id="healthIcon" style="width:10px;height:10px;border-radius:50%;display:inline-block"></span><strong style="font-size:15px">System Health</strong><span id="healthSummary" style="font-size:12px;color:#64748b"></span></div>
+<div style="display:flex;align-items:center;gap:10px"><span id="healthTimestamp" style="font-size:11px;color:#94a3b8"></span><button class="btn btn-outline btn-sm" onclick="loadHealth(true)"><i class="fas fa-sync"></i> Refresh</button>
+<button class="btn btn-sm" style="background:#6366f1;color:#fff" onclick="runAutoHeal()"><i class="fas fa-heart-pulse"></i> Run Auto-Heal</button></div>
+<div id="autoHealResult" style="display:none;margin:10px 0;padding:12px 14px;border-radius:10px;font-size:12.5px;line-height:1.7"></div>
+<div style="margin:12px 0;padding:14px 16px;border:1px solid #c7d2fe;border-radius:12px;background:#eef2ff">
+<div style="font-size:13px;font-weight:800;color:#3730a3;margin-bottom:8px"><i class="fas fa-tower-cell"></i> Uptime Monitoring (external alerts)</div>
+<div style="font-size:12px;color:#4f46e5;margin-bottom:10px;line-height:1.6">Creates external uptime monitors for the website + API via UptimeRobot. You'll get an email the moment either goes down, even if Render is off.</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+<input type="text" id="uptimeKey" placeholder="UptimeRobot Main API Key (u9...)..." style="flex:1;min-width:200px;padding:9px 12px;border:1px solid #c7d2fe;border-radius:8px;font-size:12px;font-family:monospace">
+<button class="btn btn-sm" style="background:#6366f1;color:#fff" onclick="setupUptime()">Create monitors</button>
+<button class="btn btn-outline btn-sm" onclick="checkUptime()">Check status</button>
+</div>
+<div id="uptimeResult" style="margin-top:8px;font-size:12px;color:#3730a3;line-height:1.6"></div>
+</div>
+</div>
+<div id="healthIssues"></div>
+<div id="healthSystem" style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:#64748b"></div>
+<div id="healthProducts" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-top:14px"></div>
+<div style="margin-top:18px;font-weight:800;font-size:13px;color:#1e293b">🚀 Bulk &amp; Boost pools <span style="font-weight:400;font-size:11px;color:#64748b">(archive leads for bulk packs — never used for the daily 24/48h delivery)</span></div>
+<div id="bulkPools" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-top:10px"></div>
+</div>
+</div>
+
+
+<!-- ============ FULFILMENT ============ -->
+<div class="tab-panel" id="tab-fulfilment">
+<div class="card" style="margin-bottom:18px;padding:0">
+<div style="padding:16px 16px 8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+<div style="font-size:14px;font-weight:700;font-family:'Outfit',sans-serif"><i class="fas fa-chart-line" style="color:#22c55e;margin-right:6px"></i> Lead Delivery Monitor</div>
+<span style="font-size:11px;color:#64748b">Verify each customer gets their promised leads. today / week / month</span>
+</div>
+<div style="overflow:auto"><table><thead><tr>
+<th>Customer</th><th>Product</th><th>Plan</th><th>Promised/Day</th><th>Today</th><th>This Week</th><th>This Month</th><th>Status</th>
+</tr></thead><tbody id="leadMonitorTable"><tr><td colspan="8" class="loading">Loading lead monitor...</td></tr></tbody></table></div>
+</div>
+<div class="card" style="padding:0">
+<div style="padding:16px 16px 8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+<div style="font-size:14px;font-weight:700;font-family:'Outfit',sans-serif"><i class="fas fa-clipboard-check" style="color:#22c55e;margin-right:6px"></i> Daily Fulfilment Report</div>
+<span style="font-size:11px;color:#64748b">Per customer + lead type: expected vs delivered. Over-delivery is a bug.</span>
+<div style="display:flex;align-items:center;gap:8px">
+<input type="date" id="fulfilmentDate" onchange="loadFulfilment()" class="input" style="padding:6px 10px;font-size:12px">
+<button class="btn btn-outline btn-sm" onclick="loadFulfilment()"><i class="fas fa-sync"></i> Refresh</button>
+</div>
+</div>
+<div id="fulfilmentSummary" style="padding:0 16px 8px"></div>
+<div style="overflow:auto"><table><thead><tr>
+<th>Customer</th><th>Product</th><th>Expected</th><th>Actual</th><th>Shortfall</th><th>Fulfilment</th><th>Status</th>
+</tr></thead><tbody id="fulfilmentTable"><tr><td colspan="7" class="loading">Loading fulfilment report...</td></tr></tbody></table></div>
+</div>
+</div>
+
+<!-- ============ REJECTED ============ -->
+<div class="tab-panel" id="tab-rejected">
+<div class="card" style="padding:0">
+<div style="padding:16px 16px 8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+<div style="font-size:14px;font-weight:700;font-family:'Outfit',sans-serif"><i class="fas fa-times-circle" style="color:#ef4444;margin-right:6px"></i> Rejected Leads</div>
+<span style="font-size:11px;color:#64748b">Customer-rejected leads waiting for a replacement. Review, then Approve to send them a fresh lead.</span>
+</div>
+<div style="overflow:auto"><table><thead><tr>
+<th>Customer</th><th>Product</th><th>Address</th><th>Postcode</th><th>Reason</th><th>Rejected</th><th></th>
+</tr></thead><tbody id="rejectedTable"><tr><td colspan="7" class="loading">Loading rejected leads...</td></tr></tbody></table></div>
+</div>
+</div>
+
+<!-- ============ ANALYTICS (CONVERSION) ============ -->
+<div class="tab-panel" id="tab-analytics">
+<div class="card">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+<div style="font-size:14px;font-weight:700;font-family:'Outfit',sans-serif"><i class="fas fa-chart-pie" style="color:#0ea5e9;margin-right:6px"></i> Conversion Funnel</div>
+<div style="display:flex;align-items:center;gap:8px">
+<select id="analyticsRange" onchange="loadAnalytics()" class="input" style="padding:6px 10px;font-size:12px"><option value="1">Today</option><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="0">All time</option></select>
+<button class="btn btn-outline btn-sm" onclick="loadAnalytics()"><i class="fas fa-sync"></i> Refresh</button>
+</div>
+</div>
+<div id="analyticsWarnings" style="margin-bottom:12px"></div>
+<div id="analyticsBody"><div class="empty">Loading conversion data...</div></div>
+</div>
+</div>
+
+
+<!-- ============ AFFILIATES ============ -->
+<div class="tab-panel" id="tab-rejected">
+<div class="card" style="margin-bottom:16px">
+<div style="font-size:14px;font-weight:700;font-family:'Outfit',sans-serif;margin-bottom:12px"><i class="fas fa-ban" style="color:#ef4444;margin-right:6px"></i> Rejected Leads</div>
+<p style="font-size:12.5px;color:#475569;margin:0 0 10px">Leads that customers (or you) have rejected. Review them below. The customer + address + reason are shown. Then click <b>Replace</b> to swap each with a valid in-area lead.</p>
+<div class="table-wrap" id="rejectedLeadsWrap"><div class="loading">Loading rejected leads...</div></div>
+</div>
+</div>
+
+<div class="tab-panel" id="tab-partners">
+<div class="card" style="margin-bottom:16px">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+<div style="font-size:14px;font-weight:700;font-family:'Outfit',sans-serif"><i class="fas fa-handshake" style="color:#0ea5e9;margin-right:6px"></i> Partner Programme</div>
+<div style="display:flex;gap:6px;flex-wrap:wrap">
+<button class="btn btn-outline btn-sm" onclick="loadPartnerAdmin('partners')">Partners</button>
+<button class="btn btn-outline btn-sm" onclick="loadPartnerAdmin('commissions')">Commissions</button>
+<button class="btn btn-outline btn-sm" onclick="loadPartnerAdmin('payouts')">Payouts</button>
+<button class="btn btn-outline btn-sm" onclick="loadPartnerAdmin('feedback')">Voice of Customer</button>
+<button class="btn btn-outline btn-sm" onclick="loadPartnerAdmin('config')">Settings</button>
+<button class="btn btn-outline btn-sm" onclick="loadPartnerAdmin('resources')">Resources</button>
+</div>
+</div>
+<div id="partnerAdminBody"><div class="empty">Loading partner data...</div></div>
+</div>
+</div>
+
+<div class="tab-panel" id="tab-affiliates">
+<div class="card" style="margin-bottom:16px">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+<div style="font-size:14px;font-weight:700;font-family:'Outfit',sans-serif"><i class="fas fa-handshake" style="color:#0ea5e9;margin-right:6px"></i> Affiliate Program</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<button class="btn btn-outline btn-sm" onclick="runAffAutoPayout()" title="Queue every cleared commission (2nd invoice paid, ~5-day clearance) as a ready-to-pay bank transfer"><i class="fas fa-money-check-alt"></i> Queue cleared commissions</button>
+<button class="btn btn-outline btn-sm" onclick="runAffAutomation()" title="Send pending nurture/reactivation emails now"><i class="fas fa-paper-plane"></i> Run automation</button>
+<button class="btn btn-primary btn-sm" onclick="createAffiliateForm()"><i class="fas fa-plus"></i> Add Affiliate</button>
+</div>
+<p style="font-size:12.5px;color:#475569;margin:0 0 10px">Referrals use an affiliate's name or code at signup → customer gets an extended trial → the affiliate earns <b>£25</b> once the customer pays their <b>second</b> invoice for a Starter/Pro/Enterprise package. Cleared commissions appear in the green payout queue below — <b>transfer the money, then click Confirm paid</b> (the affiliate is emailed automatically). No minimum. Wheel wins also queue here. Associations earn £30 (25 + £5 bonus).</p>
+<div id="affPendingWrap"></div>
+<div id="affPayoutQueueWrap"></div>
+<div class="table-wrap" id="affiliateTableWrap"><div class="loading">Loading affiliates...</div></div>
+</div>
+</div>
+
+</div>
+</div>
 <script>
+// Use SAME-ORIGIN relative paths: /api/* is proxied by Netlify to the backend.
+// No CORS/preflight. works reliably from 9amleads.com in any browser.
 const API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:8012' : '';
 let allCustomers = [];
 
+// PERMANENT STALE-CACHE FIX: if this page is restored from the browser's
+// back-forward cache (bfcache) it would show an OLD build (the recurring "section
+// disappears" bug). Reload once whenever the page is restored from bfcache so the
+// admin page is ALWAYS the current version.
+window.addEventListener('pageshow', function(psEv) {
+  if (psEv.persisted) { try { window.location.reload(); } catch(e) {} }
+});
+
+// Fetch + render the delivery preview (which leads each customer will get at 9am).
+function openDeliveryPreview() {
+  var ov = document.getElementById('adminModalOverlay');
+  if (!ov) { ov = document.createElement('div'); ov.id = 'adminModalOverlay'; ov.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,.5);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:30px 20px;overflow:auto'; document.body.appendChild(ov); }
+  ov.innerHTML = '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;max-width:900px;width:100%;padding:22px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h2 style="font-size:18px;font-family:Outfit,sans-serif;color:#1e293b">Delivery Preview - next 9am</h2><button onclick="this.closest(\'#adminModalOverlay\').style.display=\'none\'" style="background:none;border:none;color:#94a3b8;font-size:22px;cursor:pointer">&times;</button></div><div id="dp-content" style="font-size:13px;color:#1e293b">Loading...</div></div>';
+  ov.style.display = 'flex';
+  fetch(API + '/api/admin/delivery-preview?t=' + Date.now(), { headers: adminHeaders() })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.error) { document.getElementById('dp-content').innerHTML = '<span style="color:#dc2626">' + d.error + '</span>'; return; }
+      var html = '<p style="font-size:11px;color:#64748b;margin-bottom:10px">Generated ' + (d.generated_at || '').replace('T', ' ').substring(0, 16) + ' UTC - ' + d.note + '</p>';
+      // FULFILMENT GUARANTEE STATUS (latest 07:15 / 07:45 check) — the FINAL, post-check
+      // state so the founder sees the guaranteed outcome the moment they open this.
+      if (d.guarantee) {
+        var gAt = (d.guarantee.last_run || '').replace('T', ' ').substring(0, 16);
+        var gCol = d.guarantee.ok ? '#15803d' : '#b91c1c';
+        var gBg = d.guarantee.ok ? '#f0fdf4' : '#fef2f2';
+        var gBd = d.guarantee.ok ? '#bbf7d0' : '#fecaca';
+        html += '<div style="background:' + gBg + ';border:1px solid ' + gBd + ';border-radius:8px;padding:8px 12px;margin:0 0 12px;font-size:12px;color:' + gCol + '"><b>Fulfilment Guarantee (' + (d.guarantee.label || '') + '):</b> checked ' + gAt + ' UTC - ' + (d.guarantee.ok ? 'ALL ' + (d.guarantee.customers_checked || 0) + ' customers guaranteed their full count for 9am ✓' : (d.guarantee.short || []).length + ' customer(s) would fall short!') + '</div>';
+        if (!d.guarantee.ok && d.guarantee.short && d.guarantee.short.length) {
+          html += '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:8px 12px;margin:0 0 12px;font-size:12px;color:#b91c1c"><ul style="margin:0;padding-left:18px">' + d.guarantee.short.map(function(s){ return '<li>' + s + '</li>'; }).join('') + '</ul></div>';
+        }
+      } else {
+        html += '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:6px 10px;margin:0 0 10px;font-size:11px;color:#92400e">Fulfilment guarantee has not run yet today (runs 07:15 + 07:45 UK before the 9am delivery).</div>';
+      }
+      if (d.last_preverify) {
+        var pvAt = (d.last_preverify.at || '').replace('T', ' ').substring(0, 16);
+        html += '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:6px 10px;margin:0 0 10px;font-size:11px;color:#1e40af">Pre-verified at ' + pvAt + ' UTC: ' + (d.last_preverify.done || 0) + ' customer leads checked · <b>' + (d.last_preverify.enriched || 0) + ' door numbers added</b>' + (d.last_preverify.failed ? ' · ' + d.last_preverify.failed + ' flagged for replacement' : '') + '</div>';
+      }
+      (d.customers || []).forEach(function(cx) {
+        html += '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;margin-bottom:10px">';
+        html += '<div style="font-weight:700;margin-bottom:6px">' + cx.email + ' <span style="font-weight:500;color:#64748b;font-size:11px">' + cx.product + '/' + cx.plan + ' - promised ' + cx.promised + ', preview ' + cx.preview_count + '</span>' + (cx.fallback_note ? ' <span style="background:#fef3c7;color:#b45309;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:600">' + cx.fallback_note + '</span>' : '') + '</div>';
+        if (cx.areas && cx.areas.length) {
+          html += '<div style="font-size:11px;color:#475569;margin:0 0 6px"><b style="color:#0f172a">Chosen areas:</b> ' + cx.areas.join(', ') + '</div>';
+        }
+        if (cx.product === 'moving') {
+          var guar = (cx.door_now || 0) + ' have door numbers';
+          if (cx.door_paf) guar += ' · <b>' + cx.door_paf + ' get door number added at delivery</b>';
+          if (cx.door_fail) guar += ' · ' + cx.door_fail + ' replaced';
+          html += '<div style="font-size:11px;color:#0f766e;background:#f0fdfa;border:1px solid #ccfbf1;border-radius:6px;padding:4px 8px;margin:0 0 6px">Guarantee: ' + guar + '. Every delivered lead has a full address + door number</div>';
+        }
+        (cx.leads || []).forEach(function(l) {
+          // Display address without duplicating the postcode area (pool addresses
+          // often end with the outward code, e.g. "Chester CH2" + postcode "CH2 1NN").
+          var dispAddr = (l.address || '').trim();
+          var pcDisp = (l.postcode || '').trim();
+          if (pcDisp) {
+            var outward = (pcDisp.replace(/\s+/g, '').match(/^([A-Z]{1,2}[0-9][A-Z0-9]?)/) || [])[1];
+            if (outward) dispAddr = dispAddr.replace(new RegExp('\\s*' + outward + '\\s*$', 'i'), '');
+            var pcRe = new RegExp('\\s*' + pcDisp.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*$', 'i');
+            if (!pcRe.test(dispAddr)) dispAddr = dispAddr ? dispAddr + ', ' + pcDisp : pcDisp;
+          }
+          var needsDoor = cx.product === 'moving' || cx.product === 'probate' || cx.product === 'newbusiness';
+          var badge = '';
+          if (needsDoor) {
+            badge = l.has_door_number ? '<span style="background:#dcfce7;color:#15803d;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:600;margin-left:4px">DOOR ✓</span>' : (l.paf_failed ? '<span style="background:#fee2e2;color:#b91c1c;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:600;margin-left:4px">NO DOOR · REPLACED</span>' : (l.paf_candidate ? '<span style="background:#fef3c7;color:#b45309;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:600;margin-left:4px">+DOOR AT DELIVERY (PAF)</span>' : '<span style="background:#fee2e2;color:#b91c1c;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:600;margin-left:4px">NO DOOR</span>'));
+          }
+          if (cx.areas && cx.areas.length && l.in_area === false) {
+            badge += '<span style="background:#f1f5f9;color:#64748b;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:600;margin-left:4px">OUT OF AREA</span>';
+          }
+          // Business products (newbusiness/planning/tenders) show the company/app name
+          // + a verification link; moving/probate show the address.
+          var namePart = '';
+          if (l.name) namePart = '<div style="font-weight:700;color:#0f172a;font-size:12.5px;margin-bottom:1px">' + l.name + '</div>';
+          var linkPart = '';
+          var linkUrl = l.verified_link || l.url || '';
+          if (linkUrl) linkPart = ' <a href="' + linkUrl + '" target="_blank" style="color:#2563eb;font-size:11px;font-weight:600">verify ↗</a>';
+          if (cx.product === 'newbusiness' && l.incorporation_date) {
+            linkPart += ' <span style="color:#64748b;font-size:10px">incorporated ' + l.incorporation_date + '</span>';
+          }
+          var dispTitle = dispAddr || l.name || '-';
+          html += '<div style="font-size:12px;color:#334155;padding-left:12px;border-left:3px solid #0ea5e9;margin-bottom:4px">' + namePart + (namePart ? '<div style="color:#475569">' + dispAddr + '</div>' : dispTitle) + badge + linkPart + '</div>';
+        });
+        if (!(cx.leads || []).length) html += '<div style="font-size:11px;color:#b45309;padding-left:12px">No leads in pool for these areas right now (will top up after the 6am scrape).</div>';
+        html += '</div>';
+      });
+      document.getElementById('dp-content').innerHTML = html;
+    })
+    .catch(function(e) { document.getElementById('dp-content').innerHTML = '<span style="color:#dc2626">Error: ' + e.message + '</span>'; });
+}
+
+// Quiet areas report: which chosen postcode areas have produced no leads recently.
+function openQuietAreas() {
+  var ov = document.getElementById('adminModalOverlay');
+  ov.style.display = 'flex';
+  ov.innerHTML = '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;max-width:900px;width:100%;padding:22px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h2 style="font-size:18px;font-family:Outfit,sans-serif;color:#1e293b">Quiet Areas - no leads recently</h2><button onclick="this.closest(\'#adminModalOverlay\').style.display=\'none\'" style="background:none;border:none;color:#94a3b8;font-size:22px;cursor:pointer">&times;</button></div><div id="qa-content" style="font-size:13px;color:#1e293b">Loading...</div></div>';
+  fetch(API + '/api/admin/quiet-areas-report?t=' + Date.now(), { headers: adminHeaders() })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.error) { document.getElementById('qa-content').innerHTML = '<span style="color:#dc2626">' + d.error + '</span>'; return; }
+      var html = '<p style="font-size:11px;color:#64748b;margin-bottom:10px">Chosen postcode areas with <b>0 delivered leads in the last ' + d.days + ' days</b>. Customers are auto-notified (email + dashboard) once per area per 7 days.</p>';
+      var quiet = (d.areas || []).filter(function(a) { return a.delivered === 0; });
+      if (!quiet.length) { html += '<div style="padding:16px;background:#dcfce7;color:#15803d;border-radius:8px">No quiet areas. Every chosen postcode has had leads recently.</div>'; }
+      else {
+        html += '<table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;padding:7px;font-size:11px;color:#64748b;border-bottom:1px solid #e2e8f0">Customer</th><th style="text-align:left;padding:7px;font-size:11px;color:#64748b;border-bottom:1px solid #e2e8f0">Product</th><th style="text-align:left;padding:7px;font-size:11px;color:#64748b;border-bottom:1px solid #e2e8f0">Area</th><th style="text-align:left;padding:7px;font-size:11px;color:#64748b;border-bottom:1px solid #e2e8f0">Delivered</th><th style="text-align:left;padding:7px;font-size:11px;color:#64748b;border-bottom:1px solid #e2e8f0">Last alerted</th></tr></thead><tbody>';
+        quiet.forEach(function(a) {
+          html += '<tr><td style="padding:7px;border-bottom:1px solid #f1f5f9">' + a.email + (a.company ? '<div style="font-size:11px;color:#94a3b8">' + a.company + '</div>' : '') + '</td><td style="padding:7px;border-bottom:1px solid #f1f5f9">' + a.product + '</td><td style="padding:7px;border-bottom:1px solid #f1f5f9"><b style="color:#b45309">' + a.area + '</b></td><td style="padding:7px;border-bottom:1px solid #f1f5f9">' + a.delivered + ' in ' + a.days + 'd</td><td style="padding:7px;border-bottom:1px solid #f1f5f9">' + (a.last_alerted || '<span style="color:#64748b">not yet</span>') + '</td></tr>';
+        });
+        html += '</tbody></table>';
+      }
+      document.getElementById('qa-content').innerHTML = html;
+    })
+    .catch(function(e) { document.getElementById('qa-content').innerHTML = '<span style="color:#dc2626">Error: ' + e.message + '</span>'; });
+}
+
+// Tab navigation (clean, dashboard-style)
+async function loadBulkPoolPage() {
+  const el = document.getElementById('bulkPoolPage');
+  if (!el) return;
+  el.innerHTML = '<div style="color:#64748b;font-size:13px;padding:10px">Loading...</div>';
+  try {
+    const r = await fetch(API + '/api/admin/bulk-pools', { headers: adminHeaders() });
+    const d = await r.json();
+    if (!d.success) { el.innerHTML = '<div style="color:#ef4444;font-size:13px">Could not load bulk pool data.</div>'; return; }
+    const updated = (d.generated_at || '').replace('T', ' ').substring(0, 16) + ' UTC';
+    const colors = { moving: '#ff6b35', probate: '#a855f7', newbusiness: '#06b6d4' };
+    const names = { moving: 'Moving', probate: 'Probate', newbusiness: 'New Business' };
+    const cards = ['moving', 'probate', 'newbusiness'].map(function(p) {
+      const b = d[p] || {};
+      const fresh = b['0-2d'] || 0, res = b.reserved || 0, sold = b.sold || 0;
+      const nbd = p === 'newbusiness' ? (b['3-7d'] || 0) : 0;
+      const ageTm = p === 'newbusiness' ? 0 : (b['tm'] || 0);
+      const age1m = b['1m'] || 0, age2m = b['2m'] || 0;
+      const saleable = p === 'newbusiness' ? nbd : ageTm + age1m + age2m;
+      const readyTxt = saleable >= 200 ? '200-pack ready' : saleable >= 100 ? '100-pack ready' : saleable >= 50 ? '50-pack ready' : 'below pack size';
+      const readyColor = saleable >= 50 ? '#16a34a' : saleable > 0 ? '#eab308' : '#94a3b8';
+      function cell(label, v, min) { return '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;text-align:center"><div style="font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:.4px">' + label + '</div><div style="font-size:18px;font-weight:900;color:' + (v >= min ? '#16a34a' : v > 0 ? '#eab308' : '#94a3b8') + '">' + v + '</div></div>'; }
+      return '<div class="card" style="margin-bottom:16px"><h3 style="color:' + (colors[p] || '#1e293b') + '">' + names[p] + ' <span style="font-size:11px;color:#64748b">(total ' + b.total + ')</span></h3>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px">' +
+        (p === 'newbusiness' ? cell('Bulk 3-7d', nbd, 50) : cell('This month', ageTm, 50)) +
+        cell('1-month old', age1m, 50) + cell('2-month old', age2m, 50) +
+        cell('Fresh 0-2d (daily)', fresh, 0) + cell('Reserved', res, 0) + cell('Sold', sold, 0) +
+        '</div>' +
+        '<div style="margin-top:8px;font-size:12px;font-weight:800;color:' + readyColor + '">' + readyTxt + '</div>' +
+        '</div>';
+    }).join('');
+    el.innerHTML = '<div style="font-size:11px;color:#64748b;margin-bottom:10px">Last updated: ' + updated + ' · This month = 3-27 days old (never sent) · 1m = 28-35 days old · 2m = 58-65 days old · archive bands never enter the 24/48h subscription delivery.</div>' + cards +
+      '<button class="btn btn-outline btn-sm" onclick="loadBulkPoolPage()" style="margin-top:4px"><i class="fas fa-refresh"></i> Refresh</button>';
+  } catch (e) { el.innerHTML = '<div style="color:#ef4444;font-size:13px">Error loading bulk pool: ' + esc(e.message) + '</div>'; }
+}
+function switchTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+  var el = document.getElementById('tab-' + name);
+  if (el) el.classList.add('active');
+  document.querySelectorAll('.top .nav button').forEach(function(b){ b.classList.remove('active'); });
+  var btn = document.querySelector('.top .nav button[onclick*="switchTab(\'' + name + '\')"]');
+  if (btn) btn.classList.add('active');
+  if (name === 'affiliates') loadAffiliates();
+  if (name === 'partners') loadPartnerAdmin('partners');
+  if (name === 'rejected') loadRejected();
+  if (name === 'analytics') loadAnalytics();
+  if (name === 'bulkpool') loadBulkPoolPage();
+  window.scrollTo(0, 0);
+}
+
+// ===== PARTNER PROGRAMME ADMIN =====
+function pEsc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function pStatusTag(st){ var m = { pending:'#f59e0b', approved:'#0ea5e9', paid:'#22c55e', held:'#94a3b8', voided:'#ef4444', active:'#22c55e', suspended:'#ef4444', rejected:'#ef4444', closed:'#94a3b8' }; return '<span style="display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:' + (m[st]||'#e2e8f0') + '22;color:' + (m[st]||'#475569') + '">' + pEsc(st) + '</span>'; }
+function loadPartnerAdmin(section){
+  var body = document.getElementById('partnerAdminBody');
+  if (!body) return;
+  if (section === 'config') return loadPartnerConfig();
+  if (section === 'resources') return loadPartnerResources();
+  if (section === 'commissions') {
+    fetch(API + '/api/admin/partner/commissions?t=' + Date.now(), { headers: adminHeaders() }).then(function(r){ return r.json(); }).then(function(d){
+      var list = d.commissions || [];
+      var html = '<div style="font-size:12px;font-weight:700;margin-bottom:8px">Commissions (' + list.length + ')</div><table style="width:100%;font-size:11px;border-collapse:collapse"><thead><tr style="text-align:left;color:#64748b"><th style="padding:5px">Period</th><th>Type</th><th>Amount</th><th>Status</th><th>Customer</th><th>Actions</th></tr></thead><tbody>';
+      list.slice(0, 100).forEach(function(c){
+        html += '<tr style="border-top:1px solid #eef2f7"><td style="padding:5px">' + pEsc(c.commission_period) + '</td><td>' + pEsc(c.commission_type) + '</td><td>£' + (Number(c.commission_amount)||0) + '</td><td>' + pStatusTag(c.status) + '</td><td>' + pEsc((c.customer_id||'').substring(0,8)) + '</td><td>' +
+          (c.status === 'pending' ? '<button class="btn btn-sm" style="font-size:10px" onclick="setCommissionStatus(\'' + c.id + '\',\'approved\')">Approve</button> <button class="btn btn-sm btn-outline" style="font-size:10px" onclick="setCommissionStatus(\'' + c.id + '\',\'held\')">Hold</button> <button class="btn btn-sm btn-outline" style="font-size:10px" onclick="setCommissionStatus(\'' + c.id + '\',\'voided\')">Void</button>' : '') + '</td></tr>';
+      });
+      html += '</tbody></table>';
+      body.innerHTML = html;
+    });
+    return;
+  }
+  if (section === 'payouts') {
+    fetch(API + '/api/admin/partner/payouts?t=' + Date.now(), { headers: adminHeaders() }).then(function(r){ return r.json(); }).then(function(d){
+      var list = d.payouts || [];
+      var html = '<div style="font-size:12px;font-weight:700;margin-bottom:8px">Payouts (' + list.length + ')</div>';
+      if (!list.length) html += '<div class="empty">No payouts yet. Approve commissions, then create a payout batch.</div>';
+      else {
+        html += '<table style="width:100%;font-size:11px;border-collapse:collapse"><thead><tr style="text-align:left;color:#64748b"><th style="padding:5px">Period</th><th>Amount</th><th>Status</th><th>Reference</th><th>Actions</th></tr></thead><tbody>';
+        list.forEach(function(p){ html += '<tr style="border-top:1px solid #eef2f7"><td style="padding:5px">' + pEsc(p.payout_period || '-') + '</td><td>£' + (Number(p.total_amount)||0) + '</td><td>' + pStatusTag(p.status) + '</td><td>' + pEsc(p.payment_reference || '') + '</td><td>' + (p.status === 'draft' || p.status === 'approved' ? '<button class="btn btn-sm" style="font-size:10px" onclick="setPayoutStatus(\'' + p.id + '\',\'paid\')">Mark Paid</button>' : '') + '</td></tr>'; });
+        html += '</tbody></table>';
+      }
+      html += '<div style="margin-top:12px;padding-top:12px;border-top:1px solid #e2e8f0"><div style="font-size:12px;font-weight:700;margin-bottom:8px">Create Payout Batch</div>' +
+        '<input class="input" id="po-partner" placeholder="Partner ID" style="margin-bottom:6px">' +
+        '<input class="input" id="po-period" placeholder="Period e.g. 2026-11" style="margin-bottom:6px">' +
+        '<input class="input" id="po-commissions" placeholder="Commission IDs, comma-separated" style="margin-bottom:6px">' +
+        '<button class="btn btn-primary btn-sm" onclick="createPayout()">Create Payout</button></div>';
+      body.innerHTML = html;
+    });
+    return;
+  }
+  if (section === 'feedback') {
+    fetch(API + '/api/admin/partner/feedback?t=' + Date.now(), { headers: adminHeaders() }).then(function(r){ return r.json(); }).then(function(d){
+      var list = d.feedback || [];
+      var types = { positive:'😊', neutral:'😐', negative:'😟', feature_request:'💡', problem:'⚠️', cancellation_risk:'🚨', potential_testimonial:'⭐' };
+      var html = '<div style="font-size:12px;font-weight:700;margin-bottom:8px">Voice of Customer (' + list.length + ')</div>';
+      if (!list.length) html += '<div class="empty">No customer feedback logged yet.</div>';
+      list.slice(0, 80).forEach(function(f){
+        var urgent = f.feedback_type === 'cancellation_risk' || f.requested_action === 'urgent';
+        html += '<div style="border:1px solid ' + (urgent ? '#fca5a5' : '#e2e8f0') + ';border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:12px">' +
+          '<div style="font-weight:700">' + (types[f.feedback_type] || '•') + ' ' + pEsc(f.feedback_type) + ' <span style="color:#64748b;font-weight:400">· ' + pEsc(f.category) + ' · ' + new Date(f.created_at).toLocaleDateString() + '</span> ' + pStatusTag(f.status) + '</div>' +
+          (f.customer_comment ? '<p style="margin:6px 0 0;color:#334155">“' + pEsc(f.customer_comment) + '”</p>' : '') +
+          (f.partner_notes ? '<p style="margin:4px 0 0;color:#64748b;font-size:11px">Partner: ' + pEsc(f.partner_notes) + '</p>' : '') +
+          '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">' + (f.status !== 'resolved' ? '<button class="btn btn-sm" style="font-size:10px" onclick="resolveFeedback(\'' + f.id + '\')">Resolve</button>' : '') + '<button class="btn btn-sm btn-outline" style="font-size:10px" onclick="promptFeedbackNote(\'' + f.id + '\')">Add note</button></div>' +
+          '</div>';
+      });
+      body.innerHTML = html;
+    });
+    return;
+  }
+  // default: partners list
+  fetch(API + '/api/admin/partners?t=' + Date.now(), { headers: adminHeaders() }).then(function(r){ return r.json(); }).then(function(d){
+    var list = d.partners || [];
+    var html = '<input class="input" id="partnerSearch" placeholder="Search by name/email/code..." style="margin-bottom:10px" onkeyup="filterPartners()">';
+    html += '<table style="width:100%;font-size:11px;border-collapse:collapse"><thead><tr style="text-align:left;color:#64748b"><th style="padding:6px">Partner</th><th>Type</th><th>Status</th><th>Code</th><th>Commission</th><th>Actions</th></tr></thead><tbody id="partnerRows">';
+    list.forEach(function(p){
+      html += '<tr class="p-row" data-q="' + pEsc((p.full_name||'') + ' ' + (p.email||'') + ' ' + (p.referral_code||'')) + '" style="border-top:1px solid #eef2f7"><td style="padding:6px"><b>' + pEsc(p.full_name || p.email) + '</b><br><span style="color:#64748b">' + pEsc(p.email) + '</span></td><td>' + pEsc(p.partner_type) + '</td><td>' + pStatusTag(p.status) + '</td><td>' + pEsc(p.referral_code) + '</td><td>' + (p.commission_type === 'recurring' ? '£' + (p.commission_amount||25) + '/mo' : '£' + (p.commission_amount||25) + ' once') + '</td><td>' +
+        '<select style="font-size:10px;padding:3px 6px" onchange="setPartnerStatus(\'' + p.id + '\', this.value)">' + ['active','pending','suspended','rejected','closed'].map(function(o){ return '<option value="' + o + '"' + (p.status === o ? ' selected' : '') + '>' + o + '</option>'; }).join('') + '</select> ' +
+        '<select style="font-size:10px;padding:3px 6px" onchange="setPartnerType(\'' + p.id + '\', this.value)">' + ['affiliate','sales_partner'].map(function(o){ return '<option value="' + o + '"' + (p.partner_type === o ? ' selected' : '') + '>' + o + '</option>'; }).join('') + '</select>' +
+        '</td></tr>';
+    });
+    html += '</tbody></table>';
+    body.innerHTML = html;
+  });
+}
+function filterPartners(){
+  var q = (document.getElementById('partnerSearch').value || '').toLowerCase();
+  document.querySelectorAll('#partnerRows .p-row').forEach(function(r){ r.style.display = r.getAttribute('data-q').toLowerCase().indexOf(q) !== -1 ? '' : 'none'; });
+}
+function setPartnerStatus(id, st){
+  if (!confirm('Set partner status to ' + st + '?')) return;
+  fetch(API + '/api/admin/partners/' + id + '/status', { method: 'POST', headers: Object.assign({}, adminHeaders(), { 'Content-Type': 'application/json' }), body: JSON.stringify({ status: st }) }).then(function(r){ return r.json(); }).then(function(){ loadPartnerAdmin('partners'); });
+}
+function setPartnerType(id, t){
+  if (!confirm('Change partner type to ' + t + '? This changes their commission model.')) return;
+  fetch(API + '/api/admin/partners/' + id + '/type', { method: 'POST', headers: Object.assign({}, adminHeaders(), { 'Content-Type': 'application/json' }), body: JSON.stringify({ partner_type: t }) }).then(function(r){ return r.json(); }).then(function(){ loadPartnerAdmin('partners'); });
+}
+function setCommissionStatus(id, st){
+  fetch(API + '/api/admin/partner/commissions/' + id + '/status', { method: 'POST', headers: Object.assign({}, adminHeaders(), { 'Content-Type': 'application/json' }), body: JSON.stringify({ status: st, reason: prompt('Reason (for audit log):') || '' }) }).then(function(r){ return r.json(); }).then(function(){ loadPartnerAdmin('commissions'); });
+}
+function setPayoutStatus(id, st){
+  var ref = st === 'paid' ? prompt('Payment reference (e.g. bank transfer ref):') || '' : '';
+  fetch(API + '/api/admin/partner/payouts/' + id + '/status', { method: 'POST', headers: Object.assign({}, adminHeaders(), { 'Content-Type': 'application/json' }), body: JSON.stringify({ status: st, payment_reference: ref }) }).then(function(r){ return r.json(); }).then(function(){ loadPartnerAdmin('payouts'); });
+}
+function createPayout(){
+  var partner_id = document.getElementById('po-partner').value.trim();
+  var period = document.getElementById('po-period').value.trim();
+  var ids = document.getElementById('po-commissions').value.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+  if (!partner_id || !ids.length) { alert('Partner ID + commission IDs required'); return; }
+  fetch(API + '/api/admin/partner/payouts', { method: 'POST', headers: Object.assign({}, adminHeaders(), { 'Content-Type': 'application/json' }), body: JSON.stringify({ partner_id: partner_id, payout_period: period, commission_ids: ids }) }).then(function(r){ return r.json(); }).then(function(d){ alert(d.success ? 'Payout created: £' + d.payout.total_amount : (d.error || 'Error')); loadPartnerAdmin('payouts'); });
+}
+function resolveFeedback(id){
+  fetch(API + '/api/admin/partner/feedback/' + id, { method: 'POST', headers: Object.assign({}, adminHeaders(), { 'Content-Type': 'application/json' }), body: JSON.stringify({ status: 'resolved' }) }).then(function(r){ return r.json(); }).then(function(){ loadPartnerAdmin('feedback'); });
+}
+function promptFeedbackNote(id){
+  var note = prompt('Admin note:');
+  if (note === null) return;
+  fetch(API + '/api/admin/partner/feedback/' + id, { method: 'POST', headers: Object.assign({}, adminHeaders(), { 'Content-Type': 'application/json' }), body: JSON.stringify({ admin_notes: note }) }).then(function(r){ return r.json(); }).then(function(){ loadPartnerAdmin('feedback'); });
+}
+function loadPartnerConfig(){
+  var body = document.getElementById('partnerAdminBody');
+  fetch(API + '/api/admin/partner/config?t=' + Date.now(), { headers: adminHeaders() }).then(function(r){ return r.json(); }).then(function(d){
+    var c = d.config || {};
+    var fields = [['affiliate_one_off_amount','Affiliate one-off commission (£)', c.affiliate_one_off_amount], ['sales_partner_monthly_amount','Sales Partner monthly commission (£)', c.sales_partner_monthly_amount], ['affiliate_trial_days','Affiliate referral trial (days)', c.affiliate_trial_days], ['sales_partner_trial_days','Sales Partner referral trial (days)', c.sales_partner_trial_days], ['standard_trial_days','Standard trial (days)', c.standard_trial_days], ['attribution_window_days','Attribution window (days)', c.attribution_window_days], ['commission_clearance_days','Commission clearance (days)', c.commission_clearance_days], ['commission_qualification_days','First-commission qualification (days)', c.commission_qualification_days], ['sales_partner_commission_duration_months','Sales commission duration (months, empty = indefinite)', c.sales_partner_commission_duration_months === null ? '' : c.sales_partner_commission_duration_months]];
+    var html = '<div style="font-size:12px;font-weight:700;margin-bottom:8px">Partner Programme Settings</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px">';
+    fields.forEach(function(f){ html += '<div><label style="font-size:11px;font-weight:700;color:#64748b">' + f[1] + '</label><input class="input" id="cfg-' + f[0] + '" value="' + pEsc(f[2]) + '"></div>'; });
+    html += '</div><div style="margin-top:12px;display:flex;gap:10px;align-items:center"><label style="display:flex;align-items:center;gap:5px;font-size:11px;color:#64748b"><input type="checkbox" id="cfg-partners_open" ' + (c.partners_open ? 'checked' : '') + '> Applications open</label><button class="btn btn-primary btn-sm" onclick="savePartnerConfig()">Save Settings</button></div>';
+    html += '<p style="font-size:10px;color:#94a3b8;margin-top:10px">Every config change is audit-logged. Commission amounts are never read from the frontend.</p>';
+    body.innerHTML = html;
+  });
+}
+function savePartnerConfig(){
+  var cfg = {};
+  ['affiliate_one_off_amount','sales_partner_monthly_amount','affiliate_trial_days','sales_partner_trial_days','standard_trial_days','attribution_window_days','commission_clearance_days','commission_qualification_days','sales_partner_commission_duration_months'].forEach(function(k){
+    var el = document.getElementById('cfg-' + k); if (!el) return;
+    var v = el.value.trim(); if (v === '') cfg[k] = null; else cfg[k] = isNaN(Number(v)) ? v : Number(v);
+  });
+  cfg.partners_open = document.getElementById('cfg-partners_open').checked;
+  fetch(API + '/api/admin/partner/config', { method: 'POST', headers: Object.assign({}, adminHeaders(), { 'Content-Type': 'application/json' }), body: JSON.stringify(cfg) }).then(function(r){ return r.json(); }).then(function(d){ alert(d.success ? 'Settings saved' : (d.error || 'Error')); loadPartnerConfig(); });
+}
+function loadPartnerResources(){
+  var body = document.getElementById('partnerAdminBody');
+  fetch(API + '/api/admin/partner/resources?t=' + Date.now(), { headers: adminHeaders() }).then(function(r){ return r.json(); }).then(function(d){
+    var list = d.resources || [];
+    var html = '<div style="font-size:12px;font-weight:700;margin-bottom:8px">Sales Resources (' + list.length + ')</div>';
+    list.forEach(function(r){ html += '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:12px;display:flex;justify-content:space-between;gap:8px"><div><b>' + pEsc(r.title) + '</b> <span style="color:#64748b">· ' + pEsc(r.category) + '</span><br><span style="color:#64748b;font-size:11px">' + pEsc((r.content||'').substring(0,120)) + '</span></div><button class="btn btn-sm btn-outline" style="font-size:10px" onclick="deleteResource(\'' + r.id + '\')">Delete</button></div>'; });
+    html += '<div style="margin-top:12px;padding-top:12px;border-top:1px solid #e2e8f0"><div style="font-size:12px;font-weight:700;margin-bottom:8px">Add Resource</div>' +
+      '<input class="input" id="rs-title" placeholder="Title" style="margin-bottom:6px"><input class="input" id="rs-cat" placeholder="Category (e.g. call_script, training)" style="margin-bottom:6px"><textarea class="input" id="rs-content" rows="3" placeholder="Content / notes"></textarea><input class="input" id="rs-url" placeholder="URL / file link (optional)" style="margin-bottom:6px"><button class="btn btn-primary btn-sm" onclick="addResource()">Add Resource</button></div>';
+    body.innerHTML = html;
+  });
+}
+function addResource(){
+  var b = { title: document.getElementById('rs-title').value, category: document.getElementById('rs-cat').value, content: document.getElementById('rs-content').value, url: document.getElementById('rs-url').value };
+  fetch(API + '/api/admin/partner/resources', { method: 'POST', headers: Object.assign({}, adminHeaders(), { 'Content-Type': 'application/json' }), body: JSON.stringify(b) }).then(function(r){ return r.json(); }).then(function(){ loadPartnerResources(); });
+}
+function deleteResource(id){
+  if (!confirm('Delete resource?')) return;
+  fetch(API + '/api/admin/partner/resources/' + id, { method: 'DELETE', headers: adminHeaders() }).then(function(){ loadPartnerResources(); });
+}
+
+// ===== REJECTED LEADS =====
+function loadRejected() {
+  var wrap = document.getElementById('rejectedLeadsWrap');
+  fetch(API + '/api/admin/rejected-leads?t=' + Date.now(), { headers: adminHeaders() })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (!d.success) { wrap.innerHTML = '<div class="empty">Could not load rejected leads.</div>'; return; }
+      if (!d.count) { wrap.innerHTML = '<div class="empty">No rejected leads. When a customer rejects a lead, it appears here for review before replacement.</div>'; return; }
+      var h = '<table><thead><tr><th>Customer</th><th>Address</th><th>Reason</th><th>Rejected</th><th>Action</th></tr></thead><tbody>';
+      d.leads.forEach(function(l) {
+        h += '<tr><td><b>' + esc(l.customer_company || l.customer_email) + '</b><div style="font-size:11px;color:#64748b">' + esc(l.customer_email) + ' · ' + esc(l.product) + '</div></td>' +
+          '<td>' + esc(l.address) + '<div style="font-size:11px;color:#64748b">' + esc(l.postcode) + '</div></td>' +
+          '<td>' + esc(l.reason) + '</td>' +
+          '<td>' + fmtDate(l.rejected_at) + '</td>' +
+          '<td><button class="btn btn-outline btn-sm" onclick="replaceRejectedLead(\'' + l.lead_id + '\')"><i class="fas fa-sync"></i> Replace</button></td></tr>';
+      });
+      h += '</tbody></table>'; wrap.innerHTML = h;
+      loadAffiliatePayoutQueue();
+    })
+    .catch(function(e) { wrap.innerHTML = '<div class="empty">Error: ' + e.message + '</div>'; });
+}
+function replaceRejectedLead(leadId) {
+  if (!confirm('Replace this rejected lead with a valid in-area lead?')) return;
+  fetch(API + '/api/admin/replace-pending-lead', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: JSON.stringify({ lead_id: leadId }) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) { alert(d.success ? 'Replaced! A valid in-area lead has been assigned.' : 'Replace failed: ' + (d.error || 'unknown')); loadRejected(); })
+    .catch(function(e) { alert('Error: ' + e.message); });
+}
+
+// ===== AFFILIATES =====
+function loadAffiliates() {
+  var wrap = document.getElementById('affiliateTableWrap');
+  var pw = document.getElementById('affPendingWrap');
+  fetch(API + '/api/admin/affiliates?t=' + Date.now(), { headers: adminHeaders() })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      // Prominent "applications waiting for your decision" banner.
+      if (pw) {
+        var pending = (d.affiliates || []).filter(function(a){ return a.status === 'pending'; });
+        var hasVoice = function(a){ return a.application && a.application.voice && a.application.voice.audio; };
+        var anyVoice = pending.some(hasVoice);
+        if (pending.length) {
+          var cards = pending.map(function(a){
+            var score = (a.application && a.application.score) || {};
+            var v = hasVoice(a);
+            return '<div style="display:flex;align-items:center;gap:12px;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;margin-bottom:8px;flex-wrap:wrap">' +
+              '<div style="font-size:20px">' + (v ? '🎙️' : '📋') + '</div>' +
+              '<div style="flex:1;min-width:180px"><b>' + pEsc(a.name) + '</b><div style="font-size:11px;color:#64748b">' + pEsc(a.email) + ' · code ' + pEsc(a.code) + ' · score ' + (score.total || '?') + '/100' + (v ? ' · voice test recorded' : ' · no voice') + '</div></div>' +
+              '<button class="btn btn-primary btn-sm" onclick="reviewApplication(\'' + a.id + '\')">' + (v ? '🎙️ Review (listen + form)' : 'Review form') + '</button>' +
+              '<button class="btn btn-sm" style="background:#16a34a;color:#fff" onclick="instantApprove(\'' + a.id + '\',\'' + pEsc(a.name) + '\')">✓ Approve</button>' +
+              '</div>';
+          }).join('');
+          pw.innerHTML = '<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:12px;padding:14px;margin-bottom:14px">' +
+            '<div style="font-weight:800;color:#92400e;font-size:13px;margin-bottom:8px">' + (anyVoice ? '🎙️ ' : '') + pending.length + ' application' + (pending.length>1?'s':'') + ' waiting for your decision</div>' + cards + '</div>';
+        } else {
+          pw.innerHTML = '';
+        }
+      }
+      if (!d.success || !d.affiliates) { wrap.innerHTML = '<div class="empty">Could not load affiliates.</div>'; return; }
+      if (!d.affiliates.length) { wrap.innerHTML = '<div class="empty">No affiliates yet. Click "Add Affiliate" to create one.</div>'; return; }
+      var h = '<table><thead><tr><th>Affiliate</th><th>Code</th><th>Status</th><th>Application</th><th>KYC</th><th>Association</th><th>Rate</th><th>Referrals</th><th>Pending</th><th>Ready to pay</th><th>Paid</th><th>Actions</th></tr></thead><tbody>';
+      d.affiliates.forEach(function(a) {
+        var st = a.status === 'pending' ? '<span class="badge badge-warn">Pending</span>' : a.status === 'rejected' ? '<span class="badge" style="background:#fef2f2;color:#ef4444">Rejected</span>' : a.status === 'paused' ? '<span class="badge">Paused</span>' : '<span class="badge badge-ok">Active</span>';
+        var appCell = a.application ? '<button class="btn btn-outline btn-sm" onclick="reviewApplication(\'' + a.id + '\')">' + (a.status === 'pending' ? 'Review' : 'View') + '</button>' : '<span style="font-size:11px;color:#94a3b8">-</span>';
+        var kycCell = '';
+        if (a.kyc && a.kyc.status === 'approved') kycCell = '<span class="badge badge-ok">Verified</span>';
+        else if (a.kyc && a.kyc.status === 'pending_review') kycCell = '<button class="btn btn-outline btn-sm" style="border-color:#f59e0b;color:#d97706" onclick="reviewKyc(\'' + a.id + '\')">Review ID</button>';
+        else if (a.kyc && a.kyc.status === 'rejected') kycCell = '<button class="btn btn-outline btn-sm" style="border-color:#ef4444;color:#ef4444" onclick="reviewKyc(\'' + a.id + '\')">Rejected</button>';
+        else kycCell = '<span style="font-size:11px;color:#94a3b8">Not submitted</span>';
+        var assoc = a.association || '-';
+        var rate = (a.commission_amount || 25);
+        h += '<tr><td><b>' + esc(a.name) + '</b><div style="font-size:11px;color:#64748b">' + esc(a.email) + '</div></td>' +
+          '<td><code>' + esc(a.code) + '</code></td><td>' + st + '</td>' +
+          '<td>' + appCell + '</td>' +
+          '<td>' + kycCell + '</td>' +
+          '<td>' + esc(assoc) + ' <button class="btn btn-outline btn-sm" style="margin-left:2px" onclick="setAffAssociation(\'' + a.id + '\',\'' + esc(a.association || '') + '\')" title="Set a trade association"><i class="fas fa-tag"></i></button></td>' +
+          '<td style="font-weight:600">£' + rate + '</td>' +
+          '<td>' + a.counts.referrals + '</td><td>£' + a.earnings_pending + ' (' + a.counts.pending + ')</td>' +
+          '<td style="color:#16a34a;font-weight:600">£' + a.earnings_due + ' (' + a.counts.due + ')</td>' +
+          '<td>£' + a.earnings_paid + ' (' + a.counts.paid + ')</td>' +
+          '<td>' + (a.counts.due ? '<button class="btn btn-outline btn-sm" onclick="payAffiliate(\'' + a.id + '\',\'' + esc(a.name) + '\')"><i class="fas fa-pound-sign"></i> Pay £' + a.earnings_due + '</button>' : '<span style="font-size:11px;color:#94a3b8">-</span>') + ' ' +
+          (a.status === 'pending' ? '<button class="btn btn-sm" style="background:#16a34a;color:#fff" onclick="instantApprove(\'' + a.id + '\',\'' + esc(a.name) + '\')" title="Approve without opening the review">✓ Approve</button> ' : '') +
+          '<button class="btn btn-outline btn-sm" onclick="viewAffiliateDashboard(\'' + a.id + '\')" title="View this affiliate\'s dashboard"><i class="fas fa-eye"></i> View</button> ' +
+          '<button class="btn btn-outline btn-sm" style="background:rgba(239,68,68,0.1)!important;color:#ef4444!important;border-color:rgba(239,68,68,0.25)!important" onclick="deleteAffiliateAdmin(\'' + a.id + '\',\'' + esc(a.name) + '\')" title="Permanently delete this affiliate">Delete</button></td></tr>';
+      });
+      h += '</tbody></table>'; wrap.innerHTML = h;
+    })
+    .catch(function(e) { wrap.innerHTML = '<div class="empty">Error: ' + e.message + '</div>'; });
+}
+function createAffiliateForm() {
+  var content = '<div style="display:grid;gap:10px">' +
+    '<div><label style="font-size:12px;color:#475569;font-weight:600">Full name</label><input class="input" id="af-name" style="width:100%;padding:9px 11px;border:1px solid #cbd5e1;border-radius:8px"></div>' +
+    '<div><label style="font-size:12px;color:#475569;font-weight:600">Email</label><input class="input" id="af-email" style="width:100%;padding:9px 11px;border:1px solid #cbd5e1;border-radius:8px"></div>' +
+    '<div><label style="font-size:12px;color:#475569;font-weight:600">Referral code</label><input class="input" id="af-code" placeholder="e.g. JAMES24" style="width:100%;padding:9px 11px;border:1px solid #cbd5e1;border-radius:8px"></div>' +
+    '<div><label style="font-size:12px;color:#475569;font-weight:600">Password (for affiliate sign-in, min 8 chars)</label><input class="input" id="af-pass" type="password" style="width:100%;padding:9px 11px;border:1px solid #cbd5e1;border-radius:8px"></div>' +
+    '<div style="display:flex;gap:8px;margin-top:6px"><button class="btn btn-primary btn-sm" onclick="createAffiliate()">Create</button><button class="btn btn-outline btn-sm" onclick="document.getElementById(\'adminModalOverlay\').style.display=\'none\'">Cancel</button></div>' +
+    '</div>';
+  showModal('Add Affiliate', content, 420);
+}
+function createAffiliate() {
+  var name = document.getElementById('af-name').value.trim();
+  var email = document.getElementById('af-email').value.trim();
+  var code = document.getElementById('af-code').value.trim();
+  var pass = document.getElementById('af-pass').value;
+  if (!name || !email || !pass) { alert('Name, email and password are required'); return; }
+  fetch(API + '/api/admin/affiliates', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: JSON.stringify({ name: name, email: email, code: code, password: pass, status: 'active' }) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) { document.getElementById('adminModalOverlay').style.display = 'none'; alert('Affiliate created! Code: ' + d.affiliate.code); loadAffiliates(); }
+      else alert(d.error || 'Could not create affiliate');
+    })
+    .catch(function(e) { alert('Error: ' + e.message); });
+}
+function payAffiliate(id, name) {
+  if (!confirm('Pay all ready-to-pay earnings for ' + name + '? This records the payout as paid.')) return;
+  fetch(API + '/api/admin/affiliates/pay', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: JSON.stringify({ affiliate_id: id }) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) { alert('Paid £' + d.amount_paid + ' to ' + d.affiliate + ' (' + d.paid_referrals + ' referral' + (d.paid_referrals === 1 ? '' : 's') + ').'); loadAffiliates(); })
+    .catch(function(e) { alert('Error: ' + e.message); });
+}
+function loadAffiliatePayoutQueue() {
+  var el = document.getElementById('affPayoutQueueWrap');
+  if (!el) return;
+  fetch(API + '/api/admin/affiliate/payouts', { headers: adminHeaders() })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (!d.success || !d.ready || !d.ready.length) { el.innerHTML = ''; return; }
+      el.innerHTML = '<div style="background:#ecfdf5;border:1px solid #6ee7b7;border-radius:12px;padding:12px 14px;margin-bottom:14px">' +
+        '<div style="font-weight:800;color:#065f46;font-size:13px;margin-bottom:8px">💷 ' + d.ready.length + ' payout' + (d.ready.length > 1 ? 's' : '') + ' READY to transfer — total £' + Number(d.ready_total || 0).toFixed(2) + '</div>' +
+        '<div style="display:flex;flex-direction:column;gap:6px">' + d.ready.map(function(p) {
+          return '<div style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #d1fae5;border-radius:8px;padding:8px 10px;flex-wrap:wrap">' +
+            '<div style="flex:1;min-width:200px"><b>' + esc(p.affiliate) + '</b>' +
+            '<div style="font-size:11px;color:#334155;margin-top:3px">' + esc(p.account_holder || p.legal_name || '') + (p.bank_name ? ' · ' + esc(p.bank_name) : '') + '</div>' +
+            '<div style="font-size:12px;color:#047857;font-weight:700;margin-top:2px">Sort ' + esc(p.sort_code || '') + ' · Account ' + esc(p.account_number || '') + '</div>' +
+            '</div>' +
+            '<div style="font-weight:800;color:#047857">£' + Number(p.amount || 0).toFixed(2) + '</div>' +
+            '<button class="btn btn-sm" style="background:#059669;color:#fff" onclick="confirmPayout(\'' + p.id + '\')">✓ Confirm paid (I sent it)</button>' +
+            '</div>';
+        }).join('') + '</div></div>';
+    })
+    .catch(function() { el.innerHTML = ''; });
+}
+function confirmPayout(id) {
+  if (!confirm('Confirm you have SENT this bank transfer? The affiliate will be emailed that their payout is on the way.')) return;
+  fetch(API + '/api/admin/affiliate/payouts/confirm', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: JSON.stringify({ id: id }) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) { if (d.success) { alert('Payout confirmed as sent.'); loadAffiliatePayoutQueue(); loadAffiliates(); } else alert(d.error || 'Could not confirm payout'); })
+    .catch(function(e) { alert('Error: ' + e.message); });
+}
+function setAffAssociation(id, current) {
+  var assoc = prompt('Trade association name (e.g. BAR - British Association of Removers). Leave blank to clear. Their commission becomes £30 (25 + 5 bonus).', current || '');
+  if (assoc === null) return;
+  fetch(API + '/api/admin/affiliates/' + id + '/association', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: JSON.stringify({ association: assoc }) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) { if (d.success) { alert('Association set for ' + d.affiliate.name + '. Rate: £' + d.affiliate.commission_amount); loadAffiliates(); } else alert(d.error || 'Could not set association'); })
+    .catch(function(e) { alert('Error: ' + e.message); });
+}
+function reviewApplication(id) {
+  fetch(API + '/api/admin/affiliates?t=' + Date.now(), { headers: adminHeaders() })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var a = (d.affiliates || []).find(function(x) { return x.id === id; });
+      if (!a) { alert('Affiliate not found'); return; }
+      var app = a.application || {};
+      var s = app.survey || {};
+      function q(n, v) { return '<div style="font-size:12px;margin-bottom:8px"><div style="color:#475569;font-weight:600">' + n + '</div><div style="color:#0f172a;margin-top:2px">' + pEsc(v || '-') + '</div></div>'; }
+      var score = app.score || { total: 0, pass: false, fail_reasons: [] };
+      var scoreHtml = '<div style="display:flex;align-items:center;gap:10px;background:' + (score.pass ? '#f0fdf4' : '#fffbeb') + ';border:1px solid ' + (score.pass ? '#bbf7d0' : '#fde68a') + ';border-radius:10px;padding:10px 14px;margin-bottom:14px">' +
+        '<div style="font-size:26px;font-weight:800;color:' + (score.pass ? '#16a34a' : '#d97706') + '">' + (score.total || 0) + '</div>' +
+        '<div style="font-size:12px;color:#334155"><b>Application score</b><br>' + (score.pass ? 'Auto-suggested: PASS' : 'Auto-suggested: REVIEW') + (score.fail_reasons && score.fail_reasons.length ? ' · Flags: ' + score.fail_reasons.join(', ') : '') + '</div></div>';
+      var voiceHtml = app.voice && app.voice.audio
+        ? '<div style="background:#f0fdf4;border:2px solid #86efac;border-radius:10px;padding:14px;margin-bottom:14px"><div style="font-size:12px;font-weight:800;color:#15803d;margin-bottom:8px">🎙️ Listen to their voice test (read this before you approve)</div>' +
+          '<audio controls preload="auto" style="width:100%" type="audio/webm" src="data:audio/webm;base64,' + app.voice.audio + '"></audio>' +
+          '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="btn btn-outline btn-sm" onclick="window.open(\'data:audio/webm;base64,' + app.voice.audio + '\',\'_blank\')">↗ Open audio in new tab</button>' +
+          '<button class="btn btn-outline btn-sm" onclick="window.open(\'data:audio/wav;base64,' + app.voice.audio + '\',\'_blank\')">Try .wav</button></div>' +
+          '<div style="font-size:11px;color:#64748b;margin-top:6px">Recorded ' + pEsc(app.voice.recorded_at || '') + '</div></div>'
+        : '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin-bottom:14px;color:#64748b;font-size:12px">No voice recording submitted.</div>';
+      var content = scoreHtml + voiceHtml +
+        '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;max-height:340px;overflow-y:auto;margin-bottom:14px">' +
+        q('1. Willing to find own customers?', s.q1) +
+        q('2. Willing to use own phone?', s.q2) +
+        q('3. Open a dedicated email account?', s.q3) +
+        q('4. Hours per week', s.q4) +
+        q('5. Days and hours', s.q5) +
+        q('6. Happy being paid 1 month after signup?', s.q6) +
+        q('7. Follow up during trial?', s.q7) +
+        q('8. Reply to "we already get enough work from referrals"', s.q8) +
+        q('9. Explain the £25 commission to a friend', s.q9) +
+        q('10. Comfortable calling businesses?', s.q10) +
+        q('11. Trial customer stops replying — what do you do?', s.q11) +
+        q('12. Referred businesses before?', s.q12) +
+        q('13. Questions for us', s.q13) +
+        (app.review_note ? '<div style="font-size:12px;color:#16a34a;margin-top:8px"><b>Review note:</b> ' + pEsc(app.review_note) + '</div>' : '') +
+        '</div>' +
+        '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input id="rv-note" placeholder="Optional note to email them" style="flex:1;min-width:160px;padding:9px 11px;border:1px solid #cbd5e1;border-radius:8px;font-size:12px">' +
+        '<button class="btn btn-primary btn-sm" onclick="decideApplication(\'' + id + '\',\'approve\')">✓ Approve</button>' +
+        '<button class="btn btn-sm" style="background:#ef4444;color:#fff" onclick="decideApplication(\'' + id + '\',\'reject\')">✗ Reject</button></div>';
+      showModal('Application Review · ' + pEsc(a.name), content, 680);
+    })
+    .catch(function(e) { alert('Error: ' + e.message); });
+}
+function decideApplication(id, decision) {
+  var note = (document.getElementById('rv-note') || {}).value || '';
+  if (decision === 'reject' && !confirm('Reject this application? The affiliate will be emailed and cannot sign in.')) return;
+  fetch(API + '/api/admin/affiliates/' + id + '/review', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: JSON.stringify({ decision: decision, note: note }) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) { alert(decision === 'approve' ? 'Approved! ' + d.affiliate.name + ' can now sign in.' : 'Application rejected.'); document.getElementById('adminModalOverlay').style.display = 'none'; loadAffiliates(); }
+      else alert(d.error || 'Could not process review');
+    })
+    .catch(function(e) { alert('Error: ' + e.message); });
+}
+function reviewKyc(id) {
+  fetch(API + '/api/admin/affiliates/' + id + '/kyc?t=' + Date.now(), { headers: adminHeaders() })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (!d.success) { alert(d.error || 'Could not load KYC'); return; }
+      var k = d.kyc || {};
+      var idHtml = k.id_image
+        ? '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:12px;text-align:center"><div style="font-size:12px;font-weight:700;color:#334155;margin-bottom:6px">ID upload (' + pEsc(k.id_type || 'document') + ')</div><img src="data:image/jpeg;base64,' + k.id_image + '" style="max-width:100%;max-height:240px;border-radius:8px;border:1px solid #cbd5e1" alt="Affiliate ID"></div>'
+        : '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:12px;color:#64748b;font-size:12px">No ID uploaded yet.</div>';
+      var content = idHtml +
+        '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;margin-bottom:14px">' +
+        '<div style="font-size:12px;margin-bottom:8px"><b>Legal name (ID):</b> ' + pEsc(k.legal_name || '-') + '</div>' +
+        '<div style="font-size:12px;margin-bottom:8px"><b>Bank:</b> ' + pEsc(k.bank_name || '-') + '</div>' +
+        '<div style="font-size:12px;margin-bottom:8px"><b>Account holder:</b> ' + pEsc(k.bank_account_holder || '-') + '</div>' +
+        '<div style="font-size:12px;margin-bottom:8px"><b>Sort code:</b> ' + pEsc(k.bank_sort_code || '-') + ' &nbsp; <b>Account no.:</b> ' + pEsc(k.bank_account_number || '-') + '</div>' +
+        '<div style="font-size:12px;margin-bottom:8px"><b>Name match:</b> ' + (normalizeMatch(k.legal_name) === normalizeMatch(k.bank_account_holder) ? '<span style="color:#16a34a;font-weight:700">MATCH</span>' : '<span style="color:#d97706;font-weight:700">CHECK MANUALLY</span>') + '</div>' +
+        '<div style="font-size:12px"><b>T&amp;C accepted:</b> ' + (k.tc_accepted ? '<span style="color:#16a34a;font-weight:700">Yes</span>' : '<span style="color:#ef4444;font-weight:700">No</span>') + '</div>' +
+        (k.status === 'rejected' && k.id_review_note ? '<div style="font-size:12px;color:#ef4444;margin-top:8px"><b>Reject reason:</b> ' + pEsc(k.id_review_note) + '</div>' : '') +
+        '</div>' +
+        '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input id="kyc-note" placeholder="Optional note (sent to affiliate)" style="flex:1;min-width:160px;padding:9px 11px;border:1px solid #cbd5e1;border-radius:8px;font-size:12px">' +
+        '<button class="btn btn-primary btn-sm" onclick="decideKyc(\'' + id + '\',\'approve\')">✓ Approve ID</button>' +
+        '<button class="btn btn-sm" style="background:#ef4444;color:#fff" onclick="decideKyc(\'' + id + '\',\'reject\')">✗ Reject ID</button></div>';
+      showModal('ID Verification · ' + pEsc(k.legal_name || 'Affiliate'), content, 540);
+    })
+    .catch(function(e) { alert('Error: ' + e.message); });
+}
+function normalizeMatch(n) { return String(n || '').toLowerCase().replace(/[^a-z]/g, ''); }
+function decideKyc(id, decision) {
+  var note = (document.getElementById('kyc-note') || {}).value || '';
+  if (decision === 'reject' && !confirm('Reject this ID? The affiliate will be emailed and cannot be paid until they re-submit.')) return;
+  fetch(API + '/api/admin/affiliates/' + id + '/kyc-review', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: JSON.stringify({ decision: decision, note: note }) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) { alert(decision === 'approve' ? 'ID approved. ' + d.kyc.legal_name + ' can now be paid.' : 'ID rejected.'); document.getElementById('adminModalOverlay').style.display = 'none'; loadAffiliates(); }
+      else alert(d.error || 'Could not process KYC review');
+    })
+    .catch(function(e) { alert('Error: ' + e.message); });
+}
+function instantApprove(id, name) {
+  if (!confirm('Approve ' + name + ' immediately? This activates their affiliate account. You can still review their application and KYC from the View button later.')) return;
+  fetch(API + '/api/admin/affiliates/' + id + '/review', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: JSON.stringify({ decision: 'approve', note: 'Approved via instant approve' }) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) { if (d.success) { alert(name + ' approved!'); loadAffiliates(); } else alert(d.error || 'Could not approve'); })
+    .catch(function(e) { alert('Error: ' + e.message); });
+}
+function runAffAutoPayout() {
+  if (!confirm('Queue all cleared commissions (2nd invoice paid, clearance passed) as ready-to-pay now? Nothing is transferred until you click "Confirm paid" on each payout.')) return;
+  fetch(API + '/api/admin/affiliate/run-auto-payout', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: '{}' })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var n = (d.result && d.result.action_lines) || 0;
+      var msg = (d.result && d.result.commissions_paid) ? (d.result.commissions_paid + ' commission(s) queued as ready-to-pay.') : 'No new cleared commissions to queue.';
+      alert(msg + ' See the green payout queue above to transfer & confirm.');
+      loadAffiliates();
+    })
+    .catch(function(e) { alert('Error: ' + e.message); });
+}
+function runAffAutomation() {
+  fetch(API + '/api/admin/affiliate/run-automation', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: '{}' })
+    .then(function(r) { return r.json(); })
+    .then(function(d) { alert('Affiliate automation complete: nurture=' + (d.result.nurture.nurture_sent||0) + ', reactivation=' + (d.result.reactivation.reactivation_sent||0)); })
+    .catch(function(e) { alert('Error: ' + e.message); });
+}
+function deleteAffiliateAdmin(id, name) {
+  if (!confirm('PERMANENTLY delete affiliate ' + (name || id) + '? This removes their account, identity documents, referrals and data. Cannot be undone.')) return;
+  fetch(API + '/api/admin/affiliates/delete', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: JSON.stringify({ affiliate_id: id }) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) { if (d.success) { alert('Affiliate deleted.'); loadAffiliates(); } else alert(d.error || 'Could not delete affiliate'); })
+    .catch(function(e) { alert('Error: ' + e.message); });
+}
+function viewAffiliateDashboard(id) {  fetch(API + '/api/admin/affiliate-impersonate', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: JSON.stringify({ affiliate_id: id }) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.token) { window.open('/portal/affiliate.html?token=' + encodeURIComponent(d.token), '_blank'); }
+      else alert(d.error || 'Could not view affiliate dashboard');
+    })
+    .catch(function(e) { alert('Error: ' + e.message); });
+}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function fmtDate(iso){ if(!iso) return '-'; try { return new Date(iso).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) + ' ' + new Date(iso).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}); } catch(e){ return iso; } }
+
+// Light modal helper (used by impersonation logs etc.)
+function showModal(title, content, width) {
+  var ov = document.getElementById('adminModalOverlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'adminModalOverlay';
+    ov.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,.5);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:40px 20px;overflow:auto';
+    document.body.appendChild(ov);
+  }
+  ov.innerHTML = '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;max-width:' + (width || '760px') + ';width:100%;padding:24px;box-shadow:0 20px 50px rgba(15,23,42,.15)">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h2 style="font-size:18px;font-family:Outfit,sans-serif;color:#1e293b">' + title + '</h2>' +
+    '<button onclick="document.getElementById(\'adminModalOverlay\').style.display=\'none\'" style="background:none;border:none;color:#94a3b8;font-size:22px;cursor:pointer">&times;</button></div>' + content + '</div>';
+  ov.style.display = 'flex';
+}
+
+(function(){
+  var h = new Date().getHours();
+  var g = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+  var gEl = document.getElementById('greeting'); if (gEl) gEl.textContent = g;
+  var dEl = document.getElementById('heroDate');
+  if (dEl) dEl.textContent = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+})();
+
 function saveAdminAuth() { sessionStorage.setItem('9amAdminAuth', 'true'); }
 function getAdminAuth() { return sessionStorage.getItem('9amAdminAuth') === 'true'; }
-function getAdminPass() { return sessionStorage.getItem('9amAdminPass') || ''; }
+function getAdminPass() { return sessionStorage.getItem('9amAdminPass') || localStorage.getItem('9amAdminPass') || ''; }
 function adminHeaders() { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getAdminPass() }; }
 
-function adminLogin() {
+async function verifyPass(pass) {
+  // Retry up to 3 times with short backoff. the backend may be waking from a cold start
+  for (var attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const r = await fetch(API + '/api/admin/verify', { headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + pass } });
+      const d = await r.json();
+      if (d) return d;
+    } catch(e) { /* fall through to retry */ }
+    if (attempt < 3) await new Promise(function(res) { setTimeout(res, 1500 * attempt); });
+  }
+  return { valid: false, error: 'server_unreachable' };
+}
+
+async function adminLogin() {
   const pass = document.getElementById('adminPass').value;
   document.getElementById('loginError').style.display = 'none';
-  if (pass) {
-    sessionStorage.setItem('9amAdminPass', pass);
-    saveAdminAuth();
-    document.getElementById('loginPage').style.display = 'none';
-    document.getElementById('adminPage').style.display = 'block';
-    loadData();
-  } else {
+  if (!pass) { document.getElementById('loginError').style.display = 'block'; return; }
+  var btn = document.querySelector('#loginPage .btn');
+  if (btn) { btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...'; btn.disabled = true; }
+  // Verify the password server-side BEFORE proceeding
+  const d = await verifyPass(pass);
+  if (btn) { btn.innerHTML = '<i class="fas fa-lock"></i> Sign In'; btn.disabled = false; }
+  if (!d.valid) {
+    document.getElementById('loginError').textContent = (d.error === 'server_unreachable') ? 'Cannot reach server. Waking it up. wait 30s and try again.' : 'Incorrect password (server rejected login)';
     document.getElementById('loginError').style.display = 'block';
+    return;
   }
+  sessionStorage.setItem('9amAdminPass', pass);
+  // ALSO store in localStorage so NEW TABS (admin-customer.html, dashboard
+  // impersonation) inherit the admin credentials instantly without re-login.
+  try { localStorage.setItem('9amAdminPass', pass); } catch(e) {}
+  saveAdminAuth();
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('adminPage').style.display = 'block';
+  loadData();
 }
 
 function adminLogout() {
@@ -153,9 +995,34 @@ function adminLogout() {
 }
 
 if (getAdminAuth()) {
-  document.getElementById('loginPage').style.display = 'none';
-  document.getElementById('adminPage').style.display = 'block';
-  loadData();
+  // Validate the stored token server-side; if invalid, force re-login
+  var storedPass = getAdminPass();
+  if (storedPass) {
+    fetch(API + '/api/admin/verify', { headers: { 'Authorization': 'Bearer ' + storedPass } }).then(function(r) {
+      return r.json();
+    }).then(function(d) {
+      if (d && d.valid) {
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('adminPage').style.display = 'block';
+        loadData();
+      } else {
+        // Stored password invalid. clear and show login
+        sessionStorage.removeItem('9amAdminAuth');
+        sessionStorage.removeItem('9amAdminPass');
+        document.getElementById('loginPage').style.display = 'block';
+        document.getElementById('adminPage').style.display = 'none';
+      }
+    }).catch(function() {
+      // Server unreachable. force login (don't show stale/empty dashboard)
+      document.getElementById('loginError').textContent = 'Cannot reach server. Check connection and try again.';
+      document.getElementById('loginError').style.display = 'block';
+      document.getElementById('loginPage').style.display = 'block';
+      document.getElementById('adminPage').style.display = 'none';
+    });
+  } else {
+    document.getElementById('loginPage').style.display = 'block';
+    document.getElementById('adminPage').style.display = 'none';
+  }
 }
 
 function badgeClass(product) {
@@ -169,35 +1036,230 @@ function planBadge(plan) {
   return 'badge-paid';
 }
 
+// Overview alert: surface affiliate ID verifications / applications needing attention.
+function loadAffiliateVerifyAlert() {
+  var el = document.getElementById('aff-verify-alert');
+  if (!el) return;
+  fetch(API + '/api/admin/affiliates?t=' + Date.now(), { headers: adminHeaders() })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var needVerify = (d.affiliates || []).filter(function(a) { return a.kyc && a.kyc.status === 'pending_review'; });
+      var needApp = (d.affiliates || []).filter(function(a) { return a.status === 'pending'; });
+      var html = '';
+      needVerify.forEach(function(a) {
+        html += '<div style="background:#fffbeb;border:1px solid #f59e0b;border-radius:12px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">' +
+          '<div style="flex:1;min-width:200px"><b>🔎 Affiliate ID needs verifying:</b> ' + esc(a.name) + ' (' + esc(a.email) + ') <span style="color:#d97706;font-weight:700">· Verification pending</span></div>' +
+          '<button class="btn btn-sm" style="background:#f59e0b;color:#fff" onclick="switchTab(\'affiliates\');setTimeout(function(){reviewKyc(\'' + a.id + '\');},250)">Review ID</button></div>';
+      });
+      needApp.forEach(function(a) {
+        html += '<div style="background:#eff6ff;border:1px solid #0ea5e9;border-radius:12px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">' +
+          '<div style="flex:1;min-width:200px"><b>📝 New affiliate application:</b> ' + esc(a.name) + ' (' + esc(a.email) + ')</div>' +
+          '<button class="btn btn-sm" style="background:#0ea5e9;color:#fff" onclick="switchTab(\'affiliates\')">Review application</button></div>';
+      });
+      el.innerHTML = html;
+    })
+    .catch(function() { el.innerHTML = ''; });
+}
+
 async function loadData() {
   try {
-    const stats = await (await fetch(API + '/api/admin/stats', { headers: adminHeaders() })).json();
+    const statsResp = await fetch(API + '/api/admin/stats?t=' + Date.now(), { headers: adminHeaders() });
+    const stats = await statsResp.json();
+    if (!stats || stats.error || statsResp.status !== 200) {
+      var badgeEl = document.getElementById('custCountBadge'); if (badgeEl) badgeEl.textContent = (stats.total_customers||0);
+    var labelEl = document.getElementById('custCountLabel'); if (labelEl) labelEl.textContent = '(' + (stats.total_customers||0) + ' total). Everyone with an account on 9amLeads';
+    document.getElementById('statsGrid').innerHTML = '<div class="empty" style="color:#ef4444">API error (' + statsResp.status + '): ' + (stats && stats.error || 'unauthorized. check admin password') + '</div>';
+      return;
+    }
+    var badgeEl = document.getElementById('custCountBadge'); if (badgeEl) badgeEl.textContent = (stats.total_customers||0);
+    var labelEl = document.getElementById('custCountLabel'); if (labelEl) labelEl.textContent = '(' + (stats.total_customers||0) + ' total). Everyone with an account on 9amLeads';
     document.getElementById('statsGrid').innerHTML =
-      '<div class="stat-card"><div class="num">' + stats.total_customers + '</div><div class="label">Total Customers</div></div>' +
-      '<div class="stat-card"><div class="num">' + stats.free_trials + '</div><div class="label">Free Trials</div></div>' +
-      '<div class="stat-card"><div class="num">' + stats.paid_customers + '</div><div class="label">Paid Customers</div></div>' +
-      '<div class="stat-card"><div class="num">' + stats.total_leads + '</div><div class="label">Total Leads</div></div>' +
-      '<div class="stat-card"><div class="num">' + stats.today_leads + '</div><div class="label">Today\'s Leads</div></div>' +
-      '<div class="stat-card"><div class="num">' + stats.deliveries_today + '</div><div class="label">Deliveries Today</div></div>';
+      '<div class="stat-card"><div class="num">' + (stats.total_customers||0) + '</div><div class="label">Total Customers</div></div>' +
+      '<div class="stat-card"><div class="num" style="color:#0ea5e9">' + (stats.free_trials||0) + '</div><div class="label">Free Trials</div></div>' +
+      '<div class="stat-card"><div class="num" style="color:#22c55e">' + (stats.paid_customers||0) + '</div><div class="label">Paid Customers</div></div>' +
+      '<div class="stat-card"><div class="num" style="color:#ef4444">' + (stats.expired_trials||0) + '</div><div class="label">Expired Trials</div></div>' +
+      '<div class="stat-card"><div class="num" style="color:#06b6d4">' + (stats.this_week_signups||0) + '</div><div class="label">New Signups (7d)</div></div>' +
+      '<div class="stat-card"><div class="num" style="color:#a855f7">' + (stats.crm_connected||0) + '</div><div class="label">CRM Connected</div></div>' +
+      '<div class="stat-card"><div class="num">' + (stats.total_leads||0) + '</div><div class="label">Total Leads</div></div>' +
+      '<div class="stat-card"><div class="num" style="color:#22c55e">' + (stats.today_leads||0) + '</div><div class="label">Today\'s Leads</div></div>' +
+      '<div class="stat-card"><div class="num">' + (stats.deliveries_today||0) + '</div><div class="label">Deliveries Today</div></div>' +
+      '<div class="stat-card"><div class="num" style="color:#ef4444">' + (stats.rejected_leads||0) + '</div><div class="label">Rejected Leads</div></div>';
 
-    const custResp = await fetch(API + '/api/admin/customers', { headers: adminHeaders() });
+    const custResp = await fetch(API + '/api/admin/customers?t=' + Date.now(), { headers: adminHeaders() });
     const custData = custResp.ok ? await custResp.json() : { customers: [] };
     allCustomers = custData.customers || [];
     renderCustomers(allCustomers);
+    renderPlanBreakdown(allCustomers);
+    loadLeadMonitor();
+    loadRejectedLeads();
+    loadFulfilment();
     loadHealth();
-    loadBlogPosts();
-    loadSeoReport();
+    loadAnalytics();
+    loadAffiliateVerifyAlert();
   } catch (e) {
+    var badgeEl = document.getElementById('custCountBadge'); if (badgeEl) badgeEl.textContent = (stats.total_customers||0);
+    var labelEl = document.getElementById('custCountLabel'); if (labelEl) labelEl.textContent = '(' + (stats.total_customers||0) + ' total). Everyone with an account on 9amLeads';
     document.getElementById('statsGrid').innerHTML = '<div class="empty" style="color:#ef4444">Failed to load: ' + e.message + '</div>';
   }
 }
 
-function renderCustomers(customers) {
-  const tbody = document.getElementById('customerTable');
-  if (customers.length === 0) { tbody.innerHTML = '<tr><td colspan="10" class="empty">No customers found</td></tr>'; return; }
+async function loadAnalytics() {
+  try {
+    var days = document.getElementById('analyticsRange') ? document.getElementById('analyticsRange').value : 30;
+    var r = await fetch(API + '/api/admin/analytics?days=' + days + '&t=' + Date.now(), { headers: adminHeaders() });
+    if (!r.ok) { document.getElementById('analyticsBody').innerHTML = '<div class="empty" style="color:#ef4444">Could not load analytics</div>'; return; }
+    var d = await r.json();
+    if (!d || d.error) { document.getElementById('analyticsBody').innerHTML = '<div class="empty" style="color:#64748b">No conversion data yet. Analytics events accumulate as visitors use the site.</div>'; return; }
+
+    // Warnings
+    var warnHtml = '';
+    (d.warnings || []).forEach(function(w) {
+      var col = w.level === 'red' ? '#ef4444' : (w.level === 'amber' ? '#f59e0b' : '#22c55e');
+      var ic = w.level === 'red' ? '🔴' : (w.level === 'amber' ? '🟠' : '🟢');
+      warnHtml += '<div style="display:inline-flex;align-items:center;gap:6px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:6px 12px;font-size:12px;margin-right:8px;margin-bottom:6px">' + ic + ' <strong style="color:' + col + '">' + w.label + ': ' + w.pct + '%</strong> <span style="color:#64748b">(' + w.note + ')</span></div>';
+    });
+    var wEl = document.getElementById('analyticsWarnings');
+    if (wEl) wEl.innerHTML = warnHtml;
+
+    var F = { homepage_viewed: 'Website Visitors', trial_cta_clicked: 'Trial CTA Clicked', signup_started: 'Signup Started', signup_completed: 'Signup Completed', trial_activated: 'Trial Activated', lead_viewed: 'First Lead Viewed', lead_contacted: 'Lead Contacted', pricing_viewed: 'Pricing Viewed', checkout_started: 'Checkout Started', subscription_started: 'Subscription Started' };
+    var html = '';
+
+    // Funnel
+    html += '<div style="font-size:13px;font-weight:800;font-family:\'Outfit\',sans-serif;margin-bottom:10px">Visitor → Paid Funnel</div>';
+    html += '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin-bottom:16px">';
+    (d.funnel || []).forEach(function(f, i) {
+      var label = F[f.event] || f.event;
+      html += '<div style="display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid #eef2f7">' +
+        '<span style="width:14px;height:14px;border-radius:50%;background:' + (i === d.funnel.length - 1 ? '#22c55e' : '#0ea5e9') + ';flex-shrink:0"></span>' +
+        '<span style="flex:1;font-size:12px;color:#334155;font-weight:600">' + label + '</span>' +
+        (f.fromPrevPct !== null ? '<span style="font-size:11px;color:#0ea5e9;font-weight:700">' + f.fromPrevPct + '%</span>' : '') +
+        '<span style="font-size:12px;color:#64748b;width:40px;text-align:right"><strong>' + f.unique + '</strong></span>' +
+        '<span style="font-size:10px;color:#94a3b8;width:46px;text-align:right">' + f.raw + ' raw</span>' +
+        '</div>';
+    });
+    html += '<div style="padding-top:8px;font-size:12px;font-weight:800;color:#0c4a6e">Overall Visitor → Paid: <span style="color:#0ea5e9">' + (d.overall_pct !== null ? d.overall_pct + '%' : 'n/a') + '</span></div>';
+    html += '</div>';
+
+    // Trial performance
+    var t = d.trials || {};
+    html += '<div style="font-size:13px;font-weight:800;font-family:\'Outfit\',sans-serif;margin-bottom:10px">Trial Performance</div>';
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px">' +
+      statCard(t.started || 0, 'Trials Started') + statCard(t.active || 0, 'Active Now') + statCard(t.expired || 0, 'Expired') +
+      statCard(t.converted || 0, 'Converted to Paid') + statCard((t.conversion_pct !== null ? t.conversion_pct + '%' : 'n/a'), 'Trial → Paid') +
+      statCard((t.avg_received || 0), 'Avg Leads Delivered') + statCard((t.avg_contacted || 0), 'Avg Contacted') +
+      '<div style="border:1px solid ' + ((t.zero_lead_count || 0) > 0 ? '#f59e0b' : '#e2e8f0') + ';border-radius:10px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:900;font-family:\'Outfit\',sans-serif;color:' + ((t.zero_lead_count || 0) > 0 ? '#d97706' : '#22c55e') + '">' + (t.zero_lead_count || 0) + '</div><div style="font-size:11px;color:#64748b;margin-top:2px">Zero-Lead Trials</div></div>' +
+      '</div>';
+
+    // Zero-lead trials list
+    if (t.zero_lead && t.zero_lead.length) {
+      html += '<div style="font-size:13px;font-weight:800;font-family:\'Outfit\',sans-serif;margin:14px 0 8px;color:#b45309">⚠️ Trials With Zero Leads</div>';
+      html += '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 12px;margin-bottom:16px;max-height:220px;overflow:auto">';
+      html += '<table style="width:100%;font-size:11px;border-collapse:collapse"><tr style="color:#92400e;text-align:left"><th style="padding:4px 6px">Customer</th><th>Type</th><th>Areas</th><th>Trial End</th><th>Days Left</th><th>Allocation</th></tr>';
+      t.zero_lead.forEach(function(z) {
+        html += '<tr style="border-top:1px solid #fde68a"><td style="padding:4px 6px;color:#334155">' + escHtml(z.email) + '</td><td>' + escHtml(z.product || '') + '</td><td style="color:#64748b">' + escHtml(z.areas || '') + '</td><td>' + (z.trial_end ? new Date(z.trial_end).toLocaleDateString() : '-') + '</td><td>' + (z.days_remaining || 0) + '</td><td>' + (z.allocation || 0) + '/day</td></tr>';
+      });
+      html += '</table></div>';
+    }
+
+    // Lead-type performance
+    html += '<div style="font-size:13px;font-weight:800;font-family:\'Outfit\',sans-serif;margin:14px 0 8px">Lead Type Performance</div>';
+    var bp = d.by_product || {};
+    html += '<table style="width:100%;font-size:11px;border-collapse:collapse;margin-bottom:16px"><tr style="color:#64748b;text-align:left;border-bottom:1px solid #e2e8f0"><th style="padding:6px">Lead Type</th><th>Trials</th><th>Converted</th><th>Conv %</th><th>Avg Delivered</th><th>Avg Contacted</th></tr>';
+    Object.keys(bp).forEach(function(p) {
+      var b = bp[p];
+      html += '<tr style="border-bottom:1px solid #eef2f7"><td style="padding:6px;font-weight:600;color:#334155">' + p + '</td><td>' + (b.trials || 0) + '</td><td>' + (b.converted || 0) + '</td><td>' + (b.conversion_pct !== null ? b.conversion_pct + '%' : 'n/a') + '</td><td>' + (b.avg_received || 0) + '</td><td>' + (b.avg_contacted || 0) + '</td></tr>';
+    });
+    html += '</table>';
+
+    // Plan conversion
+    html += '<div style="font-size:13px;font-weight:800;font-family:\'Outfit\',sans-serif;margin:14px 0 8px">Plan Conversion</div>';
+    var plans = { starter: { label: 'Starter', price: 25 }, pro: { label: 'Pro', price: 49 }, enterprise: { label: 'Enterprise', price: 99 } };
+    var bp2 = d.by_plan || {};
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px">';
+    Object.keys(plans).forEach(function(p) {
+      var b = bp2[p] || { count: 0 };
+      html += '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:12px;text-align:center"><div style="font-size:11px;color:#64748b;font-weight:700">' + plans[p].label + ' · £' + plans[p].price + '/wk</div><div style="font-size:24px;font-weight:900;font-family:\'Outfit\',sans-serif;color:#0ea5e9">' + (b.count || 0) + '</div><div style="font-size:11px;color:#64748b">' + (b.pct !== null ? b.pct + '% of paid' : 'n/a') + '</div></div>';
+    });
+    html += '</div>';
+    html += '<div style="font-size:11px;color:#64748b">Estimated current weekly subscription value (paid plan count × price): <strong style="color:#0c4a6e">£' + (d.weekly_value_est || 0) + '/week</strong>. Based on plan counts, not recognised accounting revenue.</div>';
+
+    document.getElementById('analyticsBody').innerHTML = html;
+  } catch(e) { document.getElementById('analyticsBody').innerHTML = '<div class="empty" style="color:#ef4444">Failed: ' + e.message + '</div>'; }
+}
+function statCard(num, label) {
+  return '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:900;font-family:\'Outfit\',sans-serif;color:#0c4a6e">' + num + '</div><div style="font-size:11px;color:#64748b;margin-top:2px">' + label + '</div></div>';
+}
+function escHtml(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function renderPlanBreakdown(customers) {
+  var plans = { free_trial: { label: 'Free Trial', color: '#0ea5e9' }, starter: { label: 'Starter', color: '#22c55e' }, pro: { label: 'Pro', color: '#a855f7' }, enterprise: { label: 'Enterprise', color: '#f59e0b' }, cancelled: { label: 'Cancelled', color: '#ef4444' } };
+  var counts = {};
+  (customers || []).forEach(function(c) { counts[c.plan] = (counts[c.plan] || 0) + 1; });
+  var html = '';
+  Object.keys(plans).forEach(function(p) {
+    var n = counts[p] || 0;
+    html += '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:12px;text-align:center">' +
+      '<div style="font-size:22px;font-weight:900;font-family:\'Outfit\',sans-serif;color:' + plans[p].color + '">' + n + '</div>' +
+      '<div style="font-size:11px;color:#64748b;margin-top:2px">' + plans[p].label + '</div></div>';
+  });
+  document.getElementById('planBreakdown').innerHTML = html;
+}
+
+async function loadLeadMonitor() {
+  try {
+    const r = await fetch(API + '/api/admin/leads-overview?t=' + Date.now(), { headers: adminHeaders() });
+    const d = await r.json();
+    var rows = d.customers || [];
+    var tbody = document.getElementById('leadMonitorTable');
+    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="8" class="empty">No customers</td></tr>'; return; }
+    var html = rows.map(function(c) {
+      var promised = parseInt(c.promised_per_day) || 5;
+      var met = c.leads_today >= promised;
+      var status = c.leads_today >= promised
+        ? '<span style="color:#22c55e;font-size:11px;font-weight:700"><i class="fas fa-check-circle"></i> Met</span>'
+        : c.leads_today > 0
+          ? '<span style="color:#eab308;font-size:11px;font-weight:700"><i class="fas fa-exclamation-triangle"></i> Partial</span>'
+          : '<span style="color:#ef4444;font-size:11px;font-weight:700"><i class="fas fa-times-circle"></i> None</span>';
+      return '<tr>' +
+        '<td><strong>' + (c.company || c.email) + '</strong><div style="font-size:10px;color:#64748b">' + c.email + '</div></td>' +
+        '<td style="font-size:12px">' + (c.product || '-') + '</td>' +
+        '<td><span class="badge ' + planBadge(c.plan) + '">' + (c.plan || 'free_trial') + '</span></td>' +
+        '<td style="font-size:13px;font-weight:700">' + promised + '</td>' +
+        '<td style="font-size:13px;font-weight:900;color:' + (c.leads_today >= promised ? '#22c55e' : '#eab308') + '">' + c.leads_today + '</td>' +
+        '<td>' + c.leads_week + '</td>' +
+        '<td>' + c.leads_month + '</td>' +
+        '<td>' + status + '</td></tr>';
+    }).join('');
+    tbody.innerHTML = html;
+  } catch(e) {
+    document.getElementById('leadMonitorTable').innerHTML = '<tr><td colspan="8" class="empty" style="color:#ef4444">Failed: ' + e.message + '</td></tr>';
+  }
+}
+
+function deleteCustomerAdmin(emailEnc) {
+  var email = decodeURIComponent(emailEnc);
+  if (!confirm('PERMANENTLY delete customer ' + email + '?\n\nThis removes their account, all their leads, email history and settings. This CANNOT be undone and is only needed for removing real customers/test accounts permanently.')) return;
+  if (!confirm('Are you absolutely sure? Type OK to confirm deletion of ' + email + '.')) return;
+  fetch(API + '/api/admin/delete-customer', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: JSON.stringify({ email: email }) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) { if (d.success) { alert('Customer deleted.'); loadData(); } else alert(d.error || 'Could not delete customer'); })
+    .catch(function(e) { alert('Error: ' + e.message); });
+}
+
+function renderCustomers(customers) {  const tbody = document.getElementById('customerTable');
+  if (customers.length === 0) { tbody.innerHTML = '<tr><td colspan="11" class="empty">No customers found</td></tr>'; return; }
   tbody.innerHTML = customers.map(c => {
     const areas = c.target_areas ? JSON.parse(c.target_areas).slice(0, 3).join(', ') + (JSON.parse(c.target_areas).length > 3 ? '...' : '') : '';
-    const hasCrm = c.crm_webhook_url ? '<span style="color:#22c55e;font-size:11px">Connected</span>' : '<span style="color:#5c6480;font-size:11px">No</span>';
+    // Trial end + days remaining
+    var trialHtml = '<span style="font-size:11px;color:#64748b">-</span>';
+    if (c.trial_ends) {
+      var te = new Date(c.trial_ends);
+      var days = Math.ceil((te - Date.now()) / 86400000);
+      var teColor = days < 0 ? '#ef4444' : days <= 2 ? '#eab308' : '#64748b';
+      var teLabel = days < 0 ? 'Expired' : days === 0 ? 'Today' : days + 'd';
+      trialHtml = '<span style="font-size:11px;color:' + teColor + ';font-weight:' + (days<=2?'700':'400') + '">' + teLabel + ' (' + te.toLocaleDateString() + ')</span>';
+    }
+    const hasCrm = c.crm_webhook_url ? '<span style="color:#22c55e;font-size:11px">Connected</span>' : '<span style="color:#64748b;font-size:11px">No</span>';
     const signupDate = c.created_at ? new Date(c.created_at).toLocaleDateString() : '';
     // Multi-product: parse biz_field3 to show all products
     let productsHtml = '<span class="badge ' + badgeClass(c.product) + '">' + (c.lead_type || c.product) + '</span>';
@@ -210,15 +1272,16 @@ function renderCustomers(customers) {
     var extendBtn = (c.plan === 'free_trial') ? '<button class="btn btn-sm" style="background:rgba(14,165,233,0.1);color:#0ea5e9;border:1px solid rgba(14,165,233,0.2);padding:3px 7px;font-size:10px;margin-left:4px" onclick="event.stopPropagation();fixExtendTrial(\'' + c.id + '\')" title="Extend trial"><i class="fas fa-clock"></i></button>' : '';
     return '<tr>' +
       '<td><strong>' + (c.company || '-') + '</strong>' + extendBtn + '</td>' +
-      '<td style="font-size:12px;color:#8890a8">' + c.email + '</td>' +
+      '<td style="font-size:12px;color:#64748b">' + c.email + '</td>' +
       '<td style="white-space:nowrap">' + productsHtml + '</td>' +
       '<td><span class="badge ' + planBadge(c.plan) + '">' + (c.plan || 'free_trial') + '</span></td>' +
-      '<td style="font-size:11px;color:#5c6480;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + areas + '</td>' +
-      '<td>' + leadsVal + '</td>' +
-      '<td style="font-size:11px">' + bookedVal + ' <span style="color:#5c6480">(' + convPct + '%)</span></td>' +
+      '<td>' + trialHtml + '</td>' +
+      '<td style="font-size:11px;color:#64748b;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + areas + '</td>' +
+      '<td>' + leadsVal + ' <span style="color:#64748b;font-size:10px">(' + (c.leads_per_day||0) + '/d)</span></td>' +
+      '<td style="font-size:11px">' + bookedVal + ' <span style="color:#64748b">(' + convPct + '%)</span></td>' +
       '<td>' + hasCrm + '</td>' +
-      '<td style="font-size:11px;color:#5c6480">' + signupDate + '</td>' +
-      '<td><div style="display:flex;gap:3px"><button class="btn btn-view btn-sm" onclick="loginAs(\'' + c.id + '\')" title="View details"><i class="fas fa-eye"></i></button><button class="btn btn-view btn-sm" onclick="impersonateCustomer(\'' + c.id + '\',\'' + (c.email || '').replace(/'/g,"\\'") + '\')" title="Login as customer" style="background:rgba(245,158,11,0.12)!important;color:#f59e0b!important;border-color:rgba(245,158,11,0.2)!important"><i class="fas fa-shield-alt"></i></button></div></td></tr>';
+      '<td style="font-size:11px;color:#64748b">' + signupDate + '</td>' +
+      '<td><div style="display:flex;gap:4px;flex-wrap:wrap"><a class="btn btn-view btn-sm" href="/portal/admin-customer.html?email=' + encodeURIComponent(c.email || '') + '" target="_blank" rel="noopener" title="View this customer\'s leads (new tab)"><i class="fas fa-list"></i> Leads</a><a class="btn btn-view btn-sm" href="/portal/admin-customer.html?email=' + encodeURIComponent(c.email || '') + '&action=dashboard" target="_blank" rel="noopener" title="Login as this customer - open their dashboard (new tab)" style="background:rgba(245,158,11,0.12)!important;color:#f59e0b!important;border-color:rgba(245,158,11,0.2)!important"><i class="fas fa-shield-alt"></i> Login as</a><button class="btn btn-view btn-sm" style="background:rgba(239,68,68,0.1)!important;color:#ef4444!important;border-color:rgba(239,68,68,0.25)!important" onclick="deleteCustomerAdmin(\'' + encodeURIComponent(c.email || '') + '\')" title="Permanently delete this customer and all their data">Delete</button></div></td></tr>';
   }).join('');
 }
 
@@ -254,69 +1317,6 @@ function sortBy(field) {
   renderCustomers(sorted);
 }
 
-// ===== BLOG MANAGEMENT =====
-async function loadBlogPosts() {
-  try {
-    var r = await fetch(API + '/api/admin/blog/posts', { headers: adminHeaders() });
-    var d = await r.json();
-    document.getElementById('blogStatus').textContent = d.templates_used + '/' + d.templates_total + ' templates used';
-    var container = document.getElementById('blogList');
-    if (!d.posts || d.posts.length === 0) {
-      container.innerHTML = '<div style="font-size:12px;color:#5c6480;padding:8px 0">No blog posts yet. Click "Generate Post" to create your first SEO-optimised article.</div>';
-      return;
-    }
-    container.innerHTML = d.posts.map(function(p) {
-      var dateStr = p.created_at ? new Date(p.created_at).toLocaleDateString() : '';
-      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a1a1a;font-size:12px">' +
-        '<div style="flex:1;min-width:0"><strong>' + p.title + '</strong><br><span style="color:#5c6480">' + p.product_name + ' \u00b7 ' + dateStr + '</span></div>' +
-        '<div style="display:flex;gap:6px;flex-shrink:0">' +
-        '<a href="/blog/' + p.slug + '" target="_blank" class="btn btn-view btn-sm" style="padding:3px 8px;font-size:10px"><i class="fas fa-eye"></i></a>' +
-        '<button class="btn btn-sm" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);padding:3px 8px;font-size:10px" onclick="deleteBlogPost(\'' + p.slug + '\')"><i class="fas fa-trash"></i></button>' +
-        '</div></div>';
-    }).join('');
-  } catch(e) { document.getElementById('blogStatus').textContent = 'Error loading posts'; }
-}
-
-async function loadSeoReport() {
-  try {
-    var r = await fetch(API + '/api/admin/seo/report', { headers: adminHeaders() });
-    if (!r.ok) { document.getElementById('seoDashboard').innerHTML = '<div style="color:#5c6480;font-size:11px">SEO data unavailable</div>'; return; }
-    var d = await r.json();
-    var html = '';
-    html += '<div style="background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.1);border-radius:8px;padding:10px;text-align:center"><div style="font-size:22px;font-weight:900;color:#0ea5e9">' + d.total_posts + '/' + d.templates_total + '</div><div style="font-size:10px;color:#5c6480">Posts Generated</div><div style="font-size:11px;color:#22c55e;margin-top:4px">' + d.completeness_pct + '% complete</div></div>';
-    html += '<div style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.1);border-radius:8px;padding:10px;text-align:center"><div style="font-size:22px;font-weight:900;color:#22c55e">' + d.sitemap_urls + '</div><div style="font-size:10px;color:#5c6480">Sitemap URLs</div><div style="font-size:11px;color:#5c6480;margin-top:4px">' + d.posts_this_week + ' this week</div></div>';
-    html += '<div style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.1);border-radius:8px;padding:10px;text-align:center"><div style="font-size:22px;font-weight:900;color:#f59e0b">' + (d.avg_word_count || 0).toLocaleString() + '</div><div style="font-size:10px;color:#5c6480">Avg Word Count</div><div style="font-size:11px;color:#5c6480;margin-top:4px">' + (d.total_words || 0).toLocaleString() + ' total</div></div>';
-    html += '<div style="background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.1);border-radius:8px;padding:10px;text-align:center"><div style="font-size:22px;font-weight:900;color:#a855f7">' + d.templates_remaining + '</div><div style="font-size:10px;color:#5c6480">Templates Left</div><div style="font-size:11px;color:#a855f7;margin-top:4px">Generate to complete</div></div>';
-    if (d.by_category && d.by_category.length > 0) {
-      html += '<div style="grid-column:1/-1;font-size:11px;color:#5c6480;display:flex;gap:8px;flex-wrap:wrap;padding:4px 0">' + d.by_category.map(function(c) { return '<span style="background:rgba(255,255,255,0.04);padding:3px 8px;border-radius:4px;font-size:10px">' + c.label + ': ' + c.count + '</span>'; }).join('') + '</div>';
-    }
-    if (d.last_generated) {
-      html += '<div style="grid-column:1/-1;font-size:10px;color:#5c6480;text-align:center;padding:2px 0">Last post: ' + new Date(d.last_generated).toLocaleDateString() + '</div>';
-    }
-    document.getElementById('seoDashboard').innerHTML = html;
-  } catch(e) { document.getElementById('seoDashboard').innerHTML = '<div style="color:#5c6480;font-size:11px">Error loading SEO data</div>'; }
-}
-
-async function generateBlogPost() {
-  var btn = document.querySelector('#blogSection .btn-primary');
-  btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
-  try {
-    var r = await fetch(API + '/api/admin/blog/generate', { method: 'POST', headers: adminHeaders() });
-    var d = await r.json();
-    alert('Generated ' + d.count + ' post' + (d.count !== 1 ? 's' : '') + '!');
-    loadBlogPosts();
-  } catch(e) { alert('Error: ' + e.message); }
-  btn.disabled = false; btn.innerHTML = '<i class="fas fa-plus"></i> Generate Post';
-}
-
-async function deleteBlogPost(slug) {
-  if (!confirm('Delete "' + slug + '"?')) return;
-  try {
-    await fetch(API + '/api/admin/blog/delete', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ slug: slug }) });
-    loadBlogPosts();
-  } catch(e) { alert('Error: ' + e.message); }
-}
-
 async function fixExtendTrial(customerId) {
   var days = prompt('Extend trial by how many days?', '7');
   if (!days || isNaN(parseInt(days))) return;
@@ -330,9 +1330,82 @@ async function fixExtendTrial(customerId) {
 }
 
 // ===== HEALTH DASHBOARD =====
+async function runAutoHeal() {
+  const btn = document.querySelector('button[onclick="runAutoHeal()"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Healing...'; }
+  const el = document.getElementById('autoHealResult');
+  if (el) { el.style.display = 'block'; el.style.background = '#eef2ff'; el.style.border = '1px solid #c7d2fe'; el.style.color = '#3730a3'; el.textContent = 'Running auto-heal checks...'; }
+  fetch(API + '/api/admin/auto-heal', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: '{}' })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Run Auto-Heal'; }
+      if (el && d.success) {
+        const o = d.result || {};
+        const fixes = [];
+        if (o.pauses > 0) fixes.push('Cleared ' + o.pauses + ' stuck pause(s)');
+        if (o.lock) fixes.push('Released stale delivery lock');
+        if (o.resend > 0) fixes.push('Resent ' + o.resend + ' failed email(s)');
+        if (o.pools && o.pools.length) fixes.push('Triggered scraper for: ' + o.pools.join(', '));
+        if (o.errors && o.errors.errors_last_hour > o.errors.threshold) fixes.push('High error rate: ' + o.errors.errors_last_hour + '/hr');
+        const lines = [
+          'Auto-heal completed.',
+          fixes.length ? 'Auto-fixed: ' + fixes.join('; ') : 'No auto-fixes were needed.',
+          'Backup restorable: ' + (o.backup && o.backup.ok ? 'YES' : 'NO'),
+          'Errors last hour: ' + (o.errors ? o.errors.errors_last_hour : '?'),
+          'Payment failures last hour: ' + (o.payments ? o.payments.payment_failures_hour : '?'),
+          'Stripe webhook received: ' + (o.webhook && o.webhook.last_webhook_at ? 'YES' : 'not yet today')
+        ];
+        el.innerHTML = lines.join('<br>');
+        el.style.background = fixes.length ? '#fef3c7' : '#f0fdf4';
+        el.style.borderColor = fixes.length ? '#fde68a' : '#bbf7d0';
+        el.style.color = fixes.length ? '#92400e' : '#166534';
+      } else if (el) {
+        el.style.background = '#fef2f2'; el.style.borderColor = '#fecaca'; el.style.color = '#991b1b';
+        el.textContent = 'Error: ' + ((d && d.error) || 'could not run auto-heal');
+      }
+      loadHealth(true);
+    })
+    .catch(function(e) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Run Auto-Heal'; }
+      if (el) { el.style.display = 'block'; el.style.background = '#fef2f2'; el.style.border = '1px solid #fecaca'; el.style.color = '#991b1b'; el.textContent = 'Error: ' + e.message; }
+    });
+}
+
+function setupUptime() {
+  const key = (document.getElementById('uptimeKey') || {}).value || '';
+  const el = document.getElementById('uptimeResult');
+  if (!key) { el.textContent = 'Please paste your UptimeRobot Main API Key first.'; return; }
+  el.textContent = 'Creating monitors...';
+  fetch(API + '/api/admin/uptime/setup', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: JSON.stringify({ api_key: key }) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) {
+        const o = d.result || {};
+        const lines = ['Uptime monitors set up:', 'Created: ' + (o.created || []).map(function(m){ return m.name; }).join(', ') || 'none'];
+        if (o.skipped && o.skipped.length) lines.push('Skipped: ' + o.skipped.join(', '));
+        if (o.errors && o.errors.length) lines.push('Errors: ' + o.errors.map(function(e){ return e.name + ' (' + e.msg + ')'; }).join('; '));
+        el.textContent = lines.join('\n');
+        checkUptime();
+      } else { el.textContent = 'Error: ' + (d.error || 'setup failed'); }
+    })
+    .catch(function(e) { el.textContent = 'Error: ' + e.message; });
+}
+function checkUptime() {
+  const el = document.getElementById('uptimeResult');
+  fetch(API + '/api/admin/uptime/status', { headers: adminHeaders() })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) {
+        if (!d.configured) { el.textContent = 'UptimeRobot not configured yet.'; return; }
+        el.innerHTML = (d.monitors || []).map(function(m){ return m.name + ': <b style="color:' + (m.status_text === 'UP' ? '#16a34a' : m.status_text === 'SEEMS_DOWN' ? '#ef4444' : '#d97706') + '">' + (m.status_text || '?') + '</b>'; }).join(' &nbsp;|&nbsp; ');
+      } else { el.textContent = 'Error: ' + (d.error || ''); }
+    })
+    .catch(function(e) { el.textContent = 'Error: ' + e.message; });
+}
+
 async function loadHealth() {
   try {
-    const r = await fetch(API + '/api/admin/health-report', { headers: adminHeaders() });
+    const r = await fetch(API + '/api/admin/health-report?t=' + Date.now(), { headers: adminHeaders() });
     if (!r.ok) return;
     const h = await r.json();
     const card = document.getElementById('healthCard');
@@ -366,13 +1439,13 @@ async function loadHealth() {
           if (d.days_overdue !== undefined) info += ' (' + d.days_overdue + 'd overdue)';
           if (d.fail_count !== undefined) info += ' (' + d.fail_count + ' attempts)';
           return '<div style="padding:2px 0;font-size:12px;display:flex;align-items:center;gap:6px">' +
-            '<span style="color:#5c6480;width:16px;font-size:10px">' + (d.bounced ? '\u2709\uFE0F' : d.fail_count ? '\U0001F4B3' : d.days_since !== undefined ? '\U0001F4E9' : '\u23F3') + '</span>' +
+            '<span style="color:#64748b;width:16px;font-size:10px">' + (d.bounced ? '\u2709\uFE0F' : d.fail_count ? '\U0001F4B3' : d.days_since !== undefined ? '\U0001F4E9' : '\u23F3') + '</span>' +
             '<span>' + info + '</span>' +
             '<a href="mailto:' + d.email + '" style="color:#0ea5e9;font-size:10px;text-decoration:none;margin-left:auto"><i class="fas fa-envelope"></i></a>' +
             '</div>';
         }).join('');
-        if (issue.details.length > 5) detailsHtml += '<div style="font-size:11px;color:#5c6480;padding:2px 0">+' + (issue.details.length - 5) + ' more</div>';
-        return '<div style="border-left:3px solid ' + color + ';padding:8px 12px;margin:6px 0;background:rgba(255,255,255,0.02);border-radius:0 6px 6px 0">' +
+        if (issue.details.length > 5) detailsHtml += '<div style="font-size:11px;color:#64748b;padding:2px 0">+' + (issue.details.length - 5) + ' more</div>';
+        return '<div style="border-left:3px solid ' + color + ';padding:8px 12px;margin:6px 0;background:#fafbfc;border-radius:0 6px 6px 0">' +
           '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">' +
           '<span><i class="fas ' + iconName + '" style="color:' + color + ';width:16px"></i> ' + issue.label + '</span>' +
           '<div style="display:flex;gap:6px">' + btnHtml + '</div></div>' +
@@ -383,12 +1456,61 @@ async function loadHealth() {
     var sysHtml = '';
     sysHtml += '<span><i class="fas ' + (h.system.brevo_configured ? 'fa-check-circle" style="color:#22c55e"> Brevo' : 'fa-times-circle" style="color:#ef4444"> Brevo') + '</i></span>';
     sysHtml += '<span><i class="fas ' + (h.system.stripe_configured ? 'fa-check-circle" style="color:#22c55e"> Stripe' : 'fa-times-circle" style="color:#ef4444"> Stripe') + '</i></span>';
-    var scrapeStatus = h.system.scraper_stale ? 'stale' : 'fresh';
-    var scrapeColor = h.system.scraper_stale ? '#eab308' : '#22c55e';
-    sysHtml += '<span><i class="fas fa-database" style="color:' + scrapeColor + '"> Scrapers ' + scrapeStatus + '</i></span>';
-    if (h.system.last_scrape) sysHtml += '<span style="color:#5c6480">Last scrape: ' + new Date(h.system.last_scrape).toLocaleDateString() + '</span>';
+    sysHtml += '<span><i class="fas fa-users" style="color:#0ea5e9"> ' + (h.system.customers||0) + ' customers</i></span>';
+    sysHtml += '<span><i class="fas fa-envelope-open-text" style="color:#22c55e"> ' + (h.system.leads_today||0) + ' delivered today</i></span>';
     document.getElementById('healthSystem').innerHTML = sysHtml;
+    // Overview status strip (if visible)
+    var ovIcon = document.getElementById('healthStripIcon');
+    var ovTxt = document.getElementById('healthStripText');
+    if (ovIcon) ovIcon.style.background = h.status === 'green' ? '#22c55e' : h.status === 'yellow' ? '#eab308' : '#ef4444';
+    if (ovTxt) ovTxt.textContent = h.issues.length ? (h.summary.high_issues + ' high · ' + h.summary.total_issues + ' issues') : 'All systems operational';
+    // Product supply grid
+    var prods = h.system.products || {};
+    var prodNames = {moving:'Moving',probate:'Probate',newbusiness:'New Business',planning:'Planning',tenders:'Tenders'};
+    var prodColors = {moving:'#ff6b35',probate:'#a855f7',newbusiness:'#06b6d4',planning:'#10b981',tenders:'#6366f1'};
+    var prodHtml = Object.keys(prods).map(function(p){
+      var pr = prods[p];
+      var okColor = pr.customers > 0 && pr.pool === 0 ? '#ef4444' : pr.customers > 0 && pr.pool < pr.customers ? '#eab308' : '#22c55e';
+      var okIcon = okColor === '#22c55e' ? 'fa-check-circle' : okColor === '#eab308' ? 'fa-exclamation-triangle' : 'fa-exclamation-circle';
+      return '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:12px">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between">' +
+        '<span style="font-size:11px;font-weight:700;color:' + (prodColors[p]||'#fff') + '">' + (prodNames[p]||p) + '</span>' +
+        '<i class="fas ' + okIcon + '" style="color:' + okColor + ';font-size:11px"></i></div>' +
+        '<div style="font-size:20px;font-weight:900;font-family:\'Outfit\',sans-serif;color:#1e293b;margin-top:4px">' + pr.pool + '</div>' +
+        '<div style="font-size:10px;color:#64748b">leads in pool' + (pr.customers ? ' · ' + pr.customers + ' cust' : '') + '</div>' +
+        '<div style="font-size:10px;color:' + (pr.fresh_today > 0 ? '#22c55e' : '#64748b') + ';margin-top:2px">' + pr.fresh_today + ' fresh today</div>' +
+        '</div>';
+    }).join('');
+    document.getElementById('healthProducts').innerHTML = prodHtml;
   } catch(e) { /* health check non-critical */ }
+  loadBulkPools();
+}
+async function loadBulkPools() {
+  try {
+    const r = await fetch(API + '/api/admin/bulk-pools', { headers: adminHeaders() });
+    const d = await r.json();
+    const el = document.getElementById('bulkPools');
+    if (!d.success) { el.innerHTML = '<span style="font-size:12px;color:#64748b">Bulk pool data unavailable.</span>'; return; }
+    const names = { moving: 'Moving', probate: 'Probate', newbusiness: 'New Business' };
+    const colors = { moving: '#ff6b35', probate: '#a855f7', newbusiness: '#06b6d4' };
+    el.innerHTML = ['moving', 'probate', 'newbusiness'].map(function(p) {
+      const b = d[p] || {};
+      const ageTm = p === 'newbusiness' ? 0 : (b['tm'] || 0);
+      const age1m = b['1m'] || 0, age2m = b['2m'] || 0, nbd = p === 'newbusiness' ? (b['3-7d'] || 0) : 0;
+      const saleable = p === 'newbusiness' ? nbd : (ageTm + age1m + age2m);
+      const canSell = saleable >= 50 ? '#16a34a' : saleable > 0 ? '#eab308' : '#94a3b8';
+      return '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:12px">' +
+        '<div style="font-size:11px;font-weight:700;color:' + (colors[p] || '#1e293b') + '">' + names[p] + '</div>' +
+        '<div style="font-size:10px;color:#64748b;margin:4px 0 8px">total pool ' + b.total + ' · fresh(0-2d) ' + (b['0-2d'] || 0) + ' · reserved ' + (b.reserved || 0) + '</div>' +
+        '<div style="display:flex;gap:8px;font-size:12px;flex-wrap:wrap">' +
+        (p === 'newbusiness' ? '<span><b>3-7d bulk</b>: <b style="color:' + (nbd >= 50 ? '#16a34a' : '#94a3b8') + '">' + nbd + '</b></span>' : '<span><b>This month</b>: <b style="color:' + (ageTm >= 50 ? '#16a34a' : ageTm > 0 ? '#eab308' : '#94a3b8') + '">' + ageTm + '</b></span>') +
+        '<span><b>1m</b>: <b style="color:' + (age1m >= 50 ? '#16a34a' : age1m > 0 ? '#eab308' : '#94a3b8') + '">' + age1m + '</b></span>' +
+        '<span><b>2m</b>: <b style="color:' + (age2m >= 50 ? '#16a34a' : age2m > 0 ? '#eab308' : '#94a3b8') + '">' + age2m + '</b></span>' +
+        '</div>' +
+        '<div style="font-size:10px;margin-top:6px;color:' + canSell + ';font-weight:700">' + (saleable >= 200 ? '200-pack ready' : saleable >= 100 ? '100-pack ready' : saleable >= 50 ? '50-pack ready' : 'below pack size') + '</div>' +
+        '</div>';
+    }).join('');
+  } catch(e) {}
 }
 
 async function fixClearBounce(customerId) {
@@ -430,7 +1552,7 @@ async function loginAs(customerId) {
       var session = { token: d.token, clientId: customerId, name: 'Admin', plan: d.customer?.plan || 'free_trial', email: d.customer?.email || '', product: d.customer?.product || 'moving', admin_impersonating: true, impersonated_by: d.admin_email || 'Admin' };
       try { var payload = JSON.parse(atob(d.token.split('.')[1])); if (payload) { session.admin_impersonating = payload.admin_impersonating || true; session.impersonated_by = payload.impersonated_by || session.impersonated_by; } } catch(e2) {}
       localStorage.setItem('mld_portal_session', JSON.stringify(session));
-      window.location.href = '/portal/dashboard.html';
+      window.open('/portal/dashboard.html', '_blank');
     } else { alert('Failed: ' + (d.error || 'unknown')); }
   } catch(e) { alert('Error: ' + e.message); }
 }
@@ -442,7 +1564,7 @@ function impersonateCustomer(id, email) {
     if (d.token) {
       var session = { token: d.token, clientId: id, name: 'Admin', plan: d.customer?.plan || 'free_trial', email: d.customer?.email || '', product: d.customer?.product || 'moving', admin_impersonating: true, impersonated_by: d.admin_email || 'Admin', impersonation_reason: reason };
       localStorage.setItem('mld_portal_session', JSON.stringify(session));
-      window.location.href = '/portal/dashboard.html';
+      window.open('/portal/dashboard.html', '_blank');
     } else { alert('Failed: ' + (d.error || 'unknown')); }
   }).catch(function(e) { alert('Error: ' + e.message); });
 }
@@ -471,6 +1593,157 @@ function showImpersonationLogs() {
     h += '</table>';
     showModal('Impersonation Logs', h, '700px');
   });
+}
+async function viewCustomerLeads(email) {
+  function buildModal(title, content, width) {
+    var overlay = document.getElementById('leadViewOverlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'leadViewOverlay';
+      overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,.5);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:40px 20px;overflow:auto';
+      document.body.appendChild(overlay);
+    }
+    overlay.innerHTML = '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;max-width:' + (width || '760px') + ';width:100%;padding:24px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h2 style="font-size:18px;font-family:Outfit,sans-serif;color:#1e293b">' + title + '</h2>' +
+      '<button onclick="document.getElementById(\'leadViewOverlay\').style.display=\'none\'" style="background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer">&times;</button></div>' + content + '</div>';
+    overlay.style.display = 'flex';
+  }
+  try {
+    const r = await fetch(API + '/api/admin/customer-dashboard?email=' + encodeURIComponent(email), { headers: adminHeaders() });
+    if (!r.ok) { buildModal('Leads', '<div style="color:#ef4444">Could not load leads (HTTP ' + r.status + '). If this says 401, re-enter the admin password (top-right) and try again.</div>'); return; }
+    const d = await r.json();
+    let h = '<div style="margin-bottom:10px;font-size:13px;color:#1e293b"><strong>' + email + '</strong> · ' + d.product + ' · plan: ' + d.plan + ' · areas: ' + (d.areas || '-') + ' · ' + d.delivered + ' delivered / ' + d.pending + ' pending</div>';
+    if (!d.leads || d.leads.length === 0) {
+      h += '<div style="color:#64748b">No leads for this customer.</div>';
+    } else {
+      h += '<table style="width:100%;border-collapse:collapse"><tr style="background:#f8fafc"><th style="padding:6px;font-size:11px;text-align:left;color:#64748b">Status</th><th style="padding:6px;font-size:11px;text-align:left;color:#64748b">Address</th><th style="padding:6px;font-size:11px;text-align:left;color:#64748b">Postcode</th><th style="padding:6px;font-size:11px;text-align:left;color:#64748b">Door/Flat</th><th style="padding:6px;font-size:11px;text-align:left;color:#64748b">Full PC</th></tr>';
+      d.leads.forEach(function(l) {
+        var st = l.status === 'delivered' ? '<span style="color:#22c55e">delivered</span>' : '<span style="color:#eab308">pending</span>';
+        var ok = l.has_door_or_flat_number ? '<span style="color:#22c55e">✓</span>' : '<span style="color:#ef4444">✗</span>';
+        var pc = l.full_postcode ? '<span style="color:#22c55e">✓</span>' : '<span style="color:#ef4444">✗</span>';
+        h += '<tr><td style="padding:6px;font-size:12px">' + st + '</td><td style="padding:6px;font-size:12px">' + (l.address || '-').replace(/\n+/g, ', ') + '</td><td style="padding:6px;font-size:12px">' + (l.postcode || '-') + '</td><td style="padding:6px;font-size:12px">' + ok + '</td><td style="padding:6px;font-size:12px">' + pc + '</td></tr>';
+      });
+      h += '</table>';
+    }
+    // EMAIL HISTORY: what emails this customer has actually received (daily sheet,
+    // previews, alerts, print & post, billing...) so the founder can spot wrong emails.
+    try {
+      const er = await fetch(API + '/api/admin/customer-emails?email=' + encodeURIComponent(email), { headers: adminHeaders() });
+      if (er.ok) {
+        const ed = await er.json();
+        h += '<div style="margin-top:18px;border-top:2px solid #e2e8f0;padding-top:12px"><div style="font-weight:700;font-size:13px;margin-bottom:8px;color:#1e293b">Email History (' + ed.count + ')</div>';
+        if (ed.emails && ed.emails.length) {
+          h += '<table style="width:100%;border-collapse:collapse"><tr style="background:#f8fafc"><th style="padding:6px;font-size:11px;text-align:left;color:#64748b">When (UK)</th><th style="padding:6px;font-size:11px;text-align:left;color:#64748b">Type</th><th style="padding:6px;font-size:11px;text-align:left;color:#64748b">Subject</th><th style="padding:6px;font-size:11px;text-align:left;color:#64748b"></th></tr>';
+          ed.emails.forEach(function(e) {
+            var uk = '-';
+            try { uk = new Date(e.at).toLocaleString('en-GB', { timeZone: 'Europe/London', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch(e2) { uk = e.at || '-'; }
+            var cls = e.type === 'daily_lead' ? '#22c55e' : (e.type === 'alert' ? '#dc2626' : (e.type === 'print_post' ? '#7c3aed' : (e.type === 'billing' ? '#d97706' : (e.type === 'bulk' ? '#0891b2' : '#64748b'))));
+            h += '<tr><td style="padding:6px;font-size:11px;white-space:nowrap">' + uk + '</td><td style="padding:6px;font-size:11px"><span style="color:' + cls + ';font-weight:600">' + (e.type || 'other') + '</span></td><td style="padding:6px;font-size:11px">' + esc(e.subject || '') + '</td><td style="padding:6px;font-size:11px;text-align:right">' + (e.has_html ? '<button class="btn btn-sm btn-outline" onclick="viewEmailContent(\'' + e.id + '\')">View</button>' : '<span style="color:#94a3b8;font-size:10px">no body</span>') + '</td></tr>';
+          });
+          h += '</table>';
+        } else {
+          h += '<div style="color:#64748b;font-size:12px">No emails logged for this customer yet.</div>';
+        }
+        h += '</div>';
+      }
+    } catch(eh) {}
+    buildModal('Customer Dashboard: ' + email, h);
+  } catch (e) { buildModal('Leads', '<div style="color:#ef4444">Error: ' + e.message + '</div>'); }
+}
+
+async function viewEmailContent(id) {
+  try {
+    var r = await fetch(API + '/api/admin/customer-email?id=' + encodeURIComponent(id), { headers: adminHeaders() });
+    var d = await r.json();
+    if (!d.success || !d.html) { alert(d.error || 'This email has no saved body.'); return; }
+    var overlay = document.getElementById('emailViewOverlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'emailViewOverlay';
+      overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,.6);z-index:99999;display:flex;align-items:flex-start;justify-content:center;padding:30px 20px;overflow:auto';
+      document.body.appendChild(overlay);
+    }
+    overlay.innerHTML = '<div style="background:#fff;border-radius:14px;max-width:760px;width:100%;padding:20px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="font-size:14px;font-family:Outfit,sans-serif;color:#1e293b"><b>' + esc(d.subject || '') + '</b><div style="font-size:11px;color:#64748b;margin-top:2px">' + esc(d.email || '') + ' &middot; ' + (function(){ try { return new Date(d.at).toLocaleString('en-GB', { timeZone:'Europe/London', dateStyle:'medium', timeStyle:'short' }); } catch(e){ return d.at || ''; } })() + '</div></div>' +
+      '<button onclick="document.getElementById(\'emailViewOverlay\').style.display=\'none\'" style="background:none;border:none;color:#94a3b8;font-size:22px;cursor:pointer">&times;</button></div>' +
+      '<iframe srcdoc="' + esc(d.html).replace(/"/g, '&quot;') + '" style="width:100%;height:72vh;border:1px solid #e2e8f0;border-radius:10px;background:#fff"></iframe></div>';
+    overlay.style.display = 'flex';
+  } catch (e) { alert('Could not load email content: ' + e.message); }
+}
+
+async function loadRejectedLeads() {
+  var tb = document.getElementById('rejectedTable');
+  if (!tb) return;
+  try {
+    var r = await fetch(API + '/api/admin/rejected-leads?t=' + Date.now(), { headers: adminHeaders() });
+    if (!r.ok) { tb.innerHTML = '<tr><td colspan="7" class="empty" style="color:#ef4444">Could not load rejected leads</td></tr>'; return; }
+    var d = await r.json();
+    var items = (d && d.leads) || [];
+    if (!items.length) { tb.innerHTML = '<tr><td colspan="7" class="empty">No rejected leads. All clear.</td></tr>'; return; }
+    var h = '';
+    items.forEach(function(x) {
+      var addr = x.address || (x.data && (x.data.fullAddress || x.data.address)) || '-';
+      var pc = x.postcode || (x.data && x.data.postcode) || '-';
+      var cust = x.customer || x.company || x.lead_id || '-';
+      var prod = x.product || '';
+      var prodClass = 'prod-moving';
+      if (prod === 'probate') prodClass = 'prod-probate';
+      else if (prod === 'newbusiness') prodClass = 'prod-newbusiness';
+      else if (prod === 'planning') prodClass = 'prod-planning';
+      else if (prod === 'tenders') prodClass = 'prod-tenders';
+      var reason = x.reject_reason || 'wrong address';
+      var when = x.rejected_at ? new Date(x.rejected_at).toLocaleString() : '-';
+      h += '<tr><td>' + cust + '</td><td><span class="badge ' + prodClass + '">' + (prod || '-').toUpperCase() + '</span></td>' +
+           '<td style="font-size:12px">' + addr + '</td><td>' + pc + '</td><td>' + reason + '</td><td>' + when + '</td>' +
+           '<td><button class="btn btn-sm btn-primary" onclick="approveRejectedLead(\'' + x.lead_id + '\')"><i class="fas fa-check"></i> Approve &amp; Replace</button></td></tr>';
+    });
+    tb.innerHTML = h;
+  } catch (e) { tb.innerHTML = '<tr><td colspan="7" class="empty" style="color:#ef4444">Error: ' + e.message + '</td></tr>'; }
+}
+
+async function approveRejectedLead(leadId) {
+  if (!confirm('Approve replacement for this rejected lead? This marks it as replaced and adds a fresh lead to the customer\'s account.')) return;
+  var btn = event.target;
+  try {
+    var r = await fetch(API + '/api/admin/rejected-leads/approve', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ lead_id: leadId }) });
+    var d = await r.json();
+    if (r.ok && d.success) { alert(d.message || 'Replacement approved.'); loadRejectedLeads(); }
+    else { alert(d.error || 'Could not approve replacement'); }
+  } catch (e) { alert('Error: ' + e.message); }
+}
+
+async function loadFulfilment() {
+  var tb = document.getElementById('fulfilmentTable');
+  var sm = document.getElementById('fulfilmentSummary');
+  if (!tb) return;
+  var dateEl = document.getElementById('fulfilmentDate');
+  var date = dateEl && dateEl.value ? dateEl.value : new Date().toISOString().split('T')[0];
+  if (dateEl && !dateEl.value) dateEl.value = date;
+  try {
+    var r = await fetch(API + '/api/admin/fulfilment-report?date=' + date + '&t=' + Date.now(), { headers: adminHeaders() });
+    if (!r.ok) { tb.innerHTML = '<tr><td colspan="7" class="empty" style="color:#ef4444">Could not load fulfilment report</td></tr>'; return; }
+    var d = await r.json();
+    if (sm) {
+      var s = d.summary || {};
+      sm.innerHTML = '<span style="font-size:12px;color:#64748b">' + (s.total||0) + ' rows · <span style="color:#22c55e">' + (s.fulfilled||0) + ' fulfilled</span> · <span style="color:#eab308">' + (s.under||0) + ' under</span> · <span style="color:#ef4444">' + (s.over||0) + ' over (bug)</span></span>';
+    }
+    var rows = (d && d.rows) || [];
+    if (!rows.length) { tb.innerHTML = '<tr><td colspan="7" class="empty">No fulfilment data for this date.</td></tr>'; return; }
+    var h = '';
+    rows.forEach(function(x) {
+      var pct = (x.fulfilment_pct || 0) + '%';
+      var col = x.status === 'FULFILLED' ? '#22c55e' : (x.status === 'OVER_DELIVERED' ? '#ef4444' : '#eab308');
+      var prodBadge = 'prod-moving';
+      if (x.product === 'probate') prodBadge = 'prod-probate';
+      else if (x.product === 'newbusiness') prodBadge = 'prod-newbusiness';
+      else if (x.product === 'planning') prodBadge = 'prod-planning';
+      else if (x.product === 'tenders') prodBadge = 'prod-tenders';
+      h += '<tr><td>' + x.email + '</td><td><span class="badge ' + prodBadge + '">' + (x.product||'').toUpperCase() + '</span></td>' +
+           '<td>' + x.expected + '</td><td>' + x.actual + '</td><td>' + x.shortfall + '</td>' +
+           '<td style="color:' + col + '">' + pct + '</td><td><span class="badge" style="background:#f0fdf4;color:' + col + '">' + x.status + '</span></td></tr>';
+    });
+    tb.innerHTML = h;
+  } catch (e) { tb.innerHTML = '<tr><td colspan="7" class="empty" style="color:#ef4444">Error: ' + e.message + '</td></tr>'; }
 }
 </script>
 </body></html>
