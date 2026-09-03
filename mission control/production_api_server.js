@@ -10757,6 +10757,58 @@ app.post('/api/admin/send-missed-lead-email', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/restore-delivered — silently restore N delivered rows for a customer
+// on a past date WITHOUT emailing (used when a legitimate batch was removed by mistake).
+// Rows are recreated from never-sent pool leads so future deliveries skip them (dedupe)
+// and the customer's dashboard/history matches what they should have received.
+app.post('/api/admin/restore-delivered', adminAuth, (req, res) => {
+  try {
+    var emailR = String((req.body && req.body.email) || '').toLowerCase().trim();
+    var dateR = String((req.body && req.body.date) || '').substring(0, 10);
+    var countR = Math.min(Math.max(parseInt(req.body && req.body.count, 10) || 1, 1), 100);
+    if (!emailR || !/^\d{4}-\d{2}-\d{2}$/.test(dateR)) return res.status(400).json({ error: 'email + date (YYYY-MM-DD) + count required' });
+    var dbX = getDb();
+    var cust = (dbX.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === emailR; });
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    // Global keys of everything already delivered (any customer) so we never re-use a
+    // lead that has been (or will be counted) as delivered.
+    var used = {};
+    (dbX.leads || []).forEach(function(l) { try { var d = JSON.parse(l.data || '{}'); var u = String(d.url || '').toLowerCase(); if (u) used['u:' + u] = 1; var a = String(d.fullAddress || d.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 28); var p = String(d.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); if (a && p) used['a:' + a + '|' + p] = 1; } catch(e) {} });
+    var pool = readPoolFile(cust.product) || [];
+    var added = 0, usedPool = [];
+    for (var pi = 0; pi < pool.length && added < countR; pi++) {
+      var pl = pool[pi];
+      if (!pl) continue;
+      if (pl.bulk_reserved || pl.bulk_sold || pl.boost_reserved || pl.boost_sold) continue;
+      var dd = {};
+      try { dd = pl.data && typeof pl.data === 'object' ? pl.data : JSON.parse(pl.data || '{}'); } catch(e) {}
+      var fullA = dd.fullAddress || dd.address || pl.fullAddress || pl.address || '';
+      var pcX = String(dd.postcode || pl.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+      var urlX = String(dd.url || pl.url || '').toLowerCase();
+      var keyA = 'a:' + String(fullA).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 28) + '|' + pcX;
+      var keyU = urlX ? ('u:' + urlX) : '';
+      if (used[keyA] || (keyU && used[keyU])) continue;
+      used[keyA] = 1; if (keyU) used[keyU] = 1;
+      var row = {
+        id: 'lead_' + Date.now() + '_' + added + Math.floor(Math.random() * 999),
+        customer_id: cust.id,
+        company: cust.company || 'Lead',
+        product: cust.product,
+        lead_type: cust.lead_type || '',
+        delivered: 1,
+        delivered_at: dateR + 'T09:00:00.000Z',
+        created_at: dateR + 'T05:20:00.000Z',
+        status: 'delivered',
+        data: JSON.stringify({ company: dd.company || pl.company || dd.name || 'Lead', fullAddress: fullA, address: fullA, postcode: String(dd.postcode || pl.postcode || ''), url: urlX, source: dd.source || pl.source || 'pool', firstVisibleDate: dd.firstVisibleDate || pl.firstVisibleDate || null, reference: dd.reference || pl.reference || null })
+      };
+      dbX.leads.push(row); added++;
+    }
+    if (!added) return res.status(400).json({ error: 'No never-sent pool leads available to restore from.' });
+    saveDb();
+    res.json({ success: true, restored: added, email: emailR, date: dateR });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/purge-pending — remove ALL a customer's PENDING (not-yet-delivered)
 // leads so the dashboard shows only their real DELIVERED history + today's batch.
 // Pending rows accumulate as junk from force re-deliveries / failed gate passes /
