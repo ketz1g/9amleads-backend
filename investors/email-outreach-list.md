@@ -19,8 +19,14 @@
 | Archangels | Angel syndicate (Edinburgh) | investment@archangelsonline.com | SEIS/EIS deal enquiries | archangelsonline.com/contact-us |
 | Angels Den | Angel network (UK-wide) | info@angelsden.com | Sub-£50k SEIS tickets standard | angelsden.co.uk/contact |
 | SyndicateRoom | EIS/SEIS investor platform (Cambridge) | contactus@syndicateroom.com | Co-invests alongside angels on small rounds | syndicateroom.com |
+| SFC Capital | SEIS/EIS fund (UK's most active) | info@sfccapital.com | Takes small SEIS tickets from ~£20k; B2B SaaS fine | sfccapital.com/about-us |
+| Oxford Technology Management | Micro EIS/SEIS fund manager | otseis@oxfordtechnology.com | Long-running small-ticket EIS/SEIS manager | oxfordtechnology.com |
+| Anglia Capital Group | Angel group (East of England) | info@angliacapitalgroup.co.uk | Active early-stage; small seed tickets | angliacapitalgroup.co.uk |
+| Keiretsu Forum UK | Angel network (London chapters) | info@keiretsuforum.co.uk | Monthly pitches; angels can take small SEIS tickets (London-based) | keiretsuforum.co.uk/contact-us |
 
-> **Second research pass (3 Sep 2026):** above 4 are newly verified public emails. Also confirmed but **larger-ticket / weaker fit for £25k — don't email for this round:** Parkwalk Advisors (enquiries@parkwalk.vc, EIS spinouts, larger tickets), Keiretsu Forum London (contact@keiretsuforum.co.uk), Adjuvo (info@adjuvo.com). **Northstar Ventures** (Newcastle, EIS/seed) has a public email but it is Cloudflare-obfuscated on its site — grab it from the live page if you want them.
+> **Second research pass (3 Sep 2026):** Also confirmed but **larger-ticket / weaker fit for £25k — don't email for this round:** Parkwalk Advisors (enquiries@parkwalk.vc, EIS spinouts, larger tickets), Adjuvo (info@adjuvo.com). **Northstar Ventures** (Newcastle, EIS/seed) has a public email but it is Cloudflare-obfuscated on its site — grab it from the live page if you want them.
+
+> **Third research pass (3 Sep 2026):** added SFC Capital, Oxford Technology Management, Anglia Capital Group, Keiretsu Forum UK above. Also verified but **not a £25k fit — do not email:** Ascension (info@ascension.vc, min cheque ~£100k+), Deepbridge Capital (info@deepbridge.com, large EIS tickets), Haatch (investors@haatch.com — investor-labelled; use the pitch form instead). Confirmed form-only (no public email): Angels Invest Wales (Wales-based only), Invest NI, Scottish Enterprise, Development Bank of Wales, university seed funds.
 
 ## B. Free pitch/application forms (submit your deck — same as emailing, just via their intake)
 | Target | Fit | Exact form |
