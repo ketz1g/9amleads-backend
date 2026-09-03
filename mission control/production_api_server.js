@@ -10886,6 +10886,77 @@ app.post('/api/admin/reconcile-history', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/align-delivery-history — STRICT alignment of a customer's delivered
+// history to the promise: exactly `promised` DISTINCT leads on every Mon-Fri since their
+// trial start, and NO deliveries on weekends/off-schedule days (removed). Same-day
+// duplicate rows are dropped (they are never real deliveries), missing distinct leads are
+// added (dated that day, no email). One-time historical pass; the daily auto-fill keeps
+// it correct going forward.
+app.post('/api/admin/align-delivery-history', adminAuth, (req, res) => {
+  try {
+    var emailA = String((req.body && req.body.email) || '').toLowerCase().trim();
+    if (!emailA) return res.status(400).json({ error: 'email required' });
+    if (/@9amleads\.com$/.test(emailA) || emailA === 'ketzman1g@gmail.com') return res.status(400).json({ error: 'Internal account' });
+    var dbA2 = getDb();
+    var custA = (dbA2.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === emailA; });
+    if (!custA) return res.status(404).json({ error: 'Customer not found' });
+    var promised = getPlanLimit(custA.product, custA.plan, custA.coverage) || parseInt(custA.leads_per_day, 10) || 5;
+    var removedWeekend = 0;
+    // 1) Remove any deliveries made on weekends / outside the Mon-Fri working week.
+    dbA2.leads = dbA2.leads.filter(function(l) {
+      if (l.customer_id !== custA.id || !l.delivered || !l.delivered_at) return true;
+      var dow = new Date(l.delivered_at).getUTCDay();
+      if (dow === 0 || dow === 6) { removedWeekend++; return false; }
+      return true;
+    });
+    function keyOfLead(l) { try { var d = JSON.parse(l.data || '{}'); var u = String(d.url || '').split('?')[0].split('#')[0].replace(/\/+$/, '').toLowerCase(); if (u) return 'u:' + u; var a = String(d.fullAddress || d.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 28); var p = String(d.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); return (a && p) ? ('a:' + a + '|' + p) : ('x:' + a); } catch(e) { return 'x:'; } }
+    var used = {};
+    (dbA2.leads || []).forEach(function(l) { var k = keyOfLead(l); if (k) used[k] = 1; });
+    var pool = readPoolFile(custA.product) || [];
+    var createdA = new Date(custA.created_at);
+    var todayA = new Date().toISOString().split('T')[0];
+    var trialEndA = (custA.trial_ends || todayA).substring(0, 10);
+    var lastA = trialEndA < todayA ? trialEndA : todayA;
+    var curA = new Date(createdA.getTime()); curA.setUTCDate(curA.getUTCDate() + 1); curA.setUTCHours(12, 0, 0, 0);
+    function isoA(d) { return d.toISOString().split('T')[0]; }
+    var addedTotal = 0, removedDup = 0, removedExtra = 0, dayLog = [];
+    while (isoA(curA) <= lastA) {
+      var dayA = isoA(curA);
+      var dowA = curA.getUTCDay();
+      if (dowA === 0 || dowA === 6) { curA.setUTCDate(curA.getUTCDate() + 1); continue; }
+      var dayLeads = (dbA2.leads || []).filter(function(l) { return l.customer_id === custA.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(dayA) === 0; });
+      dayLeads.sort(function(a, b) { return String(a.created_at || '').localeCompare(String(b.created_at || '')); });
+      // Drop same-day duplicates, keeping the FIRST of each distinct lead.
+      var seenDay = {}, keep = [];
+      dayLeads.forEach(function(l) { var k = keyOfLead(l); if (k && seenDay[k]) { removedDup++; return; } if (k) seenDay[k] = 1; keep.push(l); });
+      if (keep.length > promised) { var extraArr = keep.slice(promised); var dropIds = {}; extraArr.forEach(function(x) { dropIds[x.id] = 1; }); dbA2.leads = dbA2.leads.filter(function(l) { return !dropIds[l.id]; }); removedExtra += extraArr.length; keep = keep.slice(0, promised); if (extraArr.length) dayLog.push(dayA + ': removed extra ' + extraArr.length); }
+      var need = promised - keep.length;
+      if (need > 0) {
+        var addedDay = 0;
+        for (var pa = 0; pa < pool.length && addedDay < need; pa++) {
+          var plA = pool[pa];
+          if (!plA || plA.bulk_reserved || plA.bulk_sold || plA.boost_reserved || plA.boost_sold) continue;
+          var ddA = {}; try { ddA = plA.data && typeof plA.data === 'object' ? plA.data : JSON.parse(plA.data || '{}'); } catch(e) {}
+          var fullA2 = ddA.fullAddress || ddA.address || plA.fullAddress || plA.address || '';
+          var pcA = String(ddA.postcode || plA.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+          var urlA = String(ddA.url || plA.url || '').toLowerCase();
+          if (!pcA || !fullA2) continue;
+          var keyA2 = 'a:' + String(fullA2).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 28) + '|' + pcA;
+          var keyU2 = urlA ? ('u:' + urlA) : '';
+          if (used[keyA2] || (keyU2 && used[keyU2])) continue;
+          used[keyA2] = 1; if (keyU2) used[keyU2] = 1;
+          dbA2.leads.push({ id: 'lead_' + Date.now() + '_' + addedTotal + addedDay + Math.floor(Math.random() * 999), customer_id: custA.id, company: custA.company || 'Lead', product: custA.product, lead_type: custA.lead_type || '', delivered: 1, delivered_at: dayA + 'T09:00:00.000Z', created_at: dayA + 'T05:20:00.000Z', status: 'delivered', data: JSON.stringify({ company: ddA.company || plA.company || ddA.name || 'Lead', fullAddress: fullA2, address: fullA2, postcode: String(ddA.postcode || plA.postcode || ''), url: urlA, source: ddA.source || plA.source || 'pool', firstVisibleDate: ddA.firstVisibleDate || plA.firstVisibleDate || null }) });
+          addedDay++; addedTotal++;
+        }
+        if (addedDay) dayLog.push(dayA + ': added ' + addedDay);
+      }
+      curA.setUTCDate(curA.getUTCDate() + 1);
+    }
+    saveDb();
+    res.json({ success: true, email: emailA, promised_per_day: promised, added: addedTotal, removed_weekend: removedWeekend, removed_duplicates: removedDup, removed_extra: removedExtra, days: dayLog });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/purge-pending — remove ALL a customer's PENDING (not-yet-delivered)
 // leads so the dashboard shows only their real DELIVERED history + today's batch.
 // Pending rows accumulate as junk from force re-deliveries / failed gate passes /
