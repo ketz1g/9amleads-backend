@@ -114,29 +114,6 @@
 <div class="fit"><div id="stage">
 <div class="prog"><i id="pbar"></i></div>
 
-<!-- 00 VIDEO INTRO -->
-<section class="slide" style="justify-content:center">
-  <div class="row" style="justify-content:space-between;margin-bottom:26px">
-    <div class="brand"><span class="logo">9</span>9amLeads</div>
-    <span class="crumb kbd">Watch first · 60 seconds</span>
-  </div>
-  <div style="width:100%;max-width:980px;margin:0 auto;text-align:center">
-    <div style="font-size:clamp(22px,3vw,34px);font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:6px">9amLeads in <span class="ac">under a minute</span></div>
-    <p class="sub" style="max-width:640px;margin:0 auto 20px">A quick introduction before the full story below.</p>
-    <div id="introbox" style="position:relative;width:100%;aspect-ratio:16/9;border-radius:18px;overflow:hidden;border:1px solid var(--line2);background:#000;box-shadow:0 30px 90px rgba(0,0,0,.5)">
-      <div id="introoverlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:radial-gradient(600px 300px at 50% 30%,rgba(14,165,233,.25),rgba(7,13,26,.9) 70%)">
-        <div style="width:84px;height:84px;border-radius:50%;background:linear-gradient(135deg,#0ea5e9,#34d399);display:flex;align-items:center;justify-content:center;font-size:32px;color:#fff;box-shadow:0 14px 40px rgba(14,165,233,.4)">▶</div>
-        <b style="font-size:18px">Your 60-second intro video goes here</b>
-        <p class="dim" style="font-size:12.5px;max-width:420px;line-height:1.5">Add <b style="color:var(--mut)">video/intro.mp4</b> to this folder and it appears automatically.</p>
-      </div>
-      <video id="introvideo" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" controls playsinline preload="metadata">
-        <source src="video/intro.mp4" type="video/mp4">
-      </video>
-    </div>
-    <p style="font-size:13px;color:var(--dim);margin-top:16px">▼ Scroll to read the full investor story · every number is verifiable below</p>
-  </div>
-</section>
-
 <!-- 01 TITLE -->
 <section class="slide active">
   <div class="row" style="justify-content:space-between">
@@ -684,15 +661,6 @@
     pn.forEach(function(el,k){
       el.textContent=String(k+1).padStart(2,'0')+' / '+pn.length;
     });
-  })();
-  // Intro video: show placeholder until video/intro.mp4 exists, then autoplay quietly on view
-  (function(){
-    var v=document.getElementById('introvideo');
-    var ov=document.getElementById('introoverlay');
-    if(!v||!ov)return;
-    function hasSource(){var s=v.querySelector('source');return !!s&&!!s.src;}
-    v.addEventListener('canplay',function(){ov.style.display='none';});
-    v.addEventListener('error',function(){ov.style.display='flex';});
   })();
 </script>
 </body>
