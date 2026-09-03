@@ -1254,15 +1254,15 @@ function loadKyc(){
     var stEl=document.getElementById('kyc-status');
     var subEl=document.getElementById('kyc-sub');
     var stText,stColor='#f1f5f9';
-    if(k.status==='approved'){stText='✅ Verified';stColor='#34d399';}
-    else if(k.status==='pending_review'){stText='⏳ Under review';stColor='#fbbf24';}
+    if(k.status==='approved'){stText='✅ Approved';stColor='#34d399';}
+    else if(k.status==='pending_review'){stText='Verification pending';stColor='#fbbf24';}
     else if(k.status==='rejected'){stText='❌ Needs attention';stColor='#f87171';}
     else {stText='⚠️ Not submitted';stColor='#f59e0b';}
     if(stEl)stEl.textContent=stText;
     if(stEl)stEl.style.color=stColor;
     if(subEl){
-      if(k.status==='approved')subEl.textContent='Your ID is verified. Payouts are unlocked.';
-      else if(k.status==='pending_review')subEl.textContent='Your ID is being reviewed. You will be emailed when it is approved.';
+      if(k.status==='approved')subEl.textContent='Approved — your ID is verified and payouts are unlocked.';
+      else if(k.status==='pending_review')subEl.textContent='Your verification is pending. We review IDs and will email you as soon as it is approved.';
       else if(k.status==='rejected')subEl.textContent=(k.id_review_note||'Your ID could not be verified. Please re-upload a clear photo.')+' Your legal name must match your bank account holder.';
       else subEl.textContent='Verify your identity to unlock payouts. It takes 2 minutes.';
     }
