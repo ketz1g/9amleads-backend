@@ -4,7 +4,7 @@
 
 ## 1. Ready now (send on request)
 - [ ] **One-pager PDF** (`one-pager.md` → PDF, with the corrected funnel/numbers from `deck-critique.md`)
-- [ ] **Pitch deck** (10 slides; from `pitch-deck-outline.md`)
+- [ ] **Pitch deck** (single scrollable page: `pitch-deck.html`; the "all four streams" model matches `financial-model.md`)
 - [ ] **12-month financial model** (`financial-model.md` → PDF/Excel; Excel with visible formulas is better than PDF for angels)
 - [ ] Cap-table one-liner: £25k for 10% (post £250k), founder 90%, ordinary shares
 - [ ] **Live demo** — dashboard (today's leads for a real account) + one real posted Stannp order + one verified lead record
@@ -28,6 +28,8 @@
 - [ ] Delivery log: daily deliveries running for all 5 verticals (last 30 days)
 - [ ] Verification evidence: sample lead with source URL + enrichment (door/street/postcode)
 - [ ] Print & Post: real order screenshots + a physical sample letter/flyer to hand over
+- [ ] Auto-Send: settings page + a real auto-mailed lead + the per-piece charge (live feature)
+- [ ] Bulk Postage: pack pricing page, a sample/quote, and pool-volume ramp evidence (newly built, still filling)
 - [ ] Uptime/health: uptime monitor screenshot (auto-heal, backups working)
 - [ ] 3–5 customer quotes or case studies (one per vertical ideally)
 
@@ -36,12 +38,14 @@
 - [ ] Trial → paid conversion rate to date + cohort view if any
 - [ ] Churn / retention of the 8 firms
 - [ ] Affiliate programme status: # affiliates, # referrals generated, CAC by channel
+- [ ] Print-stream attach: % of customers using Print & Post / Auto-Send, average spend per customer
+- [ ] Bulk pool status: archive lead counts + expected ramp (feature is built; pool still filling)
 - [ ] Lead-scraper dependency & resilience note (multi-source per vertical)
 
 ## 6. Financials & diligence
-- [ ] Bank statements (last 3–6 months) + revenue by source (subscriptions vs print)
+- [ ] Bank statements (last 3–6 months) + revenue by source (subscriptions / Print & Post / Auto-Send / Bulk)
 - [ ] Costs run-rate (hosting, Brevo, Stannp, tools, founder salary or drawings)
-- [ ] Unit economics: ARPU, gross margin per stream, CAC, payback — one consistent set (see critique)
+- [ ] Unit economics: ~£150 subscription ARPU + ~£135 Print/Auto-Send + ~£15 Bulk = **≈£300/mo all-streams**; gross margin per stream; CAC ~£150; payback <1 month — one consistent set (see `financial-model.md`)
 - [ ] Any Start Up Loan/grant in place or planned (disclose; it sits above the cap table)
 
 ## 7. Post-interest (before money)

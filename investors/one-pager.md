@@ -3,7 +3,7 @@
 ## The Pitch
 **9amLeads delivers fresh, in-area, door-numbered business opportunities to your dashboard every morning at 9am** — moving, probate, planning permission, new business registrations and public sector tenders. Trades & professional firms get contacted first, before their competition.
 
-**Raising £25,000 for 10% equity** (post-money £250k) to fund marketing & sales and convert the trial pipeline.
+**Raising £25,000 for 10% equity** (post-money £250k) to fund marketing & sales and convert the trial pipeline. **SEIS-eligible.**
 
 ---
 
@@ -21,7 +21,7 @@
 - **New Business** — newly registered companies needing services
 - **Tenders** — public & private tender notices
 
-## Business Model — two revenue streams
+## Business Model — four revenue streams
 **1. Subscription (recurring, charged weekly):**
 | Plan | Per week | Per month |
 |---|---|---|
@@ -29,25 +29,33 @@
 | Pro | £49 | **£196** |
 | Enterprise | £99 | **£396** |
 
-**2. Print & Post (per-item, high margin):**
-| Item | Price | Cost | Margin |
-|---|---|---|---|
-| A5 Leaflet | £1.99 | £1.18 | £0.81 |
-| A4 Letter | £1.49 | £1.02 | £0.47 |
-| Leaflet + Letter | £2.99 | £2.20 | £0.79 |
+**2. Print & Post (per lead, pay-as-you-go, high margin):**
+| Item | Price |
+|---|---|
+| A5 Leaflet | **£2.99** |
+| A4 Letter | **£2.49** |
+| Leaflet + Letter | **£4.49** |
 
-> **Print & Post roughly doubles revenue per customer.** A Starter paying £100/mo adds ~£100/mo when they mail. **Pro (£196/mo) and Enterprise (£396/mo)** customers earn far more — blended ARPU is **~£150/mo**.
+**3. Auto-Send (recurring, hands-free):** automatically prints & posts every new lead after the 9am delivery (charged per piece). **Built & live.**
 
-**Scale math (customer → revenue, blended ~£150/mo ARPU):**
-- **100 customers = £15,000/month** subscription
-- With Print & Post: **~£30,000/month**
-- **1,000 customers = £150,000/month subscription → up to £300,000/month with Print & Post** (£1.8M-£3.6M/yr)
+**4. Bulk Postage (high-value one-offs, Pro upsell):** exclusive never-sent archive lead packs, printed & posted. **Built & live — pool volume ramps as it fills.**
+| Packs | 100 | 250 | 500 | 1,000 |
+|---|---|---|---|---|
+| Price | **£249** | **£622.50** | **£1,245** | **£2,490** |
 
-*(Starter-only baseline: 100 customers = £10k/mo, ~£20k/mo with Print & Post.)*
+> **Streams compound.** Print & Auto-Send ≈ +£135/mo per customer at target attach; Bulk ≈ +£15/mo across the base. **All-streams blended ≈ £300/mo per customer** (≈£150 subscription + ~£135 print/auto-send + ~£15 bulk) — roughly **2× the subscription alone**.
+
+**Scale math (customer → all-streams revenue, ≈£300/mo blended):**
+- **100 customers = ≈£30,000/month** (≈£15k subscription + ≈£15k print/auto-send/bulk)
+- **300 customers = ≈£90,000/month**
+- **500 customers = ≈£150,000/month**
+- **1,000 customers = ≈£300,000/month** (~£3.6M/yr run-rate)
+
+*(Starter-only, subscription-only baseline: 100 customers = £10k/mo.)*
 
 ## Traction (real, live today)
-- ✅ **Product fully built and operating** — scrapers, daily 9am delivery, verification, Print & Post (live Stannp integration, real mail sent), affiliate programme
-- ✅ **76 accounts** created; **8 real paying-trial firms** across removals, accountancy, property and legal
+- ✅ **Product fully built and operating** — scrapers, daily 9am delivery, verification, Print & Post (live Stannp integration, real mail sent), **Auto-Send and Bulk Postage live**
+- ✅ **76 accounts** created; **8 firms actively trialing** across removals, accountancy, property and legal
 - ✅ **Daily delivery running** — moving/probate/planning/new-business/tenders all live
 - ✅ **First real orders shipped** through Stannp (letters + flyers printing correctly)
 - ✅ Self-healing infrastructure: uptime monitoring, auto-heal, backups
@@ -69,10 +77,10 @@
 | Print & Post sampling & tools | £3,000 |
 | Contingency / ops | £2,000 |
 
-**What £25k buys:** ~£150/customer blended acquisition cost (paid channels) + the ~£0-CAC affiliate/staff engine → **~150-170 new paying customers from the £25k**, at **~£150/mo blended ARPU** that's **£22k-£25k/mo subscription**, roughly **doubled to £45k+/mo with Print & Post** — and it funds the growth to **1,000 customers / £150k-£300k per month** by month 12.
+**What £25k buys:** ~£150/customer blended acquisition cost (paid channels) + the ~£0-CAC affiliate/staff engine → **~150-170 new paying customers from the £25k**, at **≈£300/mo all-streams value** that's **≈£45k-£50k/month all-streams revenue** — and it funds the growth to **1,000 customers / ≈£300k per month** by month 12.
 
 ## Why now
-The product is done and shipping. The missing piece is **marketing & sales**. With the trial pipeline already warm (8 real firms, 50 trial accounts), £25k is enough to convert and scale to 100+ paying customers — the proof investors need.
+The product is done and shipping — including the Auto-Send and Bulk revenue streams. The missing piece is **marketing & sales**. With the trial pipeline already warm (8 firms, ~50 trial accounts), £25k is enough to convert and scale to 100+ paying customers — the proof investors need.
 
 ---
 **9amLeads** · hello@9amleads.com
