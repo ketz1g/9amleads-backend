@@ -17715,6 +17715,21 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
   // run never released it — e.g. a Postcoder call that didn't time out). Override
   // it so the next real delivery (especially the 09:00 cron) can never be blocked
   // permanently. A normal delivery completes well under 15 min.
+  // NEVER BEFORE 9AM UK: the 9am promise means leads go out at 09:00 UK, never early.
+  // Block any delivery attempt before 08:55 UK (timezone-safe) unless an explicit
+  // admin force flag is passed (used only for controlled testing). This stops a stray
+  // early trigger (like the 06:40 UTC / 7:40am UK batch on Mon 31 Aug) from ever
+  // reaching customers again.
+  try {
+    var _ukNow = new Date().toLocaleString('en-GB', { timeZone: 'Europe/London', hour12: false });
+    var _hm = _ukNow.split(', ').pop().split(':');
+    var _ukMin = (parseInt(_hm[0], 10) * 60) + parseInt(_hm[1], 10);
+    var _forceEarly = !!(req.body && req.body.force === true);
+    if (_ukMin < 535 && !_forceEarly) { // 535 = 08:55 UK
+      console.log('[DELIVERY] Blocked early delivery attempt at ' + _ukNow + ' UK (before 9am window)');
+      return res.status(423).json({ skipped: true, reason: 'Delivery only runs at 09:00 UK. This attempt was blocked so leads are never sent early.' });
+    }
+  } catch(tzErr) { console.log('[DELIVERY] timezone guard error:', tzErr.message); }
   if (_deliveryLock) {
     var _lockAge = Date.now() - (_deliveryLockAt || 0);
     if (_lockAge > 15 * 60 * 1000) {
