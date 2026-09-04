@@ -12189,6 +12189,11 @@ function sendBrevoEmail(to, subject, htmlContent) {
   // renders consistently across mail clients and matches our house style.
   subject = String(subject || '').replace(/[\u2013\u2014]/g, '-');
   htmlContent = String(htmlContent || '').replace(/[\u2013\u2014]/g, '-');
+  // BULK SEND PITCH: Print & Post and Bulk Send go hand in hand, so any email that
+  // already talks about Print & Post gets a short Bulk Send mention too (added once).
+  if (/print\s*&amp;\s*post|print\s*&\s*post|print\s*and\s*post/i.test(htmlContent) && htmlContent.indexOf('Bulk Send') === -1) {
+    htmlContent += '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td><div style="margin-top:18px;padding:14px 18px;border:1px solid #99f6e4;border-radius:12px;background:linear-gradient(135deg,rgba(16,185,129,0.07),rgba(14,165,233,0.06))"><p style="color:#0f172a;font-size:13px;line-height:1.7;margin:0">📦 <b>Bulk Send</b> goes hand in hand with Print &amp; Post: boost your business in slow times with 50&ndash;1000 exclusive never-sent leads, printed &amp; posted for you from &pound;1.99 per lead. <a href="https://9amleads.com/bulk.html" style="color:#0ea5e9;font-weight:700">See Bulk Send &rarr;</a></p></div></td></tr></table>';
+  }
   const data = JSON.stringify({
     sender: { name: senderName, email: senderFrom },
     replyTo: to.replyTo ? { email: to.replyTo.email, name: to.replyTo.name || 'Customer' } : { email: 'hello@9amleads.com', name: '9amLeads Support' },
