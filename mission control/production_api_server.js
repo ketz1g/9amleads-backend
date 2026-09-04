@@ -10047,12 +10047,15 @@ async function runMovingPafPostScrape() {
 // the scrape so probate customers get door-complete, mailable addresses. Budget
 // reserve is shared with delivery (never starve the 9am exact-count guarantee).
 async function runProbatePafPostScrape() {
-  // PROBATE POST-SCRAPE PAF DISABLED: Postcoder is MOVING-ONLY (the user has no real
-  // probate customers, so PAF credits on probate are wasted). Probate leads deliver
-  // with whatever door/postcode their source already carries. Re-enable later if a
-  // paid probate customer needs door-complete addresses.
-  console.log('[PAF-PROBATE] Postcoder is moving-only — probate post-scrape PAF skipped (no credits spent)');
-  return { enriched: 0, failed: 0 };
+  // BUDGETED PROBATE PAF: opt-in via PROBATE_PAF_ENABLED=true. Uses the same shared
+  // Postcoder daily budget + delivery reserve as moving, capped per run by
+  // PROBATE_PAF_POSTSCRAPE_MAX (default 40). Probate leads from The Gazette/PNP that
+  // have a street + postcode but no door number get their door level resolved so
+  // they are mailable to the deceased's home address.
+  if (String(process.env.PROBATE_PAF_ENABLED || '').toLowerCase() !== 'true') {
+    console.log('[PAF-PROBATE] disabled (PROBATE_PAF_ENABLED != true) - probate keeps source addresses');
+    return { enriched: 0, failed: 0 };
+  }
   if (!(process.env.POSTCODER_ENABLED === 'true' || process.env.POSTCODER_ENABLED === '1') || !process.env.POSTCODER_API_KEY) {
     console.log('[PAF-PROBATE] Postcoder disabled — skipping'); return { enriched: 0, failed: 0 };
   }
