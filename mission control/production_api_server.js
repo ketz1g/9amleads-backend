@@ -17605,7 +17605,7 @@ app.post('/api/boost/checkout', authMiddleware, async (req, res) => {
     if (c.product !== product) return res.status(400).json({ error: 'Boost packs are for your own lead type. Switch your product or ask support.' });
     if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe not configured' });
     var avail = getBoostArchiveLeads(product, age, 0).length;
-    if (avail < count) return res.status(400).json({ error: 'Not enough ' + boostAgeLabel(age).replace('-', ' ') + '-old archive leads right now (' + avail + '). Try another age or a smaller pack.', available: avail });
+    if (avail < count) return res.status(400).json({ error: 'Not enough archive leads for that size yet. The pool is being filled - please try again shortly.' });
     var amountPence = bulkPackTotal(count, mailType);
     var baseUrl = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
     var label = product === 'probate' ? 'Probate' : product === 'newbusiness' ? 'New Business' : 'Moving';

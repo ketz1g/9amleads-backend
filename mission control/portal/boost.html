@@ -123,9 +123,9 @@ function render(){
   var D=ST.DATA; if(!D)return; 
   var nm={moving:'Moving',probate:'Probate',newbusiness:'New Business'}[ST.product]||ST.product; 
   var a=D.available[ST.product]||{tm:0,'1m':0,'2m':0}; 
-  document.getElementById('availMoving').innerHTML=nm+' archive leads available: this month <b>'+a.tm+'</b> / 1 month old <b>'+a['1m']+'</b> / 2 months old <b>'+a['2m']+'</b>'; 
+  document.getElementById('availMoving').innerHTML='';
   var av=a[ST.age]; 
-  document.getElementById('availAge').innerHTML = ageName(ST.age) + ' ' + nm + ' leads available: <b>' + av + '</b>' + (ST.age==='tm' ? ' &mdash; archive leads from the last month that have never been sent to any customer' : ' &mdash; never sent to any customer'); 
+  document.getElementById('availAge').innerHTML = 'Fresh ' + nm + ' archive leads are added to the pool all the time.'; 
   var sizes=(D.sizes&&D.sizes[ST.product])||[]; 
   var rate=(D.mail_rates&&D.mail_rates[ST.mail])||249; 
   var box=document.getElementById('packsBox'); 
@@ -133,7 +133,7 @@ function render(){
   box.innerHTML=sizes.map(function(cnt){
     var total=Math.round(cnt*rate)/100;
     var can = av >= cnt;
-    return '<div class="pack" style="opacity:'+(can?1:.5)+'"><div class="num">'+cnt+'</div><div class="lbl">'+ageName(ST.age)+'<br>'+lbl+'<br>printed &amp; posted</div><div class="price">£'+total.toFixed(2)+'</div><div class="per">one-time · £'+(rate/100).toFixed(2)+'/lead</div><button class="btn btn-primary" onclick="buy('+cnt+')"'+(can?'':' disabled')+'>Buy '+cnt+'</button>'+(can?'':'<div style="font-size:10px;color:#b45309;margin-top:6px">'+av+' available</div>')+'</div>';
+    return '<div class="pack" style="opacity:'+(can?1:.5)+'"><div class="num">'+cnt+'</div><div class="lbl">'+ageName(ST.age)+'<br>'+lbl+'<br>printed &amp; posted</div><div class="price">£'+total.toFixed(2)+'</div><div class="per">one-time · £'+(rate/100).toFixed(2)+'/lead</div><button class="btn btn-primary" onclick="buy('+cnt+')"'+(can?'':' disabled')+'>Buy '+cnt+'</button>'+(can?'':'<div style="font-size:11px;color:#fbbf24;margin-top:6px">Pool is being filled - check back soon</div>')+'</div>';
   }).join('');
 }
 function buy(count){
