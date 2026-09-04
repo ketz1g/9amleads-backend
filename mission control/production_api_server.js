@@ -15179,10 +15179,15 @@ var _sentAlerts = {};
 function sendAlertIfStale(key, subject, html, cooldownMs) {
   cooldownMs = cooldownMs || 4 * 3600000;
   var now = Date.now();
-  if (_sentAlerts[key] && (now - _sentAlerts[key]) < cooldownMs) return false;
+  // Persist the throttle in the DB so deploys/restarts never reset it and re-spam.
+  var _persist = null;
+  try { var _da = getDb(); if (!_da.sent_alerts) _da.sent_alerts = {}; _persist = _da.sent_alerts; } catch(e) {}
+  var lastSent = (_persist && Number(_persist[key])) || _sentAlerts[key] || 0;
+  if (lastSent && (now - lastSent) < cooldownMs) return false;
   try {
     sendBrevoEmail({ email: process.env.OWNER_EMAIL || 'ketzman1g@gmail.com', name: 'Owner' }, subject, html);
     _sentAlerts[key] = now;
+    if (_persist) { _persist[key] = now; try { saveDb(); } catch(e) {} }
     return true;
   } catch(e) { return false; }
 }
