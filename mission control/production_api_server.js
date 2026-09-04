@@ -20395,11 +20395,11 @@ const STRIPE_PRICE_IDS = {
   newbusiness: { 'nb-starter': 'price_1TsOVjADspDnFpfBGm2vNEjh', 'nb-growth': 'price_1TsOVkADspDnFpfBfPdXdQjZ', 'nb-power': 'price_1TsOVkADspDnFpfBJK8lqbol' },
   probate: { 'prob-starter': 'price_1TsOW8ADspDnFpfB72jEnBFX', 'prob-growth': 'price_1TsOW9ADspDnFpfBAFxbNBDt', 'prob-power': 'price_1TsOW9ADspDnFpfB3HSDoQ6U' },
   tenders: { 'tend-starter': 'price_1TsOWBADspDnFpfBaf9IsPed', 'tend-growth': 'price_1TsOWCADspDnFpfBSjYEqpFq', 'tend-power': 'price_1TsOWCADspDnFpfBHWhNa4Ij' },
-  'builder-package': { 'bld-package': 'price_1TsOe1ADspDnFpfBU8vScLsH' },
-  'marketing-package': { 'mkt-package': 'price_1TsOe1ADspDnFpfBdyYT23n5' },
-  'property-package': { 'prp-package': 'price_1TsOe2ADspDnFpfBy4dOaC9w' },
-  'moving-package': { 'mov-package': 'price_1TsOe2ADspDnFpfBMkCtyt8E' },
-  pro: { 'pro-plan': 'price_1TsOe0ADspDnFpfBnAvu51e1' }
+  'builder-package': { 'bld-package': 'price_1UC5HuPS0MvjZiF9yqlfbRW1' },
+  'marketing-package': { 'mkt-package': 'price_1UC5HuPS0MvjZiF91gmuSp5v' },
+  'property-package': { 'prp-package': 'price_1UC5HvPS0MvjZiF9Jd65wWAl' },
+  'moving-package': { 'mov-package': 'price_1UC5HwPS0MvjZiF9qfNkVggL' },
+  pro: { 'pro-plan': 'price_1UC5HxPS0MvjZiF93xiHXDve' }
 };
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 // TEST-MODE price overrides. Populated from stripe-config.json "testPriceIds"
