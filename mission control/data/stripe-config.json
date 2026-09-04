@@ -1,61 +1,86 @@
 {
   "priceIds": {
     "moving": {
-      "mov-starter": "price_1TsOW7ADspDnFpfBbiqbOOnb",
-      "mov-growth": "price_1TsOW7ADspDnFpfBFi8xRpFG",
-      "mov-power": "price_1TsOW8ADspDnFpfBtcjoVRvJ"
+      "mov-starter": "price_1UC5HjPS0MvjZiF9uwP95RsY",
+      "mov-growth": "price_1UC5HjPS0MvjZiF943lxj9Cf",
+      "mov-power": "price_1UC5HkPS0MvjZiF9jFBH4aib"
     },
     "probate": {
-      "prob-starter": "price_1TsOW8ADspDnFpfB72jEnBFX",
-      "prob-growth": "price_1TsOW9ADspDnFpfBAFxbNBDt",
-      "prob-power": "price_1TsOW9ADspDnFpfB3HSDoQ6U"
+      "prob-starter": "price_1UC5HlPS0MvjZiF9EjOWX1Tq",
+      "prob-growth": "price_1UC5HmPS0MvjZiF9OmL1FIhF",
+      "prob-power": "price_1UC5HmPS0MvjZiF9RWOZsl36"
     },
     "newbusiness": {
-      "nb-starter": "price_1TsOVjADspDnFpfBGm2vNEjh",
-      "nb-growth": "price_1TsOVkADspDnFpfBfPdXdQjZ",
-      "nb-power": "price_1TsOVkADspDnFpfBJK8lqbol"
+      "nb-starter": "price_1UC5HnPS0MvjZiF91s8eaZKm",
+      "nb-growth": "price_1UC5HoPS0MvjZiF9HDTp2DnZ",
+      "nb-power": "price_1UC5HoPS0MvjZiF9U3s0fFgU"
     },
     "planning": {
-      "plan-starter": "price_1TsOWAADspDnFpfBFF9WA0gR",
-      "plan-growth": "price_1TsOWAADspDnFpfBIyA0TSDP",
-      "plan-power": "price_1TsOWBADspDnFpfBuoZcCYrn"
+      "plan-starter": "price_1UC5HpPS0MvjZiF9u2fMht2r",
+      "plan-growth": "price_1UC5HqPS0MvjZiF913ei1s9u",
+      "plan-power": "price_1UC5HrPS0MvjZiF9QpLWWuLS"
     },
     "tenders": {
-      "tend-starter": "price_1TsOWBADspDnFpfBaf9IsPed",
-      "tend-growth": "price_1TsOWCADspDnFpfBSjYEqpFq",
-      "tend-power": "price_1TsOWCADspDnFpfBHWhNa4Ij"
+      "tend-starter": "price_1UC5HrPS0MvjZiF9y7LV4SNn",
+      "tend-growth": "price_1UC5HsPS0MvjZiF9jG5vqTUA",
+      "tend-power": "price_1UC5HtPS0MvjZiF94oxcFQp0"
     },
-    "builder-package": { "bld-package": "price_1TsOe1ADspDnFpfBU8vScLsH" },
-    "marketing-package": { "mkt-package": "price_1TsOe1ADspDnFpfBdyYT23n5" },
-    "property-package": { "prp-package": "price_1TsOe2ADspDnFpfBy4dOaC9w" },
-    "moving-package": { "mov-package": "price_1TsOe2ADspDnFpfBMkCtyt8E" },
-    "pro": { "pro-plan": "price_1TsOe0ADspDnFpfBnAvu51e1" }
+    "builder-package": {
+      "bld-package": "price_1UC5HuPS0MvjZiF9yqlfbRW1"
+    },
+    "marketing-package": {
+      "mkt-package": "price_1UC5HuPS0MvjZiF91gmuSp5v"
+    },
+    "property-package": {
+      "prp-package": "price_1UC5HvPS0MvjZiF9Jd65wWAl"
+    },
+    "moving-package": {
+      "mov-package": "price_1UC5HwPS0MvjZiF9qfNkVggL"
+    },
+    "pro": {
+      "pro-plan": "price_1UC5HxPS0MvjZiF93xiHXDve"
+    }
   },
   "testPriceIds": {
     "moving": {
-      "mov-starter": "price_1U2eDlPS0MvjZiF9uzZSJKUP",
-      "mov-growth": "price_1U2eDlPS0MvjZiF9y0Sy9RAO",
-      "mov-power": "price_1U2eDmPS0MvjZiF9MgAyM2aS"
-    },
-    "planning": {
-      "plan-starter": "price_1U2eDnPS0MvjZiF9iAol8d2y",
-      "plan-growth": "price_1U2eDnPS0MvjZiF94RFmwgr0",
-      "plan-power": "price_1U2eDnPS0MvjZiF9GrjemXPY"
-    },
-    "newbusiness": {
-      "nb-starter": "price_1U2eDoPS0MvjZiF9jPI1j8fC",
-      "nb-growth": "price_1U2eDoPS0MvjZiF9X9PfX4kR",
-      "nb-power": "price_1U2eDpPS0MvjZiF98GkvCARr"
+      "mov-starter": "price_1UC5HjPS0MvjZiF9uwP95RsY",
+      "mov-growth": "price_1UC5HjPS0MvjZiF943lxj9Cf",
+      "mov-power": "price_1UC5HkPS0MvjZiF9jFBH4aib"
     },
     "probate": {
-      "prob-starter": "price_1U2eDpPS0MvjZiF9y8BrtL8t",
-      "prob-growth": "price_1U2eDqPS0MvjZiF9eW6CAMW5",
-      "prob-power": "price_1U2eDqPS0MvjZiF9IoA2KAt6"
+      "prob-starter": "price_1UC5HlPS0MvjZiF9EjOWX1Tq",
+      "prob-growth": "price_1UC5HmPS0MvjZiF9OmL1FIhF",
+      "prob-power": "price_1UC5HmPS0MvjZiF9RWOZsl36"
+    },
+    "newbusiness": {
+      "nb-starter": "price_1UC5HnPS0MvjZiF91s8eaZKm",
+      "nb-growth": "price_1UC5HoPS0MvjZiF9HDTp2DnZ",
+      "nb-power": "price_1UC5HoPS0MvjZiF9U3s0fFgU"
+    },
+    "planning": {
+      "plan-starter": "price_1UC5HpPS0MvjZiF9u2fMht2r",
+      "plan-growth": "price_1UC5HqPS0MvjZiF913ei1s9u",
+      "plan-power": "price_1UC5HrPS0MvjZiF9QpLWWuLS"
     },
     "tenders": {
-      "tend-starter": "price_1U2eDrPS0MvjZiF9twciPRac",
-      "tend-growth": "price_1U2eDrPS0MvjZiF90cHT3EJh",
-      "tend-power": "price_1U2eDrPS0MvjZiF9AlJTGWQa"
+      "tend-starter": "price_1UC5HrPS0MvjZiF9y7LV4SNn",
+      "tend-growth": "price_1UC5HsPS0MvjZiF9jG5vqTUA",
+      "tend-power": "price_1UC5HtPS0MvjZiF94oxcFQp0"
+    },
+    "builder-package": {
+      "bld-package": "price_1UC5HuPS0MvjZiF9yqlfbRW1"
+    },
+    "marketing-package": {
+      "mkt-package": "price_1UC5HuPS0MvjZiF91gmuSp5v"
+    },
+    "property-package": {
+      "prp-package": "price_1UC5HvPS0MvjZiF9Jd65wWAl"
+    },
+    "moving-package": {
+      "mov-package": "price_1UC5HwPS0MvjZiF9qfNkVggL"
+    },
+    "pro": {
+      "pro-plan": "price_1UC5HxPS0MvjZiF93xiHXDve"
     }
   },
   "setupComplete": true
