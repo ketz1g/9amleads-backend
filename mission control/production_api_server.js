@@ -1228,8 +1228,33 @@ function saveDb() {
     var tmp = DB_FILE + '.tmp';
     fs.writeFileSync(tmp, JSON.stringify(_dbData, null, 2));
     fs.renameSync(tmp, DB_FILE);
+    // An explicit saveDb() is an immediate flush, so cancel any pending coalesced
+    // flush (avoids writing the big file twice for one logical change).
+    _dbDirty = false;
+    if (_dbFlushTimer) { clearTimeout(_dbFlushTimer); _dbFlushTimer = null; }
   } catch(e) { console.error('[DB] Save error:', e.message); }
 }
+
+// ==== DB WRITE COALESCING ====
+// Every db.prepare(...).run() used to write the ENTIRE database.json synchronously
+// (atomic temp-file + rename). Bulk jobs (100+ inserts/updates) each triggered a full
+// pretty-printed write of a multi-MB database, freezing the process for a minute and
+// getting killed by the host. Mutations now just mark the DB dirty and a SINGLE flush
+// runs shortly after each burst of writes; explicit saveDb() still flushes immediately
+// (signups / payments / status transitions call it directly for crash safety).
+var _dbDirty = false, _dbFlushTimer = null;
+function _markDbDirty() {
+  _dbDirty = true;
+  if (_dbFlushTimer) return;
+  _dbFlushTimer = setTimeout(function() { _dbFlushTimer = null; if (_dbDirty) { _dbDirty = false; saveDb(); } }, 150);
+}
+function _flushDbNow() {
+  if (_dbFlushTimer) { clearTimeout(_dbFlushTimer); _dbFlushTimer = null; }
+  if (_dbDirty) { _dbDirty = false; saveDb(); }
+}
+try { process.on('beforeExit', function() { try { _flushDbNow(); } catch(e) {} }); } catch(e) {}
+try { process.on('SIGTERM', function() { try { _flushDbNow(); } catch(e) {} }); } catch(e) {}
+try { process.on('SIGINT', function() { try { _flushDbNow(); } catch(e) {} }); } catch(e) {}
 
 // ===== AUTOMATED DATABASE BACKUP (bulletproofing) =====
 // The whole business (customers, leads, campaigns, payments) lives in database.json
@@ -1444,7 +1469,7 @@ function _run(sql, params) {
       });
     }
     if (row.id) getDb()[q.table].push(row);
-    saveDb(); return { changes: 1 };
+    _markDbDirty(); return { changes: 1 };
   }
   if (q.isUpdate) {
     const setMatch = sql.match(/SET\s+(.+?)(?:\s+WHERE|$)/i);
@@ -1487,7 +1512,7 @@ function _run(sql, params) {
       }
       if (idVal === null || idVal === undefined) idVal = params[params.length - 1];
       const idx = getDb()[q.table].findIndex(r => r[idField] == idVal);
-      if (idx !== -1) { getDb()[q.table][idx] = { ...getDb()[q.table][idx], ...updates }; saveDb(); return { changes: 1 }; }
+      if (idx !== -1) { getDb()[q.table][idx] = { ...getDb()[q.table][idx], ...updates }; _markDbDirty(); return { changes: 1 }; }
     }
     return { changes: 0 };
   }
@@ -1508,7 +1533,7 @@ function _run(sql, params) {
         rows = rows.filter(function(r) { return r[field] != val; });
       });
       getDb()[q.table] = rows;
-      saveDb();
+      _markDbDirty();
       return { changes: 1 };
     }
     return { changes: 0 };
