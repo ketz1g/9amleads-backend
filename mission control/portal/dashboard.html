@@ -776,7 +776,7 @@ function maybeGateBulkRoute(e) {
   try {
     if (_myPlan === 'pro' || _myPlan === 'enterprise' || _myPlan === 'pro-plan' || _myPlan === 'premium') {
       try { e.preventDefault(); } catch(err) {}
-      var dest = (_myProduct === 'moving' || _myProduct === 'probate') ? '/portal/boost.html' : '/portal/bulk.html';
+      var dest = '/portal/boost.html';
       window.location.href = dest;
       return false;
     }
@@ -2020,12 +2020,11 @@ document.querySelectorAll('.modal').forEach(function(m){
           var _bLbl = document.getElementById('bulk-dash-label');
           if (_bLbl) _bLbl.textContent = _myProduct === 'moving' ? 'moving leads' : _myProduct === 'probate' ? 'probate leads' : 'new business leads';
           var _bCta = document.getElementById('bulk-dash-cta');
-          if (_bCta) _bCta.setAttribute('href', (_myProduct === 'moving' || _myProduct === 'probate') ? '/portal/boost.html' : '/portal/bulk.html');
+          if (_bCta) _bCta.setAttribute('href', '/portal/boost.html');
           var _bAgeLinks = document.querySelectorAll('.bulk-age-link');
           if (_bAgeLinks && _bAgeLinks.length) {
-            var _boost = (_myProduct === 'moving' || _myProduct === 'probate');
             for (var bi = 0; bi < _bAgeLinks.length; bi++) {
-              _bAgeLinks[bi].setAttribute('href', _boost ? ('/portal/boost.html?age=' + _bAgeLinks[bi].getAttribute('data-age')) : '/portal/bulk.html');
+              _bAgeLinks[bi].setAttribute('href', '/portal/boost.html?age=' + _bAgeLinks[bi].getAttribute('data-age'));
             }
           }
         }

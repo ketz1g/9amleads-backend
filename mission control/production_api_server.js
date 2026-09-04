@@ -17084,7 +17084,7 @@ app.post('/api/admin/boost-seed', adminAuth, (req, res) => {
   try {
     var prod = String((req.body && req.body.product) || 'probate');
     var months = parseInt(req.body && req.body.months, 10) || 1;
-    if (['moving', 'probate'].indexOf(prod) === -1) return res.status(400).json({ error: 'moving or probate only' });
+    if (['moving', 'probate', 'newbusiness'].indexOf(prod) === -1) return res.status(400).json({ error: 'moving, probate or newbusiness only' });
     var target = Date.now() - (months === 2 ? 61 : 31) * 86400000;
     var dateStr = new Date(target).toISOString().split('T')[0];
     var arr = readPoolFile(prod);
@@ -17454,7 +17454,7 @@ app.post('/api/admin/normalise-pool', adminAuth, (req, res) => {
 // single Print & Post offers: A5 leaflet £3.00 / A4 letter £2.50 / leaflet+letter £4.50.
 // Cost to us: leaflet £1.18, letter £1.02, both £2.20 (Stannp).
 var BULK_MAIL_RATES = { leaflet: 249, letter: 199, both: 399 }; // pence per lead — bulk/boost volume discount sits UNDER single on-demand rates
-var BOOST_PACK_SIZES = { moving: [100, 250, 500, 1000], probate: [50, 100, 200, 500] };
+var BOOST_PACK_SIZES = { moving: [100, 250, 500, 1000], probate: [50, 100, 200, 500], newbusiness: [100, 250, 500, 1000] };
 var NB_BULK_SIZES = [100, 250, 500, 1000];
 function bulkPackTotal(count, mailType) { return (BULK_MAIL_RATES[mailType] || BULK_MAIL_RATES.leaflet) * (count || 0); }
 // LAUNCH GATE: bulk/Boost storefronts stay OFF until the archive pools have enough
@@ -17493,7 +17493,7 @@ function getBoostArchiveLeads(product, ageKey, count) {
     // Age = when the property/notice REALLY appeared (sourceListedDate from the portal,
     // else pickFreshDate) — NOT when we scraped it. Long-running listings are genuine
     // 1-2-month-old archive leads even if scraped today.
-    var d = l.sourceListedDate || pickFreshDate(l) || String(l.scrapedAt || l.createdAt || l.firstVisibleDate || '');
+    var d = l.sourceListedDate || pickFreshDate(l) || l.incorporationDate || l.incorporated_on || String(l.scrapedAt || l.createdAt || l.firstVisibleDate || '');
     var t = d ? new Date(d).getTime() : 0;
     if (!(t && t >= now - hi && t <= now - lo)) return;
     // need a mailable address
@@ -17502,9 +17502,9 @@ function getBoostArchiveLeads(product, ageKey, count) {
     var addr = l.fullAddress || l.address || l.deceasedAddress || '';
     if (!addr || addr.trim().length < 8) return;
     if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/.test(pc)) return;
-    // Moving / Probate are residential: a house/building number is required so the
-    // leaflet/letter reaches the right door (flagged + excluded otherwise).
-    if (!postableLeadInfo(l, false).ok) return;
+    // Residential (moving/probate) needs a house number; new business (B2B) accepts a
+    // company at a real address. Anything else is flagged and excluded pre-Stannp.
+    if (!postableLeadInfo(l, product === 'newbusiness').ok) return;
     out.push(l);
   });
   return out.slice(0, count || out.length);
@@ -17571,7 +17571,7 @@ app.get('/api/boost', authMiddleware, (req, res) => {
     var c = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
     if (!c) return res.status(404).json({ error: 'User not found' });
     var available = {};
-    ['moving', 'probate'].forEach(function(p) { available[p] = { 'tm': getBoostArchiveLeads(p, 'tm', 0).length, '1m': getBoostArchiveLeads(p, '1m', 0).length, '2m': getBoostArchiveLeads(p, '2m', 0).length }; });
+    ['moving', 'probate', 'newbusiness'].forEach(function(p) { available[p] = { 'tm': getBoostArchiveLeads(p, 'tm', 0).length, '1m': getBoostArchiveLeads(p, '1m', 0).length, '2m': getBoostArchiveLeads(p, '2m', 0).length }; });
     var pack = null;
     try { pack = c.boost_pack ? JSON.parse(c.boost_pack) : null; } catch(e) {}
     res.json({ success: true, product: c.product, available: available, sizes: BOOST_PACK_SIZES, mail_rates: BULK_MAIL_RATES, live: bulkPoolsLive(), pack: pack });
@@ -17585,7 +17585,7 @@ app.post('/api/boost/checkout', authMiddleware, async (req, res) => {
     var age = String((req.body && req.body.age) || '1m');
     var count = parseInt(req.body && req.body.count, 10);
     var mailType = String((req.body && req.body.mail_type) || 'leaflet');
-    if (['moving', 'probate'].indexOf(product) === -1) return res.status(400).json({ error: 'Choose Moving or Probate.' });
+    if (['moving', 'probate', 'newbusiness'].indexOf(product) === -1) return res.status(400).json({ error: 'Choose Moving, Probate or New Business.' });
     if (!BOOST_PACK_SIZES[product] || BOOST_PACK_SIZES[product].indexOf(count) === -1) return res.status(400).json({ error: 'Choose a valid pack size for ' + product + '.' });
     if (!BULK_MAIL_RATES[mailType]) return res.status(400).json({ error: 'Choose what to post: leaflet, letter, or leaflet + letter.' });
     if (['tm', '1m', '2m'].indexOf(age) === -1) return res.status(400).json({ error: 'Choose This month (up to a month old), 1 month old or 2 months old.' });
@@ -17597,7 +17597,7 @@ app.post('/api/boost/checkout', authMiddleware, async (req, res) => {
     if (avail < count) return res.status(400).json({ error: 'Not enough ' + boostAgeLabel(age).replace('-', ' ') + '-old archive leads right now (' + avail + '). Try another age or a smaller pack.', available: avail });
     var amountPence = bulkPackTotal(count, mailType);
     var baseUrl = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
-    var label = product === 'probate' ? 'Probate' : 'Moving';
+    var label = product === 'probate' ? 'Probate' : product === 'newbusiness' ? 'New Business' : 'Moving';
     var typeLabel = mailType === 'both' ? 'leaflet + letter' : mailType + ' only';
     var sessionBody = {
       mode: 'payment',

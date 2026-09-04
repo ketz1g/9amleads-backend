@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Boost Your Business — Archive Lead Packs | 9amLeads</title>
+<title>Boost Your Business â€” Archive Lead Packs | 9amLeads</title>
 <style>
 :root{--bg:#f7f7f8;--card:#fff;--text:#111827;--muted:#6b7280;--border:#e5e7eb;--accent:#f97316;--green:#166534;--green-bg:#f0fdf4;--green-bd:#86efac;--radius:14px;--ff:'Inter',system-ui,sans-serif}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -47,11 +47,11 @@ h3{font-size:15px;font-weight:700;margin-bottom:10px}
 <body>
 <div class="wrap">
   <div class="topbar">
-    <div class="brand">9am<small>Leads</small> <span style="font-size:11px;color:var(--muted)">· Boost Your Business</span></div>
+    <div class="brand">9am<small>Leads</small> <span style="font-size:11px;color:var(--muted)">Â· Boost Your Business</span></div>
     <a class="back" href="/portal/dashboard.html">&larr; Back to Dashboard</a>
   </div>
   <h1>Boost Your Business</h1>
-  <div class="sub">Buy archive leads in bulk - never sent to any customer. Choose Moving or Probate, pick this month's leads, 1-month-old or 2-month-old, and we print &amp; post your leaflet/letter to every one.</div>
+  <div class="sub">Buy archive leads in bulk - never sent to any customer. Choose Moving, Probate or New Business, pick this month's leads, 1-month-old or 2-month-old, and we print &amp; post your leaflet/letter to every one.</div>
   <div id="loading">Loading Boost...</div>
   <div id="content" style="display:none">
     <div class="banner">
@@ -62,7 +62,7 @@ h3{font-size:15px;font-weight:700;margin-bottom:10px}
     </div>
     <div class="card">
       <h3>1. Choose your lead type</h3>
-      <div class="seg"><button class="on" data-p="moving" onclick="setProduct('moving')">&#128230; Moving</button><button data-p="probate" onclick="setProduct('probate')">&#9878;&#65039; Probate</button></div>
+      <div class="seg"><button class="on" data-p="moving" onclick="setProduct('moving')">&#128230; Moving</button><button data-p="probate" onclick="setProduct('probate')">&#9878;&#65039; Probate</button><button data-p="newbusiness" onclick="setProduct('newbusiness')">&#127963;&#65039; New Business</button></div>
       <div id="availMoving" class="avail"></div>
       <h3 style="margin-top:6px">2. Choose how fresh</h3>
       <div class="seg">
@@ -108,24 +108,25 @@ function ageName(a){ return a==='tm' ? 'this month' : a==='1m' ? '1 month old' :
 function setProduct(p){ ST.product=p; document.querySelectorAll('#content .seg button[data-p]').forEach(function(b){b.classList.toggle('on',b.dataset.p===p);}); render(); }
 function setAge(a){ ST.age=a; document.querySelectorAll('#content .seg button[data-a]').forEach(function(b){b.classList.toggle('on',b.dataset.a===a);}); render(); }
 function setMail(m){ ST.mail=m; document.querySelectorAll('#content .seg button[data-m]').forEach(function(b){b.classList.toggle('on',b.dataset.m===m);}); render(); }
-function render(){
-  var D=ST.DATA; if(!D)return;
-  var mv=D.available.moving, pb=D.available.probate;
-  document.getElementById('availMoving').innerHTML='Moving available: <b>'+mv['tm']+'</b> this month / <b>'+mv['1m']+'</b> (1m) / <b>'+mv['2m']+'</b> (2m)';
-  var av=D.available[ST.product][ST.age];
-  document.getElementById('availAge').innerHTML = ageName(ST.age) + ' ' + ST.product + ' leads available: <b>' + av + '</b>' + (ST.age==='tm' ? ' &mdash; fresh leads from the last month that have never been sent to any customer' : ' &mdash; never sent to any customer');
-  var sizes=(D.sizes&&D.sizes[ST.product])||[];
-  var rate=(D.mail_rates&&D.mail_rates[ST.mail])||249;
-  var box=document.getElementById('packsBox');
-  var lbl=ST.product==='probate'?'probate leads':'moving leads';
+function render(){ 
+  var D=ST.DATA; if(!D)return; 
+  var nm={moving:'Moving',probate:'Probate',newbusiness:'New Business'}[ST.product]||ST.product; 
+  var a=D.available[ST.product]||{tm:0,'1m':0,'2m':0}; 
+  document.getElementById('availMoving').innerHTML=nm+' archive leads available: this month <b>'+a.tm+'</b> / 1 month old <b>'+a['1m']+'</b> / 2 months old <b>'+a['2m']+'</b>'; 
+  var av=a[ST.age]; 
+  document.getElementById('availAge').innerHTML = ageName(ST.age) + ' ' + nm + ' leads available: <b>' + av + '</b>' + (ST.age==='tm' ? ' &mdash; archive leads from the last month that have never been sent to any customer' : ' &mdash; never sent to any customer'); 
+  var sizes=(D.sizes&&D.sizes[ST.product])||[]; 
+  var rate=(D.mail_rates&&D.mail_rates[ST.mail])||249; 
+  var box=document.getElementById('packsBox'); 
+  var lbl={moving:'moving leads',probate:'probate leads',newbusiness:'new business leads'}[ST.product]||ST.product; 
   box.innerHTML=sizes.map(function(cnt){
     var total=Math.round(cnt*rate)/100;
     var can = av >= cnt;
-    return '<div class="pack" style="opacity:'+(can?1:.5)+'"><div class="num">'+cnt+'</div><div class="lbl">'+ageName(ST.age)+'<br>'+lbl+'<br>printed &amp; posted</div><div class="price">£'+total.toFixed(2)+'</div><div class="per">one-time · £'+(rate/100).toFixed(2)+'/lead</div><button class="btn btn-primary" onclick="buy('+cnt+')"'+(can?'':' disabled')+'>Buy '+cnt+'</button>'+(can?'':'<div style="font-size:10px;color:#b45309;margin-top:6px">'+av+' available</div>')+'</div>';
+    return '<div class="pack" style="opacity:'+(can?1:.5)+'"><div class="num">'+cnt+'</div><div class="lbl">'+ageName(ST.age)+'<br>'+lbl+'<br>printed &amp; posted</div><div class="price">Â£'+total.toFixed(2)+'</div><div class="per">one-time Â· Â£'+(rate/100).toFixed(2)+'/lead</div><button class="btn btn-primary" onclick="buy('+cnt+')"'+(can?'':' disabled')+'>Buy '+cnt+'</button>'+(can?'':'<div style="font-size:10px;color:#b45309;margin-top:6px">'+av+' available</div>')+'</div>';
   }).join('');
 }
 function buy(count){
-  if(!confirm('Buy '+count+' '+ageName(ST.age)+' '+ST.product+' archive leads ('+ST.mail+') printed & posted for £'+(Math.round(count*(ST.DATA.mail_rates[ST.mail])/100)/1).toFixed(2)+'?'))return;
+  if(!confirm('Buy '+count+' '+ageName(ST.age)+' '+ST.product+' archive leads ('+ST.mail+') printed & posted for Â£'+(Math.round(count*(ST.DATA.mail_rates[ST.mail])/100)/1).toFixed(2)+'?'))return;
   fetch(API+'/api/boost/checkout',{method:'POST',headers:ah(),body:JSON.stringify({product:ST.product,age:ST.age,count:count,mail_type:ST.mail})})
   .then(function(r){return r.json();}).then(function(d){ if(d.checkout_url)window.location.href=d.checkout_url; else alert(d.error||'Could not start checkout.'); })
   .catch(function(){alert('Could not start checkout.');});
@@ -135,7 +136,7 @@ function load(){
   fetch(API+'/api/boost',{headers:{'Authorization':'Bearer '+tok()}})
   .then(function(r){return r.json();}).then(function(d){
     if(!d.success){ alert(d.error||'Could not load Boost.'); return; }
-    if(!d.live){ document.getElementById('loading').style.display='none'; document.getElementById('content').innerHTML='<div class="card" style="text-align:center;padding:40px"><div style="font-size:40px">🚀</div><h2 style="margin:10px 0 6px">Boost Your Business - coming soon</h2><p class="hint" style="max-width:460px;margin:0 auto">Archive lead packs are being prepared. Check back shortly.</p></div>'; return; }
+    if(!d.live){ document.getElementById('loading').style.display='none'; document.getElementById('content').innerHTML='<div class="card" style="text-align:center;padding:40px"><div style="font-size:40px">ðŸš€</div><h2 style="margin:10px 0 6px">Boost Your Business - coming soon</h2><p class="hint" style="max-width:460px;margin:0 auto">Archive lead packs are being prepared. Check back shortly.</p></div>'; return; }
     document.getElementById('loading').style.display='none';
     document.getElementById('content').style.display='block';
     ST.DATA=d;
