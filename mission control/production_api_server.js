@@ -24017,7 +24017,7 @@ var PRINT_POST_PRICES = {
   // Single (on-demand, post-now) sits ABOVE the bulk/boost pack rates so buying a
   // 50-1000 pack reads as a genuine volume discount. Margins (single):
   // leaflet +£1.81, letter +£1.47, pack +£2.29 per item.
-  flyer_a5: { label: 'A5 Leaflet', customer: 0.30, stannp: 1.18 }, // TEST price — restore to 2.99 after reprint test
+  flyer_a5: { label: 'A5 Leaflet', customer: 2.99, stannp: 1.18 },
   letter_a4: { label: 'A4 Letter', customer: 2.49, stannp: 1.02 },
   flyer_plus_letter: { label: 'A5 Leaflet + A4 Letter', customer: 4.49, stannp: 2.20 },
   // Postage included in above prices (Royal Mail Standard)
@@ -24112,9 +24112,9 @@ function cleanMailText(text) {
 // downloadable design template. Used by the dashboard format selector so
 // customers can pick portrait / landscape / enveloped / letter.
 var DM_FORMATS = [
-  { id: 'flyer_a5_portrait', label: 'A5 Portrait Leaflet', size: 'A5-PORT', kind: 'flyer', width: 1819, height: 2551, mm: '148×210mm', safe: '148×210mm', template: 'a5-leaflet-portrait.pdf', price: 0.30, desc: 'Classic A5 flyer, portrait. Full colour, 300gsm.' },
-  { id: 'flyer_a5_landscape', label: 'A5 Landscape Leaflet', size: 'A5', kind: 'flyer', width: 2551, height: 1819, mm: '210×148mm', safe: '210×148mm', template: 'a5-leaflet.pdf', price: 0.30, desc: 'A5 flyer, landscape orientation.' },
-  { id: 'flyer_a5_enveloped', label: 'A5 Leaflet in Envelope', size: 'A5-ENV', kind: 'flyer', width: 2551, height: 1819, mm: '210×148mm', safe: '210×148mm', template: 'a5-enveloped-postcard.pdf', price: 0.30, desc: 'A5 leaflet sent inside a windowed envelope. More premium feel.' },
+  { id: 'flyer_a5_portrait', label: 'A5 Portrait Leaflet', size: 'A5-PORT', kind: 'flyer', width: 1819, height: 2551, mm: '148×210mm', safe: '148×210mm', template: 'a5-leaflet-portrait.pdf', price: 2.99, desc: 'Classic A5 flyer, portrait. Full colour, 300gsm.' },
+  { id: 'flyer_a5_landscape', label: 'A5 Landscape Leaflet', size: 'A5', kind: 'flyer', width: 2551, height: 1819, mm: '210×148mm', safe: '210×148mm', template: 'a5-leaflet.pdf', price: 2.99, desc: 'A5 flyer, landscape orientation.' },
+  { id: 'flyer_a5_enveloped', label: 'A5 Leaflet in Envelope', size: 'A5-ENV', kind: 'flyer', width: 2551, height: 1819, mm: '210×148mm', safe: '210×148mm', template: 'a5-enveloped-postcard.pdf', price: 2.99, desc: 'A5 leaflet sent inside a windowed envelope. More premium feel.' },
   { id: 'flyer_plus_letter', label: 'Leaflet + Letter', size: 'A5-PORT', kind: 'flyer_plus_letter', width: 1819, height: 2551, mm: 'A5 leaflet + A4 letter', safe: '148×210mm + 210×297mm', template: 'a5-leaflet-portrait.pdf', price: 4.49, desc: 'A5 leaflet with a personalised A4 letter. Great for a fuller introduction.' },
   { id: 'letter_a4', label: 'A4 Letter', size: 'letter', kind: 'letter', width: 0, height: 0, mm: '210×297mm', safe: '210×297mm', template: 'a4-letter.pdf', price: 2.49, desc: 'Professional A4 letter with windowed envelope.' }
 ];
@@ -25173,7 +25173,7 @@ app.post('/api/admin/direct-mail/test-receipt', adminAuth, async (req, res) => {
     var email = req.body.email || 'ketzman1g@gmail.com';
     var name = req.body.name || 'Ketz Mandalia';
     var address = req.body.address || '4 Farmborough Close, Harrow, HA1 3YG';
-    var amount = req.body.amount || '0.30';
+    var amount = req.body.amount || '2.99';
     var orderRef = req.body.order_ref || '211936512';
     var mailType = req.body.mail_type || '';
     var sampleBody =
