@@ -1904,24 +1904,28 @@ class DirectMailProvider {
         }
         // Build a white rectangle for the address zone.
         var whiteRect = await sharp({ create: { width: Math.max(1, addrW), height: Math.max(1, addrH), channels: 3, background: { r: 255, g: 255, b: 255 } } }).jpeg({ quality: 82 }).toBuffer();
-        // Detect whether the back was ALREADY positioned by the in-app editor:
-        // editor saves render a FULL-PAGE JPEG at the exact A5 print size with the
-        // design already laid out around the white zone. A fresh upload is any
-        // other size/format and must be auto-positioned so the white zone is
-        // clearly visible (matches the editor's auto-fit).
+        // Detect whether the back was ALREADY positioned: the in-app editor saves
+        // the design laid out on the live A5 print area (either full-template dims
+        // from older saves, or the current ~1748x2480 live saves) WITH the white
+        // address zone baked in. A fresh upload (no baked zone) must be
+        // auto-positioned around the zone (matches the editor's auto-fit).
         var srcW = meta.width || A5_W, srcH = meta.height || A5_H;
         var isFullPage = (srcW === A5_W && srcH === A5_H) || (srcW === A5_H && srcH === A5_W);
-        var alreadyPositioned = isFullPage && (meta.format === 'jpeg' || meta.format === 'jpg');
+        var isRaster = (meta.format === 'jpeg' || meta.format === 'jpg' || meta.format === 'png' || meta.format === 'webp');
+        var alreadyPositioned = isRaster && (isFullPage || hasBakedZone);
         if (alreadyPositioned) {
-          // Editor-positioned back: full-bleed pass-through + re-whiten the zone
-          // (harmless if already white). Design keeps its placed layout.
-          var baseBuf = await sharp(inputBuf)
+          // Editor-positioned back: map it onto the live A5 page, re-whiten the
+          // zone (harmless if already white), and continue its edges out into the
+          // bleed ring. The design keeps its placed layout exactly.
+          var pageBufP = await sharp(inputBuf)
             .rotate()
-            .resize({ width: A5_W, height: A5_H, fit: 'fill', background: { r: 255, g: 255, b: 255 } })
+            .resize({ width: liveW, height: liveH, fit: 'fill', background: { r: 255, g: 255, b: 255 } })
             .jpeg({ quality: 82 })
             .toBuffer();
-          outBuf = await sharp(baseBuf).composite([{ input: whiteRect, left: addrX0, top: addrY0 }]).jpeg({ quality: 82 }).toBuffer();
-          console.log('[STANNP] Prepared BACK (editor-positioned, full-bleed) for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> ' + A5_W + 'x' + A5_H + ' + white address zone at ' + addrX0 + ',' + addrY0 + ' ' + addrW + 'x' + addrH + ')');
+          var zoneLP = Math.max(0, addrX0 - bleedPx), zoneTP = Math.max(0, addrY0 - bleedPx);
+          pageBufP = await sharp(pageBufP).composite([{ input: whiteRect, left: zoneLP, top: zoneTP }]).jpeg({ quality: 82 }).toBuffer();
+          outBuf = await extendToBleedTemplate(pageBufP, liveW, liveH, A5_W, A5_H, bleedPx);
+          console.log('[STANNP] Prepared BACK (editor-positioned, mapped to live A5 + bleed ring) for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> live ' + liveW + 'x' + liveH + ' + white address zone at ' + zoneLP + ',' + zoneTP + ')');
         } else {
           // FRESH back upload: fit the design into the USABLE area of the LIVE A5
           // page — the page MINUS the white address zone — so the address area is
@@ -1952,14 +1956,15 @@ class DirectMailProvider {
       } else {
         // FRONT. Two kinds of source:
         //  1) Already the full-bleed template (≈ A5_W x A5_H — includes its own
-        //     bleed, e.g. exports made on the official template or new editor
+        //     bleed, e.g. exports made on the official template or older editor
         //     saves). Pass straight through unchanged.
-        //  2) Trim-sized / plain artwork (edges = true A5). Map it 1:1 onto the
-        //     live A5 area so content flush with the artwork's edges prints flush
-        //     with the leaflet edge — nothing is pushed into the bleed and then
-        //     cropped (the portrait-bottom / landscape-left cuts). The 3mm bleed
-        //     ring is continued from the design's edge pixels so the cutter
-        //     removes background only, never content.
+        //  2) Live A5 / trim-sized artwork (edges = true A5 — what the editor now
+        //     saves and what most customers upload). Map it 1:1 onto the live A5
+        //     area so content flush with the artwork's edges prints flush with the
+        //     leaflet edge — nothing is pushed into the bleed and then cropped
+        //     (the portrait-bottom / landscape-left cuts). The 3mm bleed ring is
+        //     continued from the design's edge pixels so the cutter removes
+        //     background only, never content.
         var srcIsTemplate = meta.width >= A5_W * 0.97 && meta.width <= A5_W * 1.03 &&
                             meta.height >= A5_H * 0.97 && meta.height <= A5_H * 1.03;
         if (srcIsTemplate) {
@@ -25025,6 +25030,21 @@ app.get('/api/direct-mail/materials/:id/final-print', authQueryOrHeader, async (
     var dataUri = String(file.file_data);
     var base64 = dataUri.indexOf(',') !== -1 ? dataUri.split(',')[1] : dataUri;
     var buf = Buffer.from(base64, 'base64');
+    // The prepared file is Stannp's full-bleed template (A5 + 3mm bleed ring each
+    // side). Stannp trims the ring away, so the customer must see the true A5
+    // that prints — showing the whole canvas made the ring's edge-copies look
+    // like a ghost "duplicate" behind the design. Crop to the live A5 area.
+    if (mat.type && /flyer|postcard|leaflet/i.test(mat.type)) {
+      try {
+        var sharp2 = require('sharp');
+        var cropBleed = Math.round(3 * (300 / 25.4)); // 3mm @300dpi (~35px)
+        var fwLive = fw - 2 * cropBleed, fhLive = fh - 2 * cropBleed;
+        var bufMeta = await sharp2(buf).metadata();
+        if (bufMeta.width === fw && bufMeta.height === fh && fwLive > 40 && fhLive > 40) {
+          buf = await sharp2(buf).rotate().extract({ left: cropBleed, top: cropBleed, width: fwLive, height: fhLive }).jpeg({ quality: 92 }).toBuffer();
+        }
+      } catch (cropErr) { console.log('[STANNP] final-print live crop skipped:', cropErr.message); }
+    }
     // Artwork is now JPEG (compressed for Stannp upload limits)
     res.setHeader('Content-Type', 'image/jpeg');
     // No-store so previews/downloads always show the CURRENT baked artwork

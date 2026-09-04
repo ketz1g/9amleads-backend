@@ -1546,54 +1546,40 @@ function saveFlyerEditor(){
   var btn=document.getElementById('flyer-editor-save');
   var status=document.getElementById('flyer-editor-status');
   btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Preparing full-quality print...'; status.textContent='';
-  // Orientation-aware output: the file is Stannp's A5 template — A5-PORT =
-  // 1819x2551, A5 landscape = 2551x1819 — which INCLUDES 3mm bleed per side. The
-  // true A5 that prints is the central "live" area. We map the editor page onto
-  // that live area 1:1 (so content flush with the page stays flush with the
-  // printed edge and is never pushed into the bleed and cropped), then continue
-  // the design's own edge pixels out over the bleed ring so the cutter only ever
-  // removes background, never content.
+  // Orientation-aware output: this canvas is the TRUE A5 print area (the "live"
+  // region that actually prints), A5-PORT = 1748x2480, A5 landscape = 2480x1748
+  // @300 DPI. The editor page maps onto it 1:1, so content flush with the page
+  // stays flush with the printed edge — nothing is pushed into bleed and cropped.
+  // The bleed ring is NOT stored here (it would show as a ghost duplicate in
+  // previews); the send pipeline adds the 3mm bleed template ring at upload time.
   var isLand = _flyerEditor.pageW > _flyerEditor.pageH;
-  var PW = isLand ? 2551 : 1819, PH = isLand ? 1819 : 2551;
-  var pmm = PW / ((isLand ? 210 : 148) + 6);        // px per mm @300dpi (~11.81)
-  var bleedPx = Math.round(3 * pmm);                // 3mm bleed ring (~35px)
-  var liveW = Math.round((isLand ? 210 : 148) * pmm);
-  var liveH = Math.round((isLand ? 148 : 210) * pmm);
+  var pmm = (isLand ? 2551 : 1819) / ((isLand ? 210 : 148) + 6); // px per mm @300dpi (~11.81)
+  var PW = Math.round((isLand ? 210 : 148) * pmm);
+  var PH = Math.round((isLand ? 148 : 210) * pmm);
   var outCanvas=document.createElement('canvas');
   outCanvas.width=PW; outCanvas.height=PH;
   var ctx=outCanvas.getContext('2d');
   ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,PW,PH);
   ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
-  // Draw the design onto the live (central A5) area — NOT stretched over the bleed.
   if(_flyerEditor.img && _flyerEditor.loaded){
-    var sxP=liveW/_flyerEditor.pageW, syP=liveH/_flyerEditor.pageH;
-    var dx=bleedPx+_flyerEditor.rx*sxP, dy=bleedPx+_flyerEditor.ry*syP;
+    var sxP=PW/_flyerEditor.pageW, syP=PH/_flyerEditor.pageH;
+    var dx=_flyerEditor.rx*sxP, dy=_flyerEditor.ry*syP;
     var dw=_flyerEditor.rw*sxP, dh=_flyerEditor.rh*syP;
     ctx.drawImage(_flyerEditor.img, dx, dy, dw, dh);
   }
   // Back: keep the address zone white at Stannp's actual clearzone position,
-  // measured on the live page so it lines up with the editor overlay — portrait
-  // top-left box, landscape right-side box. (Re-whitening an already-baked zone
-  // is harmless.)
+  // measured on the live print area so it lines up with the editor overlay —
+  // portrait top-left box, landscape right-side box. (Re-whitening an already-
+  // baked zone is harmless.)
   if(_flyerEditor.matType === 'flyer_back'){
     var _isLand = _flyerEditor.pageW > _flyerEditor.pageH;
     var _zfx, _zfy, _zfw, _zfh;
     if (_isLand) { _zfx=0.68; _zfy=0.30; _zfw=0.20; _zfh=0.11; }
     else { _zfx=0.14; _zfy=0.07; _zfw=0.22; _zfh=0.10; }
-    var _zx=bleedPx+Math.round(liveW*_zfx), _zy=bleedPx+Math.round(liveH*_zfy);
-    var _zw=Math.round(liveW*_zfw), _zh=Math.round(liveH*_zfh);
+    var _zx=Math.round(PW*_zfx), _zy=Math.round(PH*_zfy);
+    var _zw=Math.round(PW*_zfw), _zh=Math.round(PH*_zfh);
     ctx.fillStyle='#ffffff'; ctx.fillRect(_zx, _zy, _zw, _zh);
   }
-  // Out-paint the bleed ring by copying each page edge band outward (from a
-  // pristine snapshot so canvas->canvas draws never read their own output). Edge
-  // bands that are white stay white; full-colour edges continue seamlessly, so
-  // the cutter removes background only.
-  var snap=document.createElement('canvas'); snap.width=PW; snap.height=PH;
-  var sctx=snap.getContext('2d'); sctx.drawImage(outCanvas,0,0);
-  ctx.drawImage(snap, 0, bleedPx, PW, bleedPx, 0, 0, PW, bleedPx);              // top
-  ctx.drawImage(snap, 0, liveH, PW, bleedPx, 0, bleedPx+liveH, PW, bleedPx);    // bottom
-  ctx.drawImage(snap, bleedPx, 0, bleedPx, PH, 0, 0, bleedPx, PH);              // left
-  ctx.drawImage(snap, liveW, 0, bleedPx, PH, bleedPx+liveW, 0, bleedPx, PH);    // right
   // Encode as JPEG (quality 0.92) instead of PNG. The full-res canvas at
   // 1819x2551 produces a PNG that can exceed the hosting proxy's ~10MB request
   // limit, which made saves fail with "Error saving: try again". JPEG keeps the
