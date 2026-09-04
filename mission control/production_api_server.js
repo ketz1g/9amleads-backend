@@ -17586,11 +17586,14 @@ app.get('/api/boost', authMiddleware, (req, res) => {
   try {
     var c = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
     if (!c) return res.status(404).json({ error: 'User not found' });
+    var liveProducts = String(process.env.BOOST_PRODUCTS_LIVE || 'newbusiness').toLowerCase().split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+    var unavailable = {};
+    ['moving', 'probate', 'newbusiness'].forEach(function(p) { if (liveProducts.indexOf(p) === -1) unavailable[p] = 'Currently unavailable - we are filling the pool. New Business packs are available now.'; });
     var available = {};
     ['moving', 'probate', 'newbusiness'].forEach(function(p) { available[p] = { 'tm': getBoostArchiveLeads(p, 'tm', 0).length, '1m': getBoostArchiveLeads(p, '1m', 0).length, '2m': getBoostArchiveLeads(p, '2m', 0).length }; });
     var pack = null;
     try { pack = c.boost_pack ? JSON.parse(c.boost_pack) : null; } catch(e) {}
-    res.json({ success: true, product: c.product, available: available, sizes: BOOST_PACK_SIZES, mail_rates: BULK_MAIL_RATES, live: bulkPoolsLive(), pack: pack });
+    res.json({ success: true, product: c.product, available: available, live_products: liveProducts, unavailable: unavailable, sizes: BOOST_PACK_SIZES, mail_rates: BULK_MAIL_RATES, live: bulkPoolsLive(), pack: pack });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -17602,6 +17605,8 @@ app.post('/api/boost/checkout', authMiddleware, async (req, res) => {
     var count = parseInt(req.body && req.body.count, 10);
     var mailType = String((req.body && req.body.mail_type) || 'leaflet');
     if (['moving', 'probate', 'newbusiness'].indexOf(product) === -1) return res.status(400).json({ error: 'Choose Moving, Probate or New Business.' });
+    var liveAllowed = String(process.env.BOOST_PRODUCTS_LIVE || 'newbusiness').toLowerCase().split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+    if (liveAllowed.indexOf(product) === -1) return res.status(400).json({ error: product === 'newbusiness' ? 'New Business Boost is not available yet.' : 'Moving & Probate Boost packs are currently unavailable while we fill the pool. New Business packs are available now.' });
     if (!BOOST_PACK_SIZES[product] || BOOST_PACK_SIZES[product].indexOf(count) === -1) return res.status(400).json({ error: 'Choose a valid pack size for ' + product + '.' });
     if (!BULK_MAIL_RATES[mailType]) return res.status(400).json({ error: 'Choose what to post: leaflet, letter, or leaflet + letter.' });
     if (['tm', '1m', '2m'].indexOf(age) === -1) return res.status(400).json({ error: 'Choose This month (up to a month old), 1 month old or 2 months old.' });
