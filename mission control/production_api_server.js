@@ -17089,7 +17089,9 @@ app.get('/api/newbusiness/bulk', authMiddleware, (req, res) => {
     var c = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
     if (!c) return res.status(404).json({ error: 'User not found' });
     var plan = String(c.plan || '').toLowerCase();
-    var eligible = c.product === 'newbusiness' && (plan === 'pro' || plan === 'enterprise' || plan === 'pro-plan');
+    // Bulk/Exclusive Lead Archive packs available to EVERY New Business package
+    // (Starter, Pro, Enterprise) so any new-business customer can buy & print a pack.
+    var eligible = c.product === 'newbusiness' && c.plan !== 'cancelled';
     var pack = getCustomerBulkPack(c);
     var reserved = [];
     if (pack && pack.status !== 'sent') {
@@ -17136,7 +17138,7 @@ app.post('/api/newbusiness/bulk/checkout', authMiddleware, async (req, res) => {
     if (!c) return res.status(404).json({ error: 'User not found' });
     var plan = String(c.plan || '').toLowerCase();
     if (c.product !== 'newbusiness') return res.status(400).json({ error: 'Bulk packs are only available for New Business customers.' });
-    if (!(plan === 'pro' || plan === 'enterprise' || plan === 'pro-plan')) return res.status(400).json({ error: 'Bulk postage packs are a Pro feature. Upgrade to Pro to unlock exclusive lead packs.' });
+    if (c.plan === 'cancelled') return res.status(400).json({ error: 'Your account is cancelled.' });
     var pack = getCustomerBulkPack(c);
     if (pack && pack.status !== 'sent' && pack.status !== 'expired') return res.status(400).json({ error: 'You already have a pack waiting to be sent (' + pack.count + ' leads). Send it first, or it expires in 7 days.' });
     if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe not configured' });
