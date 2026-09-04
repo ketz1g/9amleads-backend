@@ -8,111 +8,114 @@
 <link rel="canonical" href="https://9amleads.com/bulk.html">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
-  :root{--sky:#0ea5e9;--ink:#0f172a;--txt2:#475569;--line:#e2e8f0;--bg:#f8fafc}
+  :root{--sky:#0ea5e9;--ink:#0a0f1e;--panel:#0f172a;--line:#1e293b;--text:#f1f5f9;--txt2:#94a3b8;--muted:#64748b}
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Outfit',system-ui,sans-serif;color:var(--ink);background:#fff;line-height:1.6}
+  body{font-family:'Outfit',system-ui,sans-serif;background:var(--ink);color:var(--text);line-height:1.6}
+  a{color:inherit}
   .wrap{max-width:1080px;margin:0 auto;padding:0 20px}
   nav{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:16px 20px;border-bottom:1px solid var(--line)}
-  .logo{font-size:19px;font-weight:800;letter-spacing:-.3px;text-decoration:none;color:var(--ink)} .logo span{color:var(--sky)}
+  .logo{font-size:19px;font-weight:800;letter-spacing:-.3px;text-decoration:none} .logo span{color:var(--sky)}
   .nav-links a{color:var(--txt2);text-decoration:none;font-size:13.5px;font-weight:600;margin-left:18px}
-  .btn{display:inline-block;background:var(--sky);color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 22px;border-radius:10px;border:0;cursor:pointer}
-  .btn.green{background:#16a34a}.btn.ghost{background:#fff;color:var(--sky);border:1.5px solid var(--sky)}
-  .btn.out{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
-  .hero{background:linear-gradient(135deg,#f0f9ff,#e0f2fe);padding:56px 0 44px;text-align:center}
-  .hero h1{font-size:clamp(26px,4.4vw,40px);line-height:1.15;letter-spacing:-.5px;margin-bottom:14px}
-  .hero p{max-width:680px;margin:0 auto 22px;color:var(--txt2);font-size:16px}
-  .pill{display:inline-block;background:#fff;border:1px solid #bae6fd;color:#0369a1;font-weight:700;font-size:12px;padding:5px 12px;border-radius:99px;margin-bottom:16px}
-  section{padding:44px 0}
-  h2{font-size:24px;letter-spacing:-.3px;margin-bottom:6px}
-  .sub{color:var(--txt2);max-width:640px;margin-bottom:22px}
+  .nav-links a:hover{color:#fff}
+  .btn{display:inline-block;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;text-decoration:none;font-weight:800;font-size:14px;padding:13px 24px;border-radius:10px;border:0;cursor:pointer}
+  .btn.green{background:linear-gradient(135deg,#16a34a,#15803d)}
+  .btn.ghost{background:transparent;color:var(--sky);border:1.5px solid var(--sky)}
+  .hero{background:radial-gradient(800px 380px at 20% -10%,rgba(14,165,233,.18),transparent),radial-gradient(700px 360px at 90% 0%,rgba(99,102,241,.16),transparent);padding:64px 0 48px;text-align:center}
+  .hero h1{font-size:clamp(27px,4.6vw,42px);line-height:1.12;letter-spacing:-.5px;margin-bottom:14px}
+  .hero h1 .g{background:linear-gradient(90deg,#38bdf8,#818cf8);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .hero p{max-width:660px;margin:0 auto 24px;color:var(--txt2);font-size:16px}
+  .pill{display:inline-block;background:rgba(14,165,233,.12);border:1px solid rgba(14,165,233,.45);color:#7dd3fc;font-weight:700;font-size:12px;padding:6px 14px;border-radius:99px;margin-bottom:18px}
+  section{padding:48px 0}
+  h2{font-size:clamp(22px,3.4vw,30px);letter-spacing:-.3px;margin-bottom:8px}
+  .sub{color:var(--txt2);max-width:660px;margin-bottom:24px}
   .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
-  .card{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:20px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}
   .card h3{font-size:16px;margin-bottom:6px}
   .card p{color:var(--txt2);font-size:13.5px}
   .ico{font-size:26px;margin-bottom:8px}
+  #moving,#probate,#newbusiness{scroll-margin-top:20px}
   .packs{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
-  .pack{border:1px solid var(--line);border-radius:14px;padding:18px;text-align:center;background:#fff}
-  .pack.feat{border:2px solid var(--sky);box-shadow:0 6px 18px rgba(14,165,233,.12)}
-  .pack .n{font-size:26px;font-weight:800}
-  .pack .l{color:var(--txt2);font-size:12.5px;margin:2px 0 10px}
-  .pack .p{font-weight:800;font-size:17px}
-  .pack .per{font-size:11.5px;color:var(--txt2);margin-bottom:12px}
-  .pack a.btn{font-size:13px;padding:9px 14px;width:100%;text-align:center}
+  .pack{border:1px solid var(--line);border-radius:14px;padding:20px;text-align:center;background:var(--panel)}
+  .pack.feat{border:2px solid var(--sky);box-shadow:0 6px 24px rgba(14,165,233,.16)}
+  .pack .n{font-size:28px;font-weight:800}
+  .pack .l{color:var(--txt2);font-size:12.5px;margin:2px 0 12px}
+  .pack .p{font-weight:800;font-size:18px}
+  .pack .per{font-size:11.5px;color:var(--muted);margin-bottom:14px}
+  .pack a.btn{font-size:13px;padding:10px 14px;width:100%;text-align:center;display:inline-block}
   .rates{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:14px}
-  .rate{border:1px solid var(--line);border-radius:99px;padding:8px 16px;font-size:13px;background:#fff}
-  .rate b{color:#0369a1}
+  .rate{border:1px solid var(--line);border-radius:99px;padding:8px 16px;font-size:13px;background:var(--panel);color:var(--txt2)}
+  .rate b{color:#7dd3fc}
   .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
-  .step{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px}
-  .step .num{width:28px;height:28px;border-radius:50%;background:var(--sky);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:14px;margin-bottom:10px}
-  .cta{background:var(--ink);color:#fff;text-align:center;padding:52px 0}
-  .cta h2{color:#fff}
-  .cta p{color:#cbd5e1;max-width:560px;margin:0 auto 20px}
-  footer{padding:26px 0;color:var(--txt2);font-size:13px;text-align:center}
-  .note{font-size:12.5px;color:var(--txt2)}
-  .warn{background:#fef3c7;border:1px solid #fde68a;color:#92400e;border-radius:10px;padding:12px 16px;font-size:13px;margin-top:18px}
+  .step{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .step .num{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:14px;margin-bottom:10px}
+  .cta{background:linear-gradient(180deg,transparent,rgba(14,165,233,.08));border-top:1px solid var(--line);text-align:center;padding:54px 0}
+  .cta p{color:var(--txt2);max-width:560px;margin:0 auto 22px}
+  footer{padding:26px 0;color:var(--muted);font-size:13px;text-align:center;border-top:1px solid var(--line)}
+  .note{font-size:12.5px;color:var(--muted)}
+  .warn{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.35);color:#fcd34d;border-radius:10px;padding:12px 16px;font-size:13px;margin-top:20px}
 </style>
 </head>
 <body>
 <nav>
   <a class="logo" href="/">9am<span>Leads</span></a>
   <div class="nav-links">
-    <a href="/#moving">Moving Leads</a>
-    <a href="/#probate">Probate Leads</a>
-    <a href="/#new-business">New Business</a>
-    <a href="/bulk.html" style="color:var(--sky)">Bulk Lead Packs</a>
+    <a href="/">Home</a>
+    <a href="/who-we-serve/">Lead Types</a>
     <a href="/pricing/">Pricing</a>
+    <a href="/bulk.html" style="color:var(--sky);font-weight:700">Bulk Lead Packs</a>
+    <a href="/portal/#signup" style="background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;padding:7px 14px;border-radius:8px;font-weight:700">Start Free Trial</a>
   </div>
 </nav>
 
 <div class="hero">
   <div class="wrap">
     <span class="pill">🚀 Bulk lead packs, printed &amp; posted for you</span>
-    <h1>Fill your pipeline fast.<br>Send to 100&ndash;1000 leads in one go.</h1>
+    <h1>Fill your pipeline fast.<br>Send to <span class="g">100&ndash;1000 leads in one go</span>.</h1>
     <p>Buy an exclusive pack of moving, probate or new business leads, review them, and we print and post your leaflet or letter to every single door. You just run the follow-ups that win the work.</p>
-    <a class="btn" href="/portal/#signup">Start free &middot; get daily leads</a> &nbsp;
+    <a class="btn" href="/portal/#signup">Start free, get daily leads</a> &nbsp;
     <a class="btn ghost" href="/pricing/">See pricing</a>
   </div>
 </div>
 
 <section>
   <div class="wrap">
-    <h2>Bulk packs for the businesses that hunt in volume</h2>
-    <p class="sub">One pack, every lead printed &amp; posted, the cheapest marketing you&rsquo;ll run, with none of the printing or postage admin.</p>
+    <h2 id="moving">Bulk packs for the businesses that hunt in volume</h2>
+    <p class="sub">One pack, every lead printed &amp; posted. The cheapest marketing you'll run, with none of the printing or postage admin.</p>
     <div class="grid">
-      <div class="card"><div class="ico">🏠</div><h3>Moving / Estate Agents</h3><p>New homeowners moving near you. Post a &ldquo;welcome to the area&rdquo; leaflet, they need an agent&rsquo;s advice the day they move in, not in six weeks.</p></div>
-      <div class="card"><div class="ico">⚖️</div><h3>Probate Practitioners</h3><p>Recent probate grants in your county. A compassionate, timely letter to executors when they&rsquo;re ready to sell, before any competitor has made contact.</p></div>
-      <div class="card"><div class="ico">🏢</div><h3>New Business / B2B</h3><p>Newly incorporated companies near you. Freshly registered, reachable and needing your services, accountants, accountants, solicitors, IT and more.</p></div>
+      <div class="card" id="probate"><div class="ico">🏠</div><h3>Moving / Estate Agents</h3><p>New homeowners moving near you. Post a "welcome to the area" leaflet; they need an agent's advice the day they move in, not in six weeks.</p></div>
+      <div class="card"><div class="ico">⚖️</div><h3>Probate Practitioners</h3><p>Recent probate grants in your county. A compassionate, timely letter to executors when they're ready to sell, before any competitor has made contact.</p></div>
+      <div class="card" id="newbusiness"><div class="ico">🏢</div><h3>New Business / B2B</h3><p>Newly incorporated companies near you. Freshly registered, reachable and needing your services; accountants, solicitors, IT and more.</p></div>
     </div>
-    <p class="note" style="margin-top:14px">Boost packs (moving &amp; probate) are shared archive leads that have <b>never been sent to any customer</b>, so be first to respond. New Business bulk packs are <b>exclusive</b>: only you ever receive them.</p>
+    <p class="note" style="margin-top:14px">Boost packs (moving &amp; probate) are shared archive leads that have <b style="color:#e2e8f0">never been sent to any customer</b>, so be first to respond. New Business bulk packs are <b style="color:#e2e8f0">exclusive</b>: only you ever receive them.</p>
   </div>
 </section>
 
-<section style="background:var(--bg)">
+<section style="background:rgba(15,23,42,.6);border-top:1px solid var(--line)">
   <div class="wrap">
     <h2>Pricing, one payment, everything posted</h2>
-    <p class="sub">Pick a pack, we print and post your materials to every lead. From <b>&pound;1.99 per lead</b>.</p>
+    <p class="sub">Pick a pack and we print and post your materials to every lead. From <b style="color:#fff">&pound;1.99 per lead</b>.</p>
     <div class="rates">
-      <span class="rate">📄 A4 Letter &middot; <b>&pound;1.99 / lead</b></span>
-      <span class="rate">📃 A5 Leaflet &middot; <b>&pound;2.49 / lead</b></span>
-      <span class="rate">📄+📃 Leaflet + Letter &middot; <b>&pound;3.99 / lead</b></span>
+      <span class="rate">📄 A4 Letter, <b>&pound;1.99 / lead</b></span>
+      <span class="rate">📃 A5 Leaflet, <b>&pound;2.49 / lead</b></span>
+      <span class="rate">📄+📃 Leaflet + Letter, <b>&pound;3.99 / lead</b></span>
     </div>
-    <div style="height:18px"></div>
+    <div style="height:20px"></div>
     <div class="packs">
-      <div class="pack"><div class="n">50</div><div class="l">moving or probate leads<br>printed &amp; posted</div><div class="p">&pound;99.50</div><div class="per">boost pack &middot; leaflet rate</div><a class="btn" href="/portal/boost.html">Order 50</a></div>
-      <div class="pack feat"><div class="n">100</div><div class="l">exclusive new business leads<br>printed &amp; posted</div><div class="p">&pound;249</div><div class="per">one-time &middot; &pound;2.49 / lead</div><a class="btn" href="/portal/bulk.html">Buy 100 leads</a></div>
-      <div class="pack"><div class="n">250</div><div class="l">exclusive new business leads<br>printed &amp; posted</div><div class="p">&pound;622.50</div><div class="per">one-time &middot; &pound;2.49 / lead</div><a class="btn" href="/portal/bulk.html">Buy 250 leads</a></div>
-      <div class="pack"><div class="n">500</div><div class="l">exclusive new business leads<br>printed &amp; posted</div><div class="p">&pound;1,245</div><div class="per">one-time &middot; &pound;2.49 / lead</div><a class="btn" href="/portal/bulk.html">Buy 500 leads</a></div>
+      <div class="pack"><div class="n">50</div><div class="l">moving or probate leads,<br>printed &amp; posted</div><div class="p">&pound;99.50</div><div class="per">boost pack, leaflet rate</div><a class="btn" href="/portal/boost.html">Order 50</a></div>
+      <div class="pack feat"><div class="n">100</div><div class="l">exclusive new business leads,<br>printed &amp; posted</div><div class="p">&pound;249</div><div class="per">one-time, &pound;2.49 / lead</div><a class="btn" href="/portal/bulk.html">Buy 100 leads</a></div>
+      <div class="pack"><div class="n">250</div><div class="l">exclusive new business leads,<br>printed &amp; posted</div><div class="p">&pound;622.50</div><div class="per">one-time, &pound;2.49 / lead</div><a class="btn" href="/portal/bulk.html">Buy 250 leads</a></div>
+      <div class="pack"><div class="n">500</div><div class="l">exclusive new business leads,<br>printed &amp; posted</div><div class="p">&pound;1,245</div><div class="per">one-time, &pound;2.49 / lead</div><a class="btn" href="/portal/bulk.html">Buy 500 leads</a></div>
     </div>
-    <div class="warn">Bulk packs are a <b>Pro &amp; Enterprise</b> feature. Not on Pro yet? You&rsquo;ll see them in your dashboard once you upgrade, and existing <b>free trial &amp; Starter</b> customers can upgrade any time.</div>
+    <div class="warn">Bulk packs are a <b>Pro &amp; Enterprise</b> feature. Existing free trial and Starter customers can upgrade any time from their dashboard.</div>
   </div>
 </section>
 
 <section>
   <div class="wrap">
     <h2>How it works</h2>
-    <p class="sub">From purchase to doorstep in three steps, no printer, no stamps.</p>
+    <p class="sub">From purchase to doorstep in three steps. No printer, no stamps.</p>
     <div class="steps">
-      <div class="step"><div class="num">1</div><h3>Buy a pack</h3><p class="note">Choose 50&ndash;1000 moving, probate or new business leads. Load your leaflet front/back or letter in <b>Print &amp; Post</b>.</p></div>
+      <div class="step"><div class="num">1</div><h3>Buy a pack</h3><p class="note">Choose 50&ndash;1000 moving, probate or new business leads. Load your leaflet front/back or letter in Print &amp; Post.</p></div>
       <div class="step"><div class="num">2</div><h3>We print &amp; post</h3><p class="note">Your full-colour materials are printed, addressed and posted to every single lead, proof of posting included.</p></div>
       <div class="step"><div class="num">3</div><h3>You win the work</h3><p class="note">The door-to-door follow-up, call or visit on top of your posted pack is what turns a mailbox leaflet into a signed job.</p></div>
     </div>
@@ -129,7 +132,7 @@
 </div>
 
 <footer>
-  <div class="wrap">&copy; 9amLeads, exclusive daily leads + print &amp; post marketing for estate agents, probate practitioners &amp; B2B.</div>
+  <div class="wrap">&copy; 9amLeads. Exclusive daily leads and print &amp; post marketing for estate agents, probate practitioners and B2B.</div>
 </footer>
 </body>
 </html>
