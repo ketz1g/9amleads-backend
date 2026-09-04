@@ -55,7 +55,7 @@ html{scroll-behavior:smooth}
 body{font-family:var(--ff-b);color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;overflow-x:hidden;line-height:1.6}
 
 .container{max-width:1140px;margin:0 auto;padding:0 24px;position:relative;z-index:2}
-.section{padding: 52px 0;position:relative;z-index:2}
+.section{padding: 40px 0;position:relative;z-index:2}
 .section-title{font-size:40px;line-height:46px;font-weight:800;text-align:center;font-family:var(--ff-h);margin-bottom:60px;letter-spacing:-1px}
 .section-title span{color:var(--accent)}
 .section-sub{text-align:center;color:var(--text2);font-size:17px;margin-top:0;margin-bottom:60px;max-width:600px;margin-left:auto;margin-right:auto}
@@ -122,7 +122,7 @@ nav a,nav button,nav i,nav span{color:#fff!important}
 .photo-card .pc-arrow{position:absolute;top:14px;right:14px;z-index:2;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;background:var(--accent);color:#000;opacity:.9;transition:.35s}
 .photo-card:hover .pc-arrow{transform:translateX(4px)}
 /* Hero */
-.hero{min-height: 77vh;display:flex;align-items:center;position:relative;background:linear-gradient(180deg,rgba(0,0,0,0.4),rgba(0,0,0,0.92)),url('https://images.unsplash.com/photo-1487017159836-4e23ece2e4cf?w=1600&q=80');background-size:cover;background-position:center}
+.hero{min-height: auto;display:flex;align-items:center;position:relative;background:linear-gradient(180deg,rgba(0,0,0,0.4),rgba(0,0,0,0.92)),url('https://images.unsplash.com/photo-1487017159836-4e23ece2e4cf?w=1600&q=80');background-size:cover;background-position:center}
 .hero::after{content:'';position:absolute;bottom:0;left:0;right:0;height:200px;background:linear-gradient(transparent,var(--bg))}
 .hero-content{position:relative;z-index:2;max-width:800px;margin:0 auto;padding:160px 24px 80px;text-align:center}
 .hero-badge{display:inline-block;border:1px solid rgba(14,165,233,0.3);background:rgba(14,165,233,0.08);border-radius:24px;padding:8px 18px;color:#0ea5e9;font-size:12px;font-weight:700;margin-bottom:24px;letter-spacing:.3px}
@@ -1623,7 +1623,7 @@ document.addEventListener('DOMContentLoaded', function(){
 <a href="/portal/#signup" onclick="trackEvent('trial_cta_clicked',{placement:'sticky'})" style="display:inline-block;width:100%;max-width:420px;padding:13px 20px;border-radius:50px;background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;font-size:15px;font-weight:800;text-decoration:none;font-family:'Outfit',sans-serif"><i class="fas fa-gift"></i> Start Free · 1 Week of Leads</a>
 <div style="font-size:10px;color:#6b7280;margin-top:5px;font-weight:600">No card required &bull; Thousands of pounds of potential work &bull; Cancel anytime</div>
 </div>
-<style>@media(max-width:768px){.msticky{display:block!important}.hero{padding-bottom:80px!important}}</style>
+<style>@media(max-width:768px){.msticky{display:block!important}.hero{padding-bottom:34px!important}}</style>
 </body></html>
 
 
