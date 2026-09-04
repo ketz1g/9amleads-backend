@@ -1546,16 +1546,10 @@ function saveFlyerEditor(){
   var btn=document.getElementById('flyer-editor-save');
   var status=document.getElementById('flyer-editor-status');
   btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Preparing full-quality print...'; status.textContent='';
-  // Orientation-aware output: this canvas is the TRUE A5 print area (the "live"
-  // region that actually prints), A5-PORT = 1748x2480, A5 landscape = 2480x1748
-  // @300 DPI. The editor page maps onto it 1:1, so content flush with the page
-  // stays flush with the printed edge — nothing is pushed into bleed and cropped.
-  // The bleed ring is NOT stored here (it would show as a ghost duplicate in
-  // previews); the send pipeline adds the 3mm bleed template ring at upload time.
+  // Orientation-aware output: A5-PORT = 1819x2551, A5 landscape = 2551x1819.
   var isLand = _flyerEditor.pageW > _flyerEditor.pageH;
-  var pmm = (isLand ? 2551 : 1819) / ((isLand ? 210 : 148) + 6); // px per mm @300dpi (~11.81)
-  var PW = Math.round((isLand ? 210 : 148) * pmm);
-  var PH = Math.round((isLand ? 148 : 210) * pmm);
+  var PW = isLand ? 2551 : 1819, PH = isLand ? 1819 : 2551;
+  var zonePct=0.28, zoneH=Math.round(PH*zonePct);
   var outCanvas=document.createElement('canvas');
   outCanvas.width=PW; outCanvas.height=PH;
   var ctx=outCanvas.getContext('2d');
@@ -1567,17 +1561,19 @@ function saveFlyerEditor(){
     var dw=_flyerEditor.rw*sxP, dh=_flyerEditor.rh*syP;
     ctx.drawImage(_flyerEditor.img, dx, dy, dw, dh);
   }
-  // Back: keep the address zone white at Stannp's actual clearzone position,
-  // measured on the live print area so it lines up with the editor overlay —
-  // portrait top-left box, landscape right-side box. (Re-whitening an already-
-  // baked zone is harmless.)
+  // Back: ensure the address zone is white — at Stannp's actual clearzone position:
+  // portrait top-left box, landscape right-side box. (If the design already has the
+  // zone baked, re-whitening the same area is harmless.)
   if(_flyerEditor.matType === 'flyer_back'){
     var _isLand = _flyerEditor.pageW > _flyerEditor.pageH;
-    var _zfx, _zfy, _zfw, _zfh;
-    if (_isLand) { _zfx=0.68; _zfy=0.30; _zfw=0.20; _zfh=0.11; }
-    else { _zfx=0.14; _zfy=0.07; _zfw=0.22; _zfh=0.10; }
-    var _zx=Math.round(PW*_zfx), _zy=Math.round(PH*_zfy);
-    var _zw=Math.round(PW*_zfw), _zh=Math.round(PH*_zfh);
+    var _zx, _zy, _zw, _zh;
+    if (_isLand) {
+      _zx = Math.round(PW * 0.68); _zy = Math.round(PH * 0.30);
+      _zw = Math.round(PW * 0.88) - _zx; _zh = Math.round(PH * 0.41) - _zy;
+    } else {
+      _zx = Math.round(PW * 0.14); _zy = Math.round(PH * 0.07);
+      _zw = Math.round(PW * 0.36) - _zx; _zh = Math.round(PH * 0.17) - _zy;
+    }
     ctx.fillStyle='#ffffff'; ctx.fillRect(_zx, _zy, _zw, _zh);
   }
   // Encode as JPEG (quality 0.92) instead of PNG. The full-res canvas at
