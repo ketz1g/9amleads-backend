@@ -85,7 +85,7 @@ footer a{color:var(--accent);text-decoration:underline}
 </div>
 <div class="container">
 <div class="page-header">
-<div><h1><i class="fas fa-list" style="color:var(--accent);margin-right:6px"></i> My Leads</h1><div class="sub">Your delivered leads for each day — open any day with the calendar below.</div></div>
+<div><h1><i class="fas fa-list" style="color:var(--accent);margin-right:6px"></i> My Leads</h1><div class="sub">Your delivered leads for each day, open any day with the calendar below.</div></div>
 <div style="display:flex;gap:8px">
 <a href="/portal/dashboard.html" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Dashboard</a>
 <button class="btn btn-primary" onclick="exportLeads()"><i class="fas fa-download"></i> Export</button>
@@ -98,7 +98,7 @@ footer a{color:var(--accent);text-decoration:underline}
 
 <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:linear-gradient(135deg,#f0fdf4,#e0f2fe);border:1px solid #bbf7d0;border-radius:10px;padding:11px 14px;margin:0 0 14px;font-size:12.5px;color:var(--text);line-height:1.5">
 <span style="font-size:20px">📦</span>
-<div style="flex:1;min-width:200px"><b>Bulk Lead Packs</b> &mdash; want volume fast? Buy 50&ndash;1000 exclusive never-sent leads, review them, and we <b>print &amp; post your leaflet/letter</b> to every single one. From <b>&pound;1.99 per lead</b> &middot; Pro &amp; Enterprise.</div>
+<div style="flex:1;min-width:200px"><b>Bulk Lead Packs</b>, want volume fast? Buy 50&ndash;1000 exclusive never-sent leads, review them, and we <b>print &amp; post your leaflet/letter</b> to every single one. From <b>&pound;1.99 per lead</b> &middot; Pro &amp; Enterprise.</div>
 <a href="/portal/bulk.html" class="btn btn-primary" style="color:#fff;text-decoration:none;padding:8px 14px;font-size:12.5px;white-space:nowrap">Buy a pack</a>
 <a href="https://9amleads.com/bulk.html" target="_blank" rel="noopener" style="font-size:12px;font-weight:700;color:#0ea5e9;text-decoration:none;white-space:nowrap">How it works &rarr;</a>
 </div>
@@ -140,7 +140,7 @@ footer a{color:var(--accent);text-decoration:underline}
 <div>🤖 <b>Auto Print &amp; Post:</b> set it up once and we automatically post your chosen flyer/letter to every new matching lead. <a href="/portal/auto.html" style="color:#0369a1;font-weight:700">Set up →</a></div>
 <div>📈 <b>Track outcomes:</b> mark each lead <b>Contacted / Quoted / Won</b> so you can see what converts.</div>
 <div>🔗 <b>Verify sources:</b> click the source link on any lead to see exactly where it came from.</div>
-<div>⏰ <b>Be early:</b> opportunities are prioritised from the last 24 hours — contact early for the best response.</div>
+<div>⏰ <b>Be early:</b> opportunities are prioritised from the last 24 hours, contact early for the best response.</div>
 <div>📤 <b>Export or CRM:</b> download to CSV or connect a webhook from your <a href="/portal/dashboard.html" style="color:#0369a1;font-weight:700">dashboard</a>.</div>
 <div>🔄 <b>Re-engage old leads:</b> leads you posted to <b>2+ weeks ago</b> often respond to a follow-up letter. Find a posted lead and click <b>Post Again</b>.</div>
 </div>
@@ -179,7 +179,7 @@ function showHelp(el, text){
 </div>
 <div id="leads-container"></div>
 <div id="engage-nudge" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 16px;margin-bottom:14px;font-size:12px;color:#166534;line-height:1.6;display:none">
-<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><div style="flex:1;min-width:200px"><strong style="color:#14532d">👋 Track your progress</strong> — mark each opportunity as <b>Contacted</b>, <b>Quoted</b> or <b>Won</b> using the buttons on each lead, so you can see what's converting.</div><button onclick="dismissEngageNudge()" style="flex-shrink:0;padding:7px 16px;border-radius:8px;background:#16a34a;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Got it</button></div>
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><div style="flex:1;min-width:200px"><strong style="color:#14532d">👋 Track your progress</strong>, mark each opportunity as <b>Contacted</b>, <b>Quoted</b> or <b>Won</b> using the buttons on each lead, so you can see what's converting.</div><button onclick="dismissEngageNudge()" style="flex-shrink:0;padding:7px 16px;border-radius:8px;background:#16a34a;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Got it</button></div>
 </div>
 <div class="empty" id="no-leads" style="display:none"><div style="font-size:44px;margin-bottom:8px">🎉</div><h3 style="font-size:17px;font-weight:700;margin-bottom:6px">You're All Set</h3><p style="font-size:13px;line-height:1.6;max-width:420px;margin:0 auto 12px">Your 9amLeads trial is active. We're preparing fresh opportunities matching your selected lead type and areas.</p><div style="font-size:14px;font-weight:700;color:var(--accent);margin-bottom:14px">Your first delivery is scheduled for <span id="no-leads-time">9am tomorrow</span>.</div><div id="no-leads-details" style="display:inline-block;text-align:left;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 18px;font-size:12px;color:var(--text2);line-height:1.9;margin-bottom:16px"></div><div><a href="/portal/dashboard.html" class="btn btn-primary" style="text-decoration:none"><i class="fas fa-th-large"></i> Explore Your Dashboard</a></div></div>
 </div>
@@ -387,7 +387,7 @@ function renderLeadList(dayLeads, noGroup) {
       // moving / default
       var addr = d.address || d.title || 'Property';
       var town = (d.town || d.city || '').replace(/\s+area$/i, '').trim();
-      // Never append a bare postcode-AREA code (e.g. "CM", "E") as a town name —
+      // Never append a bare postcode-AREA code (e.g. "CM", "E") as a town name,
       // the scraper can leave a stray area code in city/town, which would corrupt
       // the displayed address (e.g. "Bow, London, CM, E3 4JB").
       if (/^[A-Z]{1,2}$/i.test(town)) town = '';
@@ -824,7 +824,7 @@ function mpPay(){
   // BULK ROUTE: when in bulk mode (one OR more leads selected via the bulk bar /
   // ticked checkboxes, OR a single lead opened via the Print & Post button which
   // sets _pendingLeadIds=[id]), always use the bulk endpoint. Previously this only
-  // routed when _bulkCount > 1 — a SINGLE bulk-selected lead fell through to the
+  // routed when _bulkCount > 1, a SINGLE bulk-selected lead fell through to the
   // single-lead endpoint with an empty _pendingLeadId and returned "Lead not found".
   if (_pendingLeadIds && _pendingLeadIds.length > 0) { bulkPay(); return; }
   if (!_pendingLeadId) {

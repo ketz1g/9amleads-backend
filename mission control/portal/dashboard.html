@@ -172,7 +172,7 @@ footer a{color:var(--accent);text-decoration:underline}
 <div style="font-size:22px;font-weight:900;font-family:var(--ff-h);color:#0c4a6e"><span id="trial-day">Day 1 of 7</span> <span style="font-size:13px;font-weight:600;color:#0369a1">· <span id="trial-days-left">7 days remaining</span></span></div>
 <div style="font-size:12px;color:#0369a1;margin-top:6px;line-height:1.7">
 <div><strong>Lead type:</strong> <span id="trial-leadtype">Loading...</span></div>
-<div><strong>Areas:</strong> <span id="trial-areas">—</span></div>
+<div><strong>Areas:</strong> <span id="trial-areas">,</span></div>
 <div><strong>Next delivery:</strong> <span id="trial-next-delivery">9am tomorrow</span></div>
 </div>
 </div>
@@ -237,7 +237,7 @@ document.addEventListener('DOMContentLoaded', function(){
 </div>
 <div class="stat-line">
 <div><strong id="plan-leads">5</strong> leads/day</div>
-<div><strong id="plan-areas">&mdash;</strong></div>
+<div><strong id="plan-areas">,</strong></div>
 <div id="trial-timer-wrap" style="display:none"><div style="font-size:12px;color:var(--muted);font-weight:600;margin-bottom:4px"><i class="fas fa-hourglass-half" style="margin-right:4px"></i> Free Trial Ends In</div><div id="trial-timer" style="font-size:22px;font-weight:800;color:#d97706;font-family:var(--ff-h);letter-spacing:1px">--:--:--</div><div style="font-size:10px;color:var(--muted);margin-top:2px">days : hours : minutes : seconds</div></div>
 <div id="trial-expired-banner" style="display:none;background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:12px 14px;margin-top:10px;text-align:center">
   <div style="font-size:13px;font-weight:800;color:#b91c1c"><i class="fas fa-exclamation-triangle" style="margin-right:4px"></i> Your free trial has ended</div>
@@ -521,15 +521,15 @@ document.addEventListener('DOMContentLoaded', function(){
   <div class="modal" id="bulk-gate-modal">
     <div class="modal-content" style="text-align:left">
       <button onclick="closeModal('bulk-gate-modal')" style="position:absolute;right:16px;top:10px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted)">&times;</button>
-      <h3 style="margin-top:6px;text-align:center">📦 Bulk Send &mdash; Pro &amp; Enterprise</h3>
-      <p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:12px">Buy an exclusive lead pack and we <b>print &amp; post your leaflet or letter to every lead</b> &mdash; your marketing, hands-free, on autopilot.</p>
+      <h3 style="margin-top:6px;text-align:center">📦 Bulk Send, Pro &amp; Enterprise</h3>
+      <p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:12px">Buy an exclusive lead pack and we <b>print &amp; post your leaflet or letter to every lead</b>, your marketing, hands-free, on autopilot.</p>
       <div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:12px">
         <div style="font-size:13px;font-weight:700;margin-bottom:6px">What you unlock on Pro:</div>
         <div style="font-size:12.5px;color:var(--text2);line-height:1.9">
-          &bull; <b>100&ndash;1000 lead packs</b> in one go &mdash; moving, probate or new business<br>
-          &bull; We <b>print, address &amp; post</b> to every single lead &mdash; proof of posting included<br>
+          &bull; <b>100&ndash;1000 lead packs</b> in one go, moving, probate or new business<br>
+          &bull; We <b>print, address &amp; post</b> to every single lead, proof of posting included<br>
           &bull; Full addresses revealed, review leads before you send<br>
-          &bull; From <b>&pound;1.99 per lead</b> &mdash; cheaper than a stamp on its own
+          &bull; From <b>&pound;1.99 per lead</b>, cheaper than a stamp on its own
         </div>
       </div>
       <p style="font-size:12.5px;color:var(--text2);line-height:1.5;margin-bottom:14px">Bulk packs are exclusive to <b>Pro &amp; Enterprise</b>. Upgrade to unlock Bulk Send from your dashboard.</p>
@@ -638,7 +638,7 @@ document.addEventListener('DOMContentLoaded', function(){
 <div id="tab-referrals" style="display:none">
 <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:16px 18px;margin-bottom:14px">
 <div style="font-size:14px;font-weight:800;color:var(--text);font-family:var(--ff-h);margin-bottom:4px">🤝 Refer a business, earn £25</div>
-<p style="font-size:12px;color:var(--text2);margin-bottom:12px">Recommend 9amLeads to another business and get paid when they sign up and pay. Your affiliate code is unique to you — share it and track everything from your affiliate dashboard.</p>
+<p style="font-size:12px;color:var(--text2);margin-bottom:12px">Recommend 9amLeads to another business and get paid when they sign up and pay. Your affiliate code is unique to you, share it and track everything from your affiliate dashboard.</p>
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;font-size:11.5px;color:var(--text2)">
 <div style="background:#fff;border:1px solid #bbf7d0;border-radius:10px;padding:10px 12px"><b style="color:#059669">1 · Share your name or code</b><br>Give a friend your affiliate name or code. It works for every lead type.</div>
 <div style="background:#fff;border:1px solid #bbf7d0;border-radius:10px;padding:10px 12px"><b style="color:#059669">2 · They get 14 days free</b><br>Anyone who signs up with your name or code gets a 14-day free trial.</div>
@@ -1083,7 +1083,7 @@ function renderTrialStatus(data) {
   var areasEl = document.getElementById('trial-areas');
   if (data.target_areas && Array.isArray(data.target_areas) && data.target_areas.length) areasEl.textContent = data.target_areas.join(' • ');
   else if (data.target_areas && typeof data.target_areas === 'string') { try { var a = JSON.parse(data.target_areas); areasEl.textContent = Array.isArray(a) ? a.join(' • ') : data.target_areas; } catch(e) { areasEl.textContent = data.target_areas; } }
-  else areasEl.textContent = '—';
+  else areasEl.textContent = ',';
   var d = new Date();
   var today = d.getDay();
   if (today === 6) document.getElementById('trial-next-delivery').textContent = 'Monday at 9am';
@@ -1790,9 +1790,9 @@ var _tipIdx = 0;
 var _tipsTimer = null;
 var _areaTipShown = false;
 var QUICK_TIPS = [
-  '🖨️ Use Print &amp; Post to send a professionally printed letter or flyer to every lead — physical mail gets opened and remembered.',
+  '🖨️ Use Print &amp; Post to send a professionally printed letter or flyer to every lead, physical mail gets opened and remembered.',
   '📦 Turn on Auto-Send and we mail every new lead for you automatically after the 9am delivery.',
-  '✉️ Send a second letter a couple of weeks later — most jobs are won on the second or third contact.',
+  '✉️ Send a second letter a couple of weeks later, most jobs are won on the second or third contact.',
   '💳 Upgrade your plan for more leads per day and a better per-lead price.',
   '📍 If an area goes quiet, add a nearby postcode or county for a fuller daily mix.'
 ];
@@ -1810,7 +1810,7 @@ function startQuickTips() {
     if (pg) pg.textContent = 'Tip ' + (_tipIdx + 1) + ' of ' + QUICK_TIPS.length;
   }, 8000);
 }
-// Keep every tip box rotating — the "areas quieter than usual" notice is treated as
+// Keep every tip box rotating, the "areas quieter than usual" notice is treated as
 // just another rotating tip (shown first) instead of a permanent static banner.
 function rotateTipsWithAreaHealth(text) {
   if (!text) return;
@@ -1852,7 +1852,7 @@ function loadActivity() {
       var lpd = parseInt((typeof _myUser !== 'undefined' && _myUser.leads_per_day) || (typeof window.__userLpd !== 'undefined' && window.__userLpd) || 5, 10);
       var weekDelivered = leadsList.filter(function(l){ return l.delivered_at && l.delivered_at >= weekStart; }).length;
       var expected = lpd * 7;
-      // Rotating-tip treatment: no permanent banner — the "areas quieter" notice is a
+      // Rotating-tip treatment: no permanent banner, the "areas quieter" notice is a
       // normal rotating tip (shown first) so the top of the page always rotates.
       if (expected > 0 && weekDelivered < Math.round(expected * 0.8)) {
         if (!_areaTipShown) {
@@ -1944,7 +1944,7 @@ document.querySelectorAll('.modal').forEach(function(m){
     try {
       var leads = JSON.parse(x.responseText);
       if (!Array.isArray(leads)) return;
-      // KPIs must count DELIVERED, non-rejected leads (matching My Leads) — NOT all
+      // KPIs must count DELIVERED, non-rejected leads (matching My Leads), NOT all
       // created records. Previously this counted every lead ever created (inflating
       // "This Week" to the total) and counted rejected/pending leads in "Today".
       function isLiveLead(l){
@@ -2003,7 +2003,7 @@ document.querySelectorAll('.modal').forEach(function(m){
       _myProduct = data.product || ((data.products && data.products[0]) || 'moving');
       _myCoverage = data.coverage || 'postcode';
       // BULK SEND: the header button + "Your Tools" card are ALWAYS visible on every
-      // active dashboard (all packages). Access is gated in maybeGateBulkRoute() —
+      // active dashboard (all packages). Access is gated in maybeGateBulkRoute(),
       // Pro/Enterprise go to the tool page for their product, free trial + starter
       // get the upgrade modal.
       try { _myPlan = String(data.plan || '').toLowerCase(); } catch(e) {}
@@ -2143,7 +2143,7 @@ document.querySelectorAll('.modal').forEach(function(m){
 
 
 <script>
-var tips=[{icon:"🔥",title:"You're on fire! Keep going.",text:"Every lead you contact today is a potential new client. Your 9am leads are waiting. Review your opportunities and take action."},{icon:"💡",title:"Pro Tip: Follow up fast.",text:"Most conversions happen after the third contact. A structured follow-up over 7-10 days dramatically increases your success rate."},{icon:"🎯",title:"Quality over quantity.",text:"A well-researched, personalised approach beats mass outreach every time. Take 5 minutes to review each lead before contacting."},{icon:"📈",title:"Track your progress.",text:"Use the leads page to track your conversions. Measuring your success rate helps you improve over time."},{icon:"⏰",title:"Early bird advantage.",text:"Leads arrive at 9am. Contacting within the first hour gives you a significant advantage over competitors."},{icon:"🤝",title:"Build relationships.",text:"Treat every lead as the start of a long-term relationship. Today's lead could be tomorrow's referral."},{icon:"📋",title:"Prepare your materials.",text:"Have your brochures, valuation packs, and introduction letters ready before 9am so you can act immediately when leads arrive."},{icon:"🎯",title:"Stay consistent.",text:"Success in lead conversion comes from daily consistency. Contact every lead, every day. Small daily actions compound into big results."},{icon:"🚀",title:"First to respond wins.",text:"Research shows the first agent to contact a new lead converts at 3x the rate of the second. Speed is your superpower."},{icon:"💎",title:"Every lead has potential.",text:"Even if a lead isn't right for you right now, they may know someone who is. Be professional, be helpful, and be memorable."},{icon:"📊",title:"Review your numbers.",text:"Check your leads page weekly to see how many you've contacted, quoted, and won. Small improvements in conversion = big revenue gains."},{icon:"🧠",title:"Know your area.",text:"The more you know about your local property market, the more valuable you are to clients."},{icon:"🚀",title:"Want more leads?",text:"Upgrade to a higher plan for more leads every day. More daily opportunities means more chances to win the work. Check your plan in Settings."},{icon:"🤖",title:"Let Auto Post & Print do the work.",text:"Save time and effort. Turn on Auto Post & Print and your new leads are printed and posted automatically at 9am. No manual sending needed."},{icon:"✉️",title:"Print & Post wins more work.",text:"A posted letter gets far more attention than an email. Send a professional letter or flyer to your leads from the Print & Post page."},{icon:"📬",title:"Follow up by post.",text:"Re-mail a lead a couple of weeks after your first letter with the Post Again button. Follow-ups convert far more often than first contacts."},{icon:"💼",title:"Bulk mailing saves time.",text:"Select all your week's leads on My Leads and send them in one go. One payment, all printed and posted for you."},{icon:"⚡",title:"Upgrade for more impact.",text:"Higher plans give you more leads, more areas, and priority support. Every extra lead is another potential client. Grow with us."},{icon:"🛠️",title:"Complete your setup.",text:"Save your business profile, leaflet and cover letter once, and every mailing uses them automatically. No re-uploading."},{icon:"📈",title:"Track conversions to grow.",text:"Your dashboard shows how many leads you've won. Use those numbers to know which areas and lead types perform best for you."},{icon:"💷",title:"One job covers months.",text:"A single booking from one lead covers months of your subscription. That's why consistent follow-up pays off so well."},{icon:"📬",title:"Upload your flyer to enable Print & Post.",text:"On your free trial, upload your flyer (front AND back) and cover letter in Print & Post so we can post your marketing to new leads automatically. Turn on Auto Send and we do the rest."},{icon:"📬",title:"Post to several leads at once.",text:"On the My Leads page, tick the boxes next to multiple leads and click Print & Post Selected — we print, address and post them all in one batch."},{icon:"🤖",title:"Automate your mailings.",text:"Set up Auto Post & Print once and we automatically post your chosen flyer or letter to every new matching lead. Pause it or set a daily limit anytime."},{icon:"📦",title:"Follow your post.",text:"Check Live Post Tracking to see the status of every mailing — printing, dispatched, out for delivery, delivered."},{icon:"🔗",title:"See where each lead came from.",text:"Every lead has a source link. Open it to verify the opportunity yourself before you contact."},{icon:"📤",title:"Export or sync your leads.",text:"Export to CSV/Excel or connect a CRM webhook from your settings so your leads flow straight into your CRM at 9am."},{icon:"🔄",title:"Follow up with older leads.",text:"Send a second flyer or letter to leads you posted to 2+ weeks ago — a follow-up often lands when they're ready to act. Go to My Leads, find a posted lead and click Post Again."}]
+var tips=[{icon:"🔥",title:"You're on fire! Keep going.",text:"Every lead you contact today is a potential new client. Your 9am leads are waiting. Review your opportunities and take action."},{icon:"💡",title:"Pro Tip: Follow up fast.",text:"Most conversions happen after the third contact. A structured follow-up over 7-10 days dramatically increases your success rate."},{icon:"🎯",title:"Quality over quantity.",text:"A well-researched, personalised approach beats mass outreach every time. Take 5 minutes to review each lead before contacting."},{icon:"📈",title:"Track your progress.",text:"Use the leads page to track your conversions. Measuring your success rate helps you improve over time."},{icon:"⏰",title:"Early bird advantage.",text:"Leads arrive at 9am. Contacting within the first hour gives you a significant advantage over competitors."},{icon:"🤝",title:"Build relationships.",text:"Treat every lead as the start of a long-term relationship. Today's lead could be tomorrow's referral."},{icon:"📋",title:"Prepare your materials.",text:"Have your brochures, valuation packs, and introduction letters ready before 9am so you can act immediately when leads arrive."},{icon:"🎯",title:"Stay consistent.",text:"Success in lead conversion comes from daily consistency. Contact every lead, every day. Small daily actions compound into big results."},{icon:"🚀",title:"First to respond wins.",text:"Research shows the first agent to contact a new lead converts at 3x the rate of the second. Speed is your superpower."},{icon:"💎",title:"Every lead has potential.",text:"Even if a lead isn't right for you right now, they may know someone who is. Be professional, be helpful, and be memorable."},{icon:"📊",title:"Review your numbers.",text:"Check your leads page weekly to see how many you've contacted, quoted, and won. Small improvements in conversion = big revenue gains."},{icon:"🧠",title:"Know your area.",text:"The more you know about your local property market, the more valuable you are to clients."},{icon:"🚀",title:"Want more leads?",text:"Upgrade to a higher plan for more leads every day. More daily opportunities means more chances to win the work. Check your plan in Settings."},{icon:"🤖",title:"Let Auto Post & Print do the work.",text:"Save time and effort. Turn on Auto Post & Print and your new leads are printed and posted automatically at 9am. No manual sending needed."},{icon:"✉️",title:"Print & Post wins more work.",text:"A posted letter gets far more attention than an email. Send a professional letter or flyer to your leads from the Print & Post page."},{icon:"📬",title:"Follow up by post.",text:"Re-mail a lead a couple of weeks after your first letter with the Post Again button. Follow-ups convert far more often than first contacts."},{icon:"💼",title:"Bulk mailing saves time.",text:"Select all your week's leads on My Leads and send them in one go. One payment, all printed and posted for you."},{icon:"⚡",title:"Upgrade for more impact.",text:"Higher plans give you more leads, more areas, and priority support. Every extra lead is another potential client. Grow with us."},{icon:"🛠️",title:"Complete your setup.",text:"Save your business profile, leaflet and cover letter once, and every mailing uses them automatically. No re-uploading."},{icon:"📈",title:"Track conversions to grow.",text:"Your dashboard shows how many leads you've won. Use those numbers to know which areas and lead types perform best for you."},{icon:"💷",title:"One job covers months.",text:"A single booking from one lead covers months of your subscription. That's why consistent follow-up pays off so well."},{icon:"📬",title:"Upload your flyer to enable Print & Post.",text:"On your free trial, upload your flyer (front AND back) and cover letter in Print & Post so we can post your marketing to new leads automatically. Turn on Auto Send and we do the rest."},{icon:"📬",title:"Post to several leads at once.",text:"On the My Leads page, tick the boxes next to multiple leads and click Print & Post Selected, we print, address and post them all in one batch."},{icon:"🤖",title:"Automate your mailings.",text:"Set up Auto Post & Print once and we automatically post your chosen flyer or letter to every new matching lead. Pause it or set a daily limit anytime."},{icon:"📦",title:"Follow your post.",text:"Check Live Post Tracking to see the status of every mailing, printing, dispatched, out for delivery, delivered."},{icon:"🔗",title:"See where each lead came from.",text:"Every lead has a source link. Open it to verify the opportunity yourself before you contact."},{icon:"📤",title:"Export or sync your leads.",text:"Export to CSV/Excel or connect a CRM webhook from your settings so your leads flow straight into your CRM at 9am."},{icon:"🔄",title:"Follow up with older leads.",text:"Send a second flyer or letter to leads you posted to 2+ weeks ago, a follow-up often lands when they're ready to act. Go to My Leads, find a posted lead and click Post Again."}]
 var ci=Math.floor(Math.random()*tips.length);
 function showTip(){try{var t=tips[ci];document.getElementById('tip-icon').textContent=t.icon;document.getElementById('tip-title').textContent=t.title;document.getElementById('tip-text').textContent=t.text;ci=(ci+1)%tips.length;}catch(e){}}
 setInterval(showTip,8000);showTip();
