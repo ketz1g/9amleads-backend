@@ -128,22 +128,22 @@ footer a{color:var(--accent);text-decoration:underline}
 </div>
 </div>
 
-<div style="font-size:11px;color:#64748b;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;margin-bottom:10px;line-height:1.6"><b>ℹ️ Quiet days:</b> On days when fewer fresh leads are available in your exact postcode areas, we send you the leads <b>closest to your chosen postcodes</b> so you still get your full daily count. You are never sent the same opportunity twice.</div>
+<div style="font-size:11px;color:#64748b;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;margin-bottom:10px;line-height:1.6"><b>9 Quiet days:</b> On days when fewer fresh leads are available in your exact postcode areas, we send you the leads <b>closest to your chosen postcodes</b> so you still get your full daily count. You are never sent the same opportunity twice.</div>
 
 <!-- Tips & shortcuts (dismissible) -->
 <div id="leads-tips" style="background:linear-gradient(135deg,#eff6ff,#f0f9ff);border:1px solid #bfdbfe;border-radius:10px;padding:12px 14px;margin-bottom:10px;font-size:11px;color:#1e3a5f;line-height:1.8">
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:6px">
 <strong style="font-size:12px;color:#0c4a6e"><i class="fas fa-lightbulb" style="margin-right:5px"></i> Tips &amp; shortcuts</strong>
-<button onclick="document.getElementById('leads-tips').style.display='none';try{localStorage.setItem('leads_tips_hidden','1');}catch(e){}" style="background:none;border:none;color:#0369a1;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">✕ Hide</button>
+<button onclick="document.getElementById('leads-tips').style.display='none';try{localStorage.setItem('leads_tips_hidden','1');}catch(e){}" style="background:none;border:none;color:#0369a1;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit"> Hide</button>
 </div>
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:4px 16px">
-<div>✅ <b>Print &amp; Post in one go:</b> tick the checkboxes on multiple leads, then click <b>Print &amp; Post</b> below to send flyers or letters to them all in one batch.</div>
-<div>🤖 <b>Auto Print &amp; Post:</b> set it up once and we automatically post your chosen flyer/letter to every new matching lead. <a href="/portal/auto.html" style="color:#0369a1;font-weight:700">Set up →</a></div>
+<div> <b>Print &amp; Post in one go:</b> tick the checkboxes on multiple leads, then click <b>Print &amp; Post</b> below to send flyers or letters to them all in one batch.</div>
+<div>> <b>Auto Print &amp; Post:</b> set it up once and we automatically post your chosen flyer/letter to every new matching lead. <a href="/portal/auto.html" style="color:#0369a1;font-weight:700">Set up →</a></div>
 <div>📈 <b>Track outcomes:</b> mark each lead <b>Contacted / Quoted / Won</b> so you can see what converts.</div>
-<div>🔗 <b>Verify sources:</b> click the source link on any lead to see exactly where it came from.</div>
+<div>= <b>Verify sources:</b> click the source link on any lead to see exactly where it came from.</div>
 <div>⏰ <b>Be early:</b> opportunities are prioritised from the last 24 hours, contact early for the best response.</div>
 <div>📤 <b>Export or CRM:</b> download to CSV or connect a webhook from your <a href="/portal/dashboard.html" style="color:#0369a1;font-weight:700">dashboard</a>.</div>
-<div>🔄 <b>Re-engage old leads:</b> leads you posted to <b>2+ weeks ago</b> often respond to a follow-up letter. Find a posted lead and click <b>Post Again</b>.</div>
+<div>= <b>Re-engage old leads:</b> leads you posted to <b>2+ weeks ago</b> often respond to a follow-up letter. Find a posted lead and click <b>Post Again</b>.</div>
 </div>
 </div>
 <style>.htip{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;background:#e2e8f0;color:#475569;font-size:10px;font-weight:700;cursor:help;margin-left:4px;vertical-align:middle;flex-shrink:0}</style>
@@ -180,7 +180,7 @@ function showHelp(el, text){
 </div>
 <div id="leads-container"></div>
 <div id="engage-nudge" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 16px;margin-bottom:14px;font-size:12px;color:#166534;line-height:1.6;display:none">
-<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><div style="flex:1;min-width:200px"><strong style="color:#14532d">👋 Track your progress</strong>, mark each opportunity as <b>Contacted</b>, <b>Quoted</b> or <b>Won</b> using the buttons on each lead, so you can see what's converting.</div><button onclick="dismissEngageNudge()" style="flex-shrink:0;padding:7px 16px;border-radius:8px;background:#16a34a;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Got it</button></div>
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><div style="flex:1;min-width:200px"><strong style="color:#14532d">=K Track your progress</strong>, mark each opportunity as <b>Contacted</b>, <b>Quoted</b> or <b>Won</b> using the buttons on each lead, so you can see what's converting.</div><button onclick="dismissEngageNudge()" style="flex-shrink:0;padding:7px 16px;border-radius:8px;background:#16a34a;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Got it</button></div>
 </div>
 <div class="empty" id="no-leads" style="display:none"><div style="font-size:44px;margin-bottom:8px">🎉</div><h3 style="font-size:17px;font-weight:700;margin-bottom:6px">You're All Set</h3><p style="font-size:13px;line-height:1.6;max-width:420px;margin:0 auto 12px">Your 9amLeads trial is active. We're preparing fresh opportunities matching your selected lead type and areas.</p><div style="font-size:14px;font-weight:700;color:var(--accent);margin-bottom:14px">Your first delivery is scheduled for <span id="no-leads-time">9am tomorrow</span>.</div><div id="no-leads-details" style="display:inline-block;text-align:left;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 18px;font-size:12px;color:var(--text2);line-height:1.9;margin-bottom:16px"></div><div><a href="/portal/dashboard.html" class="btn btn-primary" style="text-decoration:none"><i class="fas fa-th-large"></i> Explore Your Dashboard</a></div></div>
 </div>
@@ -317,7 +317,7 @@ function renderLeadList(dayLeads, noGroup) {
     var status = d.listingStatus || d.status || 'New';
     var pc = d.postcode || '';
     var score = scoreLead(l, d, product);
-    var scoreBadge = score ? '<span style="display:inline-block;margin-left:6px;padding:2px 8px;border-radius:5px;font-size:10px;font-weight:800;background:' + score.color + '22;color:' + score.color + '">★ ' + score.value + '/100</span>' : '';
+    var scoreBadge = score ? '<span style="display:inline-block;margin-left:6px;padding:2px 8px;border-radius:5px;font-size:10px;font-weight:800;background:' + score.color + '22;color:' + score.color + '"> ' + score.value + '/100</span>' : '';
     var badge = product === 'moving' ? 'MOVING' : product === 'probate' ? 'PROBATE' : product === 'newbusiness' ? 'NEW BIZ' : product === 'planning' ? 'PLANNING' : 'TENDER';
     var badgeColor = product === 'moving' ? '#0ea5e9' : product === 'probate' ? '#a855f7' : product === 'newbusiness' ? '#22c55e' : product === 'planning' ? '#f59e0b' : '#6366f1';
     var isSel = selectedLeads.indexOf(l.id) !== -1;
@@ -420,7 +420,7 @@ function postBadge(d, leadId){
       try { postedDate = ' · posted ' + new Date(d.posted_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); } catch(e) {}
     }
     var proofLink = '<a href="#" onclick="event.stopPropagation();window.open(\'/api/direct-mail/lead/' + leadId + '/proof\',\'_blank\');return false;" style="color:#fff;text-decoration:underline;font-size:10px;margin-left:4px" title="View proof of posting">View proof</a>';
-    return '<span class="badge badge-posted" title="Your materials were posted to this lead" style="background:#16a34a;color:#fff;border:none">✓ Materials Posted' + postedDate + '</span>' + proofLink;
+    return '<span class="badge badge-posted" title="Your materials were posted to this lead" style="background:#16a34a;color:#fff;border:none"> Materials Posted' + postedDate + '</span>' + proofLink;
   }
   if (d.post_status && d.post_status.indexOf('pending') !== -1) {
     return '<span class="badge badge-posted" title="Payment received, being printed" style="background:#f59e0b;color:#fff;border:none">⏳ Being Printed</span>';

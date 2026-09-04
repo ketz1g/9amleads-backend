@@ -15,7 +15,7 @@ function getAid(){ try { if (window.__aid) return window.__aid; var v = localSto
   }catch(e){}
 })();
 </script>
-<title>Dashboard Â· 9amLeads</title>
+<title>Dashboard · 9amLeads</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
@@ -97,9 +97,9 @@ footer a{color:var(--accent);text-decoration:underline}
 <a href="/portal/leads.html">My Leads</a>
 <a href="/portal/leads.html">Export</a>
 <a href="/portal/direct-mail.html">Print &amp; Post</a>
-<a href="/portal/tracking.html" style="font-weight:600">ðŸ“¬ Live Tracking</a>
+<a href="/portal/tracking.html" style="font-weight:600">📬 Live Tracking</a>
 <a href="/portal/auto.html">Auto P&amp;P</a>
-<a href="/portal/bulk.html" onclick="return maybeGateBulkRoute(event)" style="font-weight:600">ðŸ“¦ Bulk Send</a>
+<a href="/portal/bulk.html" onclick="return maybeGateBulkRoute(event)" style="font-weight:600">📦 Bulk Send</a>
 <a href="/portal/marketing.html">Marketing Tools</a>
 <a href="/pricing/">Pricing</a>
 <a href="#" onclick="showModal('settings-modal');return false" style="color:var(--text2);font-size:12px"><i class="fas fa-cog"></i></a>
@@ -121,7 +121,7 @@ footer a{color:var(--accent);text-decoration:underline}
 <!-- Bulk Lead Packs (moving / probate / new business) -->
 <div id="bulk-dash" class="card" style="display:none;background:linear-gradient(135deg,#f0fdf4,#e0f2fe);border:1px solid #bbf7d0;margin-bottom:18px;padding:16px 18px">
   <div style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap">
-    <div style="font-size:30px;line-height:1">ðŸ“¦</div>
+    <div style="font-size:30px;line-height:1">📦</div>
     <div style="flex:1;min-width:230px">
       <div style="font-size:15px;font-weight:800;font-family:var(--ff-h);color:var(--text)">Bulk Lead Packs <span style="font-size:10px;color:#166534;background:#dcfce7;border:1px solid #bbf7d0;border-radius:99px;padding:2px 8px;vertical-align:middle;font-weight:700">PRO &amp; ENTERPRISE</span></div>
       <div style="font-size:12.5px;font-weight:800;color:#166534;margin-top:2px">Boost your business in slow times, instantly.</div>
@@ -138,7 +138,7 @@ footer a{color:var(--accent);text-decoration:underline}
 <!-- Print & Post + Auto-Send callout -->
 <div class="card" style="background:linear-gradient(135deg,#eff6ff,#eef2ff);border:1px solid #e0e7ff;margin-bottom:18px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
 <div style="display:flex;align-items:center;gap:10px">
-<span style="font-size:20px">ðŸ“¬</span>
+<span style="font-size:20px">📬</span>
 <div>
 <div style="font-size:13px;font-weight:800;color:var(--text);font-family:var(--ff-h)">Make the most of your leads</div>
 <div style="font-size:11px;color:var(--text2);line-height:1.5">Upload your flyer front &amp; back + letter and we'll <strong>print &amp; post</strong> it directly to the lead. Turn on <strong>Auto-Send</strong> to do it automatically after every 9am delivery.</div>
@@ -151,7 +151,7 @@ footer a{color:var(--accent);text-decoration:underline}
 <a href="/portal/leads.html?range=today" style="text-decoration:none;color:inherit;display:block">
 <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:14px;padding:18px 22px;flex-wrap:wrap">
 <div style="display:flex;align-items:center;gap:16px">
-<div class="icon" style="background:#eff6ff;color:var(--accent)">ðŸ“Š</div>
+<div class="icon" style="background:#eff6ff;color:var(--accent)">📊</div>
 <div><div class="lbl" style="font-size:13px;color:var(--muted)">Leads delivered today</div><div class="num" id="kpi-today" style="font-size:36px;line-height:1">0</div></div>
 </div>
 <div style="font-size:13px;color:var(--accent);font-weight:700"><i class="fas fa-arrow-right"></i> View today's leads</div>
@@ -171,7 +171,7 @@ footer a{color:var(--accent);text-decoration:underline}
 <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
 <div style="flex:1;min-width:230px">
 <div style="font-size:12px;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px"><i class="fas fa-hourglass-half" style="margin-right:4px"></i> Your Free Trial</div>
-<div style="font-size:22px;font-weight:900;font-family:var(--ff-h);color:#0c4a6e"><span id="trial-day">Day 1 of 7</span> <span style="font-size:13px;font-weight:600;color:#0369a1">Â· <span id="trial-days-left">7 days remaining</span></span></div>
+<div style="font-size:22px;font-weight:900;font-family:var(--ff-h);color:#0c4a6e"><span id="trial-day">Day 1 of 7</span> <span style="font-size:13px;font-weight:600;color:#0369a1">· <span id="trial-days-left">7 days remaining</span></span></div>
 <div style="font-size:12px;color:#0369a1;margin-top:6px;line-height:1.7">
 <div><strong>Lead type:</strong> <span id="trial-leadtype">Loading...</span></div>
 <div><strong>Areas:</strong> <span id="trial-areas">,</span></div>
@@ -211,20 +211,20 @@ document.addEventListener('DOMContentLoaded', function(){
 <div class="card" style="border:1px solid var(--border)">
 <div class="sect-title"><i class="fas fa-th-large" style="color:var(--accent)"></i> Your Tools</div>
 <div class="features" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px">
-<a href="/portal/leads.html" data-htip="View every opportunity delivered to you. Use the checkboxes to bulk-print, mark outcomes (Contacted/Quoted/Won), open source links and search/filter." style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:#fff;border:1px solid var(--border);border-radius:10px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;transition:.15s"><span style="font-size:20px">ðŸ“‹</span> My Leads<span style="font-size:10px;color:var(--muted);font-weight:400">View &amp; manage</span></a>
-<a href="/portal/direct-mail.html" data-htip="We print, address and post a flyer or letter to your chosen leads for you. Pick a template or upload your own, and track every mailing with live status + proof of posting." style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:#fff;border:1px solid var(--border);border-radius:10px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;transition:.15s"><span style="font-size:20px">âœ‰ï¸</span> Print &amp; Post<span style="font-size:10px;color:var(--muted);font-weight:400">Send letters &amp; flyers</span></a>
-<a href="/portal/marketing.html" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:#fff;border:1px solid var(--border);border-radius:10px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;transition:.15s"><span style="font-size:20px">ðŸŽ¨</span> Marketing Tools<span style="font-size:10px;color:var(--muted);font-weight:400">Letters &amp; templates</span></a>
-<a href="/portal/direct-mail.html" data-htip="Upload your own flyer or letter, or pick one of our ready-made templates. This is what gets printed and posted to your leads." style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:#fff;border:1px solid var(--border);border-radius:10px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;transition:.15s"><span style="font-size:20px">ðŸ› ï¸</span> Print Setup<span style="font-size:10px;color:var(--muted);font-weight:400">Materials &amp; letter</span></a>
-<a href="/portal/bulk.html" onclick="return maybeGateBulkRoute(event)" data-htip="Buy an exclusive never-sent lead pack and we print &amp; post your flyer/letter to every one. Available on Pro &amp; Enterprise." style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:linear-gradient(135deg,#fff,#f0fdf4);border:1px solid #86efac;border-radius:10px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;transition:.15s"><span style="font-size:20px">ðŸ“¦</span> Bulk Send<span style="font-size:10px;color:#166534;font-weight:400">Exclusive lead packs âœ¨</span></a>
-<a href="#" onclick="showModal('settings-modal');switchTab('subscription');return false" data-htip="Upgrade to Starter, Pro or Enterprise to keep your 9am deliveries running. Weekly plans, cancel anytime. Manage your card + billing here." style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:#fff;border:1px solid var(--border);border-radius:10px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;transition:.15s"><span style="font-size:20px">ðŸ’³</span> Plans &amp; Billing<span style="font-size:10px;color:var(--muted);font-weight:400">Upgrade or manage</span></a>
-<a href="/portal/auto.html" data-htip="Automatically send your chosen flyer or letter to every new matching lead. You stay in control with a daily limit + pause anytime." style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:#fff;border:1px solid var(--border);border-radius:10px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;transition:.15s"><span style="font-size:20px">ðŸ¤–</span> Auto Print &amp; Post<span style="font-size:10px;color:var(--muted);font-weight:400">Automatic mailings</span></a>
-<a href="/portal/tracking.html" data-htip="See the status of every mailing: printing, dispatched, out for delivery, delivered. Download your proof of posting here." style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:#fff;border:1px solid var(--border);border-radius:10px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;transition:.15s"><span style="font-size:20px">ðŸ“¬</span> Live Post Tracking<span style="font-size:10px;color:var(--muted);font-weight:400">Track delivery in real time</span></a>
+<a href="/portal/leads.html" data-htip="View every opportunity delivered to you. Use the checkboxes to bulk-print, mark outcomes (Contacted/Quoted/Won), open source links and search/filter." style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:#fff;border:1px solid var(--border);border-radius:10px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;transition:.15s"><span style="font-size:20px">📋</span> My Leads<span style="font-size:10px;color:var(--muted);font-weight:400">View &amp; manage</span></a>
+<a href="/portal/direct-mail.html" data-htip="We print, address and post a flyer or letter to your chosen leads for you. Pick a template or upload your own, and track every mailing with live status + proof of posting." style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:#fff;border:1px solid var(--border);border-radius:10px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;transition:.15s"><span style="font-size:20px">✉️</span> Print &amp; Post<span style="font-size:10px;color:var(--muted);font-weight:400">Send letters &amp; flyers</span></a>
+<a href="/portal/marketing.html" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:#fff;border:1px solid var(--border);border-radius:10px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;transition:.15s"><span style="font-size:20px">🎨</span> Marketing Tools<span style="font-size:10px;color:var(--muted);font-weight:400">Letters &amp; templates</span></a>
+<a href="/portal/direct-mail.html" data-htip="Upload your own flyer or letter, or pick one of our ready-made templates. This is what gets printed and posted to your leads." style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:#fff;border:1px solid var(--border);border-radius:10px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;transition:.15s"><span style="font-size:20px">🛠️</span> Print Setup<span style="font-size:10px;color:var(--muted);font-weight:400">Materials &amp; letter</span></a>
+<a href="/portal/bulk.html" onclick="return maybeGateBulkRoute(event)" data-htip="Buy an exclusive never-sent lead pack and we print &amp; post your flyer/letter to every one. Available on Pro &amp; Enterprise." style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:linear-gradient(135deg,#fff,#f0fdf4);border:1px solid #86efac;border-radius:10px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;transition:.15s"><span style="font-size:20px">📦</span> Bulk Send<span style="font-size:10px;color:#166534;font-weight:400">Archive lead packs</span></a>
+<a href="#" onclick="showModal('settings-modal');switchTab('subscription');return false" data-htip="Upgrade to Starter, Pro or Enterprise to keep your 9am deliveries running. Weekly plans, cancel anytime. Manage your card + billing here." style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:#fff;border:1px solid var(--border);border-radius:10px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;transition:.15s"><span style="font-size:20px">💳</span> Plans &amp; Billing<span style="font-size:10px;color:var(--muted);font-weight:400">Upgrade or manage</span></a>
+<a href="/portal/auto.html" data-htip="Automatically send your chosen flyer or letter to every new matching lead. You stay in control with a daily limit + pause anytime." style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:#fff;border:1px solid var(--border);border-radius:10px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;transition:.15s"><span style="font-size:20px">🤖</span> Auto Print &amp; Post<span style="font-size:10px;color:var(--muted);font-weight:400">Automatic mailings</span></a>
+<a href="/portal/tracking.html" data-htip="See the status of every mailing: printing, dispatched, out for delivery, delivered. Download your proof of posting here." style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:#fff;border:1px solid var(--border);border-radius:10px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;transition:.15s"><span style="font-size:20px">📬</span> Live Post Tracking<span style="font-size:10px;color:var(--muted);font-weight:400">Track delivery in real time</span></a>
 </div>
 </div>
 
 <!-- TIPS BAR -->
 <div class="tip-card" id="tip-card" style="background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1px solid #fde68a;border-radius:12px;padding:20px;margin-bottom:16px;display:flex;align-items:flex-start;gap:14px">
-<div style="font-size:28px;flex-shrink:0;line-height:1" id="tip-icon">ðŸ”¥</div>
+<div style="font-size:28px;flex-shrink:0;line-height:1" id="tip-icon">🔥</div>
 <div><h4 style="font-size:14px;font-weight:700;color:#92400e;margin-bottom:4px" id="tip-title">You're on fire! Keep going.</h4>
 <p style="font-size:12px;color:#a16207;line-height:1.6" id="tip-text">Every lead you contact today is a potential new client. Your 9am leads are waiting. Review your opportunities and take action.</p></div>
 </div>
@@ -259,9 +259,9 @@ document.addEventListener('DOMContentLoaded', function(){
 <div class="sect-title"><i class="fas fa-credit-card" style="color:#d97706"></i> Secure Your Trial <span style="margin-left:auto;font-size:10px;font-weight:700;color:#92400e;background:#fef3c7;padding:2px 10px;border-radius:20px;border:1px solid #fde68a">NO CHARGE YET</span></div>
 <p style="font-size:12px;color:#92400e;line-height:1.6;margin-bottom:10px">Choose the plan you'll be billed for when the trial ends. <strong>No charge today</strong>. Your card is charged <strong>weekly</strong> for the package you pick, starting when the free trial ends. unless you upgrade or cancel before then.</p>
 <div style="margin-bottom:12px">
-  <label style="display:flex;align-items:center;gap:8px;padding:10px;background:#fff;border:1px solid #fde68a;border-radius:8px;margin-bottom:6px;cursor:pointer"><input type="radio" name="trial-plan" value="starter" checked style="accent-color:#d97706"><span style="font-size:13px;font-weight:700;color:#92400e">Starter</span><span style="margin-left:auto;font-size:12px;color:#92400e;text-align:right">Â£25/week<br><b id="pay-quota-starter">5 leads/day</b></span></label>
-  <label style="display:flex;align-items:center;gap:8px;padding:10px;background:#fff;border:1px solid #0ea5e9;border-radius:8px;margin-bottom:6px;cursor:pointer"><input type="radio" name="trial-plan" value="pro" style="accent-color:#0ea5e9"><span style="font-size:13px;font-weight:700;color:#0369a1">Pro <span style="font-size:10px;background:#0ea5e9;color:#fff;padding:1px 6px;border-radius:10px;margin-left:3px">POPULAR</span></span><span style="margin-left:auto;font-size:12px;color:#0369a1;text-align:right">Â£49/week<br><b id="pay-quota-pro">10 leads/day</b></span></label>
-  <label style="display:flex;align-items:center;gap:8px;padding:10px;background:#fff;border:1px solid #fde68a;border-radius:8px;cursor:pointer"><input type="radio" name="trial-plan" value="enterprise" style="accent-color:#d97706"><span style="font-size:13px;font-weight:700;color:#92400e">Enterprise</span><span style="margin-left:auto;font-size:12px;color:#92400e;text-align:right">Â£99/week<br><b id="pay-quota-enterprise">15 leads/day</b></span></label>
+  <label style="display:flex;align-items:center;gap:8px;padding:10px;background:#fff;border:1px solid #fde68a;border-radius:8px;margin-bottom:6px;cursor:pointer"><input type="radio" name="trial-plan" value="starter" checked style="accent-color:#d97706"><span style="font-size:13px;font-weight:700;color:#92400e">Starter</span><span style="margin-left:auto;font-size:12px;color:#92400e;text-align:right">£25/week<br><b id="pay-quota-starter">5 leads/day</b></span></label>
+  <label style="display:flex;align-items:center;gap:8px;padding:10px;background:#fff;border:1px solid #0ea5e9;border-radius:8px;margin-bottom:6px;cursor:pointer"><input type="radio" name="trial-plan" value="pro" style="accent-color:#0ea5e9"><span style="font-size:13px;font-weight:700;color:#0369a1">Pro <span style="font-size:10px;background:#0ea5e9;color:#fff;padding:1px 6px;border-radius:10px;margin-left:3px">POPULAR</span></span><span style="margin-left:auto;font-size:12px;color:#0369a1;text-align:right">£49/week<br><b id="pay-quota-pro">10 leads/day</b></span></label>
+  <label style="display:flex;align-items:center;gap:8px;padding:10px;background:#fff;border:1px solid #fde68a;border-radius:8px;cursor:pointer"><input type="radio" name="trial-plan" value="enterprise" style="accent-color:#d97706"><span style="font-size:13px;font-weight:700;color:#92400e">Enterprise</span><span style="margin-left:auto;font-size:12px;color:#92400e;text-align:right">£99/week<br><b id="pay-quota-enterprise">15 leads/day</b></span></label>
 </div>
 <button class="btn btn-primary btn-sm" onclick="setupPayment()" id="setup-payment-btn" style="background:#d97706;border-color:#d97706"><i class="fas fa-credit-card"></i> Add Card, Free Trial Continues</button>
 <div id="payment-status" style="font-size:11px;color:#92400e;margin-top:6px"></div>
@@ -270,11 +270,11 @@ document.addEventListener('DOMContentLoaded', function(){
 <!-- Card capture prompt (auto-shown after free-trial signup) -->
 <div class="modal" id="card-prompt-modal">
 <div class="modal-content" style="text-align:center">
-<div style="width:56px;height:56px;border-radius:50%;background:#fffbeb;border:1px solid #fde68a;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 14px">ðŸ’³</div>
+<div style="width:56px;height:56px;border-radius:50%;background:#fffbeb;border:1px solid #fde68a;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 14px">💳</div>
 <h3>Secure your trial. No charge today</h3>
-<p>Add your card now and your daily leads <strong>keep flowing automatically after the trial</strong>. You won't be charged today. Your card is only charged <strong>Â£25/week (Starter)</strong> when the 7-day trial ends, unless you upgrade or cancel before then.</p>
+<p>Add your card now and your daily leads <strong>keep flowing automatically after the trial</strong>. You won't be charged today. Your card is only charged <strong>£25/week (Starter)</strong> when the 7-day trial ends, unless you upgrade or cancel before then.</p>
 <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 16px;text-align:left;margin:0 0 16px">
-<div style="font-size:12px;color:#166534;line-height:1.7">âœ… <strong>No charge today</strong> Card saved, trial continues<br>âœ… Leads don't stop when the trial ends<br>âœ… Cancel anytime before the trial ends. No charge<br>âœ… Upgrade to Pro before the trial ends. Only the Pro price is charged</div>
+<div style="font-size:12px;color:#166534;line-height:1.7">✅ <strong>No charge today</strong> Card saved, trial continues<br>✅ Leads don't stop when the trial ends<br>✅ Cancel anytime before the trial ends. No charge<br>✅ Upgrade to Pro before the trial ends. Only the Pro price is charged</div>
 </div>
 <button class="btn btn-primary" onclick="setupPayment();closeModal('card-prompt-modal')" id="card-prompt-btn" style="background:#d97706;border-color:#d97706;width:100%;justify-content:center;margin-bottom:8px"><i class="fas fa-credit-card"></i> Add Card, Continue Free Trial</button>
 <button class="btn btn-outline" onclick="closeModal('card-prompt-modal');setCardSkipped()" style="width:100%;justify-content:center">I'll do this later</button>
@@ -436,7 +436,7 @@ document.addEventListener('DOMContentLoaded', function(){
   <ol style="margin:6px 0 0 18px;padding:0">
     <li>Your new leads arrive in your inbox every morning at 9am.</li>
     <li>We automatically print &amp; post your materials to those leads, using your saved leaflet/letter and cover letter.</li>
-    <li>You're charged automatically for exactly what was sent (A5 leaflet Â£2.99 Â· letter Â£2.49 Â· leaflet + letter Â£4.49), from the card saved on your account.</li>
+    <li>You're charged automatically for exactly what was sent (A5 leaflet £2.99 · letter £2.49 · leaflet + letter £4.49), from the card saved on your account.</li>
     <li>Each mailing is confirmed by email and marked "Posted" on the lead.</li>
   </ol>
   <div style="margin-top:8px;font-size:11px;color:var(--muted)">You control it with a daily spend limit, a monthly cap, and you can switch it off anytime. No mailing = no charge.</div>
@@ -456,7 +456,7 @@ document.addEventListener('DOMContentLoaded', function(){
 <div id="auto-pp-card-status" style="font-size:12px;margin-top:10px;padding:12px 14px;border-radius:10px;display:none"></div>
 <div id="auto-pp-card-setup" style="display:none;margin-top:10px;border:1px solid var(--border);border-radius:10px;padding:14px">
   <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px"><i class="fas fa-credit-card" style="color:var(--accent);margin-right:4px"></i> Save a card for automatic billing</div>
-      <div style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:8px">Auto Print &amp; Post charges your card automatically each day it sends leads (A5 leaflet Â£2.99 Â· letter Â£2.49 Â· leaflet + letter Â£4.49). We'll only charge when leads are actually mailed, up to your daily spend limit.</div>
+      <div style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:8px">Auto Print &amp; Post charges your card automatically each day it sends leads (A5 leaflet £2.99 · letter £2.49 · leaflet + letter £4.49). We'll only charge when leads are actually mailed, up to your daily spend limit.</div>
   <div style="font-size:11px;color:var(--text2);line-height:1.7;margin-bottom:10px"><b style="color:var(--text)">How to save it:</b>
     <ol style="margin:4px 0 0 18px;padding:0">
       <li>Click <b>"Save Card Securely"</b> below.</li>
@@ -523,7 +523,7 @@ document.addEventListener('DOMContentLoaded', function(){
   <div class="modal" id="bulk-gate-modal">
     <div class="modal-content" style="text-align:left">
       <button onclick="closeModal('bulk-gate-modal')" style="position:absolute;right:16px;top:10px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted)">&times;</button>
-      <h3 style="margin-top:6px;text-align:center">ðŸ“¦ Bulk Send, Pro &amp; Enterprise</h3>
+      <h3 style="margin-top:6px;text-align:center">📦 Bulk Send, Pro &amp; Enterprise</h3>
       <p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:12px">Buy an exclusive lead pack and we <b>print &amp; post your leaflet or letter to every lead</b>, your marketing, hands-free, on autopilot.</p>
       <div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:12px">
         <div style="font-size:13px;font-weight:700;margin-bottom:6px">What you unlock on Pro:</div>
@@ -546,7 +546,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
 <div class="modal" id="cancel-modal">
 <div class="modal-content" style="text-align:center">
-<div style="font-size:40px;margin-bottom:10px">ðŸ˜¢</div>
+<div style="font-size:40px;margin-bottom:10px">😢</div>
 <h3>Cancel Your Subscription?</h3>
 <p>Your leads will stop and your account will be downgraded. You can restart anytime.</p>
 <div style="display:flex;gap:8px;justify-content:center">
@@ -598,9 +598,9 @@ document.addEventListener('DOMContentLoaded', function(){
 <div id="moving-type-row" style="margin-top:12px;display:none">
 <label class="label" style="font-size:12px;font-weight:700;color:var(--text)">Moving Lead Type</label>
 <div style="display:flex;gap:8px;margin-top:6px">
-<button type="button" class="btn btn-sm" id="mt-residential" onclick="setMovingType('residential')" style="flex:1;justify-content:center">ðŸ  Residential</button>
-<button type="button" class="btn btn-sm" id="mt-commercial" onclick="setMovingType('commercial')" style="flex:1;justify-content:center">ðŸ¢ Commercial</button>
-<button type="button" class="btn btn-sm" id="mt-both" onclick="setMovingType('both')" style="flex:1;justify-content:center">ðŸ”€ Both</button>
+<button type="button" class="btn btn-sm" id="mt-residential" onclick="setMovingType('residential')" style="flex:1;justify-content:center">🏠 Residential</button>
+<button type="button" class="btn btn-sm" id="mt-commercial" onclick="setMovingType('commercial')" style="flex:1;justify-content:center">🏢 Commercial</button>
+<button type="button" class="btn btn-sm" id="mt-both" onclick="setMovingType('both')" style="flex:1;justify-content:center">🔀 Both</button>
 </div>
 <p style="font-size:11px;color:var(--muted);margin-top:6px">Residential = homes &amp; properties coming to market. Commercial = offices, retail, warehouses &amp; business premises. Both = all moving opportunities.</p>
 </div>
@@ -621,10 +621,10 @@ document.addEventListener('DOMContentLoaded', function(){
 <div><strong>Postcode areas:</strong> <span id="sub-areas-count">0</span>/<span id="sub-max-areas">3</span></div>
 <div><strong>Trial ends:</strong> <span id="sub-trial-end">-</span></div>
 <div id="sub-billing-row" style="display:none"><strong>Next billing:</strong> <span id="sub-next-billing">-</span></div>
-<div id="pay-weekly-row" style="display:none"><strong>Weekly plan:</strong> <span id="pay-weekly-amount">Â£0</span>/week</div>
+<div id="pay-weekly-row" style="display:none"><strong>Weekly plan:</strong> <span id="pay-weekly-amount">£0</span>/week</div>
 <div id="pay-next-invoice-row" style="display:none"><strong>Upcoming invoice:</strong> <span id="pay-next-invoice">-</span></div>
 <div id="pay-card-row" style="display:none"><strong>Card on file:</strong> <span id="pay-card">-</span></div>
-<div id="pay-spend-row" style="display:none"><strong>Paid this week:</strong> <span id="pay-spend-week">Â£0</span> Â· <strong>All time:</strong> <span id="pay-spend-total">Â£0</span></div>
+<div id="pay-spend-row" style="display:none"><strong>Paid this week:</strong> <span id="pay-spend-week">£0</span> · <strong>All time:</strong> <span id="pay-spend-total">£0</span></div>
 </div>
 </div>
 
@@ -640,13 +640,13 @@ document.addEventListener('DOMContentLoaded', function(){
 
 <div id="tab-referrals" style="display:none">
 <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:16px 18px;margin-bottom:14px">
-<div style="font-size:14px;font-weight:800;color:var(--text);font-family:var(--ff-h);margin-bottom:4px">ðŸ¤ Refer a business, earn Â£25</div>
+<div style="font-size:14px;font-weight:800;color:var(--text);font-family:var(--ff-h);margin-bottom:4px">🤝 Refer a business, earn £25</div>
 <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Recommend 9amLeads to another business and get paid when they sign up and pay. Your affiliate code is unique to you, share it and track everything from your affiliate dashboard.</p>
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;font-size:11.5px;color:var(--text2)">
-<div style="background:#fff;border:1px solid #bbf7d0;border-radius:10px;padding:10px 12px"><b style="color:#059669">1 Â· Share your name or code</b><br>Give a friend your affiliate name or code. It works for every lead type.</div>
-<div style="background:#fff;border:1px solid #bbf7d0;border-radius:10px;padding:10px 12px"><b style="color:#059669">2 Â· They get 14 days free</b><br>Anyone who signs up with your name or code gets a 14-day free trial.</div>
-<div style="background:#fff;border:1px solid #bbf7d0;border-radius:10px;padding:10px 12px"><b style="color:#059669">3 Â· You earn Â£25</b><br>Paid when that customer pays their first invoice for a Starter, Pro or Enterprise package.</div>
-<div style="background:#fff;border:1px solid #bbf7d0;border-radius:10px;padding:10px 12px"><b style="color:#059669">4 Â· Paid the month after</b><br>Payouts are made the month after their signup, as long as they are still active.</div>
+<div style="background:#fff;border:1px solid #bbf7d0;border-radius:10px;padding:10px 12px"><b style="color:#059669">1 · Share your name or code</b><br>Give a friend your affiliate name or code. It works for every lead type.</div>
+<div style="background:#fff;border:1px solid #bbf7d0;border-radius:10px;padding:10px 12px"><b style="color:#059669">2 · They get 14 days free</b><br>Anyone who signs up with your name or code gets a 14-day free trial.</div>
+<div style="background:#fff;border:1px solid #bbf7d0;border-radius:10px;padding:10px 12px"><b style="color:#059669">3 · You earn £25</b><br>Paid when that customer pays their first invoice for a Starter, Pro or Enterprise package.</div>
+<div style="background:#fff;border:1px solid #bbf7d0;border-radius:10px;padding:10px 12px"><b style="color:#059669">4 · Paid the month after</b><br>Payouts are made the month after their signup, as long as they are still active.</div>
 </div>
 <div style="margin-top:12px"><a href="/portal/affiliate.html" class="btn btn-primary" style="background:#059669;border-color:#059669;color:#fff;text-decoration:none"><i class="fas fa-handshake"></i> Go to my Affiliate Dashboard</a></div>
 </div>
@@ -902,7 +902,7 @@ function renderFilters(product) {
       { id:'f-app-type', label:'Application Types', type:'multicheck', opts:['Householder','Full Planning','Outline Planning','Listed Building','Change of Use','Lawful Development','Permitted Development','Prior Approval'] }
     ],
     tenders: [
-      { id:'f-min-val', label:'Min Contract Value', type:'select', opts:['','10000','50000','100000','250000','500000','1000000'], labels:['Any','Â£10k','Â£50k','Â£100k','Â£250k','Â£500k','Â£1M'] },
+      { id:'f-min-val', label:'Min Contract Value', type:'select', opts:['','10000','50000','100000','250000','500000','1000000'], labels:['Any','£10k','£50k','£100k','£250k','£500k','£1M'] },
       { id:'f-keywords', label:'Keywords', type:'text', placeholder:'construction, IT, healthcare...' }
     ],
     newbusiness: [
@@ -1084,8 +1084,8 @@ function renderTrialStatus(data) {
   var names = { moving: 'Moving leads', newbusiness: 'New Business leads', probate: 'Probate leads', planning: 'Planning leads', tenders: 'Public tender leads' };
   document.getElementById('trial-leadtype').textContent = names[data.product] || (data.product || 'your selected');
   var areasEl = document.getElementById('trial-areas');
-  if (data.target_areas && Array.isArray(data.target_areas) && data.target_areas.length) areasEl.textContent = data.target_areas.join(' â€¢ ');
-  else if (data.target_areas && typeof data.target_areas === 'string') { try { var a = JSON.parse(data.target_areas); areasEl.textContent = Array.isArray(a) ? a.join(' â€¢ ') : data.target_areas; } catch(e) { areasEl.textContent = data.target_areas; } }
+  if (data.target_areas && Array.isArray(data.target_areas) && data.target_areas.length) areasEl.textContent = data.target_areas.join(' • ');
+  else if (data.target_areas && typeof data.target_areas === 'string') { try { var a = JSON.parse(data.target_areas); areasEl.textContent = Array.isArray(a) ? a.join(' • ') : data.target_areas; } catch(e) { areasEl.textContent = data.target_areas; } }
   else areasEl.textContent = ',';
   var d = new Date();
   var today = d.getDay();
@@ -1138,11 +1138,11 @@ function loadPayments() {
     var pay = d.payment_method;
     if (d.price_per_week && d.price_per_week > 0 && d.plan !== 'free_trial' && d.plan !== 'cancelled') {
       document.getElementById('pay-weekly-row').style.display = 'block';
-      document.getElementById('pay-weekly-amount').textContent = 'Â£' + d.price_per_week;
+      document.getElementById('pay-weekly-amount').textContent = '£' + d.price_per_week;
     }
     if (d.upcoming_invoice && d.upcoming_invoice.amount > 0) {
       document.getElementById('pay-next-invoice-row').style.display = 'block';
-      document.getElementById('pay-next-invoice').textContent = 'Â£' + d.upcoming_invoice.amount.toFixed(2) + ' on ' + (d.upcoming_invoice.next_payment_attempt ? new Date(d.upcoming_invoice.next_payment_attempt).toLocaleDateString() : 'next week');
+      document.getElementById('pay-next-invoice').textContent = '£' + d.upcoming_invoice.amount.toFixed(2) + ' on ' + (d.upcoming_invoice.next_payment_attempt ? new Date(d.upcoming_invoice.next_payment_attempt).toLocaleDateString() : 'next week');
     }
     if (pay) {
       document.getElementById('pay-card-row').style.display = 'block';
@@ -1150,8 +1150,8 @@ function loadPayments() {
     }
     if (d.total_spend_this_month > 0 || d.total_spend_all_time > 0) {
       document.getElementById('pay-spend-row').style.display = 'block';
-      document.getElementById('pay-spend-week').textContent = 'Â£' + d.total_spend_this_month.toFixed(2);
-      document.getElementById('pay-spend-total').textContent = 'Â£' + d.total_spend_all_time.toFixed(2);
+      document.getElementById('pay-spend-week').textContent = '£' + d.total_spend_this_month.toFixed(2);
+      document.getElementById('pay-spend-total').textContent = '£' + d.total_spend_all_time.toFixed(2);
     }
     // Payment history list
     var inv = (d.invoices || []).slice(0, 10);
@@ -1167,7 +1167,7 @@ function loadPayments() {
         var link = i.invoice_pdf ? '<a href="' + i.invoice_pdf + '" target="_blank" style="color:var(--accent);text-decoration:underline;font-size:11px;margin-left:6px">PDF</a>' : '';
         html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);gap:8px;flex-wrap:wrap">' +
           '<div style="display:flex;align-items:center;gap:8px;min-width:0"><span style="color:' + statusColor + ';font-weight:700">' + label + '</span><span style="color:var(--text2);font-size:11px">' + when + '</span></div>' +
-          '<div style="display:flex;align-items:center;gap:6px"><strong>Â£' + i.amount.toFixed(2) + '</strong>' + link + '</div></div>';
+          '<div style="display:flex;align-items:center;gap:6px"><strong>£' + i.amount.toFixed(2) + '</strong>' + link + '</div></div>';
       });
       list.innerHTML = html;
     }
@@ -1463,7 +1463,7 @@ function loadPrintPostSetup(){
       if(dlFinal){dlFinal.href='/api/direct-mail/materials/'+d.flyer_front.id+'/final-print?token='+encodeURIComponent(_token)+'&format='+encodeURIComponent(fmtId)+'&download=1';dlFinal.download=(d.flyer_front.name||'leaflet-front')+'-final.png';dlFinal.style.display='flex';}
       if(dlOrig){dlOrig.href=d.flyer_front.preview_url+('?token='+encodeURIComponent(_token));dlOrig.download=(d.flyer_front.name||'leaflet-front');dlOrig.style.display='flex';}
       var specsEl=document.getElementById('pp-preview-front-specs');
-      if(specsEl&&d.format){specsEl.innerHTML='<b>Print spec:</b> '+d.format.mm+' Â· '+d.format.safe+' safe zone Â· 6mm bleed Â· 300 DPI full colour.';}
+      if(specsEl&&d.format){specsEl.innerHTML='<b>Print spec:</b> '+d.format.mm+' · '+d.format.safe+' safe zone · 6mm bleed · 300 DPI full colour.';}
     } else {
       showPreview('pp-preview-front','pp-preview-front-name','pp-preview-front-wrap',d.flyer_front);
       var dlF2=document.getElementById('pp-download-final'), dlO2=document.getElementById('pp-download-orig');
@@ -1572,7 +1572,7 @@ function autoPpLoad(){
       else { badge.textContent='OFF'; badge.style.color='var(--muted)'; badge.style.background='#f1f5f9'; badge.style.border='none'; }
     }
     if(detail){
-      if(d.enabled) detail.textContent='Using your saved "'+(d.template_name||'materials')+'" for '+d.mail_type+' up to Â£'+d.max_daily_spend+'/day. Dispatched after 9am daily.';
+      if(d.enabled) detail.textContent='Using your saved "'+(d.template_name||'materials')+'" for '+d.mail_type+' up to £'+d.max_daily_spend+'/day. Dispatched after 9am daily.';
       else if(!d.ready) detail.textContent='Save your materials above (business info + cover letter) to unlock Auto Print & Post.';
       else detail.textContent='Ready to go. Uses your saved "'+(d.template_name||'materials')+'". Switch on below.';
     }
@@ -1632,7 +1632,7 @@ function autoPpCardReturn(){
   var saved=qp.get('auto_card');
   if(saved==='saved'){
     var status=document.getElementById('auto-pp-status');
-    if(status){status.style.color='#16a34a';status.textContent='âœ… Card saved. Auto Post & Print billing is ready.';}
+    if(status){status.style.color='#16a34a';status.textContent='✅ Card saved. Auto Post & Print billing is ready.';}
     try{history.replaceState(null,'',window.location.pathname+window.location.search.replace(/[?&]auto_card=[^&]*/g,'').replace(/^&/,'?'));}catch(e){}
   } else if(saved==='cancelled'){
     var status=document.getElementById('auto-pp-status');
@@ -1716,7 +1716,7 @@ function ppSaveSetup(){
     apiCall('POST', '/api/direct-mail/setup', body, function(err, d){
       btn.disabled=false;btn.innerHTML='<i class="fas fa-save"></i> Save My Print &amp; Post Setup';
       if(d&&d.success){
-        statusEl.textContent='âœ“ '+d.message;
+        statusEl.textContent='✓ '+d.message;
         statusEl.style.color='var(--success)';
         loadPrintPostSetup();
       } else {
@@ -1747,8 +1747,8 @@ function ppDownloadCoverLetter(){
 function ppCleanLetterText(t){
   var s=String(t||'');
   s=s.replace(/\r\n?/g,'\n');
-  s=s.replace(/^\s*\*+\s+/gm,'â€¢ ');
-  s=s.replace(/^\s*(-\s+|\+\s+)/gm,'â€¢ ');
+  s=s.replace(/^\s*\*+\s+/gm,'• ');
+  s=s.replace(/^\s*(-\s+|\+\s+)/gm,'• ');
   s=s.replace(/\*\*/g,'');
   s=s.replace(/^\s*#{1,6}\s*/gm,'');
   s=s.replace(/^\s*(---+|\*\*\*+|___+)\s*$/gm,'');
@@ -1793,11 +1793,11 @@ var _tipIdx = 0;
 var _tipsTimer = null;
 var _areaTipShown = false;
 var QUICK_TIPS = [
-  'ðŸ–¨ï¸ Use Print &amp; Post to send a professionally printed letter or flyer to every lead, physical mail gets opened and remembered.',
-  'ðŸ“¦ Turn on Auto-Send and we mail every new lead for you automatically after the 9am delivery.',
-  'âœ‰ï¸ Send a second letter a couple of weeks later, most jobs are won on the second or third contact.',
-  'ðŸ’³ Upgrade your plan for more leads per day and a better per-lead price.',
-  'ðŸ“ If an area goes quiet, add a nearby postcode or county for a fuller daily mix.'
+  '🖨️ Use Print &amp; Post to send a professionally printed letter or flyer to every lead, physical mail gets opened and remembered.',
+  '📦 Turn on Auto-Send and we mail every new lead for you automatically after the 9am delivery.',
+  '✉️ Send a second letter a couple of weeks later, most jobs are won on the second or third contact.',
+  '💳 Upgrade your plan for more leads per day and a better per-lead price.',
+  '📍 If an area goes quiet, add a nearby postcode or county for a fuller daily mix.'
 ];
 function startQuickTips() {
   var el = document.getElementById('quick-tip');
@@ -1870,25 +1870,25 @@ function loadActivity() {
 
     // Build recent activity feed
     var items = [];
-    if (todayN > 0) items.push({ icon:'ðŸ“¨', color:'var(--accent)', title: todayN + ' new lead' + (todayN!==1?'s':'') + ' delivered today', sub:'Fresh opportunities are waiting in My Leads', href:'/portal/leads.html' });
-    else if (leads.length === 0) items.push({ icon:'â³', color:'var(--muted)', title:'No leads yet', sub:'Your first leads arrive at 9am after you complete your setup', href:'/portal/leads.html' });
-    if (weekN > 0) items.push({ icon:'ðŸ“…', color:'var(--success)', title: weekN + ' leads this week', sub:'Keep contacting within the first hour for best results', href:'/portal/leads.html' });
+    if (todayN > 0) items.push({ icon:'📨', color:'var(--accent)', title: todayN + ' new lead' + (todayN!==1?'s':'') + ' delivered today', sub:'Fresh opportunities are waiting in My Leads', href:'/portal/leads.html' });
+    else if (leads.length === 0) items.push({ icon:'⏳', color:'var(--muted)', title:'No leads yet', sub:'Your first leads arrive at 9am after you complete your setup', href:'/portal/leads.html' });
+    if (weekN > 0) items.push({ icon:'📅', color:'var(--success)', title: weekN + ' leads this week', sub:'Keep contacting within the first hour for best results', href:'/portal/leads.html' });
 
     // Payment info
     apiCall('GET', '/api/payments', null, function(err2, pay) {
       if (pay) {
         if (pay.upcoming_invoice && pay.upcoming_invoice.amount > 0 && pay.plan !== 'free_trial' && pay.plan !== 'cancelled') {
           var due = pay.upcoming_invoice.next_payment_attempt ? ' on ' + new Date(pay.upcoming_invoice.next_payment_attempt).toLocaleDateString('en-GB',{day:'numeric',month:'short'}) : '';
-          items.push({ icon:'ðŸ’³', color:'#8b5cf6', title:'Next payment Â£' + pay.upcoming_invoice.amount.toFixed(2) + due, sub: 'Weekly subscription renewal', href:'/portal/dashboard.html' });
+          items.push({ icon:'💳', color:'#8b5cf6', title:'Next payment £' + pay.upcoming_invoice.amount.toFixed(2) + due, sub: 'Weekly subscription renewal', href:'/portal/dashboard.html' });
         }
         if (pay.payment_method) {
-          items.push({ icon:'ðŸ’³', color:'#0ea5e9', title: (pay.payment_method.brand||'Card').charAt(0).toUpperCase() + ' ending ' + pay.payment_method.last4, sub:'Payment method on file', href:'/portal/dashboard.html' });
+          items.push({ icon:'💳', color:'#0ea5e9', title: (pay.payment_method.brand||'Card').charAt(0).toUpperCase() + ' ending ' + pay.payment_method.last4, sub:'Payment method on file', href:'/portal/dashboard.html' });
         }
       }
       // Auto print & post status
       apiCall('GET', '/api/direct-mail/auto-status', null, function(err3, auto) {
-        if (auto && auto.enabled) items.push({ icon:'ðŸ¤–', color:'#16a34a', title:'Auto Print & Post is ON', sub:'Your new leads are mailed automatically after 9am', href:'/portal/dashboard.html' });
-        if (items.length === 0) items.push({ icon:'âœ¨', color:'var(--accent)', title:'All set', sub:'Your account is ready. Check back for today\'s leads', href:'/portal/leads.html' });
+        if (auto && auto.enabled) items.push({ icon:'🤖', color:'#16a34a', title:'Auto Print & Post is ON', sub:'Your new leads are mailed automatically after 9am', href:'/portal/dashboard.html' });
+        if (items.length === 0) items.push({ icon:'✨', color:'var(--accent)', title:'All set', sub:'Your account is ready. Check back for today\'s leads', href:'/portal/leads.html' });
         var html = '';
         items.forEach(function(it){
           html += '<a href="' + it.href + '" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fff;border:1px solid var(--border);border-radius:10px;text-decoration:none;transition:.15s" onmouseover="this.style.borderColor=var(--accent)" onmouseout="this.style.borderColor=\'var(--border)\'">' +
@@ -2113,7 +2113,7 @@ document.querySelectorAll('.modal').forEach(function(m){
           if (v && v.success && v.paid) {
             var banner = document.createElement('div');
             banner.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:9999;background:#16a34a;color:#fff;padding:14px 22px;border-radius:12px;font-size:13px;font-weight:700;box-shadow:0 8px 30px rgba(0,0,0,.3);max-width:90%';
-            banner.innerHTML = 'âœ… Payment received. Your print &amp; post is on its way' + (v.provider_campaign_id ? ' (order ref ' + v.provider_campaign_id + ')' : '') + '<div style="font-weight:400;font-size:11px;margin-top:3px">A confirmation email is on its way to your inbox.</div>';
+            banner.innerHTML = '✅ Payment received. Your print &amp; post is on its way' + (v.provider_campaign_id ? ' (order ref ' + v.provider_campaign_id + ')' : '') + '<div style="font-weight:400;font-size:11px;margin-top:3px">A confirmation email is on its way to your inbox.</div>';
             document.body.appendChild(banner);
             setTimeout(function(){ banner.style.transition='opacity .5s'; banner.style.opacity='0'; setTimeout(function(){ banner.remove(); }, 600); }, 9000);
             // Refresh the print & post view so the posted status shows
@@ -2122,7 +2122,7 @@ document.querySelectorAll('.modal').forEach(function(m){
           } else if (v && v.success && v.already_completed) {
             var banner2 = document.createElement('div');
             banner2.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:9999;background:#16a34a;color:#fff;padding:12px 20px;border-radius:12px;font-size:13px;font-weight:700;box-shadow:0 8px 30px rgba(0,0,0,.3);max-width:90%';
-            banner2.innerHTML = 'âœ… Your print &amp; post was confirmed';
+            banner2.innerHTML = '✅ Your print &amp; post was confirmed';
             document.body.appendChild(banner2);
             setTimeout(function(){ banner2.style.transition='opacity .5s'; banner2.style.opacity='0'; setTimeout(function(){ banner2.remove(); }, 600); }, 7000);
           }
@@ -2140,7 +2140,7 @@ document.querySelectorAll('.modal').forEach(function(m){
       setTimeout(function(){
         var ub = document.createElement('div');
         ub.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:9999;background:#0ea5e9;color:#fff;padding:16px 24px;border-radius:14px;font-size:14px;font-weight:800;box-shadow:0 10px 40px rgba(0,0,0,.35);max-width:92%;text-align:center';
-        ub.innerHTML = 'ðŸŽ‰ You\u2019re Upgraded<div style="font-weight:400;font-size:12px;margin-top:4px">Your 9amLeads subscription is now active. Your daily leads continue at 9am.</div>';
+        ub.innerHTML = '🎉 You\u2019re Upgraded<div style="font-weight:400;font-size:12px;margin-top:4px">Your 9amLeads subscription is now active. Your daily leads continue at 9am.</div>';
         document.body.appendChild(ub);
         setTimeout(function(){ ub.style.transition='opacity .5s'; ub.style.opacity='0'; setTimeout(function(){ ub.remove(); }, 600); }, 8000);
       }, 1200);
@@ -2152,7 +2152,7 @@ document.querySelectorAll('.modal').forEach(function(m){
 
 
 <script>
-var tips=[{icon:"ðŸ”¥",title:"You're on fire! Keep going.",text:"Every lead you contact today is a potential new client. Your 9am leads are waiting. Review your opportunities and take action."},{icon:"ðŸ’¡",title:"Pro Tip: Follow up fast.",text:"Most conversions happen after the third contact. A structured follow-up over 7-10 days dramatically increases your success rate."},{icon:"ðŸŽ¯",title:"Quality over quantity.",text:"A well-researched, personalised approach beats mass outreach every time. Take 5 minutes to review each lead before contacting."},{icon:"ðŸ“ˆ",title:"Track your progress.",text:"Use the leads page to track your conversions. Measuring your success rate helps you improve over time."},{icon:"â°",title:"Early bird advantage.",text:"Leads arrive at 9am. Contacting within the first hour gives you a significant advantage over competitors."},{icon:"ðŸ¤",title:"Build relationships.",text:"Treat every lead as the start of a long-term relationship. Today's lead could be tomorrow's referral."},{icon:"ðŸ“‹",title:"Prepare your materials.",text:"Have your brochures, valuation packs, and introduction letters ready before 9am so you can act immediately when leads arrive."},{icon:"ðŸŽ¯",title:"Stay consistent.",text:"Success in lead conversion comes from daily consistency. Contact every lead, every day. Small daily actions compound into big results."},{icon:"ðŸš€",title:"First to respond wins.",text:"Research shows the first agent to contact a new lead converts at 3x the rate of the second. Speed is your superpower."},{icon:"ðŸ’Ž",title:"Every lead has potential.",text:"Even if a lead isn't right for you right now, they may know someone who is. Be professional, be helpful, and be memorable."},{icon:"ðŸ“Š",title:"Review your numbers.",text:"Check your leads page weekly to see how many you've contacted, quoted, and won. Small improvements in conversion = big revenue gains."},{icon:"ðŸ§ ",title:"Know your area.",text:"The more you know about your local property market, the more valuable you are to clients."},{icon:"ðŸš€",title:"Want more leads?",text:"Upgrade to a higher plan for more leads every day. More daily opportunities means more chances to win the work. Check your plan in Settings."},{icon:"ðŸ¤–",title:"Let Auto Post & Print do the work.",text:"Save time and effort. Turn on Auto Post & Print and your new leads are printed and posted automatically at 9am. No manual sending needed."},{icon:"âœ‰ï¸",title:"Print & Post wins more work.",text:"A posted letter gets far more attention than an email. Send a professional letter or flyer to your leads from the Print & Post page."},{icon:"ðŸ“¬",title:"Follow up by post.",text:"Re-mail a lead a couple of weeks after your first letter with the Post Again button. Follow-ups convert far more often than first contacts."},{icon:"ðŸ’¼",title:"Bulk mailing saves time.",text:"Select all your week's leads on My Leads and send them in one go. One payment, all printed and posted for you."},{icon:"âš¡",title:"Upgrade for more impact.",text:"Higher plans give you more leads, more areas, and priority support. Every extra lead is another potential client. Grow with us."},{icon:"ðŸ› ï¸",title:"Complete your setup.",text:"Save your business profile, leaflet and cover letter once, and every mailing uses them automatically. No re-uploading."},{icon:"ðŸ“ˆ",title:"Track conversions to grow.",text:"Your dashboard shows how many leads you've won. Use those numbers to know which areas and lead types perform best for you."},{icon:"ðŸ’·",title:"One job covers months.",text:"A single booking from one lead covers months of your subscription. That's why consistent follow-up pays off so well."},{icon:"ðŸ“¬",title:"Upload your flyer to enable Print & Post.",text:"On your free trial, upload your flyer (front AND back) and cover letter in Print & Post so we can post your marketing to new leads automatically. Turn on Auto Send and we do the rest."},{icon:"ðŸ“¬",title:"Post to several leads at once.",text:"On the My Leads page, tick the boxes next to multiple leads and click Print & Post Selected, we print, address and post them all in one batch."},{icon:"ðŸ¤–",title:"Automate your mailings.",text:"Set up Auto Post & Print once and we automatically post your chosen flyer or letter to every new matching lead. Pause it or set a daily limit anytime."},{icon:"ðŸ“¦",title:"Follow your post.",text:"Check Live Post Tracking to see the status of every mailing, printing, dispatched, out for delivery, delivered."},{icon:"ðŸ”—",title:"See where each lead came from.",text:"Every lead has a source link. Open it to verify the opportunity yourself before you contact."},{icon:"ðŸ“¤",title:"Export or sync your leads.",text:"Export to CSV/Excel or connect a CRM webhook from your settings so your leads flow straight into your CRM at 9am."},{icon:"ðŸ”„",title:"Follow up with older leads.",text:"Send a second flyer or letter to leads you posted to 2+ weeks ago, a follow-up often lands when they're ready to act. Go to My Leads, find a posted lead and click Post Again."}]
+var tips=[{icon:"🔥",title:"You're on fire! Keep going.",text:"Every lead you contact today is a potential new client. Your 9am leads are waiting. Review your opportunities and take action."},{icon:"💡",title:"Pro Tip: Follow up fast.",text:"Most conversions happen after the third contact. A structured follow-up over 7-10 days dramatically increases your success rate."},{icon:"🎯",title:"Quality over quantity.",text:"A well-researched, personalised approach beats mass outreach every time. Take 5 minutes to review each lead before contacting."},{icon:"📈",title:"Track your progress.",text:"Use the leads page to track your conversions. Measuring your success rate helps you improve over time."},{icon:"⏰",title:"Early bird advantage.",text:"Leads arrive at 9am. Contacting within the first hour gives you a significant advantage over competitors."},{icon:"🤝",title:"Build relationships.",text:"Treat every lead as the start of a long-term relationship. Today's lead could be tomorrow's referral."},{icon:"📋",title:"Prepare your materials.",text:"Have your brochures, valuation packs, and introduction letters ready before 9am so you can act immediately when leads arrive."},{icon:"🎯",title:"Stay consistent.",text:"Success in lead conversion comes from daily consistency. Contact every lead, every day. Small daily actions compound into big results."},{icon:"🚀",title:"First to respond wins.",text:"Research shows the first agent to contact a new lead converts at 3x the rate of the second. Speed is your superpower."},{icon:"💎",title:"Every lead has potential.",text:"Even if a lead isn't right for you right now, they may know someone who is. Be professional, be helpful, and be memorable."},{icon:"📊",title:"Review your numbers.",text:"Check your leads page weekly to see how many you've contacted, quoted, and won. Small improvements in conversion = big revenue gains."},{icon:"🧠",title:"Know your area.",text:"The more you know about your local property market, the more valuable you are to clients."},{icon:"🚀",title:"Want more leads?",text:"Upgrade to a higher plan for more leads every day. More daily opportunities means more chances to win the work. Check your plan in Settings."},{icon:"🤖",title:"Let Auto Post & Print do the work.",text:"Save time and effort. Turn on Auto Post & Print and your new leads are printed and posted automatically at 9am. No manual sending needed."},{icon:"✉️",title:"Print & Post wins more work.",text:"A posted letter gets far more attention than an email. Send a professional letter or flyer to your leads from the Print & Post page."},{icon:"📬",title:"Follow up by post.",text:"Re-mail a lead a couple of weeks after your first letter with the Post Again button. Follow-ups convert far more often than first contacts."},{icon:"💼",title:"Bulk mailing saves time.",text:"Select all your week's leads on My Leads and send them in one go. One payment, all printed and posted for you."},{icon:"⚡",title:"Upgrade for more impact.",text:"Higher plans give you more leads, more areas, and priority support. Every extra lead is another potential client. Grow with us."},{icon:"🛠️",title:"Complete your setup.",text:"Save your business profile, leaflet and cover letter once, and every mailing uses them automatically. No re-uploading."},{icon:"📈",title:"Track conversions to grow.",text:"Your dashboard shows how many leads you've won. Use those numbers to know which areas and lead types perform best for you."},{icon:"💷",title:"One job covers months.",text:"A single booking from one lead covers months of your subscription. That's why consistent follow-up pays off so well."},{icon:"📬",title:"Upload your flyer to enable Print & Post.",text:"On your free trial, upload your flyer (front AND back) and cover letter in Print & Post so we can post your marketing to new leads automatically. Turn on Auto Send and we do the rest."},{icon:"📬",title:"Post to several leads at once.",text:"On the My Leads page, tick the boxes next to multiple leads and click Print & Post Selected, we print, address and post them all in one batch."},{icon:"🤖",title:"Automate your mailings.",text:"Set up Auto Post & Print once and we automatically post your chosen flyer or letter to every new matching lead. Pause it or set a daily limit anytime."},{icon:"📦",title:"Follow your post.",text:"Check Live Post Tracking to see the status of every mailing, printing, dispatched, out for delivery, delivered."},{icon:"🔗",title:"See where each lead came from.",text:"Every lead has a source link. Open it to verify the opportunity yourself before you contact."},{icon:"📤",title:"Export or sync your leads.",text:"Export to CSV/Excel or connect a CRM webhook from your settings so your leads flow straight into your CRM at 9am."},{icon:"🔄",title:"Follow up with older leads.",text:"Send a second flyer or letter to leads you posted to 2+ weeks ago, a follow-up often lands when they're ready to act. Go to My Leads, find a posted lead and click Post Again."}]
 var ci=Math.floor(Math.random()*tips.length);
 function showTip(){try{var t=tips[ci];document.getElementById('tip-icon').textContent=t.icon;document.getElementById('tip-title').textContent=t.title;document.getElementById('tip-text').textContent=t.text;ci=(ci+1)%tips.length;}catch(e){}}
 setInterval(showTip,8000);showTip();
@@ -2175,16 +2175,16 @@ setTimeout(function(){
 <p style="font-size:12px;color:var(--muted);margin-bottom:20px">Pick your package. If you're still in your free trial, you won't be charged until the trial ends. then your chosen plan is billed weekly.</p>
 <div id="plan-options" style="display:flex;flex-direction:column;gap:12px">
   <button type="button" onclick="choosePlan('starter')" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#fff;border:1px solid var(--border);border-radius:10px;cursor:pointer;font-family:inherit;text-align:left;transition:.15s">
-    <div><div style="font-weight:800;font-size:14px;color:var(--text)">Starter</div><div style="font-size:11px;color:var(--muted);margin-top:2px" id="plan-line-starter">5 leads/day Â· 5 postcode areas</div></div>
-    <div style="font-weight:800;font-size:16px;color:var(--text)">Â£25<span style="font-size:11px;color:var(--muted)">/week</span></div>
+    <div><div style="font-weight:800;font-size:14px;color:var(--text)">Starter</div><div style="font-size:11px;color:var(--muted);margin-top:2px" id="plan-line-starter">5 leads/day · 5 postcode areas</div></div>
+    <div style="font-weight:800;font-size:16px;color:var(--text)">£25<span style="font-size:11px;color:var(--muted)">/week</span></div>
   </button>
   <button type="button" onclick="choosePlan('pro')" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#eff6ff;border:2px solid #0ea5e9;border-radius:10px;cursor:pointer;font-family:inherit;text-align:left;transition:.15s">
-    <div><div style="font-weight:800;font-size:14px;color:var(--text)">Pro <span style="font-size:10px;background:#0ea5e9;color:#fff;padding:2px 8px;border-radius:12px;margin-left:4px">MOST POPULAR</span></div><div style="font-size:11px;color:var(--muted);margin-top:2px" id="plan-line-pro">10 leads/day Â· unlimited areas</div></div>
-    <div style="font-weight:800;font-size:16px;color:var(--text)">Â£49<span style="font-size:11px;color:var(--muted)">/week</span></div>
+    <div><div style="font-weight:800;font-size:14px;color:var(--text)">Pro <span style="font-size:10px;background:#0ea5e9;color:#fff;padding:2px 8px;border-radius:12px;margin-left:4px">MOST POPULAR</span></div><div style="font-size:11px;color:var(--muted);margin-top:2px" id="plan-line-pro">10 leads/day · unlimited areas</div></div>
+    <div style="font-weight:800;font-size:16px;color:var(--text)">£49<span style="font-size:11px;color:var(--muted)">/week</span></div>
   </button>
   <button type="button" onclick="choosePlan('enterprise')" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#fff;border:1px solid var(--border);border-radius:10px;cursor:pointer;font-family:inherit;text-align:left;transition:.15s">
-    <div><div style="font-weight:800;font-size:14px;color:var(--text)">Enterprise</div><div style="font-size:11px;color:var(--muted);margin-top:2px" id="plan-line-enterprise">15 leads/day Â· all UK areas</div></div>
-    <div style="font-weight:800;font-size:16px;color:var(--text)">Â£99<span style="font-size:11px;color:var(--muted)">/week</span></div>
+    <div><div style="font-weight:800;font-size:14px;color:var(--text)">Enterprise</div><div style="font-size:11px;color:var(--muted);margin-top:2px" id="plan-line-enterprise">15 leads/day · all UK areas</div></div>
+    <div style="font-weight:800;font-size:16px;color:var(--text)">£99<span style="font-size:11px;color:var(--muted)">/week</span></div>
   </button>
 </div>
 <button onclick="closeModal('plan-select-modal')" style="margin-top:16px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;font-family:inherit">Cancel</button>
