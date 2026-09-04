@@ -94,7 +94,7 @@ h3{font-size:15px;font-weight:700;margin-bottom:10px}
 </div>
 <script>
 var API = window.location.hostname === 'localhost' ? 'http://localhost:8012' : '';
-function tok(){ return localStorage.getItem('9am_token') || localStorage.getItem('mld_portal_session') || localStorage.getItem('mld_portal_session') || localStorage.getItem('9am_token') || ''; }
+function tok(){ try { var s = localStorage.getItem('mld_portal_session') || localStorage.getItem('9am_token') || ''; if (!s) return ''; if (s.charAt(0) === '{') { var o = JSON.parse(s); if (o && o.token) return o.token; } return s; } catch (e) { return s || ''; } }
 function ah(){ return { 'Content-Type':'application/json', 'Authorization':'Bearer ' + tok() }; }
 function esc(s){ return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
 var ST = { product:'moving', age:'tm', mail:'leaflet', DATA:null, PACK:null };
