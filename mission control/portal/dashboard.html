@@ -197,8 +197,8 @@ document.addEventListener('DOMContentLoaded', function(){
 <a href="/portal/direct-mail.html" data-htip="We print, address and post a flyer or letter to your chosen leads for you. Pick a template or upload your own, and track every mailing with live status + proof of posting." style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:#fff;border:1px solid var(--border);border-radius:10px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;transition:.15s"><span style="font-size:20px">✉️</span> Print &amp; Post<span style="font-size:10px;color:var(--muted);font-weight:400">Send letters &amp; flyers</span></a>
 <a href="/portal/marketing.html" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:#fff;border:1px solid var(--border);border-radius:10px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;transition:.15s"><span style="font-size:20px">🎨</span> Marketing Tools<span style="font-size:10px;color:var(--muted);font-weight:400">Letters &amp; templates</span></a>
 <a href="/portal/direct-mail.html" data-htip="Upload your own flyer or letter, or pick one of our ready-made templates. This is what gets printed and posted to your leads." style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:#fff;border:1px solid var(--border);border-radius:10px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;transition:.15s"><span style="font-size:20px">🛠️</span> Print Setup<span style="font-size:10px;color:var(--muted);font-weight:400">Materials &amp; letter</span></a>
-<a href="/portal/boost.html" id="boost-card" data-htip="Buy a bulk boost pack of older archive leads (1 or 2 months old) - Moving or Probate - printed &amp; posted to every one. Leads have never been sent to customers; bulk packs are shared." style="display:none;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:linear-gradient(135deg,#fff,#fffbeb);border:1px solid #fcd34d;border-radius:10px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;transition:.15s"><span style="font-size:20px">🚀</span> Boost Your Business<span style="font-size:10px;color:#92400e;font-weight:400">Archive lead packs ✨</span></a>
-<a href="/portal/bulk.html" id="bulk-postage-card" data-htip="Pro exclusive: buy 50 or 100 exclusive never-sent UK New Business leads, review them, then we print &amp; post your marketing materials to every one." style="display:none;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:linear-gradient(135deg,#fff,#f0fdf4);border:1px solid #86efac;border-radius:10px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;transition:.15s"><span style="font-size:20px">📦</span> Bulk Postage<span style="font-size:10px;color:#166534;font-weight:400">Exclusive lead packs ✨</span></a>
+<a href="/portal/boost.html" onclick="return maybeGateBulk(event)" id="boost-card" data-htip="Buy a bulk boost pack of older archive leads (1 or 2 months old) - Moving or Probate - printed &amp; posted to every one. Leads have never been sent to customers; bulk packs are shared." style="display:none;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:linear-gradient(135deg,#fff,#fffbeb);border:1px solid #fcd34d;border-radius:10px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;transition:.15s"><span style="font-size:20px">🚀</span> Boost Your Business<span style="font-size:10px;color:#92400e;font-weight:400">Archive lead packs ✨</span></a>
+<a href="/portal/bulk.html" onclick="return maybeGateBulk(event)" id="bulk-postage-card" data-htip="Pro exclusive: buy 50 or 100 exclusive never-sent UK New Business leads, review them, then we print &amp; post your marketing materials to every one." style="display:none;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:linear-gradient(135deg,#fff,#f0fdf4);border:1px solid #86efac;border-radius:10px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;transition:.15s"><span style="font-size:20px">📦</span> Bulk Postage<span style="font-size:10px;color:#166534;font-weight:400">Exclusive lead packs ✨</span></a>
 <a href="#" onclick="showModal('settings-modal');switchTab('subscription');return false" data-htip="Upgrade to Starter, Pro or Enterprise to keep your 9am deliveries running. Weekly plans, cancel anytime. Manage your card + billing here." style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:#fff;border:1px solid var(--border);border-radius:10px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;transition:.15s"><span style="font-size:20px">💳</span> Plans &amp; Billing<span style="font-size:10px;color:var(--muted);font-weight:400">Upgrade or manage</span></a>
 <a href="/portal/auto.html" data-htip="Automatically send your chosen flyer or letter to every new matching lead. You stay in control with a daily limit + pause anytime." style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:#fff;border:1px solid var(--border);border-radius:10px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;transition:.15s"><span style="font-size:20px">🤖</span> Auto Print &amp; Post<span style="font-size:10px;color:var(--muted);font-weight:400">Automatic mailings</span></a>
 <a href="/portal/tracking.html" data-htip="See the status of every mailing: printing, dispatched, out for delivery, delivered. Download your proof of posting here." style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:#fff;border:1px solid var(--border);border-radius:10px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;transition:.15s"><span style="font-size:20px">📬</span> Live Post Tracking<span style="font-size:10px;color:var(--muted);font-weight:400">Track delivery in real time</span></a>
@@ -502,7 +502,21 @@ document.addEventListener('DOMContentLoaded', function(){
 </footer>
 </div>
 
-<!-- Cancel Modal -->
+  <!-- Bulk / Boost upgrade gate (free trial + starter see this instead of the tool) -->
+  <div class="modal" id="bulk-gate-modal">
+    <div class="modal-content" style="text-align:center">
+      <button onclick="closeModal('bulk-gate-modal')" style="position:absolute;right:16px;top:10px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted)">&times;</button>
+      <h3 style="margin-top:8px">Bulk Send is for Pro &amp; Enterprise</h3>
+      <p>Buy an exclusive lead pack and we&rsquo;ll print &amp; post your leaflets to every lead &mdash; hands-off marketing on autopilot.</p>
+      <p style="font-weight:700;color:var(--text)">Bulk Send unlocks on <span style="color:#0ea5e9">Pro</span> or <span style="color:#0ea5e9">Enterprise</span>. Upgrade to start.</p>
+      <a href="/portal/upgrade.html" class="btn btn-primary" style="color:#fff;text-decoration:none;padding:12px 22px;display:inline-block;margin-bottom:8px"><i class="fas fa-arrow-up"></i> Upgrade to unlock</a>
+      <br>
+      <button class="btn btn-outline" onclick="closeModal('bulk-gate-modal')" style="width:100%;justify-content:center">Maybe later</button>
+    </div>
+  </div>
+
+  <!-- Cancel Modal -->
+
 <div class="modal" id="cancel-modal">
 <div class="modal-content" style="text-align:center">
 <div style="font-size:40px;margin-bottom:10px">😢</div>
@@ -727,6 +741,17 @@ function getAreas() {
 var _sessionPlanForAreas = '';
 var _myProduct = 'moving';
 var _myCoverage = 'postcode';
+var _myPlan = '';
+// Gate for the Bulk/Boost tool cards: Pro/Enterprise open the tool; free trial +
+// starter (and anything else) get an upgrade prompt instead.
+function maybeGateBulk(e) {
+  try {
+    if (_myPlan === 'pro' || _myPlan === 'enterprise' || _myPlan === 'pro-plan' || _myPlan === 'premium') return true;
+  } catch(err) {}
+  try { e.preventDefault(); } catch(err) {}
+  showModal('bulk-gate-modal');
+  return false;
+}
 var SPECIALIST_COUNTIES = ['Bedfordshire','Berkshire','Bristol','Buckinghamshire','Cambridgeshire','Cheshire','Cornwall','Cumbria','Derbyshire','Devon','Dorset','Durham','East Sussex','Essex','Gloucestershire','Greater London','Greater Manchester','Hampshire','Herefordshire','Hertfordshire','Isle of Wight','Kent','Lancashire','Leicestershire','Lincolnshire','Merseyside','Norfolk','North Yorkshire','Northamptonshire','Northumberland','Nottinghamshire','Oxfordshire','Rutland','Shropshire','Somerset','South Yorkshire','Staffordshire','Suffolk','Surrey','Tyne and Wear','Warwickshire','West Midlands','West Sussex','West Yorkshire','Wiltshire','Worcestershire','Birmingham','Manchester','Liverpool','Leeds','Sheffield','Nottingham','Leicester','Cardiff','Edinburgh','Glasgow','Belfast','London','East Midlands','North East','North West','Yorkshire','East of England','South East','South West','Wales','Scotland','Northern Ireland','Channel Islands']
 function areaMaxLimit() {
   // free_trial / starter -> 5; pro / enterprise -> unlimited
@@ -1946,19 +1971,20 @@ document.querySelectorAll('.modal').forEach(function(m){
       loadSettings(data);
       _myProduct = data.product || ((data.products && data.products[0]) || 'moving');
       _myCoverage = data.coverage || 'postcode';
-      // BULK POSTAGE (newbusiness Pro exclusive): only show the Bulk Postage tool card
-      // for newbusiness customers on Pro/Enterprise. Free trial + starter stay hidden
-      // (they see an upgrade prompt if they try the /bulk page directly).
+      // BULK POSTAGE / BOOST cards: shown on every active account dashboard for the
+      // products that offer them (newbusiness = bulk pack, moving/probate = boost
+      // pack). Free trial + starter see the cards too, but tapping them shows an
+      // upgrade gate (maybeGateBulk) instead of opening the tool.
+      try { _myPlan = String(data.plan || '').toLowerCase(); } catch(e) {}
       try {
         var _bulkCard = document.getElementById('bulk-postage-card');
         if (_bulkCard) {
-          var _bulkPlan = String(data.plan || '').toLowerCase();
-          var _bulkShow = data.product === 'newbusiness' && (_bulkPlan === 'pro' || _bulkPlan === 'enterprise' || _bulkPlan === 'pro-plan') && data.bulk_pools_live;
+          var _bulkShow = data.product === 'newbusiness' && data.bulk_pools_live && data.plan !== 'cancelled';
           _bulkCard.style.display = _bulkShow ? 'flex' : 'none';
         }
         var _boostCard = document.getElementById('boost-card');
         if (_boostCard) {
-          var _boostShow = (data.product === 'moving' || data.product === 'probate') && data.bulk_pools_live;
+          var _boostShow = (data.product === 'moving' || data.product === 'probate') && data.bulk_pools_live && data.plan !== 'cancelled';
           _boostCard.style.display = _boostShow ? 'flex' : 'none';
         }
       } catch(e) {}
