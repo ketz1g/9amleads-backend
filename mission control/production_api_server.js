@@ -11769,6 +11769,25 @@ app.post('/api/admin/lead/un-deliver', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/lead/mark-delivered - mark a specific (already replaced/corrected)
+// lead as delivered TODAY without sending a new email. Used when the original 9am
+// lead was removed & replaced, so the customer's dashboard shows their corrected
+// lead immediately instead of "0 leads".
+app.post('/api/admin/lead/mark-delivered', adminAuth, (req, res) => {
+  try {
+    var leadId = (req.body && req.body.lead_id) || '';
+    if (!leadId) return res.status(400).json({ error: 'lead_id required' });
+    var dbM = getDb();
+    var lead = (dbM.leads || []).find(function(l) { return l.id === leadId; });
+    if (!lead) return res.status(404).json({ error: 'Lead not found' });
+    lead.delivered = 1;
+    lead.delivered_at = new Date().toISOString();
+    lead.status = 'delivered';
+    saveDb();
+    res.json({ success: true, lead_id: lead.id, customer_id: lead.customer_id, product: lead.product, delivered_at: lead.delivered_at });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/verify — validate the admin password (used by the admin login form)
 // Accept GET too: the browser's fetch() defaults to GET; a GET here previously
 // returned 404 which made the login show "Cannot reach server".
