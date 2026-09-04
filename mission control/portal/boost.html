@@ -98,6 +98,12 @@ function tok(){ return localStorage.getItem('9am_token') || ''; }
 function ah(){ return { 'Content-Type':'application/json', 'Authorization':'Bearer ' + tok() }; }
 function esc(s){ return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
 var ST = { product:'moving', age:'tm', mail:'leaflet', DATA:null, PACK:null };
+(function(){ try {
+  var qp = new URLSearchParams(window.location.search);
+  if (qp.get('product') === 'probate') ST.product = 'probate';
+  var a = qp.get('age');
+  if (a === 'tm' || a === '1m' || a === '2m') ST.age = a;
+} catch(e){} })();
 function ageName(a){ return a==='tm' ? 'this month' : a==='1m' ? '1 month old' : '2 months old'; }
 function setProduct(p){ ST.product=p; document.querySelectorAll('#content .seg button[data-p]').forEach(function(b){b.classList.toggle('on',b.dataset.p===p);}); render(); }
 function setAge(a){ ST.age=a; document.querySelectorAll('#content .seg button[data-a]').forEach(function(b){b.classList.toggle('on',b.dataset.a===a);}); render(); }
