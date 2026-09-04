@@ -74,7 +74,7 @@
 </div>
 <script>
 var API = window.location.hostname === 'localhost' ? 'http://localhost:8012' : '';
-function tok(){ return localStorage.getItem('mld_portal_session') || localStorage.getItem('9am_token') || ''; }
+function tok(){ return localStorage.getItem('mld_portal_session') || localStorage.getItem('9am_token') || localStorage.getItem('mld_portal_session') || localStorage.getItem('9am_token') || ''; }
 var STATE = { page: 1 };
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
 function load(){
