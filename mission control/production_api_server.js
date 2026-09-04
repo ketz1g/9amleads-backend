@@ -19080,6 +19080,13 @@ _deliverDiag[cust.email].products = products;
               // National fallback for tenders/probate (opportunities without a postcode).
               if (!fgAreaOk && (fgProd === 'tenders' || fgProd === 'probate')) fgAreaOk = true;
               if (!fgAreaOk) continue;
+              // MOVING DISTANCE GATE: guaranteed-fill must never send a far-away lead.
+              // Even the "full pool" last resort is only used when the lead is within
+              // MAX_FALLBACK_KM of a chosen area (never cross-country SW->NW nonsense).
+              if (fgProd === 'moving' && custAreas.length > 0 && !/all.?uk|uk.?wide|nationwide|whole.?uk/i.test((custAreas||[]).join(' '))) {
+                var fgExactArea = custAreas.some(function(a){ return extractPostcodeArea(a) === fgArea; });
+                if (!fgExactArea && !isFallbackLeadAcceptable(fgLead.postcode || fgLead.address || fgLead.location || fgLead.name || '', custAreas)) continue;
+              }
               var fgKey = (fgLead.postcode||fgLead.address||fgLead.id||fgLead.url||'');
               if (fgExisting[fgKey]) continue;
               var fgData = Object.assign({}, fgLead, {
