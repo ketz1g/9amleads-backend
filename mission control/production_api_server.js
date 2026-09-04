@@ -16951,6 +16951,28 @@ function readPoolFile(prod) {
   return arr;
 }
 
+// Quality gate: is this lead postable through Print & Post? Requires a valid UK
+// postcode + a full address with a recognisable street/premises AND a house/building
+// number (residential), or a company name at a real address (new business B2B).
+// Invalid leads are flagged and excluded BEFORE they ever reach Stannp, so nothing
+// bounces or prints to a partial address.
+function postableLeadInfo(l, allowCompanyNoDoor) {
+  var pc = String((l && (l.postcode || l.registered_postcode || '')) || '').toUpperCase().trim();
+  if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/.test(pc)) return { ok: false, reason: 'No valid UK postcode' };
+  var addr = String(l && (l.fullAddress || l.address || l.deceasedAddress || l.registered_address || '') || '').trim();
+  var words = addr.replace(/,/g, ' ').trim().split(/\s+/);
+  if (!addr || words.length < 3) return { ok: false, reason: 'Address too short' };
+  var t = addr.toLowerCase();
+  if (!/(street|road|avenue|ave|drive|dr|lane|close|crescent|cres|way|gardens|park|terrace|place|row|boulevard|business|centre|center|house|court|estate|industrial|mews|view|rise|walk|grove|hill|green|yard|yard|heights|way|end|gate|road)/i.test(t)) {
+    return { ok: false, reason: 'No recognisable street/premises' };
+  }
+  var bn = l && (l.buildingNumber || l.houseNumber || l.house_no || l.building_number || l.streetNumber || l.flatNumber || '');
+  var hasDoor = !!(bn && String(bn).trim()) || /(^|\s)(\d{1,4}[a-z]?)(\s|,|$)/i.test(' ' + addr + ' ') || /(flat|apartment|unit|suite|office|block|building|business park|industrial estate)\s/iu.test(t);
+  var company = l && String(l.company || l.companyName || l.company_name || l.name || '').trim();
+  var ok = hasDoor || (allowCompanyNoDoor && company);
+  return { ok: !!ok, hasDoor: !!hasDoor, reason: ok ? 'ok' : 'No house/building number on address' };
+}
+
 // Leads 3-7 days old, never delivered, Stannp-ready (valid postcode + usable address).
 function getBulkEligibleLeads() {
   var arr = readPoolFile('newbusiness');
@@ -16966,6 +16988,8 @@ function getBulkEligibleLeads() {
     if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/.test(pc)) return;
     var addr = l.fullAddress || l.address || '';
     if (!addr || addr.trim().length < 8) return;
+    var pi = postableLeadInfo(l, true); // new business: company-at-address counts as a door
+    if (!pi.ok) return;
     var rcpt = buildStannpRecipientFromLead(l);
     if (!rcpt || !rcpt.address_line1 || !rcpt.postcode) return;
     if (!(/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(rcpt.postcode).trim()))) return;
@@ -17241,7 +17265,7 @@ app.post('/api/newbusiness/bulk/send', authMiddleware, async (req, res) => {
       }
     }
     var arr = readPoolFile('newbusiness');
-    var leads = (arr || []).filter(function(l) { return l.bulk_reserved_by === c.id && !l.bulk_sold; });
+    var leads = (arr || []).filter(function(l) { return l.bulk_reserved_by === c.id && !l.bulk_sold && postableLeadInfo(l, true).ok; });
     if (!leads.length) return res.status(400).json({ error: 'No reserved leads found for this pack.' });
     // Materials gate depends on the customer's chosen MAIL TYPE (mirrors Print & Post):
     // leaflet needs flyer front + back; letter auto-generates (or uses uploaded letter);
@@ -17478,6 +17502,9 @@ function getBoostArchiveLeads(product, ageKey, count) {
     var addr = l.fullAddress || l.address || l.deceasedAddress || '';
     if (!addr || addr.trim().length < 8) return;
     if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/.test(pc)) return;
+    // Moving / Probate are residential: a house/building number is required so the
+    // leaflet/letter reaches the right door (flagged + excluded otherwise).
+    if (!postableLeadInfo(l, false).ok) return;
     out.push(l);
   });
   return out.slice(0, count || out.length);
@@ -17634,7 +17661,7 @@ app.post('/api/boost/send', authMiddleware, async (req, res) => {
     if (mailChoice !== 'letter' && (!hasFront || !hasBack)) return res.status(400).json({ error: 'Your boost pack is posted as A5 leaflets, so you need your leaflet front AND back uploaded in Print & Post (Step 2) first.' });
     var mailType = mailChoice === 'both' ? 'flyer_plus_letter' : mailChoice === 'letter' ? 'letter_a4' : 'flyer_a5';
     var arr = readPoolFile(product);
-    var leads = (arr || []).filter(function(l) { return l.boost_reserved_by === c.id && !l.boost_sold; });
+    var leads = (arr || []).filter(function(l) { return l.boost_reserved_by === c.id && !l.boost_sold && postableLeadInfo(l, false).ok; });
     if (!leads.length) return res.status(400).json({ error: 'No reserved leads found for this pack.' });
     // Create a direct-mail campaign + recipients, then send (reuse existing path).
     var campaignId = 'boost_' + uuidv4();
