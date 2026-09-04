@@ -17018,7 +17018,10 @@ app.post('/api/admin/boost-seed', adminAuth, (req, res) => {
     var target = Date.now() - (months === 2 ? 61 : 31) * 86400000;
     var dateStr = new Date(target).toISOString().split('T')[0];
     var arr = readPoolFile(prod);
-    var candidates = (arr || []).filter(function(l) { return l && !l.boost_reserved && !l.boost_sold && !l.bulk_reserved && !l.boost_seeded; });
+    // SAFETY: only archive leads that are no longer "fresh" (>48h old) so seeding
+    // bulk inventory never steals supply active customers still need before 9am.
+    var olderThan48h = function(l) { var d = pickFreshDate(l); if (!d) return true; var t = new Date(d).getTime(); return !isNaN(t) && (Date.now() - t) > 48 * 3600000; };
+    var candidates = (arr || []).filter(function(l) { return l && !l.boost_reserved && !l.boost_sold && !l.bulk_reserved && !l.boost_seeded && olderThan48h(l); });
     var count = Math.min(parseInt(req.body && req.body.count, 10) || 120, candidates.length);
     var chosen = candidates.slice(0, count);
     var file = path.join(DATA_DIR, PRODUCT_LEAD_FILES[prod].file);
@@ -17046,7 +17049,10 @@ app.post('/api/admin/bulk-seed', adminAuth, (req, res) => {
   try {
     var count = parseInt(req.body && req.body.count, 10) || 50;
     var arr = readPoolFile('newbusiness');
-    var candidates = (arr || []).filter(function(l) { return l && !l.bulk_reserved && !l.bulk_sold && l.incorporationDate; }).slice(0, count);
+    // SAFETY: only age companies already older than ~72h so bulk seeding doesn't
+    // drain the fresh supply new-business customers receive each day.
+    var olderThan72h = function(l) { var d = l.incorporationDate || l.firstVisibleDate || l.scrapedAt; if (!d) return false; var t = new Date(d).getTime(); return !isNaN(t) && (Date.now() - t) > 72 * 3600000; };
+    var candidates = (arr || []).filter(function(l) { return l && !l.bulk_reserved && !l.bulk_sold && l.incorporationDate && olderThan72h(l); }).slice(0, count);
     var f = PRODUCT_LEAD_FILES.newbusiness.file;
     var file = path.join(DATA_DIR, f);
     var raw = null;
