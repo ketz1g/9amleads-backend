@@ -13959,6 +13959,20 @@ cron.schedule('15 7 * * 1-5', async () => {
 cron.schedule('0 18 * * *', async () => {
   try { await runOtmDailyScrape(); } catch(e) { console.log('[OTM-18-CRON] ' + e.message); }
 }, { timezone: 'Europe/London' });
+// SECOND PLANNING SCRAPE (08:20 UK Mon-Fri): force-reruns the PLOTA/council
+// collectors so planning applications published after the early scrape still land
+// in the pool before the 9am delivery (supply safety net - pool holds 24h primary
+// + 48h fallback, delivery guarantees the promised count from it).
+cron.schedule('20 8 * * 1-5', async () => {
+  try {
+    const httpP2 = require('http');
+    var bP2 = JSON.stringify({ product: 'planning', force: true });
+    var rP2 = httpP2.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer ' + ADMIN_PASSWORD, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bP2) } }, function(s) { var rb = ''; s.on('data', function(d) { rb += d; }); s.on('end', function() { console.log('[PLANNING-2ND] done:', rb.substring(0, 180)); }); });
+    rP2.on('error', function(e) { console.log('[PLANNING-2ND] error:', e.message); });
+    rP2.write(bP2); rP2.end();
+  } catch(e) { console.log('[PLANNING-2ND] exception:', e.message); }
+}, { timezone: 'Europe/London' });
+
 // Daily funeral-notices probate supply (free, no Apify) - tops up the probate
 // pool ahead of the Gazette. Runs after the main scrape. DISABLED unless
 // FUNERAL_SOURCE=on - funeral notices carry funeral-parlour info, not the
