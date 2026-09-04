@@ -40,6 +40,26 @@
 
   var bubble = d.getElementById('chatBubble');
   var panel = d.getElementById('chatPanel');
+  // Keep the chat bubble/panel above the cookie-consent bar so they never overlap.
+  function shiftChatForCookie() {
+    try {
+      var cb = d.getElementById('cookieConsent');
+      var show = cb && String(cb.style.display) !== 'none';
+      var h = show && cb ? (cb.offsetHeight || 52) : 0;
+      bubble.style.bottom = (show ? (h + 14) : 24) + 'px';
+      panel.style.bottom = (show ? (h + 86) : 96) + 'px';
+    } catch (e) {}
+  }
+  shiftChatForCookie();
+  try {
+    var cbEl = d.getElementById('cookieConsent');
+    if (cbEl) {
+      var mo = new MutationObserver(shiftChatForCookie);
+      mo.observe(cbEl, { attributes: true, attributeFilter: ['style'] });
+      setTimeout(shiftChatForCookie, 300);
+      setTimeout(shiftChatForCookie, 1000);
+    }
+  } catch (e) {}
   var close = d.getElementById('chatClose');
   var send = d.getElementById('chatSend');
   var name = d.getElementById('chatName');

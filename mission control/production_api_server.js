@@ -17661,7 +17661,7 @@ app.post('/api/boost/send', authMiddleware, async (req, res) => {
     if (mailChoice !== 'letter' && (!hasFront || !hasBack)) return res.status(400).json({ error: 'Your boost pack is posted as A5 leaflets, so you need your leaflet front AND back uploaded in Print & Post (Step 2) first.' });
     var mailType = mailChoice === 'both' ? 'flyer_plus_letter' : mailChoice === 'letter' ? 'letter_a4' : 'flyer_a5';
     var arr = readPoolFile(product);
-    var leads = (arr || []).filter(function(l) { return l.boost_reserved_by === c.id && !l.boost_sold && postableLeadInfo(l, false).ok; });
+    var leads = (arr || []).filter(function(l) { return l.boost_reserved_by === c.id && !l.boost_sold && postableLeadInfo(l, product === 'newbusiness').ok; });
     if (!leads.length) return res.status(400).json({ error: 'No reserved leads found for this pack.' });
     // Create a direct-mail campaign + recipients, then send (reuse existing path).
     var campaignId = 'boost_' + uuidv4();
