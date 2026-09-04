@@ -136,7 +136,7 @@ function load(){
   fetch(API+'/api/boost',{headers:{'Authorization':'Bearer '+tok()}})
   .then(function(r){return r.json();}).then(function(d){
     if(!d.success){ if(d.error && /token|invalid|expired/i.test(String(d.error))){ window.location.href='/portal/'; return; } document.getElementById('loading').textContent=d.error||'Could not load Boost.'; return; }
-    if(!d.live){ document.getElementById('loading').style.display='none'; document.getElementById('content').innerHTML='<div class="card" style="text-align:center;padding:40px"><div style="font-size:40px">ðŸš€</div><h2 style="margin:10px 0 6px">Boost Your Business - coming soon</h2><p class="hint" style="max-width:460px;margin:0 auto">Archive lead packs are being prepared. Check back shortly.</p></div>'; return; }
+    if(!d.live){ document.getElementById('loading').style.display='none'; document.getElementById('content').style.display='block'; document.getElementById('content').innerHTML='<div class="card" style="text-align:center;padding:40px"><div style="font-size:40px">ðŸš€</div><h2 style="margin:10px 0 6px">Boost Your Business - coming soon</h2><p class="hint" style="max-width:460px;margin:0 auto">Archive lead packs are being prepared. Check back shortly.</p></div>'; return; }
     document.getElementById('loading').style.display='none';
     document.getElementById('content').style.display='block';
     ST.DATA=d;
