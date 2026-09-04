@@ -118,6 +118,21 @@ footer a{color:var(--accent);text-decoration:underline}
 </div>
 </div>
 
+<!-- Bulk Lead Packs (moving / probate / new business) -->
+<div id="bulk-dash" class="card" style="display:none;background:linear-gradient(135deg,#f0fdf4,#e0f2fe);border:1px solid #bbf7d0;margin-bottom:18px;padding:16px 18px">
+  <div style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap">
+    <div style="font-size:30px;line-height:1">📦</div>
+    <div style="flex:1;min-width:230px">
+      <div style="font-size:15px;font-weight:800;font-family:var(--ff-h);color:var(--text)">Bulk Lead Packs <span style="font-size:10px;color:#166534;background:#dcfce7;border:1px solid #bbf7d0;border-radius:99px;padding:2px 8px;vertical-align:middle;font-weight:700">PRO &amp; ENTERPRISE</span></div>
+      <p style="font-size:12.5px;color:var(--text2);line-height:1.6;margin:4px 0 0">Want volume fast? Buy 50&ndash;1000 exclusive never-sent <b id="bulk-dash-label" style="color:var(--text)">leads</b>, review them, and we <b>print &amp; post your leaflet or letter</b> to every single one. From <b>&pound;1.99 per lead</b>.</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;align-items:stretch;min-width:170px">
+      <a id="bulk-dash-cta" href="/portal/bulk.html" onclick="return maybeGateBulkRoute(event)" class="btn btn-primary" style="color:#fff;text-decoration:none;padding:10px 16px;font-size:13px;text-align:center;white-space:nowrap">Buy a bulk pack</a>
+      <a href="https://9amleads.com/bulk.html" target="_blank" rel="noopener" style="font-size:12px;font-weight:700;color:#0ea5e9;text-decoration:none;text-align:center">How it works &rarr;</a>
+    </div>
+  </div>
+</div>
+
 <!-- Print & Post + Auto-Send callout -->
 <div class="card" style="background:linear-gradient(135deg,#eff6ff,#eef2ff);border:1px solid #e0e7ff;margin-bottom:18px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
 <div style="display:flex;align-items:center;gap:10px">
@@ -1993,6 +2008,18 @@ document.querySelectorAll('.modal').forEach(function(m){
       // get the upgrade modal.
       try { _myPlan = String(data.plan || '').toLowerCase(); } catch(e) {}
       try { _myProduct = data.product || _myProduct; } catch(e) {}
+      // Bulk Lead Packs dashboard section (moving / probate / new business)
+      try {
+        var _bSec = document.getElementById('bulk-dash');
+        if (_bSec) {
+          var _sup = (_myProduct === 'moving' || _myProduct === 'probate' || _myProduct === 'newbusiness');
+          _bSec.style.display = (_sup && _myPlan !== 'cancelled') ? 'block' : 'none';
+          var _bLbl = document.getElementById('bulk-dash-label');
+          if (_bLbl) _bLbl.textContent = _myProduct === 'moving' ? 'moving leads' : _myProduct === 'probate' ? 'probate leads' : 'new business leads';
+          var _bCta = document.getElementById('bulk-dash-cta');
+          if (_bCta) _bCta.setAttribute('href', (_myProduct === 'moving' || _myProduct === 'probate') ? '/portal/boost.html' : '/portal/bulk.html');
+        }
+      } catch(e) {}
       if (data.target_areas) renderPostcodes(data.target_areas); loadPlanForAreas();
       if (data.plan) document.getElementById('plan-name').textContent = data.plan === 'free_trial' ? 'Free Trial' : data.plan.charAt(0).toUpperCase() + data.plan.slice(1);
       // Free-trial countdown timer: show a live countdown to trial end for free
