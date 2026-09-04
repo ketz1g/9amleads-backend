@@ -11502,8 +11502,57 @@ app.post('/api/admin/purge-funeral-probate', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-var FUNERAL_PAT = /funeral|cremator|cremation|funeralcare|funeral director|obituar|memorial|dignity funerals|the co-op funeral|co-operative funeralcare/i;
-function purgeFuneralProbateLeads() {
+// POST /api/admin/probate-sample-check — email the owner a sample of the current
+// probate pool (post purge + PAF) so they can verify leads are the correct new
+// type: Gazette / PNP deceased-estates with the deceased's home address (never
+// funeral/parlour content). Also runs automatically after each morning's scrape.
+app.post('/api/admin/probate-sample-check', adminAuth, async (req, res) => {
+  try {
+    var sent = await sendProbateSampleEmail(true);
+    res.json({ success: true, sent_to: sent, count: sent ? 1 : 0 });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+async function sendProbateSampleEmail(forceLog) {
+  try {
+    var pf = path.join(DATA_DIR, PRODUCT_LEAD_FILES.probate.file);
+    var pool = [];
+    try { pool = JSON.parse(fs.readFileSync(pf, 'utf-8')); if (!Array.isArray(pool)) pool = []; } catch(e) { pool = []; }
+    // Only correct new-type leads: Gazette / PNP, no funeral content, with a usable
+    // deceased home address where possible.
+    var cut48 = new Date(Date.now() - 48 * 3600000).toISOString();
+    var good = pool.filter(function(l) {
+      var src = String(l.source || '').toLowerCase();
+      if (src.indexOf('funeral') !== -1 || FUNERAL_PAT.test(String((l.address || '') + ' ' + (l.fullAddress || '') + ' ' + (l.name || '') + ' ' + (l.deceasedName || '')))) return false;
+      if (src.indexOf('gazette') === -1 && src.indexOf('pnp') === -1 && src.indexOf('public notice') === -1 && src.indexOf('section 27') === -1) return false;
+      var fv = pickFreshDate(l) || '';
+      return !fv || fv >= cut48;
+    }).slice(0, 3);
+    if (!good.length) { console.log('[PROBATE-SAMPLE] no fresh Gazette/PNP sample leads available yet'); return ''; }
+    var rows = good.map(function(l) {
+      return '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin:8px 0;background:#f8fafc">' +
+        '<b style="color:#0f172a">' + (l.deceasedName || l.name || 'Deceased estate') + '</b><br>' +
+        '<span style="color:#334155">Home address: ' + (l.deceasedAddress || l.address || l.fullAddress || '') + (l.postcode ? ', ' + l.postcode : '') + '</span><br>' +
+        '<span style="color:#64748b">Source: ' + (l.source || '') + '</span> &nbsp; ' +
+        (l.url ? '<a href="' + l.url + '" style="color:#0ea5e9">View notice</a>' : '') + '</div>';
+    }).join('');
+    var to = process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com';
+    var html = '<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px">' +
+      '<h2 style="color:#34d399;margin:0 0 10px">Probate sample check</h2>' +
+      '<p style="font-size:13px;color:#cbd5e1;margin:0 0 12px">Latest correct-format probate leads (Gazette/PNP deceased home addresses, funeral content excluded).</p>' + rows +
+      '<p style="font-size:11px;color:#94a3b8;margin-top:12px">If these look wrong (funeral info, no home address) check the probate scraper/pool immediately.</p></div>';
+    await sendBrevoEmail({ email: to, name: '9amLeads Owner' }, 'Probate sample check - correct-format leads', html).catch(function(e) { console.log('[PROBATE-SAMPLE] send error:', e && e.message); });
+    console.log('[PROBATE-SAMPLE] sent ' + good.length + ' sample lead(s) to ' + to);
+    return to;
+  } catch(e) { console.log('[PROBATE-SAMPLE] error:', e.message); return ''; }
+}
+
+// Automatic daily sample check after the morning scrape + PAF passes (06:45 UK).
+cron.schedule('45 6 * * 1-5', async () => {
+  try { await sendProbateSampleEmail(true); } catch(e) {}
+}, { timezone: 'Europe/London' });
+
+var FUNERAL_PAT = /funeral|cremator|cremation|funeralcare|funeral director|obituar|memorial|dignity funerals|the co-op funeral|co-operative funeralcare/i;function purgeFuneralProbateLeads() {
   var out = { pool: 0, dashboard: 0, remaining: 0 };
   try {
     var pf = path.join(DATA_DIR, PRODUCT_LEAD_FILES.probate.file);
