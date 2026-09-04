@@ -12192,7 +12192,7 @@ function sendBrevoEmail(to, subject, htmlContent) {
   // BULK SEND PITCH: Print & Post and Bulk Send go hand in hand, so any email that
   // already talks about Print & Post gets a short Bulk Send mention too (added once).
   if (/print\s*&amp;\s*post|print\s*&\s*post|print\s*and\s*post/i.test(htmlContent) && htmlContent.indexOf('Bulk Send') === -1) {
-    htmlContent += '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td><div style="margin-top:18px;padding:14px 18px;border:1px solid #99f6e4;border-radius:12px;background:linear-gradient(135deg,rgba(16,185,129,0.07),rgba(14,165,233,0.06))"><p style="color:#0f172a;font-size:13px;line-height:1.7;margin:0">📦 <b>Bulk Send</b> goes hand in hand with Print &amp; Post: boost your business in slow times with 50&ndash;1000 exclusive never-sent leads, printed &amp; posted for you from &pound;1.99 per lead. <a href="https://9amleads.com/bulk.html" style="color:#0ea5e9;font-weight:700">See Bulk Send &rarr;</a></p></div></td></tr></table>';
+    htmlContent += '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td><div style="margin-top:18px;padding:14px 18px;border:1px solid #99f6e4;border-radius:12px;background:linear-gradient(135deg,rgba(16,185,129,0.07),rgba(14,165,233,0.06))"><p style="color:#0f172a;font-size:13px;line-height:1.7;margin:0">📦 <b>Bulk Send</b> goes hand in hand with Print &amp; Post: boost your business in slow times with 50&ndash;1000 archive leads (aimed never-sent), printed &amp; posted for you from &pound;1.99 per lead. <a href="https://9amleads.com/bulk.html" style="color:#0ea5e9;font-weight:700">See Bulk Send &rarr;</a></p></div></td></tr></table>';
   }
   const data = JSON.stringify({
     sender: { name: senderName, email: senderFrom },
@@ -12993,7 +12993,7 @@ function buildWeeklyTrialTemplate(customer, wk, productName, accent, product) {
     bodyHtml = '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 16px">We\u2019re not going to chase you forever. But your <strong>' + productName + '</strong> genuinely are still waiting. You can <strong>pause, restart or switch your package anytime</strong>; there\u2019s no lock-in and no obligation. When you\u2019re ready, your daily 9am leads are one click away:</p>' +
       '<div style="background:rgba(14,165,233,0.05);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#1e293b;font-size:13px;line-height:1.9;margin:0">' + tips[1] + '<br><br>' + tips[0] + '</p></div>';
   }
-  var bulkBox = '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top:16px"><tr><td><div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.22);border-radius:12px;padding:14px 18px"><p style="color:#0f172a;font-size:13px;line-height:1.7;margin:0">📦 <b style="color:#047857">Boost your business in slow times, instantly.</b> Prefer volume? Bulk Send lets you buy 50&ndash;1000 exclusive never-sent leads, and we print &amp; post your leaflet or letter to every single one, from &pound;1.99 per lead. <a href="' + PUBLIC_URL + '/bulk.html" style="color:#0ea5e9;font-weight:700">See Bulk Send &rarr;</a></p></div></td></tr></table>';
+  var bulkBox = '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top:16px"><tr><td><div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.22);border-radius:12px;padding:14px 18px"><p style="color:#0f172a;font-size:13px;line-height:1.7;margin:0">📦 <b style="color:#047857">Boost your business in slow times, instantly.</b> Prefer volume? Bulk Send lets you buy 50&ndash;1000 archive leads (aimed never-sent), and we print &amp; post your leaflet or letter to every single one, from &pound;1.99 per lead. <a href="' + PUBLIC_URL + '/bulk.html" style="color:#0ea5e9;font-weight:700">See Bulk Send &rarr;</a></p></div></td></tr></table>';
   return '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#0f172a;margin:0 0 6px;text-align:center">Your ' + productName + ' are still waiting for you</h2>' +
     '<p style="color:#64748b;font-size:13px;text-align:center;margin:0 0 20px">Week ' + wk + ' of keeping your account ready for you</p>' +
     bodyHtml +
@@ -17208,7 +17208,7 @@ app.get('/api/newbusiness/bulk', authMiddleware, (req, res) => {
       pack: pack ? { count: pack.count, purchased_at: pack.purchased_at, status: pack.status, sent: pack.sent || 0 } : null,
       reserved_count: reserved.length, reserved: reserved,
       materials_ready: materials,
-      upgrade_hint: !eligible ? 'Bulk postage packs are a Pro feature. Upgrade to Pro to unlock exclusive lead packs.' : ''
+      upgrade_hint: !eligible ? 'Bulk postage packs are a Pro feature. Upgrade to Pro to unlock archive lead packs.' : ''
     });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -17238,7 +17238,7 @@ app.post('/api/newbusiness/bulk/checkout', authMiddleware, async (req, res) => {
       customer_email: c.email,
       'line_items[0][price_data][currency]': 'gbp',
       'line_items[0][price_data][product_data][name]': 'Exclusive Lead Archive: ' + count + ' UK New Business Leads (' + typeLabel + ')',
-      'line_items[0][price_data][product_data][description]': count + ' exclusive never-sent UK leads · print & post · ' + typeLabel,
+      'line_items[0][price_data][product_data][description]': count + ' aimed-never-sent archive UK leads · print & post · ' + typeLabel,
       'line_items[0][price_data][unit_amount]': String(amountPence),
       'line_items[0][quantity]': '1',
       success_url: baseUrl + '/portal/bulk.html?bulk_paid=success',
@@ -23799,7 +23799,7 @@ function generateLeadEmailHTML(customer, leads) {
   body += '<td style="padding:0 5px"><a href="https://www.facebook.com/share/1SBwDAUuxh/" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.08);line-height:30px;text-align:center;text-decoration:none"><span style="color:#ffffff;font-size:11px;font-weight:700">fb</span></a></td>';
   body += '<td style="padding:0 5px"><a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.08);line-height:30px;text-align:center;text-decoration:none"><span style="color:#ffffff;font-size:11px;font-weight:700">tt</span></a></td>';
   body += '<td style="padding:0 5px"><a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.08);line-height:30px;text-align:center;text-decoration:none"><span style="color:#ffffff;font-size:11px;font-weight:700">ig</span></a></td>';
-  // BULK POSTAGE REMINDER (newbusiness Pro only): one-off exclusive lead packs
+  // BULK POSTAGE REMINDER (newbusiness Pro only): one-off archive lead packs
   var _bulkPlanE = String(customer.plan || '').toLowerCase();
   if (customer.product === 'newbusiness' && (_bulkPlanE === 'pro' || _bulkPlanE === 'enterprise' || _bulkPlanE === 'pro-plan')) {
     body += '<tr><td style="background-color:#f0fdf4;padding:22px 30px;border-top:4px solid #86efac"><table cellpadding="0" cellspacing="0" width="100%"><tr><td style="font-size:26px;vertical-align:top;line-height:1;padding-right:12px">\uD83D\uDCE6</td><td style="font-family:Inter,Arial,sans-serif;color:#166534"><div style="font-size:15px;font-weight:800;color:#14532d;margin-bottom:6px">Pro perk: Bulk Postage</div><div style="font-size:13px;line-height:1.6;color:#166534;margin-bottom:14px">Boost your sales with exclusive UK new business leads that have never been sent to anyone. We print and post your own A5 leaflet to every single one.</div><table cellpadding="0" cellspacing="0"><tr><td style="background:#ffffff;border:1px solid #bbf7d0;border-radius:8px;padding:7px 12px;font-size:12px;color:#14532d"><strong>50 leads</strong>&nbsp;&nbsp;&pound;100</td><td style="width:8px"></td><td style="background:#ffffff;border:1px solid #bbf7d0;border-radius:8px;padding:7px 12px;font-size:12px;color:#14532d"><strong>100 leads</strong>&nbsp;&nbsp;&pound;200</td><td style="width:10px"></td><td><a href="https://www.9amleads.com/portal/bulk.html" style="display:inline-block;background:#16a34a;color:#ffffff;font-weight:800;font-size:13px;padding:9px 18px;border-radius:8px;text-decoration:none;white-space:nowrap">View Bulk Postage</a></td></tr></table></td></tr></table></td></tr>';
