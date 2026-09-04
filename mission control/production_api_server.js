@@ -20574,7 +20574,7 @@ app.post('/api/setup-checkout', authMiddleware, async (req, res) => {
 // customer.subscription.deleted (cancellation).
 // Signature verification is REQUIRED when a signing secret is configured. In test
 // mode the test signing secret is used so real test-mode events can be validated.
-app.post('/api/stripe/webhook', async (req, res) => {
+app.post('/api/stripe/webhook', async (req, res, next) => {
   try {
     var isTestMode = process.env.STRIPE_TEST_MODE === 'true' || process.env.STRIPE_TEST_MODE === '1';
     var whSecret = isTestMode ? (process.env.STRIPE_TEST_WEBHOOK_SECRET || '') : (process.env.STRIPE_WEBHOOK_SECRET || '');
@@ -20602,6 +20602,12 @@ app.post('/api/stripe/webhook', async (req, res) => {
       var plan = session.metadata && session.metadata.plan;
       var product = session.metadata && session.metadata.product;
       var metaType = session.metadata && session.metadata.type;
+
+      // FORWARD one-time product payments (bulk/boost lead packs, extra areas,
+      // direct-mail campaigns) to the dedicated handler below. Without this the
+      // subscription handler consumed the event and pack purchases never unlocked.
+      var _oneTimeTypes = ['bulk_leads', 'boost_leads', 'extra_area', 'direct_mail_campaign'];
+      if (_oneTimeTypes.indexOf(metaType) !== -1) return next();
 
       // Handle setup mode (trial card save)
       if (session.mode === 'setup' || metaType === 'trial_card_setup') {
