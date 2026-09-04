@@ -24144,6 +24144,69 @@ var DM_FORMATS = [
   { id: 'letter_a4', label: 'A4 Letter', size: 'letter', kind: 'letter', width: 0, height: 0, mm: '210×297mm', safe: '210×297mm', template: 'a4-letter.pdf', price: 2.49, desc: 'Professional A4 letter with windowed envelope.' }
 ];
 
+// GET /api/direct-mail/my-bulk-leads — every lead the customer has bought via a bulk /
+// boost pack (reserved or already sent), paginated 25 per page, with dispatch status.
+app.get('/api/direct-mail/my-bulk-leads', authMiddleware, (req, res) => {
+  try {
+    var c = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!c) return res.status(404).json({ error: 'User not found' });
+    var page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    var per = Math.max(1, Math.min(50, parseInt(req.query.per, 10) || 25));
+    var pools = ['newbusiness', 'moving', 'probate'];
+    var mine = [];
+    var pack = null;
+    try { pack = JSON.parse(c.bulk_pack || 'null'); } catch(e) {}
+    pools.forEach(function(pk) {
+      var arr = readPoolFile(pk) || [];
+      arr.forEach(function(l) {
+        if (!l || typeof l !== 'object') return;
+        var mineFlag = (l.bulk_reserved_by === c.id) || (l.boost_reserved_by === c.id) ||
+                       (l.bulk_sold_by === c.id) || (l.boost_sold_by === c.id) ||
+                       ((l.bulk_sold === 1 || l.bulk_sold === '1' || l.bulk_sold === true) && l.bulk_reserved_by === c.id) ||
+                       ((l.boost_sold === 1 || l.boost_sold === '1' || l.boost_sold === true) && l.boost_reserved_by === c.id) ||
+                       ((l.bulk_reserved === 1 || l.bulk_reserved === '1' || l.bulk_reserved === true) && l.bulk_reserved_by === c.id) ||
+                       ((l.boost_reserved === 1 || l.boost_reserved === '1' || l.boost_reserved === true) && l.boost_reserved_by === c.id);
+        if (!mineFlag) return;
+        mine.push({ id: l.id || l.company_number || '', name: l.name || l.company || l.companyName || l.company_name || 'Lead', company: l.company || l.companyName || l.company_name || '', address: l.fullAddress || l.address || '', postcode: l.postcode || '', reserved_at: l.bulk_reserved_at || l.boost_reserved_at || l.createdAt || '', product: pk });
+      });
+    });
+    // status map from this customer's mailpiece recipients (by lead id)
+    var statusMap = {};
+    try {
+      var recips = db.prepare('SELECT lead_id,status,provider_status FROM direct_mail_recipients WHERE customer_id = ? AND lead_id != ? AND lead_id IS NOT NULL').all(c.id, '');
+      (recips || []).forEach(function(r) { if (r.lead_id) statusMap[String(r.lead_id)] = r; });
+    } catch(e) {}
+    function bucket(r) {
+      if (!r) return { key: 'not_sent', label: 'Not yet sent' };
+      var s = String(r.provider_status || r.status || '').toLowerCase();
+      if (s.indexOf('deliver') !== -1) return { key: 'delivered', label: 'Delivered' };
+      if (s.indexOf('out') !== -1 || s.indexOf('dispatch') !== -1) return { key: 'out', label: 'Out for delivery' };
+      if (s.indexOf('fail') !== -1) return { key: 'failed', label: 'Failed' };
+      if (s !== '' && s !== 'pending') return { key: 'printer', label: 'With the printers' };
+      if (r.status === 'sent' || r.provider_mailpiece_id) return { key: 'printer', label: 'With the printers' };
+      return { key: 'not_sent', label: 'Queued' };
+    }
+    var enriched = mine.map(function(l) {
+      var b = bucket(statusMap[String(l.id)]);
+      return { id: l.id, name: l.name, company: l.company, address: l.address, postcode: l.postcode, reserved_at: l.reserved_at, product: l.product, status: b };
+    });
+    var total = enriched.length;
+    var counts = { total: total, posted: 0, printer: 0, out: 0, delivered: 0, not_sent: 0, failed: 0 };
+    enriched.forEach(function(l) {
+      var k = l.status.key;
+      if (k === 'printer' || k === 'out' || k === 'delivered') counts.posted++;
+      if (counts[k] !== undefined) counts[k]++;
+    });
+    counts.posted_pct = total > 0 ? Math.round((counts.posted / total) * 100) : 0;
+    counts.delivered_pct = total > 0 ? Math.round((counts.delivered / total) * 100) : 0;
+    // sort: unsent first, then reserved_at desc
+    enriched.sort(function(a, b) { if ((a.status.key === 'not_sent') !== (b.status.key === 'not_sent')) return a.status.key === 'not_sent' ? -1 : 1; return String(b.reserved_at).localeCompare(String(a.reserved_at)); });
+    var start = (page - 1) * per;
+    var leads = enriched.slice(start, start + per);
+    res.json({ success: true, product: c.product, pack: pack, counts: counts, page: page, per: per, totalPages: Math.max(1, Math.ceil(total / per)), total: total, leads: leads });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/direct-mail/pricing — return Print & Post prices and formats
 app.get('/api/direct-mail/pricing', (req, res) => {
   res.json({
