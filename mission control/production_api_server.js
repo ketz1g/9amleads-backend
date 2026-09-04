@@ -592,7 +592,12 @@ function isFallbackLeadAcceptable(leadPc, custAreas) {
   var joined = (custAreas || []).join(' ');
   if (/all.?uk|uk.?wide|nationwide|whole.?uk/i.test(joined)) return true;
   var km = leadClosestKm(leadPc, custAreas);
-  return km <= MAX_FALLBACK_KM;
+  // MOVING_MAX_FALLBACK_KM overrides the default 25km radius so sparse regions
+  // (e.g. North West removals) can still reach their promised count from nearby
+  // towns in the SAME region - while genuinely far areas (e.g. SW London for a
+  // NW customer) stay blocked.
+  var maxKm = Number(process.env.MOVING_MAX_FALLBACK_KM) || MAX_FALLBACK_KM;
+  return km <= maxKm;
 }
 function haversineKm(lat1, lng1, lat2, lng2) {
   var R = 6371, dLat = (lat2 - lat1) * Math.PI / 180, dLng = (lng2 - lng1) * Math.PI / 180;
