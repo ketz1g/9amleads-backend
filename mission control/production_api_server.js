@@ -15286,6 +15286,20 @@ app.post('/api/admin/prune-pools', adminAuth, (req, res) => {
   catch(e) { res.status(500).json({ error: e.message }); }
 });
 // POST /api/admin/email-preview — manually trigger the pre-delivery email now.
+// POST /api/admin/send-sample-weekly — send the weekly nurture email (with the Bulk
+// Send pitch) to any address so the founder can review live output. { email, week }
+app.post('/api/admin/send-sample-weekly', adminAuth, async (req, res) => {
+  try {
+    var to = String((req.body && req.body.email) || '').trim().toLowerCase();
+    var wk = Math.max(5, Math.min(26, parseInt((req.body && req.body.week) || 9, 10) || 9));
+    if (!to) return res.status(400).json({ error: 'email is required' });
+    var html = buildWeeklyTrialTemplate({ business_type: 'moving' }, wk, 'Moving Leads', '#0ea5e9', 'moving');
+    var subject = WEEKLY_FOLLOWUP_SUBJECTS[wk] || ('Your leads are still waiting · week ' + wk);
+    await sendBrevoEmail({ email: to, name: '9amLeads' }, subject, html);
+    res.json({ success: true, emailed: to, week: wk, subject: subject });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/admin/email-preview', adminAuth, (req, res) => {
   try {
     var when = (req.body && req.body.when) || 'pre';
