@@ -24249,6 +24249,10 @@ app.get('/api/direct-mail/my-bulk-leads', authMiddleware, (req, res) => {
       var b = bucket(statusMap[String(l.id)]);
       return { id: l.id, name: l.name, company: l.company, address: l.address, postcode: l.postcode, reserved_at: l.reserved_at, product: l.product, status: b };
     });
+    // Optional client filter: all / not yet sent / sent (bulk stays separate from daily leads)
+    var fStatus = String(req.query.status || 'all').toLowerCase();
+    if (fStatus === 'sent') enriched = enriched.filter(function(l) { return l.status.key !== 'not_sent'; });
+    else if (fStatus === 'not_sent') enriched = enriched.filter(function(l) { return l.status.key === 'not_sent'; });
     var total = enriched.length;
     var counts = { total: total, posted: 0, printer: 0, out: 0, delivered: 0, not_sent: 0, failed: 0 };
     enriched.forEach(function(l) {
