@@ -1621,6 +1621,48 @@ console.log('JSON database ready at: ' + DB_FILE);
 // ===== DIRECT MAIL PROVIDER ABSTRACTION =====
 var DIRECT_MAIL_PROVIDER = process.env.DIRECT_MAIL_PROVIDER || 'mock';
 
+// Continue a design that already fills a "live" (true A5 trim) image out into the
+// surrounding bleed ring of the larger template canvas. The final file therefore
+// has real bleed for the print provider's cutter WITHOUT ever pushing design
+// content past the trim. The ring is filled by repeating the design's own edge
+// bands outward, so edge-to-edge designs look seamless and the cutter removes
+// background only. If an edge sample ever fails we still place the design centred
+// (safe: design edges = trim; ring stays white).
+async function extendToBleedTemplate(designBuf, liveW, liveH, canvasW, canvasH, bleedPx) {
+  var sharp = require('sharp');
+  var jpegOpts = { quality: 88 };
+  function fallback() {
+    var left = Math.round((canvasW - liveW) / 2), top = Math.round((canvasH - liveH) / 2);
+    return sharp({ create: { width: canvasW, height: canvasH, channels: 3, background: { r: 255, g: 255, b: 255 } } })
+      .composite([{ input: designBuf, left: left, top: top }])
+      .jpeg(jpegOpts).toBuffer();
+  }
+  if (!bleedPx || bleedPx <= 0) return fallback();
+  try {
+    var meta = await sharp(designBuf).metadata();
+    var dW = meta.width, dH = meta.height;
+    if (!dW || !dH || dW < 2 || dH < 2) return fallback();
+    var b = Math.min(bleedPx, dW, dH);
+    var canvasBuf = await sharp({ create: { width: canvasW, height: canvasH, channels: 3, background: { r: 255, g: 255, b: 255 } } }).jpeg(jpegOpts).toBuffer();
+    var layers = [{ input: designBuf, left: b, top: b }];
+    // Top / bottom: stretch the design's own edge band across the full ring width
+    // (also covers the corners).
+    var topBand = await sharp(designBuf).extract({ left: 0, top: 0, width: dW, height: b }).resize({ width: canvasW, height: b, fit: 'fill' }).jpeg(jpegOpts).toBuffer();
+    layers.push({ input: topBand, left: 0, top: 0 });
+    var botBand = await sharp(designBuf).extract({ left: 0, top: dH - b, width: dW, height: b }).resize({ width: canvasW, height: b, fit: 'fill' }).jpeg(jpegOpts).toBuffer();
+    layers.push({ input: botBand, left: 0, top: canvasH - b });
+    // Left / right: stretch the design's own edge column over the ring height.
+    var lefBand = await sharp(designBuf).extract({ left: 0, top: 0, width: b, height: dH }).resize({ width: b, height: canvasH, fit: 'fill' }).jpeg(jpegOpts).toBuffer();
+    layers.push({ input: lefBand, left: 0, top: 0 });
+    var rigBand = await sharp(designBuf).extract({ left: dW - b, top: 0, width: b, height: dH }).resize({ width: b, height: canvasH, fit: 'fill' }).jpeg(jpegOpts).toBuffer();
+    layers.push({ input: rigBand, left: canvasW - b, top: 0 });
+    return await sharp(canvasBuf).composite(layers).jpeg(jpegOpts).toBuffer();
+  } catch (e) {
+    console.log('[STANNP] bleed-ring continuation failed, falling back:', e.message);
+    return fallback();
+  }
+}
+
 class DirectMailProvider {
   constructor() { this.name = 'base'; }
   async validateAddresses(addresses) { throw new Error('validateAddresses not implemented'); }
@@ -1710,6 +1752,19 @@ class DirectMailProvider {
         return { error: 'Unsupported file type: ' + fmt + '. Use PNG, JPG or PDF.', file: file };
       }
       var A5_W = targetW || 1819, A5_H = targetH || 2551; // default A5-PORT
+      // Stannp's templates are the final A5 PLUS 3mm bleed per side (1819x2551 =
+      // 148x210mm + 6mm). The TRUE A5 that actually prints is the central "live"
+      // area. Stretching a trim-sized design across the WHOLE template pushes its
+      // edge content ~3mm past the real trim, which the cutter then slices off —
+      // the portrait-bottom / landscape-left content cuts seen on real prints. So
+      // we map the design onto the live A5 area (edges land exactly on the trim)
+      // and continue its edge pixels out into the bleed ring (helper below), so
+      // the cutter only ever removes background, never the design.
+      var DM_PPM = 300 / 25.4;                       // px per mm at 300 DPI (~11.81)
+      var DM_BLEED_MM = 3;                            // Stannp A5 bleed per side
+      var bleedPx = Math.round(DM_BLEED_MM * DM_PPM); // ~35px
+      var liveW = A5_W - 2 * bleedPx;
+      var liveH = A5_H - 2 * bleedPx;
       // AUTO-ORIENT: if the stored image is portrait but the target format is
       // landscape (or vice-versa) — a near-90° aspect mismatch — the customer
       // almost certainly designed it for the other orientation (e.g. uploaded a
@@ -1868,43 +1923,62 @@ class DirectMailProvider {
           outBuf = await sharp(baseBuf).composite([{ input: whiteRect, left: addrX0, top: addrY0 }]).jpeg({ quality: 82 }).toBuffer();
           console.log('[STANNP] Prepared BACK (editor-positioned, full-bleed) for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> ' + A5_W + 'x' + A5_H + ' + white address zone at ' + addrX0 + ',' + addrY0 + ' ' + addrW + 'x' + addrH + ')');
         } else {
-          // FRESH back upload: fit the design into the USABLE area — the whole
-          // page MINUS the white address zone — so the address area is visibly
-          // whited out immediately on upload (no design hidden behind it), exactly
-          // like the in-app editor's auto-fit. Landscape: design fills the left
-          // ~68% (zone on the right). Portrait: design fills the area below the
-          // top-left zone.
-          var uzX = 0, uzY = 0, uzW, uzH;
-          // LANDSCAPE: design sits in the left column ending ~1 inch (12%) short of
-          // the address zone (zone left edge x68%) so the printed address never
-          // overlaps the flyer. PORTRAIT: design sits BELOW the top-left zone with a
-          // ~1 inch (12%) gap at the top so the flyer header is never cut by the
-          // recipient address.
-          if (A5_W > A5_H) { uzW = Math.max(1, Math.round(A5_W * 0.56)); uzH = A5_H; }
-          else { uzW = A5_W; uzY = Math.round(A5_H * 0.29); uzH = Math.max(1, A5_H - uzY); }
+          // FRESH back upload: fit the design into the USABLE area of the LIVE A5
+          // page — the page MINUS the white address zone — so the address area is
+          // visibly whited out immediately on upload (no design hidden behind it),
+          // exactly like the in-app editor's auto-fit. Landscape: design fills the
+          // left ~56% (zone on the right). Portrait: design fills the area below
+          // the top-left zone. All measurements are on the live (trim) area; the
+          // design is then continued out into the bleed ring so nothing real is cut.
+          // live page origin sits at the bleed offset on the template (see below)
+          var uzX2 = 0, uzY2 = 0, uzW2, uzH2;
+          if (A5_W > A5_H) { uzW2 = Math.max(1, Math.round(liveW * 0.56)); uzH2 = liveH; }
+          else { uzW2 = liveW; uzY2 = Math.round(liveH * 0.29); uzH2 = Math.max(1, liveH - uzY2); }
           var designBuf = await sharp(inputBuf)
             .rotate()
-            .resize({ width: uzW, height: uzH, fit: 'fill', background: { r: 255, g: 255, b: 255 } })
+            .resize({ width: uzW2, height: uzH2, fit: 'fill', background: { r: 255, g: 255, b: 255 } })
             .jpeg({ quality: 82 })
             .toBuffer();
-          var whiteCanvas = await sharp({ create: { width: A5_W, height: A5_H, channels: 3, background: { r: 255, g: 255, b: 255 } } }).jpeg({ quality: 82 }).toBuffer();
-          outBuf = await sharp(whiteCanvas).composite([
-            { input: designBuf, left: uzX, top: uzY },
-            { input: whiteRect, left: addrX0, top: addrY0 }
+          var pageBuf = await sharp({ create: { width: liveW, height: liveH, channels: 3, background: { r: 255, g: 255, b: 255 } } }).jpeg({ quality: 82 }).toBuffer();
+          // Zone position on the live page = template zone shifted in by the bleed.
+          var zoneL = addrX0 - bleedPx, zoneT = addrY0 - bleedPx;
+          pageBuf = await sharp(pageBuf).composite([
+            { input: designBuf, left: uzX2, top: uzY2 },
+            { input: whiteRect, left: Math.max(0, zoneL), top: Math.max(0, zoneT) }
           ]).jpeg({ quality: 82 }).toBuffer();
-          console.log('[STANNP] Prepared BACK (fresh upload, fitted around zone) for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> design ' + uzW + 'x' + uzH + ' at ' + uzX + ',' + uzY + ' on ' + A5_W + 'x' + A5_H + ' + white address zone at ' + addrX0 + ',' + addrY0 + ' ' + addrW + 'x' + addrH + ')');
+          outBuf = await extendToBleedTemplate(pageBuf, liveW, liveH, A5_W, A5_H, bleedPx);
+          console.log('[STANNP] Prepared BACK (fresh upload, fitted around zone on live A5) for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> design ' + uzW2 + 'x' + uzH2 + ' at ' + uzX2 + ',' + uzY2 + ' on ' + liveW + 'x' + liveH + ' + white address zone)');
         }
       } else {
-        // FRONT: full-bleed, edge-to-edge. Fronts are pre-trimmed of white
-        // margins (see above), then STRETCHED (fit 'fill') to exactly fill the
-        // A5 canvas — zero white bands, zero cropped content, matching what the
-        // in-app editor shows.
-        outBuf = await sharp(inputForResize)
-          .rotate()
-          .resize({ width: A5_W, height: A5_H, fit: 'fill', background: { r: 255, g: 255, b: 255 } }).jpeg({ quality: 82 })
-          .toBuffer();
-        console.log('[STANNP] Prepared FRONT/full-bleed artwork for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> ' + A5_W + 'x' + A5_H + ', fit=fill)' + trimNote);
-      }
+        // FRONT. Two kinds of source:
+        //  1) Already the full-bleed template (≈ A5_W x A5_H — includes its own
+        //     bleed, e.g. exports made on the official template or new editor
+        //     saves). Pass straight through unchanged.
+        //  2) Trim-sized / plain artwork (edges = true A5). Map it 1:1 onto the
+        //     live A5 area so content flush with the artwork's edges prints flush
+        //     with the leaflet edge — nothing is pushed into the bleed and then
+        //     cropped (the portrait-bottom / landscape-left cuts). The 3mm bleed
+        //     ring is continued from the design's edge pixels so the cutter
+        //     removes background only, never content.
+        var srcIsTemplate = meta.width >= A5_W * 0.97 && meta.width <= A5_W * 1.03 &&
+                            meta.height >= A5_H * 0.97 && meta.height <= A5_H * 1.03;
+        if (srcIsTemplate) {
+          outBuf = await sharp(inputForResize)
+            .rotate()
+            .resize({ width: A5_W, height: A5_H, fit: 'fill', background: { r: 255, g: 255, b: 255 } })
+            .jpeg({ quality: 82 })
+            .toBuffer();
+          console.log('[STANNP] Prepared FRONT artwork for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> full-bleed template ' + A5_W + 'x' + A5_H + ' passed through)' + trimNote);
+        } else {
+          var liveFront = await sharp(inputForResize)
+            .rotate()
+            .resize({ width: liveW, height: liveH, fit: 'fill', background: { r: 255, g: 255, b: 255 } })
+            .jpeg({ quality: 82 })
+            .toBuffer();
+          outBuf = await extendToBleedTemplate(liveFront, liveW, liveH, A5_W, A5_H, bleedPx);
+          console.log('[STANNP] Prepared FRONT artwork for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> live A5 ' + liveW + 'x' + liveH + ' on ' + A5_W + 'x' + A5_H + ' bleed template, content kept at trim)' + trimNote);
+        }
+      }
       return { ok: true, file: { name: file.name, file_data: outBuf.toString('base64'), file_type: 'image/jpeg' }, spec: spec };
     } catch(e) {
       console.log('[STANNP] Artwork prep failed for ' + (file.name || '?') + ': ' + e.message);
@@ -24017,7 +24091,7 @@ var PRINT_POST_PRICES = {
   // Single (on-demand, post-now) sits ABOVE the bulk/boost pack rates so buying a
   // 50-1000 pack reads as a genuine volume discount. Margins (single):
   // leaflet +£1.81, letter +£1.47, pack +£2.29 per item.
-  flyer_a5: { label: 'A5 Leaflet', customer: 2.99, stannp: 1.18 },
+  flyer_a5: { label: 'A5 Leaflet', customer: 0.30, stannp: 1.18 }, // TEST price — restore to 2.99 after reprint test
   letter_a4: { label: 'A4 Letter', customer: 2.49, stannp: 1.02 },
   flyer_plus_letter: { label: 'A5 Leaflet + A4 Letter', customer: 4.49, stannp: 2.20 },
   // Postage included in above prices (Royal Mail Standard)
@@ -24112,9 +24186,9 @@ function cleanMailText(text) {
 // downloadable design template. Used by the dashboard format selector so
 // customers can pick portrait / landscape / enveloped / letter.
 var DM_FORMATS = [
-  { id: 'flyer_a5_portrait', label: 'A5 Portrait Leaflet', size: 'A5-PORT', kind: 'flyer', width: 1819, height: 2551, mm: '148×210mm', safe: '148×210mm', template: 'a5-leaflet-portrait.pdf', price: 2.99, desc: 'Classic A5 flyer, portrait. Full colour, 300gsm.' },
-  { id: 'flyer_a5_landscape', label: 'A5 Landscape Leaflet', size: 'A5', kind: 'flyer', width: 2551, height: 1819, mm: '210×148mm', safe: '210×148mm', template: 'a5-leaflet.pdf', price: 2.99, desc: 'A5 flyer, landscape orientation.' },
-  { id: 'flyer_a5_enveloped', label: 'A5 Leaflet in Envelope', size: 'A5-ENV', kind: 'flyer', width: 2551, height: 1819, mm: '210×148mm', safe: '210×148mm', template: 'a5-enveloped-postcard.pdf', price: 2.99, desc: 'A5 leaflet sent inside a windowed envelope. More premium feel.' },
+  { id: 'flyer_a5_portrait', label: 'A5 Portrait Leaflet', size: 'A5-PORT', kind: 'flyer', width: 1819, height: 2551, mm: '148×210mm', safe: '148×210mm', template: 'a5-leaflet-portrait.pdf', price: 0.30, desc: 'Classic A5 flyer, portrait. Full colour, 300gsm.' },
+  { id: 'flyer_a5_landscape', label: 'A5 Landscape Leaflet', size: 'A5', kind: 'flyer', width: 2551, height: 1819, mm: '210×148mm', safe: '210×148mm', template: 'a5-leaflet.pdf', price: 0.30, desc: 'A5 flyer, landscape orientation.' },
+  { id: 'flyer_a5_enveloped', label: 'A5 Leaflet in Envelope', size: 'A5-ENV', kind: 'flyer', width: 2551, height: 1819, mm: '210×148mm', safe: '210×148mm', template: 'a5-enveloped-postcard.pdf', price: 0.30, desc: 'A5 leaflet sent inside a windowed envelope. More premium feel.' },
   { id: 'flyer_plus_letter', label: 'Leaflet + Letter', size: 'A5-PORT', kind: 'flyer_plus_letter', width: 1819, height: 2551, mm: 'A5 leaflet + A4 letter', safe: '148×210mm + 210×297mm', template: 'a5-leaflet-portrait.pdf', price: 4.49, desc: 'A5 leaflet with a personalised A4 letter. Great for a fuller introduction.' },
   { id: 'letter_a4', label: 'A4 Letter', size: 'letter', kind: 'letter', width: 0, height: 0, mm: '210×297mm', safe: '210×297mm', template: 'a4-letter.pdf', price: 2.49, desc: 'Professional A4 letter with windowed envelope.' }
 ];
@@ -25173,7 +25247,7 @@ app.post('/api/admin/direct-mail/test-receipt', adminAuth, async (req, res) => {
     var email = req.body.email || 'ketzman1g@gmail.com';
     var name = req.body.name || 'Ketz Mandalia';
     var address = req.body.address || '4 Farmborough Close, Harrow, HA1 3YG';
-    var amount = req.body.amount || '2.99';
+    var amount = req.body.amount || '0.30';
     var orderRef = req.body.order_ref || '211936512';
     var mailType = req.body.mail_type || '';
     var sampleBody =
