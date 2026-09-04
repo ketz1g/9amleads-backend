@@ -11436,6 +11436,14 @@ app.get('/api/admin/pool-counties', adminAuth, (req, res) => {
 // probate pool. Adds supply well ahead of the Gazette.
 app.post('/api/admin/funeral-scrape', adminAuth, async (req, res) => {
   try {
+    // DISABLED BY DEFAULT: funeral notices advertise funeral-parlour/cremation
+    // details, not the deceased's home address. Probate customers want the
+    // deceased's home address (real probate leads from The Gazette / PNP), so the
+    // funeral-notices source is off unless FUNERAL_SOURCE=on is set deliberately.
+    if (String(process.env.FUNERAL_SOURCE || '').toLowerCase() !== 'on') {
+      console.log('[FUNERAL-SCRAPE] disabled - funeral notices carry funeral-parlour info, not deceased home addresses');
+      return res.json({ success: true, skipped: true, message: 'Funeral-notice source disabled. Probate supply uses The Gazette / Public Notice Portal (deceased home addresses).' });
+    }
     var countiesParam = String((req.body && req.body.counties) || '');
     var counties = countiesParam ? countiesParam.split(',').map(function(s){ return s.trim(); }).filter(Boolean) : [];
     if (counties.length === 0) {
@@ -11479,6 +11487,52 @@ app.post('/api/admin/funeral-scrape', adminAuth, async (req, res) => {
     res.json({ success: true, counties: counties, scraped: leads.length, added: added, pool_total: poolF.length });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+
+// POST /api/admin/purge-funeral-probate — remove any funeral/obituary/cremation
+// notices from the probate pool and from pending dashboard leads. Funeral notices
+// contain funeral-parlour details (NOT the deceased's home address) and must never
+// be delivered as probate leads. Keeps The Gazette / PNP confirmed leads only.
+app.post('/api/admin/purge-funeral-probate', adminAuth, (req, res) => {
+  try {
+    var r = purgeFuneralProbateLeads();
+    res.json({ success: true, pool_removed: r.pool, dashboard_removed: r.dashboard, pool_remaining: r.remaining });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+var FUNERAL_PAT = /funeral|cremator|cremation|funeralcare|funeral director|obituar|memorial|dignity funerals|the co-op funeral|co-operative funeralcare/i;
+function purgeFuneralProbateLeads() {
+  var out = { pool: 0, dashboard: 0, remaining: 0 };
+  try {
+    var pf = path.join(DATA_DIR, PRODUCT_LEAD_FILES.probate.file);
+    var pool = [];
+    try { pool = JSON.parse(fs.readFileSync(pf, 'utf-8')); if (!Array.isArray(pool)) pool = []; } catch(e) { pool = []; }
+    var keep = pool.filter(function(l) {
+      var t = String((l.address || '') + ' ' + (l.fullAddress || '') + ' ' + (l.deceasedAddress || '') + ' ' + (l.name || '') + ' ' + (l.deceasedName || '') + ' ' + (l.company || '') + ' ' + (l.url || '') + ' ' + (l.source || ''));
+      return !FUNERAL_PAT.test(t);
+    });
+    out.pool = pool.length - keep.length;
+    if (out.pool > 0) fs.writeFileSync(pf, JSON.stringify(keep, null, 2));
+    out.remaining = keep.length;
+    var db = getDb();
+    var rem = 0;
+    (db.leads || []).forEach(function(l) {
+      if (l.product === 'probate' && l.delivered === 0) {
+        try {
+          var d = JSON.parse(l.data || '{}');
+          var t = String((d.address || '') + ' ' + (d.fullAddress || '') + ' ' + (d.deceasedAddress || '') + ' ' + (d.name || '') + ' ' + (d.company || '') + ' ' + (d.url || '') + ' ' + (d.source || ''));
+          if (FUNERAL_PAT.test(t)) { l._purgeProbate = 1; rem++; }
+        } catch(e) {}
+      }
+    });
+    if (rem > 0) {
+      db.leads = db.leads.filter(function(l) { return !l._purgeProbate; });
+      saveDb();
+    }
+    out.dashboard = rem;
+    if (out.pool > 0 || rem > 0) console.log('[PROBATE] Purged ' + out.pool + ' pool + ' + rem + ' dashboard funeral/obituary leads (' + out.remaining + ' confirmed-probate remaining)');
+  } catch(e) { console.log('[PROBATE] purge error:', e.message); }
+  return out;
+}
 
 // POST /api/admin/pnp-scrape - ingest Public Notice Portal "Probate and Trustee"
 // notices (from the custom PNP Apify actor). These are CONFIRMED probate leads
@@ -13795,8 +13849,11 @@ cron.schedule('0 18 * * *', async () => {
   try { await runOtmDailyScrape(); } catch(e) { console.log('[OTM-18-CRON] ' + e.message); }
 }, { timezone: 'Europe/London' });
 // Daily funeral-notices probate supply (free, no Apify) - tops up the probate
-// pool ahead of the Gazette. Runs after the main scrape.
+// pool ahead of the Gazette. Runs after the main scrape. DISABLED unless
+// FUNERAL_SOURCE=on - funeral notices carry funeral-parlour info, not the
+// deceased's home address (probate uses The Gazette / Public Notice Portal).
 cron.schedule('15 5 * * *', async () => {
+  if (String(process.env.FUNERAL_SOURCE || '').toLowerCase() !== 'on') return;
   try {
     const httpF = require('http');
     var bF = JSON.stringify({});
@@ -14283,6 +14340,7 @@ function runFinalGuaranteeAudit() {
 cron.schedule('0 9 * * 1-5', async () => {
   __deliveryFireCount++;
   __lastDeliveryFire = new Date().toISOString();
+  try { purgeFuneralProbateLeads(); } catch(eP) {}
   // NOTE: __lastDeliveryDate is NOT set here. It is set only AFTER the delivery
   // call succeeds, so a failed/401 9am run does NOT suppress the 09:01 watchdog
   // (which would otherwise think "already fired today" and never rescue customers).
@@ -32542,6 +32600,7 @@ app.listen(PORT, () => {
       saveDb();
     }
   } catch(e) {}
+  setTimeout(function() { try { purgeFuneralProbateLeads(); } catch(eP) {} }, 6000);
   console.log('\n========================================');
   console.log('  9amLeads Production API Server');
   console.log('  Domain: www.9amleads.com');
