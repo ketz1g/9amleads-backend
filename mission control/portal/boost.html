@@ -94,7 +94,7 @@ h3{font-size:15px;font-weight:700;margin-bottom:10px}
 </div>
 <script>
 var API = window.location.hostname === 'localhost' ? 'http://localhost:8012' : '';
-function tok(){ return localStorage.getItem('9am_token') || ''; }
+function tok(){ return localStorage.getItem('9am_token') || localStorage.getItem('mld_portal_session') || ''; }
 function ah(){ return { 'Content-Type':'application/json', 'Authorization':'Bearer ' + tok() }; }
 function esc(s){ return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
 var ST = { product:'moving', age:'tm', mail:'leaflet', DATA:null, PACK:null };
@@ -135,20 +135,21 @@ function load(){
   if(!tok()){ window.location.href='/portal/'; return; }
   fetch(API+'/api/boost',{headers:{'Authorization':'Bearer '+tok()}})
   .then(function(r){return r.json();}).then(function(d){
-    if(!d.success){ alert(d.error||'Could not load Boost.'); return; }
+    if(!d.success){ if(d.error && /token|invalid|expired/i.test(String(d.error))){ window.location.href='/portal/'; return; } document.getElementById('loading').textContent=d.error||'Could not load Boost.'; return; }
     if(!d.live){ document.getElementById('loading').style.display='none'; document.getElementById('content').innerHTML='<div class="card" style="text-align:center;padding:40px"><div style="font-size:40px">ðŸš€</div><h2 style="margin:10px 0 6px">Boost Your Business - coming soon</h2><p class="hint" style="max-width:460px;margin:0 auto">Archive lead packs are being prepared. Check back shortly.</p></div>'; return; }
     document.getElementById('loading').style.display='none';
     document.getElementById('content').style.display='block';
     ST.DATA=d;
-    // If a customer product mismatches, default product to theirs
-    if(d.product==='moving'||d.product==='probate'){ ST.product=d.product; document.querySelectorAll('#content .seg button[data-p]').forEach(function(b){b.classList.toggle('on',b.dataset.p===d.product);}); }
+    // Default the product selector to the customer's own product so the right
+    // archive (moving / probate / new business) is shown first.
+    if(['moving','probate','newbusiness'].indexOf(d.product)!==-1){ ST.product=d.product; document.querySelectorAll('#content .seg button[data-p]').forEach(function(b){b.classList.toggle('on',b.dataset.p===d.product);}); }
     render();
     if(d.pack && d.pack.status!=='sent' && d.pack.status!=='sending'){
       showReview(d.pack);
     } else if(d.pack && d.pack.status==='sent'){
       document.getElementById('sentBox').style.display='block';
     }
-  }).catch(function(){document.getElementById('loading').textContent='Could not load Boost.';});
+  }).catch(function(){ document.getElementById('loading').textContent='Could not load Boost. Please refresh or log in again.'; });
 }
 function showReview(pack){
   document.getElementById('reviewBox').style.display='block';
