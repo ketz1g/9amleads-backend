@@ -11552,6 +11552,46 @@ cron.schedule('45 6 * * 1-5', async () => {
   try { await sendProbateSampleEmail(true); } catch(e) {}
 }, { timezone: 'Europe/London' });
 
+// POST /api/admin/planning-sample-check — email the owner a sample of the current
+// planning pool so they can see fresh supply levels for active planning customers.
+app.post('/api/admin/planning-sample-check', adminAuth, async (req, res) => {
+  try { await sendPlanningSampleEmail(); res.json({ success: true, sent: true }); }
+  catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+async function sendPlanningSampleEmail() {
+  try {
+    var pf = path.join(DATA_DIR, PRODUCT_LEAD_FILES.planning.file);
+    var pool = [];
+    try { pool = JSON.parse(fs.readFileSync(pf, 'utf-8')); if (!Array.isArray(pool)) pool = []; } catch(e) { pool = []; }
+    var cut48 = new Date(Date.now() - 48 * 3600000).toISOString();
+    var good = pool.filter(function(l) {
+      var fv = pickFreshDate(l) || '';
+      return !fv || fv >= cut48;
+    }).slice(0, 4);
+    var rows = (good.length ? good : pool.slice(0, 4)).map(function(l) {
+      var d = l;
+      return '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin:8px 0;background:#f8fafc">' +
+        '<b style="color:#0f172a">' + String(d.address || d.title || d.description || 'Application').slice(0, 90) + '</b><br>' +
+        '<span style="color:#334155">' + [d.council, d.locality, d.postcode].filter(Boolean).join(' · ') + '</span><br>' +
+        '<span style="color:#64748b">Ref: ' + (d.reference || d.appReference || 'n/a') + ' · Source: ' + (d.source || '') + '</span> &nbsp; ' +
+        (d.url ? '<a href="' + d.url + '" style="color:#0ea5e9">View</a>' : '') + '</div>';
+    }).join('') || '<p style="color:#94a3b8">No planning leads in pool yet.</p>';
+    var to = process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com';
+    var html = '<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px">' +
+      '<h2 style="color:#f59e0b;margin:0 0 10px">Planning pool check</h2>' +
+      '<p style="font-size:13px;color:#cbd5e1;margin:0 0 12px">Fresh planning leads currently in the pool (' + good.length + ' fresh in 48h).</p>' + rows +
+      '<p style="font-size:11px;color:#94a3b8;margin-top:12px">If this is empty/low before 9am, supply is thin - the delivery guarantee fills from the full pool as a last resort.</p></div>';
+    await sendBrevoEmail({ email: to, name: '9amLeads Owner' }, 'Planning pool check - supply level', html).catch(function(e) { console.log('[PLANNING-SAMPLE] send error:', e && e.message); });
+    console.log('[PLANNING-SAMPLE] sent to ' + to + ' (' + good.length + ' fresh)');
+  } catch(e) { console.log('[PLANNING-SAMPLE] error:', e.message); }
+}
+
+// Automatic daily planning check at 06:50 UK (after scrape), Mon-Fri.
+cron.schedule('50 6 * * 1-5', async () => {
+  try { await sendPlanningSampleEmail(); } catch(e) {}
+}, { timezone: 'Europe/London' });
+
 var FUNERAL_PAT = /funeral|cremator|cremation|funeralcare|funeral director|obituar|memorial|dignity funerals|the co-op funeral|co-operative funeralcare/i;function purgeFuneralProbateLeads() {
   var out = { pool: 0, dashboard: 0, remaining: 0 };
   try {
