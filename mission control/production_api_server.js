@@ -15305,6 +15305,17 @@ app.post('/api/admin/send-sample-weekly', adminAuth, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/admin/failed-emails — see what the 15-min retry loop is stuck resending.
+app.get('/api/admin/failed-emails', adminAuth, (req, res) => {
+  try { var q = getDb().failed_emails || []; res.json({ success: true, count: q.length, items: q.slice(-40).map(function(x){ return { email: x.email, name: x.name, subject: String(x.subject || '').substring(0, 160), attempts: x.attempts || 1, at: x.at }; }) }); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+// POST /api/admin/failed-emails/clear — empty the retry queue (stops repeated emails).
+app.post('/api/admin/failed-emails/clear', adminAuth, (req, res) => {
+  try { var dbc = getDb(); var n = (dbc.failed_emails || []).length; dbc.failed_emails = []; saveDb(); res.json({ success: true, cleared: n }); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/admin/email-preview', adminAuth, (req, res) => {
   try {
     var when = (req.body && req.body.when) || 'pre';
