@@ -340,11 +340,14 @@ function renderLeadList(dayLeads, noGroup) {
       var pPubDate = d.grantDate || d.publishedDate || l.created_at || '';
       var pPubStr = pPubDate ? 'Published ' + new Date(pPubDate).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '';
       var pMeta = [pPubStr, d.dateOfDeath ? 'Died ' + new Date(d.dateOfDeath).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '', d.claimExpiry ? 'Claims by ' + new Date(d.claimExpiry).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '', d.solicitor ? 'Solicitor: ' + d.solicitor : '', d.executorName ? 'Executor: ' + d.executorName : ''].filter(Boolean);
+      // SOURCE LINK: every probate lead must show where it came from (e.g. the
+      // Gazette notice), like moving/tenders do, so customers can verify it.
+      var pSrcLink = (d.url || d.noticeUrl || d.sourceUrl) ? '<a href="' + (d.url || d.noticeUrl || d.sourceUrl) + '" target="_blank" rel="noopener" style="color:' + badgeColor + ';text-decoration:underline;font-size:11px;font-weight:600;display:inline-block;margin-top:2px">View notice &nearr;</a>' : '';
       html += '<div class="lead' + selClass + '">' + chk + '<div style="flex:1"><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' +
         '<div class="addr">' + pName + '</div>' +
         '<div class="meta">' + pFullAddr + '</div>' +
         '<div class="meta">' + pMeta.join(' \u00b7 ') + '</div></div>' +
-        '<div class="right"><span class="badge">' + status + '</span>' + postBadge(d, l.id) + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:4px">' + mailBtn(l.id, d) + rejectBtn(l.id, d) + '</div>' + outcomeBtn(l.id, d) + '</div></div>';
+        '<div class="right"><span class="badge">' + status + '</span>' + postBadge(d, l.id) + (pSrcLink ? pSrcLink : '') + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:4px">' + mailBtn(l.id, d) + rejectBtn(l.id, d) + '</div>' + outcomeBtn(l.id, d) + '</div></div>';
     } else if (product === 'planning') {
       var planTitle = d.address || (d.description||'').substring(0,40) || 'Planning Application';
       var planDate = d.dateSubmitted || d.receivedDate || d.date_received || l.created_at || '';
