@@ -21784,7 +21784,7 @@ app.post('/api/admin/stripe/setup-webhook', adminAuth, async (req, res) => {
         }
       } catch(reErr) { console.log('[WEBHOOK-SETUP] Render env push skipped:', reErr.message); }
     }
-    res.json({ success: true, endpoint_url: endpoint.url, endpoint_id: endpoint.id, status: endpoint.status, events: endpoint.enabled_events || [], secret_saved: !!secret });
+    res.json({ success: true, endpoint_url: endpoint.url, endpoint_id: endpoint.id, status: endpoint.status, events: endpoint.enabled_events || [], secret_saved: !!secret, secret: secret });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
