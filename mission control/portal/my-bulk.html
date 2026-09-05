@@ -89,6 +89,7 @@
 <script>
 var API = window.location.hostname === 'localhost' ? 'http://localhost:8012' : '';
 function tok(){ try { var s = localStorage.getItem('mld_portal_session') || localStorage.getItem('9am_token') || ''; if (!s) return ''; if (s.charAt(0) === '{') { var o = JSON.parse(s); if (o && o.token) return o.token; } return s; } catch (e) { return s || ''; } }
+function ah(){ return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok() }; }
 var STATE = { page: 1, status: 'all', date: '' };
 function setFilter(f, el){ STATE.status = f; STATE.page = 1; document.querySelectorAll('.fbtn').forEach(function(b){ b.classList.toggle('on', b === el); }); load(); }
 var SEL = {};
