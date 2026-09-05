@@ -2138,16 +2138,33 @@ document.querySelectorAll('.modal').forEach(function(m){
   try {
     var cq = new URLSearchParams(window.location.search);
     if (cq.get('checkout') === 'success' && _token) {
-      setTimeout(function(){
-        var ub = document.createElement('div');
-        ub.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:9999;background:#0ea5e9;color:#fff;padding:16px 24px;border-radius:14px;font-size:14px;font-weight:800;box-shadow:0 10px 40px rgba(0,0,0,.35);max-width:92%;text-align:center';
-        ub.innerHTML = '🎉 You\u2019re Upgraded<div style="font-weight:400;font-size:12px;margin-top:4px">Your 9amLeads subscription is now active. Your daily leads continue at 9am.</div>';
-        document.body.appendChild(ub);
-        setTimeout(function(){ ub.style.transition='opacity .5s'; ub.style.opacity='0'; setTimeout(function(){ ub.remove(); }, 600); }, 8000);
-      }, 1200);
+      var paidSession = cq.get('session_id') || '';
+      // Confirm the paid session against this account so the plan they paid for
+      // activates immediately (belt & braces on top of the webhook).
+      if (paidSession) {
+        apiCall('POST', '/api/auth/verify-purchase', { session_id: paidSession }, function(err, vr) {
+          if (vr && vr.success) {
+            showUpgradeBanner(true);
+            setTimeout(function(){ window.location.reload(); }, 2200);
+          } else {
+            showUpgradeBanner(false);
+          }
+        });
+      } else {
+        showUpgradeBanner(false);
+      }
       try { history.replaceState(null, '', window.location.pathname + window.location.search.replace(/[?&](checkout|session_id)=[^&]*/g, '').replace(/^&/, '?')); } catch(hErr2) {}
     }
   } catch(e) {}
+  function showUpgradeBanner(confirmed) {
+    try {
+      var ub = document.createElement('div');
+      ub.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:9999;background:' + (confirmed ? '#16a34a' : '#0ea5e9') + ';color:#fff;padding:16px 24px;border-radius:14px;font-size:14px;font-weight:800;box-shadow:0 10px 40px rgba(0,0,0,.35);max-width:92%;text-align:center';
+      ub.innerHTML = (confirmed ? '✅ Plan Activated' : '🎉 Payment Received') + '<div style="font-weight:400;font-size:12px;margin-top:4px">' + (confirmed ? 'Your new plan is now active. Your daily leads continue at 9am.' : 'Your 9amLeads subscription is now active. Your daily leads continue at 9am.') + '</div>';
+      document.body.appendChild(ub);
+      setTimeout(function(){ ub.style.transition='opacity .5s'; ub.style.opacity='0'; setTimeout(function(){ ub.remove(); }, 600); }, 8000);
+    } catch(e) {}
+  }
 })();
 </script>
 
