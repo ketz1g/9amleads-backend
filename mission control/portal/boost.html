@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Boost Your Business ï¿½ Archive Lead Packs | 9amLeads</title>
+<title>Boost Your Business � Archive Lead Packs | 9amLeads</title>
 <style>
 :root{--bg:#f7f7f8;--card:#fff;--text:#111827;--muted:#6b7280;--border:#e5e7eb;--accent:#f97316;--green:#166534;--green-bg:#f0fdf4;--green-bd:#86efac;--radius:14px;--ff:'Inter',system-ui,sans-serif}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -47,15 +47,15 @@ h3{font-size:15px;font-weight:700;margin-bottom:10px}
 <body>
 <div class="wrap">
   <div class="topbar">
-    <div class="brand">9am<small>Leads</small> <span style="font-size:11px;color:var(--muted)">Â· Boost Your Business</span></div>
-    <a class="back" href="/portal/my-bulk.html">ðŸ“¦ My Bulk Leads</a>
+    <div class="brand">9am<small>Leads</small> <span style="font-size:11px;color:var(--muted)">· Boost Your Business</span></div>
+    <a class="back" href="/portal/my-bulk.html">�x� My Bulk Leads</a>
     <a class="back" href="/portal/dashboard.html">&larr; Back to Dashboard</a>
   </div>
   <h1>Boost Your Business</h1>
   <div class="sub">Buy archive leads in bulk - never sent to your account so far; rare shares possible at high demand. Choose Moving, Probate or New Business, pick this month's leads, 1-month-old or 2-month-old, and we print &amp; post your leaflet/letter to every one.</div>
   <div id="unavailBanner" style="display:none;background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:12px;padding:12px 16px;font-size:13px;margin-bottom:14px"><b>Note:</b> Moving and Probate Boost packs are <b>currently unavailable</b> while we fill those pools. <b>New Business</b> packs are available now.</div>
   <div style="background:linear-gradient(135deg,#fff7ed,#ffffff);border:1px solid #fed7aa;border-radius:14px;padding:16px 18px;margin-bottom:14px">
-    <div style="font-size:17px;font-weight:800;color:#111827;margin-bottom:4px">ðŸš€ Boost your business in slow times. Sit back, relax... and watch the phone ring.</div>
+    <div style="font-size:17px;font-weight:800;color:#111827;margin-bottom:4px">�xa� Boost your business in slow times. Sit back, relax... and watch the phone ring.</div>
     <div style="font-size:13.5px;color:#374151;line-height:1.7;margin-bottom:10px">One pack is a full marketing campaign in the post. <b>You choose the month, we do everything else</b>: print, address, post and track.</div>
     <div style="display:flex;flex-wrap:wrap;gap:8px">
       <span style="font-size:12.5px;color:#111827;background:#fff;border:1px solid #e5e7eb;border-radius:99px;padding:6px 12px"><b style="color:#f97316">1.</b> Buy your pack in under a minute</span>
@@ -136,11 +136,11 @@ function render(){
   box.innerHTML=sizes.map(function(cnt){
     var total=Math.round(cnt*rate)/100;
     var can = av >= cnt;
-    return '<div class="pack" style="opacity:'+(can?1:.5)+'"><div class="num">'+cnt+'</div><div class="lbl">'+ageName(ST.age)+'<br>'+lbl+'<br>printed &amp; posted</div><div class="price">Â£'+total.toFixed(2)+'</div><div class="per">one-time Â· Â£'+(rate/100).toFixed(2)+'/lead</div><button class="btn btn-primary" onclick="buy('+cnt+')"'+(can?'':' disabled')+'>Buy '+cnt+'</button>'+(can?'':'<div style="font-size:11px;color:#fbbf24;margin-top:6px">Pool is being filled - check back soon</div>')+'</div>';
+    return '<div class="pack" style="opacity:'+(can?1:.5)+'"><div class="num">'+cnt+'</div><div class="lbl">'+ageName(ST.age)+'<br>'+lbl+'<br>printed &amp; posted</div><div class="price">£'+total.toFixed(2)+'</div><div class="per">one-time · £'+(rate/100).toFixed(2)+'/lead</div><button class="btn btn-primary" onclick="buy('+cnt+')"'+(can?'':' disabled')+'>Buy '+cnt+'</button>'+(can?'':'<div style="font-size:11px;color:#fbbf24;margin-top:6px">Pool is being filled - check back soon</div>')+'</div>';
   }).join('');
 }
 function buy(count){
-  if(!confirm('Buy '+count+' '+ageName(ST.age)+' '+ST.product+' archive leads ('+ST.mail+') printed & posted for Â£'+(Math.round(count*(ST.DATA.mail_rates[ST.mail])/100)/1).toFixed(2)+'?'))return;
+  if(!confirm('Buy '+count+' '+ageName(ST.age)+' '+ST.product+' archive leads ('+ST.mail+') printed & posted for £'+(Math.round(count*(ST.DATA.mail_rates[ST.mail])/100)/1).toFixed(2)+'?'))return;
   fetch(API+'/api/boost/checkout',{method:'POST',headers:ah(),body:JSON.stringify({product:ST.product,age:ST.age,count:count,mail_type:ST.mail})})
   .then(function(r){return r.json();}).then(function(d){ if(d.checkout_url)window.location.href=d.checkout_url; else alert(d.error||'Could not start checkout.'); })
   .catch(function(){alert('Could not start checkout.');});
@@ -150,7 +150,7 @@ function load(){
   fetch(API+'/api/boost',{headers:{'Authorization':'Bearer '+tok()}})
   .then(function(r){return r.json();}).then(function(d){
     if(!d.success){ if(d.error && /token|invalid|expired/i.test(String(d.error))){ window.location.href='/portal/'; return; } document.getElementById('loading').textContent=d.error||'Could not load Boost.'; return; }
-    if(!d.live){ document.getElementById('loading').style.display='none'; document.getElementById('content').style.display='block'; document.getElementById('content').innerHTML='<div class="card" style="text-align:center;padding:40px"><div style="font-size:40px">ï¿½xaï¿½</div><h2 style="margin:10px 0 6px">Boost Your Business - coming soon</h2><p class="hint" style="max-width:460px;margin:0 auto">Archive lead packs are being prepared. Check back shortly.</p></div>'; return; }
+    if(!d.live){ document.getElementById('loading').style.display='none'; document.getElementById('content').style.display='block'; document.getElementById('content').innerHTML='<div class="card" style="text-align:center;padding:40px"><div style="font-size:40px">�xa�</div><h2 style="margin:10px 0 6px">Boost Your Business - coming soon</h2><p class="hint" style="max-width:460px;margin:0 auto">Archive lead packs are being prepared. Check back shortly.</p></div>'; return; }
     document.getElementById('loading').style.display='none';
     document.getElementById('content').style.display='block';
     ST.DATA=d;
