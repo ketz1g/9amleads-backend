@@ -153,16 +153,20 @@ function upgrade(plan) {
   document.querySelectorAll('.btn').forEach(function(b){ if (b.onclick && b.getAttribute('onclick') && b.getAttribute('onclick').indexOf(plan) !== -1) btn = b; });
   if (!btn) btn = document.querySelector('.btn-primary');
   btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Redirecting to secure checkout…';
-  fetch(API + '/api/create-checkout', {
+  fetch(API + '/api/auth/change-plan', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + s.token },
     body: JSON.stringify({ plan: plan })
   }).then(function(r) { return r.json(); }).then(function(d) {
-    if (d && d.url) { window.location.href = d.url; }
+    if (d && d.success && d.applied) {
+      btn.disabled = false;
+      setStatus('✅ ' + esc(d.message || 'Plan updated'), 'ok');
+      setTimeout(function(){ window.location.reload(); }, 2500);
+    } else if (d && d.url) { window.location.href = d.url; }
     else {
       btn.disabled = false;
       var msg = 'Unable to start checkout. ' + ((d && d.error) || 'Please try again.');
-      setStatus(esc(msg) + ' — or email <a href="mailto:hello@9amleads.com" style="color:#0ea5e9">hello@9amleads.com</a>');
+      setStatus(esc(msg) + ' &mdash; or email <a href="mailto:hello@9amleads.com" style="color:#0ea5e9">hello@9amleads.com</a>');
     }
   }).catch(function() {
     btn.disabled = false;
