@@ -17779,7 +17779,11 @@ app.post('/api/boost/checkout', authMiddleware, async (req, res) => {
     var mailType = String((req.body && req.body.mail_type) || 'leaflet');
     if (['moving', 'probate', 'newbusiness'].indexOf(product) === -1) return res.status(400).json({ error: 'Choose Moving, Probate or New Business.' });
     var liveAllowed = String(process.env.BOOST_PRODUCTS_LIVE || 'newbusiness').toLowerCase().split(',').map(function(x){ return x.trim(); }).filter(Boolean);
-    if (liveAllowed.indexOf(product) === -1) return res.status(400).json({ error: product === 'newbusiness' ? 'New Business Boost is not available yet.' : 'Moving & Probate Boost packs are currently unavailable while we fill the pool. New Business packs are available now.' });
+    if (liveAllowed.indexOf(product) === -1) return res.status(400).json({ error: 'Lead pool being filled - packs will be available very soon.' });
+    // Hard guard: never sell a pack we cannot fill with mailable leads right now.
+    var poolNow = getBoostArchiveLeads(product, age, 0).length;
+    var minPack = Math.min.apply(null, (BOOST_PACK_SIZES[product] || [100]));
+    if (poolNow < minPack) return res.status(400).json({ error: 'Lead pool being filled - packs will be available very soon.' });
     if (!BOOST_PACK_SIZES[product] || BOOST_PACK_SIZES[product].indexOf(count) === -1) return res.status(400).json({ error: 'Choose a valid pack size for ' + product + '.' });
     if (!BULK_MAIL_RATES[mailType]) return res.status(400).json({ error: 'Choose what to post: leaflet, letter, or leaflet + letter.' });
     if (['tm', '1m', '2m'].indexOf(age) === -1) return res.status(400).json({ error: 'Choose This month (up to a month old), 1 month old or 2 months old.' });
