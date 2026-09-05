@@ -46,7 +46,7 @@
   <a class="btn ghost" href="/portal/dashboard.html" style="margin-left:auto">Back to Dashboard</a>
 </div>
 <div class="wrap">
-  <div class="title">📦 My Bulk Leads</div>
+  <div class="title">= My Bulk Leads</div>
   <p class="sub" id="subtitle">Every lead you've bought in bulk or boost packs, with live dispatch status.</p>
 
   <div class="bars">
@@ -109,7 +109,7 @@ function load(){
         var tr = document.createElement('tr');
         var cls = l.status.key === 'delivered' ? 'delivered' : l.status.key === 'out' ? 'out' : l.status.key === 'printer' ? 'printer' : l.status.key === 'failed' ? 'failed' : 'not';
         tr.innerHTML = '<td>' + (base + i + 1) + '</td>' +
-          '<td>' + esc(l.name) + (l.company ? ' <small>· ' + esc(l.company) + '</small>' : '') + '</td>' +
+          '<td>' + esc(l.name) + (l.company ? ' <small> ' + esc(l.company) + '</small>' : '') + '</td>' +
           '<td><small>' + esc(l.address) + '</small></td>' +
           '<td>' + esc(l.postcode) + '</td>' +
           '<td><span class="st ' + cls + '">' + esc(l.status.label) + '</span></td>';
