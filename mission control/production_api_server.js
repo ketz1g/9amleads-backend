@@ -20577,16 +20577,16 @@ _deliverDiag[cust.email].products = products;
 // Naming: -starter / -growth / -power (matches checkout planMap proâ†’growth, enterpriseâ†’power).
 // All are weekly subscriptions (interval=week, confirmed live on Stripe).
 const STRIPE_PRICE_IDS = {
-  'moving': { 'mov-starter': 'price_1UC5HjPS0MvjZiF9uwP95RsY', 'mov-growth': 'price_1UC5HjPS0MvjZiF943lxj9Cf', 'mov-power': 'price_1UC5HkPS0MvjZiF9jFBH4aib' },
-  'planning': { 'plan-starter': 'price_1UC5HpPS0MvjZiF9u2fMht2r', 'plan-growth': 'price_1UC5HqPS0MvjZiF913ei1s9u', 'plan-power': 'price_1UC5HrPS0MvjZiF9QpLWWuLS' },
-  'newbusiness': { 'nb-starter': 'price_1UC5HnPS0MvjZiF91s8eaZKm', 'nb-growth': 'price_1UC5HoPS0MvjZiF9HDTp2DnZ', 'nb-power': 'price_1UC5HoPS0MvjZiF9U3s0fFgU' },
-  'probate': { 'prob-starter': 'price_1UC5HlPS0MvjZiF9EjOWX1Tq', 'prob-growth': 'price_1UC5HmPS0MvjZiF9OmL1FIhF', 'prob-power': 'price_1UC5HmPS0MvjZiF9RWOZsl36' },
-  'tenders': { 'tend-starter': 'price_1UC5HrPS0MvjZiF9y7LV4SNn', 'tend-growth': 'price_1UC5HsPS0MvjZiF9jG5vqTUA', 'tend-power': 'price_1UC5HtPS0MvjZiF94oxcFQp0' },
-  'builder-package': { 'bld-package': 'price_1UC5HuPS0MvjZiF9yqlfbRW1' },
-  'marketing-package': { 'mkt-package': 'price_1UC5HuPS0MvjZiF91gmuSp5v' },
-  'property-package': { 'prp-package': 'price_1UC5HvPS0MvjZiF9Jd65wWAl' },
-  'moving-package': { 'mov-package': 'price_1UC5HwPS0MvjZiF9qfNkVggL' },
-  pro: { 'pro-plan': 'price_1UC5HxPS0MvjZiF93xiHXDve' },
+  'moving': { 'mov-starter': 'price_1UCHYtADspDnFpfBBd7QOcYI', 'mov-growth': 'price_1UCHYuADspDnFpfB393MTFG9', 'mov-power': 'price_1UCHYuADspDnFpfBcEfj4VQb' },
+  'planning': { 'plan-starter': 'price_1UCHYzADspDnFpfBr5xlVz9b', 'plan-growth': 'price_1UCHYzADspDnFpfB93hxERUY', 'plan-power': 'price_1UCHZ0ADspDnFpfByi7gAIYX' },
+  'newbusiness': { 'nb-starter': 'price_1UCHYxADspDnFpfBzoPTlNjN', 'nb-growth': 'price_1UCHYxADspDnFpfBPFAN12xE', 'nb-power': 'price_1UCHYyADspDnFpfBA5goep7L' },
+  'probate': { 'prob-starter': 'price_1UCHYvADspDnFpfBtBbyRQc3', 'prob-growth': 'price_1UCHYvADspDnFpfBGBWMRaJ8', 'prob-power': 'price_1UCHYwADspDnFpfBPtzxOqnM' },
+  'tenders': { 'tend-starter': 'price_1UCHZ1ADspDnFpfBTiDOYcQD', 'tend-growth': 'price_1UCHZ1ADspDnFpfBerDhBtEm', 'tend-power': 'price_1UCHZ2ADspDnFpfBMUBuWjHF' },
+  'builder-package': { 'bld-package': 'price_1UCHZ2ADspDnFpfBYKXHUKC9' },
+  'marketing-package': { 'mkt-package': 'price_1UCHZ3ADspDnFpfBNQnfdd4p' },
+  'property-package': { 'prp-package': 'price_1UCHZ4ADspDnFpfB3xkgJYam' },
+  'moving-package': { 'mov-package': 'price_1UCHZ4ADspDnFpfBd3jBHF8f' },
+  'pro': { 'pro-plan': 'price_1UCHZ5ADspDnFpfBDvviJdmR' },
 };
 
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
