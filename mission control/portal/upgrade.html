@@ -169,5 +169,40 @@ function upgrade(plan) {
     setStatus('Checkout could not be started. Please try again or email <a href="mailto:hello@9amleads.com" style="color:#0ea5e9">hello@9amleads.com</a>');
   });
 }
+// Show the customer's current plan and label buttons Upgrade / Downgrade correctly.
+(function(){
+  var s = session();
+  if (!s) return;
+  fetch('/api/auth/me', { headers: { 'Authorization': 'Bearer ' + s.token } })
+    .then(function(r){ return r.json(); })
+    .then(function(me){
+      var cur = String((me && me.plan) || '').toLowerCase();
+      if (!cur) return;
+      var order = ['starter', 'pro', 'enterprise'];
+      var idx = order.indexOf(cur);
+      var cards = { starter: document.querySelector('.card'), pro: document.querySelector('.card.featured'), enterprise: document.querySelectorAll('.card')[2] };
+      if (cards[cur]) {
+        cards[cur].style.borderColor = '#22c55e';
+        var curTag = document.createElement('div');
+        curTag.style.cssText = 'position:absolute;top:-10px;right:10px;background:#22c55e;color:#fff;font-size:10px;font-weight:800;text-transform:uppercase;padding:4px 12px;border-radius:20px';
+        curTag.textContent = 'Your current plan';
+        cards[cur].appendChild(curTag);
+      }
+      document.querySelectorAll('.grid .card').forEach(function(card){
+        var nameEl = card.querySelector('.pln-name');
+        if (!nameEl) return;
+        var name = nameEl.textContent.trim().toLowerCase();
+        var btn = card.querySelector('.btn');
+        if (!btn) return;
+        var btnPlan = (btn.getAttribute('onclick') || '').match(/upgrade\('(\w+)'\)/);
+        var target = btnPlan ? btnPlan[1] : name;
+        if (target === cur) { btn.innerHTML = '<i class="fas fa-check"></i> Your current plan'; btn.disabled = true; }
+        else {
+          var isDown = order.indexOf(target) < order.indexOf(cur) && idx !== -1;
+          btn.innerHTML = '<i class="fas fa-' + (isDown ? 'arrow-down' : 'arrow-up') + '"></i> ' + (isDown ? 'Downgrade to ' : 'Upgrade to ') + target.charAt(0).toUpperCase() + target.slice(1);
+        }
+      });
+    }).catch(function(){});
+})();
 </script>
 </body></html>
