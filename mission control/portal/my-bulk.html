@@ -60,6 +60,7 @@
     </div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
       <label style="font-size:12.5px;color:var(--txt2);display:flex;align-items:center;gap:6px"><input type="checkbox" id="selAll" onchange="toggleAll(this)"> Select all on this page</label>
+      <button class="btn ghost" onclick="selectAllAll()">Select all (all results)</button>
       <button class="btn ghost" id="delSel" onclick="deleteSelected()" style="color:#f87171;border-color:rgba(248,113,113,.4)">Delete selected</button>
       <span id="selInfo" style="font-size:12px;color:var(--txt2)"></span>
     </div>
@@ -91,7 +92,23 @@ function tok(){ try { var s = localStorage.getItem('mld_portal_session') || loca
 var STATE = { page: 1, status: 'all', date: '' };
 function setFilter(f, el){ STATE.status = f; STATE.page = 1; document.querySelectorAll('.fbtn').forEach(function(b){ b.classList.toggle('on', b === el); }); load(); }
 var SEL = {};
-function toggleAll(cb){ SEL = {}; var boxes = document.querySelectorAll('.lk'); boxes.forEach(function(b){ b.checked = cb.checked; if (cb.checked) SEL[b.value] = 1; }); updateSelInfo(); }
+function toggleAll(cb){ document.querySelectorAll('.lk').forEach(function(b){ b.checked = cb.checked; if (cb.checked) SEL[b.value] = 1; }); if (!cb.checked) document.querySelectorAll('.lk').forEach(function(b){ delete SEL[b.value]; }); updateSelInfo(); }
+function selectAllAll(){
+  var q = 'page=1&per=100&status=' + STATE.status + '&date=' + STATE.date;
+  fetch(API + '/api/direct-mail/my-bulk-leads?' + q, { headers: { 'Authorization': 'Bearer ' + tok() } })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (!d || !d.leads) return;
+      d.leads.forEach(function(l){ SEL[String(l.id)] = 1; });
+      var pages = d.totalPages || 1;
+      var chain = Promise.resolve();
+      for (var pg = 2; pg <= pages; pg++) {
+        chain = chain.then(function(p){ return fetch(API + '/api/direct-mail/my-bulk-leads?page=' + p + '&per=100&status=' + STATE.status + '&date=' + STATE.date, { headers: { 'Authorization': 'Bearer ' + tok() } }).then(function(r){ return r.json(); }).then(function(x){ if (x && x.leads) x.leads.forEach(function(l){ SEL[String(l.id)] = 1; }); }); });
+      }
+      return chain.then(function(){ var s = document.getElementById('selAll'); if (s) s.checked = true; load(); });
+    })
+    .catch(function(){ alert('Could not select all - try again.'); });
+}
 function toggleOne(cb){ if (cb.checked) SEL[cb.value] = 1; else delete SEL[cb.value]; updateSelInfo(); }
 function updateSelInfo(){ document.getElementById('selInfo').textContent = Object.keys(SEL).length ? Object.keys(SEL).length + ' selected' : ''; }
 function deleteSelected(){
@@ -135,7 +152,6 @@ function load(){
       var rows = d.leads || [];
       var tb = document.getElementById('rows'); 
       tb.innerHTML = ''; 
-      SEL = {}; updateSelInfo(); var selAll = document.getElementById('selAll'); if (selAll) selAll.checked = false;
       document.getElementById('empty').style.display = rows.length ? 'none' : 'block'; 
       var base = (d.page - 1) * (d.per || 25); 
       var lastDate = '';
@@ -157,6 +173,8 @@ function load(){
           '<td><span class="st ' + cls + '">' + esc(l.status.label) + '</span></td>'; 
         tb.appendChild(tr); 
       }); 
+      document.querySelectorAll('.lk').forEach(function(b){ b.checked = !!SEL[b.value]; });
+      updateSelInfo();
       loadDates();
       document.getElementById('pageLabel').textContent = 'Page ' + d.page + ' of ' + d.totalPages + ' (' + d.total + ' leads)';
       document.getElementById('prev').disabled = d.page <= 1;
