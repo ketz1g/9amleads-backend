@@ -50,10 +50,18 @@
   <p class="sub" id="subtitle">Every lead you've bought in bulk or boost packs, with live dispatch status.</p>
 
   <div class="bars">
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px;align-items:center">
       <button class="btn ghost fbtn on" data-f="all" onclick="setFilter('all',this)">All</button>
       <button class="btn ghost fbtn" data-f="not_sent" onclick="setFilter('not_sent',this)">Not yet sent</button>
       <button class="btn ghost fbtn" data-f="sent" onclick="setFilter('sent',this)">Sent &amp; tracking</button>
+      <select id="dateSel" onchange="STATE.date=this.value;STATE.page=1;load();" style="padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-size:13px">
+        <option value="">View by date you bought</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <label style="font-size:12.5px;color:var(--txt2);display:flex;align-items:center;gap:6px"><input type="checkbox" id="selAll" onchange="toggleAll(this)"> Select all on this page</label>
+      <button class="btn ghost" id="delSel" onclick="deleteSelected()" style="color:#f87171;border-color:rgba(248,113,113,.4)">Delete selected</button>
+      <span id="selInfo" style="font-size:12px;color:var(--txt2)"></span>
     </div>
     <div class="bar-row">
       <div class="lbl"><span>Posted to printers</span><b id="postedTxt">0%</b></div>
@@ -67,7 +75,7 @@
   </div>
 
   <table>
-    <thead><tr><th style="width:30px">#</th><th>Lead</th><th>Address</th><th style="width:110px">Postcode</th><th style="width:150px">Status</th></tr></thead>
+    <thead><tr><th style="width:26px"></th><th style="width:30px">#</th><th>Lead</th><th>Address</th><th style="width:110px">Postcode</th><th style="width:150px">Status</th></tr></thead>
     <tbody id="rows"></tbody>
   </table>
   <div class="empty" id="empty" style="display:none">No bulk leads yet. Buy a pack from the Bulk Send section in your dashboard.</div>
@@ -80,11 +88,35 @@
 <script>
 var API = window.location.hostname === 'localhost' ? 'http://localhost:8012' : '';
 function tok(){ try { var s = localStorage.getItem('mld_portal_session') || localStorage.getItem('9am_token') || ''; if (!s) return ''; if (s.charAt(0) === '{') { var o = JSON.parse(s); if (o && o.token) return o.token; } return s; } catch (e) { return s || ''; } }
-var STATE = { page: 1, status: 'all' };
+var STATE = { page: 1, status: 'all', date: '' };
 function setFilter(f, el){ STATE.status = f; STATE.page = 1; document.querySelectorAll('.fbtn').forEach(function(b){ b.classList.toggle('on', b === el); }); load(); }
+var SEL = {};
+function toggleAll(cb){ SEL = {}; var boxes = document.querySelectorAll('.lk'); boxes.forEach(function(b){ b.checked = cb.checked; if (cb.checked) SEL[b.value] = 1; }); updateSelInfo(); }
+function toggleOne(cb){ if (cb.checked) SEL[cb.value] = 1; else delete SEL[cb.value]; updateSelInfo(); }
+function updateSelInfo(){ document.getElementById('selInfo').textContent = Object.keys(SEL).length ? Object.keys(SEL).length + ' selected' : ''; }
+function deleteSelected(){
+  var ids = Object.keys(SEL);
+  if (!ids.length) { alert('Select leads to delete first.'); return; }
+  if (!confirm('Delete ' + ids.length + ' selected bulk leads from your account? This removes them from your list.')) return;
+  fetch(API + '/api/direct-mail/bulk-leads/delete', { method: 'POST', headers: ah(), body: JSON.stringify({ ids: ids }) })
+    .then(function(r){ return r.json(); })
+    .then(function(d){ if (d && d.success) { alert('Removed ' + (d.removed || 0) + ' lead(s).'); SEL = {}; updateSelInfo(); load(); } else { alert((d && d.error) || 'Delete failed.'); } })
+    .catch(function(){ alert('Delete failed - try again.'); });
+}
+function loadDates(){
+  fetch(API + '/api/direct-mail/my-bulk-leads?meta=1&status=' + STATE.status, { headers: { 'Authorization': 'Bearer ' + tok() } })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      var sel = document.getElementById('dateSel');
+      if (!sel || !d || !d.dates) return;
+      var cur = STATE.date;
+      sel.innerHTML = '<option value="">View by date you bought</option>' + d.dates.map(function(x){ return '<option value="' + x.date + '">' + x.date + ' (' + x.count + ' leads)</option>'; }).join('');
+      sel.value = cur;
+    }).catch(function(){});
+}
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
 function load(){
-  fetch(API + '/api/direct-mail/my-bulk-leads?page=' + STATE.page + '&per=25&status=' + STATE.status, { headers: { 'Authorization': 'Bearer ' + tok() } })
+  fetch(API + '/api/direct-mail/my-bulk-leads?page=' + STATE.page + '&per=25&status=' + STATE.status + '&date=' + STATE.date, { headers: { 'Authorization': 'Bearer ' + tok() } })
     .then(function(r){ return r.json(); })
     .then(function(d){
       if (!d || d.success === false) { throw new Error((d && d.error) || 'failed'); }
@@ -101,20 +133,31 @@ function load(){
         '<span class="chip">Delivered <b>' + (c.delivered || 0) + '</b></span>' +
         (c.failed ? '<span class="chip">Failed <b>' + c.failed + '</b></span>' : '');
       var rows = d.leads || [];
-      var tb = document.getElementById('rows');
-      tb.innerHTML = '';
-      document.getElementById('empty').style.display = rows.length ? 'none' : 'block';
-      var base = (d.page - 1) * (d.per || 25);
-      rows.forEach(function(l, i){
-        var tr = document.createElement('tr');
-        var cls = l.status.key === 'delivered' ? 'delivered' : l.status.key === 'out' ? 'out' : l.status.key === 'printer' ? 'printer' : l.status.key === 'failed' ? 'failed' : 'not';
-        tr.innerHTML = '<td>' + (base + i + 1) + '</td>' +
-          '<td>' + esc(l.name) + (l.company ? ' <small> ' + esc(l.company) + '</small>' : '') + '</td>' +
-          '<td><small>' + esc(l.address) + '</small></td>' +
-          '<td>' + esc(l.postcode) + '</td>' +
-          '<td><span class="st ' + cls + '">' + esc(l.status.label) + '</span></td>';
-        tb.appendChild(tr);
-      });
+      var tb = document.getElementById('rows'); 
+      tb.innerHTML = ''; 
+      SEL = {}; updateSelInfo(); var selAll = document.getElementById('selAll'); if (selAll) selAll.checked = false;
+      document.getElementById('empty').style.display = rows.length ? 'none' : 'block'; 
+      var base = (d.page - 1) * (d.per || 25); 
+      var lastDate = '';
+      rows.forEach(function(l, i){ 
+        var dd = String(l.reserved_at || '').slice(0, 10);
+        if (!STATE.date && dd && dd !== lastDate) {
+          var dh = document.createElement('tr');
+          dh.innerHTML = '<td colspan="6" style="padding:12px 12px 6px;font-weight:800;color:#0ea5e9;border-bottom:none;font-size:13px;background:transparent">Bought ' + dd + '</td>';
+          tb.appendChild(dh);
+          lastDate = dd;
+        }
+        var tr = document.createElement('tr'); 
+        var cls = l.status.key === 'delivered' ? 'delivered' : l.status.key === 'out' ? 'out' : l.status.key === 'printer' ? 'printer' : l.status.key === 'failed' ? 'failed' : 'not'; 
+        tr.innerHTML = '<td><input type="checkbox" class="lk" value="' + esc(l.id) + '" onchange="toggleOne(this)"></td>' +
+          '<td>' + (base + i + 1) + '</td>' + 
+          '<td>' + esc(l.name) + (l.company ? ' <small> ' + esc(l.company) + '</small>' : '') + '</td>' + 
+          '<td><small>' + esc(l.address) + '</small></td>' + 
+          '<td>' + esc(l.postcode) + '</td>' + 
+          '<td><span class="st ' + cls + '">' + esc(l.status.label) + '</span></td>'; 
+        tb.appendChild(tr); 
+      }); 
+      loadDates();
       document.getElementById('pageLabel').textContent = 'Page ' + d.page + ' of ' + d.totalPages + ' (' + d.total + ' leads)';
       document.getElementById('prev').disabled = d.page <= 1;
       document.getElementById('next').disabled = d.page >= d.totalPages;

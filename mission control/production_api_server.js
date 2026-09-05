@@ -24263,6 +24263,13 @@ app.get('/api/direct-mail/my-bulk-leads', authMiddleware, (req, res) => {
     var fStatus = String(req.query.status || 'all').toLowerCase();
     if (fStatus === 'sent') enriched = enriched.filter(function(l) { return l.status.key !== 'not_sent'; });
     else if (fStatus === 'not_sent') enriched = enriched.filter(function(l) { return l.status.key === 'not_sent'; });
+    // Optional purchase-date filter (YYYY-MM-DD) so customers can view a specific pack day.
+    var fDate = String(req.query.date || '');
+    if (fDate) enriched = enriched.filter(function(l) { return String(l.reserved_at || '').slice(0, 10) === fDate; });
+    var dates = {};
+    enriched.forEach(function(l) { var dd = String(l.reserved_at || '').slice(0, 10); if (dd) dates[dd] = (dates[dd] || 0) + 1; });
+    var dateList = Object.keys(dates).sort().reverse().map(function(d){ return { date: d, count: dates[d] }; });
+    if (req.query.meta === '1') return res.json({ success: true, dates: dateList, counts: { total: dateList.length } });
     var total = enriched.length;
     var counts = { total: total, posted: 0, printer: 0, out: 0, delivered: 0, not_sent: 0, failed: 0 };
     enriched.forEach(function(l) {
@@ -24277,6 +24284,36 @@ app.get('/api/direct-mail/my-bulk-leads', authMiddleware, (req, res) => {
     var start = (page - 1) * per;
     var leads = enriched.slice(start, start + per);
     res.json({ success: true, product: c.product, pack: pack, counts: counts, page: page, per: per, totalPages: Math.max(1, Math.ceil(total / per)), total: total, leads: leads });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/direct-mail/bulk-leads/delete — delete selected purchased bulk/boost leads
+// from the customer's account (releases them back to the pool). { ids: [...] }
+app.post('/api/direct-mail/bulk-leads/delete', authMiddleware, (req, res) => {
+  try {
+    var c = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!c) return res.status(404).json({ error: 'User not found' });
+    var ids = Array.isArray(req.body && req.body.ids) ? req.body.ids.filter(function(x){ return x; }) : [];
+    if (!ids.length) return res.status(400).json({ error: 'No leads selected' });
+    var want = {}; ids.forEach(function(id){ want[String(id)] = 1; });
+    var removed = 0, totalScanned = 0;
+    ['newbusiness', 'moving', 'probate'].forEach(function(pk) {
+      var file = null; try { file = path.join(DATA_DIR, PRODUCT_LEAD_FILES[pk].file); } catch(e) {}
+      if (!file || !fs.existsSync(file)) return;
+      try {
+        var raw = JSON.parse(fs.readFileSync(file, 'utf-8'));
+        function clear(l) {
+          if (!l || !want[String(l.id || l.url || l.company_number || '')]) return;
+          removed++;
+          if (l.bulk_reserved_by === c.id || l.boost_reserved_by === c.id) { l.bulk_reserved = 0; l.bulk_sold = 0; l.bulk_reserved_by = ''; l.bulk_sold_by = ''; l.bulk_reserved_at = ''; l.boost_reserved = 0; l.boost_sold = 0; l.boost_reserved_by = ''; l.boost_sold_by = ''; l.boost_reserved_at = ''; }
+        }
+        if (Array.isArray(raw)) { raw.forEach(clear); fs.writeFileSync(file, JSON.stringify(raw, null, 2)); }
+        else if (raw && typeof raw === 'object') { Object.keys(raw).forEach(function(k){ if (Array.isArray(raw[k])) { raw[k].forEach(clear); } }); fs.writeFileSync(file, JSON.stringify(raw, null, 2)); }
+      } catch(e) { console.log('[BULK-DELETE] pool error', pk, e.message); }
+    });
+    // Also drop any pending recipient rows for these leads so they stop showing in tracking.
+    try { ids.forEach(function(id){ db.prepare('DELETE FROM direct_mail_recipients WHERE customer_id = ? AND lead_id = ? AND status = ?').run(c.id, String(id), 'pending'); }); saveDb(); } catch(e) {}
+    res.json({ success: true, removed: removed });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
