@@ -20447,13 +20447,13 @@ try {
     STRIPE_SECRET_KEY = stripeConfig.apiKey;
   }
   if (stripeConfig.priceIds) {
-    // Merge file prices UNDER embedded defaults (keep overrides)
+    // File prices are AUTHORITATIVE and override the embedded defaults below, so
+    // the IDs always match the configured Stripe account (test or live). Re-run
+    // stripe_handler --setup against the right key and commit the config to switch.
     for (var prodKey in stripeConfig.priceIds) {
       if (!STRIPE_PRICE_IDS[prodKey]) STRIPE_PRICE_IDS[prodKey] = {};
       for (var planKey in stripeConfig.priceIds[prodKey]) {
-        if (!STRIPE_PRICE_IDS[prodKey][planKey]) {
-          STRIPE_PRICE_IDS[prodKey][planKey] = stripeConfig.priceIds[prodKey][planKey];
-        }
+        STRIPE_PRICE_IDS[prodKey][planKey] = stripeConfig.priceIds[prodKey][planKey];
       }
     }
   }
