@@ -5581,6 +5581,35 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 // GET /api/auth/me
+// POST /api/auth/verify-purchase - safety net: after a Stripe Checkout redirect the
+// customer re-confirms the paid session directly, so they always get the plan they
+// paid for even if a webhook is delayed/lost.
+app.post('/api/auth/verify-purchase', authMiddleware, async (req, res) => {
+  try {
+    var sessionId = String((req.body && req.body.session_id) || '');
+    if (!sessionId) return res.status(400).json({ error: 'session_id required' });
+    if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe not configured' });
+    var cust = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!cust) return res.status(404).json({ error: 'User not found' });
+    var session = await stripeApiRequest('GET', 'checkout/sessions/' + encodeURIComponent(sessionId), null);
+    if (!session || session.payment_status !== 'paid') return res.status(400).json({ error: 'Payment not completed for that session' });
+    var m = session.metadata || {};
+    if (String(m.customer_id) !== cust.id) return res.status(403).json({ error: 'Session does not belong to this account' });
+    var plan = String(m.plan || '');
+    var product = String(m.product || cust.product);
+    if (!['starter', 'pro', 'enterprise'].includes(plan)) return res.status(400).json({ error: 'Unrecognised plan on session' });
+    var limit = getPlanLimit(product, plan);
+    db.prepare('UPDATE customers SET plan = ?, leads_per_day = ?, selected_plan = ?, trial_ends = NULL WHERE id = ?').run(plan, limit, plan, cust.id);
+    var existingSub = db.prepare('SELECT id FROM subscriptions WHERE customer_id = ?').get(cust.id);
+    var nowIso = new Date().toISOString();
+    if (existingSub) { db.prepare('UPDATE subscriptions SET stripe_id = ?, plan = ?, status = ?, current_period_start = ?, current_period_end = ?, updated_at = ? WHERE customer_id = ?').run(session.subscription || existingSub.stripe_id, plan, 'active', nowIso, new Date(Date.now() + 7 * 86400000).toISOString(), nowIso, cust.id); }
+    else { db.prepare('INSERT INTO subscriptions (id, customer_id, stripe_id, plan, status, current_period_start, current_period_end, created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, session.subscription || '', plan, 'active', nowIso, new Date(Date.now() + 7 * 86400000).toISOString(), nowIso); }
+    saveDb();
+    console.log('[VERIFY-PURCHASE] Confirmed ' + cust.email + ' -> ' + plan + ' (' + product + ')');
+    res.json({ success: true, plan: plan, leads_per_day: limit });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/auth/me', authMiddleware, (req, res) => {
   const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
   if (!customer) return res.status(404).json({ error: 'User not found' });
