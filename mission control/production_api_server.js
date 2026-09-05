@@ -20711,6 +20711,61 @@ app.post('/api/admin/upgrade', adminAuth, (req, res) => {
 });
 
 // POST /api/create-checkout â€” create Stripe Checkout Session
+// POST /api/auth/change-plan - upgrade OR downgrade. Downgrades to a lower plan are
+// applied instantly on the customer's existing Stripe subscription (no payment link;
+// the next recurring charge uses the lower price). Upgrades / no-subscription cases
+// return a Stripe Checkout URL to pay the difference.
+app.post('/api/auth/change-plan', authMiddleware, async (req, res) => {
+  try {
+    var customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!customer) return res.status(404).json({ error: 'User not found' });
+    var plan = String((req.body && req.body.plan) || '').toLowerCase();
+    if (!['starter', 'pro', 'enterprise'].includes(plan)) return res.status(400).json({ error: 'Invalid plan' });
+    var rank = { starter: 0, pro: 1, enterprise: 2 };
+    var curRank = rank[customer.plan] === undefined ? -1 : rank[customer.plan];
+    var isDowngrade = curRank > rank[plan];
+    var sub = db.prepare('SELECT * FROM subscriptions WHERE customer_id = ? ORDER BY updated_at DESC LIMIT 1').get(customer.id);
+    var subId = sub && sub.stripe_id ? sub.stripe_id : '';
+    var productKeyMap = { moving: 'mov', probate: 'prob', newbusiness: 'nb', planning: 'plan', tenders: 'tend' };
+    var pk = productKeyMap[customer.product] || customer.product;
+    var pm = { starter: 'starter', pro: 'growth', enterprise: 'power' };
+    var newPrice = getStripePriceId(customer.product, pk + '-' + pm[plan]);
+    if (!newPrice) return res.status(400).json({ error: 'Pricing not found for this plan' });
+    if (isDowngrade && subId.indexOf('sub_') === 0) {
+      // Update the existing subscription's price - no payment now, lower charge next cycle.
+      var applied = false;
+      try {
+        var subObj = await stripeApiRequest('GET', 'subscriptions/' + encodeURIComponent(subId), null);
+        var item = subObj && subObj.items && subObj.items.data && subObj.items.data[0];
+        if (item && item.id) {
+          var upd = await stripeApiRequest('POST', 'subscriptions/' + encodeURIComponent(subId), {
+            'items[0][id]': item.id, 'items[0][price]': newPrice, 'proration_behavior': 'create_prorations'
+          });
+          applied = !!(upd && upd.id);
+        }
+      } catch (updErr) { console.log('[CHANGE-PLAN] sub update error:', updErr.message); applied = false; }
+      if (applied) {
+        var dlimit = getPlanLimit(customer.product, plan);
+        db.prepare('UPDATE customers SET plan = ?, leads_per_day = ?, selected_plan = ? WHERE id = ?').run(plan, dlimit, plan, customer.id);
+        db.prepare('UPDATE subscriptions SET plan = ?, status = ? WHERE id = ?').run(plan, 'active', sub.id);
+        saveDb();
+        return res.json({ success: true, applied: true, plan: plan, leads_per_day: dlimit, message: 'Plan updated - your next charge will be at the ' + plan + ' price and tomorrow\'s delivery matches it.' });
+      }
+    }
+    // Upgrade (or no subscription): send them to a payment checkout for the new price.
+    var baseUrl = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
+    var session = await stripeApiRequest('POST', 'checkout/sessions', {
+      mode: 'subscription', customer_email: customer.email,
+      'line_items[0][price]': newPrice, 'line_items[0][quantity]': '1',
+      success_url: baseUrl + '/portal/dashboard.html?checkout=success&session_id={CHECKOUT_SESSION_ID}',
+      cancel_url: baseUrl + '/portal/dashboard.html?checkout=cancel',
+      'metadata[customer_id]': customer.id, 'metadata[product]': customer.product, 'metadata[plan]': plan
+    });
+    if (session && session.url) return res.json({ success: true, applied: false, url: session.url });
+    res.status(400).json({ error: (session && session.error && session.error.message) || 'Could not create checkout' });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/create-checkout', authMiddleware, async (req, res) => {
   try {
     if (!STRIPE_SECRET_KEY) {
