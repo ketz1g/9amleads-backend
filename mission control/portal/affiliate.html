@@ -227,6 +227,16 @@ tr:last-child td{border-bottom:none}
 .aff-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:rgba(255,255,255,.04);border:1px solid #1e2030;border-radius:14px;padding:12px 16px;margin-bottom:16px}
 .aff-cta{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:#e2e8f0;background:rgba(255,255,255,.05);border:1px solid #1e2030;border-radius:9px;padding:8px 14px;text-decoration:none;transition:.15s}
 .aff-cta:hover{background:rgba(14,165,233,.15);border-color:rgba(14,165,233,.4);color:#fff;transform:translateY(-1px)}
+/* filter/search toolbars */
+.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+.toolbar .grow{flex:1;min-width:180px}
+.toolbar input[type=search],.toolbar input[type=text],.toolbar select{background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:12.5px;padding:8px 11px;outline:none}
+.toolbar input:focus,.toolbar select:focus{border-color:#0ea5e9}
+.fu-chips{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 10px}
+.fu-chip{padding:6px 12px;border-radius:50px;font-size:11.5px;font-weight:600;background:#0f111a;border:1px solid #1e2030;color:#94a3b8;cursor:pointer;transition:.15s;white-space:nowrap}
+.fu-chip:hover{color:#e2e8f0;border-color:#2a2d42}
+.fu-chip.on{background:rgba(14,165,233,.16);border-color:rgba(14,165,233,.5);color:#0ea5e9}
+.fu-chip .n{opacity:.8;font-weight:800}
 /* new-referral sign-up alerts banner */
 .ref-alert{background:linear-gradient(135deg,rgba(52,211,153,.16),rgba(14,165,233,.08));border:1px solid rgba(52,211,153,.5);border-radius:14px;padding:16px 18px;margin-bottom:18px;box-shadow:0 0 0 1px rgba(52,211,153,.14),0 10px 30px rgba(16,185,129,.14)}
 .ref-alert .ref-alert-head{font-size:15px;font-weight:800;color:#f1f5f9;display:flex;align-items:center;margin-bottom:10px}
@@ -237,6 +247,22 @@ tr:last-child td{border-bottom:none}
 .ref-alert .ref-alert-row .who b{display:block;color:#f1f5f9;font-size:13.5px}
 .ref-alert .ref-alert-row .who span{display:block;color:#94a3b8;font-size:11.5px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ref-alert .ref-alert-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:6px}
+/* ---- responsive polish (mobile-first tweaks) ---- */
+@media(max-width:640px){
+  .topbar{padding:10px 14px;flex-wrap:wrap}
+  .wrap{padding:16px 12px 60px}
+  .hero{padding:20px 16px}
+  .hero h1{font-size:20px}
+  .aff-header{flex-direction:column;align-items:stretch}
+  .aff-cta{justify-content:center}
+  .tabs{overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+  .tab{flex:0 0 auto;padding:9px 13px;font-size:12px}
+  .payout-card{padding:14px}
+  .toolbar input[type=search]{min-width:120px}
+  table{font-size:11.5px}
+  .step2{flex-direction:column}
+  .step2 .lab{flex:1 1 auto;text-align:left;width:100%}
+}
 </style>
 </head>
 <body>
@@ -449,6 +475,11 @@ tr:last-child td{border-bottom:none}
 <div class="leadhead">
 <h2>Leads <span class="hint">your CRM. Referrals + your own leads, with comments &amp; reminders</span></h2>
 <button class="btn-mini" onclick="toggleAddLead()">+ Add lead</button>
+</div>
+<div class="toolbar">
+<input type="search" id="leads-search" placeholder="Search company, email, phone or note…" oninput="renderLeads()" class="grow">
+<select id="leads-status" onchange="renderLeads()" title="Filter by status"><option value="">All statuses</option><option value="manual">My leads</option><option value="referral">Referrals</option></select>
+<button class="btn-mini" onclick="exportLeadsCSV()" title="Download leads as a CSV file">⬇ CSV</button>
 </div>
 <div class="lead-form" id="lead-form" style="display:none">
 <div class="lf-row">
@@ -669,7 +700,15 @@ tr:last-child td{border-bottom:none}
 
 <!-- REFERRALS -->
 <section id="view-refs" style="display:none">
-<div class="panel"><h2>All referrals</h2><div id="refs-table-wrap"></div></div>
+<div class="panel">
+<div class="toolbar">
+<h2 style="margin:0;flex:1">All referrals</h2>
+<input type="search" id="refs-search" placeholder="Search company or email…" oninput="renderRefsView()" class="grow">
+<select id="refs-status" onchange="renderRefsView()"><option value="">All statuses</option></select>
+<button class="btn-mini" onclick="exportRefsCSV()" title="Download referrals as a CSV file">⬇ CSV</button>
+</div>
+<div id="refs-table-wrap"></div>
+</div>
 </section>
 
 <!-- FOLLOW-UPS -->
@@ -695,13 +734,17 @@ tr:last-child td{border-bottom:none}
 <div class="err" id="fp-err"></div>
 </div>
 <div id="fu-reminder-strip"></div>
-<div id="fu-counts" style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0"></div>
+<div class="toolbar" style="margin:12px 0 4px">
+<input type="search" id="fu-search" placeholder="Search business, contact, phone or note…" oninput="renderFuTable()" class="grow">
+<button class="btn-mini" onclick="exportFuCSV()" title="Download your follow-up list as a CSV file">⬇ CSV</button>
+</div>
+<div id="fu-counts" style="display:flex;gap:6px;flex-wrap:wrap"></div>
 <div class="panel" style="padding:0;overflow:auto"><div id="fu-list-wrap"></div></div>
 </section>
 
 <!-- PAYOUTS -->
 <section id="view-payouts" style="display:none">
-<div class="panel"><h2>Payout history</h2><div id="payouts-wrap"><div class="muted">No payouts yet.</div></div></div>
+<div class="panel"><div class="leadhead"><h2>Payout history</h2><button class="btn-mini" onclick="exportPayoutsCSV()" title="Download payout history as a CSV file">⬇ CSV</button></div><div id="payouts-wrap"><div class="muted">No payouts yet.</div></div></div>
 </section>
 </div>
 
@@ -805,6 +848,11 @@ var API = (window.location.hostname === 'localhost' || window.location.hostname 
 })();
 var TOKEN = sessionStorage.getItem('mld_affiliate_session') || localStorage.getItem('mld_affiliate_token') || '';
 var D = null, RES = null, LEADS = null, curType = 'moving';
+// Show a dash instead of "£0" until there's real money to display.
+function money(v){
+  var n=Number(v);
+  return (isFinite(n)&&n>0)?('£'+(n%1===0?n:n.toFixed(2))):'—';
+}
 
 function showLogin(){document.getElementById('login-view').style.display='block';document.getElementById('register-view').style.display='none';}
 function showRegister(){
@@ -942,18 +990,70 @@ var EMOJI={moving:'🚚',probate:'⚖️',newbusiness:'💼',planning:'🏗️',
 function go(t){
   document.querySelectorAll('.tab').forEach(function(x){x.classList.toggle('on',x.dataset.t===t);});
   ['overview','leads','tools','playbook','refs','rewards','compliance','payouts','followups'].forEach(function(v){var el=document.getElementById('view-'+v);if(el)el.style.display=(v===t)?'block':'none';});
-  if(t==='tools'&&!RES)loadResources();
-  if(t==='leads'&&!LEADS)loadLeads();
+  // Always refresh the tab you open so nothing ever goes stale (new sign-ups appear
+  // the moment you switch tabs, no manual reload needed).
+  if(t==='tools')loadResources();
+  if(t==='leads')loadLeads();
+  if(t==='refs')loadRefs();
   if(t==='payouts')loadPayouts();
   if(t==='followups')loadFollowups();
+  if(t==='rewards')loadWheel();
 }
 
 // ===== FOLLOW-UP CRM =====
 var FU = null, FU_STATUS_COLORS = { prospect: '#f59e0b', trial: '#0ea5e9', referral_pending: '#94a3b8', earning: '#10b981', approved: '#34d399', paid: '#4ade80' };
 var FU_STATUS_LABEL = { prospect: 'Prospect', trial: 'Trial', referral_pending: 'Referred', earning: 'Earning', approved: 'Commission', paid: 'Paid out' };
+var FU_FILTER_STATUS = 'all'; // active status chip ('all' = no filter)
 function toggleProspectForm(){var f=document.getElementById('prospect-form');f.style.display=f.style.display==='none'?'block':'none';document.getElementById('fp-err').style.display='none';}
 function fuContact(p){return p.phone||p.email||'-';}
 function fuWhen(iso){if(!iso)return '';try{return new Date(iso).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});}catch(e){return iso;}}
+function setFuFilterStatus(st){
+  FU_FILTER_STATUS=st||'all';
+  renderFuChips();renderFuTable();
+}
+function renderFuChips(){
+  var chips=document.getElementById('fu-counts');
+  if(!chips)return;
+  var order=Object.keys(FU_STATUS_COLORS);
+  var h='<div class="fu-chip'+(FU_FILTER_STATUS==='all'?' on':'')+'" onclick="setFuFilterStatus(\'all\')">All <span class="n">'+((FU&&FU.people)?FU.people.length:0)+'</span></div>';
+  order.forEach(function(s){
+    var c=(FU&&FU.counts&&FU.counts[s])||0;
+    if(!c)return;
+    h+='<div class="fu-chip'+(FU_FILTER_STATUS===s?' on':'')+'" onclick="setFuFilterStatus(\''+s+'\')"><span style="color:'+FU_STATUS_COLORS[s]+'">●</span> '+FU_STATUS_LABEL[s]+' <span class="n">'+c+'</span></div>';
+  });
+  chips.innerHTML=h;
+}
+function renderFuTable(){
+  var w=document.getElementById('fu-list-wrap');
+  if(!w||!FU)return;
+  var q=(document.getElementById('fu-search')||{}).value||'';
+  q=q.trim().toLowerCase();
+  var people=FU.people.filter(function(p){
+    if(FU_FILTER_STATUS!=='all'&&p.status!==FU_FILTER_STATUS)return false;
+    if(!q)return true;
+    var hay=String(p.company||'')+' '+String(p.name||'')+' '+String(p.email||'')+' '+String(p.phone||'')+' '+String(p.product||'')+' '+(p.notes||[]).map(function(n){return n.text;}).join(' ');
+    return hay.toLowerCase().indexOf(q)!==-1;
+  });
+  if(!FU.people.length){w.innerHTML='<div class="muted" style="padding:20px;text-align:center">No customers or prospects yet. Share your code and add prospects you\'re working here.</div>';return;}
+  if(!people.length){w.innerHTML='<div class="muted" style="padding:20px;text-align:center">Nothing matches your search or filter.</div>';return;}
+  w.innerHTML='<table><thead><tr><th>Business</th><th>Lead type</th><th>Status</th><th>Contact</th><th>Next reminder</th><th>Notes</th><th style="text-align:right">Actions</th></tr></thead><tbody>'+people.map(function(p){
+    var color=FU_STATUS_COLORS[p.status]||'#94a3b8',lab=FU_STATUS_LABEL[p.status]||p.status;
+    var notes=p.notes&&p.notes.length?('<span title="'+esc(p.notes.map(function(n){return n.text;}).join(' • '))+'">'+p.notes.length+'</span>'):'0';
+    return '<tr><td><b>'+esc(p.company||p.name||p.email||'Contact')+'</b></td><td style="font-size:11px;color:#94a3b8">'+(p.product||'-')+'</td><td><span style="color:'+color+';font-weight:700">● '+esc(lab)+'</span></td><td style="font-size:12px">'+esc(fuContact(p))+'</td><td style="font-size:11px;white-space:nowrap">'+(p.reminder_at?'<span style="color:#f59e0b">'+fuWhen(p.reminder_at)+'</span>':'<span class="muted">-</span>')+'</td><td style="text-align:center;font-size:12px">'+notes+'</td><td style="text-align:right;white-space:nowrap"><button class="btn-mini" onclick="openNote(\''+p.id+'\',\''+esc(p.company||p.name||'').replace(/'/g,'')+'\')">📝 Note</button> <button class="btn-mini" onclick="openRemind(\''+p.id+'\')">⏰</button>'+(p.source==='prospect'?' <button class="btn-mini" style="color:#f87171" onclick="delProspect(\''+p.id+'\')">🗑 Delete</button>':'')+'</td></tr>';
+  }).join('')+'</tbody></table>';
+}
+function exportFuCSV(){
+  if(!FU||!FU.people||!FU.people.length){alert('Nothing to export yet.');return;}
+  var rows=[['Company','Name','Lead type','Status','Email','Phone','Next reminder','Last contacted','Notes']];
+  FU.people.forEach(function(p){
+    rows.push([String(p.company||'').replace(/"/g,'""'),String(p.name||'').replace(/"/g,'""'),String(p.product||''),String(FU_STATUS_LABEL[p.status]||p.status||''),String(p.email||'').replace(/"/g,'""'),String(p.phone||'').replace(/"/g,'""'),String(p.reminder_at||''),String(p.last_contacted||''),(p.notes||[]).map(function(n){return n.text;}).join('; ').replace(/"/g,'""')]);
+  });
+  var csv='\uFEFF'+rows.map(function(x){return '"'+x.join('","')+'"';}).join('\r\n');
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.download='9amleads-affiliate-followups.csv';a.click();
+  URL.revokeObjectURL(a.href);
+}
 function loadFollowups(){
   api('GET','/affiliate/followups').then(function(d){
     if(!d.success){return;}
@@ -968,16 +1068,10 @@ function loadFollowups(){
     if(ovArr.length){html+='<div class="panel" style="background:rgba(248,113,113,.08);border-color:rgba(248,113,113,.35);padding:12px 16px"><b style="color:#f87171">⏰ Overdue ('+ovArr.length+')</b><div style="font-size:12.5px;color:#cbd5e1;margin-top:6px">'+ovArr.map(function(p){return '<div style="padding:3px 0">📞 <b>'+esc(p.company||p.name)+'</b> - '+esc(fuContact(p))+' <span style="color:#94a3b8">(due '+fuWhen(p.reminder_at)+')</span></div>';}).join('')+'</div></div>';}
     if(d.reminders.today.length){html+='<div class="panel" style="background:rgba(74,222,128,.08);border-color:rgba(74,222,128,.3);padding:12px 16px"><b style="color:#4ade80">📞 Due today ('+d.reminders.today.length+')</b><div style="font-size:12.5px;color:#cbd5e1;margin-top:6px">'+d.reminders.today.map(function(p){return '<div style="padding:3px 0"><b>'+esc(p.company||p.name)+'</b> - '+esc(fuContact(p))+' <span style="color:#94a3b8">(due '+fuWhen(p.reminder_at)+')</span></div>';}).join('')+'</div></div>';}
     strip.innerHTML=html;
-    // counts chips
-    var chips=document.getElementById('fu-counts');chips.innerHTML=Object.keys(FU_STATUS_COLORS).map(function(s){var c=FU.counts[s]||0;return c?('<span style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)"><span style="color:'+FU_STATUS_COLORS[s]+'">●</span> '+FU_STATUS_LABEL[s]+' <b>'+c+'</b></span>'):'';}).join('');
-    // table
-    var w=document.getElementById('fu-list-wrap');
-    if(!d.people.length){w.innerHTML='<div class="muted" style="padding:20px;text-align:center">No customers or prospects yet. Share your code and add prospects you\'re working here.</div>';return;}
-    w.innerHTML='<table><thead><tr><th>Business</th><th>Lead type</th><th>Status</th><th>Contact</th><th>Next reminder</th><th>Notes</th><th style="text-align:right">Actions</th></tr></thead><tbody>'+d.people.map(function(p){
-      var color=FU_STATUS_COLORS[p.status]||'#94a3b8',lab=FU_STATUS_LABEL[p.status]||p.status;
-      var notes=p.notes&&p.notes.length?('<span title="'+esc(p.notes.map(function(n){return n.text;}).join(' • '))+'">'+p.notes.length+'</span>'):'0';
-      return '<tr><td><b>'+esc(p.company||p.name||p.email||'Contact')+'</b></td><td style="font-size:11px;color:#94a3b8">'+(p.product||'-')+'</td><td><span style="color:'+color+';font-weight:700">● '+esc(lab)+'</span></td><td style="font-size:12px">'+esc(fuContact(p))+'</td><td style="font-size:11px;white-space:nowrap">'+(p.reminder_at?'<span style="color:#f59e0b">'+fuWhen(p.reminder_at)+'</span>':'<span class="muted">-</span>')+'</td><td style="text-align:center;font-size:12px">'+notes+'</td><td style="text-align:right;white-space:nowrap"><button class="btn-mini" onclick="openNote(\''+p.id+'\',\''+esc(p.company||p.name||'').replace(/'/g,'')+'\')">📝 Note</button> <button class="btn-mini" onclick="openRemind(\''+p.id+'\')">⏰</button>'+(p.source==='prospect'?' <button class="btn-mini" style="color:#f87171" onclick="delProspect(\''+p.id+'\')">🗑 Delete</button>':'')+'</td></tr>';
-    }).join('')+'</tbody></table>';
+    // counts chips (now clickable status filters)
+    renderFuChips();
+    // table (filter-aware)
+    renderFuTable();
   }).catch(function(){document.getElementById('fu-list-wrap').innerHTML='<div class="muted" style="padding:20px">Could not load follow-ups.</div>';});
 }
 function openNote(id,name){
@@ -1026,9 +1120,9 @@ function init(){
     document.getElementById('tb-code').textContent='code: '+d.affiliate.code;
     document.getElementById('who-box').style.display='block';
     document.getElementById('c-refs').textContent=d.totals.referrals;
-    document.getElementById('c-month').textContent='£'+d.earnings.this_month;
-    document.getElementById('c-pending').textContent='£'+d.earnings.pending;
-    document.getElementById('c-lifetime').textContent='£'+d.earnings.lifetime;
+    document.getElementById('c-month').textContent=money(d.earnings.this_month);
+    document.getElementById('c-pending').textContent=money(d.earnings.pending);
+    document.getElementById('c-lifetime').textContent=money(d.earnings.lifetime);
     // #5 benchmark cards
     if(d.benchmark){
       var cr=document.getElementById('c-rate'); if(cr)cr.textContent=d.benchmark.my_rate+'%';
@@ -1058,20 +1152,26 @@ function init(){
   var kf=document.getElementById('kyc-file'); if(kf)kf.addEventListener('change',onKycFile);
   var kl=document.getElementById('kyc-legal'); if(kl)kl.addEventListener('input',updateKycMatch);
   var kh=document.getElementById('kyc-bankholder'); if(kh)kh.addEventListener('input',updateKycMatch);
-  // Auto-refresh the dashboard every 90s so earnings/payout progress stay live.
+  // Auto-refresh every 60s so new referrals, earnings and follow-up badges stay live
+  // without a manual reload. Cheap GETs only; the heavy dashboard call stays on init.
   clearInterval(window._affRefresh);
   window._affRefresh=setInterval(function(){
     if(!TOKEN)return;
     api('GET','/affiliate/dashboard').then(function(d){
       if(!d.success)return;
-      if(d.totals){document.getElementById('c-refs').textContent=d.totals.referrals;document.getElementById('c-month').textContent='£'+d.earnings.this_month;document.getElementById('c-pending').textContent='£'+d.earnings.pending;document.getElementById('c-lifetime').textContent='£'+d.earnings.lifetime;}
+      if(d.totals){document.getElementById('c-refs').textContent=d.totals.referrals;document.getElementById('c-month').textContent=money(d.earnings.this_month);document.getElementById('c-pending').textContent=money(d.earnings.pending);document.getElementById('c-lifetime').textContent=money(d.earnings.lifetime);}
       if(d.payout)renderPayoutProgress(d.payout,d.affiliate);
       if(d.pipeline)renderPipeline(d.pipeline);
       if(d.by_product_earnings)renderProdEarnings(d.by_product_earnings,d.earnings.lifetime);
       if(d.referrals){renderRecent(d.referrals.slice(0,5));renderRefs(d.referrals);}
       if(d.signup_alerts)renderSignupAlerts(d.signup_alerts,d.signup_alert_count);
     }).catch(function(){});
-  },90000);
+    // Keep the CRM tabs current too (new sign-ups, notes, reminders) so the lists
+    // and badge counts never go stale while the tab is sitting open.
+    if(document.getElementById('view-leads')&&document.getElementById('view-leads').style.display!=='none'){loadLeads();}
+    if(document.getElementById('view-followups')&&document.getElementById('view-followups').style.display!=='none'){loadFollowups();}
+    if(document.getElementById('view-refs')&&document.getElementById('view-refs').style.display!=='none'){loadRefs();}
+  },60000);
 }
 
 function renderRecent(list){
@@ -1131,9 +1231,23 @@ function dismissAllSignupAlerts(){
 function renderLeads(){
   var w=document.getElementById('leads-list');
   if(!w)return;
+  // search + status filter
+  var q=(document.getElementById('leads-search')||{}).value||'';
+  var st=(document.getElementById('leads-status')||{}).value||'';
+  q=q.trim().toLowerCase();
+  var list=LEADS.filter(function(r){
+    if(st==='manual'&&!r.manual)return false;
+    if(st==='referral'&&r.manual)return false;
+    if(!q)return true;
+    var hay=String(r.company||'')+' '+String(r.email||'')+' '+String(r.phone||'')+' '+String(r.notes||'')+' '+String(r.product||'')+' '+String(r.stage||'');
+    return hay.toLowerCase().indexOf(q)!==-1;
+  });
+  var cnt=document.getElementById('leads-count');
+  if(cnt)cnt.textContent=LEADS.length;
   if(!LEADS.length){w.innerHTML=renderLeadExamples();return;}
+  if(!list.length){w.innerHTML='<div class="muted" style="padding:18px;text-align:center">No leads match your search.</div>';return;}
   var h='';
-  LEADS.forEach(function(r){
+  list.forEach(function(r){
     var pendRms=(r.reminders||[]).filter(function(x){return !x.done;}).length;
     h+='<div class="lead"><div class="ico">'+(EMOJI[r.product]||'📈')+'</div><div class="main"><div class="co">'+esc(r.company||r.email)+'</div><div class="em">'+esc(r.email)+(r.phone?', '+esc(r.phone):'')+'</div>'+
     '<div class="meta"><span>'+esc(r.product)+'</span>'+(r.plan?'<span>'+esc(r.plan)+'</span>':'')+(r.manual?'<span style="color:#38bdf8">my lead</span>':'<span>'+r.days_since+'d ago</span>')+(r.card_saved?'<span style="color:#34d399">💳 card saved</span>':'')+(pendRms?'<span style="color:#fbbf24">⏰ '+pendRms+' reminder'+(pendRms>1?'s':'')+'</span>':'')+'</div>'+
@@ -1141,6 +1255,18 @@ function renderLeads(){
     '<div class="act">'+stageBadge(r.stage)+'<button class="btn-mini" onclick="quickNote(\''+esc(r.id)+'\')" title="Add or edit a note">📝 Note</button><button class="btn-mini" onclick="openLeadModal(\''+esc(r.id)+'\')">View</button><button class="btn-mini" onclick="openTools(\''+esc(r.product)+'\')">Tools</button></div></div>';
   });
   w.innerHTML=h;
+}
+function exportLeadsCSV(){
+  if(!LEADS||!LEADS.length){alert('Nothing to export yet.');return;}
+  var rows=[['Company','Email','Phone','Product','Plan','Source','Stage','Status','Signed up','Notes']];
+  LEADS.forEach(function(r){
+    rows.push([String(r.company||'').replace(/"/g,'""'),String(r.email||'').replace(/"/g,'""'),String(r.phone||'').replace(/"/g,'""'),String(r.product||''),String(r.plan||''),(r.manual?'My lead':'Referral'),String(r.stage||''),String(r.status||''),String(r.signed_up||''),String(r.notes||'').replace(/"/g,'""')]);
+  });
+  var csv='\uFEFF'+rows.map(function(x){return '"'+x.join('","')+'"';}).join('\r\n');
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.download='9amleads-affiliate-leads.csv';a.click();
+  URL.revokeObjectURL(a.href);
 }
 function loadLeads(){
   api('GET','/affiliate/leads').then(function(d){
@@ -1245,33 +1371,91 @@ function copyEmails(k){var r=(RES||[]).find(function(x){return x.key===k;});copy
 function copySms(k){var r=(RES||[]).find(function(x){return x.key===k;});copyText(r.sms.join('\n\n'));}
 function copySocial(k){var r=(RES||[]).find(function(x){return x.key===k;});copyText(r.social.join('\n\n'));}
 
-function renderRefs(refs){
+var REFS_ALL=[]; // every referral fetched from the dashboard, kept for filters/export
+function loadRefs(){
+  api('GET','/affiliate/dashboard').then(function(d){
+    if(!d.success)return;
+    if(d.referrals)REFS_ALL=d.referrals.slice();
+    renderRefsView();
+  }).catch(function(){});
+}
+function renderRefsView(){
   var w=document.getElementById('refs-table-wrap');
-  if(!refs.length){w.innerHTML='<div class="muted">No referrals yet. Share your code to get started!</div>';return;}
+  if(!w)return;
+  // populate the status dropdown with the statuses actually present (kept sorted)
+  var sel=document.getElementById('refs-status');
+  if(sel){
+    var seen={};REFS_ALL.forEach(function(r){if(r.status)seen[r.status]=true;});
+    var order=['referral_pending','earning','approved','paid','trial','pending','due','ineligible'];
+    var cur=sel.value;
+    var opts='<option value="">All statuses</option>';
+    order.concat(Object.keys(seen)).forEach(function(s){if(seen[s])opts+='<option value="'+s+'"'+(cur===s?' selected':'')+'>'+s.replace(/_/g,' ')+'</option>';});
+    sel.innerHTML=opts;
+  }
+  var q=((document.getElementById('refs-search')||{}).value||'').trim().toLowerCase();
+  var st=(sel)?sel.value:'';
+  var list=REFS_ALL.filter(function(r){
+    if(st&&r.status!==st)return false;
+    if(!q)return true;
+    var hay=String(r.company||'')+' '+String(r.email||'');
+    return hay.toLowerCase().indexOf(q)!==-1;
+  });
+  if(!REFS_ALL.length){w.innerHTML='<div class="muted">No referrals yet. Share your code to get started!</div>';return;}
+  if(!list.length){w.innerHTML='<div class="muted" style="padding:18px;text-align:center">No referrals match your search or filter.</div>';return;}
   var h='<table><thead><tr><th>Company</th><th>Lead type</th><th>Signed up</th><th>Trial</th><th>Status</th></tr></thead><tbody>';
-  refs.forEach(function(r){
+  list.forEach(function(r){
     h+='<tr><td>'+esc(r.company)+'<div class="muted">'+esc(r.email)+'</div></td><td>'+esc(r.product)+'</td><td>'+fmtDate(r.signed_up)+'</td><td>'+r.trial_days+' days</td><td>'+badge(r.status)+'</td></tr>';
   });
   h+='</tbody></table>';w.innerHTML=h;
 }
+function renderRefs(refs){
+  REFS_ALL=(refs||[]).slice();
+  renderRefsView();
+}
+function exportRefsCSV(){
+  if(!REFS_ALL.length){alert('Nothing to export yet.');return;}
+  var rows=[['Company','Email','Lead type','Signed up','Trial days','Status']];
+  REFS_ALL.forEach(function(r){
+    rows.push([String(r.company||'').replace(/"/g,'""'),String(r.email||'').replace(/"/g,'""'),String(r.product||''),String(r.signed_up||''),String(r.trial_days||''),String(r.status||'')]);
+  });
+  var csv='\uFEFF'+rows.map(function(x){return '"'+x.join('","')+'"';}).join('\r\n');
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.download='9amleads-affiliate-referrals.csv';a.click();
+  URL.revokeObjectURL(a.href);
+}
+var PAYOUTS_ALL=[]; // last-loaded payout rows, kept for the CSV export button
 function renderPayouts(p, totals){
+  PAYOUTS_ALL=(p||[]).slice();
   var w=document.getElementById('payouts-wrap');
   if(!p||!p.length){ w.innerHTML='<div class="empty">No payouts yet. Your commission payouts and wheel wins will appear here.</div>'; return; }
   var h='';
   if(totals){
     h+='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">'+
-      '<div style="background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.25);border-radius:10px;padding:10px 14px"><div style="font-size:11px;color:#94a3b8">Total paid out</div><div style="font-size:18px;font-weight:800;color:#34d399">£'+(totals.paid||0)+'</div></div>'+
-      '<div style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);border-radius:10px;padding:10px 14px"><div style="font-size:11px;color:#94a3b8">Pending / clearing</div><div style="font-size:18px;font-weight:800;color:#fbbf24">£'+(totals.pending||0)+'</div></div>'+
-      '<div style="background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.25);border-radius:10px;padding:10px 14px"><div style="font-size:11px;color:#94a3b8">Lifetime</div><div style="font-size:18px;font-weight:800;color:#0ea5e9">£'+(totals.lifetime||0)+'</div></div>'+
+      '<div style="background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.25);border-radius:10px;padding:10px 14px"><div style="font-size:11px;color:#94a3b8">Total paid out</div><div style="font-size:18px;font-weight:800;color:#34d399">'+money(totals.paid)+'</div></div>'+
+      '<div style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);border-radius:10px;padding:10px 14px"><div style="font-size:11px;color:#94a3b8">Pending / clearing</div><div style="font-size:18px;font-weight:800;color:#fbbf24">'+money(totals.pending)+'</div></div>'+
+      '<div style="background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.25);border-radius:10px;padding:10px 14px"><div style="font-size:11px;color:#94a3b8">Lifetime</div><div style="font-size:18px;font-weight:800;color:#0ea5e9">'+money(totals.lifetime)+'</div></div>'+
       '</div>';
   }
   h+='<table><thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Status</th></tr></thead><tbody>';
   p.forEach(function(x){
     var kindIcon = x.kind==='wheel' ? '🎡' : x.kind==='commission' ? '£' : '💰';
     var kindLabel = x.kind==='wheel' ? 'Wheel win' : x.kind==='commission' ? 'Commission' : 'Payout';
-    h+='<tr><td>'+fmtDate(x.date)+'</td><td>'+kindIcon+' '+kindLabel+'<div class="muted">'+esc(x.note||'')+'</div></td><td><b style="color:#34d399">£'+x.amount+'</b></td><td>'+badge(x.status||'paid')+'</td></tr>';
+    h+='<tr><td>'+fmtDate(x.date)+'</td><td>'+kindIcon+' '+kindLabel+'<div class="muted">'+esc(x.note||'')+'</div></td><td><b style="color:#34d399">'+money(x.amount)+'</b></td><td>'+badge(x.status||'paid')+'</td></tr>';
   });
   h+='</tbody></table>';w.innerHTML=h;
+}
+function exportPayoutsCSV(){
+  if(!PAYOUTS_ALL.length){alert('Nothing to export yet.');return;}
+  var rows=[['Date','Type','Amount','Status','Note']];
+  PAYOUTS_ALL.forEach(function(x){
+    rows.push([String(x.date||''),String(x.kind==='wheel'?'Wheel win':x.kind==='commission'?'Commission':'Payout'),String(x.amount||''),String(x.status||'paid'),String(x.note||'').replace(/"/g,'""')]);
+  });
+  var csv='\uFEFF'+rows.map(function(r){return '"'+r.join('","')+'"';}).join('\r\n');
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.download='9amleads-affiliate-payouts.csv';a.click();
+  URL.revokeObjectURL(a.href);
 }
 function loadPayouts(){
   api('GET','/affiliate/payouts').then(function(d){
@@ -1599,7 +1783,8 @@ function togglePb(k){
 function renderPayoutProgress(payout, aff){
   var tot = (payout && payout.approved_total) || 0;
   var rate = (aff && aff.commission_amount) || 25;
-  document.getElementById('c-next-payout').textContent='£'+tot.toFixed(0);
+  var el=document.getElementById('c-next-payout');
+  if(el)el.textContent=money(tot);
   document.getElementById('c-payout-pct').textContent='cleared · paid weekly';
   var pct = Math.min(100, Math.round((tot / Math.max(25, rate)) * 100));
   document.getElementById('c-payout-bar').style.width=Math.max(4, pct)+'%';
@@ -1619,7 +1804,7 @@ function renderProdEarnings(byProd, lifetime){
   if(!keys.length){ w.innerHTML='<div class="muted">No earnings yet. Share your code to get started.</div>'; return; }
   var h='';
   var names={moving:'Moving',probate:'Probate',newbusiness:'New Business',planning:'Planning',tenders:'Tenders',general:'General'};
-  keys.forEach(function(k){ h+='<div class="pe">'+(EMOJI[k]||'📈')+' '+esc(names[k]||k)+' <b>£'+(byProd[k]||0).toFixed(0)+'</b></div>'; });
+  keys.forEach(function(k){ h+='<div class="pe">'+(EMOJI[k]||'📈')+' '+esc(names[k]||k)+' <b>'+money(byProd[k])+'</b></div>'; });
   w.innerHTML=h;
 }
 function openHelp(){document.getElementById('help-modal').classList.add('open');}
