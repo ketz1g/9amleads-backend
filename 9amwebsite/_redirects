@@ -33,4 +33,5 @@
 /contact  /portal/enquiry.html  301
 /contact/  /portal/enquiry.html  301
 /cookies.html  /privacy.html  301
+/favicon.ico  /favicon.png  200
 /*  /404.html  404

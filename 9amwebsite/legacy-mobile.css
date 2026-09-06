@@ -33,17 +33,18 @@
 
   /* General grids that overflow on narrow screens */
   .values, .steps, .how-grid, .cards, .feature-grid, .process, .roles,
-  .footer-grid { grid-template-columns: 1fr !important; }
+  .footer-grid, .contact-grid { grid-template-columns: 1fr !important; }
   .step-item { grid-template-columns: 1fr !important; }
   /* H4/anchor blocks inside stat tiles must not force wider min-content */
   .value, .step, .card, [class*="stat"], .grid > * { min-width: 0; }
 
   /* Generic wide-content safety net */
   .container, .wrap { overflow-wrap: break-word; }
-  body { overflow-x: hidden; }
+  html, body { overflow-x: hidden; }
   img, video, iframe { max-width: 100% !important; height: auto; }
   .hero h1 { word-wrap: break-word; }
   form input, form select, form textarea { max-width: 100%; }
+  .contact-form, .contact-grid > * { min-width: 0; max-width: 100%; }
 }
 
 /* Email-style preview pages (fixed 600px tables) — scale down so they
