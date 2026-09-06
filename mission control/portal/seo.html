@@ -84,6 +84,23 @@ h1 span{color:#0ea5e9}
 <div id="gscStats" class="stat-grid"></div>
 <div id="gscTables" style="margin-top:14px"></div>
 </div>
+
+<div class="card">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+<div style="font-size:14px;font-weight:700"><i class="fas fa-bullseye" style="color:#f59e0b;margin-right:6px"></i> Keywords Closest to Page 1 <span style="font-size:10px;color:#5c6480;font-weight:500">(best SEO ROI - 90 day view)</span></div>
+<button class="btn btn-outline btn-sm" onclick="loadGscOpportunities()"><i class="fas fa-sync"></i> Refresh</button>
+</div>
+<div id="gscOppStatus" style="font-size:12px;color:#8890a8;margin-bottom:10px">Loads once GSC is connected...</div>
+<div id="gscOppBody"></div>
+</div>
+
+<div class="card">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+<div style="font-size:14px;font-weight:700"><i class="fas fa-link" style="color:#a855f7;margin-right:6px"></i> Backlink &amp; Directory Tracker <span style="font-size:10px;color:#5c6480;font-weight:500">(build authority links)</span></div>
+<button class="btn btn-outline btn-sm" onclick="addBacklinkItem()"><i class="fas fa-plus"></i> Add</button>
+</div>
+<div id="backlinkTrackerBody"><div class="empty">Loading...</div></div>
+</div>
 </div>
 
 <script>
@@ -189,6 +206,7 @@ async function loadSeoData() {
     }
     loadBlogPosts();
     if (d.gsc) renderGsc(d.gsc);
+    loadBacklinkTracker();
   } catch(e) {}
 }
 
@@ -219,6 +237,7 @@ function renderGsc(st) {
     if (connBtn) { connBtn.style.display = 'none'; }
     if (refBtn) { refBtn.style.display = ''; }
     loadGscData();
+    loadGscOpportunities();
   } else {
     if (connBtn) connBtn.style.display = '';
     if (refBtn) refBtn.style.display = 'none';
@@ -285,6 +304,82 @@ async function gscRefresh() {
   loadGscData();
 }
 
+// ---- Keywords closest to page 1 (opportunities report) ----
+async function loadGscOpportunities() {
+  try {
+    var el = document.getElementById('gscOppBody');
+    var st = document.getElementById('gscOppStatus');
+    if (!el) return;
+    if (st) st.textContent = 'Pulling 90-day keyword data from Google...';
+    var r = await fetch(API + '/api/admin/gsc/opportunities?days=90&t=' + Date.now(), { headers: adminHeaders() });
+    if (!r.ok) { if (st) st.textContent = 'Not connected - connect GSC above to see win keywords.'; return; }
+    var d = await r.json();
+    if (d.error) { if (st) st.textContent = 'Error: ' + d.error; return; }
+    var dt = d.data || {};
+    if (st) st.textContent = '';
+    var html = '';
+    function tableRows(rows, showWhy) {
+      if (!rows || !rows.length) return '<div style="color:#64748b;font-size:12px;padding:6px 0">None in this band yet.</div>';
+      return '<table style="width:100%;font-size:11px;border-collapse:collapse"><tr style="color:#64748b;text-align:left"><th style="padding:4px 6px">Keyword</th>' + (showWhy ? '<th style="padding:4px 6px">Why</th>' : '') + '<th>Pos</th><th>Clk</th><th>Impr</th><th>CTR</th></tr>' + rows.map(function(o) {
+        return '<tr style="border-top:1px solid #1a1a1a"><td style="padding:4px 6px;color:#cbd5e1;font-weight:600">' + esc(o.query) + '</td>' + (showWhy ? '<td style="padding:4px 6px;color:#64748b">' + whyForPos(o.position) + '</td>' : '') + '<td>' + o.position + '</td><td>' + o.clicks + '</td><td>' + o.impressions + '</td><td>' + o.ctr + '%</td></tr>';
+      }).join('') + '</table>';
+    }
+    function whyForPos(pos) { return pos >= 4 && pos <= 15 ? 'Just off page 1 - biggest win' : 'Near page 1'; }
+    html += '<div style="font-size:12px;font-weight:700;color:#f59e0b;margin:6px 0 4px">🎯 Win Now - ranked 4-15 (one push gets you clicks)</div>';
+    html += tableRows(dt.win_now, false);
+    html += '<div style="font-size:12px;font-weight:700;color:#38bdf8;margin:14px 0 4px">📈 Page 1-3 (ranked 16-30) - build these next</div>';
+    html += tableRows(dt.page_1_to_3, false);
+    html += '<div style="font-size:12px;font-weight:700;color:#64748b;margin:14px 0 4px">🌱 Emerging (ranked 30+) - long-term content targets</div>';
+    html += tableRows(dt.emerging, false);
+    el.innerHTML = html;
+  } catch(e) { var el2 = document.getElementById('gscOppBody'); if (el2) el2.innerHTML = '<div class="empty" style="color:#ef4444">Failed: ' + esc(e.message) + '</div>'; }
+}
+
+// ---- Backlink & Directory Tracker ----
+async function loadBacklinkTracker() {
+  try {
+    var el = document.getElementById('backlinkTrackerBody');
+    if (!el) return;
+    var r = await fetch(API + '/api/admin/backlink-tracker?t=' + Date.now(), { headers: adminHeaders() });
+    if (!r.ok) { el.innerHTML = '<div class="empty">Could not load tracker</div>'; return; }
+    var d = await r.json();
+    if (!d.items || !d.items.length) { el.innerHTML = '<div class="empty">No opportunities yet. Click Add.</div>'; return; }
+    var statuses = { pending: { c: '#f59e0b', l: 'Pending' }, submitted: { c: '#38bdf8', l: 'Submitted' }, live: { c: '#22c55e', l: 'Live' }, skip: { c: '#64748b', l: 'Skipped' } };
+    var summary = '';
+    Object.keys(statuses).forEach(function(k) { if (d.counts && d.counts[k]) summary += '<span style="margin-right:10px"><span style="color:' + statuses[k].c + ';font-weight:800">' + d.counts[k] + '</span> ' + statuses[k].l + '</span>'; });
+    el.innerHTML = '<div style="font-size:11px;color:#5c6480;margin-bottom:8px">' + summary + '</div>';
+    el.innerHTML += d.items.map(function(i) {
+      var s = statuses[i.status] || statuses.pending;
+      return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #1a1a1a;font-size:12px;flex-wrap:wrap">' +
+        '<div style="flex:1;min-width:200px"><strong style="color:#e2e8f0">' + esc(i.name) + '</strong>' +
+        (i.url ? ' <a href="' + esc(i.url) + '" target="_blank" style="color:#7dd3fc;text-decoration:none;font-size:11px">' + esc(i.url.replace(/^https?:\/\//,'')) + '</a>' : '') +
+        (i.why ? '<div style="color:#5c6480;font-size:10px;margin-top:2px">' + esc(i.why) + '</div>' : '') +
+        (i.notes ? '<div style="color:#94a3b8;font-size:10px;margin-top:2px">' + esc(i.notes) + '</div>' : '') + '</div>' +
+        '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">' +
+        '<select style="background:#111;color:' + s.c + ';border:1px solid #333;border-radius:6px;font-size:11px;padding:4px 6px" onchange="setBacklinkStatus(\'' + i.id + '\', this.value)">' +
+        Object.keys(statuses).map(function(k) { return '<option value="' + k + '"' + (k === i.status ? ' selected' : '') + ' style="color:#e2e8f0">' + statuses[k].l + '</option>'; }).join('') +
+        '</select>' +
+        '<button class="btn btn-sm" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);padding:3px 7px;font-size:10px" onclick="delBacklinkItem(\'' + i.id + '\')"><i class="fas fa-trash"></i></button>' +
+        '</div></div>';
+    }).join('');
+  } catch(e) { var el3 = document.getElementById('backlinkTrackerBody'); if (el3) el3.innerHTML = '<div class="empty" style="color:#ef4444">Failed: ' + esc(e.message) + '</div>'; }
+}
+
+async function setBacklinkStatus(id, status) {
+  try { await fetch(API + '/api/admin/backlink-tracker/' + encodeURIComponent(id), { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ status: status }) }); loadBacklinkTracker(); } catch(e) { alert(e.message); }
+}
+async function delBacklinkItem(id) {
+  if (!confirm('Remove this opportunity?')) return;
+  try { await fetch(API + '/api/admin/backlink-tracker/' + encodeURIComponent(id), { method: 'DELETE', headers: adminHeaders() }); loadBacklinkTracker(); } catch(e) { alert(e.message); }
+}
+async function addBacklinkItem() {
+  var name = prompt('Directory / opportunity name:');
+  if (!name) return;
+  var url = prompt('URL (optional):') || '';
+  var why = prompt('Why this helps (optional):') || '';
+  try { await fetch(API + '/api/admin/backlink-tracker', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ name: name, url: url, why: why }) }); loadBacklinkTracker(); } catch(e) { alert(e.message); }
+}
+
 function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 async function loadBlogPosts() {
@@ -342,8 +437,7 @@ async function deleteBlogPost(slug) {
   } catch(e) { alert('Error: ' + e.message); }
 }
 
-// If the OAuth callback redirected back here (?gsc=connected / ?gsc=error), refresh
-// once GSC state is available (panel login already done via stored session).
+// If the OAuth callback redirected back here (?gsc=connected / ?gsc=error), refresh// once GSC state is available (panel login already done via stored session).
 (function() {
   try {
     var params = new URLSearchParams(window.location.search);

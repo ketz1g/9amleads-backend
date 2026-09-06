@@ -28766,6 +28766,92 @@ app.get('/api/admin/gsc/opportunities', adminAuth, async function(req, res) {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ===== ONLINE PRESENCE / BACKLINK TRACKER =====
+// A simple owner-managed checklist of free/paid directories + link opportunities to
+// build authority. Stored in the DB (seeded once). Status: pending/submitted/live/skip.
+var DEFAULT_DIRECTORY_LIST = [
+  { name: 'Google Business Profile', url: 'https://business.google.com', why: 'Local pack + maps visibility', status: 'pending' },
+  { name: 'Bing Places', url: 'https://www.bingplaces.com', why: 'Bing local + free backlink', status: 'pending' },
+  { name: 'Yell.com', url: 'https://www.yell.com', why: 'UK business directory', status: 'pending' },
+  { name: 'Crunchbase', url: 'https://www.crunchbase.com', why: 'Startup authority + brand signal', status: 'pending' },
+  { name: 'LinkedIn Company Page', url: 'https://www.linkedin.com', why: 'Brand SERP + E-E-A-T', status: 'pending' },
+  { name: 'Trustpilot', url: 'https://www.trustpilot.com', why: 'Reviews = CTR + trust', status: 'pending' },
+  { name: 'Cylex UK', url: 'https://www.cylex-uk.co.uk', why: 'UK directory backlink', status: 'pending' },
+  { name: 'Hotfrog UK', url: 'https://www.hotfrog.co.uk', why: 'UK directory backlink', status: 'pending' },
+  { name: 'FreeIndex', url: 'https://www.freeindex.co.uk', why: 'UK business directory', status: 'pending' },
+  { name: 'Thompson Local', url: 'https://www.thomsonlocal.com', why: 'UK directory (paid tier optional)', status: 'pending' },
+  { name: 'Product Hunt', url: 'https://www.producthunt.com', why: 'Launch traffic + authority', status: 'pending' },
+  { name: 'Startup Directories (BetaList, StartupRanking, etc)', url: 'https://www.betalist.com', why: 'SaaS authority links', status: 'pending' },
+  { name: 'HARO / Featured / Connectively', url: 'https://www.helpareporter.com', why: 'Digital PR - journalist quotes = high-authority links', status: 'pending' },
+  { name: 'UK Trade Roundups (mover/probate/lead-gen blogs)', url: '', why: 'Guest posts / expert quotes in your niche', status: 'pending' },
+  { name: 'Industry Associations (BAR, BVRLA-equivalents, RLA)', url: '', why: 'Member directory links + trust', status: 'pending' }
+];
+
+function getDirectoryTracker() {
+  var dbDt = getDb();
+  if (!dbDt.backlink_tracker) {
+    dbDt.backlink_tracker = { seeded_at: new Date().toISOString(), updated_at: null, items: DEFAULT_DIRECTORY_LIST.map(function(x){ return Object.assign({ id: 'dir_' + Math.random().toString(36).slice(2, 10) }, x); }) };
+    saveDb();
+  }
+  return dbDt.backlink_tracker;
+}
+
+// GET /api/admin/backlink-tracker — list all directory/backlink opportunities.
+app.get('/api/admin/backlink-tracker', adminAuth, function(req, res) {
+  try {
+    var t = getDirectoryTracker();
+    var items = (t.items || []).map(function(i) { return Object.assign({}, i); });
+    var counts = { pending: 0, submitted: 0, live: 0, skip: 0 };
+    items.forEach(function(i) { if (counts[i.status] !== undefined) counts[i.status]++; });
+    res.json({ success: true, counts: counts, items: items, updated_at: t.updated_at });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/backlink-tracker — add a new opportunity (name/url/why).
+app.post('/api/admin/backlink-tracker', adminAuth, function(req, res) {
+  try {
+    var name = String((req.body && req.body.name) || '').trim();
+    if (!name) return res.status(400).json({ error: 'name required' });
+    var t = getDirectoryTracker();
+    t.items.push({ id: 'dir_' + Math.random().toString(36).slice(2, 10), name: name, url: String((req.body && req.body.url) || '').trim(), why: String((req.body && req.body.why) || '').trim(), status: 'pending' });
+    t.updated_at = new Date().toISOString();
+    saveDb();
+    res.json({ success: true, items: t.items });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// PATCH /api/admin/backlink-tracker/:id — update status (+ optional url/why/notes).
+app.post('/api/admin/backlink-tracker/:id', adminAuth, function(req, res) {
+  try {
+    var t = getDirectoryTracker();
+    var id = String((req.params && req.params.id) || '');
+    var item = (t.items || []).find(function(i) { return i.id === id; });
+    if (!item) return res.status(404).json({ error: 'Not found' });
+    var status = String((req.body && req.body.status) || '').trim();
+    if (status && ['pending', 'submitted', 'live', 'skip'].indexOf(status) === -1) return res.status(400).json({ error: 'Invalid status' });
+    if (status) item.status = status;
+    if (req.body && req.body.url !== undefined) item.url = String(req.body.url).trim();
+    if (req.body && req.body.why !== undefined) item.why = String(req.body.why).trim();
+    if (req.body && req.body.notes !== undefined) item.notes = String(req.body.notes).trim();
+    if (status) item.status_changed_at = new Date().toISOString();
+    t.updated_at = new Date().toISOString();
+    saveDb();
+    res.json({ success: true, item: item });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// DELETE /api/admin/backlink-tracker/:id — remove an opportunity.
+app.delete('/api/admin/backlink-tracker/:id', adminAuth, function(req, res) {
+  try {
+    var t = getDirectoryTracker();
+    var id = String((req.params && req.params.id) || '');
+    t.items = (t.items || []).filter(function(i) { return i.id !== id; });
+    t.updated_at = new Date().toISOString();
+    saveDb();
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/gsc/disconnect — clear stored tokens.
 app.post('/api/admin/gsc/disconnect', adminAuth, function(req, res) {
   try {
