@@ -53,6 +53,20 @@
   footer{padding:26px 0;color:var(--muted);font-size:13px;text-align:center;border-top:1px solid var(--line)}
   .note{font-size:12.5px;color:var(--muted)}
   .warn{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.35);color:#fcd34d;border-radius:10px;padding:12px 16px;font-size:13px;margin-top:20px}
+  /* Responsive mobile nav */
+  .hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:6px;z-index:301}
+  .hamburger span{width:24px;height:2.5px;background:#f1f5f9;border-radius:2px;transition:.3s}
+  .hamburger.active span:nth-child(1){transform:rotate(45deg) translate(5px,5px)}
+  .hamburger.active span:nth-child(2){opacity:0}
+  .hamburger.active span:nth-child(3){transform:rotate(-45deg) translate(5px,-5px)}
+  .mobile-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:299;opacity:0;pointer-events:none;transition:.3s}
+  .mobile-overlay.show{opacity:1;pointer-events:auto}
+  .mobile-menu{position:fixed;top:0;right:-100%;width:100%;max-width:300px;height:100vh;background:#0a0f1e;border-left:1px solid var(--line);padding:80px 28px 32px;z-index:300;transition:.3s;overflow-y:auto}
+  .mobile-menu.open{right:0}
+  .mobile-menu a{display:block;color:#94a3b8;text-decoration:none;font-size:16px;padding:14px 0;border-bottom:1px solid #1e293b}
+  .mobile-menu a:hover{color:#fff}
+  .mobile-menu .btn-mobile{display:block;margin-top:20px;padding:14px;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff!important;text-align:center;border-radius:10px;font-weight:800}
+  @media(max-width:768px){ .nav-links{display:none} .hamburger{display:flex} }
 </style>
 <!-- 9amLeads site polish -->
 <link rel="stylesheet" href="/site-polish.css">
@@ -67,7 +81,16 @@
     <a href="/bulk.html" style="color:var(--sky);font-weight:700">Bulk Lead Packs</a>
     <a href="/portal/#signup" style="background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;padding:7px 14px;border-radius:8px;font-weight:700">Start Free Trial</a>
   </div>
+  <button class="hamburger" id="hamBtn" onclick="toggleMobile()" aria-label="Open menu"><span></span><span></span><span></span></button>
 </nav>
+<div class="mobile-overlay" id="mobileOverlay" onclick="toggleMobile()"></div>
+<div class="mobile-menu" id="mobileMenu">
+  <a href="/" onclick="toggleMobile()">Home</a>
+  <a href="/who-we-serve/" onclick="toggleMobile()">Lead Types</a>
+  <a href="/pricing/" onclick="toggleMobile()">Pricing</a>
+  <a href="/bulk.html" onclick="toggleMobile()" style="color:#0ea5e9;font-weight:700">Bulk Lead Packs</a>
+  <a href="/portal/#signup" class="btn-mobile" onclick="toggleMobile()">Start Free Trial</a>
+</div>
 
 <div class="hero">
   <div class="wrap">
@@ -138,5 +161,11 @@
 <footer>
   <div class="wrap">&copy; 9amLeads. Exclusive daily leads and print &amp; post marketing for estate agents, probate practitioners and B2B.</div>
 </footer>
+<script>
+function toggleMobile(){
+  var m=document.getElementById('mobileMenu'),o=document.getElementById('mobileOverlay'),h=document.getElementById('hamBtn');
+  if(m)m.classList.toggle('open'); if(o)o.classList.toggle('show'); if(h)h.classList.toggle('active');
+}
+</script>
 </body>
 </html>

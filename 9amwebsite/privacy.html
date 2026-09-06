@@ -6,7 +6,7 @@
 <!-- 9amLeads site polish -->
 <link rel="stylesheet" href="/site-polish.css">
 <style>*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:Inter,sans-serif;background:#050505;color:#f5f5f5;line-height:1.8;padding:40px 24px}
+body{font-family:Inter,sans-serif;background:#050505;color:#f5f5f5;line-height:1.8;padding:108px 24px 40px}
 .page{max-width:800px;margin:0 auto;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:20px;padding:48px;position:relative}
 h1{font-size:28px;font-weight:800;font-family:Outfit,sans-serif;margin-bottom:4px}
 h2{font-size:18px;font-weight:700;margin:32px 0 12px;color:#0ea5e9;font-family:Outfit,sans-serif}
@@ -19,9 +19,61 @@ a:hover{text-decoration:underline}
 .back{display:inline-flex;align-items:center;gap:6px;margin-bottom:24px;color:#666;font-size:14px;transition:.2s}
 .back:hover{color:#0ea5e9;text-decoration:none}
 @media(max-width:600px){.page{padding:24px}}
+nav{position:fixed;top:0;left:0;right:0;height:68px;z-index:200;background:rgba(11,15,26,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:100%;max-width:var(--max-w);margin:0 auto;padding:0 24px}
+.logo{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:900;font-family:var(--ff-h);letter-spacing:-.5px;text-decoration:none;color:var(--text)}
+.logo span{color:var(--accent)}
+.logo-mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800}
+.nav-links{display:flex;align-items:center;gap:4px}
+.nav-links a{padding:8px 14px;font-size:14px;font-weight:500;color:var(--text2);border-radius:6px;transition:.2s;text-decoration:none}
+.nav-links a:hover{color:var(--text);background:rgba(255,255,255,.04)}
+.nav-links .btn-nav{padding:9px 20px;background:linear-gradient(135deg,var(--accent),#0284c7);color:#fff!important;font-weight:600;border-radius:8px}
+.hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:6px;z-index:101}
+.hamburger span{width:24px;height:2.5px;background:var(--text);border-radius:2px;transition:.3s}
+.hamburger.active span:nth-child(1){transform:rotate(45deg) translate(5px,5px)}
+.hamburger.active span:nth-child(2){opacity:0}
+.hamburger.active span:nth-child(3){transform:rotate(-45deg) translate(5px,-5px)}
+.mobile-menu{position:fixed;top:0;right:-100%;width:100%;max-width:300px;height:100vh;background:rgba(0,0,0,0.97);border-left:1px solid var(--border);padding:80px 28px 32px;z-index:100;transition:.3s;overflow-y:auto}
+.mobile-menu.open{right:0}
+.mobile-menu a{display:block;color:var(--text2);text-decoration:none;font-size:16px;padding:14px 0;border-bottom:1px solid var(--border)}
+.mobile-menu a:hover{color:var(--text)}
+.mobile-menu .btn-mobile{display:block;margin-top:20px;padding:14px;background:linear-gradient(135deg,var(--accent),#0284c7);color:#fff!important;text-align:center;border-radius:8px;font-weight:600;border-bottom:none}
+.mobile-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99;opacity:0;pointer-events:none;transition:.3s}
+.mobile-overlay.show{opacity:1;pointer-events:auto}
+@media(max-width:768px){.hamburger{display:flex}.nav-links a{display:none}}
+
 </style>
 </head>
 <body>
+<nav><div class="nav-inner">
+<a href="/" class="logo"><div class="logo-mark">9</div>9am<span>Leads</span></a>
+<div class="nav-links">
+<a href="/">Home</a>
+<a href="/who-we-serve/">Lead Types</a>
+<a href="/pricing/">Pricing</a>
+<a href="/how-it-works/">How It Works</a>
+<a href="/help/">Help Centre</a>
+<a href="/contact/">Contact</a>
+<a href="/portal/#signup" class="btn-nav"><i class="fas fa-gift"></i> Start Free Trial</a>
+<a href="/affiliates" style="font-size:13px;font-weight:600;color:#0ea5e9;text-decoration:none;padding:8px 14px">Affiliates</a>
+<a href="/portal/" style="font-size:13px;font-weight:600;color:var(--text2);text-decoration:none;padding:8px 14px">Sign In</a>
+</div>
+<button class="hamburger" id="hamBtn" onclick="toggleMobile()" aria-label="Menu"><span></span><span></span><span></span></button>
+</div></nav>
+<div class="mobile-overlay" id="mobileOverlay" onclick="toggleMobile()"></div>
+<div class="mobile-menu" id="mobileMenu">
+<a href="/" onclick="toggleMobile()">Home</a>
+<a href="/who-we-serve/" onclick="toggleMobile()">Lead Types</a>
+<a href="/pricing/" onclick="toggleMobile()">Pricing</a>
+<a href="/how-it-works/" onclick="toggleMobile()">How It Works</a>
+<a href="/testimonials/" onclick="toggleMobile()">Testimonials</a>
+<a href="/help/" onclick="toggleMobile()">Help Centre</a>
+<a href="/faq/" onclick="toggleMobile()">FAQ</a>
+<a href="/contact/" onclick="toggleMobile()">Contact</a>
+<a href="/affiliates" style="color:#0ea5e9;font-weight:700">Affiliates: earn &pound;25 per sign-up</a>
+<a href="/portal/#signup" class="btn-mobile" onclick="toggleMobile()"><i class="fas fa-gift"></i> Start Free Trial</a>
+</div>
+
 <div class="page">
 <a href="/" class="back"><i class="fas fa-arrow-left"></i> Back to 9am Leads</a>
 <h1>Privacy Policy</h1>
@@ -126,4 +178,63 @@ a:hover{text-decoration:underline}
 <p>You also have the right to lodge a complaint with the UK supervisory authority: the Information Commissioner's Office (ICO), Wycliffe House, Water Lane, Wilmslow, Cheshire, SK9 5AF, or via <a href="https://ico.org.uk">ico.org.uk</a>.</p>
 
 </div>
+<footer>
+<div class="container">
+<div class="footer-grid">
+<div>
+<div style="display:flex;align-items:center;gap:10px;font-size:18px;font-weight:800;font-family:var(--ff-h);margin-bottom:12px"><div class="logo-mark" style="width:32px;height:32px">9</div>9am<span style="color:var(--accent)">Leads</span></div>
+<p style="font-size:13px;color:var(--text2);line-height:1.8;max-width:320px">Opportunity intelligence platform delivering fresh UK business opportunities daily at 9am — with opportunity scoring, marketing templates, lead management, Print &amp; Post and CRM exports.</p>
+<div style="display:flex;gap:8px;margin-top:14px">
+<a href="https://www.facebook.com/share/1SBwDAUuxh/?mibextid=wwXIfr" target="_blank" aria-label="Facebook" style="width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);color:#8890a8;display:inline-flex;align-items:center;justify-content:center;text-decoration:none"><i class="fab fa-facebook-f"></i></a>
+<a href="https://www.tiktok.com/@9amleads.com" target="_blank" aria-label="TikTok" style="width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);color:#8890a8;display:inline-flex;align-items:center;justify-content:center;text-decoration:none"><i class="fab fa-tiktok"></i></a>
+<a href="https://www.instagram.com/9amleads/" target="_blank" aria-label="Instagram" style="width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);color:#8890a8;display:inline-flex;align-items:center;justify-content:center;text-decoration:none"><i class="fab fa-instagram"></i></a>
+</div>
+</div>
+<div>
+<h4>Lead Types</h4>
+<a href="/movingleadsdaily/">Moving Leads</a>
+<a href="/probateleads/">Probate Leads</a>
+<a href="/newbusinessalert/">New Business Alerts</a>
+<a href="/planningleads/">Planning Permission</a>
+<a href="/tenders/">Public Tenders</a>
+</div>
+<div>
+<h4>Company</h4>
+<a href="/about-us/">About Us</a>
+<a href="/testimonials/">Testimonials</a>
+<a href="/careers/">Careers</a>
+<a href="/founder/">Meet the Founder</a>
+<a href="/blog/">Blog</a>
+</div>
+<div>
+<h4>Product</h4>
+<a href="/pricing/">Pricing &amp; Plans</a>
+<a href="/how-it-works/">How It Works</a>
+<a href="/integrations/">Integrations</a>
+<a href="/api-docs/">API &amp; Webhooks</a>
+<a href="/status/">System Status</a>
+<a href="/security/">Security</a>
+<a href="/compare/">Why 9amLeads</a>
+</div>
+<div>
+<h4>Support</h4>
+<a href="/help/">Help Centre</a>
+<a href="/faq/">FAQ</a>
+<a href="/contact/">Contact Us</a>
+<a href="/terms.html">Terms of Service</a>
+<a href="/privacy.html">Privacy Policy</a>
+<a href="/gdpr/">GDPR &amp; Data Protection</a>
+<a href="mailto:hello@9amleads.com">hello@9amleads.com</a>
+</div>
+</div>
+<div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:24px;padding:16px;border:1px solid rgba(14,165,233,0.12);border-radius:12px;background:rgba(14,165,233,0.04)">
+<span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--text2)"><i class="fas fa-envelope" style="color:var(--accent)"></i> Royal Mail Print &amp; Post partner</span>
+<span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--text2)"><i class="fas fa-building-columns" style="color:var(--accent)"></i> Official Gov.uk &amp; Companies House data</span>
+<span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--text2)"><i class="fas fa-shield-halved" style="color:var(--accent)"></i> GDPR compliant</span>
+<span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--text2)"><i class="fas fa-lock" style="color:var(--accent)"></i> SSL secured</span>
+</div>
+<div class="footer-bottom">&copy; 2026 9am Leads Ltd &middot; Made in the UK &middot; All rights reserved. <span style="display:block;margin-top:4px">9am Leads Ltd, Company No. 17402522 · 66 Paul Street, London EC2A 4NA</span></div>
+</div>
+</footer>
+<script>function toggleMobile(){var m=document.getElementById('mobileMenu'),o=document.getElementById('mobileOverlay'),h=document.getElementById('hamBtn');if(m)m.classList.toggle('open');if(o)o.classList.toggle('show');if(h)h.classList.toggle('active')}</script>
 </body></html>
