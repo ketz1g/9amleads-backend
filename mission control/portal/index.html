@@ -147,9 +147,41 @@ function __showByHash() {
   if (h === '#login') { sf.style.display = 'none'; lf.style.display = 'block'; }
   else { sf.style.display = 'block'; lf.style.display = 'none'; }
 }
-document.addEventListener('DOMContentLoaded', __showByHash);
-window.addEventListener('hashchange', __showByHash);
+// Pre-select a lead type when arriving via a product page, e.g.
+// /portal/?product=probate#signup  or  /portal/#signup-probate
+function __applyProductPreselect() {
+  try {
+    var want = null;
+    var q = new URLSearchParams(window.location.search || '');
+    if (q.get('product')) want = String(q.get('product')).toLowerCase().trim();
+    if (!want) {
+      var hm = (window.location.hash || '').match(/^#signup-([a-z0-9_-]+)$/i);
+      if (hm) want = hm[1].toLowerCase();
+    }
+    if (!want) return;
+    var valid = ['moving', 'planning', 'newbusiness', 'probate', 'tenders'];
+    if (valid.indexOf(want) === -1) return;
+    var boxes = document.querySelectorAll('#s-products-container input[type=checkbox]');
+    if (!boxes.length) return;
+    boxes.forEach(function (cb) {
+      cb.checked = (cb.value === want);
+    });
+    // Keep any derived UI in sync after a tick (function defs may be in a later script block).
+    setTimeout(function () {
+      try { if (window.calcTotal) calcTotal(); } catch (e) {}
+      try { if (window.updateMovingTypeLabel) updateMovingTypeLabel(); } catch (e) {}
+      // Scroll the signup form into view so the pre-selection is visible.
+      try {
+        var sfEl = document.getElementById('signup-form');
+        if (sfEl) sfEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (e) {}
+    }, 30);
+  } catch (e) {}
+}
+document.addEventListener('DOMContentLoaded', function(){ __showByHash(); __applyProductPreselect(); });
+window.addEventListener('hashchange', function(){ __showByHash(); __applyProductPreselect(); });
 __showByHash();
+setTimeout(__applyProductPreselect, 60);
 </script>
 <script>
 // Email-verification result handling: after the verify link (…/?verified=true) the
