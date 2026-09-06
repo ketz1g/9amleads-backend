@@ -28755,6 +28755,17 @@ app.get('/api/admin/gsc/data', adminAuth, async function(req, res) {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/admin/gsc/opportunities?days=90 — keywords closest to page 1 (best ROI).
+app.get('/api/admin/gsc/opportunities', adminAuth, async function(req, res) {
+  try {
+    var g = getGsc();
+    if (!g.isConnected()) return res.status(400).json({ error: 'Not connected to Google Search Console.' });
+    var days = parseInt(req.query.days, 10) || 90; // 90d gives enough signal for lower-volume terms
+    var data = await g.fetchOpportunities(days, req.query.property ? String(req.query.property) : null);
+    res.json({ success: true, source: 'Google Search Console', data: data });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/gsc/disconnect — clear stored tokens.
 app.post('/api/admin/gsc/disconnect', adminAuth, function(req, res) {
   try {

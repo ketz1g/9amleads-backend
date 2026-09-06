@@ -222,6 +222,42 @@ async function fetchDashboard(days, siteUrl) {
 function roundPct(v) { v = parseFloat(v); return v ? Math.round(v * 1000) / 10 : 0; }
 function round1(v) { v = parseFloat(v); return v ? Math.round(v * 10) / 10 : 0; }
 
+// Pull opportunity keywords: all queries with impressions in the window (up to 200),
+// then flag ones closest to page 1 (position 4-20 = easiest wins) and the positions
+// that already earn impressions but not clicks. Returns them ranked by opportunity score.
+async function fetchOpportunities(days, siteUrl) {
+  days = parseInt(days, 10) || 28;
+  var cfg = loadConfig();
+  var prop = siteUrl || cfg.property || '';
+  if (!prop) throw new Error('No Search Console property set.');
+  var end = isoDaysAgo(1);
+  var start = isoDaysAgo(days);
+  var queries = await searchAnalytics(prop, start, end, ['query'], 200);
+  var rowsOut = (queries.json && queries.json.rows) || [];
+  var out = rowsOut.filter(function (q) { return (q.impressions || 0) > 0; }).map(function (q) {
+    var pos = round1(q.position);
+    var clicks = Math.round(q.clicks || 0);
+    var imp = Math.round(q.impressions || 0);
+    // Opportunity score: favour queries that are just off page 1 (pos 4-15), have
+    // impressions (demand) but low CTR (need better title/meta), and decent volume.
+    var inWinBand = pos >= 4 && pos <= 15;
+    var nearP1 = pos <= 20;
+    var score = (nearP1 ? 40 : 0) + (inWinBand ? 40 : 0) + Math.min(imp, 200) / 10 + (clicks === 0 ? 15 : 0) - (pos >= 30 ? 30 : 0);
+    return { query: q.keys[0], position: pos, clicks: clicks, impressions: imp, ctr: roundPct(q.ctr), opportunity_score: Math.round(score) };
+  }).sort(function (a, b) { return b.opportunity_score - a.opportunity_score; });
+  // Bucket the candidates so the owner sees the tiered wins.
+  return {
+    property: prop,
+    startDate: start,
+    endDate: end,
+    days: days,
+    win_now: out.filter(function (o) { return o.position >= 4 && o.position <= 15; }).slice(0, 15),
+    page_1_to_3: out.filter(function (o) { return o.position >= 1 && o.position <= 30 && o.position > 15; }).slice(0, 15),
+    emerging: out.filter(function (o) { return o.position > 30; }).slice(0, 10),
+    all: out.slice(0, 60)
+  };
+}
+
 module.exports = {
   getCredentials: getCredentials,
   isConfigured: isConfigured,
@@ -235,6 +271,7 @@ module.exports = {
   pickProperty: pickProperty,
   searchAnalytics: searchAnalytics,
   fetchDashboard: fetchDashboard,
+  fetchOpportunities: fetchOpportunities,
   PUBLIC_BASE: PUBLIC_BASE,
   REDIRECT_URI: REDIRECT_URI,
   SCOPE: SCOPE,
