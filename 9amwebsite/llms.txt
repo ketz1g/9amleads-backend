@@ -1,0 +1,32 @@
+# 9amLeads
+
+> 9amLeads delivers fresh, exclusive UK business leads every morning at 9am. We cover five lead types: moving leads (from Rightmove), probate leads (from the Gov.uk probate register), new business leads (Companies House registrations), planning permission leads (new UK planning applications) and public sector tender opportunities (from Contracts Finder and data.gov.uk). Each lead type is available on a weekly subscription with a 7-day free trial.
+
+## About
+
+- What we do: Daily data feeds of newly published UK business opportunities, delivered to your inbox at 9am, matched to your trade and chosen postcode territories.
+- How it differs: A subscription data feed rather than a lead marketplace. You receive your own daily allocation and leads are not auctioned to multiple buyers at once.
+- Pricing: Starter £25/week, Pro £49/week, Enterprise £99/week. All lead types at the same price. 7-day free trial, no card required.
+- Contact: hello@9amleads.com
+
+## Pages
+
+- [Home](https://9amleads.com/): Overview of 9amLeads products and how daily lead delivery works.
+- [Lead Types & Who We Serve](https://9amleads.com/who-we-serve/): Moving, probate, new business, planning permission and tender leads, by industry.
+- [Pricing](https://9amleads.com/pricing/): Weekly subscription plans and free trial details.
+- [How It Works](https://9amleads.com/how-it-works/): How leads are sourced, matched and delivered at 9am.
+- [About Us](https://9amleads.com/about-us/): Company information for 9am Leads Ltd.
+- [Blog](https://9amleads.com/blog/): Guides on UK lead generation, conversion and outreach.
+
+## Key Topics
+
+- Moving leads for removal companies and estate agents.
+- Probate leads for solicitors and estate administrators.
+- New business leads from Companies House registrations for accountants, web designers and B2B services.
+- Planning permission leads for builders, architects and tradespeople.
+- Public sector tenders for cleaning, IT, construction and facilities management firms.
+- Daily lead generation, first-contact conversion, outreach and follow-up best practice.
+
+## Updates
+
+The Blog is updated regularly with new guides. Sitemap: https://9amleads.com/sitemap.xml
