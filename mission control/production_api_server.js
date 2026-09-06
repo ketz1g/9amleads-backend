@@ -9791,7 +9791,15 @@ app.get('/api/admin/delivery-preview', adminAuth, async (req, res) => {
   try {
     var emailFilter = String((req.query && req.query.email) || '').toLowerCase().trim();
     var dbP = getDb();
-    var customers = (dbP.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && !isLeadsPaused(c) && (!emailFilter || String(c.email||'').toLowerCase() === emailFilter); });
+    var customers = (dbP.customers || []).filter(function(c) {
+      // Match real delivery (line 19022): an EXPIRED free trial gets NO leads until
+      // they pay. Previously the preview included them, over-reporting "short"
+      // customers that real 9am delivery actually skips.
+      if (!c.plan || c.plan === 'cancelled' || isLeadsPaused(c)) return false;
+      if (String(c.plan) === 'free_trial' && c.trial_ends && new Date(c.trial_ends) < new Date()) return false;
+      if (emailFilter && String(c.email || '').toLowerCase() !== emailFilter) return false;
+      return true;
+    });
     var out = [];
     var _previewSeen = {};
     for (var pi = 0; pi < customers.length; pi++) {
