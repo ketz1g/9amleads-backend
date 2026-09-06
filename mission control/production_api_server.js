@@ -15579,7 +15579,70 @@ app.post('/api/admin/send-sample-weekly', adminAuth, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/failed-emails — see what the 15-min retry loop is stuck resending.
+// POST /api/admin/send-all-customer-samples — send a copy of every customer-facing
+// email to one address so the founder can review the real output in their inbox.
+// { email }  Sends: daily lead sheet (moving sample), the full trial nurture set,
+// the paid welcome/tips series, a weekly follow-up, and the status/missed-lead
+// notices. Uses the same builders + a demo customer as the real senders.
+app.post('/api/admin/send-all-customer-samples', adminAuth, async (req, res) => {
+  try {
+    var to = String((req.body && req.body.email) || '').trim().toLowerCase();
+    if (!to) return res.status(400).json({ error: 'email is required' });
+    var sent = [];
+    function send(subject, html){ return sendBrevoEmail({ email: to, name: '9amLeads' }, subject, html).then(function(){ sent.push(subject); }).catch(function(e){ sent.push(subject + ' (FAILED: ' + (e && e.message ? e.message.slice(0,60) : 'send error') + ')'); }); }
+    // Demo customer shared by all template builders.
+    function demoCustomer(product){
+      return { id: 'demo', email: to, product: product, plan: 'free_trial', company: 'Demo Removal Co',
+        contact_name: 'Demo Owner', business_type: 'Removal Company', lead_type: 'Moving Leads',
+        target_areas: JSON.stringify(['HA','EN','N']), coverage: 'postcode', trial_ends: new Date(Date.now()+7*86400000).toISOString(), created_at: new Date().toISOString(), marketing_consent: 1 };
+    }
+    // Sample leads for the daily lead sheet (moving demo).
+    function sampleLeads(product){
+      var base = {
+        moving: [ { product:'moving', address:'48 Oakwood Avenue', data:{ bedrooms:3, price:475000, postcode:'EN1 3HJ', town:'Enfield' } },
+                  { product:'moving', address:'12 Lime Grove, Richmond', data:{ bedrooms:4, price:712000, postcode:'TW9 3AB', town:'Richmond' } } ],
+        probate: [ { product:'probate', data:{ deceasedName:'Margaret Collins', deceasedAddress:'7 The Paddock, Sunbury', postcode:'TW16 5EX', grantDate:new Date(Date.now()-3*86400000).toISOString() } } ],
+        newbusiness: [ { product:'newbusiness', data:{ companyName:'Brightleaf Marketing Ltd', address:'21 Market Street, Leeds', postcode:'LS1 6EZ', publishedDate:new Date(Date.now()-2*86400000).toISOString() } } ],
+        planning: [ { product:'planning', data:{ address:'33 Church Road, Chorley', postcode:'PR7 4HT', description:'Single storey rear extension', status:'Pending', publishedDate:new Date(Date.now()-1*86400000).toISOString() } } ],
+        tenders: [ { product:'tenders', data:{ title:'School catering services - 3 year contract', organisation:'Local Authority', closingDate:new Date(Date.now()+14*86400000).toISOString(), url:'https://www.gov.uk/contracts-finder' } } ]
+      };
+      return base[product] || base.moving;
+    }
+    var order = [];
+    // 1. Daily lead sheet per product
+    var prods = ['moving','probate','newbusiness','planning','tenders'];
+    for (var pi2 = 0; pi2 < prods.length; pi2++){
+      var prod = prods[pi2];
+      var dc = demoCustomer(prod);
+      var leadHtml = generateLeadEmailHTML(dc, sampleLeads(prod));
+      await send('SAMPLE - Daily lead sheet (' + prod + ')', leadHtml);
+    }
+    // 2. Trial nurture sequence (send each distinct day template once)
+    for (var ci2 = 0; ci2 < CAMPAIGN_EMAILS.length; ci2++){
+      var ce = CAMPAIGN_EMAILS[ci2];
+      if (String(ce.template).indexOf('trial_wk') === 0) continue; // weeks handled below
+      try {
+        var cHtml = getCampaignEmailHTMLWithEdits(demoCustomer('moving'), ce.template);
+        await send('SAMPLE - Campaign: ' + (getEditedCampaignSubject(ce.template, ce.subject)), cHtml);
+      } catch(cce) { sent.push(ce.template + ' (FAILED: ' + (cce&&cce.message?cce.message.slice(0,50):'build') + ')'); }
+    }
+    // 3. Paid welcome + tips series
+    for (var pai = 0; pai < PAID_EMAIL_SERIES.length; pai++){
+      var pe = PAID_EMAIL_SERIES[pai];
+      try { await send('SAMPLE - Paid: ' + (getEditedCampaignSubject(pe.template, pe.subject)), getCampaignEmailHTMLWithEdits(demoCustomer('moving'), pe.template)); }
+      catch(pe2) { sent.push(pe.template + ' (FAILED)'); }
+    }
+    // 4. Weekly follow-up (week 9 sample)
+    await send('SAMPLE - Weekly follow-up (week 9)', buildWeeklyTrialTemplate(demoCustomer('moving'), 9, 'Moving Leads', '#0ea5e9', 'moving'));
+    // 5. Status emails (delay + sorted)
+    var delayHtml = '<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:16px"><h2 style="color:#38bdf8;margin:0 0 8px">Your leads are on their way ✨</h2><p style="font-size:15px;line-height:1.6;color:#cbd5e1">Just a quick heads-up: today\'s fresh opportunities are still being delivered to your dashboard and inbox. They\'ll be with you very shortly.</p><p style="font-size:13px;color:#94a3b8;margin:16px 0 0">- The 9amLeads Team</p></div>';
+    var sortedHtml = '<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:16px"><h2 style="color:#34d399;margin:0 0 8px">All sorted ✅</h2><p style="font-size:15px;line-height:1.6;color:#cbd5e1">We\'ve resolved the technical issue and your fresh leads are now in your dashboard and inbox.</p><p style="font-size:13px;color:#94a3b8;margin:16px 0 0">- The 9amLeads Team</p></div>';
+    await send('SAMPLE - Status: leads on their way', delayHtml);
+    await send('SAMPLE - Status: all sorted', sortedHtml);
+    res.json({ success: true, emailed: to, count: sent.length, subjects: sent });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/admin/failed-emails', adminAuth, (req, res) => {
   try { var q = getDb().failed_emails || []; res.json({ success: true, count: q.length, items: q.slice(-40).map(function(x){ return { email: x.email, name: x.name, subject: String(x.subject || '').substring(0, 160), attempts: x.attempts || 1, at: x.at }; }) }); }
   catch (e) { res.status(500).json({ error: e.message }); }
