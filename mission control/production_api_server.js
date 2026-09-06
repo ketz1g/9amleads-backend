@@ -15157,8 +15157,10 @@ cron.schedule('20 9 * * 1-5', async () => {
     saveDb();
   } catch(e) { console.log('[09:20 STATUS] error:', e.message); }
 }, { timezone: 'Europe/London' });
-cron.schedule('30 10 * * 1-5', async () => { await resendFailedEmails(); }, { timezone: 'Europe/London' });
-cron.schedule('0 15 * * 1-5', async () => { await resendFailedEmails(); }, { timezone: 'Europe/London' });
+// NOTE: only the tight 09:02 / 09:10 catch-up retries run (see above). The old
+// 10:30 and 15:00 retries were removed - they added little value (a send that
+// still fails at 10:30 is usually a persistent address/bounce problem, and the
+// duplicate guard already prevents double-sending).
 
 // ===== DEPLOY-FAILURE MONITOR =====
 // Every 15 minutes, query Render's API for the latest deploy of this service. If
