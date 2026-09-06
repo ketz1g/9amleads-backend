@@ -40,26 +40,70 @@
 
   var bubble = d.getElementById('chatBubble');
   var panel = d.getElementById('chatPanel');
-  // Keep the chat bubble/panel above the cookie-consent bar so they never overlap.
-  function shiftChatForCookie() {
+  // Keep the chat bubble/panel, cookie bar and live-proof banner from overlapping.
+  // A single shared function also lets other scripts (cookie accept buttons)
+  // re-run the layout after the consent bar disappears.
+  function shiftForOverlays() {
     try {
-      var cb = d.getElementById('cookieConsent');
-      var show = cb && String(cb.style.display) !== 'none';
-      var h = show && cb ? (cb.offsetHeight || 52) : 0;
-      bubble.style.bottom = (show ? (h + 14) : 24) + 'px';
-      panel.style.bottom = (show ? (h + 86) : 96) + 'px';
+      // The visible consent bar (either the JS-injected #cookieBanner or a page's
+      // own #cookieConsent).
+      var bar = d.getElementById('cookieBanner') || d.getElementById('cookieConsent');
+      var barShown = bar && String(bar.style.display) !== 'none';
+      var barBottomPad = 0;
+      if (barShown && bar) barBottomPad = (bar.offsetHeight || 52) + 10;
+
+      // On small screens a full-width mobile sticky CTA also docks to the bottom.
+      // While the cookie bar is showing we hide the sticky CTA (the consent bar
+      // takes that slot) and restore it once consent is given.
+      var msticky = d.getElementById('msticky') || d.querySelector('.msticky');
+      var stickyH = 0;
+      if (msticky) {
+        var mstickyHadData = msticky.getAttribute('data-msticky-state');
+        if (barShown) {
+          if (getComputedStyle(msticky).display !== 'none') {
+            msticky.setAttribute('data-msticky-state', 'shown');
+          }
+          msticky.style.setProperty('display', 'none', 'important');
+        } else if (mstickyHadData === 'shown') {
+          msticky.style.removeProperty('display');
+          msticky.removeAttribute('data-msticky-state');
+        }
+        if (getComputedStyle(msticky).display !== 'none') stickyH = (msticky.offsetHeight || 72);
+      }
+
+      var gap = barBottomPad + stickyH;
+      if (gap) gap += 10;
+
+      var live = d.getElementById('liveProof');
+      if (live) live.style.bottom = (24 + gap) + 'px';
+
+      bubble.style.bottom = (24 + gap) + 'px';
+      panel.style.bottom = (96 + gap) + 'px';
+
+      // Keep the back-to-top button above the overlays too.
+      var btt = d.getElementById('backToTop');
+      if (btt) btt.style.bottom = (96 + gap) + 'px';
     } catch (e) {}
   }
-  shiftChatForCookie();
-  try {
-    var cbEl = d.getElementById('cookieConsent');
-    if (cbEl) {
-      var mo = new MutationObserver(shiftChatForCookie);
-      mo.observe(cbEl, { attributes: true, attributeFilter: ['style'] });
-      setTimeout(shiftChatForCookie, 300);
-      setTimeout(shiftChatForCookie, 1000);
-    }
-  } catch (e) {}
+  window.__shiftBottomWidgets = shiftForOverlays;
+  shiftForOverlays();
+  // Re-run whenever the consent bar is shown/hidden.
+  ['cookieConsent', 'cookieBanner', 'msticky', 'mobileSticky'].forEach(function(id) {
+    try {
+      var el = d.getElementById(id);
+      if (el) {
+        var mo = new MutationObserver(shiftForOverlays);
+        mo.observe(el, { attributes: true, attributeFilter: ['style', 'class'] });
+      }
+    } catch (e) {}
+  });
+  window.addEventListener('resize', shiftForOverlays);
+  setTimeout(shiftForOverlays, 300);
+  setTimeout(shiftForOverlays, 1000);
+  setTimeout(shiftForOverlays, 2500);
+  // Late / repeated re-layout: catches elements injected after this script ran
+  // (e.g. mobile sticky CTA or consent banner added near the end of the page).
+  setInterval(shiftForOverlays, 2500);
   var close = d.getElementById('chatClose');
   var send = d.getElementById('chatSend');
   var name = d.getElementById('chatName');

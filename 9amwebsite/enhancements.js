@@ -73,7 +73,10 @@
 
   /* Cookie Consent */
   function cookieConsent() {
+    // A page may already carry its own consent banner (static markup). Don't
+    // inject a second overlapping one.
     if (localStorage.getItem('cookieConsent')) return;
+    if (d.getElementById('cookieConsent') || d.getElementById('cookieBanner')) return;
     var banner = d.createElement('div');
     banner.id = 'cookieBanner';
     banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:99997;background:rgba(0,0,0,0.95);backdrop-filter:blur(12px);border-top:1px solid #1a1a1a;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:13px';
@@ -83,6 +86,7 @@
     d.getElementById('cookieAccept').onclick = function() {
       localStorage.setItem('cookieConsent', 'true');
       banner.style.display = 'none';
+      if (window.__shiftBottomWidgets) window.__shiftBottomWidgets();
     };
   }
 

@@ -1582,11 +1582,11 @@ setTimeout(function(){var e=document.getElementById('liveProof'),t=document.getE
 <script src="/enhancements.js"></script>
 <div id="cookieConsent" style="position:fixed;bottom:0;left:0;right:0;z-index:999;background:rgba(17,17,17,0.95);backdrop-filter:blur(8px);border-top:1px solid #222;padding:10px 20px;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;font-size:12px;color:#999;pointer-events:auto">
 <span>We use cookies to improve your experience. <a href="/privacy.html" style="color:#0ea5e9">Privacy Policy</a></span>
-<button onclick="document.getElementById('cookieConsent').style.display='none';localStorage.setItem('cookies_accepted','true')" style="padding:6px 16px;border-radius:5px;background:#0ea5e9;color:#fff;border:none;cursor:pointer;font-weight:600;font-size:11px">Got it</button>
-<button onclick="document.getElementById('cookieConsent').style.display='none'" style="padding:6px 12px;border-radius:5px;background:transparent;border:1px solid #333;color:#666;cursor:pointer;font-size:11px">Decline</button>
+<button onclick="var _cc=document.getElementById('cookieConsent');if(_cc)_cc.style.display='none';localStorage.setItem('cookies_accepted','true');localStorage.setItem('cookieConsent','true');if(window.__shiftBottomWidgets)window.__shiftBottomWidgets();" style="padding:6px 16px;border-radius:5px;background:#0ea5e9;color:#fff;border:none;cursor:pointer;font-weight:600;font-size:11px">Got it</button>
+<button onclick="var _cc=document.getElementById('cookieConsent');if(_cc)_cc.style.display='none';localStorage.setItem('cookies_accepted','true');if(window.__shiftBottomWidgets)window.__shiftBottomWidgets();" style="padding:6px 12px;border-radius:5px;background:transparent;border:1px solid #333;color:#666;cursor:pointer;font-size:11px">Decline</button>
 </div>
 <script>
-if(localStorage.getItem('cookies_accepted')) document.getElementById('cookieConsent').style.display='none';
+if(localStorage.getItem('cookies_accepted')||localStorage.getItem('cookieConsent')) { var _cc0=document.getElementById('cookieConsent'); if(_cc0)_cc0.style.display='none'; }
 // Theme toggle · DARK mode default (matches the portal + brand). Base CSS is light,
 // but we apply .dark unless the visitor explicitly saved 'light'.
 document.documentElement.classList.remove('dark');
