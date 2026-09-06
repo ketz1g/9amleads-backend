@@ -190,9 +190,7 @@
     }, { threshold: 0.15 });
     document.querySelectorAll('[data-animate]').forEach(el => animObserver.observe(el));
 
-    if (!localStorage.getItem('mld_cookie_consent')) {
-      document.getElementById('cookieConsent').style.display = 'flex';
-    }
+    var _cc=document.getElementById('cookieConsent'); if(_cc&&!localStorage.getItem('mld_cookie_consent')){ _cc.style.display='flex'; }
     window.addEventListener('scroll', function() {
       var b = document.getElementById('btop');
       if (b) {
