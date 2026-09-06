@@ -976,7 +976,7 @@ function loadFollowups(){
     w.innerHTML='<table><thead><tr><th>Business</th><th>Lead type</th><th>Status</th><th>Contact</th><th>Next reminder</th><th>Notes</th><th style="text-align:right">Actions</th></tr></thead><tbody>'+d.people.map(function(p){
       var color=FU_STATUS_COLORS[p.status]||'#94a3b8',lab=FU_STATUS_LABEL[p.status]||p.status;
       var notes=p.notes&&p.notes.length?('<span title="'+esc(p.notes.map(function(n){return n.text;}).join(' • '))+'">'+p.notes.length+'</span>'):'0';
-      return '<tr><td><b>'+esc(p.company||p.name||p.email||'Contact')+'</b></td><td style="font-size:11px;color:#94a3b8">'+(p.product||'-')+'</td><td><span style="color:'+color+';font-weight:700">● '+esc(lab)+'</span></td><td style="font-size:12px">'+esc(fuContact(p))+'</td><td style="font-size:11px;white-space:nowrap">'+(p.reminder_at?'<span style="color:#f59e0b">'+fuWhen(p.reminder_at)+'</span>':'<span class="muted">-</span>')+'</td><td style="text-align:center;font-size:12px">'+notes+'</td><td style="text-align:right;white-space:nowrap"><button class="btn-mini" onclick="openNote(\''+p.id+'\',\''+esc(p.company||p.name||'').replace(/'/g,'')+'\')">📝 Note</button> <button class="btn-mini" onclick="openRemind(\''+p.id+'\')">⏰</button></td></tr>';
+      return '<tr><td><b>'+esc(p.company||p.name||p.email||'Contact')+'</b></td><td style="font-size:11px;color:#94a3b8">'+(p.product||'-')+'</td><td><span style="color:'+color+';font-weight:700">● '+esc(lab)+'</span></td><td style="font-size:12px">'+esc(fuContact(p))+'</td><td style="font-size:11px;white-space:nowrap">'+(p.reminder_at?'<span style="color:#f59e0b">'+fuWhen(p.reminder_at)+'</span>':'<span class="muted">-</span>')+'</td><td style="text-align:center;font-size:12px">'+notes+'</td><td style="text-align:right;white-space:nowrap"><button class="btn-mini" onclick="openNote(\''+p.id+'\',\''+esc(p.company||p.name||'').replace(/'/g,'')+'\')">📝 Note</button> <button class="btn-mini" onclick="openRemind(\''+p.id+'\')">⏰</button>'+(p.source==='prospect'?' <button class="btn-mini" style="color:#f87171" onclick="delProspect(\''+p.id+'\')">🗑 Delete</button>':'')+'</td></tr>';
     }).join('')+'</tbody></table>';
   }).catch(function(){document.getElementById('fu-list-wrap').innerHTML='<div class="muted" style="padding:20px">Could not load follow-ups.</div>';});
 }
@@ -992,6 +992,13 @@ function openRemind(id){
   var clear=(pick.trim()==='');
   var iso=clear?null:new Date(pick.replace(' ','T')).toISOString();
   api('POST','/affiliate/followups/'+id+'/reminder',{reminder_at:iso}).then(function(d){if(d.success){loadFollowups();}else alert(d.error||'Could not set reminder.');});
+}
+function delProspect(id){
+  if(!confirm('Remove this prospect from your follow-up list?'))return;
+  api('DELETE','/affiliate/followups/'+id).then(function(d){
+    if(d.success){loadFollowups();}
+    else alert(d.error||'Could not delete this prospect.');
+  }).catch(function(){alert('Server error. Please try again.');});
 }
 function addProspect(){
   var company=document.getElementById('fp-company').value.trim(),name=document.getElementById('fp-name').value.trim(),phone=document.getElementById('fp-phone').value.trim(),email=document.getElementById('fp-email').value.trim(),product=document.getElementById('fp-product').value,rem=document.getElementById('fp-remind').value;
