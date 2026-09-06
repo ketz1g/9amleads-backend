@@ -28764,65 +28764,6 @@ app.post('/api/admin/gsc/disconnect', adminAuth, function(req, res) {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ===== DAILY GSC SNAPSHOT EMAIL =====
-// Emails the owner a morning summary of real Google search performance (clicks,
-// impressions, CTR, avg position + top queries/pages). Runs at 04:00 UK inside the
-// AUTO-SEO cron (after the sitemap refresh + pings). GSC data lags ~2 days, so we
-// report the trailing 28-day window (ending yesterday) - the freshest meaningful view.
-async function sendGscSnapshotEmail() {
-  try {
-    var g = getGsc();
-    if (!g.isConfigured() || !g.isConnected()) {
-      console.log('[GSC-EMAIL] Skipped: not configured/connected');
-      return { skipped: true, reason: 'not_connected' };
-    }
-    // Refresh sitemap first so today's new posts are included + engines re-pinged
-    // (only if this call isn't already inside the SEO cron - harmless either way).
-    var data = await g.fetchDashboard(28, null);
-    var t = data.totals || {};
-    var emailTo = process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com';
-    var rows = function(qs) {
-      if (!qs || !qs.length) return '<tr><td colspan="5" style="padding:8px;color:#94a3b8;font-size:12px">No data in the last 28 days yet.</td></tr>';
-      return qs.slice(0, 8).map(function(q) {
-        var link = q.page ? 'https://' : '';
-        var disp = q.page || q.query || '';
-        var label = q.page ? disp.replace('https://9amleads.com', '') : disp;
-        return '<tr style="border-bottom:1px solid #1f2937"><td style="padding:7px 6px;color:#e2e8f0;font-size:12px">' + (q.page ? '<a href="' + String(disp).replace(/&/g,'&amp;') + '" style="color:#7dd3fc;text-decoration:none">' + String(label).replace(/</g,'&lt;').replace(/&/g,'&amp;') + '</a>' : String(label).replace(/</g,'&lt;').replace(/&/g,'&amp;')) + '</td><td style="padding:7px 6px;color:#f5f5f5;font-size:12px;text-align:center">' + q.clicks + '</td><td style="padding:7px 6px;color:#f5f5f5;font-size:12px;text-align:center">' + q.impressions + '</td><td style="padding:7px 6px;color:#94a3b8;font-size:12px;text-align:center">' + q.ctr + '%</td><td style="padding:7px 6px;color:#94a3b8;font-size:12px;text-align:center">' + q.position + '</td></tr>';
-      }).join('');
-    };
-    var trendCells = (data.daily || []).slice(-14).map(function(d) {
-      return '<div style="flex:1;min-width:14px;text-align:center"><div style="font-size:10px;color:#f59e0b;font-weight:700">' + d.clicks + '</div><div style="height:26px;display:flex;align-items:flex-end;justify-content:center"><div style="width:9px;height:' + Math.max(2, Math.round(d.clicks / Math.max(1, (data.daily || []).reduce(function(m,x){ return Math.max(m,x.clicks); },0)) * 26)) + 'px;background:#f59e0b;border-radius:2px"></div></div><div style="font-size:8px;color:#64748b">' + String(d.date || '').slice(5) + '</div></div>';
-    }).join('');
-    var html = '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:28px;max-width:600px;margin:0 auto">' +
-      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px"><div style="width:34px;height:34px;border-radius:8px;background:#16a34a;display:flex;align-items:center;justify-content:center;font-size:16px">🔎</div><h1 style="font-family:Outfit,sans-serif;color:#fff;margin:0;font-size:20px">Google Search Performance</h1></div>' +
-      '<p style="color:#94a3b8;font-size:13px;margin:2px 0 18px">Last 28 days ending ' + (data.endDate || '') + ' &middot; ' + (data.property || '') + '</p>' +
-      '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px">' +
-      '<div style="background:#111827;border:1px solid #1f2937;border-radius:10px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:800;color:#f59e0b">' + t.clicks + '</div><div style="font-size:11px;color:#94a3b8">Clicks</div></div>' +
-      '<div style="background:#111827;border:1px solid #1f2937;border-radius:10px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:800;color:#38bdf8">' + t.impressions + '</div><div style="font-size:11px;color:#94a3b8">Impressions</div></div>' +
-      '<div style="background:#111827;border:1px solid #1f2937;border-radius:10px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:800;color:#a78bfa">' + t.ctr + '%</div><div style="font-size:11px;color:#94a3b8">CTR</div></div>' +
-      '<div style="background:#111827;border:1px solid #1f2937;border-radius:10px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:800;color:#fb7185">' + t.position + '</div><div style="font-size:11px;color:#94a3b8">Avg Position</div></div>' +
-      '</div>' +
-      (trendCells ? '<div style="background:#111827;border:1px solid #1f2937;border-radius:10px;padding:10px;margin-bottom:18px"><div style="font-size:11px;color:#94a3b8;margin-bottom:6px">Daily clicks (last 14 days)</div><div style="display:flex;gap:2px;align-items:flex-end">' + trendCells + '</div></div>' : '') +
-      '<div style="font-size:13px;font-weight:700;margin:14px 0 6px;color:#fff">Top Queries</div><table style="width:100%;border-collapse:collapse;background:#111827;border:1px solid #1f2937;border-radius:10px;overflow:hidden"><tr style="background:#0f172a;color:#64748b;text-align:left;font-size:11px"><th style="padding:7px 6px">Query</th><th style="text-align:center">Clicks</th><th style="text-align:center">Impr</th><th style="text-align:center">CTR</th><th style="text-align:center">Pos</th></tr>' + rows(data.topQueries) + '</table>' +
-      '<div style="font-size:13px;font-weight:700;margin:16px 0 6px;color:#fff">Top Pages</div><table style="width:100%;border-collapse:collapse;background:#111827;border:1px solid #1f2937;border-radius:10px;overflow:hidden"><tr style="background:#0f172a;color:#64748b;text-align:left;font-size:11px"><th style="padding:7px 6px">Page</th><th style="text-align:center">Clicks</th><th style="text-align:center">Impr</th><th style="text-align:center">CTR</th><th style="text-align:center">Pos</th></tr>' + rows(data.topPages) + '</table>' +
-      '<p style="color:#64748b;font-size:11px;margin-top:18px">View full details in the SEO admin panel: <a href="https://9amleads.com/portal/seo.html" style="color:#f59e0b">9amleads.com/portal/seo.html</a></p></div>';
-    var ok = await sendBrevoEmail({ email: emailTo, name: '9amLeads Owner' }, 'Google Search Performance - 28 day snapshot', html);
-    console.log('[GSC-EMAIL] Sent daily snapshot to ' + emailTo + ' (clicks=' + t.clicks + ', impressions=' + t.impressions + ')');
-    return { sent: true, to: emailTo, clicks: t.clicks, impressions: t.impressions };
-  } catch(e) {
-    console.log('[GSC-EMAIL] Error:', e.message);
-    return { sent: false, error: e.message };
-  }
-}
-
-// Manual trigger: POST /api/admin/gsc/send-snapshot (owner can also test from the panel).
-app.post('/api/admin/gsc/send-snapshot', adminAuth, async function(req, res) {
-  try {
-    var r = await sendGscSnapshotEmail();
-    res.json(r);
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
 // POST /api/admin/seo/refresh-sitemap - Update sitemap.xml
 app.post('/api/admin/seo/refresh-sitemap', adminAuth, function(req, res) {
   try {
@@ -33883,8 +33824,6 @@ cron.schedule('0 4 * * *', async () => {
     dbData.seo_last_run = new Date().toISOString();
     fs.writeFileSync(DB_FILE, JSON.stringify(dbData, null, 2));
     console.log('[SEO] Pipeline done: ' + seoLog.join(' | '));
-    // GSC daily snapshot email (real Google search performance) - never blocks.
-    try { await sendGscSnapshotEmail(); } catch(gse) { console.log('[GSC-EMAIL] cron error:', gse.message); }
   } catch(e) {
     console.log('[SEO] Cron error: ' + (e && e.message || e));
   }
