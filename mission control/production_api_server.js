@@ -33481,7 +33481,7 @@ function getEditedCampaignSubject(template, originalSubject) {
 }
 
 // ===== OUTBOUND PROSPECTING CAMPAIGNS (Brevo) =====
-// 5 campaigns ï¿½ 16 emails = 80 total
+// 5 campaigns - 16 emails = 80 total
 // Naming: 9AM-PROD-WKX-EX where PROD = MOV/PLAN/PROB/NBZ/TEN
 
 var OUTBOUND_CAMPAIGNS = {
@@ -33492,7 +33492,7 @@ I was speaking with a removal business owner in Birmingham last week who told me
 
 He said: "I don't mind the quiet weeks. What kills me is knowing there are people moving right now, in my area, and they're hiring someone else because they never found me."
 
-That's the harsh reality of the removal industry in 2025. The demand is thereï¿½over 400,000 households move each month in the UK. The problem isn't a lack of moves. It's a lack of visibility at the exact moment someone decides to move.
+That's the harsh reality of the removal industry in 2025. The demand is there-over 400,000 households move each month in the UK. The problem isn't a lack of moves. It's a lack of visibility at the exact moment someone decides to move.
 
 Traditional advertising catches people who might move someday. Directory listings show you to people who are browsing, not necessarily buying. Referrals are great but unpredictable.
 
@@ -33517,11 +33517,11 @@ How many of those did you quote for?
 
 If the answer is fewer than 50, there's a gap. And that gap represents real revenue that's funding someone else's business instead of yours.
 
-Here's what we've learned from working with removal companies across the UK: the average removal job is worth between ï¿½1,000 and ï¿½3,000. For a man-and-van operator, it might be ï¿½400-800. For a full-service removal company with packing, storage, and insurance, it can be ï¿½5,000 or more.
+Here's what we've learned from working with removal companies across the UK: the average removal job is worth between £1,000 and £3,000. For a man-and-van operator, it might be £400-800. For a full-service removal company with packing, storage, and insurance, it can be £5,000 or more.
 
 But here's the part that really matters: you only need ONE extra removal job per month to cover the cost of a lead generation system. Everything after that is pure upside.
 
-If you're currently running at 60% capacity and could fill that to 85%, the difference to your annual revenue is transformational. It's not about working harderï¿½it's about making sure the opportunities that exist in your area actually reach your inbox.
+If you're currently running at 60% capacity and could fill that to 85%, the difference to your annual revenue is transformational. It's not about working harder-it's about making sure the opportunities that exist in your area actually reach your inbox.
 
 The technology exists now to see every person who is actively preparing to move in your area, scored by how likely they are to convert and what the job is worth. It arrives in your email at 9am, before your first cup of tea.
 
@@ -33534,15 +33534,15 @@ Ketz Mandalia | Founder, 9amLeads`, cta: 'Reply and I\x27ll send you this week\x
 
 Here's something most removal companies don't realise: the UK property market follows predictable cycles, and those cycles create predictable removal demand.
 
-Spring and autumn are the obvious peaksï¿½conveyancing completes, keys are handed over, and someone needs a van. But there are deeper patterns that matter more for your business.
+Spring and autumn are the obvious peaks-conveyancing completes, keys are handed over, and someone needs a van. But there are deeper patterns that matter more for your business.
 
 When interest rates change, the market shifts within weeks. When stamp duty thresholds change, completion dates cluster. When a new housing development opens, everyone moves in within a 4-8 week window. When a corporate relocation contract lands with an estate agent, every employee needs moving in a specific timeframe.
 
 The data exists to see all of these patterns in real time. It's not guesswork. It's lead intelligence.
 
-Most removal companies operate reactivelyï¿½they wait for the phone to ring. The best operators we work with operate prospectively. They know what's coming, they prepare quotes in advance, and they're the first company a potential customer speaks to.
+Most removal companies operate reactively-they wait for the phone to ring. The best operators we work with operate prospectively. They know what's coming, they prepare quotes in advance, and they're the first company a potential customer speaks to.
 
-That first-contact advantage is enormous. When you're the first removal company to respond, you're not competing on priceï¿½you're solving a problem before the customer even knows all their options.
+That first-contact advantage is enormous. When you're the first removal company to respond, you're not competing on price-you're solving a problem before the customer even knows all their options.
 
 The 9amLeads platform delivers this intelligence daily. It scans thousands of data points to find people who are actively preparing to move, scores them by likelihood and value, and delivers actionable opportunities to your inbox.
 
@@ -33555,18 +33555,18 @@ Ketz Mandalia | Founder, 9amLeads`, cta: 'Reply to discuss how market intelligen
 
 Let's talk about return on investment, because I know that every pound you spend on marketing needs to come back with friends.
 
-The average removal job in the UK generates ï¿½1,000-3,000 in revenue. Some are smallerï¿½local man-with-a-van moves at ï¿½350. Some are much largerï¿½full service, packing, storage, international, corporate relocations at ï¿½10,000 or more.
+The average removal job in the UK generates £1,000-3,000 in revenue. Some are smaller-local man-with-a-van moves at £350. Some are much larger-full service, packing, storage, international, corporate relocations at £10,000 or more.
 
-Here's the simple maths: if you win ONE extra removal job per month from our system, that's ï¿½12,000-36,000 in additional annual revenue. The cost of the system is a fraction of that first job's value.
+Here's the simple maths: if you win ONE extra removal job per month from our system, that's £12,000-36,000 in additional annual revenue. The cost of the system is a fraction of that first job's value.
 
 But let's be more realistic. Removal companies using 9amLeads typically see:
 
-ï¿½ 3-8 qualified leads delivered per week (depending on area)
-ï¿½ 40-60% quote conversion rate (because you're responding first)
-ï¿½ Average job value of ï¿½1,800 across all move types
-ï¿½ 5-12 additional jobs secured per quarter
+- 3-8 qualified leads delivered per week (depending on area)
+- 40-60% quote conversion rate (because you're responding first)
+- Average job value of £1,800 across all move types
+- 5-12 additional jobs secured per quarter
 
-One customer in Manchester told us: "I was sceptical about another lead source, but the quality was different. These are people who are actually movingï¿½not tyre-kickers. I booked two full house moves in my first week."
+One customer in Manchester told us: "I was sceptical about another lead source, but the quality was different. These are people who are actually moving-not tyre-kickers. I booked two full house moves in my first week."
 
 The difference isn't the number of leads. It's that these leads are actively looking right now. They're not "maybe next year" leads. They're "I need a quote this week" leads.
 
@@ -33579,13 +33579,13 @@ Ketz Mandalia | Founder, 9amLeads`, cta: 'Reply for a personalised ROI calculati
 
 I want to share a real story from a removal company we work with in South London.
 
-They're a family-run business with three crews. Before using 9amLeads, they relied on repeat customers and Google Ads. Their calendar was unpredictableï¿½some weeks fully booked, others worryingly quiet.
+They're a family-run business with three crews. Before using 9amLeads, they relied on repeat customers and Google Ads. Their calendar was unpredictable-some weeks fully booked, others worryingly quiet.
 
-After their first week with our platform, they received 6 qualified leadsï¿½all people actively moving within the next 2-4 weeks. They quoted all 6 and secured 4. That's ï¿½7,200 in booked revenue from one week of leads.
+After their first week with our platform, they received 6 qualified leads-all people actively moving within the next 2-4 weeks. They quoted all 6 and secured 4. That's £7,200 in booked revenue from one week of leads.
 
 By the end of their first month, they'd booked 12 moves directly attributed to our leads. Their utilisation rate went from roughly 55% to over 80%. The system paid for itself on day one.
 
-What made the difference? Speed. They were the first removal company to respond to every single lead. When you're first, you're not competing on priceï¿½you're building trust by being helpful immediately.
+What made the difference? Speed. They were the first removal company to respond to every single lead. When you're first, you're not competing on price-you're building trust by being helpful immediately.
 
 The owner told me: "The biggest change isn't just the extra revenue. It's the peace of mind. I know I'm going to get leads every morning. I can plan my crews, my routes, my admin. The business feels stable for the first time in years."
 
@@ -33604,13 +33604,13 @@ And I understand why you'd say that. When your teams are on the road and your di
 
 But here's what those same owners discover when they look deeper:
 
-First, "busy" doesn't always mean "profitable." If you're running at full capacity but your margins are thin, it's because you're competing on price. The best jobsï¿½the full-service, high-value movesï¿½aren't going to the busiest companies. They're going to the companies that respond first.
+First, "busy" doesn't always mean "profitable." If you're running at full capacity but your margins are thin, it's because you're competing on price. The best jobs-the full-service, high-value moves-aren't going to the busiest companies. They're going to the companies that respond first.
 
-Second, relying on one lead source is risky. If your website drops in rankings, if Google Ads costs double next quarter, if your key referrer retiresï¿½what happens to your pipeline? Multiple lead sources create resilience.
+Second, relying on one lead source is risky. If your website drops in rankings, if Google Ads costs double next quarter, if your key referrer retires-what happens to your pipeline? Multiple lead sources create resilience.
 
 Third, not all leads are equal. The leads we deliver are people who have demonstrated intent to move in the next 2-6 weeks. They're not browsing. They're buying. The difference between a warm lead and a cold lead is often weeks of unnecessary follow-up.
 
-The removal companies that grow consistently are the ones that build multiple channels. They treat lead generation like a diversified investment portfolioï¿½not a single bet.
+The removal companies that grow consistently are the ones that build multiple channels. They treat lead generation like a diversified investment portfolio-not a single bet.
 
 I'm not suggesting you replace your current sources. I'm suggesting you add another one that fills the gaps your current sources miss.
 
@@ -33631,11 +33631,11 @@ The businesses that perform best during peak seasons are the ones that built the
 
 Here's what we've observed: removal companies that start using 9amLeads in the quieter periods see the biggest spike when the market picks up. Because they've already built the habit of responding to leads quickly. They've already refined their quoting process. They've already secured the early-mover advantage.
 
-The platform delivers opportunities daily, so you're building a pipeline consistentlyï¿½not scrambling when things get busy.
+The platform delivers opportunities daily, so you're building a pipeline consistently-not scrambling when things get busy.
 
 If you wait until you're quiet to look for leads, you're always reacting. If you build a consistent lead pipeline now, you'll have a full calendar when everyone else is scrambling.
 
-There's never a wrong time to build a better pipeline. But there's definitely a right timeï¿½and that's before you need it.
+There's never a wrong time to build a better pipeline. But there's definitely a right time-and that's before you need it.
 
 Would you like to see what's currently available in your area?
 
@@ -33658,7 +33658,7 @@ Being first matters in the removal industry. First response gets the first conve
 
 The 9amLeads platform gives you that first-mover advantage every single day. While others are waiting for the phone to ring, you're already reviewing opportunities and sending quotes.
 
-The question isn't whether daily lead delivery worksï¿½it's whether you can afford to let your competitors have it to themselves.
+The question isn't whether daily lead delivery works-it's whether you can afford to let your competitors have it to themselves.
 
 Would you like to be one of the first removal companies in your area to access daily qualified leads?
 
@@ -33876,7 +33876,7 @@ Ketz Mandalia | Founder, 9amLeads`, cta: 'Reply to speak with Ketz directly' },
 
 I was talking to a builder in Bristol last month who summed up his frustration perfectly: "I know there are people in my area who want extensions, new kitchens, driveways, and roofs. But by the time they find me, they've already spoken to three other traders. I'm always the fourth or fifth quote."
 
-That's the reality of the home improvement industry in 2025. The demand is enormousï¿½millions of UK homeowners are planning projects worth ï¿½20,000 to ï¿½100,000 or more. But most tradespeople are competing for the same small pool of leads that have been passed around by comparison sites.
+That's the reality of the home improvement industry in 2025. The demand is enormous-millions of UK homeowners are planning projects worth £20,000 to £100,000 or more. But most tradespeople are competing for the same small pool of leads that have been passed around by comparison sites.
 
 The problem isn't a lack of projects. It's that you're finding out about them too late.
 
@@ -33891,23 +33891,23 @@ If you'd like to see what projects are currently being planned in your area, I'd
 Best,
 Ketz Mandalia | Founder, 9amLeads`, cta: 'Reply to see live projects in your area' },
 
-    { id: '9AM-PLAN-WK1-E2', week: 1, emailNum: 2, subject: 'The ï¿½50,000 project you didn\x27t quote for', subjectB: 'The real cost of missing one extension or loft conversion', preview: 'What a single missed project costs your business in real terms', body: `Hi {{NAME}},
+    { id: '9AM-PLAN-WK1-E2', week: 1, emailNum: 2, subject: 'The £50,000 project you didn\x27t quote for', subjectB: 'The real cost of missing one extension or loft conversion', preview: 'What a single missed project costs your business in real terms', body: `Hi {{NAME}},
 
 Let me ask you a straightforward question.
 
-How many homeowners in your area are planning a major renovation or construction project right now? Not "thinking about it someday"ï¿½actively planning, measuring, saving, and preparing to hire.
+How many homeowners in your area are planning a major renovation or construction project right now? Not "thinking about it someday"-actively planning, measuring, saving, and preparing to hire.
 
 If you're like most tradespeople, you're getting a fraction of those projects. Not because you're not good at what you do, but because you're not appearing in front of those homeowners at the right time.
 
-Here's what we've learned from working with builders, roofers, kitchen fitters, and landscapers across the UK: the average project value in our system ranges from ï¿½5,000 for a small landscaping job to over ï¿½100,000 for a full extension or loft conversion.
+Here's what we've learned from working with builders, roofers, kitchen fitters, and landscapers across the UK: the average project value in our system ranges from £5,000 for a small landscaping job to over £100,000 for a full extension or loft conversion.
 
-The average is around ï¿½25,000.
+The average is around £25,000.
 
-Here's the simple maths: one extra project per quarter at ï¿½25,000 adds ï¿½100,000 to your annual revenue. One extra project per month adds ï¿½300,000.
+Here's the simple maths: one extra project per quarter at £25,000 adds £100,000 to your annual revenue. One extra project per month adds £300,000.
 
 You don't need a hundred new customers. You need one or two good projects that you would have missed otherwise.
 
-The 9amLeads platform finds those projects for youï¿½homeowners who've started the process, applied for planning permission, ordered surveys, or taken other concrete steps. We score them by likelihood and value, and deliver them to your inbox at 9am.
+The 9amLeads platform finds those projects for you-homeowners who've started the process, applied for planning permission, ordered surveys, or taken other concrete steps. We score them by likelihood and value, and deliver them to your inbox at 9am.
 
 You only need to win one to make the system pay for itself many times over.
 
@@ -33920,7 +33920,7 @@ Ketz Mandalia | Founder, 9amLeads`, cta: 'Reply to see this week\x27s projects i
 
 Here's something most tradespeople don't realise: by the time a homeowner is asking for quotes, they've been planning their project for weeks or months.
 
-The question isï¿½what happened during those weeks and months?
+The question is-what happened during those weeks and months?
 
 When someone decides to build an extension, they typically start by researching online. They look at designs. They check planning permission rules. They measure their space. They talk to neighbours who've had work done. They visit showrooms. They search for builders.
 
@@ -33932,7 +33932,7 @@ What if you could see those signals as they happen? What if you knew which homeo
 
 That's the intelligence 9amLeads provides. We aggregate dozens of data signals to identify homeowners who are actively moving toward a construction decision. We score them by how close they are to buying and how much the project is likely to be worth.
 
-By the time they're asking for quotes, you've already been on their radar for weeksï¿½because you reached out when they started planning, not when they started shopping.
+By the time they're asking for quotes, you've already been on their radar for weeks-because you reached out when they started planning, not when they started shopping.
 
 Would you like to see the intelligence available for your area?
 
@@ -33943,22 +33943,22 @@ Ketz Mandalia | Founder, 9amLeads`, cta: 'Reply to see your area\x27s opportunit
 
 Let's talk about numbers, because in construction, everything comes down to maths.
 
-The average extension project in the UK costs between ï¿½45,000 and ï¿½75,000. A loft conversion averages ï¿½40,000-60,000. A new kitchen is ï¿½15,000-30,000. Landscaping projects range from ï¿½5,000-25,000.
+The average extension project in the UK costs between £45,000 and £75,000. A loft conversion averages £40,000-60,000. A new kitchen is £15,000-30,000. Landscaping projects range from £5,000-25,000.
 
 These aren't council tax band A numbers. These are significant investments that homeowners don't make lightly.
 
 Here's the return on investment calculation that matters:
 
-If you win ONE extension project from our system, at even a conservative ï¿½40,000 contract value, your gross profit at 20% margin is ï¿½8,000. The cost of 9amLeads for a full year is a fraction of that.
+If you win ONE extension project from our system, at even a conservative £40,000 contract value, your gross profit at 20% margin is £8,000. The cost of 9amLeads for a full year is a fraction of that.
 
 One project covers years of subscription. Everything else you win is additional.
 
 Here's what our customers in the construction space are actually seeing:
 
-ï¿½ 2-5 qualified project leads per week (varies by area and trade)
-ï¿½ Project values averaging ï¿½15,000-65,000
-ï¿½ Response time advantage: 40-60% close rate when first to quote
-ï¿½ Average 3-6 additional projects secured per quarter
+- 2-5 qualified project leads per week (varies by area and trade)
+- Project values averaging £15,000-65,000
+- Response time advantage: 40-60% close rate when first to quote
+- Average 3-6 additional projects secured per quarter
 
 One builder in Essex told us: "I got a lead on a Tuesday, quoted on Wednesday, and was measuring up on Friday. The customer said I was the only one who responded within 48 hours. I got the job without even competing on price."
 
@@ -33969,19 +33969,19 @@ Reply and I'll calculate the potential ROI for your specific trade and area.
 Best,
 Ketz Mandalia | Founder, 9amLeads`, cta: 'Reply for a personalised ROI projection' },
 
-    { id: '9AM-PLAN-WK1-E5', week: 1, emailNum: 5, subject: 'How a Yorkshire builder secured ï¿½180k in projects from one platform', subjectB: 'Case study: From feast-or-famine to a full pipeline', preview: 'A builder\x27s journey from unpredictable workflow to consistent project pipeline', body: `Hi {{NAME}},
+    { id: '9AM-PLAN-WK1-E5', week: 1, emailNum: 5, subject: 'How a Yorkshire builder secured £180k in projects from one platform', subjectB: 'Case study: From feast-or-famine to a full pipeline', preview: 'A builder\x27s journey from unpredictable workflow to consistent project pipeline', body: `Hi {{NAME}},
 
 Let me share a story that illustrates what's possible.
 
-A builder in Yorkshireï¿½let's call him Markï¿½specialises in extensions and loft conversions. Before using 9amLeads, his workflow was unpredictable. He'd have busy months where he'd turn down work, then quiet months where he'd worry about covering his overheads.
+A builder in Yorkshire-let's call him Mark-specialises in extensions and loft conversions. Before using 9amLeads, his workflow was unpredictable. He'd have busy months where he'd turn down work, then quiet months where he'd worry about covering his overheads.
 
 He signed up sceptical. "I've tried every lead generation service out there," he told me. "They all promise the world and deliver tyre-kickers."
 
-In his first week, he received 3 project leads. One was a loft conversion in his exact area, valued at approximately ï¿½45,000. He quoted within 4 hours of receiving the lead. The homeowner told him he was the first to respond out of five builders contacted.
+In his first week, he received 3 project leads. One was a loft conversion in his exact area, valued at approximately £45,000. He quoted within 4 hours of receiving the lead. The homeowner told him he was the first to respond out of five builders contacted.
 
 He got the job.
 
-Over the next three months, Mark received 28 qualified project leads. He quoted 22. He secured 12 projects with a combined value of approximately ï¿½180,000.
+Over the next three months, Mark received 28 qualified project leads. He quoted 22. He secured 12 projects with a combined value of approximately £180,000.
 
 The total cost of the system over that period? Less than the profit from the smallest project he won.
 
@@ -34004,7 +34004,7 @@ But here's what I'd gently challenge: is your recommendation pipeline reliable e
 
 Recommendations are unpredictable. They come in waves. You might have a great month followed by two quiet ones. You can't control when someone's friend decides to build an extension.
 
-Beyond unpredictability, there's another issue: recommendations tend to produce similar projects. Your existing customers know you for what you've already done. They won't refer you for the ï¿½100,000 extension project if they hired you for a ï¿½5,000 driveway.
+Beyond unpredictability, there's another issue: recommendations tend to produce similar projects. Your existing customers know you for what you've already done. They won't refer you for the £100,000 extension project if they hired you for a £5,000 driveway.
 
 The 9amLeads platform doesn't replace your recommendation pipeline. It complements it. It fills the gaps when recommendations are quiet. It surfaces different types of projects that your existing network might not generate.
 
@@ -34046,7 +34046,7 @@ They respond faster because they've practised. They quote more accurately becaus
 
 And most importantly, they're building relationships with homeowners weeks before their competitors even know those homeowners exist.
 
-Consider this: if you start today, within a month you'll have a pipeline of projects at various stagesï¿½some quoting, some negotiating, some confirmed. Within three months, you'll have a steady flow of work that you can predict and plan around.
+Consider this: if you start today, within a month you'll have a pipeline of projects at various stages-some quoting, some negotiating, some confirmed. Within three months, you'll have a steady flow of work that you can predict and plan around.
 
 If you start in six months, you'll be six months behind every business that started today. And in the construction industry, being six months behind on relationships and pipeline is very hard to recover from.
 
@@ -34272,7 +34272,7 @@ Every year in the UK, approximately 270,000 estates go through probate. That's 2
 
 The problem is that most of these opportunities never reach the right people at the right time.
 
-Estate agents find out about probate properties when a solicitor instructs themï¿½often months after the grant of probate. Removal companies hear about house clearances when a family is already stressed and rushing. Property investors discover probate sales when they're already on the open market.
+Estate agents find out about probate properties when a solicitor instructs them-often months after the grant of probate. Removal companies hear about house clearances when a family is already stressed and rushing. Property investors discover probate sales when they're already on the open market.
 
 By the time most professionals hear about a probate opportunity, the best windows have passed.
 
@@ -34285,21 +34285,21 @@ If you'd like to see what probate opportunities are currently active in your are
 Best,
 Ketz Mandalia | Founder, 9amLeads`, cta: 'Reply to see probate opportunities in your area' },
 
-    { id: '9AM-PROB-WK1-E2', week: 1, emailNum: 2, subject: 'The ï¿½50,000 probate instruction you didn\x27t know existed', subjectB: 'Calculating the lifetime value of one probate relationship', preview: 'The compound revenue from a single probate instruction across multiple services', body: `Hi {{NAME}},
+    { id: '9AM-PROB-WK1-E2', week: 1, emailNum: 2, subject: 'The £50,000 probate instruction you didn\x27t know existed', subjectB: 'Calculating the lifetime value of one probate relationship', preview: 'The compound revenue from a single probate instruction across multiple services', body: `Hi {{NAME}},
 
 Let me put a number on what you might be missing.
 
 A single probate instruction isn't worth one transaction. It's worth a relationship that generates revenue across multiple services, often over several years.
 
-For an estate agent, a probate sale is worth ï¿½5,000-15,000 in commission on a typical property.
+For an estate agent, a probate sale is worth £5,000-15,000 in commission on a typical property.
 
-For a removal or house clearance company, a probate clearance is worth ï¿½1,000-5,000 depending on property size.
+For a removal or house clearance company, a probate clearance is worth £1,000-5,000 depending on property size.
 
-For a storage company, probate contents need storing for monthsï¿½ï¿½500-2,000 in recurring revenue.
+For a storage company, probate contents need storing for months-£500-2,000 in recurring revenue.
 
-For a solicitor, the probate application and estate administration can generate ï¿½3,000-15,000 in fees.
+For a solicitor, the probate application and estate administration can generate £3,000-15,000 in fees.
 
-For a property investor, a probate sale below market value can yield ï¿½20,000-50,000 in profit.
+For a property investor, a probate sale below market value can yield £20,000-50,000 in profit.
 
 And here's the crucial point: the professional who makes contact first often gets the entire relationship. The executors don't want to manage multiple vendors. They want one trusted professional who coordinates everything.
 
@@ -34320,9 +34320,9 @@ Phase one: Pre-grant. This is the period immediately after someone passes away w
 
 Phase two: Grant of probate. The legal authority to administer the estate is granted. This is when executors start making decisions about the property. Do they sell it? Move into it? Clear it? Rent it out? This is the critical decision window.
 
-Phase three: Post-grant administration. The property is sold, cleared, or transferred. This is when most professionals get involvedï¿½but by now, decisions have been made and relationships have been formed.
+Phase three: Post-grant administration. The property is sold, cleared, or transferred. This is when most professionals get involved-but by now, decisions have been made and relationships have been formed.
 
-The key insight is that the professional who engages during phase one or early phase two has a massive advantage. They're not competing for the instructionï¿½they're helping shape the decision.
+The key insight is that the professional who engages during phase one or early phase two has a massive advantage. They're not competing for the instruction-they're helping shape the decision.
 
 Most professionals wait for phase three. They wait for the property to hit the market. They wait for the clearance to be advertised. By then, they're one of many competing for a decision that's already been made.
 
@@ -34343,7 +34343,7 @@ Take the example of an estate agent who identifies a probate property early. Her
 
 They contact the executor with helpful information about the probate sale process, valuation requirements, and timeline. The executor appreciates the guidance and instructs them to sell.
 
-The property sells for ï¿½350,000 at 2% commission: ï¿½7,000.
+The property sells for £350,000 at 2% commission: £7,000.
 
 The executor also needs the property cleared: they recommend a removal company and potentially earn a referral fee or strengthen their relationship with a local partner.
 
@@ -34351,9 +34351,9 @@ The executor needs storage for some items: another referral opportunity.
 
 The executor's friends and family hear about the positive experience and remember the agent's name for their own future moves.
 
-Total revenue from one instruction: ï¿½7,000 direct, plus uncounted referral value.
+Total revenue from one instruction: £7,000 direct, plus uncounted referral value.
 
-For a probate solicitor, one instruction might be worth ï¿½5,000-15,000 in legal fees. For a removal company, a probate clearance might generate ï¿½1,500-4,000.
+For a probate solicitor, one instruction might be worth £5,000-15,000 in legal fees. For a removal company, a probate clearance might generate £1,500-4,000.
 
 But here's what our customers tell us: the first probate instruction they win from our system typically covers their subscription for several years. Everything after that is additional.
 
@@ -34364,11 +34364,11 @@ Reply and I'll show you the specific probate opportunities available in your are
 Best,
 Ketz Mandalia | Founder, 9amLeads`, cta: 'Reply to see your probate opportunity pipeline' },
 
-    { id: '9AM-PROB-WK1-E5', week: 1, emailNum: 5, subject: 'How a Southampton estate agent generated ï¿½28k from probate in 90 days', subjectB: 'Case study: The probate specialist who transformed their business', preview: 'Real results from a professional who made probate their focus', body: `Hi {{NAME}},
+    { id: '9AM-PROB-WK1-E5', week: 1, emailNum: 5, subject: 'How a Southampton estate agent generated £28k from probate in 90 days', subjectB: 'Case study: The probate specialist who transformed their business', preview: 'Real results from a professional who made probate their focus', body: `Hi {{NAME}},
 
 I want to share a story that demonstrates the power of probate-focused lead generation.
 
-An estate agent in Southamptonï¿½let's call her Sarahï¿½had always handled probate properties when they came through referrals, but she'd never actively sought them out. She estimated she was getting maybe one or two probate instructions per year.
+An estate agent in Southampton-let's call her Sarah-had always handled probate properties when they came through referrals, but she'd never actively sought them out. She estimated she was getting maybe one or two probate instructions per year.
 
 After joining 9amLeads, she started receiving daily notifications of probate estates in her area. In the first week, she identified three properties where the grant of probate had just been issued.
 
@@ -34376,9 +34376,9 @@ She contacted the executors not with a sales pitch, but with a helpful guide to 
 
 Two of the three executors instructed her within a week. The third called her back a month later when they were ready to proceed.
 
-Over the next 90 days, Sarah identified and secured instructions on five probate properties. Total commission: approximately ï¿½28,000.
+Over the next 90 days, Sarah identified and secured instructions on five probate properties. Total commission: approximately £28,000.
 
-She told us: "I can't believe I wasn't doing this before. These are the easiest sales I've ever made because the executors need helpï¿½they're not being sold to. I'm solving a real problem for people at a difficult time."
+She told us: "I can't believe I wasn't doing this before. These are the easiest sales I've ever made because the executors need help-they're not being sold to. I'm solving a real problem for people at a difficult time."
 
 The key to her success was timing. She contacted executors when they were making decisions, not after decisions had been made.
 
@@ -34395,13 +34395,13 @@ Solicitor referrals are valuable. They're a sign that you've built trust with pr
 
 But here's what we've learned from working with hundreds of professionals across the probate ecosystem: solicitor referrals typically capture only a fraction of the available opportunity.
 
-Most solicitors work with a small number of trusted agents and providers. They refer to the same 2-3 people they've always worked with. If you're one of them, great. But you're still only seeing the estates that solicitor handlesï¿½which might be 10-20 per year.
+Most solicitors work with a small number of trusted agents and providers. They refer to the same 2-3 people they've always worked with. If you're one of them, great. But you're still only seeing the estates that solicitor handles-which might be 10-20 per year.
 
 What about the other 200+ estates going through probate in your area each year? Who's serving those executors?
 
 Furthermore, solicitor referrals often come late in the process. By the time a solicitor recommends you, the executor may have already spoken to other professionals, received advice, or even made arrangements.
 
-Direct outreach to executorsï¿½at the right time, with the right messageï¿½captures opportunities that never reach the solicitor referral pipeline.
+Direct outreach to executors-at the right time, with the right message-captures opportunities that never reach the solicitor referral pipeline.
 
 The 9amLeads platform doesn't replace your existing referral sources. It complements them by surfacing opportunities your current network doesn't reach.
 
@@ -34441,7 +34441,7 @@ In area after area, we see the same pattern. A few forward-thinking professional
 
 Within months, they've established themselves as the go-to probate professionals in their area. Executors recommend them to other executors. Solicitors start referring to them because they see them everywhere.
 
-The professionals who didn't act early find themselves competing for the leftoversï¿½the estates that the early adopters didn't pursue.
+The professionals who didn't act early find themselves competing for the leftovers-the estates that the early adopters didn't pursue.
 
 This isn't theory. This is what we observe happening across the country right now.
 
@@ -34666,7 +34666,7 @@ But they don't always know they need you. Or they know they need help, but they 
 
 The firms that grow fastest are the ones that find those businesses first, reach out with genuine insight, and build relationships before a formal procurement process begins.
 
-That's what 9amLeads helps you do. We identify businesses in your area or sector that are showing signs of needing your servicesï¿½new incorporations, funding rounds, leadership changes, expansion plans, regulatory triggersï¿½and deliver those opportunities to your inbox every morning at 9am.
+That's what 9amLeads helps you do. We identify businesses in your area or sector that are showing signs of needing your services-new incorporations, funding rounds, leadership changes, expansion plans, regulatory triggers-and deliver those opportunities to your inbox every morning at 9am.
 
 You're not cold calling. You're reaching out at the exact moment a business is most likely to need what you offer.
 
@@ -34675,7 +34675,7 @@ If you'd like to see what opportunities exist in your market right now, I'd be h
 Best,
 Ketz Mandalia | Founder, 9amLeads`, cta: 'Reply to see live opportunities in your sector' },
 
-    { id: '9AM-NBZ-WK1-E2', week: 1, emailNum: 2, subject: 'The ï¿½50,000 account you didn\x27t pitch for', subjectB: 'The lifetime value of one new business client you never knew existed', preview: 'Calculating what missed new business opportunities cost your firm', body: `Hi {{NAME}},
+    { id: '9AM-NBZ-WK1-E2', week: 1, emailNum: 2, subject: 'The £50,000 account you didn\x27t pitch for', subjectB: 'The lifetime value of one new business client you never knew existed', preview: 'Calculating what missed new business opportunities cost your firm', body: `Hi {{NAME}},
 
 Let me ask you something. How many businesses in your area or sector started looking for your service last month?
 
@@ -34683,13 +34683,13 @@ If you're relying on referrals, recommendations, and incoming enquiries, you're 
 
 Here's what we've learned from working with professional service firms: the lifetime value of a new business client varies by sector, but it's almost always substantial.
 
-For an accountant, a new SME client is worth ï¿½2,000-10,000 per year in recurring fees. If they stay for 5 years, that's ï¿½10,000-50,000 in lifetime value.
+For an accountant, a new SME client is worth £2,000-10,000 per year in recurring fees. If they stay for 5 years, that's £10,000-50,000 in lifetime value.
 
-For a marketing agency, a retainer client is worth ï¿½3,000-15,000 per month. A single client retained for two years is worth ï¿½72,000-360,000.
+For a marketing agency, a retainer client is worth £3,000-15,000 per month. A single client retained for two years is worth £72,000-360,000.
 
-For an insurance broker, a commercial client generates ï¿½1,000-5,000 in commission annually. Over a decade, that's ï¿½10,000-50,000.
+For an insurance broker, a commercial client generates £1,000-5,000 in commission annually. Over a decade, that's £10,000-50,000.
 
-For a recruitment agency, a single placed candidate generates ï¿½5,000-25,000 in fees. One client with multiple hires can be worth ï¿½50,000+ per year.
+For a recruitment agency, a single placed candidate generates £5,000-25,000 in fees. One client with multiple hires can be worth £50,000+ per year.
 
 The common thread? You only need to win a handful of new clients per year from our system to generate a transformational return. Every client after that is pure growth.
 
@@ -34708,19 +34708,19 @@ Businesses don't wake up one day and decide to hire an accountant or a marketing
 
 Here are the signals we track:
 
-A company incorporates a new subsidiaryï¿½they'll need accounting, insurance, and probably IT support within weeks.
+A company incorporates a new subsidiary-they'll need accounting, insurance, and probably IT support within weeks.
 
-A business raises funding or takes on investmentï¿½they'll need financial structuring, marketing support, and recruitment almost immediately.
+A business raises funding or takes on investment-they'll need financial structuring, marketing support, and recruitment almost immediately.
 
-A key executive is hired or leavesï¿½this often triggers a review of existing service providers.
+A key executive is hired or leaves-this often triggers a review of existing service providers.
 
-A company expands into new premises or locationsï¿½they need new insurance, IT setup, and potentially recruitment.
+A company expands into new premises or locations-they need new insurance, IT setup, and potentially recruitment.
 
 Regulatory changes in their industry create compliance needs.
 
 Each of these signals creates a window of opportunity. And each window closes quickly once the business has chosen their provider.
 
-The firms that win the most new business are the ones that see these signals early and reach out with relevant insightï¿½not a sales pitch, but genuine understanding of what the business is going through.
+The firms that win the most new business are the ones that see these signals early and reach out with relevant insight-not a sales pitch, but genuine understanding of what the business is going through.
 
 9amLeads monitors these signals across thousands of businesses, aggregates them, and delivers actionable opportunities to your inbox daily. You see who needs you before they know they need you.
 
@@ -34733,24 +34733,24 @@ Ketz Mandalia | Founder, 9amLeads`, cta: 'Reply to see your market\x27s buying s
 
 Let me show you the return on investment from the perspective of different professional services.
 
-Accountant: A new SME client generates ï¿½3,000-8,000 in annual fees. Average retention is 5+ years. Lifetime value: ï¿½15,000-40,000. One client acquired through our system covers your subscription for many years.
+Accountant: A new SME client generates £3,000-8,000 in annual fees. Average retention is 5+ years. Lifetime value: £15,000-40,000. One client acquired through our system covers your subscription for many years.
 
-Marketing agency: A new retainer client at ï¿½5,000 per month. Minimum 12-month engagement. Lifetime value: ï¿½60,000+. One client is transformational.
+Marketing agency: A new retainer client at £5,000 per month. Minimum 12-month engagement. Lifetime value: £60,000+. One client is transformational.
 
-Insurance broker: A commercial client with ï¿½2,500 annual commission. Retention averages 7+ years. Lifetime value: ï¿½17,500. Not bad for responding to one email.
+Insurance broker: A commercial client with £2,500 annual commission. Retention averages 7+ years. Lifetime value: £17,500. Not bad for responding to one email.
 
-IT consultancy: A new client engagement at ï¿½10,000-50,000. Plus ongoing support and project work. One project can fund years of lead generation.
+IT consultancy: A new client engagement at £10,000-50,000. Plus ongoing support and project work. One project can fund years of lead generation.
 
-Recruiter: A single placement at ï¿½15,000 fee. One placement covers years of subscription. Multiple placements from the same client are pure profit.
+Recruiter: A single placement at £15,000 fee. One placement covers years of subscription. Multiple placements from the same client are pure profit.
 
 Here's what our customers are actually seeing:
 
-ï¿½ 3-10 qualified opportunities per week (varies by sector and geography)
-ï¿½ Response time advantage: significantly higher conversion when first to engage
-ï¿½ Average deal values ranging from ï¿½5,000-ï¿½50,000+
-ï¿½ Pipeline visibility that enables better business planning
+- 3-10 qualified opportunities per week (varies by sector and geography)
+- Response time advantage: significantly higher conversion when first to engage
+- Average deal values ranging from £5,000-£50,000+
+- Pipeline visibility that enables better business planning
 
-One accounting firm partner told us: "I was sceptical. But the first week I used it, I identified a company that had just raised ï¿½2m in funding and needed a new accountant. I was speaking to the FD within hours of the signal appearing. We won the account."
+One accounting firm partner told us: "I was sceptical. But the first week I used it, I identified a company that had just raised £2m in funding and needed a new accountant. I was speaking to the FD within hours of the signal appearing. We won the account."
 
 The ROI maths is simple. One win covers everything. Everything after that compounds.
 
@@ -34767,15 +34767,15 @@ A recruitment agency specialising in technology roles had a solid reputation but
 
 Their director told me: "Our problem isn't placing candidates. It's getting clients who trust us enough to give us their vacancies."
 
-After joining 9amLeads, they started receiving daily notifications about businesses showing signs of hiring activityï¿½companies that had received funding, expanded leadership teams, or posted related roles internally.
+After joining 9amLeads, they started receiving daily notifications about businesses showing signs of hiring activity-companies that had received funding, expanded leadership teams, or posted related roles internally.
 
 They reached out to these businesses with market insights about talent availability, salary benchmarks, and hiring timelines. No hard sell. Just genuine expertise.
 
-In the first 60 days, they identified 14 businesses with active or imminent hiring needs. They secured mandates with 8. Total fee value: approximately ï¿½95,000.
+In the first 60 days, they identified 14 businesses with active or imminent hiring needs. They secured mandates with 8. Total fee value: approximately £95,000.
 
 The director said: "The biggest change isn't just the revenue. It's that I know every morning exactly which businesses I should be talking to. I'm not guessing anymore."
 
-A marketing agency using our platform had a similar experience. They identified a company that had just completed a Series A funding round, reached out with a strategic marketing assessment, and secured a ï¿½12,000 per month retainer within two weeks.
+A marketing agency using our platform had a similar experience. They identified a company that had just completed a Series A funding round, reached out with a strategic marketing assessment, and secured a £12,000 per month retainer within two weeks.
 
 The common thread: they saw the opportunity before their competitors, reached out with value, and built relationships before any formal pitch process.
 
@@ -34796,7 +34796,7 @@ First, complacency is the biggest risk to any professional services firm. Market
 
 Second, the best time to build a pipeline is when you don't need it. When you're busy, you can be selective. You can choose the best clients. You can negotiate better terms. You can turn down work that isn't profitable.
 
-When you're quiet and desperate, you'll take anythingï¿½and that rarely ends well.
+When you're quiet and desperate, you'll take anything-and that rarely ends well.
 
 Third, a daily intelligence feed of opportunities gives you market awareness that you simply don't get from your existing client base. You see what's happening in your sector, who's growing, who's changing, and where the market is heading.
 
@@ -34825,7 +34825,7 @@ The firms that wait until they're quiet to start looking for new business are al
 
 The firms that prospect consistently are always in control. They choose their clients. They protect their margins. They grow predictably.
 
-Here's what consistent opportunity intelligence looks like in practice: every morning at 9am, you receive a brief of the most relevant opportunities in your market. Some are immediateï¿½businesses actively looking right now. Others are emergingï¿½signals that a need will develop in the coming weeks.
+Here's what consistent opportunity intelligence looks like in practice: every morning at 9am, you receive a brief of the most relevant opportunities in your market. Some are immediate-businesses actively looking right now. Others are emerging-signals that a need will develop in the coming weeks.
 
 You spend 15 minutes reviewing, prioritising, and taking action. Over a month, that's five hours of focused business development that builds a visible, predictable pipeline.
 
@@ -35057,7 +35057,7 @@ I want to talk about a market that's worth hundreds of billions of pounds in the
 
 The public and private sector tender market.
 
-Every day, thousands of contracts are advertised and awarded across cleaning, security, construction, facilities management, catering, maintenance, training, and IT. These aren't small projectsï¿½they're transformative contracts worth tens of thousands to millions of pounds.
+Every day, thousands of contracts are advertised and awarded across cleaning, security, construction, facilities management, catering, maintenance, training, and IT. These aren't small projects-they're transformative contracts worth tens of thousands to millions of pounds.
 
 The problem is that most businesses don't know these opportunities exist until it's too late.
 
@@ -35072,21 +35072,21 @@ If you'd like to see what tender opportunities are currently available in your s
 Best,
 Ketz Mandalia | Founder, 9amLeads`, cta: 'Reply to see current tender opportunities in your sector' },
 
-    { id: '9AM-TEN-WK1-E2', week: 1, emailNum: 2, subject: 'The ï¿½500,000 contract you didn\x27t bid for', subjectB: 'What one missed tender really costs your business', preview: 'The transformative value of winning a single contract in your sector', body: `Hi {{NAME}},
+    { id: '9AM-TEN-WK1-E2', week: 1, emailNum: 2, subject: 'The £500,000 contract you didn\x27t bid for', subjectB: 'What one missed tender really costs your business', preview: 'The transformative value of winning a single contract in your sector', body: `Hi {{NAME}},
 
 Let me put a number on what you might be missing.
 
 In the tenders and contracts space, a single win can transform your business.
 
-For a cleaning company, a school or hospital contract is worth ï¿½50,000-500,000 per year, often with 3-5 year terms.
+For a cleaning company, a school or hospital contract is worth £50,000-500,000 per year, often with 3-5 year terms.
 
-For a security firm, a public sector guarding contract averages ï¿½100,000-1,000,000 annually.
+For a security firm, a public sector guarding contract averages £100,000-1,000,000 annually.
 
-For a construction company, a framework placement can deliver ï¿½500,000-5,000,000 in work over its lifetime.
+For a construction company, a framework placement can deliver £500,000-5,000,000 in work over its lifetime.
 
-For a facilities management provider, a single large site contract can generate ï¿½200,000-2,000,000 per year.
+For a facilities management provider, a single large site contract can generate £200,000-2,000,000 per year.
 
-For a catering company, an education or healthcare contract is worth ï¿½100,000-1,000,000 annually.
+For a catering company, an education or healthcare contract is worth £100,000-1,000,000 annually.
 
 For a training provider, a framework agreement can deliver consistent revenue for years.
 
@@ -35111,13 +35111,13 @@ Most businesses think tendering starts when the ITT (Invitation to Tender) is pu
 
 Here's the actual procurement timeline:
 
-Phase oneï¿½Market engagement: 3-6 months before the ITT. Procurement teams research the market, identify potential suppliers, and attend industry events. This is when relationships are formed.
+Phase one-Market engagement: 3-6 months before the ITT. Procurement teams research the market, identify potential suppliers, and attend industry events. This is when relationships are formed.
 
-Phase twoï¿½Pre-qualification: 2-4 months before the ITT. Suppliers are invited to express interest and complete SQ (Selection Questionnaire) documents. This filters the field.
+Phase two-Pre-qualification: 2-4 months before the ITT. Suppliers are invited to express interest and complete SQ (Selection Questionnaire) documents. This filters the field.
 
-Phase threeï¿½ITT publication: The formal tender is published. You typically have 3-6 weeks to respond. If you haven't been involved in phases one and two, you're at a massive disadvantage.
+Phase three-ITT publication: The formal tender is published. You typically have 3-6 weeks to respond. If you haven't been involved in phases one and two, you're at a massive disadvantage.
 
-Phase fourï¿½Evaluation: Scoring typically weights 60-70% on quality and 30-40% on price. The highest-scoring bidder wins.
+Phase four-Evaluation: Scoring typically weights 60-70% on quality and 30-40% on price. The highest-scoring bidder wins.
 
 The winning suppliers are the ones who engage in phases one and two. They know the contract is coming before it's published. They've shaped their services to match the buyer's needs. They've built relationships with the procurement team.
 
@@ -35144,18 +35144,18 @@ For an IT services provider, a spot on a G-Cloud framework makes selling to gove
 
 Here's the ROI maths:
 
-A single framework placement costs time and effort to secureï¿½typically 40-80 hours of bid writing. But the lifetime value can run into millions.
+A single framework placement costs time and effort to secure-typically 40-80 hours of bid writing. But the lifetime value can run into millions.
 
 Even outside frameworks, a single contract win in most sectors covers your bid costs many times over.
 
-A cleaning company winning one ï¿½200,000 school contract covers years of subscription to a tender intelligence service. A security firm winning one ï¿½500,000 guarding contract covers a decade or more.
+A cleaning company winning one £200,000 school contract covers years of subscription to a tender intelligence service. A security firm winning one £500,000 guarding contract covers a decade or more.
 
 Our customers in the tenders space report:
 
-ï¿½ 5-15 relevant tender opportunities identified per week
-ï¿½ Win rates of 20-40% on opportunities they pursue
-ï¿½ Average contract values ranging from ï¿½50,000 to ï¿½2,000,000+
-ï¿½ Framework placement rates significantly improved with early intelligence
+- 5-15 relevant tender opportunities identified per week
+- Win rates of 20-40% on opportunities they pursue
+- Average contract values ranging from £50,000 to £2,000,000+
+- Framework placement rates significantly improved with early intelligence
 
 The ROI isn't marginal. It's transformational. One win changes everything.
 
@@ -35164,23 +35164,23 @@ Reply and I'll calculate what the tender opportunity looks like for your specifi
 Best,
 Ketz Mandalia | Founder, 9amLeads`, cta: 'Reply for a tender opportunity assessment' },
 
-    { id: '9AM-TEN-WK1-E5', week: 1, emailNum: 5, subject: 'How a North West cleaning company won ï¿½1.2m in contracts in 6 months', subjectB: 'Case study: From ad hoc tendering to a systematic contract pipeline', preview: 'Real results from a business that transformed their approach to tenders', body: `Hi {{NAME}},
+    { id: '9AM-TEN-WK1-E5', week: 1, emailNum: 5, subject: 'How a North West cleaning company won £1.2m in contracts in 6 months', subjectB: 'Case study: From ad hoc tendering to a systematic contract pipeline', preview: 'Real results from a business that transformed their approach to tenders', body: `Hi {{NAME}},
 
 Let me share a story that illustrates the power of systematic tender intelligence.
 
-A cleaning company in the North Westï¿½family-run, 50 employeesï¿½had historically won contracts through local relationships. They'd occasionally bid on public sector tenders, but without a consistent approach.
+A cleaning company in the North West-family-run, 50 employees-had historically won contracts through local relationships. They'd occasionally bid on public sector tenders, but without a consistent approach.
 
 Their director told me: "We knew there were contracts out there, but we never seemed to hear about them in time. By the time we found them, other bidders had a head start."
 
-After joining 9amLeads, they started receiving daily notifications of cleaning tenders matched to their capabilities and location. In the first week, they identified a school cleaning contract worth ï¿½180,000 per year that they would have completely missed.
+After joining 9amLeads, they started receiving daily notifications of cleaning tenders matched to their capabilities and location. In the first week, they identified a school cleaning contract worth £180,000 per year that they would have completely missed.
 
 They bid and won.
 
-Over the next six months, they identified and bid on 22 relevant tender opportunities. They won 7 contracts with a combined annual value of approximately ï¿½1.2 million. Their bid team grew from one person to four.
+Over the next six months, they identified and bid on 22 relevant tender opportunities. They won 7 contracts with a combined annual value of approximately £1.2 million. Their bid team grew from one person to four.
 
 The director said: "The single biggest change is that we now know what's coming. We can prepare, we can resource, we can build relationships with procurement teams before the tender drops. We're not scrambling anymore. We're planning."
 
-A security company in the Midlands had a similar experience. They secured a place on a police force guarding framework worth an estimated ï¿½3 million over four yearsï¿½a contract they found through our platform in the pre-market engagement phase.
+A security company in the Midlands had a similar experience. They secured a place on a police force guarding framework worth an estimated £3 million over four years-a contract they found through our platform in the pre-market engagement phase.
 
 If you'd like to see case studies specific to your sector, just reply.
 
@@ -35199,7 +35199,7 @@ If you're too busy to bid for new contracts, it might mean you're working on the
 
 The most successful tender-driven businesses we work with are selective. They use intelligence to identify the contracts that offer the best strategic fit, the highest margins, and the longest terms. They turn down the rest.
 
-The 9amLeads platform doesn't force you to bid on everything. It gives you the intelligence to choose which opportunities are worth pursuing. You might see 15 opportunities per week but only bid on 2. That's fineï¿½if those 2 are the right ones.
+The 9amLeads platform doesn't force you to bid on everything. It gives you the intelligence to choose which opportunities are worth pursuing. You might see 15 opportunities per week but only bid on 2. That's fine-if those 2 are the right ones.
 
 Some of our most successful customers bid on fewer than 10% of the opportunities we surface. But the ones they pursue, they win at high rates because they're selective and focused.
 
