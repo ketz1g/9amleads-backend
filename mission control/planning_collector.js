@@ -53,7 +53,7 @@ function categoriseTrade(proposal, description) {
 }
 
 // Main: collect fresh planning applications from the active provider
-async function collectFreshPlanning(freshnessHours = 48) {
+async function collectFreshPlanning(freshnessHours, areasHint) {
   var seen = loadSeenApps();
   var result = { leads: [], status: 'no_provider', message: 'No planning provider configured' };
 
@@ -63,7 +63,7 @@ async function collectFreshPlanning(freshnessHours = 48) {
     var provider = planningProvider.get(providerNames[pi]);
     if (!provider || !provider.collectFresh) continue;
     try {
-      var r = await provider.collectFresh(freshnessHours);
+      var r = await provider.collectFresh({ freshnessHours: freshnessHours || 48, counties: areasHint, areas: areasHint });
       if (r && r.leads && r.leads.length > 0) {
         // Dedup by reference + council
         var deduped = [];

@@ -29260,7 +29260,18 @@ function syncCustomers(product) {
           leads = [];
           try {
             var planningCollector = require('./planning_collector');
-            leads = await planningCollector.collectFreshPlanning(48);
+            // Collect ONLY for the active planning customers' chosen counties/areas.
+            // Plota is a paid API and only accepts real postcode districts (single
+            // letters like "E"/"L" get HTTP 400), so scope the sweep to the areas
+            // we actually serve instead of trying every district nationwide.
+            var planCusts = (getDb().customers || []).filter(function(pc) {
+              return pc.product === 'planning' && pc.plan && pc.plan !== 'cancelled' && !isLeadsPaused(pc) && !(String(pc.plan) === 'free_trial' && pc.trial_ends && new Date(pc.trial_ends) < new Date());
+            });
+            var planHint = [];
+            planCusts.forEach(function(pc) {
+              try { var _areas = JSON.parse(pc.target_areas || '[]'); (Array.isArray(_areas) ? _areas : []).forEach(function(a){ planHint.push(a); }); } catch(e) {}
+            });
+            leads = await planningCollector.collectFreshPlanning(48, planHint.length ? planHint : undefined);
             if (!leads || leads.length === 0) {  console.log('[SCRAPER] Planning collector returned 0 applications'); }
             console.log('[SCRAPER] Planning collector returned ' + (leads ? leads.length : 0) + ' applications');
           } catch(e) { console.log('[SCRAPER] Planning error: ' + (e && e.message || '')); leads = []; }
