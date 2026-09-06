@@ -45,3 +45,25 @@
   .hero h1 { word-wrap: break-word; }
   form input, form select, form textarea { max-width: 100%; }
 }
+
+/* Email-style preview pages (fixed 600px tables) — scale down so they
+   fit phones instead of overflowing. Applies only when the document
+   looks like an email (a full-width wrapper table with max-width:600px). */
+@media (max-width: 640px) {
+  body > table {
+    display: block !important;
+    width: 100% !important;
+    overflow-x: hidden !important;
+  }
+  body > table table[width="600"],
+  body > table table[style*="max-width:600px"],
+  table[width="600"] {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  body > table td[style*="padding:32px"],
+  body > table table[width="600"] td {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+}
