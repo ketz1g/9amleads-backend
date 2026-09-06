@@ -71,6 +71,19 @@ h1 span{color:#0ea5e9}
 <div style="font-size:14px;font-weight:700;margin-bottom:10px"><i class="fas fa-list" style="color:#0ea5e9;margin-right:6px"></i> Published Posts</div>
 <div id="blogList"></div>
 </div>
+
+<div class="card">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+<div style="font-size:14px;font-weight:700"><i class="fab fa-google" style="color:#22c55e;margin-right:6px"></i> Google Search Console <span style="font-size:10px;color:#5c6480;font-weight:500">(real Google search performance)</span></div>
+<div style="display:flex;gap:8px">
+<button class="btn btn-primary btn-sm" onclick="gscConnect()" id="gscConnectBtn"><i class="fas fa-plug"></i> Connect</button>
+<button class="btn btn-outline btn-sm" onclick="gscRefresh()" id="gscRefreshBtn" style="display:none"><i class="fas fa-sync"></i> Refresh</button>
+</div>
+</div>
+<div id="gscStatus" style="font-size:12px;color:#8890a8;margin-bottom:10px">Checking...</div>
+<div id="gscStats" class="stat-grid"></div>
+<div id="gscTables" style="margin-top:14px"></div>
+</div>
 </div>
 
 <script>
@@ -175,8 +188,104 @@ async function loadSeoData() {
         '<div style="color:#a16207;margin-top:3px">' + d.backlinks.suggestion + '</div></div>';
     }
     loadBlogPosts();
+    if (d.gsc) renderGsc(d.gsc);
   } catch(e) {}
 }
+
+// ---- Google Search Console UI ----
+function gscStatusHtml(st) {
+  if (!st.configured) {
+    return '<div class="status-banner" style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.2);color:#fcd34d">' +
+      '<b>Not configured.</b> Create an OAuth client in Google Cloud and set the GSC_CLIENT_ID + GSC_CLIENT_SECRET env vars, then press Connect.</div>';
+  }
+  if (!st.connected) {
+    return '<div class="status-banner" style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.2);color:#fcd34d">' +
+      'Configured but <b>not connected</b>. Press Connect, sign in with the Google account that owns the verified 9amleads.com Search Console property, and approve access.</div>';
+  }
+  return '<div class="status-banner" style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.15);color:#86efac">' +
+    '<b>Connected</b> &middot; property: <span style="color:#22c55e">' + esc(st.property || '') + '</span>' +
+    (st.last_sync ? ' &middot; last sync: ' + new Date(st.last_sync).toLocaleString() : '') + '</div>';
+}
+
+function renderGsc(st) {
+  var stEl = document.getElementById('gscStatus');
+  var connBtn = document.getElementById('gscConnectBtn');
+  var refBtn = document.getElementById('gscRefreshBtn');
+  if (!stEl) return;
+  stEl.innerHTML = gscStatusHtml(st);
+  if (st.configured && !st.connected) {
+    if (connBtn) { connBtn.style.display = ''; connBtn.innerHTML = '<i class="fas fa-plug"></i> Connect with Google'; }
+  } else if (st.connected) {
+    if (connBtn) { connBtn.style.display = 'none'; }
+    if (refBtn) { refBtn.style.display = ''; }
+    loadGscData();
+  } else {
+    if (connBtn) connBtn.style.display = '';
+    if (refBtn) refBtn.style.display = 'none';
+  }
+}
+
+async function loadGscData() {
+  try {
+    var stEl = document.getElementById('gscStats');
+    if (stEl) stEl.innerHTML = '<div class="empty" style="grid-column:1/-1">Loading Google data...</div>';
+    var r = await fetch(API + '/api/admin/gsc/data?days=28&t=' + Date.now(), { headers: adminHeaders() });
+    if (!r.ok) {
+      var e = await r.json().catch(function(){ return {}; });
+      if (stEl) stEl.innerHTML = '<div class="empty" style="grid-column:1/-1;color:#ef4444">' + esc((e && e.error) || ('GSC error ' + r.status)) + '</div>';
+      return;
+    }
+    var d = await r.json();
+    var dt = (d.data || {}).totals || {};
+    var html = '';
+    html += '<div class="stat-card"><div class="num">' + (dt.clicks || 0).toLocaleString() + '</div><div class="label">Clicks (28d)</div></div>';
+    html += '<div class="stat-card"><div class="num">' + (dt.impressions || 0).toLocaleString() + '</div><div class="label">Impressions (28d)</div></div>';
+    html += '<div class="stat-card"><div class="num">' + (dt.ctr || 0) + '%</div><div class="label">CTR</div></div>';
+    html += '<div class="stat-card"><div class="num">' + (dt.position || 0) + '</div><div class="label">Avg Position</div></div>';
+    var dayFirst = ((d.data || {}).daily || []).slice(0, 7).reverse().map(function(x) { return '<span style="white-space:nowrap">' + (x.date || '').slice(5) + ': ' + x.clicks + ' clk / ' + x.impressions + ' imp</span>'; }).join(' ');
+    html += '<div style="grid-column:1/-1;font-size:11px;color:#5c6480;display:flex;gap:8px;flex-wrap:wrap;padding:4px 0">' + (dayFirst || '') + '</div>';
+    if (stEl) stEl.innerHTML = html;
+    var tEl = document.getElementById('gscTables');
+    if (!tEl) return;
+    var th = '';
+    if ((d.data || {}).topQueries && (d.data).topQueries.length) {
+      th += '<div style="font-size:12px;font-weight:700;margin:8px 0 4px;color:#cbd5e1">Top Queries</div><table style="width:100%;font-size:11px;border-collapse:collapse"><tr style="color:#64748b;text-align:left"><th style="padding:4px 6px">Query</th><th>Clicks</th><th>Impr</th><th>CTR</th><th>Pos</th></tr>';
+      (d.data.topQueries).slice(0, 10).forEach(function(q) {
+        th += '<tr style="border-top:1px solid #1a1a1a"><td style="padding:4px 6px;color:#cbd5e1">' + esc(q.query) + '</td><td>' + q.clicks + '</td><td>' + q.impressions + '</td><td>' + q.ctr + '%</td><td>' + q.position + '</td></tr>';
+      });
+      th += '</table>';
+    }
+    if ((d.data || {}).topPages && (d.data).topPages.length) {
+      th += '<div style="font-size:12px;font-weight:700;margin:12px 0 4px;color:#cbd5e1">Top Pages</div><table style="width:100%;font-size:11px;border-collapse:collapse"><tr style="color:#64748b;text-align:left"><th style="padding:4px 6px">Page</th><th>Clicks</th><th>Impr</th><th>CTR</th><th>Pos</th></tr>';
+      (d.data.topPages).slice(0, 10).forEach(function(p) {
+        th += '<tr style="border-top:1px solid #1a1a1a"><td style="padding:4px 6px;color:#cbd5e1">' + esc(p.page) + '</td><td>' + p.clicks + '</td><td>' + p.impressions + '</td><td>' + p.ctr + '%</td><td>' + p.position + '</td></tr>';
+      });
+      th += '</table>';
+    }
+    tEl.innerHTML = th || '<div style="color:#64748b;font-size:12px;padding:8px 0">No Google search data in the last 28 days yet — new posts take time to be indexed and ranked.</div>';
+  } catch(e) {
+    var stEl2 = document.getElementById('gscStats');
+    if (stEl2) stEl2.innerHTML = '<div class="empty" style="grid-column:1/-1;color:#ef4444">Failed to load GSC data: ' + esc(e.message) + '</div>';
+  }
+}
+
+async function gscConnect() {
+  try {
+    var r = await fetch(API + '/api/admin/gsc/connect', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({}) });
+    var d = await r.json();
+    if (d.error) { alert('GSC: ' + d.error); return; }
+    if (d.auth_url) {
+      // Open Google consent in this tab so the callback can redirect back here.
+      window.location.href = d.auth_url;
+    }
+  } catch(e) { alert('GSC connect failed: ' + e.message); }
+}
+
+async function gscRefresh() {
+  loadGscData();
+}
+
+function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 async function loadBlogPosts() {
   try {
@@ -232,6 +341,30 @@ async function deleteBlogPost(slug) {
     loadSeoData();
   } catch(e) { alert('Error: ' + e.message); }
 }
+
+// If the OAuth callback redirected back here (?gsc=connected / ?gsc=error), refresh
+// once GSC state is available (panel login already done via stored session).
+(function() {
+  try {
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('gsc')) {
+      var msg = params.get('gsc') === 'connected' ? 'Google Search Console connected.' : 'GSC connection failed. Check server logs.';
+      // Wait for the page to authenticate + load, then refresh data and surface status.
+      setTimeout(function() {
+        loadSeoData();
+        var sc = document.createElement('div');
+        sc.textContent = msg;
+        sc.style.cssText = 'position:fixed;bottom:16px;right:16px;background:#16a34a;color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,.3)';
+        if (params.get('gsc') === 'error') sc.style.background = '#dc2626';
+        document.body.appendChild(sc);
+        setTimeout(function(){ sc.remove(); }, 5000);
+        var gscCard = document.querySelector('.card');
+        if (gscCard) gscCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 1200);
+    }
+  } catch(e) {}
+})();
+
 </script>
 </body>
 </html>

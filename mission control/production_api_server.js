@@ -28608,8 +28608,159 @@ app.get('/api/admin/seo/report', adminAuth, function(req, res) {
         internal_links: published.filter(function(p) { return p.html && p.html.indexOf('9amleads.com/') > -1; }).length + ' of ' + published.length + ' posts link internally',
         suggestion: 'To build external backlinks: submit 9amleads.com to Google Business Profile, Yell, Bing Places, Crunchbase, LinkedIn Company page, and relevant industry directories. Guest posts and digital PR (HARO/Featured) build authority fastest.',
         external_needs_manual: true
-      }
+      },
+      gsc: (function() {
+        try {
+          var gm = require('./gsc_integration');
+          var gcfg = gm.loadConfig();
+          return {
+            configured: gm.isConfigured(gm.getCredentials()),
+            connected: gm.isConnected(),
+            property: gcfg.property || '',
+            last_sync: gcfg.last_sync || null,
+            note: 'Connect Google Search Console to see real Google impressions/clicks/position.'
+          };
+        } catch(e) { return { configured: false, connected: false, error: e.message }; }
+      })()
     });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== GOOGLE SEARCH CONSOLE (GSC) — real Google search performance =====
+// Unlike the self-hosted conversion analytics (/api/admin/analytics) this shows
+// actual Google impressions/clicks/position for the verified 9amleads.com property.
+var gscMod = null;
+function getGsc() { if (!gscMod) gscMod = require('./gsc_integration'); return gscMod; }
+
+// GET /api/admin/gsc/status — is GSC configured/connected, which property, last sync.
+app.get('/api/admin/gsc/status', adminAuth, function(req, res) {
+  try {
+    var g = getGsc();
+    var cfg = g.loadConfig();
+    var creds = g.getCredentials();
+    res.json({
+      configured: g.isConfigured(creds),
+      connected: g.isConnected(),
+      client_id_set: !!(creds.client_id),
+      redirect_uri: g.REDIRECT_URI,
+      property: cfg.property || '',
+      connected_email: cfg.connected_email || '',
+      last_sync: cfg.last_sync || null,
+      auth_url: (!g.isConnected() && g.isConfigured(creds)) ? buildGscAuthUrl(g, creds) : null,
+      note: 'Shows real Google search performance (impressions/clicks/position). Connect to see data.'
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Build the Google OAuth consent URL (state stored in config for callback validation).
+function buildGscAuthUrl(g, creds) {
+  var cfg = g.loadConfig();
+  var state = 'gsc_' + Date.now() + '_' + require('crypto').randomBytes(8).toString('hex');
+  g.updateConfig({ oauth_state: state, oauth_state_at: new Date().toISOString() });
+  var params = require('querystring').stringify({
+    client_id: creds.client_id,
+    redirect_uri: creds.redirect_uri,
+    response_type: 'code',
+    scope: g.SCOPE,
+    access_type: 'offline',
+    prompt: 'consent',
+    state: state,
+    include_granted_scopes: 'true'
+  });
+  return 'https://accounts.google.com/o/oauth2/v2/auth?' + params;
+}
+
+// POST /api/admin/gsc/connect — returns the consent URL for the admin to open.
+// Optional body: { client_id, client_secret } to save OAuth app credentials first
+// (otherwise read from GSC_CLIENT_ID / GSC_CLIENT_SECRET env vars).
+app.post('/api/admin/gsc/connect', adminAuth, async function(req, res) {
+  try {
+    var g = getGsc();
+    var overrides = {};
+    if (req.body && req.body.client_id) overrides.client_id = String(req.body.client_id).trim();
+    if (req.body && req.body.client_secret) overrides.client_secret = String(req.body.client_secret).trim();
+    var creds = g.getCredentials(overrides);
+    if (!g.isConfigured(creds)) {
+      return res.status(400).json({ error: 'Google OAuth client not configured. Set GSC_CLIENT_ID + GSC_CLIENT_SECRET env vars (or pass client_id/client_secret in this request).' });
+    }
+    // Persist credentials so reconnects work without re-entering them.
+    g.updateConfig({ client_id: creds.client_id, client_secret: creds.client_secret, redirect_uri: creds.redirect_uri });
+    var url = buildGscAuthUrl(g, creds);
+    res.json({ success: true, auth_url: url, redirect_uri: creds.redirect_uri });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/gsc/callback — Google redirects the admin's browser here with ?code.
+// Public (no adminAuth): Google cannot send our Bearer header. Validates state,
+// exchanges the code, stores tokens, auto-picks the property, redirects to the panel.
+app.get('/api/admin/gsc/callback', async function(req, res) {
+  try {
+    var g = getGsc();
+    var code = String(req.query.code || '');
+    var state = String(req.query.state || '');
+    var cfg = g.loadConfig();
+    if (!code) return res.status(400).send('Missing OAuth code.');
+    if (state && cfg.oauth_state && state !== cfg.oauth_state) return res.status(400).send('Invalid OAuth state (CSRF guard). Close this tab and retry Connect.');
+    var creds = g.getCredentials();
+    if (!g.isConfigured(creds)) return res.status(400).send('Google OAuth client not configured on the server.');
+    var x = await g.exchangeCode(code, creds.redirect_uri, creds);
+    var j = x.body && typeof x.body === 'string' ? JSON.parse(x.body) : x.body;
+    if (x.status !== 200 || !j.access_token) {
+      console.log('[GSC] code exchange failed:', x.status, JSON.stringify(j).slice(0, 300));
+      return res.redirect(g.PUBLIC_BASE + '/portal/seo.html?gsc=error');
+    }
+    // Store tokens + try to discover which property the account can read.
+    var patch = { access_token: j.access_token, expires_at: String(Date.now() + (parseInt(j.expires_in, 10) || 3600) * 1000), oauth_state: '' };
+    if (j.refresh_token) patch.refresh_token = j.refresh_token;
+    g.updateConfig(patch);
+    // If we don't have a property yet, list sites and auto-pick.
+    if (!cfg.property) {
+      try {
+        var sites = await g.listSites();
+        var prop = g.pickProperty(sites.json && sites.json.siteEntry, null);
+        if (prop) g.updateConfig({ property: prop });
+      } catch(pe) { console.log('[GSC] property discovery failed:', pe.message); }
+    }
+    g.updateConfig({ last_sync: null, connected_email: (j.email || '').toLowerCase() || cfg.connected_email || '' });
+    console.log('[GSC] Connected. Tokens stored.');
+    res.redirect(g.PUBLIC_BASE + '/portal/seo.html?gsc=connected');
+  } catch(e) { console.log('[GSC] callback error:', e.message); res.status(500).send('GSC callback error: ' + e.message); }
+});
+
+// POST /api/admin/gsc/set-property — choose which GSC property to read (optional).
+app.post('/api/admin/gsc/set-property', adminAuth, async function(req, res) {
+  try {
+    var g = getGsc();
+    var prop = String((req.body && req.body.property) || '').trim();
+    if (!prop) return res.status(400).json({ error: 'property required' });
+    // Validate the account can actually read it.
+    var sites = await g.listSites();
+    var entries = (sites.json && sites.json.siteEntry) || [];
+    var ok = entries.some(function(s) { return s.siteUrl === prop; });
+    if (!ok) return res.status(400).json({ error: 'This Google account cannot read that property. Available: ' + entries.map(function(s){return s.siteUrl;}).join(', ') });
+    g.updateConfig({ property: prop });
+    res.json({ success: true, property: prop });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/gsc/data?days=30 — pull real search performance from Google.
+app.get('/api/admin/gsc/data', adminAuth, async function(req, res) {
+  try {
+    var g = getGsc();
+    if (!g.isConnected()) return res.status(400).json({ error: 'Not connected to Google Search Console.' });
+    var days = parseInt(req.query.days, 10) || 28;
+    var data = await g.fetchDashboard(days, req.query.property ? String(req.query.property) : null);
+    g.updateConfig({ last_sync: new Date().toISOString() });
+    res.json({ success: true, source: 'Google Search Console', data: data });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/gsc/disconnect — clear stored tokens.
+app.post('/api/admin/gsc/disconnect', adminAuth, function(req, res) {
+  try {
+    var g = getGsc();
+    g.updateConfig({ access_token: '', refresh_token: '', expires_at: '', property: '', connected_email: '', last_sync: null });
+    res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
