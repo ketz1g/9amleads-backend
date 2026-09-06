@@ -134,7 +134,14 @@ function fetchProbateRegistry() {
 // OGL v3 licence (personal data requires care, but these are public notices).
 function fetchGazetteHTML(maxItems, pageNum) {
   return new Promise((resolve) => {
-    const searchPath = '/all-notices/notice?notice-type=deceased-estates&results-page-size=' + (maxItems || 50) + '&sort-by=latest-date' + (pageNum && pageNum > 1 ? '&results-page=' + pageNum : '');
+    // Use the Wills & Probate section path, NOT /all-notices. As of Sept 2026 the
+    // Gazette moved the deceased-estates category under /wills-and-probate/notice —
+    // the old /all-notices/notice?notice-type=deceased-estates URL silently returns
+    // unrelated insolvency/bankruptcy notices ("Notice of Intended Dividends" etc)
+    // with no deceased address. The /wills-and-probate path returns genuine
+    // deceased-estates notices AND includes the "Address of Deceased" block inline
+    // on every article (verified live: 15/15 articles carried full addresses).
+    const searchPath = '/wills-and-probate/notice?notice-type=deceased-estates&results-page-size=' + (maxItems || 50) + '&sort-by=latest-date' + (pageNum && pageNum > 1 ? '&results-page=' + pageNum : '');
     const req = https.request({ hostname: 'www.thegazette.co.uk', path: searchPath, method: 'GET', headers: { 'Accept': 'text/html', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36', 'Accept-Language': 'en-GB,en;q=0.9' }, timeout: 30000 }, (res) => {
       let body = '';
       res.on('data', chunk => body += chunk);
