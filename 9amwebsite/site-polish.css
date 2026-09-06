@@ -1,0 +1,75 @@
+/* ==========================================================================
+   9amLeads — site-wide visual polish (additive, safe refinements only)
+   Loaded after each page's own stylesheet. Every rule is optional and
+   designed not to conflict with page-specific CSS.
+   ========================================================================== */
+
+/* 1. Consistent, accessible focus indicator (WCAG) ------------------------ */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible{
+  outline:2px solid #0ea5e9;
+  outline-offset:2px;
+  border-radius:4px;
+}
+
+/* 2. Brand selection colour ---------------------------------------------- */
+::selection{ background:rgba(14,165,233,.25); }
+
+/* 3. Native scrollbar: subtle, matches the dark shell used sitewide ------ */
+*{ scrollbar-width:thin; scrollbar-color:rgba(14,165,233,.5) transparent; }
+::-webkit-scrollbar{ width:10px; height:10px; }
+::-webkit-scrollbar-track{ background:transparent; }
+::-webkit-scrollbar-thumb{ background:rgba(14,165,233,.4); border-radius:8px; border:2px solid transparent; background-clip:content-box; }
+::-webkit-scrollbar-thumb:hover{ background:rgba(14,165,233,.65); border:2px solid transparent; background-clip:content-box; }
+
+/* 4. Buttons: subtle sheen + press feedback for the shared .btn-pill ------ */
+.btn-pill{
+  position:relative;
+  overflow:hidden;
+}
+.btn-pill::after{
+  content:'';
+  position:absolute;
+  top:0; left:-60%;
+  width:45%; height:100%;
+  background:linear-gradient(105deg,transparent,rgba(255,255,255,.28),transparent);
+  transform:skewX(-20deg);
+  transition:left .5s ease;
+  pointer-events:none;
+}
+.btn-pill:hover::after{ left:115%; }
+.btn-pill:active{ transform:translateY(0) scale(.985); }
+
+/* 5. Link CTAs: smooth colour/underline transitions ---------------------- */
+a{ transition:color .2s ease; }
+.btn-nav, .btn-mobile{ transition:transform .2s ease, box-shadow .2s ease, background .2s ease; }
+.btn-nav:hover{ transform:translateY(-1px); }
+
+/* 6. Card hovers: consistent, subtle elevation --------------------------- */
+.photo-card, .card, .value, .role{
+  transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+@media (hover:hover){
+  .photo-card:hover, .card:hover, .value:hover, .role:hover{
+    transform:translateY(-2px);
+  }
+}
+
+/* 7. Reduce motion for users who prefer it (professional/accessible) ----- */
+@media (prefers-reduced-motion:reduce){
+  *, *::before, *::after{
+    animation-duration:.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;
+    scroll-behavior:auto !important;
+  }
+}
+
+/* 8. Slightly tighter hero headings for better rhythm on wide screens ---- */
+@media (min-width:1100px){
+  .hero h1, section.hero h1, .section-title{
+    text-wrap:balance;
+  }
+  .section-sub, .hero p{
+    text-wrap:pretty;
+  }
+}
