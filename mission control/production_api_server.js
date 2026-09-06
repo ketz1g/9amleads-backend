@@ -12372,6 +12372,23 @@ const BREVO_API_KEY = process.env.BREVO_API_KEY || ''; // Set via Render env var
 
 async function addBrevoContact(customer) {
   if (!BREVO_API_KEY) return;
+  // NEVER add test/QA/placeholder signups to the real marketing lists. They have
+  // no real inbox so they hard-bounce, get blacklisted and drag the campaign
+  // sender reputation down (and can make Brevo fail a whole campaign send).
+  // Real customer addresses are never affected.
+  try {
+    var _rcpt = String((customer && (customer.email || '')) || '').trim().toLowerCase();
+    var _isOwner = _rcpt === 'hello@9amleads.com' || /^(ketzman1g|ketan|hello)\+?.*@(gmail\.com|9amleads\.com)$/.test(_rcpt);
+    if (_rcpt && !_isOwner) {
+      var _placeholder = /(^|\.)(test|demo|qa|smoke|bulk)[0-9_.]*@/.test(_rcpt) || /^test\./.test(_rcpt) || /^bulk\.test/.test(_rcpt) || /^(journey\d+|livesmoke|smoke\d+|alertcust|probtest|probbulk|planstarter)\d*@/.test(_rcpt);
+      var _disposable = /@(example\.com|test\.com|yopmail\.com|mailinator\.com|tempmail\.com|fake\.com|sharklasers\.com|guerrillamail\.com)$/.test(_rcpt);
+      var _selfTestDomain = /@9amleads\.com$/.test(_rcpt);
+      if (_placeholder || _disposable || (_selfTestDomain && !/^(hello|support|noreply|no-reply|founder)@/.test(_rcpt))) {
+        console.log('[BREVO-LIST] Skipped adding junk/test contact ' + _rcpt);
+        return;
+      }
+    }
+  } catch(_le) {}
   const https = require('https');
   
   // Map product to the correct Brevo list
