@@ -12444,6 +12444,24 @@ async function stripHtmlToText(html) {
 
 function sendBrevoEmail(to, subject, htmlContent) {
   if (!BREVO_API_KEY) return;
+  // UN-DELIVERABLE TEST/INTERNAL ADDRESSES: never actually send to addresses that
+  // cannot receive mail (generated test accounts, disposable providers, our own
+  // @9amleads.com demo/test inboxes). Attempting these creates hard bounces that
+  // drag down the Brevo sender reputation and show up as "blocked". Real customer
+  // addresses and the owner's own inbox (hello@9amleads.com) are never affected.
+  try {
+    var _rcpt = String((to && to.email) || '').trim().toLowerCase();
+    var _isOwnerInbox = _rcpt === 'hello@9amleads.com' || /^(ketzman1g|ketan|hello)\+?.*@(gmail\.com|9amleads\.com)$/.test(_rcpt);
+    if (_rcpt && !_isOwnerInbox) {
+      var _placeholder = /(^|\.)(test|demo|qa|bulk|cbc|payc|kyc)[0-9_.]*@/.test(_rcpt) || /^bulk\.test/.test(_rcpt) || /^test\./.test(_rcpt);
+      var _disposable = /@(example\.com|test\.com|yopmail\.com|mailinator\.com|tempmail\.com|fake\.com|sharklasers\.com|guerrillamail\.com)$/.test(_rcpt);
+      var _selfTestDomain = /@9amleads\.com$/.test(_rcpt);
+      if (_placeholder || _disposable || (_selfTestDomain && !/^(hello|support|noreply|no-reply|founder)@/.test(_rcpt))) {
+        console.log('[BREVO] Skipped un-deliverable test address ' + _rcpt + ' (' + String(subject||'').slice(0,50) + ')');
+        return;
+      }
+    }
+  } catch(_te) {}
   const https = require('https');
   // Sender: hello@9amleads.com is the registered Brevo sender with SPF/DKIM/DMARC
   // published (9amleads.com). A plain-text version + reply-to improve deliverability
@@ -16740,10 +16758,12 @@ var _goodwillTimer = cron.schedule('0 8 * * *', async () => {
     var gwLog = {};
     try { gwLog = JSON.parse(fs.readFileSync(gwFile, 'utf-8')); } catch(e) {}
     var gwCandidates = [
-      { email: 'info@afsremovals.com', name: 'AFS Removals' },
       { email: 'oathxxx@gmail.com', name: 'there' },
       { email: 'abbashussnain144@gmail.com', name: 'there' }
     ];
+    // Mark any previously-attempted-but-failed address as done so a single dead
+    // address can never make this one-off keep re-emailing it every morning.
+    try { if (!gwLog['info@afsremovals.com']) { gwLog['info@afsremovals.com'] = 'sent'; } } catch(e) {}
     var allSent = true;
     for (var gi = 0; gi < gwCandidates.length; gi++) {
       var gc = gwCandidates[gi];
@@ -16762,7 +16782,12 @@ var _goodwillTimer = cron.schedule('0 8 * * *', async () => {
         await sendBrevoEmail({ email: gc.email, name: gc.name }, 'Your 9amLeads trial has been extended', html);
         gwLog[gc.email] = 'sent';
         console.log('[GOODWILL] Sent trial-extension email to ' + gc.email);
-      } catch(ge) { console.log('[GOODWILL] Failed to email ' + gc.email + ': ' + ge.message); }
+      } catch(ge) {
+        // A failure still counts as "attempted" so a bad/undeliverable address can
+        // never make this one-off email every morning forever.
+        gwLog[gc.email] = 'sent';
+        console.log('[GOODWILL] Could not email ' + gc.email + ' (' + ge.message + ') - marked sent, not retrying');
+      }
     }
     fs.writeFileSync(gwFile, JSON.stringify(gwLog));
     if (allSent) {
