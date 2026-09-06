@@ -237,6 +237,24 @@ tr:last-child td{border-bottom:none}
 .fu-chip:hover{color:#e2e8f0;border-color:#2a2d42}
 .fu-chip.on{background:rgba(14,165,233,.16);border-color:rgba(14,165,233,.5);color:#0ea5e9}
 .fu-chip .n{opacity:.8;font-weight:800}
+/* referral journey tracker */
+.jdots{display:inline-flex;align-items:center;gap:2px;vertical-align:middle}
+.jdots .jd{width:8px;height:8px;border-radius:50%;background:#262b3d;border:1px solid #2a2d42;flex-shrink:0}
+.jdots .jd.done{background:#10b981;border-color:#10b981}
+.jdots .jd.cur{background:#0ea5e9;border-color:#0ea5e9;box-shadow:0 0 0 3px rgba(14,165,233,.22)}
+.jbtn{background:none;border:none;color:#0ea5e9;font-size:11px;font-weight:700;cursor:pointer;padding:0;text-decoration:underline}
+.jtimeline{margin:4px 0 0}
+.jtl{display:flex;gap:12px;position:relative;padding:0 0 14px}
+.jtl:last-child{padding-bottom:0}
+.jtl:before{content:'';position:absolute;left:11px;top:20px;bottom:-2px;width:2px;background:rgba(255,255,255,.08)}
+.jtl:last-child:before{display:none}
+.jtl .jd-ico{width:24px;height:24px;border-radius:50%;background:#12151f;border:2px solid #2a2d42;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;z-index:1}
+.jtl.done .jd-ico{background:rgba(16,185,129,.15);border-color:#10b981;color:#34d399}
+.jtl.cur .jd-ico{background:rgba(14,165,233,.15);border-color:#0ea5e9;color:#38bdf8;box-shadow:0 0 0 3px rgba(14,165,233,.15)}
+.jtl .jt-t{flex:1;min-width:0}
+.jtl .jt-l{font-size:12.5px;font-weight:700;color:#e2e8f0}
+.jtl .jt-n{font-size:11.5px;color:#94a3b8;margin-top:1px}
+.jtl .jt-d{font-size:11px;color:#0ea5e9;margin-top:1px;font-weight:700;white-space:nowrap}
 /* new-referral sign-up alerts banner */
 .ref-alert{background:linear-gradient(135deg,rgba(52,211,153,.16),rgba(14,165,233,.08));border:1px solid rgba(52,211,153,.5);border-radius:14px;padding:16px 18px;margin-bottom:18px;box-shadow:0 0 0 1px rgba(52,211,153,.14),0 10px 30px rgba(16,185,129,.14)}
 .ref-alert .ref-alert-head{font-size:15px;font-weight:800;color:#f1f5f9;display:flex;align-items:center;margin-bottom:10px}
@@ -824,6 +842,7 @@ tr:last-child td{border-bottom:none}
 <div class="ld-tab" data-p="reminders" onclick="ldTab('reminders')">Reminders <span id="ld-rm-count" style="color:#fbbf24"></span></div>
 </div>
 <div class="ld-pane on" id="pane-details">
+<div id="ld-journey"></div>
 <div class="lf-row">
 <div class="lf-field"><label>Company</label><input type="text" id="ld-company"></div>
 <div class="lf-field"><label>Email</label><input type="email" id="ld-email"></div>
@@ -841,6 +860,16 @@ tr:last-child td{border-bottom:none}
 <div id="ld-reminders"></div>
 <div class="addline"><input type="text" id="ld-rm-note" placeholder="e.g. Follow up re: trial"><input type="datetime-local" id="ld-rm-when"><button class="btn-mini" onclick="addReminder()">Set</button></div>
 </div>
+</div>
+</div>
+
+<!-- REFERRAL JOURNEY MODAL -->
+<div class="modal" id="journey-modal">
+<div class="modal-box" style="max-width:520px">
+<button class="m-close" onclick="closeJourneyModal()">&times;</button>
+<h2 id="jm-title">Referral journey</h2>
+<div class="sub" id="jm-sub"></div>
+<div id="jm-body"></div>
 </div>
 </div>
 
@@ -892,6 +921,46 @@ function perLink(t){
   return t;
 }
 function copyLink(){copyText(shareUrl,document.querySelectorAll('.code button')[1]);}
+/* ---- REFERRAL JOURNEY UI ---- */
+// Compact dot tracker for table rows. Reach milestones up to stage_index (green),
+// then highlight the NEXT milestone the affiliate is working toward (blue).
+function journeyDots(j){
+  if(!j||!j.steps||!j.steps.length)return '';
+  var idx=(j.stage_index!==undefined)?j.stage_index:0;
+  var dots=j.steps.map(function(s,i){
+    var cls='jd';
+    if(i<=idx)cls+=' done';
+    else if(i===idx+1)cls+=' cur';
+    return '<span class="'+cls+'" title="'+esc(s.label)+(s.note?' - '+esc(s.note):'')+'"></span>';
+  }).join('');
+  return '<span class="jdots">'+dots+'</span>';
+}
+function fmtDt(iso){if(!iso)return '';try{return new Date(iso).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}catch(e){return '';}}
+function journeyTimelineHtml(j){
+  if(!j||!j.steps||!j.steps.length)return '<div class="muted">No journey data yet.</div>';
+  var idx=(j.stage_index!==undefined)?j.stage_index:0;
+  return '<div class="jtimeline">'+j.steps.map(function(s,i){
+    var ico;
+    var cls='jtl';
+    if(i<=idx){ cls+=' done'; ico='✓'; }
+    else if(i===idx+1){ cls+=' cur'; ico='●'; }
+    else ico='○';
+    return '<div class="'+cls+'"><div class="jd-ico">'+ico+'</div><div class="jt-t"><div class="jt-l">'+esc(s.label)+'</div>'+(s.note?'<div class="jt-n">'+esc(s.note)+'</div>':'')+(s.done&&s.at?'<div class="jt-d">'+fmtDt(s.at)+'</div>':'')+'</div></div>';
+  }).join('')+'</div>';
+}
+function openJourney(j, company){
+  var m=document.getElementById('journey-modal');
+  var t=document.getElementById('jm-title');
+  var s=document.getElementById('jm-sub');
+  var b=document.getElementById('jm-body');
+  if(!m)return;
+  if(t)t.textContent=company||'Referral journey';
+  if(s)s.textContent='Every step of this sign-up, live from your dashboard.';
+  if(b)b.innerHTML='';
+  if(b)b.innerHTML=journeyTimelineHtml(j);
+  m.classList.add('open');
+}
+function closeJourneyModal(){document.getElementById('journey-modal').classList.remove('open');}
 function share(ch){
   var u=encodeURIComponent(shareUrl),t=encodeURIComponent('Hi! Want fresh business leads delivered every morning at 9am? Normally 9amLeads gives a 7-day free trial, but with my code you get 14 days free, no card required, cancel anytime. Sign up here \u2014 2 minutes:');
   var m={wa:'https://wa.me/?text='+t+'%20'+u,li:'https://www.linkedin.com/sharing/share-offsite/?url='+u,fb:'https://www.facebook.com/sharer/sharer.php?u='+u,x:'https://twitter.com/intent/tweet?text='+t+'&url='+u,mail:'mailto:?subject='+encodeURIComponent('14 days free business leads')+'&body='+t+'%20'+u};
@@ -1415,11 +1484,24 @@ function renderRefsView(){
   });
   if(!REFS_ALL.length){w.innerHTML='<div class="muted">No referrals yet. Share your code to get started!</div>';return;}
   if(!list.length){w.innerHTML='<div class="muted" style="padding:18px;text-align:center">No referrals match your search or filter.</div>';return;}
-  var h='<table><thead><tr><th>Company</th><th>Lead type</th><th>Signed up</th><th>Trial</th><th>Status</th></tr></thead><tbody>';
+  var h='<table><thead><tr><th>Company</th><th>Lead type</th><th>Signed up</th><th>Trial</th><th>Journey</th><th>Status</th></tr></thead><tbody>';
   list.forEach(function(r){
-    h+='<tr><td>'+esc(r.company)+'<div class="muted">'+esc(r.email)+'</div></td><td>'+esc(r.product)+'</td><td>'+fmtDate(r.signed_up)+'</td><td>'+r.trial_days+' days</td><td>'+badge(r.status)+'</td></tr>';
+    var jd=(r.journey&&r.journey.steps)?journeyDots(r.journey):'';
+    var tld='';
+    if(r.journey){
+      if(r.journey.trial_days_left!==null&&r.journey.trial_days_left!==undefined)tld=r.journey.trial_days_left>0?(r.journey.trial_days_left+'d left'):(r.journey.paying?'converted':'ended');
+      else if(r.trial_days)tld=r.trial_days+' days';
+    } else if(r.trial_days){ tld=r.trial_days+' days'; }
+    h+='<tr><td>'+esc(r.company)+'<div class="muted">'+esc(r.email)+'</div></td><td>'+esc(r.product)+'</td><td>'+fmtDate(r.signed_up)+'</td><td style="white-space:nowrap">'+(r.journey&&r.journey.trial_days_left!==undefined?'<span style="color:#f59e0b">'+tld+'</span>':(tld||'-'))+'</td>'+
+      '<td>'+jd+(jd?' <button class="jbtn" onclick="openJourneyFromRef(\''+esc(r.id)+'\')">View journey</button>':'')+'</td>'+
+      '<td>'+badge(r.status)+'</td></tr>';
   });
   h+='</tbody></table>';w.innerHTML=h;
+}
+function openJourneyFromRef(id){
+  var r=REFS_ALL.find(function(x){return String(x.id)===String(id);});
+  if(!r)return;
+  openJourney(r.journey||null,(r.company||r.email||'Referral'));
 }
 function renderRefs(refs){
   REFS_ALL=(refs||[]).slice();
@@ -2048,6 +2130,20 @@ function openLeadModal(id){
   document.getElementById('ld-notes').value=curLead.notes||'';
   document.getElementById('ld-save-msg').style.display='none';
   document.getElementById('ld-del').style.display=curLead.manual?'inline-block':'none';
+  // Referral journey strip shown above the details form for sign-ups (not manual leads).
+  var jbox=document.getElementById('ld-journey');
+  if(jbox){
+    if(!curLead.manual&&curLead.journey){
+      var sIdx=(curLead.journey.stage_index!==undefined)?curLead.journey.stage_index:0;
+      var curStep=curLead.journey.steps[sIdx]||null;
+      jbox.style.display='block';
+      jbox.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.3);border-radius:10px;padding:10px 14px;margin-bottom:14px">'+
+        '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:16px">'+(curLead.journey.paid?'✅':curLead.journey.cleared?'💰':curLead.journey.earned?'🎉':curLead.journey.paying?'💳':'🚀')+'</span><div><div style="font-size:12.5px;font-weight:800;color:#e2e8f0">'+(curStep?esc(curStep.label):'Signed up')+'</div><div style="font-size:11px;color:#94a3b8">'+(curStep&&curStep.note?esc(curStep.note):'')+'</div></div></div>'+
+        '<div style="display:flex;align-items:center;gap:8px">'+journeyDots(curLead.journey)+'<button class="jbtn" id="ld-jview">View journey</button></div></div>';
+      var _jb=document.getElementById('ld-jview');
+      if(_jb)_jb.onclick=function(){openJourney(curLead.journey,(curLead.company||curLead.email||'Referral'));};
+    } else { jbox.style.display='none'; jbox.innerHTML=''; }
+  }
   document.getElementById('lead-modal').classList.add('open');
   renderComments();renderReminders();ldTab('details');
 }

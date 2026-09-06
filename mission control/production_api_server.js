@@ -5805,6 +5805,61 @@ function ensureSignupAlerts(aff) {
   } catch(e) { console.log('[AFFILIATE] ensureSignupAlerts error:', e.message); return 0; }
 }
 
+// ===== REFERRAL JOURNEY =====
+// Builds the milestone timeline an affiliate sees for one of their referred
+// sign-ups: Signed up → Trial → Card saved → Paying → £25 earned → Cleared → Paid.
+// Every step is derived from the real customer record, the subscription payment
+// receipts and the commission ledger (no guessed dates).
+function referralSubscriptionPayments(dbc, c) {
+  var paid = [];
+  try {
+    (dbc.payments || []).forEach(function(r) {
+      if (r.product && r.product === 'direct_mail') return;
+      var subj = String((r.description || '') + ' ' + (r.plan || '') + ' ' + (r.product || '')).toLowerCase();
+      if (/(one-?off|top-?up|boost|bulk|direct.?mail|print.?post|single)/.test(subj)) return;
+      if ((r.customer_id && r.customer_id === c.id) || (r.customer_email && String(r.customer_email).toLowerCase() === String(c.email || '').toLowerCase())) paid.push(r);
+    });
+  } catch(e) {}
+  paid.sort(function(a, b) { return String(a.created_at || '').localeCompare(String(b.created_at || '')); });
+  return paid;
+}
+function referralJourney(dbc, c, custComms) {
+  var now = Date.now();
+  var created = c.created_at || '';
+  var trialDays = Number(c.affiliate_trial_days) || 14;
+  var trialEnds = c.trial_ends || (created ? new Date(new Date(created).getTime() + trialDays * 86400000).toISOString() : '');
+  var tEnd = trialEnds ? new Date(trialEnds).getTime() : NaN;
+  var trialDaysLeft = isNaN(tEnd) ? null : Math.max(0, Math.ceil((tEnd - now) / 86400000));
+  var paying = customerIsPaying(c);
+  var subs = referralSubscriptionPayments(dbc, c);
+  var firstInvoiceAt = subs.length ? subs[0].created_at : '';
+  var secondInvoiceAt = subs.length > 1 ? subs[1].created_at : '';
+  var cm = null;
+  (custComms || []).forEach(function(x) { if (x.commission_type === 'one_off' && cm === null) cm = x; });
+  if (cm === null) (custComms || []).forEach(function(x) { if (x.commission_type === 'recurring' && cm === null) cm = x; });
+  var earned = !!(cm) || c.affiliate_payout_status === 'pending' || c.affiliate_payout_status === 'due' || c.affiliate_payout_status === 'paid';
+  var cleared = (cm && (cm.status === 'approved' || cm.status === 'paid')) || c.affiliate_payout_status === 'due' || c.affiliate_payout_status === 'paid';
+  var paid = (cm && cm.status === 'paid') || c.affiliate_payout_status === 'paid' || !!c.affiliate_paid_at;
+  function dLocal(iso) { if (!iso) return ''; try { return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); } catch(e) { return ''; } }
+  var steps = [
+    { key: 'signup', label: 'Signed up', done: !!created, at: created, note: created ? dLocal(created) : '' },
+    { key: 'trial', label: 'Trial (' + trialDays + 'd)', done: !!created, at: trialEnds, note: trialEnds ? (trialDaysLeft > 0 ? 'ends in ' + trialDaysLeft + 'd' : (paying ? 'converted' : 'trial over')) : '' },
+    { key: 'card', label: 'Card saved', done: !!c.stripe_payment_method_id, at: '', note: c.stripe_payment_method_id ? 'card on file' : '' },
+    { key: 'paying', label: 'Paying', done: paying || !!firstInvoiceAt, at: firstInvoiceAt, note: firstInvoiceAt ? 'first invoice ' + dLocal(firstInvoiceAt) : (paying ? 'paying now' : '') },
+    { key: 'earned', label: '£25 earned', done: earned, at: (cm && cm.created_at) || (c.affiliate_payout_status ? c.affiliate_payout_due : ''), note: earned ? 'second invoice paid' : 'needs 2nd invoice' },
+    { key: 'cleared', label: 'Cleared', done: cleared, at: (cm && cm.approved_at) || '', note: cleared ? 'ready for payout' : '' },
+    { key: 'paid', label: 'Paid', done: paid, at: (cm && cm.paid_at) || c.affiliate_paid_at || '', note: paid ? 'paid out' : '' }
+  ];
+  var idx = 0;
+  steps.forEach(function(s, i) { if (s.done) idx = i; });
+  return {
+    created_at: created, trial_ends: trialEnds, trial_days_left: trialDaysLeft, paying: paying,
+    card_saved: !!c.stripe_payment_method_id, first_invoice_at: firstInvoiceAt, second_invoice_at: secondInvoiceAt,
+    commission_status: cm ? cm.status : '', commission_amount: cm ? Number(cm.commission_amount || 0) : 0,
+    earned: earned, cleared: cleared, paid: paid, stage_index: idx, stage: steps[idx].label, steps: steps
+  };
+}
+
 // GET /api/affiliate/dashboard — the affiliate's earnings dashboard: referrals by
 // lead type, earnings split (pending / due / paid), and payout history. Works for
 // every lead type — moving, probate, planning, new business, tenders.
@@ -5846,7 +5901,8 @@ app.get('/api/affiliate/dashboard', affiliateAuth, (req, res) => {
         id: c.id, company: c.company, email: c.email, product: prod, plan: c.plan,
         signed_up: c.created_at, status: cSt, trial_days: c.affiliate_trial_days || 14,
         card_saved: !!(c.stripe_payment_method_id),
-        monthly_earned: custComms.filter(function(cm) { return cm.status === 'paid' || cm.status === 'approved'; }).reduce(function(a, cm) { return a + Number(cm.commission_amount || 0); }, 0)
+        monthly_earned: custComms.filter(function(cm) { return cm.status === 'paid' || cm.status === 'approved'; }).reduce(function(a, cm) { return a + Number(cm.commission_amount || 0); }, 0),
+        journey: referralJourney(dbc, c, custComms)
       });
     });
     referralRows.sort(function(a, b) { return String(b.signed_up).localeCompare(String(a.signed_up)); });
@@ -6745,7 +6801,8 @@ app.get('/api/affiliate/leads', affiliateAuth, (req, res) => {
         lead_status: (ex && ex.status) || 'new', manual: false, source: 'referral',
         notes: (ex && ex.notes) || '',
         comments: (ex && ex.comments) || [], reminders: (ex && ex.reminders) || [],
-        extra_id: ex ? ex.id : null
+        extra_id: ex ? ex.id : null,
+        journey: referralJourney(dbc, c, custComms)
       };
     });
     var out = refs.concat(manual.map(function(l) {
