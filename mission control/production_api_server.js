@@ -1580,6 +1580,25 @@ function _filterWhere(rows, sql, params) {
       }
       continue;
     }
+    // LIKE / NOT LIKE — compare a field against a %-pattern. Real SQL semantics:
+    // '%' wildcard, '_' single char. Kept simple & safe (no ESCAPE support needed
+    // for the queries we run). Consumers a bound param just like '='.
+    const likeMatch = cond.match(/^(\S+)\s+(NOT\s+LIKE|LIKE)\s+(.+)$/i);
+    if (likeMatch) {
+      const field = likeMatch[1].trim();
+      let pat = likeMatch[3].trim();
+      if (pat === '?') { pat = params[paramIdx++]; }
+      else { pat = pat.replace(/^'(.*)'$/, '$1'); }
+      const negate = /NOT\s+LIKE/i.test(likeMatch[2]);
+      const re = new RegExp('^' + String(pat).split('%').map(s => s.split('_').join('.')).join('.*') + '$', 'i');
+      rows = rows.filter(r => {
+        const rv = r[field];
+        if (rv === undefined || rv === null) return negate;
+        const m = re.test(String(rv));
+        return negate ? !m : m;
+      });
+      continue;
+    }
     for (const o of ops) {
       const idx = cond.indexOf(o);
       if (idx !== -1) { op = o; opIdx = idx; break; }
