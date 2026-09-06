@@ -78,6 +78,7 @@ h1 span{color:#0ea5e9}
 <div style="display:flex;gap:8px">
 <button class="btn btn-primary btn-sm" onclick="gscConnect()" id="gscConnectBtn"><i class="fas fa-plug"></i> Connect</button>
 <button class="btn btn-outline btn-sm" onclick="gscRefresh()" id="gscRefreshBtn" style="display:none"><i class="fas fa-sync"></i> Refresh</button>
+<button class="btn btn-outline btn-sm" onclick="gscEmail()" id="gscEmailBtn" style="display:none"><i class="fas fa-envelope"></i> Email Me</button>
 </div>
 </div>
 <div id="gscStatus" style="font-size:12px;color:#8890a8;margin-bottom:10px">Checking...</div>
@@ -218,11 +219,24 @@ function renderGsc(st) {
   } else if (st.connected) {
     if (connBtn) { connBtn.style.display = 'none'; }
     if (refBtn) { refBtn.style.display = ''; }
+    var emBtn = document.getElementById('gscEmailBtn');
+    if (emBtn) { emBtn.style.display = ''; emBtn.innerHTML = '<i class="fas fa-envelope"></i> Email Me the Snapshot'; }
     loadGscData();
   } else {
     if (connBtn) connBtn.style.display = '';
     if (refBtn) refBtn.style.display = 'none';
   }
+}
+
+async function gscEmail() {
+  try {
+    var emBtn = document.getElementById('gscEmailBtn');
+    if (emBtn) { emBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...'; emBtn.disabled = true; }
+    var r = await fetch(API + '/api/admin/gsc/send-snapshot', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({}) });
+    var d = await r.json();
+    alert(d.sent ? 'Snapshot email sent to your inbox.' : ('Send failed: ' + (d.error || 'unknown')));
+    if (emBtn) { emBtn.innerHTML = '<i class="fas fa-envelope"></i> Email Me'; emBtn.disabled = false; }
+  } catch(e) { alert('Failed: ' + e.message); }
 }
 
 async function loadGscData() {
