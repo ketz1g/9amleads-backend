@@ -525,6 +525,10 @@ tr:last-child td{border-bottom:none}
 <h2>Conversion playbook</h2>
 <p style="font-size:12.5px;color:#94a3b8;margin-bottom:6px">Proven steps to turn every referral into a paying customer. And get them to their first paid package so your <b style="color:#e2e8f0">£25 sign-up commission</b> clears. Everything here is tailored to how 9amLeads works.</p>
 </div>
+<div class="payout-card" id="pb-today-card" style="background:linear-gradient(135deg,rgba(56,189,248,.10),rgba(37,99,235,.04));border-color:rgba(56,189,248,.3)">
+<div class="p-head"><div><div class="lbl">⚡ What to do today</div><div class="val" id="pb-today-title" style="font-size:17px;color:#7dd3fc">Checking your pipeline…</div></div></div>
+<div id="pb-today-body" style="font-size:13px;color:#cbd5e1;line-height:1.6">Loading your live referrals…</div>
+</div>
 <div class="pb-track">
 <div class="pb-head"><div><b>Your referral checklist</b> <span style="font-size:11px;color:#94a3b8">tick each step as you complete it</span></div><div class="pb-pct" id="pb-pct">0%</div></div>
 <div class="bar"><div class="fill" id="pb-bar" style="width:0%"></div></div>
@@ -880,6 +884,13 @@ function setLink(code){
   var qr=document.getElementById('qr-img');
   if(qr){ qr.src='https://api.qrserver.com/v1/create-qr-code/?size=96x96&data='+encodeURIComponent(shareUrl); qr.style.display='block'; }
 }
+// Swap the generic sign-up URL inside any toolkit template for THIS affiliate's
+// own tracked /r/CODE link, so copied & shared material credits them.
+function perLink(t){
+  t=String(t==null?'':t);
+  if(shareUrl) t=t.split('https://9amleads.com/portal/#signup').join(shareUrl);
+  return t;
+}
 function copyLink(){copyText(shareUrl,document.querySelectorAll('.code button')[1]);}
 function share(ch){
   var u=encodeURIComponent(shareUrl),t=encodeURIComponent('Hi! Want fresh business leads delivered every morning at 9am? Normally 9amLeads gives a 7-day free trial, but with my code you get 14 days free, no card required, cancel anytime. Sign up here \u2014 2 minutes:');
@@ -998,6 +1009,7 @@ function go(t){
   if(t==='payouts')loadPayouts();
   if(t==='followups')loadFollowups();
   if(t==='rewards')loadWheel();
+  if(t==='playbook')loadPbToday();
 }
 
 // ===== FOLLOW-UP CRM =====
@@ -1171,6 +1183,7 @@ function init(){
     if(document.getElementById('view-leads')&&document.getElementById('view-leads').style.display!=='none'){loadLeads();}
     if(document.getElementById('view-followups')&&document.getElementById('view-followups').style.display!=='none'){loadFollowups();}
     if(document.getElementById('view-refs')&&document.getElementById('view-refs').style.display!=='none'){loadRefs();}
+    if(document.getElementById('view-playbook')&&document.getElementById('view-playbook').style.display!=='none'){loadPbToday();}
   },60000);
 }
 
@@ -1315,19 +1328,19 @@ function renderTools(){
   // emails
   h+='<div class="flow"><h3>📧 Email templates <button class="btn-mini" onclick="copyEmails(\''+r.key+'\')">Copy all</button></h3>';
   r.emails.forEach(function(e,i){
-    h+='<div class="tpl"><div class="subj">Subject: '+esc(e.subject)+'</div><pre>'+esc(e.body)+'</pre><div style="text-align:right;margin-top:8px"><button class="btn-mini" onclick="copyTxt(this,'+i+',\'email\')">Copy</button> <button class="btn-mini" onclick="shareToWa(\''+r.key+'\','+i+',\'email\')" title="Share on WhatsApp">WhatsApp</button></div></div>';
+    h+='<div class="tpl"><div class="subj">Subject: '+esc(e.subject)+'</div><pre>'+esc(perLink(e.body))+'</pre><div style="text-align:right;margin-top:8px"><button class="btn-mini" onclick="copyTxt(this,'+i+',\'email\')">Copy</button> <button class="btn-mini" onclick="shareToWa(\''+r.key+'\','+i+',\'email\')" title="Share on WhatsApp">WhatsApp</button></div></div>';
   });
   h+='</div>';
   // sms
   h+='<div class="flow"><h3>💬 Text / SMS messages <button class="btn-mini" onclick="copySms(\''+r.key+'\')">Copy all</button></h3>';
   r.sms.forEach(function(s,i){
-    h+='<div class="post-card">'+esc(s)+'<div style="text-align:right;margin-top:6px"><button class="btn-mini" onclick="copyTxt(this,'+i+',\'sms\')">Copy</button> <button class="btn-mini" onclick="shareToWa(\''+r.key+'\','+i+',\'sms\')" title="Share on WhatsApp">WhatsApp</button></div></div>';
+    h+='<div class="post-card">'+esc(perLink(s))+'<div style="text-align:right;margin-top:6px"><button class="btn-mini" onclick="copyTxt(this,'+i+',\'sms\')">Copy</button> <button class="btn-mini" onclick="shareToWa(\''+r.key+'\','+i+',\'sms\')" title="Share on WhatsApp">WhatsApp</button></div></div>';
   });
   h+='</div>';
   // social
   h+='<div class="flow"><h3>📱 Social media posts <button class="btn-mini" onclick="copySocial(\''+r.key+'\')">Copy all</button></h3>';
   r.social.forEach(function(s,i){
-    h+='<div class="post-card">'+esc(s)+'<div style="text-align:right;margin-top:6px"><button class="btn-mini" onclick="copyTxt(this,'+i+',\'social\')">Copy</button> <button class="btn-mini" onclick="shareToWa(\''+r.key+'\','+i+',\'social\')" title="Share on WhatsApp">WhatsApp</button></div></div>';
+    h+='<div class="post-card">'+esc(perLink(s))+'<div style="text-align:right;margin-top:6px"><button class="btn-mini" onclick="copyTxt(this,'+i+',\'social\')">Copy</button> <button class="btn-mini" onclick="shareToWa(\''+r.key+'\','+i+',\'social\')" title="Share on WhatsApp">WhatsApp</button></div></div>';
   });
   h+='</div>';
   // follow-up timeline
@@ -1339,8 +1352,8 @@ function renderTools(){
   document.getElementById('tool-content').innerHTML=h;
   document.getElementById('tool-content')._r=r;
 }
-function copyTxt(btn,idx,kind){var r=document.getElementById('tool-content')._r;var txt='';if(kind==='email'){var e=r.emails[idx];txt='Subject: '+e.subject+'\n\n'+e.body;}else if(kind==='sms'){txt=r.sms[idx];}else if(kind==='social'){txt=r.social[idx];}copyText(txt,btn);}
-function copyScript(k){var r=(RES||[]).find(function(x){return x.key===k;});var parts=[];if(r.precall&&r.precall.length)parts.push('PRE-CALL CHECKLIST\n'+r.precall.map(function(p){return '- '+p;}).join('\n'));if(r.facts&&r.facts.length)parts.push('KEY SELLING POINTS\n'+r.facts.map(function(f){return '- '+f;}).join('\n'));parts.push('COLD CALL: '+r.name+'\n'+r.phone.join('\n\n'));copyText(parts.join('\n\n------------------\n\n'));}
+function copyTxt(btn,idx,kind){var r=document.getElementById('tool-content')._r;var txt='';if(kind==='email'){var e=r.emails[idx];txt='Subject: '+e.subject+'\n\n'+e.body;}else if(kind==='sms'){txt=r.sms[idx];}else if(kind==='social'){txt=r.social[idx];}copyText(perLink(txt),btn);}
+function copyScript(k){var r=(RES||[]).find(function(x){return x.key===k;});var parts=[];if(r.precall&&r.precall.length)parts.push('PRE-CALL CHECKLIST\n'+r.precall.map(function(p){return '- '+p;}).join('\n'));if(r.facts&&r.facts.length)parts.push('KEY SELLING POINTS\n'+r.facts.map(function(f){return '- '+f;}).join('\n'));parts.push('COLD CALL: '+r.name+'\n'+r.phone.join('\n\n'));copyText(perLink(parts.join('\n\n------------------\n\n')));}
 function copyEntireKit(k){
   var r=(RES||[]).find(function(x){return x.key===k;});
   if(!r)return;
@@ -1352,7 +1365,7 @@ function copyEntireKit(k){
   if(r.sms&&r.sms.length)parts.push('SMS\n'+r.sms.join('\n\n'));
   if(r.social&&r.social.length)parts.push('SOCIAL POSTS\n'+r.social.join('\n\n'));
   if(r.followup&&r.followup.length)parts.push('FOLLOW-UP PLAN\n'+r.followup.map(function(f){return f.day+': '+f.action;}).join('\n'));
-  copyText(parts.join('\n\n====================================\n\n'));
+  copyText(perLink(parts.join('\n\n====================================\n\n')));
   var btn=document.querySelector('.tool-hero .btn-mini');
   if(btn){var o=btn.textContent;btn.textContent='Copied!';setTimeout(function(){btn.textContent=o;},1400);}
 }
@@ -1364,12 +1377,12 @@ function shareToWa(k,idx,kind){
   else if(kind==='sms'){txt=r.sms[idx];}
   else if(kind==='social'){txt=r.social[idx];}
   else if(kind==='phone'){txt=r.phone[idx];}
-  window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank');
+  window.open('https://wa.me/?text='+encodeURIComponent(perLink(txt)),'_blank');
 }
 
-function copyEmails(k){var r=(RES||[]).find(function(x){return x.key===k;});copyText(r.emails.map(function(e){return 'SUBJECT: '+e.subject+'\n'+e.body;}).join('\n\n------------------\n\n'));}
-function copySms(k){var r=(RES||[]).find(function(x){return x.key===k;});copyText(r.sms.join('\n\n'));}
-function copySocial(k){var r=(RES||[]).find(function(x){return x.key===k;});copyText(r.social.join('\n\n'));}
+function copyEmails(k){var r=(RES||[]).find(function(x){return x.key===k;});copyText(perLink(r.emails.map(function(e){return 'SUBJECT: '+e.subject+'\n'+e.body;}).join('\n\n------------------\n\n')));}
+function copySms(k){var r=(RES||[]).find(function(x){return x.key===k;});copyText(perLink(r.sms.join('\n\n')));}
+function copySocial(k){var r=(RES||[]).find(function(x){return x.key===k;});copyText(perLink(r.social.join('\n\n')));}
 
 var REFS_ALL=[]; // every referral fetched from the dashboard, kept for filters/export
 function loadRefs(){
@@ -1779,6 +1792,120 @@ function togglePb(k){
   s[k]=!s[k];
   localStorage.setItem('mld_aff_playbook',JSON.stringify(s));
   renderPb();
+}
+/* ---- What to do today (live) ---- */
+function fuWhen2(iso){if(!iso)return '';try{return new Date(iso).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});}catch(e){return iso;}}
+var PB_MSGS=[ // quick message presets for a referral/prospect
+  {k:'welcome',lab:'👋 Welcome',t:'Hi [name], just checking in about your 9amLeads trial. Your first leads land tomorrow at 9am, so look out for them in your inbox. Happy to answer any questions!'},
+  {k:'checkin',lab:'👀 Check-in',t:'Hi [name], how did your first batch of leads look this morning? If any stand out, the key is to call the lead quickly. Want me to help you pick which to call first?'},
+  {k:'nudge',lab:'⏰ Trial ending',t:'Hi [name], just a reminder your 14-day free trial is about to end. If the leads are useful, it is easy to keep them going. Do you want to stay on the plan?'},
+  {k:'success',lab:'🌟 Referral ask',t:'Great to hear the leads are working for you, [name]! If you know another business that could use fresh leads, they get 14 days free too, and I will be here to help them set up.'}
+];
+function pbFill(msg,who){
+  return String(msg||'').split('[name]').join(who||'there').split('[your name]').join('').split('[area]').join('your area');
+}
+function pbFindPerson(id){
+  if(!FU||!FU.people)return null;
+  return FU.people.find(function(p){return p&&p.id===id;})||null;
+}
+function pbQuickMsg(id,idx){
+  // Build personalised text for a person + preset, then copy it.
+  var p=pbFindPerson(id); if(!p)return;
+  var m=PB_MSGS[idx]||PB_MSGS[0];
+  var who=(p.name||p.company||'there');
+  copyText(pbFill(m.t,who));
+}
+function pbWaQuick(id,idx){
+  var p=pbFindPerson(id); if(!p)return;
+  var m=PB_MSGS[idx]||PB_MSGS[0];
+  var who=(p.name||p.company||'there');
+  window.open('https://wa.me/?text='+encodeURIComponent(pbFill(m.t,who)),'_blank');
+}
+function loadPbToday(){
+  var body=document.getElementById('pb-today-body');
+  var title=document.getElementById('pb-today-title');
+  if(!body)return;
+  // Make sure we have fresh pipeline data.
+  var loadData = FU ? Promise.resolve(FU) : api('GET','/affiliate/followups');
+  loadData.then(function(d){
+    if(!d||!d.success){ body.innerHTML='<div class="muted">Could not load your pipeline. Please try again.</div>'; return; }
+    FU=d;
+    var people=d.people||[];
+    var rows=[];
+    var now=new Date();
+    // 1) Overdue / due-today reminders -> call or message these people.
+    var overdue=[],today=[];
+    (d.reminders&&d.reminders.overdue||[]).forEach(function(p){overdue.push(p);});
+    (d.reminders&&d.reminders.today||[]).forEach(function(p){today.push(p);});
+    overdue.forEach(function(p){
+      rows.push({ico:'🔴',sev:'overdue',txt:'<b>'+esc(p.company||p.name||'a lead')+'</b> is overdue for follow-up (due '+fuWhen2(p.reminder_at)+'). '+(p.product?esc(p.product)+' · ':''),p:p});
+    });
+    today.forEach(function(p){
+      rows.push({ico:'🟠',sev:'today',txt:'<b>'+esc(p.company||p.name||'a lead')+'</b> is due for follow-up today.',p:p});
+    });
+    // 2) Referrals/prospects with a reminder_at very soon (next 24h) not already listed.
+    // 3) Active customers whose referral is approaching the 2nd invoice -> commission within reach.
+    people.forEach(function(p){
+      if(!p)return;
+      var st=p.status||'';
+      if(st==='earning'){ rows.push({ico:'💰',sev:'earning',txt:'<b>'+esc(p.company||p.name||'a customer')+'</b> is paying and close to their 2nd invoice - help them get there to clear your commission. '+(p.product?esc(p.product)+' · ':''),p:p}); }
+      else if(st==='approved'){ rows.push({ico:'✅',sev:'approved',txt:'<b>'+esc(p.company||p.name||'a customer')+'</b> has cleared - your commission is ready to pay out.',p:p}); }
+    });
+    // 4) Freshly signed-up customers (first 3 days) who have had no contact yet.
+    people.forEach(function(p){
+      if(!p)return;
+      if(p.source!=='customer')return;
+      var st=p.status||'';
+      if(st!=='referral_pending'&&st!=='trial')return;
+      if(p.last_contacted)return;
+      var age=Infinity;
+      if(p.created_at){ try{age=(now-new Date(p.created_at))/86400000;}catch(e){} }
+      if(age<=3){ rows.push({ico:'🆕',sev:'fresh',txt:'<b>'+esc(p.company||p.name||'a new referral')+'</b> just signed up with your code (no contact yet). Send the welcome message today.',p:p}); }
+    });
+    // De-duplicate by id (keep highest priority: overdue > today > earning > approved > fresh)
+    var seen={},finalRows=[];
+    var rank={overdue:0,today:1,earning:2,approved:3,fresh:4};
+    rows.forEach(function(r){
+      var id=r.p&&r.p.id?r.p.id:Math.random();
+      if(seen[id]!==undefined){ if(rank[r.sev]<rank[seen[id]]){ finalRows[seen[id]]=r; } return; }
+      seen[id]=finalRows.length; finalRows.push(r);
+    });
+    if(title){
+      var urgent=finalRows.filter(function(r){return r.sev==='overdue'||r.sev==='today';}).length;
+      if(!finalRows.length)title.textContent='All clear - no urgent actions right now';
+      else if(urgent)title.textContent=urgent+' follow-up'+(urgent>1?'s':'')+' waiting today';
+      else title.textContent=finalRows.length+' action'+(finalRows.length>1?'s':'')+' worth doing today';
+    }
+    if(!finalRows.length){ body.innerHTML='<div class="muted">No urgent actions right now. Keep sharing your code - every new referral shows up here the moment they sign up. Visit the <a href="#" onclick="go(\'followups\');return false" style="color:#7dd3fc">Follow-ups tab</a> to plan ahead.</div>'; return; }
+    var out='';
+    finalRows.forEach(function(r){
+      var p=r.p||{};
+      var quick='';
+      if(p.id){
+        quick='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">'+
+          '<button class="btn-mini" onclick="openNote(\''+esc(p.id)+'\',\''+esc(p.company||p.name||'').replace(/'/g,'')+'\')">📝 Note</button>'+
+          '<button class="btn-mini" onclick="pbWaQuick(\''+esc(p.id)+'\',0)" title="WhatsApp a welcome message">💬 WhatsApp</button>'+
+          (p.email?('<a class="btn-mini" href="mailto:'+esc(p.email)+'" style="text-decoration:none">✉️ Email</a>'):'')+
+          '<button class="btn-mini" onclick="pbQuickMsg(\''+esc(p.id)+'\',0)" title="Copy a ready-to-send message">📋 Copy msg</button>'+
+          '<button class="btn-mini" style="color:#7dd3fc" onclick="pbShowMsgs(this,\''+esc(p.id)+'\')">More messages ▾</button></div>'+
+          '<div id="pb-q-'+esc(p.id)+'" style="display:none;margin-top:6px"></div>';
+      }
+      out+='<div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.07)"><div style="display:flex;gap:10px;align-items:flex-start"><span>'+r.ico+'</span><div style="flex:1;min-width:0"><div style="font-size:13px;color:#e2e8f0;line-height:1.55">'+r.txt+'</div>'+quick+'</div></div></div>';
+    });
+    body.innerHTML=out;
+  }).catch(function(){ body.innerHTML='<div class="muted">Could not load your pipeline. Please try again.</div>'; });
+}
+function pbShowMsgs(btn,id){
+  var box=document.getElementById("pb-q-"+id);
+  if(!box)return;
+  var visible=box.style.display!=='none';
+  box.style.display=visible?'none':'block';
+  if(btn){btn.textContent=visible?'More messages ▾':'Hide messages ▴';}
+  if(visible)return;
+  var p=pbFindPerson(id); if(!p)return;
+  box.innerHTML=PB_MSGS.map(function(m,idx){
+    return '<div style="display:flex;gap:8px;align-items:flex-start;margin:6px 0;background:rgba(11,13,20,.5);border:1px solid rgba(255,255,255,.08);border-radius:9px;padding:8px 10px"><div style="flex:1;font-size:12px;color:#cbd5e1;line-height:1.5"><b style="color:#e2e8f0">'+esc(m.lab)+'</b><br>'+esc(pbFill(m.t,p.name||p.company||'there'))+'</div><div style="display:flex;flex-direction:column;gap:5px"><button class="btn-mini" onclick="pbQuickMsg(\''+esc(id)+'\','+idx+')">Copy</button><button class="btn-mini" onclick="pbWaQuick(\''+esc(id)+'\','+idx+')">WhatsApp</button></div></div>';
+  }).join('');
 }
 function renderPayoutProgress(payout, aff){
   var tot = (payout && payout.approved_total) || 0;
