@@ -105,6 +105,7 @@ tbody tr:hover td{background:#f8fafc}
 <button onclick="switchTab('partners')"><i class="fas fa-handshake"></i> Partners</button>
 <button onclick="switchTab('affiliates')"><i class="fas fa-handshake"></i> Affiliates</button>
 <button onclick="switchTab('rejected')"><i class="fas fa-ban"></i> Rejected Leads</button>
+<button onclick="switchTab('emails')"><i class="fas fa-envelope-open-text"></i> Emails <span id="emailCountBadge" style="display:none;background:#eff6ff;color:#0ea5e9;font-size:10px;font-weight:700;border-radius:20px;padding:1px 7px;margin-left:2px"></span></button>
 <button onclick="openDeliveryPreview()" title="See which leads each customer will get at the next 9am"><i class="fas fa-eye"></i> Delivery Preview</button> <button onclick="openQuietAreas()" title="Which chosen postcode areas have had no leads for 3-5 days"><i class="fas fa-exclamation-triangle"></i> Quiet Areas</button> <a href="/portal/seo.html"><i class="fas fa-magnifying-glass"></i> SEO</a>
 <a href="/portal/"><i class="fas fa-arrow-right-to-bracket"></i> Portal</a>
 </div>
@@ -311,6 +312,45 @@ tbody tr:hover td{background:#f8fafc}
 
 </div>
 </div>
+
+<!-- ============ EMAIL LIBRARY ============ -->
+<div class="tab-panel" id="tab-emails">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px">
+    <div style="font-size:15px;font-weight:800;font-family:'Outfit',sans-serif">Email Library <span style="font-size:12px;font-weight:600;color:#64748b">- every email a customer can receive, organised by when it is sent</span></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="btn btn-outline btn-sm" onclick="loadEmailLibrary()"><i class="fas fa-refresh"></i> Refresh</button>
+      <button class="btn btn-primary btn-sm" onclick="sendAllSampleEmails()" title="Send a live copy of every email to your inbox"><i class="fas fa-paper-plane"></i> Send all to my inbox</button>
+    </div>
+  </div>
+  <div style="font-size:12px;color:#94a3b8;margin-bottom:10px">Tip: open any email and use the Desktop / Mobile toggle to check how it looks on both.</div>
+  <div id="emailLibraryBody"><div class="loading">Loading email library...</div></div>
+</div>
+
+<!-- Email preview modal -->
+<div class="modal" id="emailPreviewModal" style="display:none">
+  <div style="position:fixed;inset:0;background:rgba(15,23,42,.7);z-index:9990"></div>
+  <div style="position:fixed;top:3vh;left:50%;transform:translateX(-50%);width:94%;max-width:1100px;height:94vh;background:#0f172a;border-radius:16px;z-index:9991;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5)">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid #1e293b;flex-wrap:wrap;gap:8px">
+      <div style="min-width:0">
+        <div id="emailPreviewTitle" style="font-size:14px;font-weight:800;font-family:'Outfit',sans-serif;color:#f1f5f9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60vw">Email</div>
+        <div id="emailPreviewSub" style="font-size:11px;color:#64748b;margin-top:2px"></div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button id="previewDesktopBtn" class="btn btn-sm" style="background:#0ea5e9;color:#fff" onclick="emailPreviewWidth('desktop')">Desktop</button>
+        <button id="previewMobileBtn" class="btn btn-sm btn-outline" onclick="emailPreviewWidth('mobile')">Mobile</button>
+        <button class="btn btn-outline btn-sm" onclick="sendThisSampleEmail()" title="Send a live copy of this email to your inbox"><i class="fas fa-paper-plane"></i> Send me</button>
+        <button class="btn btn-outline btn-sm" style="color:#f87171" onclick="closeEmailPreview()"><i class="fas fa-times"></i></button>
+      </div>
+    </div>
+    <div style="flex:1;overflow:auto;background:#0b1220;padding:16px">
+      <div id="emailPreviewFrameWrap" style="background:#fff;border-radius:8px;margin:0 auto;max-width:620px;height:100%;overflow:auto">
+        <div style="padding:8px 12px;background:#f1f5f9;color:#64748b;font-size:11px;font-weight:600;border-bottom:1px solid #e2e8f0">Rendered preview (this is how the email body will look)</div>
+        <iframe id="emailPreviewFrame" style="width:100%;height:calc(100% - 36px);border:0;background:#fff"></iframe>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 // Use SAME-ORIGIN relative paths: /api/* is proxied by Netlify to the backend.
 // No CORS/preflight. works reliably from 9amleads.com in any browser.
@@ -477,7 +517,110 @@ function switchTab(name) {
   if (name === 'rejected') loadRejected();
   if (name === 'analytics') loadAnalytics();
   if (name === 'bulkpool') loadBulkPoolPage();
+  if (name === 'emails') loadEmailLibrary();
   window.scrollTo(0, 0);
+}
+
+// ===== EMAIL LIBRARY =====
+var __emailLibrary = null;
+var __emailPreviewHtml = '';
+function eEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function loadEmailLibrary() {
+  var body = document.getElementById('emailLibraryBody');
+  if (!body) return;
+  body.innerHTML = '<div class="loading">Loading email library...</div>';
+  fetch('/api/admin/email-library?t=' + Date.now(), { headers: adminHeaders() })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (!d || !d.success) { body.innerHTML = '<div class="empty">Could not load the email library.</div>'; return; }
+      __emailLibrary = d.groups || [];
+      var total = 0;
+      __emailLibrary.forEach(function(g){ total += (g.emails || []).length; });
+      var badge = document.getElementById('emailCountBadge');
+      if (badge){ badge.textContent = total; badge.style.display = total ? 'inline-block' : 'none'; }
+      var html = '';
+      __emailLibrary.forEach(function(g){
+        html += '<div class="card" style="margin-bottom:16px">' +
+          '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:2px">' +
+          '<div style="font-size:14px;font-weight:800;font-family:\'Outfit\',sans-serif"><span style="margin-right:6px">' + (g.icon || '✉️') + '</span>' + eEsc(g.label) +
+          ' <span style="font-size:11px;font-weight:600;color:#94a3b8">(' + (g.emails||[]).length + ')</span></div>' +
+          '<span style="font-size:11px;color:#0ea5e9;font-weight:600">' + eEsc(g.sends || '') + '</span></div>' +
+          '<div style="font-size:12px;color:#94a3b8;margin-bottom:10px">' + eEsc(g.key) + ' group</div>' +
+          '<div style="display:flex;flex-direction:column;gap:6px">';
+        (g.emails || []).forEach(function(em){
+          var hasHtml = em.html && em.html.length > 200;
+          html += '<div style="display:flex;align-items:center;gap:10px;border:1px solid #e2e8f0;border-radius:10px;padding:9px 12px;flex-wrap:wrap;background:#fafbff">' +
+            '<div style="flex:1;min-width:180px"><div style="font-size:13px;font-weight:700;color:#0f172a">' + eEsc(em.name || em.id) + '</div>' +
+            (em.subject ? '<div style="font-size:11px;color:#64748b;margin-top:2px">Subject: ' + eEsc(em.subject) + '</div>' : '') +
+            '<div style="font-size:11px;color:#0ea5e9;font-weight:600;margin-top:2px">' + eEsc(em.when || '') + '</div></div>' +
+            '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">' +
+            (hasHtml ? '<button class="btn btn-primary btn-sm" onclick="openEmailPreview(\'' + eEsc(em.id) + '\')"><i class="fas fa-eye"></i> Preview</button>' : '<button class="btn btn-outline btn-sm" disabled title="Preview generated at send time from live data">Preview on send</button>') +
+            '<button class="btn btn-outline btn-sm" onclick="sendOneSampleEmail(\'' + eEsc(em.id) + '\')"><i class="fas fa-paper-plane"></i> Send me</button>' +
+            '</div></div>';
+        });
+        html += '</div></div>';
+      });
+      body.innerHTML = html;
+    })
+    .catch(function(e){ body.innerHTML = '<div class="empty">Error loading email library: ' + eEsc(e.message) + '</div>'; });
+}
+function findEmailById(id) {
+  if (!__emailLibrary) return null;
+  for (var g = 0; g < __emailLibrary.length; g++) {
+    var list = __emailLibrary[g].emails || [];
+    for (var e = 0; e < list.length; e++) if (String(list[e].id) === String(id)) return list[e];
+  }
+  return null;
+}
+function openEmailPreview(id) {
+  var em = findEmailById(id);
+  if (!em) return;
+  var html = em.html || '';
+  if (html.indexOf('<!DOCTYPE html>') === -1 && html.indexOf('<html') === -1) {
+    html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;font-family:Inter,Arial,sans-serif">' + html + '</body></html>';
+  }
+  __emailPreviewHtml = html;
+  document.getElementById('emailPreviewTitle').textContent = em.name || em.id;
+  document.getElementById('emailPreviewSub').textContent = (em.subject ? 'Subject: ' + em.subject + '  •  ' : '') + (em.when || '');
+  document.getElementById('emailPreviewModal').style.display = 'block';
+  document.getElementById('emailPreviewFrame').srcdoc = html;
+  emailPreviewWidth('desktop');
+}
+function emailPreviewWidth(mode) {
+  var wrap = document.getElementById('emailPreviewFrameWrap');
+  var db = document.getElementById('previewDesktopBtn');
+  var mb = document.getElementById('previewMobileBtn');
+  if (mode === 'mobile') {
+    wrap.style.maxWidth = '375px';
+    if (db){ db.style.background=''; db.className='btn btn-sm btn-outline'; }
+    if (mb){ mb.style.background='#0ea5e9'; mb.className='btn btn-sm'; mb.style.color='#fff'; }
+  } else {
+    wrap.style.maxWidth = '620px';
+    if (mb){ mb.style.background=''; mb.className='btn btn-sm btn-outline'; mb.style.color=''; }
+    if (db){ db.style.background='#0ea5e9'; db.className='btn btn-sm'; db.style.color='#fff'; }
+  }
+}
+function closeEmailPreview() { document.getElementById('emailPreviewModal').style.display = 'none'; }
+function emailSendTo() { return { email: 'ketzman1g@gmail.com', name: '9amLeads' }; }
+function sendOneSampleEmail(id) {
+  var em = findEmailById(id);
+  if (!em) return;
+  var btn = event && event.target ? event.target : null;
+  if (btn) { var o = btn.textContent; btn.textContent = 'Sending...'; btn.disabled = true; }
+  fetch('/api/admin/send-library-email', { method:'POST', headers: adminHeaders(), body: JSON.stringify({ id: id, email: 'ketzman1g@gmail.com' }) })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (btn) { btn.textContent = d && d.success ? '✓ Sent' : 'Failed'; setTimeout(function(){ btn.textContent = 'Send me'; btn.disabled = false; }, 2000); }
+      if (!d || !d.success) alert((d && d.error) || 'Send failed');
+    })
+    .catch(function(e){ if (btn) { btn.textContent='Send me'; btn.disabled=false; } alert('Error: ' + e.message); });
+}
+function sendAllSampleEmails() {
+  if (!confirm('Send a live copy of every email in the library to ketzman1g@gmail.com?')) return;
+  fetch('/api/admin/send-all-customer-samples', { method:'POST', headers: adminHeaders(), body: JSON.stringify({ email: 'ketzman1g@gmail.com' }) })
+    .then(function(r){ return r.json(); })
+    .then(function(d){ alert(d && d.success ? 'Sent ' + (d.count || '') + ' emails to your inbox.' : ((d && d.error) || 'Send failed')); })
+    .catch(function(e){ alert('Error: ' + e.message); });
 }
 
 // ===== PARTNER PROGRAMME ADMIN =====

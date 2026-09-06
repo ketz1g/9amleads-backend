@@ -15643,6 +15643,143 @@ app.post('/api/admin/send-all-customer-samples', adminAuth, async (req, res) => 
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// Shared demo/sample builders for email previews & single sends.
+function __emailDemoCustomer(product) {
+  return { id: 'demo', email: 'ketzman1g@gmail.com', product: product || 'moving', plan: 'free_trial',
+    company: 'Demo Removal Co', contact_name: 'Demo Owner', business_type: 'Removal Company',
+    lead_type: 'Moving Leads', target_areas: JSON.stringify(['HA','EN','N']), coverage: 'postcode',
+    trial_ends: new Date(Date.now() + 7 * 86400000).toISOString(), created_at: new Date().toISOString(), marketing_consent: 1 };
+}
+function __emailSampleLeads(product) {
+  var base = {
+    moving: [ { product:'moving', address:'48 Oakwood Avenue', data:{ bedrooms:3, price:475000, postcode:'EN1 3HJ', town:'Enfield' } },
+              { product:'moving', address:'12 Lime Grove, Richmond', data:{ bedrooms:4, price:712000, postcode:'TW9 3AB', town:'Richmond' } } ],
+    probate: [ { product:'probate', data:{ deceasedName:'Margaret Collins', deceasedAddress:'7 The Paddock, Sunbury', postcode:'TW16 5EX', grantDate:new Date(Date.now()-3*86400000).toISOString() } } ],
+    newbusiness: [ { product:'newbusiness', data:{ companyName:'Brightleaf Marketing Ltd', address:'21 Market Street, Leeds', postcode:'LS1 6EZ', publishedDate:new Date(Date.now()-2*86400000).toISOString() } } ],
+    planning: [ { product:'planning', data:{ address:'33 Church Road, Chorley', postcode:'PR7 4HT', description:'Single storey rear extension', status:'Pending', publishedDate:new Date(Date.now()-1*86400000).toISOString() } } ],
+    tenders: [ { product:'tenders', data:{ title:'School catering services - 3 year contract', organisation:'Local Authority', closingDate:new Date(Date.now()+14*86400000).toISOString(), url:'https://www.gov.uk/contracts-finder' } } ]
+  };
+  return base[product] || base.moving;
+}
+function __emailStatusHtml(kind) {
+  return kind === 'delay'
+    ? '<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:16px"><h2 style="color:#38bdf8;margin:0 0 8px">Your leads are on their way \u2728</h2><p style="font-size:15px;line-height:1.6;color:#cbd5e1">Just a quick heads-up: today\'s fresh opportunities are still being delivered to your dashboard and inbox. They\'ll be with you very shortly.</p><p style="font-size:13px;color:#94a3b8;margin:16px 0 0">- The 9amLeads Team</p></div>'
+    : '<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:16px"><h2 style="color:#34d399;margin:0 0 8px">All sorted \u2705</h2><p style="font-size:15px;line-height:1.6;color:#cbd5e1">We\'ve resolved the technical issue and your fresh leads are now in your dashboard and inbox.</p><p style="font-size:13px;color:#94a3b8;margin:16px 0 0">- The 9amLeads Team</p></div>';
+}
+function __emailVerificationHtml() {
+  return '<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:16px"><h2 style="color:#38bdf8;margin:0 0 8px">Verify your email</h2><p style="font-size:14px;line-height:1.7;color:#cbd5e1">Click below to confirm your email address and activate your 9amLeads account.</p><div style="margin:18px 0"><a href="#" style="display:inline-block;padding:12px 28px;background:#0ea5e9;color:#fff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Verify email address</a></div><p style="font-size:11px;color:#64748b">If you didn\'t create an account you can ignore this email.</p></div>';
+}
+function __emailWeeklyDigestHtml() {
+  return '<div style="font-family:Inter,Arial,sans-serif;max-width:600px;margin:0 auto;background:#0f111a;color:#e2e8f0;border-radius:16px;overflow:hidden"><div style="background:#0f172a;padding:20px;text-align:center"><div style="font-size:16px;font-weight:900;color:#fff">9am<span style="color:#38bdf8">Leads</span></div><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;margin-top:4px;letter-spacing:1px">Your Weekly Performance Summary</div></div><div style="padding:22px"><h2 style="margin:0 0 8px;font-size:18px;color:#f1f5f9">Here\'s your week, Demo Owner</h2><p style="color:#cbd5e1;font-size:13px">You received <b style="color:#34d399">6 leads</b> this week. Keep calling them fast - the first to respond usually wins the job.</p></div></div>';
+}
+// Render a single customer email template by library id (returns {subject, html} or throws).
+function __renderLibraryEmail(id) {
+  id = String(id || '');
+  var subj = '';
+  // Daily lead sheets
+  var dm = id.match(/^daily_(moving|probate|newbusiness|planning|tenders)$/);
+  if (dm) { subj = 'Your Daily Opportunities'; return { subject: subj, html: generateLeadEmailHTML(__emailDemoCustomer(dm[1]), __emailSampleLeads(dm[1])) }; }
+  if (id === 'verification') return { subject: 'Verify your email address', html: __emailVerificationHtml() };
+  if (id === 'weekly_digest') return { subject: 'Your 9amLeads weekly summary', html: __emailWeeklyDigestHtml() };
+  if (id === 'status_delay') return { subject: 'Your leads are on their way', html: __emailStatusHtml('delay') };
+  if (id === 'status_sorted') return { subject: 'All sorted', html: __emailStatusHtml('sorted') };
+  // Campaign templates (trial_day*, paid_*)
+  var known = null;
+  for (var i = 0; i < CAMPAIGN_EMAILS.length; i++) if (CAMPAIGN_EMAILS[i].template === id) { known = CAMPAIGN_EMAILS[i]; break; }
+  if (!known) for (var j = 0; j < PAID_EMAIL_SERIES.length; j++) if (PAID_EMAIL_SERIES[j].template === id) { known = PAID_EMAIL_SERIES[j]; break; }
+  if (known) {
+    subj = getEditedCampaignSubject(id, known.subject);
+    var html = getCampaignEmailHTMLWithEdits(__emailDemoCustomer('moving'), id);
+    return { subject: subj, html: html };
+  }
+  // Weekly reactivation weeks 5-26
+  var wm = id.match(/^trial_wk(\d+)$/);
+  if (wm) {
+    var wk = Math.min(26, Math.max(5, parseInt(wm[1], 10)));
+    subj = WEEKLY_FOLLOWUP_SUBJECTS[wk] || ('Your leads are still waiting - week ' + wk);
+    return { subject: subj, html: buildWeeklyTrialTemplate(__emailDemoCustomer('moving'), wk, 'Moving Leads', '#0ea5e9', 'moving') };
+  }
+  throw new Error('Unknown email id: ' + id);
+}
+
+// POST /api/admin/send-library-email — send one email from the Email Library to an address.
+app.post('/api/admin/send-library-email', adminAuth, async (req, res) => {
+  try {
+    var id = String((req.body && req.body.id) || '');
+    var to = String((req.body && req.body.email) || '').trim().toLowerCase();
+    if (!id) return res.status(400).json({ error: 'id is required' });
+    if (!to) return res.status(400).json({ error: 'email is required' });
+    var r = __renderLibraryEmail(id);
+    await sendBrevoEmail({ email: to, name: '9amLeads' }, 'SAMPLE - ' + r.subject, r.html);
+    res.json({ success: true, emailed: to, id: id, subject: r.subject });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/email-library — every email a customer can receive, grouped by
+// WHEN it is sent (not by template type), each with fully-rendered HTML so it can
+// be previewed inline at desktop and mobile width. Used by the Admin Email Library.
+app.get('/api/admin/email-library', adminAuth, (req, res) => {
+  try {
+    var edits = loadEmailEdits();
+    function demoCustomer(p) { return __emailDemoCustomer(p); }
+    function sampleLeads(p) { return __emailSampleLeads(p); }
+    function campaignBody(tpl) {
+      try { var h = getCampaignEmailHTMLWithEdits(demoCustomer('moving'), tpl); return (h && h.length > 200) ? h : ''; } catch(e){ return ''; }
+    }
+    function subjectFor(tpl, fallback) {
+      try { return getEditedCampaignSubject(tpl, fallback); } catch(e){ return fallback; }
+    }
+    function statusHtml(kind) { return __emailStatusHtml(kind); }
+    var groups = [];
+    // 1) IMMEDIATE (on sign-up)
+    groups.push({ key:'immediate', label:'Immediately on sign-up', icon:'\uD83D\uDC4B', sends:'Sent the moment a customer creates their free trial', emails:[
+      { id:'trial_day1', name:'Welcome email', subject: subjectFor('trial_day1', 'Your opportunities start tomorrow at 9am \u2705'), when:'On sign-up', html: campaignBody('trial_day1') },
+      { id:'verification', name:'Email verification', subject:'Verify your email address', when:'On sign-up', html: __emailVerificationHtml() }
+    ]});
+    // 2) DAILY 9AM LEAD SHEET (per product)
+    var prodMeta = { moving:['Moving Leads','#0ea5e9'], probate:['Probate Leads','#a855f7'], newbusiness:['New Business Alerts','#06b6d4'], planning:['Planning Permissions','#10b981'], tenders:['Public Tenders','#6366f1'] };
+    var daily = [];
+    for (var dp in prodMeta) {
+      try {
+        var dc = demoCustomer(dp);
+        daily.push({ id:'daily_'+dp, name:'Daily 9am lead sheet - '+prodMeta[dp][0], product:dp, when:'Every weekday 09:00 UK', html: generateLeadEmailHTML(dc, sampleLeads(dp)) });
+      } catch(de) { daily.push({ id:'daily_'+dp, name:'Daily 9am lead sheet - '+prodMeta[dp][0], product:dp, when:'Every weekday 09:00 UK', html:'', error:String(de.message||de) }); }
+    }
+    groups.push({ key:'daily', label:'Daily lead delivery', icon:'\uD83D\uDCE8', sends:'Every weekday at 09:00 UK (Mon-Fri)', emails: daily });
+    // 3) FREE-TRIAL NURTURE (during trial, day-gated)
+    var trialEmails = [];
+    for (var ci = 0; ci < CAMPAIGN_EMAILS.length; ci++) {
+      var ce = CAMPAIGN_EMAILS[ci];
+      if (String(ce.template).indexOf('trial_wk') === 0) continue;
+      var whenTxt = ce.day <= 6 ? 'Day ' + ce.day + ' of your free trial' : ce.day === 7 ? '1 day before the trial ends' : String(ce.day - 7) + ' day(s) after the trial ends';
+      trialEmails.push({ id: ce.template, name: 'Trial follow-up (day ' + ce.day + ')', when: whenTxt, day: ce.day, html: campaignBody(ce.template) });
+    }
+    groups.push({ key:'trial', label:'Trial nurture sequence', icon:'\uD83C\uDF89', sends:'Day-gated while on (and just after) the free trial', emails: trialEmails.sort(function(a,b){ return (a.day||0)-(b.day||0); }) });
+    // 4) WEEKLY FOLLOW-UPS (after trial, weeks 5-26)
+    var weekly = [];
+    for (var wk = 5; wk <= 14; wk++) {
+      try { weekly.push({ id:'trial_wk'+wk, name:'Weekly follow-up (week '+wk+')', week: wk, when:'Every week after the trial (weeks 5-26)', html: buildWeeklyTrialTemplate(demoCustomer('moving'), wk, 'Moving Leads', '#0ea5e9', 'moving') }); }
+      catch(we) {}
+    }
+    groups.push({ key:'weekly', label:'Weekly reactivation (after trial)', icon:'\uD83D\uDD04', sends:'One per week for ~6 months after the trial ends', emails: weekly });
+    // 5) PAID CUSTOMER SERIES
+    var paid = [];
+    for (var pai = 0; pai < PAID_EMAIL_SERIES.length; pai++) {
+      var pe = PAID_EMAIL_SERIES[pai];
+      paid.push({ id: pe.template, name: 'Paid customer - week ' + pe.week, week: pe.week, when: pe.week === 0 ? 'Immediately after paying' : 'Week ' + pe.week + ' of being a paid customer', html: campaignBody(pe.template) });
+    }
+    groups.push({ key:'paid', label:'Paid customer series', icon:'\uD83D\uDCB5', sends:'After converting to a paid plan (weekly, up to 12 weeks)', emails: paid });
+    // 6) WEEKLY DIGEST
+    groups.push({ key:'digest', label:'Weekly performance digest', icon:'\uD83D\uDCCA', sends:'Every Monday 08:30 UK', emails:[{ id:'weekly_digest', name:'Weekly performance digest', subject:'Your 9amLeads weekly summary', when:'Monday 08:30 UK', html: __emailWeeklyDigestHtml() }] });
+    // 7) STATUS NOTICES
+    groups.push({ key:'status', label:'Delivery status notices', icon:'\uD83D\uDCCB', sends:'Only if a 9am delivery is delayed or resolved', emails:[
+      { id:'status_delay', name:'Leads on their way (delay)', when:'If delivery is running late (09:10 UK)', html: statusHtml('delay') },
+      { id:'status_sorted', name:'All sorted (resolved)', when:'Once the issue is fixed', html: statusHtml('sorted') }
+    ]});
+    res.json({ success: true, groups: groups });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/admin/failed-emails', adminAuth, (req, res) => {
   try { var q = getDb().failed_emails || []; res.json({ success: true, count: q.length, items: q.slice(-40).map(function(x){ return { email: x.email, name: x.name, subject: String(x.subject || '').substring(0, 160), attempts: x.attempts || 1, at: x.at }; }) }); }
   catch (e) { res.status(500).json({ error: e.message }); }
