@@ -12808,7 +12808,23 @@ var COUNTY_NEIGHBORS = {
   'city-of-glasgow': ['east-renfrewshire','east-dunbartonshire','west-dunbartonshire','north-lanarkshire','south-lanarkshire'],
   'highland': ['argyll-and-bute','aberdeenshire','moray'],
   'aberdeenshire': ['angus','highland','moray'], 'moray': ['highland','aberdeenshire'],
-  'western-isles': ['highland']
+  'western-isles': ['highland'],
+  // ---- REGION keys that the signup picker offers (probate/planning/newbusiness) ----
+  // These MUST be present so "closest area" broadening works when a customer picks a
+  // region label like "Merseyside" / "North East" / "Yorkshire and the Humber".
+  // Without them broadenAreas() returns nothing extra and the delivery falls back to
+  // the FULL NATIONAL pool (sending a Poole probate lead to a Yorkshire customer).
+  'merseyside': ['cheshire','greater-manchester','lancashire'],
+  'north-east': ['tyne-and-wear','durham','northumberland'],
+  'north-east-england': ['tyne-and-wear','durham','northumberland'],
+  'yorkshire-and-the-humber': ['north-yorkshire','west-yorkshire','south-yorkshire','east-riding-of-yorkshire'],
+  'yorkshire': ['north-yorkshire','west-yorkshire','south-yorkshire','east-riding-of-yorkshire'],
+  'tyne-and-wear': ['northumberland','durham'],
+  'durham': ['tyne-and-wear','northumberland'],
+  'east-riding-of-yorkshire': ['north-yorkshire','south-yorkshire','lincolnshire'],
+  'city-of-durham': ['durham'],
+  'liverpool': ['merseyside','cheshire','lancashire'],
+  'greater-manchester': ['cheshire','merseyside','lancashire','west-yorkshire','derbyshire','staffordshire']
 };
 // Build the broadened area set for a customer: chosen areas + nearest neighbours.
 function broadenAreas(areas) {
@@ -19939,8 +19955,13 @@ _deliverDiag[cust.email].products = products;
                   fgAreaOk = custAreas.some(function(a){ return extractPostcodeArea(a) === fgArea; }) || (expandedAreas && expandedAreas.indexOf(fgArea) !== -1);
                 }
               } else { fgAreaOk = true; }
-              // National fallback for tenders/probate (opportunities without a postcode).
-              if (!fgAreaOk && (fgProd === 'tenders' || fgProd === 'probate')) fgAreaOk = true;
+              // NATIONAL fallback ONLY for genuinely postcode-less public notices
+              // (some tender/older-probate records have no address/postcode at all).
+              // If a probate lead HAS a real postcode area that is OUTSIDE the
+              // customer's chosen counties, REJECT it - a Yorkshire probate customer
+              // must never receive a Poole/Dorset lead (this was the bug that sent
+              // bobby1chaudhry an out-of-area lead). Only no-address records relax.
+              if (!fgAreaOk && (fgProd === 'tenders' || fgProd === 'probate') && !fgArea) fgAreaOk = true;
               if (!fgAreaOk) continue;
               // MOVING DISTANCE GATE: guaranteed-fill must never send a far-away lead.
               // Even the "full pool" last resort is only used when the lead is within
@@ -20090,24 +20111,18 @@ _deliverDiag[cust.email].products = products;
               if (topupAreas.length > 0) {
                 var tlCounties = topupAreas.some(function(a){ return !/^[A-Z]{1,3}$/i.test(a); });
                 if (tlCounties) {
-                  var tlCountyMap = {
-                    'essex':['CM','CO','SS','IG'],'hertfordshire':['AL','EN','HP','SG','WD'],'kent':['CT','DA','ME','TN'],
-                    'surrey':['CR','GU','KT','RH','SM','TW'],'sussex':['BN','RH','TN'],'hampshire':['GU','PO','SO','SP','RG'],
-                    'london':['E','EC','N','NW','SE','SW','W','WC','BR','CR','DA','EN','HA','IG','KT','RM','SM','TN','TW','UB'],
-                    'greater-london':['E','EC','N','NW','SE','SW','W','WC','BR','CR','DA','EN','HA','IG','KT','RM','SM','TN','TW','UB'],
-                    'birmingham':['B'],'manchester':['M'],'liverpool':['L'],'leeds':['LS'],'sheffield':['S'],
-                    'bristol':['BS'],'nottingham':['NG'],'leicester':['LE'],'cardiff':['CF'],'edinburgh':['EH'],
-  'glasgow':['G'],'belfast':['BT'],'cheshire':['CH','WA'],'lancashire':['BB','BL','FY','LA','PR'],'fife':['KY','DD'],
-                    'north-east':['DH','DL','NE','SR','TS'],'north-west':['BB','BL','CH','CW','FY','L','LA','M','OL','PR','SK','WA','WN'],
-  'yorkshire':['BD','HD','HG','HU','HX','LS','S','WF','YO'],'yorkshire-and-the-humber':['BD','HD','HG','HU','HX','LS','S','WF','YO'],
-  'west-yorkshire':['BD','HX','LS','WF'],'south-yorkshire':['S','DN'],'north-yorkshire':['HG','YO','DL','BD'],
-  'east-riding-of-yorkshire':['HU','YO'],'leeds':['LS'],'sheffield':['S'],'city-of-leeds':['LS'],'city-of-sheffield':['S'],
-  'east-midlands':['DE','DN','LE','LN','NG','NN','PE'],'west-midlands-region':['B','CV','DY','HR','ST','SY','TF','WR','WS','WV'],
-  'city-of-glasgow':['G'],'city-of-edinburgh':['EH'],'scotland':['AB','DD','DG','EH','FK','G','HS','IV','KA','KW','KY','ML','PA','PH','TD','ZE'],
-                    'east-of-england':['AL','CB','CM','CO','HP','IP','LU','NR','PE','SG','SS'],'south-east':['BN','CT','DA','GU','HP','KT','ME','MK','OX','PO','RG','RH','SL','SN','SO','SS','TN','TW'],
-                    'south-west':['BA','BS','DT','EX','GL','PL','SN','SP','TA','TQ','TR'],'wales':['CF','LD','LL','NP','SA','SY']
-                  };
-                  tlAreaOk = (tlCountyMap[String(topupAreas[0]||'').toLowerCase().replace(/[\s-]+/g,'-')] || []).indexOf(tlArea) >= 0;
+                  // Use the GLOBAL single-source-of-truth map (covers merseyside/
+                  // north-east/yorkshire-and-the-humber/tyne-and-wear etc) and check
+                  // EVERY chosen area - NOT a stale inline map that only checked
+                  // areas[0]. This is what stopped bobby1chaudhry getting a real
+                  // in-area lead and instead receiving a far-away (Poole/Dorset) one.
+                  var tlCountyMap = COUNTY_POSTCODE_MAP;
+                  var tlAreaOkLocal = false;
+                  for (var _tc = 0; _tc < topupAreas.length; _tc++) {
+                    var tlKey2 = String(topupAreas[_tc] || '').toLowerCase().replace(/[\s-]+/g, '-');
+                    if ((tlCountyMap[tlKey2] || []).indexOf(tlArea) >= 0) { tlAreaOkLocal = true; break; }
+                  }
+                  tlAreaOk = tlAreaOkLocal;
                 } else {
                   // Nearest-area fill (option 2): always hit the promised count.
                   // First try the customer's exact chosen areas; if they're exhausted
@@ -20124,8 +20139,11 @@ _deliverDiag[cust.email].products = products;
                   }
                 }
               } else { tlAreaOk = true; }
-              // National fallback for tenders/probate (opportunities without a postcode).
-              if (!tlAreaOk && (tpProd === 'tenders' || tpProd === 'probate')) tlAreaOk = true;
+              // NATIONAL fallback ONLY for genuinely postcode-less public notices
+              // (some tender/older-probate records have no address/postcode at all).
+              // A probate lead WITH a real postcode that is OUTSIDE the customer's
+              // chosen counties is REJECTED (never a far-away out-of-area lead).
+              if (!tlAreaOk && (tpProd === 'tenders' || tpProd === 'probate') && !tlArea) tlAreaOk = true;
               if (!tlAreaOk) continue;
               var tlKey = (tl.postcode || tl.address || tl.id || tl.url || '').toLowerCase().trim();
               if (usedTopupAddrs[tlKey]) continue;
