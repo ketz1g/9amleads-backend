@@ -1,13 +1,17 @@
 Investor,Type,Ticket,Contact path (URL/email),Fit,Contacted,Reply,Demo booked,Status
+"SFC Capital",SEIS fund (national),SEIS rounds,https://sfccapital.com/raise,UK's leading SEIS fund; B2B software is #1 sector; 600+ companies,no,,,,QUEUE-FIRST
+"Ascension",VC pre-seed/seed (national),£150k-850k,https://www.ascension.vc/founders,UK-wide; reviews every app in a week; B2B-heavy,no,,,,QUEUE (bigger round angle)
+"Firestartr",Venture platform/syndicate (national),seed stage,https://firestartr.co/,UK-wide internet/software seed; EIS,no,,,,Queue
+"UKBAA TechInvest showcase",Pitch showcase (national),n/a,https://ukbaa.org.uk/membership/angel-hubs/,Free national pitching to many angels,no,,,,Queue
 "Angels Den",Angel network + platform,"£25k avg",https://app.angelsden.com/apply,Spot-on size; SEIS small deals,no,,,,Queue
 "Angel Investment Network (AIN)",Angel marketplace,"£1k+",https://www.angelinvestmentnetwork.co.uk/entrepreneur/register,Wide national SEIS reach,no,,,,Queue
 "Cambridge Angels",Angel syndicate,n/a,https://www.cambridgeangels.com/apply-to-cambridge-angels,SaaS-savvy operator angels; office hours,no,,,,Queue
 "Envestors (Envestry)",Investor network,"£10k+",https://envestors.envestry.com/raising,SEIS/EIS micro-raises,no,,,,Queue
 "London Business Angels",Angel network,"£10-20k",https://www.londonbusinessangels.com,Established SEIS/EIS network; confirm intake,no,,,,Queue
-"Angel Investors Bristol (AIB)",Angel network,"£50-250k",https://angel.scoreapp.com,SEIS/EIS + SaaS; needs SW presence,no,,,,Queue
-"NorthInvest",Angel network,"small rounds OK",https://share.hsforms.com/1t91-QEf8RDKYElEdgn-uEw3e2w7,Coaching + micro rounds; North-based,no,,,,Queue
-"GC Angels",Angel network,n/a,https://www.gcangels.co.uk,NW early-stage; confirm form open,no,,,,Queue
-"Minerva Business Angels",Angel network,"£50k-1m",https://www.minerva-ba.co.uk,Long-established regional; check min,no,,,,Queue
+"Angel Investors Bristol (AIB)",REGIONAL (SW) - SKIP unless SW base,"£50-250k",https://angel.scoreapp.com,Needs SW presence,no,,,,SKIP-regional
+"NorthInvest",REGIONAL (North) - SKIP unless N base,small rounds OK,https://northinvest.co.uk/raise/,Needs North presence,no,,,,SKIP-regional
+"GC Angels",REGIONAL (Manchester/NW) - SKIP unless NW base,n/a,https://www.gcangels.co.uk,NW early-stage,no,,,,SKIP-regional
+"Minerva Business Angels",WM + national (ask re remote),"£50k-1m",https://www.minerva-ba.co.uk,Ask if remote founder accepted,no,,,,Queue-ask
 "UKBAA",Umbrella body,n/a,https://ukbaa.org.uk/membership/angel-hubs/,Unlocks regional hubs + showcases,no,,,,Queue
 "BAR (British Association of Removers)",Sector body,n/a,https://bar.co.uk/partnerships-and-affiliates/,Buyer segment + operator angels,no,,,,Queue
 "FMB (Federation of Master Builders)",Sector body,n/a,membership@fmb.org.uk,Builders buyers + operator angels,no,,,,Queue

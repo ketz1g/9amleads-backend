@@ -1,12 +1,39 @@
 # 9amLeads — UK Investor Shortlist (£25k for 10%, SEIS-friendly)
 
-> Researched 3 Sep 2026 (live web verification during session).
+> Researched 3 Sep 2026 (live web verification during session) · Updated 7 Sep 2026 with **national** additions.
 > Verification key: **[V]** = site verified live · **[#]** = real, long-established org but intake form could not be auto-verified — re-check before pitching.
 > ⚠️ The network "USK" from earlier outreach notes could not be traced to any current UK angel group in 2026 — see live equivalents below (Angels Den, Cambridge Angels, NorthInvest, AIB).
+> 📍 **Geography filter applied 7 Sep:** the regional networks marked "REGIONAL" require a genuine local presence (office/team in that area). Skip them unless you actually operate there — they are why half the earlier list was "not useful."
+
+---
+
+## 🔥 NEW — National / UK-wide (no regional requirement) — apply FIRST
+
+**N1. SFC Capital** [V] — *UK's leading SEIS fund manager, London HQ, invests UK-wide*
+- B2B software is their **#1 sector** (115 of ~400 portfolio companies); SEIS-native; 600+ companies backed, £160m+ AUM.
+- Path: `https://sfccapital.com/raise` (Start Raising → startup application form).
+- Why: purpose-built for exactly your round size (£25k–£250k SEIS); most active SEIS investor in the UK.
+- Caveat: competitive — they screen many; lead with live revenue + 8 paying trials, not the idea.
+
+**N2. Ascension** [V] — *London VC (pre-seed/seed), invests across UK + Europe*
+- Tickets **£150k–£850k** (bigger than £25k), but they review every application within a week and are a strong "first cheque then follow-on" partner.
+- Path: `https://www.ascension.vc/founders` → "Apply for funding".
+- Why: top-10 most-active UK early-stage investor; B2B/software-heavy portfolio (Credit Kudos, etc.).
+- Caveat: min ticket is above £25k — pitch as "SEIS round now, £250k pre-seed in 6–12 months" to stay relevant.
+
+**N3. Firestartr** [V] — *UK venture platform / angel syndicate, seed stage, national*
+- Backs seed-stage internet/software founders UK-wide; EIS structure; one line on the cap table.
+- Path: apply via site (`https://firestartr.co/` → Team/Apply contact).
+- Caveat: co-investment platform — need to show you already have a lead investor or strong angel traction.
+
+**N4. UKBAA "Angel Hub" national events + TechInvest showcases** [V] — *umbrella route, UK-wide*
+- Pitch showcases run nationally (British Business Bank partner) — a free way to get in front of many angels without a regional network membership.
+- Path: `https://ukbaa.org.uk/membership/angel-hubs/` · ask `enquiries@ukbaa.org.uk` for the next national showcase.
 
 ---
 
 ## (a) Angel networks & syndicates — best fit for a £25k SEIS seed
+<!-- (national/non-regional kept; REGIONAL items marked) -->
 
 **1. Angels Den** [V] — *Angel network + platform, UK-wide*
 - Average angel ticket **£25k** — your exact size. 27,000+ investors, 1,000+ startups funded.
@@ -36,27 +63,25 @@
 - Path: founders application form on `https://www.londonbusinessangels.com` (re-verify it's open).
 - Caveat: could not verify current intake this session.
 
-**6. Angel Investors Bristol (AIB)** [V] — *UKBAA-affiliated, SEIS/EIS specialist, South West & South Wales*
+**6. Angel Investors Bristol (AIB)** [V] — REGIONAL (South West & South Wales)
 - Rounds ~£50–250k via SPV; monthly pitch slots.
 - Path: self-assessment first at `https://angel.scoreapp.com`; if "investment ready" you get the apply link.
-- Why: explicitly SEIS/EIS + SaaS + traction-friendly; loves grant/co-investment matches.
-- Caveat: **strict geography** — needs a real South West (incl. Glos/Wilts) presence; 5% introducer fee.
+- Caveat: **strict geography** — needs a real South West presence; 5% introducer fee. **Skip unless you open a SW base.**
 
-**7. NorthInvest** [V] — *Angel network, Leeds / North of England (Angel Group of the Year 2022)*
+**7. NorthInvest** [V] — REGIONAL (Leeds / North of England)
 - ~220 angels; early-stage tech incl. micro rounds; free investment-readiness coaching first.
-- Path: open application → `https://share.hsforms.com/1t91-QEf8RDKYElEdgn-uEw3e2w7` · `https://northinvest.co.uk/raise/`
-- Why: the most accessible North-network path for a first formal round.
-- Caveat: generally wants the business/team based in the North.
+- Path: `https://northinvest.co.uk/raise/`
+- Caveat: generally wants the business/team based in the North. **Skip unless you open a Northern base.**
 
-**8. GC Angels** [#] — *Angel network, Greater Manchester / North West*
+**8. GC Angels** [#] — REGIONAL (Greater Manchester / North West)
 - Early-stage; grants + equity blended.
 - Path: online form at `https://www.gcangels.co.uk` (re-verify).
-- Caveat: regional focus.
+- Caveat: regional focus. **Skip unless you open a Manchester/NW base.**
 
-**9. Minerva Business Angels** [#] — *Angel network, West Midlands (Warwick) + national*
+**9. Minerva Business Angels** [#] — *West Midlands (Warwick) + national* (borderline)
 - Rounds typically £50k–£1m; SEIS/EIS deals; long-established.
 - Path: `https://www.minerva-ba.co.uk` (re-verify current intake).
-- Caveat: minimums may exceed £25k — ask.
+- Caveat: minimums may exceed £25k — ask. National reach but WM-anchored — ask if remote founder accepted.
 
 **10. UKBAA (UK Business Angels Association)** [V] — *Trade body / umbrella (not an investor)*
 - Runs Angel Hubs + TechInvest pitch showcases (with British Business Bank).
@@ -96,11 +121,12 @@
 
 ---
 
-## Recommended sequencing
+## Recommended sequencing (updated 7 Sep — national first)
+0. **National first:** SFC Capital (raise form) + Ascension (founders apply) + UKBAA TechInvest showcase — no geography barrier, apply THIS week.
 1. **File SEIS Advance Assurance now** (free, ~weeks) — every investor below asks for it.
 2. **Start Up Loans application in parallel** — up to £25k non-dilutive (combines with the equity round).
-3. Pitch **regional networks you genuinely have presence in** (AIB, NorthInvest, GC, Minerva, LBA).
-4. Use **Angels Den / AIN / Envestors** for national frictionless SEIS reach.
+3. Pitch national networks (Angels Den / AIN / Envestors / LBA) — UK-wide, no location rule.
+4. **Skip regional networks (AIB/NorthInvest/GC/Minerva) UNLESS** you actually open a local base — that was the time-waster.
 5. Treat **Crowdcube/Seedrs** as your *next* round (£150k+), not this one.
 6. Mine **BAR / FMB / Legal Geek + existing customers** for warm operator money alongside.
 

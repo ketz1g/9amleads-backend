@@ -26,9 +26,8 @@ Having AA **before** talking to angels is the single biggest close-rate lever fo
 **⚠️ Verify before you apply:** confirm the company's incorporation date and first commercial-sale date are within 3 years at share issue. If between 3–7 years old, you fall back to **EIS** (30% relief, ≤£30m/£35m gross assets, no employee limit issue at this size) — still very pitchable, just less generous.
 
 ## Company overview (paste into the form)
-- **Company:** [9amLeads Ltd — confirm exact legal name + Companies House number]
-- **Registered address:** [—]
-- **Directors:** Ketz Mandalia (confirm any others)
+- **Company:** 9AM LEADS LTD · Company No. **17402522** · Registered office 66 Paul Street, London EC2A 4NA · Incorporated **16 Aug 2026**
+- **Directors:** Ketan Umed Mandalia (solo; appointed 16 Aug 2026)
 - **Business:** 9amLeads is a B2B SaaS + print service that delivers **fresh, in-area, door-numbered business opportunities** (residential & commercial moves, probate estates, planning applications, new company registrations, public-sector tenders) to UK trades & professional firms every morning at 9am. Customers subscribe weekly (Starter £25/wk ≈ £100/mo, Pro £49/wk, Enterprise £99/wk) and can additionally use "Print & Post" to mail a flyer/letter to each lead (revenue roughly doubles per customer). Revenue is genuine trading income from subscriptions and printed-mail delivery — not royalties/licensing, not financial services.
 - **Employees/FTE:** [1]
 - **Gross assets:** under £[figure] — within the £350k cap.
