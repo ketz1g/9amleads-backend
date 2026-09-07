@@ -9983,14 +9983,21 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
   // Preview copy of leadPassesFilters (mirrors the delivery's filter application).
   function previewLeadPassesFilters(ld2) {
     try {
+      // RELAXED FILL (mirror delivery): when the strict preview tiers are short and
+      // this customer has optional filters, the 48h fallback relaxes them so the
+      // preview shows the same count the guaranteed-fill delivery will actually send.
+      if (previewFilterRelax && cust.product !== 'moving') return true;
       if (cust.product === 'moving') {
-        var b = parseInt(ld2.bedrooms) || 0;
-        if (custLeadFilters.maxBedrooms < 99 && b > custLeadFilters.maxBedrooms) return false;
+        if (!previewFilterRelax) {
+          var b = parseInt(ld2.bedrooms) || 0;
+          if (custLeadFilters.maxBedrooms < 99 && b > custLeadFilters.maxBedrooms) return false;
+        }
         // COMMERCIAL FILTER (mirror delivery): residential-only must not get commercial.
         var _mt2 = 'both';
         try { var _pc3 = JSON.parse(cust.product_config || '{}'); _mt2 = (_pc3.moving && _pc3.moving.moving_type) || cust.moving_type || 'both'; } catch(e) {}
         if (_mt2 === 'residential' && isCommercialLead(ld2)) return false;
         if (_mt2 === 'commercial' && !isCommercialLead(ld2)) return false;
+        return true;
       }
       if (cust.product === 'planning' && custLeadFilters.appTypes && custLeadFilters.appTypes.length) {
         var at = String(ld2.applicationType || ld2.proposal || ld2.type || ld2.category || '').toLowerCase();
@@ -10040,6 +10047,13 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
   function mailOK(addr, pc) { return hasUsablePremiseAddress(addr, pc) && /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(pc || '').trim()); }
   var leadFilters = {};
   try { leadFilters = JSON.parse(cust.biz_field2 || '{}'); } catch(e) { leadFilters = {}; }
+  // FILTER = PRIORITY, NEVER UNDER-DELIVER (preview mirror): relax optional filters in
+  // the 48h fallback so the preview shows the count guaranteed-fill will really send.
+  var previewFilterRelax = false;
+  var previewHasOptional = (cust.product === 'moving' && custLeadFilters.maxBedrooms < 99) ||
+    (cust.product === 'planning' && custLeadFilters.appTypes && custLeadFilters.appTypes.length > 0) ||
+    (cust.product === 'newbusiness' && custLeadFilters.industries && custLeadFilters.industries.length > 0) ||
+    (cust.product === 'tenders' && ((custLeadFilters.minContractVal > 0) || !!custLeadFilters.keywords));
   var candCap = Math.max(limit * 4, 30);
   for (var i = 0; i < interleaved.length && candidates.length < candCap; i++) {
     var l = interleaved[i];
@@ -10103,6 +10117,10 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
   // count, pull additional pool leads up to 48h old (moving: closest-postcode
   // ranking; non-moving: in-area first). Mirrors the delivery's 24h->48h passes.
   if (selected.length < limit) {
+    // FILTER = PRIORITY, NEVER UNDER-DELIVER (preview mirror): once the strict
+    // in-area tiers can't fill the promised count, relax optional signup filters so
+    // the preview matches what the delivery's guaranteed-fill will actually send.
+    if (previewHasOptional) { previewFilterRelax = true; }
     var pcSeen2 = {};
     candidates.forEach(function(c) { var k = String(c.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); if (k) pcSeen2[k] = 1; });
     var fallbackPool = interleaved.slice().filter(function(c2) { return isFallbackLeadAcceptable(c2.postcode || c2.address || c2.fullAddress || '', areas); }).sort(function(a, b) {
@@ -19073,22 +19091,44 @@ _deliverDiag[cust.email].products = products;
         custLeadFilters.minContractVal = parseInt(lfFlat['f-min-val'] || lfFlat.minContractValue) || 0;
         custLeadFilters.keywords = String(lfFlat['f-keywords'] || lfFlat.keywords || '').toLowerCase();
       } catch(e) {}
+      // FILTER = PRIORITY, NEVER UNDER-DELIVER: a customer's optional signup filters
+      // (planning app-type, tenders keywords/min-value, newbusiness industry, moving
+      // max-bedrooms) rank which leads are preferred, but they must NEVER leave the
+      // customer short of their promised count. The strict tiers below select
+      // filter-matching leads first (priority). If after every strict tier the count
+      // is still not met, the guaranteed-fill tiers flip this flag so they may pull
+      // any valid in-area lead (still fresh, door-numbered, deduped, area-matched) to
+      // hit the promise. The moving residential/commercial split is an identity-level
+      // rule, not a preference, so it is ALWAYS enforced even when relaxed.
+      var filterRelaxForFill = false;
+      var hasOptionalFilter = (cust.product === 'moving' && custLeadFilters.maxBedrooms < 99) ||
+        (cust.product === 'planning' && custLeadFilters.appTypes && custLeadFilters.appTypes.length > 0) ||
+        (cust.product === 'newbusiness' && custLeadFilters.industries && custLeadFilters.industries.length > 0) ||
+        (cust.product === 'tenders' && ((custLeadFilters.minContractVal > 0) || !!custLeadFilters.keywords));
       function leadPassesFilters(ld2) {
         try {
+          // RELAXED FILL: optional signup filters are skipped once the guaranteed-fill
+          // tiers kick in (they only ever relax for a customer who is STILL SHORT).
+          // The moving residential/commercial split below still applies either way.
+          if (filterRelaxForFill && cust.product !== 'moving') return true;
           if (cust.product === 'moving') {
             // MOVING: only the optional MAX-BEDROOMS filter applies (a removal company
             // may only move homes up to N beds). Min beds / max price / property type
             // filters are NOT used for moving — removal companies move any size home,
             // and extra filters shrink the deliverable pool and break the 5/day promise.
-            var b = parseInt(ld2.bedrooms) || 0;
-            if (custLeadFilters.maxBedrooms < 99 && b > custLeadFilters.maxBedrooms) return false;
+            if (!filterRelaxForFill) {
+              var b = parseInt(ld2.bedrooms) || 0;
+              if (custLeadFilters.maxBedrooms < 99 && b > custLeadFilters.maxBedrooms) return false;
+            }
             // COMMERCIAL FILTER: only accept leads matching the customer's moving_type
             // (residential/commercial/both). A residential-only customer must never
-            // receive a commercial property (cafe/shop/office/unit etc).
+            // receive a commercial property (cafe/shop/office/unit etc). Always enforced
+            // — this is an identity-level rule, never relaxed by guaranteed-fill.
             var _mt = 'both';
             try { var _pc2 = JSON.parse(cust.product_config || '{}'); _mt = (_pc2.moving && _pc2.moving.moving_type) || cust.moving_type || 'both'; } catch(e) {}
             if (_mt === 'residential' && isCommercialLead(ld2)) return false;
             if (_mt === 'commercial' && !isCommercialLead(ld2)) return false;
+            return true;
           }
           if (cust.product === 'planning' && custLeadFilters.appTypes && custLeadFilters.appTypes.length) {
             // PLANNING: customer chose specific application types (Householder, Full
@@ -19828,6 +19868,10 @@ _deliverDiag[cust.email].products = products;
       // guarantees the exact promised daily count is always delivered in ONE
       // email whenever market supply exists.
       if (custLeads.length < totalNeeded) {
+        // FILTER = PRIORITY, NEVER UNDER-DELIVER: relax optional signup filters for
+        // this fill so a filtered customer still gets their full promised count when
+        // filter-matching supply is exhausted (area/door/freshness still enforced).
+        if (hasOptionalFilter) { filterRelaxForFill = true; console.log('[DELIVERY] ' + cust.email + ': relaxing optional filters for guaranteed fill (short after strict tiers)'); }
         if (!_deliverDiag[cust.email]) _deliverDiag[cust.email] = { global: 0, poolfile: 0, poolfile_total: 0, areas: custAreas.slice(0,5) };
         _deliverDiag[cust.email].poolfile_total++;
         _deliverDiag[cust.email].final_pass = 'has=' + custLeads.length + ' need=' + totalNeeded + ' areas=' + JSON.stringify(custAreas) + ' poolfile=' + (PRODUCT_LEAD_FILES[products[0]] ? PRODUCT_LEAD_FILES[products[0]].file : '?');
