@@ -15,6 +15,11 @@
 - Why: purpose-built for exactly your round size (£25k–£250k SEIS); most active SEIS investor in the UK.
 - Caveat: competitive — they screen many; lead with live revenue + 8 paying trials, not the idea.
 
+## 🕒 Government-backed equity/loans — verified but NOT for a £25k round right now
+**B1. Angel CoFund (British Business Bank)** [V] — co-invests **£100k–£1m** alongside an angel syndicate. You cannot apply directly — you need an angel syndicate/network to sponsor you. **Keep for the next round.**
+**B2. Regional Angels Programme (BBB)** [V] — co-investment delivered via regional angel networks; effectively £100k+. **Next round.**
+**B3. South East Investment Fund (BBB)** [V] — **launches summer 2026**; loans **from £25,000** to £2m + equity. Your region (Hertfordshire = South East). **Watch for opening — could be a £25k+ non-dilutive-ish/commercial loan or equity route when live.**
+
 **N2. Ascension** [V] — *London VC (pre-seed/seed), invests across UK + Europe*
 - Tickets **£150k–£850k** (bigger than £25k), but they review every application within a week and are a strong "first cheque then follow-on" partner.
 - Path: `https://www.ascension.vc/founders` → "Apply for funding".
