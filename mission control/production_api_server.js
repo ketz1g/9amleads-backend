@@ -13503,25 +13503,6 @@ for (var _wt = 5; _wt <= 26; _wt++) {
 // reactivate-trial endpoint does the reset).
 templates['trial_month3'] = buildMonth3OfferTemplate(customer, productName, accent, allProds[0]);
 
-// POST /api/admin/send-tip-sample — email a single paid/tip campaign template to
-// the owner so they can review the copy. Body: { template, email }.
-app.post('/api/admin/send-tip-sample', adminAuth, async (req, res) => {
-  try {
-    var to = String((req.body && req.body.email) || 'ketzman1g@gmail.com').trim().toLowerCase();
-    var tmpl = String((req.body && req.body.template) || 'paid_tip3').trim();
-    res.json({ success: true, background: true, emailed: to, template: tmpl, note: 'Sending in the background - check your inbox shortly.' });
-    (async function() {
-      try {
-        var cust = __emailDemoCustomer('moving');
-        var html = getCampaignEmailHTMLWithEdits(cust, tmpl);
-        var subj = getEditedCampaignSubject(tmpl, 'Tip #3: Print &amp; Post Every Lead In Minutes');
-        await sendBrevoEmail({ email: to, name: '9amLeads Owner' }, 'TEST — ' + tmpl + ' — ' + String(subj || '').replace(/<[^>]+>/g, ''), html);
-        console.log('[TIP-SAMPLE] Sent ' + tmpl + ' to ' + to);
-      } catch(_e) { console.log('[TIP-SAMPLE] error: ' + _e.message); }
-    })();
-  } catch (e) { console.log('[TIP-SAMPLE] ' + e.message); }
-});
-
 // ===== BREVO OUTBOUND CAMPAIGN UPLOAD INFRASTRUCTURE =====
 // Master HTML template matching existing 9am Leads email design
 function buildOutboundEmailHTML(email, campaignKey, recipientName) {
@@ -13899,6 +13880,25 @@ console.log('  Outbound campaigns: ' + Object.keys(OUTBOUND_CAMPAIGNS).length + 
   // Footer
   ' + buildEmailFooter() + </td></tr></table></td></tr></table></body></html>';
 }
+
+// POST /api/admin/send-tip-sample — email a single paid/tip campaign template to
+// the owner so they can review the copy. Body: { template, email }.
+app.post('/api/admin/send-tip-sample', adminAuth, async (req, res) => {
+  try {
+    var to = String((req.body && req.body.email) || 'ketzman1g@gmail.com').trim().toLowerCase();
+    var tmpl = String((req.body && req.body.template) || 'paid_tip3').trim();
+    res.json({ success: true, background: true, emailed: to, template: tmpl, note: 'Sending in the background - check your inbox shortly.' });
+    (async function() {
+      try {
+        var cust = __emailDemoCustomer('moving');
+        var html = getCampaignEmailHTMLWithEdits(cust, tmpl);
+        var subj = getEditedCampaignSubject(tmpl, 'Tip #3: Print &amp; Post Every Lead In Minutes');
+        await sendBrevoEmail({ email: to, name: '9amLeads Owner' }, 'TEST — ' + tmpl + ' — ' + String(subj || '').replace(/<[^>]+>/g, ''), html);
+        console.log('[TIP-SAMPLE] Sent ' + tmpl + ' to ' + to);
+      } catch(_e) { console.log('[TIP-SAMPLE] error: ' + _e.message); }
+    })();
+  } catch (e) { console.log('[TIP-SAMPLE] ' + e.message); }
+});
 
 // ===== SCRAPER SCHEDULER: Daily at 5:30 AM =====
 
