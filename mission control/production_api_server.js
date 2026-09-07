@@ -15727,22 +15727,24 @@ app.post('/api/admin/send-all-customer-samples', adminAuth, async (req, res) => 
 
 // POST /api/admin/send-lead-sheet-samples — email ONLY the daily-lead sheet samples
 // (one per product) to the owner so they can review the corrected mobile lead layout.
-// Body: { email } defaults to ketzman1g@gmail.com.
+// Body: { email } defaults to ketzman1g@gmail.com. Sends in the BACKGROUND so the
+// request returns instantly (5 HTML emails exceed the proxy idle timeout otherwise).
 app.post('/api/admin/send-lead-sheet-samples', adminAuth, async (req, res) => {
   try {
     var to = String((req.body && req.body.email) || 'ketzman1g@gmail.com').trim().toLowerCase();
-    var sent = [];
+    res.json({ success: true, background: true, emailed: to, note: 'Emails are being sent in the background - check your inbox in ~30s.' });
     var prodsL = ['moving', 'probate', 'newbusiness', 'planning', 'tenders'];
     for (var _lp = 0; _lp < prodsL.length; _lp++) {
       var _prod = prodsL[_lp];
-      var _cust = __emailDemoCustomer(_prod);
-      var _leads = __emailSampleLeads(_prod);
-      var _html = generateLeadEmailHTML(_cust, _leads);
-      try { await sendBrevoEmail({ email: to, name: '9amLeads Owner' }, 'TEST — Daily lead sheet (' + _prod + ') — mobile view', _html); sent.push(_prod); }
-      catch(_le) { console.log('[LEAD-SHEET-SAMPLE] ' + _prod + ' send failed: ' + _le.message); }
+      try {
+        var _cust = __emailDemoCustomer(_prod);
+        var _leads = __emailSampleLeads(_prod);
+        var _html = generateLeadEmailHTML(_cust, _leads);
+        await sendBrevoEmail({ email: to, name: '9amLeads Owner' }, 'TEST — Daily lead sheet (' + _prod + ') — mobile view', _html);
+      } catch(_le) { console.log('[LEAD-SHEET-SAMPLE] ' + _prod + ' send failed: ' + _le.message); }
     }
-    res.json({ success: true, emailed: to, count: sent.length, products: sent });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+    console.log('[LEAD-SHEET-SAMPLE] All lead-sheet samples sent to ' + to);
+  } catch (e) { console.log('[LEAD-SHEET-SAMPLE] error: ' + e.message); }
 });
 
 // Shared demo/sample builders for email previews & single sends.
