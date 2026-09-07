@@ -11846,9 +11846,12 @@ async function sendProbateSampleEmail(forceLog) {
 }
 
 // Automatic daily sample check after the morning scrape + PAF passes (06:45 UK).
-cron.schedule('45 6 * * 1-5', async () => {
-  try { await sendProbateSampleEmail(true); } catch(e) {}
-}, { timezone: 'Europe/London' });
+// DISABLED 2026-09-07: daily auto-sample emails were flooding the owner inbox.
+// Quality sampling is still available on-demand from the admin panel, and the 07:00
+// readiness report + delivery-complete summary still cover supply/format health.
+// cron.schedule('45 6 * * 1-5', async () => {
+//   try { await sendProbateSampleEmail(true); } catch(e) {}
+// }, { timezone: 'Europe/London' });
 
 // POST /api/admin/planning-sample-check — email the owner a sample of the current
 // planning pool so they can see fresh supply levels for active planning customers.
@@ -11886,9 +11889,11 @@ async function sendPlanningSampleEmail() {
 }
 
 // Automatic daily planning check at 06:50 UK (after scrape), Mon-Fri.
-cron.schedule('50 6 * * 1-5', async () => {
-  try { await sendPlanningSampleEmail(); } catch(e) {}
-}, { timezone: 'Europe/London' });
+// DISABLED 2026-09-07: daily auto-sample emails were flooding the owner inbox.
+// Planning sampling stays available on-demand from the admin panel.
+// cron.schedule('50 6 * * 1-5', async () => {
+//   try { await sendPlanningSampleEmail(); } catch(e) {}
+// }, { timezone: 'Europe/London' });
 
 var FUNERAL_PAT = /funeral|cremator|cremation|funeralcare|funeral director|obituar|memorial|dignity funerals|the co-op funeral|co-operative funeralcare/i;function purgeFuneralProbateLeads() {
   var out = { pool: 0, dashboard: 0, remaining: 0 };
