@@ -30,6 +30,8 @@
 
 > **Fourth research pass (3 Sep 2026): zero new public emails found.** Checked live across micro-EIS fund managers (Mercia, Puma, Seneca, Foresight, Bure Valley, Ironshield), more regional angel groups, co-investment/development funds, investor newsletters and named angels (incl. Simon Squibb) — every one is form-only, Cloudflare-obfuscated, investor-facing only, or dead. The surface of literally-published founder-intake emails is effectively exhausted at **16 verified direct recipients**. Further growth of the pipeline must come from the ~20 application forms + warm intros, not more email scraping.
 
+> **Fifth research pass (7 Sep 2026):** Added 10 more verified contacts to the Brevo "9amLeads Investor Outreach - £25k SEIS" list (ID 50) — now **26 total**. New additions: The FSE Group (fundingenquiries@thefsegroup.com), Innovate UK Business Connect (enquiries@iukbc.org.uk), Start Up Loans (hello@startuploans.co.uk), BAR (membershipservices@bar.co.uk), FMB (membership@fmb.org.uk), NAFD (info@nafd.org.uk), AAT (partner.support@aat.org.uk), Business West (info@businesswest.co.uk), Haatch (investors@haatch.com, £100k+ next-round flag), Ascension (info@ascension.vc, £100k+ next-round flag). **Re-verified:** small-ticket SEIS/EIS fund managers (Mercia, Oxford Tech, etc.) remain form-only or £150k+ minimums — no further genuine founder emails to add beyond the above. Growth now comes from the ~15 free intake forms + warm intros.
+
 ## B. Free pitch/application forms (submit your deck — same as emailing, just via their intake)
 | Target | Fit | Exact form |
 |---|---|---|
