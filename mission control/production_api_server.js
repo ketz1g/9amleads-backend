@@ -13339,9 +13339,9 @@ function buildWeeklyTrialTemplate(customer, wk, productName, accent, product) {
   var restartUrl = PUBLIC_URL + '/portal/dashboard.html';
   var biz = String(customer.business_type || 'business').toLowerCase();
   var tipBlocks = {
-    moving: ['Print &amp; Post your brochure to the seller\u2019s address. A letter on the kitchen table gets read while emails get deleted.', 'Bulk send to your whole batch with Print &amp; Post, or turn on Auto Send and we post to every new lead for you. No stamps, no post office, no forgetting.', 'Turn on Auto Send and we\u2019ll post to every new lead automatically. No stamps, no post office, no forgetting.'],
+    moving: ['Bulk send your brochure to your whole batch with Print &amp; Post. A letter on the seller\u2019s kitchen table gets read while emails get deleted.', 'Bulk send to your whole batch with Print &amp; Post, or turn on Auto Send and we post to every new lead for you. No stamps, no post office, no forgetting.', 'Turn on Auto Send and we\u2019ll post to every new lead automatically. No stamps, no post office, no forgetting.'],
     planning: ['Send your flyer the week the application is submitted. You\u2019ll be ahead of every competitor quoting the same job.', 'Bulk send your flyer to every planning applicant with Print &amp; Post. They\u2019ve already decided to build, so your timing is perfect.', 'Use Auto Send so a printed brochure lands on their doormat within days of the planning notice.'],
-    probate: ['A compassionate letter to the executor stands out. Families remember who reached out with sensitivity.', 'Follow up by post a couple of weeks later with your services pack.', 'Print &amp; Post handles the letter, the addressing and the stamp. You just sign in.'],
+    probate: ['A compassionate letter to the executor stands out. Families remember who reached out with sensitivity.', 'Bulk send a compassionate letter to every executor with Print &amp; Post, then follow up by post a couple of weeks later.', 'Print &amp; Post handles the letter, the addressing and the stamp. You just sign in. Bulk send to your whole batch in one click.'],
     newbusiness: ['Look the new company up on Companies House the day you get the lead. Then be the first to introduce your services.', 'Bulk send your brochure to every registered office with Print &amp; Post. New businesses often don\u2019t have a website yet, so post gets their attention.', 'Set Auto Send and your introduction letter arrives before any competitor\u2019s.'],
     tenders: ['Read the tender documents on Contracts Finder and prepare your capability statement the same week.', 'Submit online and follow up with a printed capability pack via Print &amp; Post.', 'Auto Send keeps your best documents in front of the right buyers without you lifting a finger.']
   };
@@ -13420,12 +13420,12 @@ function buildWhyBestBlock(product, accent) {
 // campaign email shell so follow-ups always remind people how easy it is.
 function buildHowItWorksBlock(product, accent) {
   var steps = {
-    moving: ['Pick up to 5 postcode areas (e.g. SW, NW, EN, CM)', 'Fresh home-mover leads arrive in your dashboard at 9am every weekday', 'Contact them first. Or use Print &amp; Post to send a brochure the same morning'],
+    moving: ['Pick up to 5 postcode areas (e.g. SW, NW, EN, CM)', 'Fresh home-mover leads arrive in your dashboard at 9am every weekday', 'Contact them first. Or bulk send a brochure to your whole batch with Print &amp; Post the same morning'],
     planning: ['Pick your counties', 'New planning applications in your area land in your dashboard each morning', 'Send your building services flyer to the applicant while they\u2019re choosing quotes'],
-    probate: ['Pick your counties', 'New probate/estate leads arrive each morning', 'Send a compassionate introduction letter to the executor via Print &amp; Post'],
-    newbusiness: ['Pick your counties or areas', 'Newly incorporated companies land in your dashboard each morning', 'Be the first to introduce your services. Before they have a website'],
+    probate: ['Pick your counties', 'New probate/estate leads arrive each morning', 'Bulk send a compassionate introduction letter to every executor with Print &amp; Post'],
+    newbusiness: ['Pick your counties or areas', 'Newly incorporated companies land in your dashboard each morning', 'Bulk send your brochure to every new company with Print &amp; Post. Before they have a website'],
     tenders: ['Pick UK-wide or your regions', 'New public tenders land in your dashboard each morning', 'Submit your capability statement before the deadline']
-  }[product] || ['Choose your areas', 'Fresh leads arrive at 9am every weekday', 'Contact them first. Or Print &amp; Post a letter the same morning'];
+  }[product] || ['Choose your areas', 'Fresh leads arrive at 9am every weekday', 'Contact them first. Or bulk send a letter to your whole batch with Print &amp; Post the same morning'];
   var prodLabel = { moving: 'Moving Leads', planning: 'Planning Permissions', probate: 'Probate Leads', newbusiness: 'New Business Alerts', tenders: 'Public Tenders' }[product] || 'Your leads';
   var items = '';
   steps.forEach(function(s2, idx){ items += '<tr><td style="padding:5px 0;vertical-align:top;width:26px;color:' + accent + ';font-weight:900;font-size:13px">' + (idx + 1) + '.</td><td style="padding:5px 0;font-size:12.5px;color:#334155;line-height:1.65;vertical-align:top">' + s2 + '</td></tr>'; });
@@ -13513,7 +13513,7 @@ function buildOutboundEmailHTML(email, campaignKey, recipientName) {
   var insightCards = {
     moving: { emoji: '\uD83D\uDE9A', tip: 'A printed brochure on the seller\'s kitchen table wins the job. Use Print &amp; Post to bulk send your letter to every lead the day the property goes SSTC, or the day a commercial premises comes to market.', metric: 'Avg. move value: \u00a31,000-\u00a33,000' },
     planning: { emoji: '\uD83C\uDFD7\uFE0F', tip: 'Planning applicants are actively choosing builders. Bulk send your flyer to every applicant with Print &amp; Post the week the application is submitted. You\'ll be ahead of every competitor.', metric: 'Avg. project value: \u00a320,000-\u00a3100,000' },
-    probate: { emoji: '\u2696\uFE0F', tip: 'A compassionate letter to the executor stands out. Use Print &amp; Post for a professional introduction, and follow up by post a couple of weeks later. Families remember who reached out with sensitivity.', metric: 'Avg. estate value: \u00a3150,000+' },
+    probate: { emoji: '\u2696\uFE0F', tip: 'A compassionate letter to the executor stands out. Bulk send to every executor with Print &amp; Post for a professional introduction, and follow up by post a couple of weeks later. Families remember who reached out with sensitivity.', metric: 'Avg. estate value: \u00a3150,000+' },
     newbusiness: { emoji: '\uD83C\uDFE2', tip: 'New companies often have no website or phone number yet. Bulk send your brochure to every registered office with Print &amp; Post, then follow up by post or phone once their details go live.', metric: 'Avg. client LTV: 2-5 years' },
     tenders: { emoji: '\uD83D\uDCCB', tip: 'Stand out by sending a printed capability pack. Use Print &amp; Post to get your documents to the buying organisation early, and follow up before the deadline.', metric: 'Avg. contract value: \u00a350,000-\u00a3500,000' }
   };
@@ -13852,7 +13852,7 @@ console.log('  Outbound campaigns: ' + Object.keys(OUTBOUND_CAMPAIGNS).length + 
   var insightCards = {
     moving: { emoji: '\uD83D\uDE9A', tip: 'Send a printed brochure with Print &amp; Post the day a property goes SSTC, or a commercial premises comes to market. Bulk send to your whole batch, or turn on Auto Send and we post to every new lead for you. Your letter on the kitchen table gets read while competitors\' emails get deleted.', metric: 'Avg. move value: \u00a31,000-\u00a33,000', link: PUBLIC_URL + '/movingleadsdaily' },
     planning: { emoji: '\uD83C\uDFD7\uFE0F', tip: 'Use Print &amp; Post to bulk send your flyer to every planning applicant the week their application is submitted. You\'ll be ahead of every competitor quoting.', metric: 'Avg. project value: \u00a320,000-\u00a3100,000', link: PUBLIC_URL + '/planningleads' },
-    probate: { emoji: '\u2696\uFE0F', tip: 'A compassionate printed letter to the executor stands out. Use Print &amp; Post, then follow up by post a couple of weeks later. Families remember who reached out with sensitivity.', metric: 'Avg. estate value: \u00a3150,000+', link: PUBLIC_URL + '/probateleads' },
+    probate: { emoji: '\u2696\uFE0F', tip: 'A compassionate printed letter to the executor stands out. Bulk send to every executor with Print &amp; Post, then follow up by post a couple of weeks later. Families remember who reached out with sensitivity.', metric: 'Avg. estate value: \u00a3150,000+', link: PUBLIC_URL + '/probateleads' },
     newbusiness: { emoji: '\uD83C\uDFE2', tip: 'New companies often have no website or phone yet. Bulk send your brochure to every registered office with Print &amp; Post, then follow up by post or phone once their details go live.', metric: 'Avg. client LTV: 2-5 years', link: PUBLIC_URL + '/newbusinessalert' },
     tenders: { emoji: '\uD83D\uDCCB', tip: 'Send a printed capability pack with Print &amp; Post to stand out, and follow up before the deadline. Buyers notice the professional touch.', metric: 'Avg. contract value: \u00a350,000-\u00a3500,000', link: PUBLIC_URL + '/tenders' }
   };
@@ -24460,7 +24460,7 @@ function generateLeadEmailHTML(customer, leads) {
   var insightCards2 = {
     moving: { emoji: '\uD83D\uDE9A', tip: 'Send a printed brochure with Print &amp; Post the day a property goes SSTC, or a commercial premises comes to market. Bulk send to your whole batch in one click. A letter on the kitchen table gets read while emails get deleted.', metric: '' },
     planning: { emoji: '\uD83C\uDFD7\uFE0F', tip: 'Use Print &amp; Post to bulk send your flyer to every planning applicant the week their application is submitted. You\'ll be ahead of every competitor quoting.', metric: '' },
-    probate: { emoji: '\u2696\uFE0F', tip: 'A compassionate printed letter to the executor stands out. Use Print &amp; Post, then follow up by post a couple of weeks later. Families remember who reached out with sensitivity.', metric: '' },
+    probate: { emoji: '\u2696\uFE0F', tip: 'A compassionate printed letter to the executor stands out. Bulk send to every executor with Print &amp; Post, then follow up by post a couple of weeks later. Families remember who reached out with sensitivity.', metric: '' },
     newbusiness: { emoji: '\uD83C\uDFE2', tip: 'New companies often have no website yet. Bulk send your brochure to every registered office with Print &amp; Post, then follow up by post or phone once their details go live.', metric: 'Avg. client LTV: 2-5 years' },
     tenders: { emoji: '\uD83D\uDCCB', tip: 'Send a printed capability pack with Print &amp; Post to stand out, and follow up before the deadline. Buyers notice the professional touch.', metric: '' }
   };
