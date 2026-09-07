@@ -15686,7 +15686,7 @@ app.post('/api/admin/send-all-customer-samples', adminAuth, async (req, res) => 
         probate: [ { product:'probate', data:{ deceasedName:'Margaret Collins', deceasedAddress:'7 The Paddock, Sunbury', postcode:'TW16 5EX', grantDate:new Date(Date.now()-3*86400000).toISOString() } } ],
         newbusiness: [ { product:'newbusiness', data:{ companyName:'Brightleaf Marketing Ltd', address:'21 Market Street, Leeds', postcode:'LS1 6EZ', publishedDate:new Date(Date.now()-2*86400000).toISOString() } } ],
         planning: [ { product:'planning', data:{ address:'33 Church Road, Chorley', postcode:'PR7 4HT', description:'Single storey rear extension', status:'Pending', publishedDate:new Date(Date.now()-1*86400000).toISOString() } } ],
-        tenders: [ { product:'tenders', data:{ title:'School catering services - 3 year contract', organisation:'Local Authority', closingDate:new Date(Date.now()+14*86400000).toISOString(), url:'https://www.gov.uk/contracts-finder' } } ]
+        tenders: [ { product:'tenders', data:{ tenderTitle:'School catering services - 3 year contract', title:'School catering services - 3 year contract', description:'Provision of school meals and catering services for 3 years with an option to extend. Approx 1,400 meals per day across 8 sites.', organisation:'Local Authority', buyer:'AnyTown Council - Procurement Team', contractValueLabel:'£1.2M', contractValue:1200000, closingDate:new Date(Date.now()+14*86400000).toISOString(), publishedDate:new Date(Date.now()-2*86400000).toISOString(), tenderNoticeId:'CF-2026-0451', url:'https://www.gov.uk/contracts-finder', applyLink:'https://www.gov.uk/contracts-finder', contactName:'Procurement Team', contactEmail:'procurement@example.gov.uk' } } ]
       };
       return base[product] || base.moving;
     }
@@ -15722,6 +15722,26 @@ app.post('/api/admin/send-all-customer-samples', adminAuth, async (req, res) => 
     await send('SAMPLE - Status: leads on their way', delayHtml);
     await send('SAMPLE - Status: all sorted', sortedHtml);
     res.json({ success: true, emailed: to, count: sent.length, subjects: sent });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/send-lead-sheet-samples — email ONLY the daily-lead sheet samples
+// (one per product) to the owner so they can review the corrected mobile lead layout.
+// Body: { email } defaults to ketzman1g@gmail.com.
+app.post('/api/admin/send-lead-sheet-samples', adminAuth, async (req, res) => {
+  try {
+    var to = String((req.body && req.body.email) || 'ketzman1g@gmail.com').trim().toLowerCase();
+    var sent = [];
+    var prodsL = ['moving', 'probate', 'newbusiness', 'planning', 'tenders'];
+    for (var _lp = 0; _lp < prodsL.length; _lp++) {
+      var _prod = prodsL[_lp];
+      var _cust = __emailDemoCustomer(_prod);
+      var _leads = __emailSampleLeads(_prod);
+      var _html = generateLeadEmailHTML(_cust, _leads);
+      try { await sendBrevoEmail({ email: to, name: '9amLeads Owner' }, 'TEST — Daily lead sheet (' + _prod + ') — mobile view', _html); sent.push(_prod); }
+      catch(_le) { console.log('[LEAD-SHEET-SAMPLE] ' + _prod + ' send failed: ' + _le.message); }
+    }
+    res.json({ success: true, emailed: to, count: sent.length, products: sent });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
