@@ -19964,6 +19964,15 @@ _deliverDiag[cust.email].products = products;
               // addresses rather than leave the customer short.
               var fgD = pickFreshDate(fgLead);
               if (!fgD) continue;
+              // TENDERS: the "fresh lead" promise is a HARD freshness rule — a
+              // tender published months/years ago (standing DPS framework notices,
+              // renewals) must NEVER be delivered as a "fresh" opportunity. The
+              // cutoff already extends back to Friday 09:00 UK on a Monday, so this
+              // is strictly ≤48h (or ≤72h/back-to-Friday for a Monday delivery).
+              if (fgProd === 'tenders') {
+                var _fgCut = freshCutoffNow || getFreshCutoffIso();
+                if (fgD < _fgCut) continue;
+              }
               if (!leadPassesFilters(fgLead)) continue;
               var fgArea = extractPostcodeArea(fgLead.postcode || fgLead.address || fgLead.location || fgLead.name || '');
               // Tenders/probate are national-fallback products (no postcode on leads).
