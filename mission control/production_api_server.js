@@ -847,7 +847,9 @@ function pickFreshDate(lead) {
 
 // Normalise a date string to ISO (YYYY-MM-DD...). Accepts ISO already, plus UK
 // display formats like "19 August 2026" (tenders/planning/gazette often publish
-// "d MMMM yyyy" instead of ISO). Non-date values return '' (excluded).
+// "d MMMM yyyy" instead of ISO). Also accepts a time suffix after the year
+// ("5 September 2026, 2:27pm" - the Find a Tender site format) and US numeric
+// formats ("5/31/2023" - some Contracts Finder exports). Non-date values return ''.
 function toIsoDate(v) {
   if (!v) return '';
   v = String(v).trim();
@@ -859,6 +861,25 @@ function toIsoDate(v) {
     if (mon !== undefined) {
       var d = new Date(Date.UTC(parseInt(m[3], 10), mon, parseInt(m[1], 10)));
       if (!isNaN(d.getTime())) return d.toISOString();
+    }
+  }
+  // US numeric: "5/31/2023" (month/day/year) — Contracts Finder / gov.uk exports
+  // use US month-first. Ambiguous UK-style day/month ("9/3/2026") is disambiguated
+  // as DAY/MONTH (UK data), so a fresh "9/3/2026" = 9 March, not 3 September.
+  var us = v.match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})/);
+  if (us) {
+    var a = parseInt(us[1],10), b = parseInt(us[2],10), y = parseInt(us[3],10);
+    var month, day;
+    if (a > 12) { // clearly month/day (US): 5/31/2023
+      month = b; day = a;
+    } else if (b > 12) { // day/month unambiguous
+      month = a; day = b;
+    } else { // ambiguous like 9/3/2026 -> UK day/month
+      month = b; day = a;
+    }
+    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+      var du = new Date(Date.UTC(y, month - 1, day));
+      if (!isNaN(du.getTime())) return du.toISOString();
     }
   }
   return '';
