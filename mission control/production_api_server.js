@@ -13476,7 +13476,7 @@ function getCampaignEmailHTML(customer, template) {
   const outreachVisit = { moving: 'Send a printed brochure to the property address with Print &amp; Post',
     probate: 'Send a compassionate letter and flyer to the executor with Print &amp; Post',
     newbusiness: 'Send your brochure to the registered office with Print &amp; Post',
-    planning: 'Send your building services flyer to the applicant with Print &amp; Post',
+    planning: 'Bulk send your building services flyer to every applicant with Print &amp; Post',
     tenders: 'Send a printed capability pack to the buying organisation with Print &amp; Post' }[prod] || 'Send a letter or flyer with Print &amp; Post';
   const outreachPost = { moving: 'Post your brochure to the seller\'s address with Print &amp; Post',
     probate: 'Post your services pack to the executor with a compassionate covering letter',
@@ -24501,12 +24501,12 @@ function generateLeadEmailHTML(customer, leads) {
 
   // QUICK WIN TIPS — product-specific conversion advice (kept short, actionable)
   var quickTipsMap = {
-    moving: '🖨️ Print &amp; Post a letter or flyer within days. A printed letter on the kitchen table is what wins the move.',
-    probate: '✉️ Print &amp; Post a compassionate letter to the executor. The firm that reaches them first with a warm letter wins the instruction.',
-    newbusiness: '📮 Send a letter or flyer to new companies early. With no incumbent supplier, your mail arrives first.',
-    planning: '🏠 Print &amp; Post a letter to planning applicants while the application is being decided . Homeowners ready to build act on the first professional contact.',
+    moving: '🖨️ Bulk send a letter or flyer to your whole batch with Print &amp; Post. A printed letter on the kitchen table is what wins the move.',
+    probate: '✉️ Bulk send a compassionate letter to every executor with Print &amp; Post. The firm that reaches them first with a warm letter wins the instruction.',
+    newbusiness: '📮 Bulk send a letter or flyer to every new company with Print &amp; Post. With no incumbent supplier, your mail arrives first.',
+    planning: '🏠 Bulk send a letter to every planning applicant with Print &amp; Post while the application is being decided. Homeowners ready to build act on the first professional contact.',
     tenders: '📋 Bid on 2-3 well-matched tenders a week and answer every quality question fully. Completeness wins.',
-    general: '📮 Use Print &amp; Post to mail every lead promptly. Printed mail reaches prospects before anyone else does.'
+    general: '📮 Use Print &amp; Post to bulk send to every lead promptly. Printed mail reaches prospects before anyone else does.'
   };
   body += '<tr><td style="background:#ffffff;padding:0 28px 6px">' +
     '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:13px 16px;font-size:12px;color:#92400e;line-height:1.6">' +
