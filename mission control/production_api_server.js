@@ -17134,7 +17134,17 @@ cron.schedule('30 8 * * 1', async () => {
   console.log('[DIGEST] Starting weekly digest...');
   var dbD = getDb();
   var customers = (dbD.customers || []).filter(function(c) {
-    return c.plan && c.plan !== 'cancelled' && c.email && (!c.bounced || c.bounced < 3);
+    if (!c.plan || c.plan === 'cancelled' || !c.email || (c.bounced && c.bounced >= 3)) return false;
+    // An EXPIRED free trial must not receive nurture/digest emails after the trial
+    // ends (they are re-engaged only through the payment/expiry flow, not weekly
+    // summaries). This is what caused nawadi1655@mediseat.com to get a digest the
+    // day after his trial ended.
+    var nowD = Date.now();
+    if (String(c.plan) === 'free_trial' && c.trial_ends) {
+      var tEndD = new Date(c.trial_ends).getTime();
+      if (!isNaN(tEndD) && tEndD < nowD) return false;
+    }
+    return true;
   });
   var weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
   var thisWeekKey = 'w' + (function(){ var d = new Date(); var onejan = new Date(d.getFullYear(), 0, 1); return Math.ceil((((d - onejan) / 86400000) + onejan.getDay() + 1) / 7); })() + '-' + new Date().getFullYear();
