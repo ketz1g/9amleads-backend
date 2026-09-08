@@ -8603,21 +8603,85 @@ app.get('/api/admin/debug-customer-leads', adminAuth, (req, res) => {
 // GET /api/leads/today
 
 
-// POST /api/leads/reject — customer rejects a lead (incorrect/wrong address), so it's
-// removed from their view and queued for admin review + replacement.
-app.post('/api/leads/reject', authMiddleware, (req, res) => {
+// POST /api/leads/reject — customer rejects a lead (incorrect/wrong address). With
+// INSTANT REPLACE + GUARDRAILS: marks the lead rejected, picks a valid in-area
+// replacement from the pool straight away (real full-address lead in their areas),
+// inserts it as their new lead, and emails hello@9amleads.com so the owner knows
+// who rejected what and what it was replaced with.
+app.post('/api/leads/reject', authMiddleware, async (req, res) => {
   try {
     var leadId = (req.body && req.body.lead_id) || '';
     var reason = (req.body && req.body.reason) || 'wrong address';
     if (!leadId) return res.status(400).json({ error: 'lead_id required' });
-    var lead = db.prepare('SELECT * FROM leads WHERE id = ? AND customer_id = ?').get(leadId, req.user.id);
+    var customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!customer) return res.status(404).json({ error: 'Account not found' });
+
+    // GUARDRAIL 1: max 3 replacements per customer per rolling day.
+    var cutoffReject = new Date(Date.now() - 24 * 3600000).toISOString();
+    var recentRejects = db.prepare("SELECT COUNT(*) AS c FROM leads WHERE customer_id = ? AND status = 'rejected' AND (json_extract(data,'$.rejected_at') > ? OR json_extract(data,'$.rejected_at') IS NOT NULL)").get(customer.id, cutoffReject);
+    var rejCount = (recentRejects && recentRejects.c) || 0;
+    if (rejCount >= 3) {
+      return res.status(429).json({ success: false, error: 'You can only reject up to 3 leads per day so we can keep quality high. Your other leads stay valid - contact hello@9amleads.com if a lead is genuinely wrong.' });
+    }
+
+    var lead = db.prepare('SELECT * FROM leads WHERE id = ? AND customer_id = ?').get(leadId, customer.id);
     if (!lead) return res.status(404).json({ error: 'Lead not found' });
     var parsed = {}; try { parsed = JSON.parse(lead.data || '{}'); } catch(e) {}
+
+    // GUARDRAIL 2: only reject a lead that was delivered recently (last 48h) or not
+    // yet delivered. Stops a customer farming a fresh replacement out of old history.
+    var deliveredAt = lead.delivered_at || parsed.delivered_at || '';
+    var createdTs = lead.created_at || '';
+    var isRecent = true;
+    try {
+      var rel = lead.release_at ? new Date(lead.release_at).getTime() : 0;
+      var dAt = deliveredAt ? new Date(deliveredAt).getTime() : 0;
+      var cAt = createdTs ? new Date(createdTs).getTime() : 0;
+      var newest = Math.max(dAt, cAt, rel ? Math.min(rel, Date.now()) : 0);
+      if (deliveredAt && (Date.now() - dAt) > 48 * 3600000) isRecent = false;
+      else if (!deliveredAt && rel && rel > Date.now()) isRecent = true;
+      else if (!deliveredAt && !cAt) isRecent = false;
+    } catch(e) { isRecent = true; }
+    if (!isRecent) {
+      return res.status(400).json({ success: false, error: 'This lead was delivered more than 48 hours ago and can no longer be replaced. Contact hello@9amleads.com if it is genuinely wrong.' });
+    }
+    if (parsed.rejected) return res.status(400).json({ success: false, error: 'This lead was already rejected.' });
+
     parsed.rejected = true;
     parsed.rejected_at = new Date().toISOString();
     parsed.reject_reason = reason;
     db.prepare('UPDATE leads SET data = ?, status = ? WHERE id = ?').run(JSON.stringify(parsed), 'rejected', leadId);
-    res.json({ success: true, message: 'Lead rejected. We will send you a replacement.' });
+
+    // INSTANT REPLACE: pick a valid in-area replacement now (full door address,
+    // fresh within cutoff, in their chosen areas). createReplacementLead inserts it.
+    var replacement = null;
+    try { replacement = await createReplacementLead(customer, lead.product || customer.product || 'moving'); }
+    catch(rrE) { console.log('[LEADS-REJECT] replacement create error:', rrE.message); }
+    var msg = 'Lead rejected. We will send you a replacement lead.';
+    if (replacement) {
+      msg = 'Lead rejected. Your replacement is on its way - a new ' + String(lead.product || '') + ' lead has been added to your account.';
+    } else {
+      msg = 'Lead rejected. Our team will send you a replacement lead shortly.';
+    }
+
+    // Notify the owner at hello@9amleads.com so they always know who rejected what.
+    try {
+      var custName = customer.company || customer.name || customer.email || customer.id;
+      var oldAddr = parsed.address || parsed.fullAddress || parsed.deceasedAddress || lead.address || '(no address)';
+      var oldPc = parsed.postcode || lead.postcode || '';
+      var repInfo = replacement ? ('<tr><td style="padding:6px 10px;border:1px solid #1e2030">Replacement</td><td style="padding:6px 10px;border:1px solid #1e2030">' + escHtml(replacement.address) + ' · ' + escHtml(replacement.postcode) + '</td></tr>') : '';
+      var rHtml = '<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px"><h2 style="color:#f87171;margin:0 0 10px;font-size:17px">\uD83D\uDEAB Lead rejected &amp; replaced</h2>' +
+        '<table cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;font-size:13px">' +
+        '<tr><td style="padding:6px 10px;border:1px solid #1e2030">Customer</td><td style="padding:6px 10px;border:1px solid #1e2030"><b>' + escHtml(custName) + '</b> (' + escHtml(customer.email || '') + ')</td></tr>' +
+        '<tr><td style="padding:6px 10px;border:1px solid #1e2030">Product</td><td style="padding:6px 10px;border:1px solid #1e2030">' + escHtml(lead.product || '') + '</td></tr>' +
+        '<tr><td style="padding:6px 10px;border:1px solid #1e2030">Rejected lead</td><td style="padding:6px 10px;border:1px solid #1e2030">' + escHtml(oldAddr) + (oldPc ? ' · ' + escHtml(oldPc) : '') + '</td></tr>' +
+        '<tr><td style="padding:6px 10px;border:1px solid #1e2030">Reason</td><td style="padding:6px 10px;border:1px solid #1e2030">' + escHtml(reason) + '</td></tr>' + repInfo +
+        '</table>' +
+        '<p style="color:#94a3b8;font-size:12px;margin:14px 0 0">Rejected at ' + escHtml(new Date().toISOString()) + '. View the queue: admin dashboard → Rejected Leads.</p></div>';
+      sendBrevoEmail({ email: 'hello@9amleads.com', name: '9amLeads Admin' }, 'Lead rejected & replaced — ' + escHtml(custName) + ' (' + escHtml(lead.product || '') + ')', rHtml).catch(function(){});
+    } catch(e) { console.log('[LEADS-REJECT] owner email error:', e.message); }
+
+    res.json({ success: true, message: msg, replacement: replacement ? { address: replacement.address, postcode: replacement.postcode } : null, limit_left: Math.max(0, 3 - (rejCount + 1)) });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
