@@ -11439,7 +11439,7 @@ app.post('/api/admin/probate-backfill', adminAuth, async (req, res) => {
         var existing = {};
         (arr || []).forEach(function(l){ if (l && l.id) existing[l.id] = 1; });
         var nowMs = Date.now();
-        var added = [], dupes = 0, errs = 0, emptyRun = 0;
+        var added = [], dupes = 0, errs = 0;
         for (var pg = 1; pg <= maxPages && added.length < 700; pg++) {
           var pageLeads = [];
           try { pageLeads = await scraper.fetchGazetteHTML(50, pg); } catch(e) { errs++; }
@@ -11472,15 +11472,11 @@ app.post('/api/admin/probate-backfill', adminAuth, async (req, res) => {
             keep = true;
           }
           await new Promise(function(r){ setTimeout(r, 300); });
-          // Only stop after a run of empty/all-duplicate pages (Gazette pages already
-          // captured by the daily scrape are skipped, but older pages are still new —
-          // a single all-dup page must not halt the walk before we reach them).
-          if (!keep) {
-            emptyRun++;
-            if (emptyRun >= 3) break;
-          } else {
-            emptyRun = 0;
-          }
+          // Stop ONLY when the Gazette returns no articles at all (end of results),
+          // never on pages that are all duplicates — recent days are already in the
+          // pool from the daily scrape, so all-dup pages are normal until we walk far
+          // enough back to reach genuinely older, uncaptured notices.
+          if (!keep && (!pageLeads || pageLeads.length === 0)) break;
         }
         if (added.length) {
           arr = arr.concat(added);
