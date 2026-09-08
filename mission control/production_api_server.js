@@ -34584,26 +34584,25 @@ try {
   try {
     if (process.env.RUN_BUYER_SCRAPE === '1') {
       var buyerLock = path.join(DATA_DIR, 'buyer-scrape.lock');
-      var buyerRunning = false;
-      try { buyerRunning = fs.existsSync(buyerLock) && (Date.now() - fs.statSync(buyerLock).mtimeMs) < 5 * 60 * 1000; } catch (e) { buyerRunning = false; }
-      if (buyerRunning) {
-        console.log('[BOOT] Buyer scraper already running (lock present), skipping launch');
-      } else {
-        try { fs.writeFileSync(buyerLock, new Date().toISOString()); } catch (e) {}
-        try {
-          var townsFileCheck = path.join(__dirname, 'data', 'uk-postcode-areas.json');
-          var townsExistsCheck = fs.existsSync(townsFileCheck);
-          console.log('[BOOT] Buyer towns file exists at ' + townsFileCheck + ' = ' + townsExistsCheck);
-        } catch (e) { console.log('[BOOT] towns check error ' + e.message); }
-        var buyerArgs = ['mission control/run_buyer_subtypes.js', '--all', '--target=' + (process.env.BUYER_SCRAPE_TARGET || '350'), '--pages=' + (process.env.BUYER_SCRAPE_PAGES || '3')];
-        var buyerCp = require('child_process');
-        var buyerLogFd = null;
-        try { buyerLogFd = fs.openSync(path.join(DATA_DIR, 'buyer-scrape.log'), 'a'); } catch (e) { buyerLogFd = null; }
-        var buyerChild = buyerCp.spawn(process.execPath, buyerArgs, { cwd: path.join(__dirname, '..'), detached: true, stdio: buyerLogFd ? ['ignore', buyerLogFd, buyerLogFd] : 'ignore', env: Object.assign({}, process.env, { BUYER_LOCK_FILE: buyerLock }) });
-        buyerChild.unref();
-        if (buyerLogFd) { try { fs.writeSync(buyerLogFd, '\n=== buyer scrape launched ' + new Date().toISOString() + ' pid=' + (buyerChild.pid || '?') + ' ===\n'); } catch (e) {} }
-        console.log('[BOOT] Buyer subtype scraper launched pid=' + (buyerChild.pid || '?'));
-      }
+      // A fresh boot always means any previous buyer child was killed with the old
+      // process (deploy/restart), so the lock is stale by definition. Clear it and
+      // launch cleanly. The lock is only meaningful DURING a run to avoid double-launch
+      // from a concurrent boot path; the scraper clears it itself on completion.
+      try { if (fs.existsSync(buyerLock)) fs.unlinkSync(buyerLock); } catch (e) {}
+      try { fs.writeFileSync(buyerLock, new Date().toISOString()); } catch (e) {}
+      try {
+        var townsFileCheck = path.join(__dirname, 'data', 'uk-postcode-areas.json');
+        var townsExistsCheck = fs.existsSync(townsFileCheck);
+        console.log('[BOOT] Buyer towns file exists at ' + townsFileCheck + ' = ' + townsExistsCheck);
+      } catch (e) { console.log('[BOOT] towns check error ' + e.message); }
+      var buyerArgs = ['mission control/run_buyer_subtypes.js', '--all', '--target=' + (process.env.BUYER_SCRAPE_TARGET || '350'), '--pages=' + (process.env.BUYER_SCRAPE_PAGES || '3')];
+      var buyerCp = require('child_process');
+      var buyerLogFd = null;
+      try { buyerLogFd = fs.openSync(path.join(DATA_DIR, 'buyer-scrape.log'), 'a'); } catch (e) { buyerLogFd = null; }
+      var buyerChild = buyerCp.spawn(process.execPath, buyerArgs, { cwd: path.join(__dirname, '..'), detached: true, stdio: buyerLogFd ? ['ignore', buyerLogFd, buyerLogFd] : 'ignore', env: Object.assign({}, process.env, { BUYER_LOCK_FILE: buyerLock }) });
+      buyerChild.unref();
+      if (buyerLogFd) { try { fs.writeSync(buyerLogFd, '\n=== buyer scrape launched ' + new Date().toISOString() + ' pid=' + (buyerChild.pid || '?') + ' ===\n'); } catch (e) {} }
+      console.log('[BOOT] Buyer subtype scraper launched pid=' + (buyerChild.pid || '?'));
     } else {
       console.log('[BOOT] Buyer subtype scraper not started (RUN_BUYER_SCRAPE != 1)');
     }
