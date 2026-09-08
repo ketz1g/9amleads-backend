@@ -8686,6 +8686,37 @@ app.post('/api/leads/reject', authMiddleware, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/leads/cleanup — admin-only test-data cleanup on the SQLite leads
+// table. Body: { un_reject_lead_id, delete_lead_id, email? } — used to undo test
+// rejections/replacements so QA accounts stay clean.
+app.post('/api/admin/leads/cleanup', adminAuth, (req, res) => {
+  try {
+    var out = {};
+    var urId = String((req.body && req.body.un_reject_lead_id) || '').trim();
+    var delId = String((req.body && req.body.delete_lead_id) || '').trim();
+    if (urId) {
+      var l = db.prepare('SELECT * FROM leads WHERE id = ?').get(urId);
+      if (!l) return res.status(404).json({ error: 'Lead not found for un-reject: ' + urId });
+      var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
+      if (d.rejected) {
+        d.rejected = false; d.rejected_at = null; d.reject_reason = null;
+        // Restore as delivered (it was a delivered lead before the test reject).
+        db.prepare("UPDATE leads SET data = ?, status = 'delivered', delivered = 1 WHERE id = ?").run(JSON.stringify(d), urId);
+        out.un_rejected = urId;
+      } else { out.un_rejected = 'already-not-rejected'; }
+    }
+    if (delId) {
+      var ld = db.prepare('SELECT * FROM leads WHERE id = ?').get(delId);
+      if (ld) {
+        db.prepare('DELETE FROM leads WHERE id = ?').run(delId);
+        out.deleted = delId;
+      } else { out.deleted = 'not-found'; }
+    }
+    if (!urId && !delId) return res.status(400).json({ error: 'un_reject_lead_id or delete_lead_id required' });
+    res.json({ success: true, ...out });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/admin/rejected-leads — admin review queue of all customer-rejected leads.
 app.get('/api/admin/rejected-leads', adminAuth, (req, res) => {
   try {
