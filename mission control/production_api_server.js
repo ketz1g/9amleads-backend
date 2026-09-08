@@ -24319,8 +24319,29 @@ app.get('/api/analytics/overview', adminAuth, (req, res) => {
 });
 
 // Generate lead email HTML (reuses existing template pattern)
-function generateLeadEmailHTML(customer, leads) {
-  const brand = getProductBrand(customer.product);
+// Clean a planning site address for display. Plota's raw address can repeat the
+// postcode (with and without a space) and county ("..., CO5 9AU, CO59AU, Essex,
+// CO5 9AU"). Returns a tidy single "street..., town..., POSTCODE" line or ''.
+function cleanPlanningAddress(a) {
+  if (!a) return '';
+  var s = String(a).trim().replace(/\s+/g, ' ').replace(/\s*,\s*/g, ', ').replace(/,\s*$/, '');
+  if (!s) return '';
+  // 1) Find the first genuine postcode token (space optional: "CO5 9AU" or "CO59AU").
+  var pcRe = /\b([A-Z]{1,2}[0-9][A-Z0-9]?)\s?([0-9][A-Z]{2})\b/;
+  var m = s.match(pcRe);
+  if (!m) return s; // no postcode at all — return as-is
+  var pc = (m[1] + ' ' + m[2]).toUpperCase();
+  // 2) Head = everything before the postcode. If nothing before it, keep as-is.
+  var head = s.slice(0, m.index).replace(/[,\s]+$/, '').trim();
+  if (!head) return s;
+  // 3) Trim a trailing county/town that duplicates the postcode area's county is
+  //    impossible to know generically, but we DO stop any duplicated postcode or
+  //    its mirror ("CO5 9AU ... CO59AU" / "... Essex, CO5 9AU") from leaking in.
+  var result = head + ', ' + pc;
+  return result;
+}
+
+function generateLeadEmailHTML(customer, leads) {  const brand = getProductBrand(customer.product);
   const accent = brand.color;
   const productName = customer.product || 'opportunities';
   const aboutText = productName === 'moving' ? 'Property and moving details'
@@ -24411,8 +24432,12 @@ function generateLeadEmailHTML(customer, leads) {
       var incDate = d.incorporationDate || d.dateOfCreation;
       subtitle = incDate ? (d.city ? d.city + ' · ' : '') + 'Incorporated ' + new Date(incDate).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : (d.city || '');
     } else if (leadProduct === 'planning') {
-      // Full site address in the title (number + street + town + postcode)
-      title = address || d.address || (d.proposal ? d.proposal.substring(0, 40) : 'Planning Application');
+      // Full site address in the title (number + street + town + postcode).
+      // Plota's raw `address` field is sometimes a messy concatenation that repeats
+      // the postcode (with and without a space) and the county (e.g. "...CO5 9AU,
+      // CO59AU, Essex, CO5 9AU"). Clean it so the title reads like a real address
+      // and never forces the email layout wide / overlapping.
+      title = cleanPlanningAddress(address || d.address || '') || (d.proposal ? d.proposal.substring(0, 40) : 'Planning Application');
       var appType = d.applicationType || 'Planning Application';
       subtitle = (d.council ? d.council + ' · ' : '') + appType + (d.status ? ' · ' + d.status : '');
     } else {
@@ -24432,7 +24457,7 @@ function generateLeadEmailHTML(customer, leads) {
     body += '<div style="margin-bottom:12px">';
     body += '<table cellpadding="0" cellspacing="0" width="100%"><tr>';
     body += '<td style="vertical-align:top;width:auto;padding-right:10px"><span style="display:inline-block;padding:4px 12px;border-radius:6px;background-color:' + leadAccent + ';background-image:linear-gradient(135deg,' + leadAccent + ',rgba(99,102,241,0.6));color:#fff;font-size:10px;font-weight:700;letter-spacing:0.8px">' + (leadProduct === 'moving' ? 'MOVING' : leadProduct === 'probate' ? 'PROBATE' : leadProduct === 'newbusiness' ? 'NEW BIZ' : leadProduct === 'planning' ? 'PLANNING' : 'TENDER') + '</span></td>';
-    body += '<td style="vertical-align:top;width:100%"><div style="font-size:16px;font-weight:700;color:#1e293b;line-height:1.3">' + (title || 'Opportunity') + '</div>';
+    body += '<td style="vertical-align:top;width:100%"><div style="font-size:16px;font-weight:700;color:#1e293b;line-height:1.3;word-break:break-word">' + (title || 'Opportunity') + '</div>';
     if (subtitle) body += '<div style="font-size:13px;color:#1e293b;margin-top:4px">' + subtitle + '</div>';
     if (emailSendOn) body += '<div style="font-size:11px;color:#3f3f46;margin-top:6px;font-weight:600">' + emailSendOn + '</div>';
     body += '</td></tr></table></div>';
@@ -24446,10 +24471,16 @@ function generateLeadEmailHTML(customer, leads) {
       var _rmTown = require('./rightmove_scraper_v2');
       areaChip = _rmTown.getTownForPostcode(postcode || d.postcode || '') || d.town || d.city || '';
     } catch(e) { areaChip = d.town || d.city || ''; }
-    if (areaChip) chips.push({ icon: '\uD83D\uDCCD', text: areaChip });
-    if (postcode) chips.push({ icon: '\uD83D\uDCCD', text: postcode });
-    if (address && address.length > 10 && leadProduct !== 'moving') chips.push({ icon: '\uD83C\uDFE2', text: address.substring(0, 55) });
-    if (d.city && leadProduct !== 'moving') chips.push({ icon: '\uD83C\uDFD9\uFE0F', text: d.city });
+    // PLANNING: the (cleaned) full address + postcode are the card TITLE, so don't
+    // also repeat them as chips (that doubled the text and forced the layout wide).
+    // MOVING: the title is the full address too, but keep a single short town chip.
+    var titleHasAddr = (leadProduct === 'planning' || leadProduct === 'moving');
+    if (!titleHasAddr) {
+      if (areaChip) chips.push({ icon: '\uD83D\uDCCD', text: areaChip });
+      if (postcode) chips.push({ icon: '\uD83D\uDCCD', text: postcode });
+    }
+    if (address && address.length > 10 && leadProduct === 'moving') chips.push({ icon: '\uD83C\uDFE2', text: address.substring(0, 55) });
+    if (d.city && leadProduct === 'newbusiness') chips.push({ icon: '\uD83C\uDFD9\uFE0F', text: d.city });
 
     if (leadProduct === 'moving') {
       var listingDate = d.firstVisibleDate || d.addedOrReduced || d.lastAddedOrReducedDate || '';
@@ -24510,7 +24541,7 @@ function generateLeadEmailHTML(customer, leads) {
     if (chips.length > 0) {
       body += '<div style="margin-bottom:8px">';
       for (var c = 0; c < chips.length; c++) {
-        body += '<span style="display:inline-block;padding:4px 10px;margin:0 4px 4px 0;background:rgba(255,255,255,0.04);border:1px solid #e2e8f0;border-radius:8px;font-size:12px;color:#1e293b;white-space:nowrap">' + chips[c].text + '</span>';
+        body += '<span style="display:inline-block;padding:4px 10px;margin:0 4px 4px 0;background:rgba(255,255,255,0.04);border:1px solid #e2e8f0;border-radius:8px;font-size:12px;color:#1e293b;white-space:normal;word-break:break-word">' + chips[c].text + '</span>';
       }
       body += '</div>';
     }
