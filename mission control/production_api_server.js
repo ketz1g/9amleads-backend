@@ -34544,6 +34544,32 @@ try {
   streamWorker.start(chKeyStream);
   console.log('[BOOT] Stream: Companies House live stream worker started');
 
+  // BUYER SUBTYPE SCRAPER (always-on): when RUN_BUYER_SCRAPE=1 is set (Render web
+  // service), spawn run_buyer_subtypes.js as a detached child so the per-business-type
+  // contact lists keep filling 24/7 on the persistent disk, independent of any laptop.
+  // Only launches if a scrape is not already in progress (lock file on the disk).
+  try {
+    if (process.env.RUN_BUYER_SCRAPE === '1') {
+      var buyerLock = path.join(DATA_DIR, 'buyer-scrape.lock');
+      var buyerRunning = false;
+      try { buyerRunning = fs.existsSync(buyerLock) && (Date.now() - fs.statSync(buyerLock).mtimeMs) < 10 * 60 * 1000; } catch (e) { buyerRunning = false; }
+      if (buyerRunning) {
+        console.log('[BOOT] Buyer scraper already running (lock present), skipping launch');
+      } else {
+        try { fs.writeFileSync(buyerLock, new Date().toISOString()); } catch (e) {}
+        var buyerArgs = ['mission control/run_buyer_subtypes.js', '--all', '--target=' + (process.env.BUYER_SCRAPE_TARGET || '350'), '--pages=' + (process.env.BUYER_SCRAPE_PAGES || '3')];
+        var buyerCp = require('child_process');
+        var buyerChild = buyerCp.spawn(process.execPath, buyerArgs, { cwd: path.join(__dirname, '..'), detached: true, stdio: 'ignore', env: Object.assign({}, process.env) });
+        buyerChild.unref();
+        console.log('[BOOT] Buyer subtype scraper launched pid=' + (buyerChild.pid || '?'));
+      }
+    } else {
+      console.log('[BOOT] Buyer subtype scraper not started (RUN_BUYER_SCRAPE != 1)');
+    }
+  } catch (buyerErr) {
+    console.log('[BOOT] Buyer scraper launch error: ' + (buyerErr && buyerErr.message || buyerErr));
+  }
+
   // STREAM DRAIN: every 2 minutes, pull companies queued by the streaming worker
   // and merge them into the NEWBUSINESS POOL FILE (newbusiness-leads.json) — the
   // SAME file the delivery/preview read via loadProductPool/getDeliveryPool.
