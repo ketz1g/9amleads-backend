@@ -8749,23 +8749,11 @@ async function createReplacementLead(cust, product, deliveredNow) {
     } catch(e) {}
     var cutoff = getFreshCutoffIso();
     var seen = {};
-    // County-aware matching (mirrors the main delivery loop). Set up only if needed.
-    var countyPostcodes = {
-      'essex': ['CM','CO','SS','IG'],'hertfordshire':['AL','EN','HP','SG','WD'],'kent':['CT','DA','ME','TN'],
-      'surrey':['CR','GU','KT','RH','SM','TW'],'sussex':['BN','RH','TN'],'hampshire':['GU','PO','SO','SP','RG'],
-      'berkshire':['RG','SL'],'buckinghamshire':['HP','MK','SL'],'oxfordshire':['OX'],'bedfordshire':['LU','MK'],
-      'cambridgeshire':['CB','PE'],'norfolk':['IP','NR','PE'],'suffolk':['CO','IP','NR'],
-      'london':['E','EC','N','NW','SE','SW','W','WC','BR','CR','DA','EN','HA','IG','KT','RM','SM','TN','TW','UB'],
-      'greater-london':['E','EC','N','NW','SE','SW','W','WC','BR','CR','DA','EN','HA','IG','KT','RM','SM','TN','TW','UB'],
-      'birmingham':['B'],'manchester':['M'],'liverpool':['L'],'leeds':['LS'],'sheffield':['S'],
-      'bristol':['BS'],'nottingham':['NG'],'leicester':['LE'],'cardiff':['CF'],'edinburgh':['EH'],
-      'glasgow':['G'],'belfast':['BT'],'cheshire':['CH','WA'],'lancashire':['BB','BL','FY','LA','PR'],
-      'north-east':['DH','DL','NE','SR','TS'],'north-west':['BB','BL','CH','CW','FY','L','LA','M','OL','PR','SK','WA','WN'],
-      'yorkshire':['BD','HD','HG','HU','HX','LS','S','WF','YO'],'yorkshire-and-the-humber':['BD','HD','HG','HU','HX','LS','S','WF','YO'],
-      'east-midlands':['DE','DN','LE','LN','NG','NN','PE'],'west-midlands-region':['B','CV','DY','HR','ST','SY','TF','WR','WS','WV'],
-      'east-of-england':['AL','CB','CM','CO','HP','IP','LU','NR','PE','SG','SS'],'south-east':['BN','CT','DA','GU','HP','KT','ME','MK','OX','PO','RG','RH','SL','SN','SO','SS','TN','TW'],
-      'south-west':['BA','BS','DT','EX','GL','PL','SN','SP','TA','TQ','TR'],'wales':['CF','LD','LL','NP','SA','SY']
-    };
+    // County-aware matching (mirrors the main delivery loop). Uses the GLOBAL
+    // single-source-of-truth map (covers merseyside/north-east/yorkshire-and-the-
+    // humber/durham etc) so an in-area replacement is found for ANY customer —
+    // never a far-away national lead.
+    var countyPostcodes = COUNTY_POSTCODE_MAP;
     var ukwide = /all.?uk|uk.?wide/i.test((areas||[]).join(' '));
     for (var i=0;i<pool.length;i++){
       var fl = pool[i];
@@ -8788,8 +8776,12 @@ async function createReplacementLead(cust, product, deliveredNow) {
         } else {
           hit = areas.some(function(a){ return extractPostcodeArea(a) === areaOfPool; });
         }
-        // NATIONAL FALLBACK for tenders/probate: accept even if no area matched.
-        if (!hit && (product === 'tenders' || product === 'probate')) hit = true;
+        // NATIONAL FALLBACK only for genuinely postcode-less public notices
+        // (some tender/older-probate records have no address/postcode at all).
+        // A probate replacement WITH a real postcode that is OUTSIDE the customer's
+        // chosen counties is REJECTED (never a far-away out-of-area lead) — mirrors
+        // the main delivery fix.
+        if (!hit && (product === 'tenders' || product === 'probate') && !areaOfPool) hit = true;
         if (!hit) continue;
       }
       // Must have a PROPER address (door number / flat / named building), not a bare street.
