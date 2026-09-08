@@ -15,10 +15,21 @@ const DATA_DIR = path.join(__dirname, 'data');
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Safari/537.36';
 
 function loadTowns() {
-  try {
-    const o = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'uk-postcode-areas.json'), 'utf-8'));
-    return Object.keys(o).map(k => o[k].name).filter(n => n && n.length > 2);
-  } catch (e) { return []; }
+  const candidates = [
+    path.join(__dirname, 'towns-uk.json'),
+    path.join(__dirname, 'data', 'uk-postcode-areas.json'),
+    path.join(process.cwd(), 'mission control', 'towns-uk.json')
+  ];
+  for (const c of candidates) {
+    try {
+      if (!fs.existsSync(c)) continue;
+      const o = JSON.parse(fs.readFileSync(c, 'utf-8'));
+      const names = Object.keys(o).map(k => o[k].name).filter(n => n && n.length > 2);
+      if (names.length) { console.log('towns loaded from ' + c + ' (' + names.length + ')'); return names; }
+    } catch (e) {}
+  }
+  console.log('WARN: no towns file found among ' + candidates.join(', '));
+  return [];
 }
 
 function get(url, timeout, depth) {
