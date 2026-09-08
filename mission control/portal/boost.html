@@ -127,8 +127,22 @@ function render(){
   var nm={moving:'Moving',probate:'Probate',newbusiness:'New Business'}[ST.product]||ST.product; 
   var a=D.available[ST.product]||{tm:0,'1m':0,'2m':0}; 
   document.getElementById('availMoving').innerHTML='';
-  var av=a[ST.age]; 
-  document.getElementById('availAge').innerHTML = 'Fresh ' + nm + ' archive leads are added to the pool all the time.'; 
+  var av=a[ST.age];
+  // Stamp live stock onto each age button (e.g. "1 month old &middot; 0 ready").
+  document.querySelectorAll('#content .seg button[data-a]').forEach(function(btn){
+    var key=btn.dataset.a, n=a[key]||0;
+    var core = key==='tm' ? 'This month' : key==='1m' ? '1 month old' : '2 months old';
+    btn.innerHTML = core + ' <span style="font-size:10px;font-weight:700;opacity:.85">(' + n + ' ready)</span>';
+  });
+  // Show current stock in the selected age band: biggest pack that's actually ready.
+  var sizesBand=(D.sizes&&D.sizes[ST.product])||[]; 
+  var ready=[];
+  sizesBand.forEach(function(s){ if(av>=s) ready.push(s); });
+  var biggestReady=ready.length?ready[ready.length-1]:0;
+  var stockTxt = av>0
+    ? (biggestReady ? '<span style="color:#16a34a;font-weight:800">'+biggestReady+'-pack in stock now</span>' : '') + ' &middot; '+av+' '+nm.toLowerCase()+' leads ready in this band'
+    : '<span style="color:#fbbf24;font-weight:800">Pool filling &mdash; check back soon</span>';
+  document.getElementById('availAge').innerHTML = stockTxt; 
   var sizes=(D.sizes&&D.sizes[ST.product])||[]; 
   var rate=(D.mail_rates&&D.mail_rates[ST.mail])||249; 
   var box=document.getElementById('packsBox'); 
@@ -137,7 +151,9 @@ function render(){
     var total=Math.round(cnt*rate)/100;
     var can = av >= cnt;
     var fmt = total % 1 === 0 ? total.toLocaleString('en-GB') : total.toFixed(2);
-    var canText = can ? '' : '<div style="font-size:11px;color:#fbbf24;margin-top:8px">Lead pool being filled - available very soon</div>';
+    var canText = can
+      ? '<div style="font-size:11px;color:#16a34a;font-weight:800;margin-top:8px">&#10003; In stock &mdash; ready to buy</div>'
+      : '<div style="font-size:11px;color:#fbbf24;margin-top:8px">Need '+cnt+' &middot; '+av+' ready now &mdash; pool filling, available soon</div>';
     return '<div class="pack" style="opacity:'+(can?1:.5)+'">'
       + '<div class="num">'+cnt+'</div>'
       + '<div style="font-size:11.5px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:.6px;margin:0 0 2px">'+lbl+'</div>'
