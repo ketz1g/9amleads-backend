@@ -7542,26 +7542,31 @@ app.post('/api/admin/pause-test-accounts', adminAuth, (req, res) => {
 
 // POST /api/admin/set-plan — apply a paid plan (calls applyPlan: sets plan +
 // leads_per_day + clears trial_ends). Mirrors the post-payment webhook.
+// Optional body { product } changes the customer's lead product too (e.g. so an owner
+// can flip a test account to a different lead type to preview its storefront).
 app.post('/api/admin/set-plan', adminAuth, (req, res) => {
   try {
     var email = String((req.body && req.body.email) || '').toLowerCase().trim();
     var plan = String((req.body && req.body.plan) || '').toLowerCase();
     if (!['free_trial','starter','pro','enterprise'].includes(plan)) return res.status(400).json({ error: 'plan must be free_trial, starter, pro or enterprise' });
+    var newProduct = String((req.body && req.body.product) || '').toLowerCase().trim();
+    if (newProduct && ['moving','probate','newbusiness','planning','tenders'].indexOf(newProduct) === -1) return res.status(400).json({ error: 'product must be moving, probate, newbusiness, planning or tenders' });
     var cust = db.prepare('SELECT * FROM customers WHERE email = ?').get(email);
     if (!cust) return res.status(404).json({ error: 'Customer not found' });
     if (plan === 'free_trial') {
       // Restore a test/refunded account to a fresh free trial (admin/test tool).
       var newTrialEnd = new Date(Date.now() + 7 * 86400000).toISOString();
       var ftLpd = parseInt(cust.leads_per_day, 10) > 0 ? parseInt(cust.leads_per_day, 10) : 5;
-      db.prepare('UPDATE customers SET plan = ?, leads_per_day = ?, trial_ends = ?, leads_paused = 0, auto_send_paused = 0 WHERE id = ?')
-        .run('free_trial', ftLpd, newTrialEnd, cust.id);
+      db.prepare('UPDATE customers SET plan = ?, leads_per_day = ?, trial_ends = ?, leads_paused = 0, auto_send_paused = 0, product = ? WHERE id = ?')
+        .run('free_trial', ftLpd, newTrialEnd, newProduct || cust.product, cust.id);
       saveDb();
-      return res.json({ success: true, email: email, plan: 'free_trial', leads_per_day: ftLpd, trial_ends: newTrialEnd });
+      return res.json({ success: true, email: email, plan: 'free_trial', product: newProduct || cust.product, leads_per_day: ftLpd, trial_ends: newTrialEnd });
     }
-    applyPlan(cust, plan, cust.product);
+    applyPlan(cust, plan, newProduct || cust.product);
+    if (newProduct) db.prepare('UPDATE customers SET product = ? WHERE id = ?').run(newProduct, cust.id);
     saveDb();
     var after = db.prepare('SELECT * FROM customers WHERE id = ?').get(cust.id);
-    res.json({ success: true, email: email, plan: after.plan, leads_per_day: after.leads_per_day, trial_ends: after.trial_ends });
+    res.json({ success: true, email: email, plan: after.plan, product: after.product, leads_per_day: after.leads_per_day, trial_ends: after.trial_ends });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
