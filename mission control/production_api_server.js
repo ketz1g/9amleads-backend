@@ -18016,8 +18016,8 @@ function reserveBulkLeads(count, customerId) {
   var raw = null;
   try { raw = JSON.parse(fs.readFileSync(file, 'utf-8')); } catch(e) {}
   var container = null;
+  var ids = {}; chosen.forEach(function(c) { ids[c.id || c.company_number] = 1; });
   if (Array.isArray(raw)) {
-    var ids = {}; chosen.forEach(function(c) { ids[c.id || c.company_number] = 1; });
     raw.forEach(function(l) { if (l && ids[l.id || l.company_number]) { l.bulk_reserved = 1; l.bulk_reserved_by = customerId; l.bulk_reserved_at = new Date().toISOString(); } });
     fs.writeFileSync(file, JSON.stringify(raw, null, 2));
   } else if (raw && typeof raw === 'object') {
@@ -18029,6 +18029,39 @@ function reserveBulkLeads(count, customerId) {
     });
     fs.writeFileSync(file, JSON.stringify(container, null, 2));
   }
+  // Background PAF verification of the reserved New Business bulk pack (new-company
+  // registered offices are usually already postable; uncertain ones get a PAF check
+  // using the separate bulk allowance, with auto-swap for failures).
+  try {
+    (async function() {
+      try {
+        var rawB = JSON.parse(fs.readFileSync(file, 'utf-8'));
+        var rowsB = [];
+        if (Array.isArray(rawB)) rowsB = rawB.map(function(x){ return { isCont:false, x:x }; });
+        else if (rawB && typeof rawB === 'object') { Object.keys(rawB).forEach(function(k){ if (k.indexOf('_')===0) return; if (Array.isArray(rawB[k])) rawB[k].forEach(function(x){ rowsB.push({ isCont:true, key:k, x:x }); }); }); }
+        var reservedB = rowsB.filter(function(e){ return e.x && e.x.bulk_reserved_by === customerId && !e.x.bulk_sold; });
+        var extrasB = rowsB.filter(function(e){ return e.x && !e.x.bulk_reserved && !e.x.bulk_sold && !e.x.boost_reserved && !e.x.boost_sold; });
+        var needB = count, verifiedB = [];
+        for (var vi2 = 0; vi2 < reservedB.length && needB > 0; vi2++) {
+          var okB = await verifyBulkLeadPostable(reservedB[vi2].x, 'newbusiness');
+          if (okB) { verifiedB.push(reservedB[vi2]); needB--; }
+        }
+        for (var fi2 = 0; fi2 < 40 && needB > 0; fi2++) { // safety cap on swap attempts
+          var foundB = false;
+          for (var s3 = 0; s3 < extrasB.length; s3++) {
+            var rok2 = await verifyBulkLeadPostable(extrasB[s3].x, 'newbusiness');
+            if (rok2) { extrasB[s3].x.bulk_reserved = 1; extrasB[s3].x.bulk_reserved_by = customerId; extrasB[s3].x.bulk_reserved_at = new Date().toISOString(); verifiedB.push(extrasB[s3]); extrasB.splice(s3,1); needB--; foundB = true; break; }
+          }
+          if (!foundB) break;
+        }
+        var vidsB = {}; verifiedB.forEach(function(e){ vidsB[e.x.id || e.x.company_number] = 1; });
+        function applyB(obj){ if (vidsB[obj.id || obj.company_number]) { obj.bulk_reserved = 1; obj.bulk_reserved_by = customerId; if(!obj.bulk_reserved_at) obj.bulk_reserved_at = new Date().toISOString(); } else if (obj.bulk_reserved_by === customerId && !obj.bulk_sold) { obj.bulk_reserved = 0; obj.bulk_reserved_by = ''; } }
+        if (Array.isArray(rawB)) { rawB.forEach(applyB); fs.writeFileSync(file, JSON.stringify(rawB, null, 2)); }
+        else { var rebuiltB = {}; Object.keys(rawB).forEach(function(k){ if (k.indexOf('_')===0) rebuiltB[k]=rawB[k]; }); rowsB.forEach(function(e){ applyB(e.x); if(!rebuiltB[e.key]) rebuiltB[e.key]=[]; rebuiltB[e.key].push(e.x); }); fs.writeFileSync(file, JSON.stringify(rebuiltB, null, 2)); }
+        console.log('[BULK-PAF] Verified New Business pack for ' + customerId + ' x' + count + ' -> verified ' + verifiedB.length + '/' + count);
+      } catch(bp2) { console.log('[BULK-PAF] error:', bp2.message); }
+    })();
+  } catch(e) { console.log('[BULK-PAF] launch error:', e.message); }
   return { ok: true, leads: chosen };
 }
 
@@ -18272,8 +18305,18 @@ app.post('/api/newbusiness/bulk/send', authMiddleware, async (req, res) => {
       }
     }
     var arr = readPoolFile('newbusiness');
-    var leads = (arr || []).filter(function(l) { return l.bulk_reserved_by === c.id && !l.bulk_sold && postableLeadInfo(l, true).ok; });
-    if (!leads.length) return res.status(400).json({ error: 'No reserved leads found for this pack.' });
+    // PAF-verify each reserved lead before dispatch (free when already door-numbered;
+    // uses the separate bulk allowance for the uncertain minority) so only postable
+    // registered-office addresses ever get printed.
+    var reservedBulk = (arr || []).filter(function(l) { return l && l.bulk_reserved_by === c.id && !l.bulk_sold; });
+    if (!reservedBulk.length) return res.status(400).json({ error: 'No reserved leads found for this pack.' });
+    var leads = [];
+    for (var bv = 0; bv < reservedBulk.length; bv++) {
+      if (leads.length >= pack.count) break;
+      var bl = await verifyBulkLeadPostable(reservedBulk[bv], 'newbusiness');
+      if (bl) leads.push(bl);
+    }
+    if (!leads.length) return res.status(400).json({ error: 'None of the reserved leads in this pack have a postable address. Please contact hello@9amleads.com.' });
     // Materials gate depends on the customer's chosen MAIL TYPE (mirrors Print & Post):
     // leaflet needs flyer front + back; letter auto-generates (or uses uploaded letter);
     // leaflet+letter needs the flyer AND the letter body. Requires materials before send.
@@ -18516,9 +18559,52 @@ function getBoostArchiveLeads(product, ageKey, count) {
   });
   return out.slice(0, count || out.length);
 }
+// PAF-VERIFY ONE BULK/BOOST LEAD using the SEPARATE bulk allowance (never the daily
+// delivery budget). If the lead already has a full postcode + usable door/premise
+// address, it needs NO paid lookup (free, like the daily path). Otherwise spend one
+// bulk credit on Postcoder PAF to resolve/confirm a deliverable address. Returns the
+// possibly-upgraded lead object, or null if it can't be made postable.
+async function verifyBulkLeadPostable(l, product) {
+  try {
+    if (!l) return null;
+    var allowCompany = product === 'newbusiness';
+    var pi = postableLeadInfo(l, allowCompany);
+    var alreadyGood = pi && pi.ok && pi.hasDoor;
+    if (product === 'newbusiness' && pi && pi.ok && !pi.hasDoor && String(l.company || l.companyName || l.company_name || l.name || '').trim()) alreadyGood = true;
+    if (alreadyGood) { l.paf_done = 1; return l; } // no paid lookup needed
+    // Uncertain: needs a PAF lookup. Spend from the bulk allowance only.
+    var budget = null;
+    try { budget = require('./postcoder_budget'); } catch(e) {}
+    if (!budget || !budget.spendBulk || !budget.spendBulk()) return null; // no bulk credits left this run
+    var pc = String(l.postcode || l.registered_postcode || '').toUpperCase().trim();
+    if (!/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/.test(pc)) return null;
+    var addr0 = String(l.fullAddress || l.address || l.deceasedAddress || l.registered_address || '').trim();
+    var pcDeliver = require('./rightmove_scraper_v2');
+    var hint = l.doorNumberHint || '';
+    var full = await pcDeliver.lookupPostcoderAddress(pc, addr0, hint);
+    if (full && full.rateLimited) { await new Promise(function(r){ setTimeout(r, 30000); }); full = await pcDeliver.lookupPostcoderAddress(pc, addr0, hint); }
+    var nAddr = (full && full.fullAddress) || (full && full.address1) || '';
+    if (full && !full.rateLimited && hasUsablePremiseAddress(nAddr || addr0, full.postcode || pc)) {
+      l.fullAddress = l.fullAddress || addr0;
+      l.address = nAddr || addr0 || l.address || '';
+      l.street = full.street || l.street || '';
+      l.buildingNumber = full.buildingNumber || hint || l.buildingNumber || '';
+      l.postcode = (full.postcode || pc).toUpperCase();
+      l.udprn = full.udprn || l.udprn || '';
+      l.paf_done = 1; l.paf_failed = false;
+      return l;
+    }
+    l.paf_failed = true; l.paf_done = 1; l.paf_attempts = (l.paf_attempts || 0) + 1;
+    return null;
+  } catch(e) { try { if (l) l.paf_failed = true; } catch(_) {} return null; }
+}
+
 function reserveBoostLeads(product, ageKey, count, customerId) {
   var eligible = getBoostArchiveLeads(product, ageKey, 0);
   if (eligible.length < count) return { ok: false, available: eligible.length, error: 'Not enough archive leads in this age band right now (' + eligible.length + ' available). Choose another age or pack, or try again in a few days.' };
+  // Reserve synchronously (reservation is what the webhook records). PAF verification
+  // of the uncertain minority + auto-swap runs afterwards in the background so the
+  // reservation is never empty and the customer isn't charged-then-refunded.
   var chosen = eligible.slice(0, count);
   var file = path.join(DATA_DIR, PRODUCT_LEAD_FILES[product].file);
   var raw = null;
@@ -18527,7 +18613,63 @@ function reserveBoostLeads(product, ageKey, count, customerId) {
   function mark(l) { if (l && ids[l.id || l.url || l.company_number || 1]) { l.boost_reserved = 1; l.boost_reserved_by = customerId; l.boost_reserved_at = new Date().toISOString(); } }
   if (Array.isArray(raw)) { raw.forEach(mark); fs.writeFileSync(file, JSON.stringify(raw, null, 2)); }
   else if (raw && typeof raw === 'object') { Object.keys(raw).forEach(function(k) { if (Array.isArray(raw[k])) raw[k].forEach(mark); }); fs.writeFileSync(file, JSON.stringify(raw, null, 2)); }
-  return { ok: true, leads: chosen };
+  // Kick off background PAF verification of the reserved pack (uncertain leads only).
+  try {
+    var f2 = path.join(DATA_DIR, PRODUCT_LEAD_FILES[product].file);
+    (async function() {
+      try {
+        // PAF verification may replace some reserved leads with better extras, so it
+        // re-reads + re-writes the file atomically at the end. Simpler + safer than
+        // trying to mutate the original array/container in place.
+        var raw2 = JSON.parse(fs.readFileSync(f2, 'utf-8'));
+        var rows = [];
+        if (Array.isArray(raw2)) rows = raw2.map(function(x){ return { isCont:false, x:x }; });
+        else if (raw2 && typeof raw2 === 'object') { Object.keys(raw2).forEach(function(k){ if (k.indexOf('_')===0) return; if (Array.isArray(raw2[k])) raw2[k].forEach(function(x){ rows.push({ isCont:true, key:k, x:x }); }); }); }
+        var finalKept = []; // verified reserved rows (container meta separate)
+        var reserved = rows.filter(function(e){ return e.x && e.x.boost_reserved_by === customerId && !e.x.boost_sold; });
+        var extras = rows.filter(function(e){ return e.x && !e.x.boost_reserved && !e.x.boost_sold && !e.x.bulk_reserved && !e.x.bulk_sold; });
+        var need = count;
+        var verified = [], failures = [];
+        for (var vi = 0; vi < reserved.length && need > 0; vi++) {
+          var ok = await verifyBulkLeadPostable(reserved[vi].x, product);
+          if (ok) { verified.push(reserved[vi]); need--; }
+          else failures.push(reserved[vi]);
+        }
+        // auto-swap failures for PAF-verified extras
+        for (var fi = 0; fi < failures.length && need > 0; fi++) {
+          for (var s2 = 0; s2 < extras.length; s2++) {
+            var rok = await verifyBulkLeadPostable(extras[s2].x, product);
+            if (rok) {
+              extras[s2].x.boost_reserved = 1; extras[s2].x.boost_reserved_by = customerId; extras[s2].x.boost_reserved_at = new Date().toISOString();
+              verified.push(extras[s2]); extras.splice(s2, 1); need--;
+              break;
+            }
+          }
+        }
+        // Build the final file: clear reservation on failures, keep verified reserved.
+        // mark verified as reserved
+        var vids = {}; verified.forEach(function(e){ vids[e.x.id || e.x.url || e.x.company_number || 1] = 1; });
+        function applyVerif(obj, row) {
+          if (vids[obj.id || obj.url || obj.company_number || 1]) {
+            obj.boost_reserved = 1; obj.boost_reserved_by = customerId;
+            if (!obj.boost_reserved_at) obj.boost_reserved_at = new Date().toISOString();
+          } else if (obj.boost_reserved_by === customerId && !obj.boost_sold) {
+            obj.boost_reserved = 0; obj.boost_reserved_by = '';
+          }
+        }
+        var arrOut = [];
+        if (Array.isArray(raw2)) { raw2.forEach(function(l){ applyVerif(l); arrOut.push(l); }); fs.writeFileSync(f2, JSON.stringify(arrOut, null, 2)); }
+        else {
+          var rebuilt = {};
+          Object.keys(raw2).forEach(function(k){ if (k.indexOf('_')===0) rebuilt[k]=raw2[k]; });
+          rows.forEach(function(e){ applyVerif(e.x); if(!rebuilt[e.key]) rebuilt[e.key]=[]; rebuilt[e.key].push(e.x); });
+          fs.writeFileSync(f2, JSON.stringify(rebuilt, null, 2));
+        }
+        console.log('[BOOST-PAF] Verified pack for ' + customerId + ' ' + product + ' ' + ageKey + ' x' + count + ' -> verified ' + verified.length + '/' + count + (need>0 ? ' (short ' + need + ')' : ''));
+      } catch(bp) { console.log('[BOOST-PAF] background error:', bp.message); }
+    })();
+  } catch(e) { console.log('[BOOST-PAF] launch error:', e.message); }
+  return { ok: true, leads: chosen, paf_verifying: true };
 }
 
 // Release stale boost reservations: (a) the reserving customer no longer exists
@@ -18677,8 +18819,28 @@ app.post('/api/boost/send', authMiddleware, async (req, res) => {
     if (mailChoice !== 'letter' && (!hasFront || !hasBack)) return res.status(400).json({ error: 'Your boost pack is posted as A5 leaflets, so you need your leaflet front AND back uploaded in Print & Post (Step 2) first.' });
     var mailType = mailChoice === 'both' ? 'flyer_plus_letter' : mailChoice === 'letter' ? 'letter_a4' : 'flyer_a5';
     var arr = readPoolFile(product);
-    var leads = (arr || []).filter(function(l) { return l.boost_reserved_by === c.id && !l.boost_sold && postableLeadInfo(l, product === 'newbusiness').ok; });
-    if (!leads.length) return res.status(400).json({ error: 'No reserved leads found for this pack.' });
+    // Only PAF-CONFIRMED postable leads ever get dispatched. Every lead is verified
+    // (free when it already has a door number; PAF lookup from the separate bulk
+    // allowance for the uncertain minority) so no unmailable address is ever printed.
+    var reservedPool = (arr || []).filter(function(l) { return l && l.boost_reserved_by === c.id && !l.boost_sold; });
+    if (!reservedPool.length) return res.status(400).json({ error: 'No reserved leads found for this pack.' });
+    var leads = [];
+    for (var vx = 0; vx < reservedPool.length; vx++) {
+      if (leads.length >= pack.count) break;
+      var vl = await verifyBulkLeadPostable(reservedPool[vx], product);
+      if (vl) leads.push(vl);
+    }
+    if (!leads.length) return res.status(400).json({ error: 'None of the reserved leads in this pack have a postable address. Please contact hello@9amleads.com.' });
+    // If PAF dropped some leads (unverifiable), persist the cleaned reserved state so the
+    // customer's dashboard + sold count reflect exactly what will be posted.
+    try {
+      var vfile = path.join(DATA_DIR, PRODUCT_LEAD_FILES[product].file);
+      var vraw = JSON.parse(fs.readFileSync(vfile, 'utf-8'));
+      var vIds = {}; leads.forEach(function(l){ vIds[l.id || l.url || l.company_number || 1] = 1; });
+      function unReserveNonSent(l) { if (l && l.boost_reserved_by === c.id && !l.boost_sold && !vIds[l.id || l.url || l.company_number || 1]) { l.boost_reserved = 0; l.boost_reserved_by = ''; } }
+      if (Array.isArray(vraw)) { vraw.forEach(unReserveNonSent); fs.writeFileSync(vfile, JSON.stringify(vraw, null, 2)); }
+      else if (vraw && typeof vraw === 'object') { var vr2={}; Object.keys(vraw).forEach(function(k){ if(k.indexOf('_')===0) vr2[k]=vraw[k]; }); Object.keys(vraw).forEach(function(k){ if(k.indexOf('_')!==0 && Array.isArray(vraw[k])) vraw[k].forEach(function(x){ unReserveNonSent(x); if(!vr2[k]) vr2[k]=[]; vr2[k].push(x); }); }); fs.writeFileSync(vfile, JSON.stringify(vr2, null, 2)); }
+    } catch(ve) { console.log('[BOOST-SEND] reserve cleanup error:', ve.message); }
     // Create a direct-mail campaign + recipients, then send (reuse existing path).
     var campaignId = 'boost_' + uuidv4();
     var nowIso = new Date().toISOString();

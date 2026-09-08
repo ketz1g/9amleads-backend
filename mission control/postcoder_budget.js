@@ -111,4 +111,42 @@ function usage() {
   return u.date === today ? (u.used || 0) : 0;
 }
 
-module.exports = { spend, usage, getDailyBudget, enabled, canLookup, RATE_LIMIT, RATE_WINDOW_MS };
+// ---- BULK/BOOST PAF VERIFICATION (separate from the daily delivery budget) ----
+// When a customer buys a Boost/bulk pack we PAF-verify the uncertain leads (those not
+// already carrying a door number) so every posted leaflet has a deliverable address.
+// That spend is tracked SEPARATELY from the daily delivery budget so verifying packs
+// never drains the credits reserved for the 9am deliveries. Default allowance is set
+// by POSTCODER_BULK_BUDGET (default 150 lookups/day). The shared 5-minute rate window
+// still applies (Postcoder restricts bursts regardless of budget), so bulk verification
+// is paced the same way as delivery lookups.
+function bulkBudget() {
+  return Math.max(0, parseInt(process.env.POSTCODER_BULK_BUDGET || '150', 10));
+}
+function bulkUsage() {
+  var today = new Date().toISOString().split('T')[0];
+  var u = load();
+  return u.date === today ? (u.bulkUsed || 0) : 0;
+}
+// Try to spend one bulk-verification credit. Returns true if the bulk allowance + the
+// shared 5-min rate window permit it. Recorded under u.bulkUsed so it never touches the
+// daily delivery u.used count.
+function spendBulk() {
+  if (!enabled()) return false;
+  var today = new Date().toISOString().split('T')[0];
+  var u = load();
+  if (u.date !== today) { u.date = today; u.used = 0; u.bulkUsed = 0; u.window = []; }
+  if ((u.bulkUsed || 0) >= bulkBudget()) return false;
+  var now = Date.now();
+  if (!u.window) u.window = [];
+  u.window = u.window.filter(function(t) { return (now - t) < RATE_WINDOW_MS; });
+  if (u.window.length >= RATE_LIMIT) {
+    console.log('[POSTCODER-BULK] Rate limit reached (' + RATE_LIMIT + '/5min) - pausing bulk verification.');
+    return false;
+  }
+  u.window.push(now);
+  u.bulkUsed = (u.bulkUsed || 0) + 1;
+  save(u);
+  return true;
+}
+
+module.exports = { spend, usage, getDailyBudget, enabled, canLookup, RATE_LIMIT, RATE_WINDOW_MS, bulkUsage, spendBulk, bulkBudget };
