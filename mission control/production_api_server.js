@@ -11430,7 +11430,7 @@ app.post('/api/admin/probate-backfill', adminAuth, async (req, res) => {
   // walking can exceed the proxy idle timeout otherwise).
   try {
     var days = Math.max(7, Math.min(120, parseInt((req.body && req.body.days) || 60, 10)));
-    var maxPages = Math.max(2, Math.min(30, parseInt((req.body && req.body.pages) || 12, 10)));
+    var maxPages = Math.max(2, Math.min(160, parseInt((req.body && req.body.pages) || 90, 10)));
     res.json({ success: true, background: true, note: 'Probate bulk backfill started in the background - refresh Bulk Pool in ~1-2 min.' });
     (async function() {
       try {
@@ -11439,8 +11439,8 @@ app.post('/api/admin/probate-backfill', adminAuth, async (req, res) => {
         var existing = {};
         (arr || []).forEach(function(l){ if (l && l.id) existing[l.id] = 1; });
         var nowMs = Date.now();
-        var added = [], dupes = 0, errs = 0;
-        for (var pg = 1; pg <= maxPages && added.length < 250; pg++) {
+        var added = [], dupes = 0, errs = 0, emptyRun = 0;
+        for (var pg = 1; pg <= maxPages && added.length < 700; pg++) {
           var pageLeads = [];
           try { pageLeads = await scraper.fetchGazetteHTML(50, pg); } catch(e) { errs++; }
           var keep = false;
@@ -11471,8 +11471,16 @@ app.post('/api/admin/probate-backfill', adminAuth, async (req, res) => {
             added.push(l);
             keep = true;
           }
-          await new Promise(function(r){ setTimeout(r, 350); });
-          if (!keep && pg > 1) break;
+          await new Promise(function(r){ setTimeout(r, 300); });
+          // Only stop after a run of empty/all-duplicate pages (Gazette pages already
+          // captured by the daily scrape are skipped, but older pages are still new —
+          // a single all-dup page must not halt the walk before we reach them).
+          if (!keep) {
+            emptyRun++;
+            if (emptyRun >= 3) break;
+          } else {
+            emptyRun = 0;
+          }
         }
         if (added.length) {
           arr = arr.concat(added);
