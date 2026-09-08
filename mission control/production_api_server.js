@@ -15833,7 +15833,9 @@ app.post('/api/admin/send-all-customer-samples', adminAuth, async (req, res) => 
                   { product:'moving', address:'12 Lime Grove, Richmond', data:{ bedrooms:4, price:712000, postcode:'TW9 3AB', town:'Richmond' } } ],
         probate: [ { product:'probate', data:{ deceasedName:'Margaret Collins', deceasedAddress:'7 The Paddock, Sunbury', postcode:'TW16 5EX', grantDate:new Date(Date.now()-3*86400000).toISOString() } } ],
         newbusiness: [ { product:'newbusiness', data:{ companyName:'Brightleaf Marketing Ltd', address:'21 Market Street, Leeds', postcode:'LS1 6EZ', publishedDate:new Date(Date.now()-2*86400000).toISOString() } } ],
-        planning: [ { product:'planning', data:{ address:'33 Church Road, Chorley', postcode:'PR7 4HT', description:'Single storey rear extension', status:'Pending', publishedDate:new Date(Date.now()-1*86400000).toISOString() } } ],
+    planning: [ { product:'planning', data:{ address:'150 Gloucester Road, Walthamstow, London', postcode:'E17 6AF', council:'Waltham Forest', applicationType:'Householder Planning', status:'Pending', description:'Construction of replacement single storey rear extension', reference:'26/00123/HH', receivedDate:new Date(Date.now()-2*86400000).toISOString() } },
+                { product:'planning', data:{ address:'2 Ardleigh Road, Hackney, London', postcode:'N1 4HP', council:'Hackney', applicationType:'Householder Planning', status:'Pending', description:'Retrospective application for the installation of two external heating and cooling units on the rear wall', reference:'2026/1785', receivedDate:new Date(Date.now()-2*86400000).toISOString() } },
+                { product:'planning', data:{ address:'Loughton London Road Kelvedon Essex CO5 9AU, CO59AU, Essex, CO5 9AU', postcode:'CO5 9AU', council:'Braintree', applicationType:'Admin / procedural', status:'Pending', description:'Non-Material Amendment to permission 25/01777/HH granted for: proposed single-storey rear and side extensions', reference:'26/00234/AMD', receivedDate:new Date(Date.now()-1*86400000).toISOString() } } ],
         tenders: [ { product:'tenders', data:{ tenderTitle:'School catering services - 3 year contract', title:'School catering services - 3 year contract', description:'Provision of school meals and catering services for 3 years with an option to extend. Approx 1,400 meals per day across 8 sites.', organisation:'Local Authority', buyer:'AnyTown Council - Procurement Team', contractValueLabel:'£1.2M', contractValue:1200000, closingDate:new Date(Date.now()+14*86400000).toISOString(), publishedDate:new Date(Date.now()-2*86400000).toISOString(), tenderNoticeId:'CF-2026-0451', url:'https://www.gov.uk/contracts-finder', applyLink:'https://www.gov.uk/contracts-finder', contactName:'Procurement Team', contactEmail:'procurement@example.gov.uk' } } ]
       };
       return base[product] || base.moving;
@@ -15880,10 +15882,12 @@ app.post('/api/admin/send-all-customer-samples', adminAuth, async (req, res) => 
 app.post('/api/admin/send-lead-sheet-samples', adminAuth, async (req, res) => {
   try {
     var to = String((req.body && req.body.email) || 'ketzman1g@gmail.com').trim().toLowerCase();
+    var onlyProd = String((req.body && req.body.product) || '').trim().toLowerCase();
     res.json({ success: true, background: true, emailed: to, note: 'Emails are being sent in the background - check your inbox in ~30s.' });
-    var prodsL = ['moving', 'probate', 'newbusiness', 'planning', 'tenders'];
+    var prodsL = onlyProd ? [onlyProd] : ['moving', 'probate', 'newbusiness', 'planning', 'tenders'];
     for (var _lp = 0; _lp < prodsL.length; _lp++) {
       var _prod = prodsL[_lp];
+      if (['moving','probate','newbusiness','planning','tenders'].indexOf(_prod) === -1) continue;
       try {
         var _cust = __emailDemoCustomer(_prod);
         var _leads = __emailSampleLeads(_prod);
