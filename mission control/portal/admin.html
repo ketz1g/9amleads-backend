@@ -490,7 +490,9 @@ async function loadBulkPoolPage() {
       const ageTm = p === 'newbusiness' ? 0 : (b['tm'] || 0);
       const age1m = b['1m'] || 0, age2m = b['2m'] || 0;
       const saleable = p === 'newbusiness' ? nbd : ageTm + age1m + age2m;
-      const readyTxt = saleable >= 200 ? '200-pack ready' : saleable >= 100 ? '100-pack ready' : saleable >= 50 ? '50-pack ready' : 'below pack size';
+      // Bulk packs are sold in 50 / 100 / 250 / 500 / 1000. Report the LARGEST pack
+      // that current supply can fulfil, not a fixed 200 ceiling.
+      const readyTxt = saleable >= 1000 ? '1000-pack ready' : saleable >= 500 ? '500-pack ready' : saleable >= 250 ? '250-pack ready' : saleable >= 100 ? '100-pack ready' : saleable >= 50 ? '50-pack ready' : 'below pack size';
       const readyColor = saleable >= 50 ? '#16a34a' : saleable > 0 ? '#eab308' : '#94a3b8';
       function cell(label, v, min) { return '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;text-align:center"><div style="font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:.4px">' + label + '</div><div style="font-size:18px;font-weight:900;color:' + (v >= min ? '#16a34a' : v > 0 ? '#eab308' : '#94a3b8') + '">' + v + '</div></div>'; }
       return '<div class="card" style="margin-bottom:16px"><h3 style="color:' + (colors[p] || '#1e293b') + '">' + names[p] + ' <span style="font-size:11px;color:#64748b">(total ' + b.total + ')</span></h3>' +
