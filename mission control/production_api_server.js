@@ -8653,9 +8653,10 @@ app.post('/api/leads/reject', authMiddleware, async (req, res) => {
     db.prepare('UPDATE leads SET data = ?, status = ? WHERE id = ?').run(JSON.stringify(parsed), 'rejected', leadId);
 
     // INSTANT REPLACE: pick a valid in-area replacement now (full door address,
-    // fresh within cutoff, in their chosen areas). createReplacementLead inserts it.
+    // fresh within cutoff, in their chosen areas) and deliver it to their dashboard
+    // immediately (deliveredNow=true). createReplacementLead inserts it.
     var replacement = null;
-    try { replacement = await createReplacementLead(customer, lead.product || customer.product || 'moving'); }
+    try { replacement = await createReplacementLead(customer, lead.product || customer.product || 'moving', true); }
     catch(rrE) { console.log('[LEADS-REJECT] replacement create error:', rrE.message); }
     var msg = 'Lead rejected. We will send you a replacement lead.';
     if (replacement) {
@@ -8734,7 +8735,7 @@ app.post('/api/admin/rejected-leads/approve', adminAuth, async (req, res) => {
 function hasProperAddressModule(addr, pc) {
   return hasUsablePremiseAddress(addr, pc);
 }
-async function createReplacementLead(cust, product) {
+async function createReplacementLead(cust, product, deliveredNow) {
   try {
     var areas = [];
     try { areas = JSON.parse(cust.target_areas || '[]'); } catch(e) {}
@@ -8792,12 +8793,17 @@ async function createReplacementLead(cust, product) {
         if (!hit) continue;
       }
       // Must have a PROPER address (door number / flat / named building), not a bare street.
-      var fAddr = fl.fullAddress || fl.address || '';
+      var fAddr = fl.fullAddress || fl.address || fl.deceasedAddress || '';
       if (!fAddr) continue;
       if (!hasProperAddressModule(fAddr, fpc)) continue;
-      var fld = Object.assign({}, fl, { id: fl.id, address: fAddr, postcode: fpc, product: product });
-      var nr = { id: 'lead_' + Date.now() + '_repl_' + Math.floor(Math.random()*1000), customer_id: cust.id, product: product, data: JSON.stringify(fld), status: 'new', delivered: 0, created_at: new Date().toISOString(), delivered_at: null, release_at: new Date().toISOString().split('T')[0] + 'T09:00:00.000Z' };
-      db.prepare('INSERT INTO leads (id, customer_id, product, data, status, delivered, created_at, delivered_at, release_at) VALUES (?,?,?,?,?,?,?,?,?)').run(nr.id, cust.id, product, nr.data, 'new', 0, nr.created_at, null, nr.release_at);
+      var fld = Object.assign({}, fl, { id: fl.id, address: fAddr, fullAddress: fAddr, postcode: fpc, product: product });
+      if (product === 'probate') fld.deceasedAddress = fAddr;
+      var nowIsoX = new Date().toISOString();
+      // deliveredNow = INSTANT REPLACE (customer rejected today's lead): show the
+      // replacement in their dashboard immediately, exactly like a normal delivered
+      // lead (status delivered, delivered_at now). Otherwise queue for next 9am.
+      var nr = { id: 'lead_' + Date.now() + '_repl_' + Math.floor(Math.random()*1000), customer_id: cust.id, product: product, data: JSON.stringify(fld), status: deliveredNow ? 'delivered' : 'new', delivered: deliveredNow ? 1 : 0, created_at: nowIsoX, delivered_at: deliveredNow ? nowIsoX : null, release_at: deliveredNow ? null : (nowIsoX.split('T')[0] + 'T09:00:00.000Z') };
+      db.prepare('INSERT INTO leads (id, customer_id, product, data, status, delivered, created_at, delivered_at, release_at) VALUES (?,?,?,?,?,?,?,?,?)').run(nr.id, cust.id, product, nr.data, nr.status, nr.delivered, nr.created_at, nr.delivered_at, nr.release_at);
       return { id: nr.id, address: fAddr, postcode: fpc };
     }
     return null;
