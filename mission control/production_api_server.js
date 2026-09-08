@@ -8654,9 +8654,10 @@ app.post('/api/leads/reject', authMiddleware, async (req, res) => {
 
     // INSTANT REPLACE: pick a valid in-area replacement now (full door address,
     // fresh within cutoff, in their chosen areas) and deliver it to their dashboard
-    // immediately (deliveredNow=true). createReplacementLead inserts it.
+    // immediately (deliveredNow=true). The rejected lead's identity is passed so the
+    // SAME lead is never handed back as its own "replacement".
     var replacement = null;
-    try { replacement = await createReplacementLead(customer, lead.product || customer.product || 'moving', true); }
+    try { replacement = await createReplacementLead(customer, lead.product || customer.product || 'moving', true, { url: parsed.url || '', postcode: parsed.postcode || '', address: parsed.address || parsed.fullAddress || parsed.deceasedAddress || '' }); }
     catch(rrE) { console.log('[LEADS-REJECT] replacement create error:', rrE.message); }
     var msg = 'Lead rejected. We will send you a replacement lead.';
     if (replacement) {
@@ -8751,7 +8752,7 @@ app.post('/api/admin/rejected-leads/approve', adminAuth, async (req, res) => {
     try {
       var cust = db.prepare('SELECT * FROM customers WHERE id = ?').get(lead.customer_id);
       if (cust) {
-        var repLead = await createReplacementLead(cust, lead.product || 'moving');
+        var repLead = await createReplacementLead(cust, lead.product || 'moving', false, { url: parsed.url || '', postcode: parsed.postcode || '', address: parsed.address || parsed.fullAddress || parsed.deceasedAddress || '' });
         result.replacement = repLead ? { lead_id: repLead.id, address: repLead.address, postcode: repLead.postcode } : null;
       }
     } catch(rErr) { result.replacement_error = rErr.message; }
@@ -8766,10 +8767,16 @@ app.post('/api/admin/rejected-leads/approve', adminAuth, async (req, res) => {
 function hasProperAddressModule(addr, pc) {
   return hasUsablePremiseAddress(addr, pc);
 }
-async function createReplacementLead(cust, product, deliveredNow) {
+async function createReplacementLead(cust, product, deliveredNow, exclude) {
   try {
     var areas = [];
     try { areas = JSON.parse(cust.target_areas || '[]'); } catch(e) {}
+    exclude = exclude || {};
+    // Normalise the rejected lead's identity so we never hand it back as its own
+    // replacement (the exact bug where "Replaced" appeared on the same Regent St lead).
+    var exUrl = String(exclude.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
+    var exPc = String(exclude.postcode || '').toUpperCase().replace(/\s+/g, '');
+    var exAddr = String(exclude.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 40);
     var file = (PRODUCT_LEAD_FILES[product] && PRODUCT_LEAD_FILES[product].file) || 'moving-leads.json';
     var poolPath = path.join(DATA_DIR, file);
     var pool = [];
@@ -8790,6 +8797,12 @@ async function createReplacementLead(cust, product, deliveredNow) {
       var fl = pool[i];
       if (fl.commercial || seen[fl.id]) continue;
       seen[fl.id]=1;
+      // NEVER hand back the exact lead that was just rejected (same URL, postcode,
+      // or address fingerprint) as its own "replacement".
+      var flUrl = String(fl.url || fl.noticeUrl || '').split('#')[0].split('?')[0].replace(/\/+$/,'').toLowerCase().trim();
+      var flAddr2 = String(fl.fullAddress || fl.address || fl.deceasedAddress || '').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,40);
+      if (exUrl && flUrl === exUrl) continue;
+      if (exPc && String(fl.postcode || '').toUpperCase().replace(/\s+/g,'') === exPc && exAddr && flAddr2 === exAddr) continue;
       var fd = fl.firstVisibleDate || fl.addedOn || fl.updateDate || fl.scrapedAt || fl.publishedDate || fl.receivedDate || fl.grantDate || fl.incorporationDate || '';
       if (fd && fd < cutoff) continue;
       var fpc = String(fl.postcode || fl.location || '').toUpperCase().trim();
