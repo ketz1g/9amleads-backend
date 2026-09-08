@@ -17903,13 +17903,13 @@ function pruneStalePoolLeads() {
       if (!arr || !arr.length) return;
       // RETENTION WINDOWS:
       // - newbusiness: held up to 7 days (3-7d exclusive bulk reserve)
-      // - moving & probate: held up to 65 days so older "Boost Your Business"
-      //   archive leads (1-month / 2-month old) can be sold as shared bulk packs.
-      //   Old leads never enter the daily 9am delivery (freshness-gated), so holding
-      //   them is just archive storage for bulk sales.
-      // - planning/tenders: standard 3-day floor (no backlog).
+      // - moving, probate & planning: held up to 65 days so older "Boost Your
+      //   Business" archive leads (1-month / 2-month old) can be sold as shared
+      //   bulk packs. Old leads never enter the daily 9am delivery (freshness-
+      //   gated), so holding them is just archive storage for bulk sales.
+      // - tenders: standard 3-day floor (no backlog).
       var _cutMs = Date.now();
-      var _cutHrs = (prod === 'newbusiness') ? 7 * 24 : (prod === 'moving' || prod === 'probate') ? 65 * 24 : 3 * 24;
+      var _cutHrs = (prod === 'newbusiness') ? 7 * 24 : (prod === 'moving' || prod === 'probate' || prod === 'planning') ? 65 * 24 : 3 * 24;
       var cutoff = new Date(_cutMs - _cutHrs * 3600000).toISOString();
       var kept = [], removed = 0;
       arr.forEach(function(e) {
@@ -18461,7 +18461,7 @@ app.post('/api/admin/normalise-pool', adminAuth, (req, res) => {
 // single Print & Post offers: A5 leaflet £3.00 / A4 letter £2.50 / leaflet+letter £4.50.
 // Cost to us: leaflet £1.18, letter £1.02, both £2.20 (Stannp).
 var BULK_MAIL_RATES = { leaflet: 249, letter: 199, both: 399 }; // pence per lead — bulk/boost volume discount sits UNDER single on-demand rates
-var BOOST_PACK_SIZES = { moving: [100, 250, 500, 1000], probate: [50, 100, 200, 500], newbusiness: [100, 250, 500, 1000] };
+var BOOST_PACK_SIZES = { moving: [100, 250, 500, 1000], probate: [50, 100, 200, 500], planning: [100, 250, 500, 1000], newbusiness: [100, 250, 500, 1000] };
 var NB_BULK_SIZES = [100, 250, 500, 1000];
 function bulkPackTotal(count, mailType) { return (BULK_MAIL_RATES[mailType] || BULK_MAIL_RATES.leaflet) * (count || 0); }
 // LAUNCH GATE: bulk/Boost storefronts stay OFF until the archive pools have enough
@@ -18579,9 +18579,9 @@ app.get('/api/boost', authMiddleware, (req, res) => {
     if (!c) return res.status(404).json({ error: 'User not found' });
     var liveProducts = String(process.env.BOOST_PRODUCTS_LIVE || 'newbusiness').toLowerCase().split(',').map(function(x){ return x.trim(); }).filter(Boolean);
     var unavailable = {};
-    ['moving', 'probate', 'newbusiness'].forEach(function(p) { if (liveProducts.indexOf(p) === -1) unavailable[p] = 'Currently unavailable - we are filling the pool. New Business packs are available now.'; });
+    ['moving', 'probate', 'planning', 'newbusiness'].forEach(function(p) { if (liveProducts.indexOf(p) === -1) unavailable[p] = 'Currently unavailable - we are filling the pool. New Business packs are available now.'; });
     var available = {};
-    ['moving', 'probate', 'newbusiness'].forEach(function(p) { available[p] = { 'tm': getBoostArchiveLeads(p, 'tm', 0).length, '1m': getBoostArchiveLeads(p, '1m', 0).length, '2m': getBoostArchiveLeads(p, '2m', 0).length }; });
+    ['moving', 'probate', 'planning', 'newbusiness'].forEach(function(p) { available[p] = { 'tm': getBoostArchiveLeads(p, 'tm', 0).length, '1m': getBoostArchiveLeads(p, '1m', 0).length, '2m': getBoostArchiveLeads(p, '2m', 0).length }; });
     var pack = null;
     try { pack = c.boost_pack ? JSON.parse(c.boost_pack) : null; } catch(e) {}
     res.json({ success: true, product: c.product, available: available, live_products: liveProducts, unavailable: unavailable, sizes: BOOST_PACK_SIZES, mail_rates: BULK_MAIL_RATES, live: bulkPoolsLive(), pack: pack });
@@ -18595,7 +18595,7 @@ app.post('/api/boost/checkout', authMiddleware, async (req, res) => {
     var age = String((req.body && req.body.age) || '1m');
     var count = parseInt(req.body && req.body.count, 10);
     var mailType = String((req.body && req.body.mail_type) || 'leaflet');
-    if (['moving', 'probate', 'newbusiness'].indexOf(product) === -1) return res.status(400).json({ error: 'Choose Moving, Probate or New Business.' });
+    if (['moving', 'probate', 'planning', 'newbusiness'].indexOf(product) === -1) return res.status(400).json({ error: 'Choose Moving, Probate, Planning or New Business.' });
     var liveAllowed = String(process.env.BOOST_PRODUCTS_LIVE || 'newbusiness').toLowerCase().split(',').map(function(x){ return x.trim(); }).filter(Boolean);
     if (liveAllowed.indexOf(product) === -1) return res.status(400).json({ error: 'Lead pool being filled - packs will be available very soon.' });
     // Hard guard: never sell a pack we cannot fill with mailable leads right now.
@@ -18613,7 +18613,7 @@ app.post('/api/boost/checkout', authMiddleware, async (req, res) => {
     if (avail < count) return res.status(400).json({ error: 'Not enough archive leads for that size yet. The pool is being filled - please try again shortly.' });
     var amountPence = bulkPackTotal(count, mailType);
     var baseUrl = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
-    var label = product === 'probate' ? 'Probate' : product === 'newbusiness' ? 'New Business' : 'Moving';
+    var label = product === 'probate' ? 'Probate' : product === 'newbusiness' ? 'New Business' : product === 'planning' ? 'Planning' : 'Moving';
     var typeLabel = mailType === 'both' ? 'leaflet + letter' : mailType + ' only';
     var sessionBody = {
       mode: 'payment',
@@ -18756,8 +18756,9 @@ app.get('/api/admin/bulk-pools', adminAuth, (req, res) => {
       generated_at: new Date().toISOString(),
       moving: bands('moving'),
       probate: bands('probate'),
+      planning: bands('planning'),
       newbusiness: bands('newbusiness'),
-      note: 'Moving/Probate: tm = This month (3-27 days, never sent) · 1m = 28-35d · 2m = 58-65d. New Business: 3-7d = bulk reserve. Archive bands never touch the daily 24/48h fresh feed.' + (released ? ' Released ' + released + ' stale reservation(s).' : '')
+      note: 'Moving/Probate/Planning: tm = This month (3-27 days, never sent) · 1m = 28-35d · 2m = 58-65d. New Business: 3-7d = bulk reserve. Archive bands never touch the daily 24/48h fresh feed.' + (released ? ' Released ' + released + ' stale reservation(s).' : '')
     });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });

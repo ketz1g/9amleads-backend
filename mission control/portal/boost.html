@@ -52,7 +52,7 @@ h3{font-size:15px;font-weight:700;margin-bottom:10px}
     <a class="back" href="/portal/dashboard.html">&larr; Back to Dashboard</a>
   </div>
   <h1>Boost Your Business</h1>
-  <div class="sub">Buy archive leads in bulk - never sent to your account so far; rare shares possible at high demand. Choose Moving, Probate or New Business, pick this month's leads, 1-month-old or 2-month-old, and we print &amp; post your leaflet/letter to every one.</div>
+  <div class="sub">Buy archive leads in bulk - never sent to your account so far; rare shares possible at high demand. Choose Moving, Probate, Planning or New Business, pick this month's leads, 1-month-old or 2-month-old, and we print &amp; post your leaflet/letter to every one.</div>
     <div id="unavailBanner" style="display:none;background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:12px;padding:12px 16px;font-size:13px;margin-bottom:14px"><b>Note:</b> A pack becomes buyable once enough archive leads are available in that age band. The pool fills automatically every day.</div>
   <div style="background:linear-gradient(135deg,#fff7ed,#ffffff);border:1px solid #fed7aa;border-radius:14px;padding:16px 18px;margin-bottom:14px">
     <div style="font-size:17px;font-weight:800;color:#111827;margin-bottom:4px">Boost your business in slow times. Sit back, relax... and watch the phone ring.</div>
@@ -75,7 +75,7 @@ h3{font-size:15px;font-weight:700;margin-bottom:10px}
     </div>
     <div class="card">
       <h3>1. Choose your lead type</h3>
-      <div class="seg"><button class="on" data-p="moving" onclick="setProduct('moving')">&#128230; Moving</button><button data-p="probate" onclick="setProduct('probate')">&#9878;&#65039; Probate</button><button data-p="newbusiness" onclick="setProduct('newbusiness')">&#127963;&#65039; New Business</button></div>
+      <div class="seg"><button class="on" data-p="moving" onclick="setProduct('moving')">&#128230; Moving</button><button data-p="probate" onclick="setProduct('probate')">&#9878;&#65039; Probate</button><button data-p="planning" onclick="setProduct('planning')">&#127959;&#65039; Planning</button><button data-p="newbusiness" onclick="setProduct('newbusiness')">&#127963;&#65039; New Business</button></div>
       <div id="availMoving" class="avail"></div>
       <h3 style="margin-top:6px">2. Choose how fresh</h3>
       <div class="seg">
@@ -124,7 +124,7 @@ function setAge(a){ ST.age=a; document.querySelectorAll('#content .seg button[da
 function setMail(m){ ST.mail=m; document.querySelectorAll('#content .seg button[data-m]').forEach(function(b){b.classList.toggle('on',b.dataset.m===m);}); render(); }
 function render(){ 
   var D=ST.DATA; if(!D)return; 
-  var nm={moving:'Moving',probate:'Probate',newbusiness:'New Business'}[ST.product]||ST.product; 
+  var nm={moving:'Moving',probate:'Probate',planning:'Planning',newbusiness:'New Business'}[ST.product]||ST.product; 
   var a=D.available[ST.product]||{tm:0,'1m':0,'2m':0}; 
   document.getElementById('availMoving').innerHTML='';
   var av=a[ST.age];
@@ -146,7 +146,7 @@ function render(){
   var sizes=(D.sizes&&D.sizes[ST.product])||[]; 
   var rate=(D.mail_rates&&D.mail_rates[ST.mail])||249; 
   var box=document.getElementById('packsBox'); 
-  var lbl={moving:'moving leads',probate:'probate leads',newbusiness:'new business leads'}[ST.product]||ST.product; 
+  var lbl={moving:'moving leads',probate:'probate leads',planning:'planning permission leads',newbusiness:'new business leads'}[ST.product]||ST.product; 
   box.innerHTML=sizes.map(function(cnt){
     var total=Math.round(cnt*rate)/100;
     var can = av >= cnt;
@@ -185,7 +185,7 @@ function load(){
     var liveProds = (d.live_products || ['newbusiness']);
     var unavail = d.unavailable || {};
     var defP = (d.product && liveProds.indexOf(d.product) !== -1) ? d.product : 'newbusiness';
-    if (liveProds.indexOf('newbusiness') !== -1 && (liveProds.indexOf('moving') === -1 || liveProds.indexOf('probate') === -1)) {
+    if (liveProds.indexOf('newbusiness') !== -1 && (liveProds.indexOf('moving') === -1 || liveProds.indexOf('probate') === -1 || liveProds.indexOf('planning') === -1)) {
       var ub = document.getElementById('unavailBanner');
       if (ub) ub.style.display = 'block';
     }

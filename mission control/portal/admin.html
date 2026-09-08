@@ -481,9 +481,9 @@ async function loadBulkPoolPage() {
     const d = await r.json();
     if (!d.success) { el.innerHTML = '<div style="color:#ef4444;font-size:13px">Could not load bulk pool data.</div>'; return; }
     const updated = (d.generated_at || '').replace('T', ' ').substring(0, 16) + ' UTC';
-    const colors = { moving: '#ff6b35', probate: '#a855f7', newbusiness: '#06b6d4' };
-    const names = { moving: 'Moving', probate: 'Probate', newbusiness: 'New Business' };
-    const cards = ['moving', 'probate', 'newbusiness'].map(function(p) {
+    const colors = { moving: '#ff6b35', probate: '#a855f7', planning: '#10b981', newbusiness: '#06b6d4' };
+    const names = { moving: 'Moving', probate: 'Probate', planning: 'Planning', newbusiness: 'New Business' };
+    const cards = ['moving', 'probate', 'planning', 'newbusiness'].map(function(p) {
       const b = d[p] || {};
       const fresh = b['0-2d'] || 0, res = b.reserved || 0, sold = b.sold || 0;
       const nbd = p === 'newbusiness' ? (b['3-7d'] || 0) : 0;
