@@ -14983,7 +14983,11 @@ cron.schedule('45 6 * * 1-5', async () => {
           spReq.on('error', function(){}); spReq.write(spBody); spReq.end();
         } catch(se) {}
       });
-      sendAdminAlert('⚠ Low lead supply — auto-scraping', '<div style="font-size:13px;color:#e2e8f0;line-height:1.7">The 06:45 monitor found low fresh supply (possible multi-day scrape failure):<br><ul style="margin:4px 0;padding-left:18px">' + spLow.map(function(l){ return '<li>' + l + '</li>'; }).join('') + '</ul><br>An automatic re-scrape has been triggered for each. There is plenty of time before the 09:00 delivery.</div>');
+      // OWNER-EMAIL DIGEST MODE: the re-scrape above still runs automatically, but
+      // we no longer email the owner for every low-supply blip — these are usually
+      // transient and self-heal within minutes (they were confusing + noisy at 5-6am).
+      // The single 07:00 morning report + the 07:45 real-shortfall alert cover it.
+      console.log('[STALE-POOL] Low supply (auto-rescrape sent, owner NOT emailed): ' + spLow.join(' | '));
     } else {
       console.log('[STALE-POOL] All products have healthy supply');
     }
@@ -15120,7 +15124,16 @@ async function runDailyDeliveryReport() {
       (rShort.length ? '<div style="margin-top:14px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:12px 16px;font-size:12px;color:#fca5a5;line-height:1.6"><b style="color:#f87171">Needs attention before 9am:</b><br>' + escHtml(rShort.join('<br>')) + '</div>' : '<div style="margin-top:14px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);border-radius:10px;padding:12px 16px;font-size:12px;color:#86efac">Every customer is ready. Full leads will be delivered at 9:00.</div>') +
       '<p style="font-size:10px;color:#64748b;margin-top:14px">Delivery runs 08:58-09:00 (completes by 9am). Freshness: 24h in-area primary, 48h fallback, closest-area within 25km. Postcoder: moving only.</p>' +
       '</div></div>';
-    await sendBrevoEmail({ email: process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com', name: '9amLeads Admin' }, '9amLeads morning report — ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + (rShort.length ? ' · ' + rShort.length + ' need(s) attention' : ' · all ready'), html);
+    // OWNER-EMAIL DIGEST MODE: email the morning report ONLY when a customer would
+    // genuinely be short at 9am (a real problem needing attention). On a healthy day
+    // no morning email is sent — the single 09:10 "delivery summary" is the one daily
+    // confirmation, and real problems are also flagged by the 07:15/07:45 guarantee
+    // alerts. The self-heal re-scrape + DB metrics above ALWAYS still run.
+    if (rShort.length) {
+      await sendBrevoEmail({ email: process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com', name: '9amLeads Admin' }, '9amLeads morning report — ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + (rShort.length ? ' · ' + rShort.length + ' need(s) attention' : ' · all ready'), html);
+    } else {
+      console.log('[07:00 REPORT] All customers ready — morning email skipped (digest mode)');
+    }
     // also update admin metrics so the dashboard preview reflects the final state.
     try { var _mDb = getDb(); if (!_mDb.last_delivery_report) _mDb.last_delivery_report = {}; _mDb.last_delivery_report[todayR] = { at: new Date().toISOString(), status: 'sent', customers: rRows.length, ready: rRows.filter(function(x){ return x.ok; }).length, short: rShort.length, short_customers: rShort }; saveDb(); } catch(me) {}
     console.log('[07:00 REPORT] sent — ' + rRows.length + ' customers, ' + rShort.length + ' short');
@@ -15373,9 +15386,10 @@ cron.schedule('30 6 * * 1-5', async () => {
     }
     if (rdShort.length) {
       console.log('[READINESS] ⚠ ' + rdShort.length + ' customer(s) would SHORTFALL at 9am: ' + rdShort.join(' | '));
-      // ALERT the founder so the shortfall is seen BEFORE the 9am delivery (the
-      // auto-scrape below also runs, but the admin gets a heads-up).
-      try { sendAdminAlert('⚠ ' + rdShort.length + ' customer(s) may shortfall at 9am', '<div style="font-size:13px;color:#e2e8f0;line-height:1.7">The 06:30 readiness check found ' + rdShort.length + ' customer(s) that may not get their full daily count at 9am:<br><br><ul style="margin:0;padding-left:18px">' + rdShort.map(function(s2){ return '<li>' + s2 + '</li>'; }).join('') + '</ul><br>An automatic re-scrape has been triggered for the affected products.</div>'); } catch(aE2) { console.log('[READINESS] alert err:', aE2.message); }
+      // OWNER-EMAIL DIGEST MODE: the 06:30 readiness blip is usually transient and the
+      // auto-remediate below + guaranteed-fill resolve it before 9am. Email the owner
+      // only from the single morning report / real 07:45 shortfall alert, NOT here.
+      // (The re-scrape below still runs automatically.)
       // AUTO-REMEDIATE: trigger the FREE scrapes for the affected products so the
       // pool is refreshed before the 9am delivery (OTM/Companies House/funeral/
       // tenders/PLOTA are all no-cost). The delivery's guaranteed-fill fallback is
@@ -15433,9 +15447,21 @@ async function runFulfilmentGuarantee(label) {
       } catch(ge2) { console.log('[GUARANTEE] preview error ' + gc.email + ': ' + ge2.message); }
     }
     if (gShort.length) {
-      // Alert the founder NOW (well before 9am) so they can act / top up in time.
-      var _gHtml = '<div style="font-family:Inter,Arial,sans-serif;max-width:540px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px"><h2 style="color:#f87171;margin:0 0 10px;font-size:18px">⚠ Fulfilment check (' + label + '): a customer will be short at 9am</h2><p style="font-size:14px;line-height:1.6;color:#cbd5e1">These customers will NOT get their full promised count at 9am:<br><br><ul style="margin:0;padding-left:18px">' + gShort.map(function(s){ return '<li>' + s + '</li>'; }).join('') + '</ul><br><b style="color:#fbbf24">You still have time to fix this.</b> Run a targeted top-up (<code>/api/admin/top-up-today</code>) or widen the customer\'s areas before 9am.</p></div>';
-      try { await sendBrevoEmail({ email: process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com', name: '9amLeads Admin' }, '⚠ URGENT (' + label + '): ' + gShort.length + ' customer(s) would shortfall at 9am', _gHtml); } catch(ga) { console.log('[GUARANTEE] alert error:', ga.message); }
+      // OWNER-EMAIL DIGEST MODE: email the shortfall ONCE per day (the first check
+      // that finds it — usually 07:15) rather than at BOTH 07:15 and 07:45 for the
+      // same issue. Persisted so restarts don't re-spam. The 09:10 delivery summary
+      // + 09:30 action digest cover anything still unresolved after 9am.
+      var _todayGuar = new Date().toISOString().split('T')[0];
+      var _alreadySent = false;
+      try { var _gd2 = getDb(); if (!_gd2.fulfilment_guarantee) _gd2.fulfilment_guarantee = {}; if (_gd2.fulfilment_guarantee.shortfall_emailed === _todayGuar) _alreadySent = true; } catch(e) {}
+      if (_alreadySent) {
+        console.log('[GUARANTEE] ' + label + ': shortfall already emailed today (' + _todayGuar + ') — skipping duplicate alert');
+      } else {
+        // Alert the founder NOW (well before 9am) so they can act / top up in time.
+        var _gHtml = '<div style="font-family:Inter,Arial,sans-serif;max-width:540px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px"><h2 style="color:#f87171;margin:0 0 10px;font-size:18px">⚠ Fulfilment check (' + label + '): a customer will be short at 9am</h2><p style="font-size:14px;line-height:1.6;color:#cbd5e1">These customers will NOT get their full promised count at 9am:<br><br><ul style="margin:0;padding-left:18px">' + gShort.map(function(s){ return '<li>' + s + '</li>'; }).join('') + '</ul><br><b style="color:#fbbf24">You still have time to fix this.</b> Run a targeted top-up (<code>/api/admin/top-up-today</code>) or widen the customer\'s areas before 9am.</p></div>';
+        try { await sendBrevoEmail({ email: process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com', name: '9amLeads Admin' }, '⚠ URGENT (' + label + '): ' + gShort.length + ' customer(s) would shortfall at 9am', _gHtml); } catch(ga) { console.log('[GUARANTEE] alert error:', ga.message); }
+        try { var _gd3 = getDb(); if (!_gd3.fulfilment_guarantee) _gd3.fulfilment_guarantee = {}; _gd3.fulfilment_guarantee.shortfall_emailed = _todayGuar; saveDb(); } catch(e) {}
+      }
       console.log('[GUARANTEE] ' + label + ': ⚠ ' + gShort.length + ' would shortfall: ' + gShort.join(' | '));
     } else {
       console.log('[GUARANTEE] ' + label + ': All ' + gCusts.length + ' customers guaranteed their full count for 9am');
@@ -15626,7 +15652,10 @@ function runHealthAlerts() {
     } catch(e) {}
     if (issues.length) {
       var html = '<div style="font-family:Arial;color:#e2e8f0;background:#0b1120;padding:20px"><h2>⚠ 9amLeads — issues detected</h2><ul style="color:#fecaca;line-height:1.8">' + issues.map(function(i) { return '<li>' + i + '</li>'; }).join('') + '</ul><p style="color:#94a3b8;font-size:12px">Check /api/health and the admin delivery preview.</p></div>';
-      sendAlertIfStale('health-issues', '9amLeads alert: issues detected', html, 4 * 3600000);
+      // OWNER-EMAIL DIGEST MODE: throttle genuine problem alerts to ~once per 12h
+      // (was 4h = up to 6 emails/day even for one persistent issue). Real outages
+      // still get through, healthy stretches stay silent.
+      sendAlertIfStale('health-issues', '9amLeads alert: issues detected', html, 12 * 3600000);
       console.log('[ALERT] Emailed owner: ' + issues.join('; '));
     }
   } catch(e) { console.log('[ALERT] check error:', e.message); }
@@ -15656,11 +15685,18 @@ function sendDailyDeliveryPreview(when) {
       function finish() {
         var short = rows.filter(function(r) { return r.count < r.promised; });
         var ok = rows.filter(function(r) { return r.count >= r.promised; });
-        var html = '<div style="font-family:Arial;color:#e2e8f0;background:#0b1120;padding:20px"><h2>📬 9amLeads ' + (when === 'pre' ? 'pre-delivery check' : 'delivery summary') + '</h2>' +
-          '<h3 style="color:#4ade80">✓ ' + ok.length + ' customer(s) covered</h3>' +
-          (short.length ? '<h3 style="color:#f87171">⚠ ' + short.length + ' customer(s) short</h3><ul style="color:#fecaca;line-height:1.7">' + short.map(function(r) { return '<li>' + r.email + ' (' + r.product + '): ' + r.count + '/' + r.promised + (r.error ? ' — ' + r.error : '') + '</li>'; }).join('') + '</ul>' : '') +
-          '<p style="color:#94a3b8;font-size:12px">Details: admin dashboard → delivery preview.</p></div>';
-        sendBrevoEmail({ email: process.env.OWNER_EMAIL || 'ketzman1g@gmail.com', name: 'Owner' }, '9amLeads ' + (when === 'pre' ? 'pre-delivery check' : 'delivery summary') + ' (' + ok.length + ' ok' + (short.length ? ', ' + short.length + ' short' : '') + ')', html);
+        // OWNER-EMAIL DIGEST MODE: only email when there is a REAL problem.
+        // 'pre' = shortfall heads-up BEFORE 9am (only if a customer will be short).
+        // 'post' = the ONE daily delivery confirmation (always sent after 9am).
+        if (when === 'post' || short.length) {
+          var html = '<div style="font-family:Arial;color:#e2e8f0;background:#0b1120;padding:20px"><h2>📬 9amLeads ' + (when === 'pre' ? 'pre-delivery check' : 'delivery summary') + '</h2>' +
+            '<h3 style="color:#4ade80">✓ ' + ok.length + ' customer(s) covered</h3>' +
+            (short.length ? '<h3 style="color:#f87171">⚠ ' + short.length + ' customer(s) short</h3><ul style="color:#fecaca;line-height:1.7">' + short.map(function(r) { return '<li>' + r.email + ' (' + r.product + '): ' + r.count + '/' + r.promised + (r.error ? ' — ' + r.error : '') + '</li>'; }).join('') + '</ul>' : '') +
+            '<p style="color:#94a3b8;font-size:12px">Details: admin dashboard → delivery preview.</p></div>';
+          sendBrevoEmail({ email: process.env.OWNER_EMAIL || 'ketzman1g@gmail.com', name: 'Owner' }, '9amLeads ' + (when === 'pre' ? 'pre-delivery check' : 'delivery summary') + ' (' + ok.length + ' ok' + (short.length ? ', ' + short.length + ' short' : '') + ')', html);
+        } else {
+          console.log('[PRE-CHECK] All customers ready at pre-check — owner email skipped (digest mode)');
+        }
         resolve(rows);
       }
       next();
