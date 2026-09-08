@@ -352,6 +352,7 @@ tr:last-child td{border-bottom:none}
 <span id="rec-status" style="font-size:11px;color:#94a3b8"></span>
 </div>
 <audio id="rec-audio" controls style="display:none;width:100%;margin-bottom:10px"></audio>
+<div class="fg" style="margin-top:6px"><label style="display:flex;gap:8px;align-items:flex-start;font-size:11.5px;color:#c6cfdd;cursor:pointer"><input type="checkbox" id="r-tc" style="margin-top:2px"> I have read and agree to the <a href="/affiliate-terms.html" target="_blank" rel="noopener" style="color:#0ea5e9;text-decoration:underline">Affiliate Programme Terms &amp; Conditions</a>, including that my account may be deleted if I make no referrals within 30 days of joining.</label></div>
 <div class="fg" style="margin-top:6px"><label style="display:flex;gap:8px;align-items:flex-start;font-size:11.5px;color:#c6cfdd;cursor:pointer"><input type="checkbox" id="r-consent" style="margin-top:2px"> I agree to 9amLeads recording my voice for onboarding review, and to be contacted about my application.</label></div>
 <div style="display:flex;gap:8px"><button class="btn btn-out" style="width:auto" onclick="appStep(2)">Back</button><button class="btn" onclick="submitApplication()">Submit application</button></div>
 </div>
@@ -1025,10 +1026,12 @@ function submitApplication(){
   var name=document.getElementById('r-name').value.trim(),email=document.getElementById('r-email').value.trim(),pass=document.getElementById('r-pass').value,code=document.getElementById('r-code').value.trim();
   var q1=document.getElementById('q1').value,q2=document.getElementById('q2').value,q3=document.getElementById('q3').value,q4=document.getElementById('q4').value,q5=document.getElementById('q5').value.trim(),q6=document.getElementById('q6').value,q7=document.getElementById('q7').value,q8=document.getElementById('q8').value.trim(),q9=document.getElementById('q9').value.trim(),q10=document.getElementById('q10').value,q11=document.getElementById('q11').value.trim(),q12=document.getElementById('q12').value,q13=document.getElementById('q13').value.trim();
   var consent=document.getElementById('r-consent').checked;
+  var tc=document.getElementById('r-tc').checked;
   var errEl=document.getElementById('register-err'); errEl.style.color='#f87171'; errEl.style.display='none';
   if(!name||!email||!pass){ errEl.textContent='Please fill in your name, email and password'; errEl.style.display='block'; return; }
   if(pass.length<8){ errEl.textContent='Password must be at least 8 characters'; errEl.style.display='block'; return; }
   if(!q1||!q2||!q3||!q4||!q6||!q7||!q10||!q12){ errEl.textContent='Please answer all the multiple-choice questions'; errEl.style.display='block'; return; }
+  if(!tc){ errEl.textContent='Please read and tick the Terms & Conditions box to submit your application'; errEl.style.display='block'; return; }
   if(!consent){ errEl.textContent='Please tick the consent box to submit your application'; errEl.style.display='block'; return; }
   if(!window._recBlob){ errEl.textContent='Please record your voice test before submitting'; errEl.style.display='block'; return; }
   var btn=document.querySelector('#app-step-3 button.btn'); if(btn){btn.disabled=true;btn.textContent='Submitting...';}
@@ -1036,7 +1039,7 @@ function submitApplication(){
   var fr=new FileReader();
   fr.onload=function(){
     var audioB64=String(fr.result||'').split(',')[1]||'';
-    var payload={name:name,email:email,password:pass,code:code,consent_voice:consent,voice_audio:audioB64,survey:{q1:q1,q2:q2,q3:q3,q4:q4,q5:q5,q6:q6,q7:q7,q8:q8,q9:q9,q10:q10,q11:q11,q12:q12,q13:q13}};
+    var payload={name:name,email:email,password:pass,code:code,terms_accepted:tc,consent_voice:consent,voice_audio:audioB64,survey:{q1:q1,q2:q2,q3:q3,q4:q4,q5:q5,q6:q6,q7:q7,q8:q8,q9:q9,q10:q10,q11:q11,q12:q12,q13:q13}};
     fetch(API+'/api/affiliate/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
     .then(function(r){return r.json();}).then(function(d){
       if(btn){btn.disabled=false;btn.textContent='Submit application';}

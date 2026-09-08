@@ -4083,17 +4083,77 @@ function runAffiliateAutoPayout() {
     return { commissions_paid: paid, action_lines: ownerLines.length };
   } catch(e) { return { commissions_paid: paid, error: e.message }; }
 }
+// ===== INACTIVE AFFILIATE DELETION =====
+// Per the Affiliate Terms (section 8a): an affiliate who makes NO referrals within
+// 30 days of their account becoming ACTIVE gets a 7-day warning email, then their
+// account + referral code is deleted if they still have zero referrals. Accounts with
+// even ONE referral are never deleted under this rule. Referrals = customers whose
+// affiliate_id OR affiliate_code matches the affiliate.
+function countAffiliateReferrals(dbc, aff) {
+  var n = 0;
+  try {
+    (dbc.customers || []).forEach(function(c) {
+      if (c.affiliate_id === aff.id || (aff.code && String(c.affiliate_code || '').toLowerCase() === String(aff.code).toLowerCase())) n++;
+    });
+  } catch(e) {}
+  return n;
+}
+function processInactiveAffiliateDeletion() {
+  try {
+    var dbc = getDb();
+    var warned = [], deleted = [], errored = [];
+    var now = new Date();
+    (dbc.affiliates || []).forEach(function(aff) {
+      try {
+        // Only ACTIVE (approved) affiliates are subject to the inactivity rule.
+        if (!aff || !aff.email || aff.status !== 'active') return;
+        var activatedAt = aff.activated_at ? new Date(aff.activated_at) : (aff.created_at ? new Date(aff.created_at) : null);
+        if (!activatedAt || isNaN(activatedAt.getTime())) return;
+        var ageDays = Math.floor((now - activatedAt) / 86400000);
+        var referralCount = countAffiliateReferrals(dbc, aff);
+        if (referralCount > 0) return; // has made a referral - never deleted
+        if (ageDays < 30) return;      // within the first 30 days - not yet
+        // Has earned a commission (paid/approved)? Never delete a paying relationship.
+        var earned = (dbc.partner_commissions || []).some(function(cm) { return cm.partner_id === aff.id && (cm.status === 'approved' || cm.status === 'paid'); });
+        if (earned) return;
+        var warnedKey = 'inactive_deletion_warned_at';
+        var warnedAt = aff[warnedKey] ? new Date(aff[warnedKey]) : null;
+        // Warning: sent once ~day 30-36 if still 0 referrals.
+        if (!warnedAt || isNaN(warnedAt.getTime())) {
+          aff[warnedKey] = now.toISOString();
+          try {
+            sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' }, '9amLeads Affiliate - action needed to keep your account', '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="font-family:Outfit,sans-serif;color:#0ea5e9;margin:0 0 10px">Your affiliate account is about to close</h1><p style="color:#ccc;line-height:1.7">Hi ' + escHtml(String(aff.name || 'there')).trim() + ',</p><p style="color:#ccc;line-height:1.7">Your 9amLeads affiliate account has been active for over 30 days but we have not yet seen a single referral from your code <strong style="color:#0ea5e9">' + escHtml(String(aff.code || '')) + '</strong>.</p><p style="color:#ccc;line-height:1.7">Per our <a href="https://9amleads.com/affiliate-terms.html" style="color:#0ea5e9">Affiliate Terms</a>, accounts with no referrals within 30 days are closed. <strong style="color:#fff">Make one referral in the next 7 days to keep your account.</strong> Your dashboard has ready-made posts, scripts and a 14-day-free-trial code to make it easy.</p><p style="color:#ccc;line-height:1.7">If you cannot promote right now, reply to this email and we will pause your deadline - no problem.</p><p style="color:#ccc;line-height:1.7">Log in: <a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">9amleads.com/portal/affiliate.html</a></p><p style="color:#888;font-size:13px;margin-top:24px">- The 9amLeads team · hello@9amleads.com</p></div>').catch(function() {});
+            warned.push(aff.email);
+          } catch(eW) { errored.push(aff.email); }
+          return;
+        }
+        // 7 days after the warning (day ~37): delete if still 0 referrals.
+        var warnAge = Math.floor((now - warnedAt) / 86400000);
+        if (warnAge < 7) return;
+        aff.status = 'deleted';
+        aff.deleted_at = now.toISOString();
+        aff.deleted_reason = 'no referrals within 30 days (inactive account deletion)';
+        try { sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' }, 'Your 9amLeads affiliate account has been closed', '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="font-family:Outfit,sans-serif;color:#f87171;margin:0 0 10px">Your affiliate account has been closed</h1><p style="color:#ccc;line-height:1.7">Hi ' + escHtml(String(aff.name || 'there')).trim() + ',</p><p style="color:#ccc;line-height:1.7">As set out in our <a href="https://9amleads.com/affiliate-terms.html" style="color:#0ea5e9">Affiliate Terms</a>, your account has been closed because no referrals were made within 30 days of joining, and no referral was made after our 7-day warning.</p><p style="color:#ccc;line-height:1.7">You are very welcome to <a href="https://9amleads.com/portal/affiliate.html#register" style="color:#0ea5e9">re-apply any time</a> when you are ready to promote.</p><p style="color:#888;font-size:13px;margin-top:24px">- The 9amLeads team · hello@9amleads.com</p></div>').catch(function() {}); } catch(eD) {}
+        deleted.push(aff.email);
+      } catch(e) { errored.push(aff.email); }
+    });
+    if (warned.length || deleted.length) { try { saveDb(); } catch(e) {} }
+    if (warned.length || deleted.length) console.log('[AFF-DELETE] warned=' + warned.length + ' deleted=' + deleted.length);
+    return { warned: warned.length, deleted: deleted.length, errors: errored.length };
+  } catch(e) { console.log('[AFF-DELETE] error:', e.message); return { error: e.message }; }
+}
 // Wire affiliate automation into the daily partner job (runs post-delivery).
 function runAffiliateAutomation() {
   var r1 = processAffiliateNurture();
   var r2 = processAffiliateReactivation();
+  var r5 = processInactiveAffiliateDeletion();
   // Wheel: clamp spins to retained count (clawback on refunds) + send unlock emails.
   var dbc = getDb();
   (dbc.affiliates || []).forEach(function(aff) { affiliateWheelClawback(dbc, aff); });
   try { saveDb(); } catch(e) {}
   var r3 = runAffiliateWheelUnlockEmails();
   var r4 = runAffiliateProspectSequence();
-  return { nurture: r1, reactivation: r2, wheel: r3, prospects: r4 };
+  return { nurture: r1, reactivation: r2, wheel: r3, prospects: r4, inactive_deletion: r5 };
 }
 // ===== AFFILIATE REWARD WHEEL =====
 // Milestone spin wheel. Every 50 RETAINED paid signups (customers whose
@@ -4820,6 +4880,9 @@ app.post('/api/admin/affiliates/:id/review', adminAuth, (req, res) => {
     var decision = String(req.body.decision || '').toLowerCase(); // approve | reject
     if (decision === 'approve') {
       aff.status = 'active';
+      // Inactivity-deletion clock starts on approval (Affiliate Terms §8a): active
+      // accounts with 0 referrals are warned at ~30 days and deleted at ~37 days.
+      if (!aff.activated_at) aff.activated_at = new Date().toISOString();
       aff.application = aff.application || {};
       aff.application.review_status = 'approved';
       aff.application.reviewed_at = new Date().toISOString();
@@ -5692,6 +5755,10 @@ app.post('/api/affiliate/register', async (req, res) => {
     if (!name || !email || !password) return res.status(400).json({ error: 'Name, email and password are required' });
     if (!validateEmail(email)) return res.status(400).json({ error: 'Invalid email format' });
     if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    // Terms & Conditions MUST be accepted to apply (they see + link to
+    // /affiliate-terms.html on the signup form). Records the tick for the admin.
+    var termsAccepted = !!req.body.terms_accepted;
+    if (!termsAccepted) return res.status(400).json({ error: 'You must read and accept the Affiliate Programme Terms & Conditions to apply.' });
     var affs = getDb().affiliates || [];
     var em = String(email).toLowerCase().trim();
     if (affs.some(function(a) { return String(a.email || '').toLowerCase() === em; })) return res.status(409).json({ error: 'An affiliate with this email already exists' });
@@ -5699,6 +5766,7 @@ app.post('/api/affiliate/register', async (req, res) => {
     if (affs.some(function(a) { return String(a.code || '').toLowerCase() === String(code2).toLowerCase(); })) return res.status(409).json({ error: 'That affiliate code is already taken. Pick another.' });
     var passwordHash = await bcrypt.hash(password, 10);
     var consent = !!req.body.consent_voice;
+    var termsAccepted = !!req.body.terms_accepted;
     var survey = {};
     try { survey = req.body.survey || {}; } catch(e) {}
     var voiceAudio = String(req.body.voice_audio || '');
@@ -5707,11 +5775,14 @@ app.post('/api/affiliate/register', async (req, res) => {
       survey: survey,
       voice: voiceAudio ? { recorded_at: new Date().toISOString(), audio: voiceAudio } : null,
       consent_voice: consent,
+      terms_accepted: termsAccepted,
+      terms_accepted_at: termsAccepted ? new Date().toISOString() : null,
+      terms_accepted_ip: String(req.ip || req.headers['x-forwarded-for'] || '').split(',')[0].trim() || '',
       score: scoreAffiliateApplication(survey),
       review_status: 'pending'
     };
     var _autoActivate = process.env.AFFILIATE_AUTO_ACTIVATE === 'true';
-    var aff = { id: uuidv4(), name: String(name).trim(), email: em, code: code2, password_hash: passwordHash, payout_rate: AFFILIATE_PAYOUT_RATE, status: _autoActivate ? 'active' : 'pending', created_at: new Date().toISOString(), payouts: [], association: String(req.body.association || '').trim().substring(0, 60) || '', recruited_by: String(req.body.recruited_by || req.body.recruiter_code || '').toUpperCase().substring(0, 40) || '', application: application, kyc: { status: 'not_submitted', tc_accepted: false, tc_accepted_at: null } };
+    var aff = { id: uuidv4(), name: String(name).trim(), email: em, code: code2, password_hash: passwordHash, payout_rate: AFFILIATE_PAYOUT_RATE, status: _autoActivate ? 'active' : 'pending', created_at: new Date().toISOString(), payouts: [], association: String(req.body.association || '').trim().substring(0, 60) || '', recruited_by: String(req.body.recruited_by || req.body.recruiter_code || '').toUpperCase().substring(0, 40) || '', application: application, kyc: { status: 'not_submitted', tc_accepted: termsAccepted, tc_accepted_at: termsAccepted ? new Date().toISOString() : null } };
     affs.push(aff);
     saveDb();
     // Confirmation email to the affiliate (so they know their application arrived).
@@ -5734,6 +5805,7 @@ app.post('/api/affiliate/register', async (req, res) => {
         '<h1 style="font-family:Outfit,sans-serif;color:#0ea5e9;margin:0 0 10px">New affiliate application</h1>' +
         '<p style="color:#ccc;line-height:1.7"><strong style="color:#fff">' + escHtml(String(name).trim()) + '</strong> (' + escHtml(em) + ') applied with code <strong style="color:#0ea5e9">' + escHtml(code2) + '</strong>.</p>' +
         '<p style="color:#ccc;line-height:1.7">Application score: <strong style="color:' + (Number(_appScore) >= 55 ? '#34d399' : '#fbbf24') + '">' + _appScore + '/100</strong>. Voice test: <strong style="color:#fff">' + _appVoice + '</strong>.</p>' +
+        '<p style="color:#ccc;line-height:1.7">Terms &amp; Conditions: <strong style="color:' + (termsAccepted ? '#34d399' : '#f87171') + '">' + (termsAccepted ? 'TICKED ✓' : 'NOT ACCEPTED') + '</strong> (at ' + (application.terms_accepted_at ? application.terms_accepted_at.slice(0,16) : 'n/a') + ').</p>' +
         '<p style="color:#ccc;line-height:1.7">Status: <strong style="color:#fff">' + (AFFILIATE_AUTO_ACTIVATE ? 'active (auto)' : 'pending') + '</strong>.' + (AFFILIATE_AUTO_ACTIVATE ? '' : ' Review and activate them from the admin dashboard when ready.') + '</p>' +
         '<p style="color:#ccc;line-height:1.7">Review at <a href="https://9amleads.com/portal/admin.html" style="color:#0ea5e9">admin dashboard &rarr; Affiliates</a> (listen to the voice test before approving).</p>' +
         '<p style="color:#888;font-size:13px;margin-top:24px">Admin: ' + (AFFILIATE_AUTO_ACTIVATE ? 'no action needed' : 'activate via Admin &rarr; Affiliates') + '</p>' +

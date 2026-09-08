@@ -950,7 +950,9 @@ function reviewApplication(id) {
           '<button class="btn btn-outline btn-sm" onclick="window.open(\'data:audio/wav;base64,' + app.voice.audio + '\',\'_blank\')">Try .wav</button></div>' +
           '<div style="font-size:11px;color:#64748b;margin-top:6px">Recorded ' + pEsc(app.voice.recorded_at || '') + '</div></div>'
         : '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin-bottom:14px;color:#64748b;font-size:12px">No voice recording submitted.</div>';
-      var content = scoreHtml + voiceHtml +
+      var tcOk = app.terms_accepted || (a.kyc && a.kyc.tc_accepted);
+      var tcHtml = '<div style="display:flex;align-items:flex-start;gap:8px;background:' + (tcOk ? '#f0fdf4' : '#fef2f2') + ';border:1px solid ' + (tcOk ? '#bbf7d0' : '#fecaca') + ';border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:' + (tcOk ? '#166534' : '#b91c1c') + '"><b>' + (tcOk ? '✓' : '✗') + '</b><div><b>Terms &amp; Conditions: ' + (tcOk ? 'TICKED' : 'NOT accepted') + '</b><br>' + (tcOk ? 'Accepted ' + pEsc(app.terms_accepted_at || '') : 'They did not tick the T&amp;C box — should not have submitted') + '</div></div>';
+      var content = scoreHtml + tcHtml + voiceHtml +
         '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;max-height:340px;overflow-y:auto;margin-bottom:14px">' +
         q('1. Willing to find own customers?', s.q1) +
         q('2. Willing to use own phone?', s.q2) +
