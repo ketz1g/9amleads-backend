@@ -8828,12 +8828,17 @@ async function createReplacementLead(cust, product, deliveredNow, exclude) {
         if (!hit && (product === 'tenders' || product === 'probate') && !areaOfPool) hit = true;
         if (!hit) continue;
       }
-      // Must have a PROPER address (door number / flat / named building), not a bare street.
+      // Must have a PROPER address (door number / flat / named building), not a bare
+      // street — EXCEPT tenders, which are national opportunities with a title/buyer
+      // and NO postal address (they'd never get a replacement otherwise).
       var fAddr = fl.fullAddress || fl.address || fl.deceasedAddress || '';
-      if (!fAddr) continue;
-      if (!hasProperAddressModule(fAddr, fpc)) continue;
-      var fld = Object.assign({}, fl, { id: fl.id, address: fAddr, fullAddress: fAddr, postcode: fpc, product: product });
+      if (product !== 'tenders') {
+        if (!fAddr) continue;
+        if (!hasProperAddressModule(fAddr, fpc)) continue;
+      }
+      var fld = Object.assign({}, fl, { id: fl.id, address: fAddr || fl.title || fl.name || '', fullAddress: fAddr, postcode: fpc, product: product });
       if (product === 'probate') fld.deceasedAddress = fAddr;
+      if (product === 'tenders' && !fAddr && !fld.fullAddress) fld.fullAddress = String(fl.title || fl.name || 'Opportunity').substring(0, 60);
       if (deliveredNow) fld.is_replacement = true; // marks the swapped-in lead so the dashboard can badge it "Replaced"
       var nowIsoX = new Date().toISOString();
       // deliveredNow = INSTANT REPLACE (customer rejected today's lead): show the
