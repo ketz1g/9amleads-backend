@@ -24620,6 +24620,39 @@ app.get('/api/distribute/status', (req, res) => {
   }
 });
 
+app.get('/api/buyer-scrape/status', (req, res) => {
+  try {
+    var out = { running: false, lock: null, subtypes: {}, log_tail: [] };
+    try {
+      var lockFile = path.join(DATA_DIR, 'buyer-scrape.lock');
+      if (fs.existsSync(lockFile)) out.lock = fs.readFileSync(lockFile, 'utf-8');
+    } catch (e) {}
+    try {
+      var logFile = path.join(DATA_DIR, 'buyer-scrape.log');
+      if (fs.existsSync(logFile)) {
+        var logTxt = fs.readFileSync(logFile, 'utf-8');
+        var logLines = logTxt.split('\n').filter(Boolean);
+        out.log_tail = logLines.slice(-15);
+        var lastLine = logLines[logLines.length - 1] || '';
+        out.running = /towns-exhausted|ALL DONE|RESULT/.test(logTxt) ? !/ALL DONE/.test(logTxt) : true;
+      }
+    } catch (e) {}
+    try {
+      var buyerFiles = fs.readdirSync(DATA_DIR).filter(function(f) { return /^buyer-.*\.json$/.test(f); });
+      buyerFiles.forEach(function(f) {
+        try {
+          var j = JSON.parse(fs.readFileSync(path.join(DATA_DIR, f), 'utf-8'));
+          var name = f.replace('buyer-', '').replace('.json', '');
+          out.subtypes[name] = { towns: (j.doneTowns || []).length, sites: (j.sites || []).length, emails: (j.sites || []).filter(function(s) { return s.email; }).length };
+        } catch (e) {}
+      });
+    } catch (e) {}
+    res.json({ success: true, ...out });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.get('/api/health', (req, res) => {
   const customerCount = db.prepare('SELECT COUNT(*) as count FROM customers').get();
   const leadCount = db.prepare('SELECT COUNT(*) as count FROM leads').get();
@@ -34559,8 +34592,11 @@ try {
         try { fs.writeFileSync(buyerLock, new Date().toISOString()); } catch (e) {}
         var buyerArgs = ['mission control/run_buyer_subtypes.js', '--all', '--target=' + (process.env.BUYER_SCRAPE_TARGET || '350'), '--pages=' + (process.env.BUYER_SCRAPE_PAGES || '3')];
         var buyerCp = require('child_process');
-        var buyerChild = buyerCp.spawn(process.execPath, buyerArgs, { cwd: path.join(__dirname, '..'), detached: true, stdio: 'ignore', env: Object.assign({}, process.env) });
+        var buyerLogFd = null;
+        try { buyerLogFd = fs.openSync(path.join(DATA_DIR, 'buyer-scrape.log'), 'a'); } catch (e) { buyerLogFd = null; }
+        var buyerChild = buyerCp.spawn(process.execPath, buyerArgs, { cwd: path.join(__dirname, '..'), detached: true, stdio: buyerLogFd ? ['ignore', buyerLogFd, buyerLogFd] : 'ignore', env: Object.assign({}, process.env) });
         buyerChild.unref();
+        if (buyerLogFd) { try { fs.writeSync(buyerLogFd, '\n=== buyer scrape launched ' + new Date().toISOString() + ' pid=' + (buyerChild.pid || '?') + ' ===\n'); } catch (e) {} }
         console.log('[BOOT] Buyer subtype scraper launched pid=' + (buyerChild.pid || '?'));
       }
     } else {
