@@ -8821,6 +8821,7 @@ async function createReplacementLead(cust, product, deliveredNow) {
       if (!hasProperAddressModule(fAddr, fpc)) continue;
       var fld = Object.assign({}, fl, { id: fl.id, address: fAddr, fullAddress: fAddr, postcode: fpc, product: product });
       if (product === 'probate') fld.deceasedAddress = fAddr;
+      if (deliveredNow) fld.is_replacement = true; // marks the swapped-in lead so the dashboard can badge it "Replaced"
       var nowIsoX = new Date().toISOString();
       // deliveredNow = INSTANT REPLACE (customer rejected today's lead): show the
       // replacement in their dashboard immediately, exactly like a normal delivered
