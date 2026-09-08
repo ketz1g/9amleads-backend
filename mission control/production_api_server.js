@@ -34590,6 +34590,11 @@ try {
         console.log('[BOOT] Buyer scraper already running (lock present), skipping launch');
       } else {
         try { fs.writeFileSync(buyerLock, new Date().toISOString()); } catch (e) {}
+        try {
+          var townsFileCheck = path.join(__dirname, 'data', 'uk-postcode-areas.json');
+          var townsExistsCheck = fs.existsSync(townsFileCheck);
+          console.log('[BOOT] Buyer towns file exists at ' + townsFileCheck + ' = ' + townsExistsCheck);
+        } catch (e) { console.log('[BOOT] towns check error ' + e.message); }
         var buyerArgs = ['mission control/run_buyer_subtypes.js', '--all', '--target=' + (process.env.BUYER_SCRAPE_TARGET || '350'), '--pages=' + (process.env.BUYER_SCRAPE_PAGES || '3')];
         var buyerCp = require('child_process');
         var buyerLogFd = null;
