@@ -8661,7 +8661,7 @@ app.post('/api/leads/reject', authMiddleware, async (req, res) => {
     catch(rrE) { console.log('[LEADS-REJECT] replacement create error:', rrE.message); }
     var msg = 'Lead rejected. We will send you a replacement lead.';
     if (replacement) {
-      msg = 'Lead rejected. Your replacement is on its way - a new ' + String(lead.product || '') + ' lead has been added to your account.';
+      msg = 'Lead rejected. Your replacement is on its way - a new ' + String(lead.product || '') + ' lead has been added to your account' + (replacement.nearest ? ' from the nearest area to yours (no exact-area leads were available just now)' : '') + '.';
     } else {
       msg = 'Lead rejected. Our team will send you a replacement lead shortly.';
     }
@@ -8671,7 +8671,7 @@ app.post('/api/leads/reject', authMiddleware, async (req, res) => {
       var custName = customer.company || customer.name || customer.email || customer.id;
       var oldAddr = parsed.address || parsed.fullAddress || parsed.deceasedAddress || lead.address || '(no address)';
       var oldPc = parsed.postcode || lead.postcode || '';
-      var repInfo = replacement ? ('<tr><td style="padding:6px 10px;border:1px solid #1e2030">Replacement</td><td style="padding:6px 10px;border:1px solid #1e2030">' + escHtml(replacement.address) + ' · ' + escHtml(replacement.postcode) + '</td></tr>') : '';
+      var repInfo = replacement ? ('<tr><td style="padding:6px 10px;border:1px solid #1e2030">Replacement</td><td style="padding:6px 10px;border:1px solid #1e2030">' + escHtml(replacement.address) + ' · ' + escHtml(replacement.postcode) + (replacement.nearest ? '<br><span style="color:#fbbf24;font-size:11px">(nearest area — no exact-area lead was available)</span>' : '') + '</td></tr>') : '';
       var rHtml = '<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px"><h2 style="color:#f87171;margin:0 0 10px;font-size:17px">\uD83D\uDEAB Lead rejected &amp; replaced</h2>' +
         '<table cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;font-size:13px">' +
         '<tr><td style="padding:6px 10px;border:1px solid #1e2030">Customer</td><td style="padding:6px 10px;border:1px solid #1e2030"><b>' + escHtml(custName) + '</b> (' + escHtml(customer.email || '') + ')</td></tr>' +
@@ -8793,41 +8793,64 @@ async function createReplacementLead(cust, product, deliveredNow, exclude) {
     // never a far-away national lead.
     var countyPostcodes = COUNTY_POSTCODE_MAP;
     var ukwide = /all.?uk|uk.?wide/i.test((areas||[]).join(' '));
+    var areasAreCounties = areas.some(function(a){ return !/^[A-Z]{1,3}$/i.test(a); });
+    // Expand the customer's chosen areas to postcode-area letters for distance maths:
+    // a county like "Hertfordshire" maps to ['AL','EN','HP','SG','WD'] via the global
+    // map; a literal area like "SW" stays as-is.
+    var targetAreas = [];
+    (areas||[]).forEach(function(a){
+      var key = String(a).toLowerCase().replace(/[\s-]+/g,'-');
+      var letters = extractPostcodeArea(a);
+      if (/^[A-Z]{1,3}$/i.test(a)) { if (letters) targetAreas.push(letters.toUpperCase()); }
+      else {
+        var mapped = countyPostcodes[key] || [];
+        mapped.forEach(function(l){ if (targetAreas.indexOf(l)===-1) targetAreas.push(l); });
+      }
+    });
+    function closestKmFromArea(areaLetters) {
+      var c = POSTCODE_AREA_GEO[String(areaLetters||'').toUpperCase()];
+      if (!c) return 9999;
+      var best = 9999;
+      targetAreas.forEach(function(t){
+        var g = POSTCODE_AREA_GEO[t];
+        if (!g) return;
+        var d = haversineKm(c[0], c[1], g[0], g[1]);
+        if (d < best) best = d;
+      });
+      return best;
+    }
+
+    // Pass 1: collect ALL valid candidates. Prefer exact-area matches; if none exist
+    // we fall back to the geographically NEAREST area so the customer still gets a
+    // genuinely useful replacement instead of "none available".
+    var exactCands = [];   // fresh + proper address + inside a chosen area
+    var nearestCands = []; // fresh + proper address, ranked by km to their areas
+    function isExcluded(fl, fpcRaw) {
+      var flUrl = String(fl.url || fl.noticeUrl || '').split('#')[0].split('?')[0].replace(/\/+$/,'').toLowerCase().trim();
+      var flAddr2 = String(fl.fullAddress || fl.address || fl.deceasedAddress || '').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,40);
+      if (exUrl && flUrl === exUrl) return true;
+      if (exPc && fpcRaw === exPc && exAddr && flAddr2 === exAddr) return true;
+      return false;
+    }
+    function areaHitOf(areaOfPool) {
+      if (ukwide || !areas.length) return true;
+      if (areasAreCounties) {
+        for (var _cc=0; _cc<areas.length; _cc++) {
+          var al = String(areas[_cc] || '').toLowerCase().replace(/[\s-]+/g,'-');
+          if ((countyPostcodes[al] || []).indexOf(areaOfPool) >= 0) return true;
+        }
+        return false;
+      }
+      return areas.some(function(a){ return extractPostcodeArea(a) === areaOfPool; });
+    }
     for (var i=0;i<pool.length;i++){
       var fl = pool[i];
       if (fl.commercial || seen[fl.id]) continue;
       seen[fl.id]=1;
-      // NEVER hand back the exact lead that was just rejected (same URL, postcode,
-      // or address fingerprint) as its own "replacement".
-      var flUrl = String(fl.url || fl.noticeUrl || '').split('#')[0].split('?')[0].replace(/\/+$/,'').toLowerCase().trim();
-      var flAddr2 = String(fl.fullAddress || fl.address || fl.deceasedAddress || '').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,40);
-      if (exUrl && flUrl === exUrl) continue;
-      if (exPc && String(fl.postcode || '').toUpperCase().replace(/\s+/g,'') === exPc && exAddr && flAddr2 === exAddr) continue;
       var fd = fl.firstVisibleDate || fl.addedOn || fl.updateDate || fl.scrapedAt || fl.publishedDate || fl.receivedDate || fl.grantDate || fl.incorporationDate || '';
       if (fd && fd < cutoff) continue;
       var fpc = String(fl.postcode || fl.location || '').toUpperCase().trim();
-      // Must be in the customer's chosen areas (or all-uk for paid).
-      if (!ukwide && areas.length) {
-        var areaOfPool = extractPostcodeArea(fpc || fl.address || '');
-        if (!areaOfPool) continue;
-        var hit = false;
-        var areasAreCounties = areas.some(function(a){ return !/^[A-Z]{1,3}$/i.test(a); });
-        if (areasAreCounties) {
-          for (var _cc=0; _cc<areas.length; _cc++) {
-            var al = String(areas[_cc] || '').toLowerCase().replace(/[\s-]+/g,'-');
-            if ((countyPostcodes[al] || []).indexOf(areaOfPool) >= 0) { hit = true; break; }
-          }
-        } else {
-          hit = areas.some(function(a){ return extractPostcodeArea(a) === areaOfPool; });
-        }
-        // NATIONAL FALLBACK only for genuinely postcode-less public notices
-        // (some tender/older-probate records have no address/postcode at all).
-        // A probate replacement WITH a real postcode that is OUTSIDE the customer's
-        // chosen counties is REJECTED (never a far-away out-of-area lead) — mirrors
-        // the main delivery fix.
-        if (!hit && (product === 'tenders' || product === 'probate') && !areaOfPool) hit = true;
-        if (!hit) continue;
-      }
+      if (isExcluded(fl, fpc.replace(/\s+/g,''))) continue;
       // Must have a PROPER address (door number / flat / named building), not a bare
       // street — EXCEPT tenders, which are national opportunities with a title/buyer
       // and NO postal address (they'd never get a replacement otherwise).
@@ -8836,20 +8859,55 @@ async function createReplacementLead(cust, product, deliveredNow, exclude) {
         if (!fAddr) continue;
         if (!hasProperAddressModule(fAddr, fpc)) continue;
       }
-      var fld = Object.assign({}, fl, { id: fl.id, address: fAddr || fl.title || fl.name || '', fullAddress: fAddr, postcode: fpc, product: product });
-      if (product === 'probate') fld.deceasedAddress = fAddr;
-      if (product === 'tenders' && !fAddr && !fld.fullAddress) fld.fullAddress = String(fl.title || fl.name || 'Opportunity').substring(0, 60);
-      if (deliveredNow) fld.is_replacement = true; // marks the swapped-in lead so the dashboard can badge it "Replaced"
+      // NATIONAL FALLBACK only for genuinely postcode-less public notices
+      // (some tender/older-probate records have no address/postcode at all).
+      var areaOfPool = extractPostcodeArea(fpc || fl.address || fl.title || '');
+      var hit = false;
+      if (!ukwide && areas.length) {
+        if (!areaOfPool && (product === 'tenders' || product === 'probate')) hit = true; // no postcode → treat as ok
+        else hit = areaHitOf(areaOfPool);
+      } else {
+        hit = true;
+      }
+      var cand = { fl: fl, fAddr: fAddr, fpc: fpc, areaOfPool: areaOfPool };
+      if (hit) exactCands.push(cand);
+      else if (areaOfPool) {
+        var km = closestKmFromArea(areaOfPool);
+        if (km < 9999) { cand.km = km; nearestCands.push(cand); }
+      }
+    }
+
+    function insertReplacement(cand) {
+      var fl2 = cand.fl;
+      var fpc2 = cand.fpc;
+      var fAddr2b = cand.fAddr;
+      var fld = Object.assign({}, fl2, { id: fl2.id, address: fAddr2b || fl2.title || fl2.name || '', fullAddress: fAddr2b, postcode: fpc2, product: product });
+      if (product === 'probate') fld.deceasedAddress = fAddr2b;
+      if (product === 'tenders' && !fAddr2b && !fld.fullAddress) fld.fullAddress = String(fl2.title || fl2.name || 'Opportunity').substring(0, 60);
+      if (deliveredNow) {
+        fld.is_replacement = true;
+        // Mark the fallback as nearest-area so the owner/customer can see it was the
+        // closest available (still a real, useful lead near their area).
+        if (!cand.areaOfPool || !areaHitOf(cand.areaOfPool)) fld.replacement_fallback = 'nearest_area';
+      }
       var nowIsoX = new Date().toISOString();
-      // deliveredNow = INSTANT REPLACE (customer rejected today's lead): show the
-      // replacement in their dashboard immediately, exactly like a normal delivered
-      // lead (status delivered, delivered_at now). Otherwise queue for next 9am.
       var nr = { id: 'lead_' + Date.now() + '_repl_' + Math.floor(Math.random()*1000), customer_id: cust.id, product: product, data: JSON.stringify(fld), status: deliveredNow ? 'delivered' : 'new', delivered: deliveredNow ? 1 : 0, created_at: nowIsoX, delivered_at: deliveredNow ? nowIsoX : null, release_at: deliveredNow ? null : (nowIsoX.split('T')[0] + 'T09:00:00.000Z') };
       db.prepare('INSERT INTO leads (id, customer_id, product, data, status, delivered, created_at, delivered_at, release_at) VALUES (?,?,?,?,?,?,?,?,?)').run(nr.id, cust.id, product, nr.data, nr.status, nr.delivered, nr.created_at, nr.delivered_at, nr.release_at);
-      return { id: nr.id, address: fAddr, postcode: fpc };
+      return { id: nr.id, address: nr.data ? JSON.parse(nr.data).address : '', postcode: fpc2, nearest: !!fld.replacement_fallback };
+    }
+
+    // Prefer an exact-area replacement.
+    if (exactCands.length) {
+      var pickExact = exactCands[0];
+      return insertReplacement(pickExact);
+    }
+    // Otherwise the NEAREST area with a valid lead (real geo distance).
+    if (nearestCands.length) {
+      nearestCands.sort(function(a,b){ return (a.km||9999) - (b.km||9999); });
+      return insertReplacement(nearestCands[0]);
     }
     return null;
-  } catch(e) { return null; }
+  } catch(e) { console.log('[CREATE-REPL] error:', e.message); return null; }
 }
 
 // PATCH /api/leads/:id/status
