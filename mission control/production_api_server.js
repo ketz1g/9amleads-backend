@@ -34585,7 +34585,7 @@ try {
     if (process.env.RUN_BUYER_SCRAPE === '1') {
       var buyerLock = path.join(DATA_DIR, 'buyer-scrape.lock');
       var buyerRunning = false;
-      try { buyerRunning = fs.existsSync(buyerLock) && (Date.now() - fs.statSync(buyerLock).mtimeMs) < 10 * 60 * 1000; } catch (e) { buyerRunning = false; }
+      try { buyerRunning = fs.existsSync(buyerLock) && (Date.now() - fs.statSync(buyerLock).mtimeMs) < 5 * 60 * 1000; } catch (e) { buyerRunning = false; }
       if (buyerRunning) {
         console.log('[BOOT] Buyer scraper already running (lock present), skipping launch');
       } else {
@@ -34599,7 +34599,7 @@ try {
         var buyerCp = require('child_process');
         var buyerLogFd = null;
         try { buyerLogFd = fs.openSync(path.join(DATA_DIR, 'buyer-scrape.log'), 'a'); } catch (e) { buyerLogFd = null; }
-        var buyerChild = buyerCp.spawn(process.execPath, buyerArgs, { cwd: path.join(__dirname, '..'), detached: true, stdio: buyerLogFd ? ['ignore', buyerLogFd, buyerLogFd] : 'ignore', env: Object.assign({}, process.env) });
+        var buyerChild = buyerCp.spawn(process.execPath, buyerArgs, { cwd: path.join(__dirname, '..'), detached: true, stdio: buyerLogFd ? ['ignore', buyerLogFd, buyerLogFd] : 'ignore', env: Object.assign({}, process.env, { BUYER_LOCK_FILE: buyerLock }) });
         buyerChild.unref();
         if (buyerLogFd) { try { fs.writeSync(buyerLogFd, '\n=== buyer scrape launched ' + new Date().toISOString() + ' pid=' + (buyerChild.pid || '?') + ' ===\n'); } catch (e) {} }
         console.log('[BOOT] Buyer subtype scraper launched pid=' + (buyerChild.pid || '?'));

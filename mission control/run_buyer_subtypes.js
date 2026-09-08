@@ -162,6 +162,10 @@ async function main() {
     results.push(r);
   }
   console.log('ALL DONE');
+  // Clear the boot lock file so the next boot can relaunch if needed.
+  if (process.env.BUYER_LOCK_FILE) {
+    try { fs.unlinkSync(process.env.BUYER_LOCK_FILE); console.log('cleared buyer lock'); } catch (e) { console.log('lock clear failed (already gone?)'); }
+  }
 }
 
 main().then(() => process.exit(0)).catch(e => { console.error(e); process.exit(1); });
