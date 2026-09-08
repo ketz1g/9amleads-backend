@@ -11426,63 +11426,62 @@ app.post('/api/admin/test-probate-email', adminAuth, async (req, res) => {
 // 24/48h daily delivery. Body: { days } (how far back to walk, default 60), { pages }
 // (max pages, default 12).
 app.post('/api/admin/probate-backfill', adminAuth, async (req, res) => {
+  // Runs in the BACKGROUND so the request returns instantly (multi-page Gazette
+  // walking can exceed the proxy idle timeout otherwise).
   try {
     var days = Math.max(7, Math.min(120, parseInt((req.body && req.body.days) || 60, 10)));
     var maxPages = Math.max(2, Math.min(30, parseInt((req.body && req.body.pages) || 12, 10)));
-    var scraper = require('./probate_leads_scraper');
-    var arr = readPoolFile('probate');
-    var existing = {};
-    (arr || []).forEach(function(l){ if (l && l.id) existing[l.id] = 1; });
-    var nowMs = Date.now();
-    var added = [], dupes = 0;
-    // Walk from page 1 forward but only keep notices OLDER than ~3 days (so we fill the
-    // archive, never drain anything the 9am delivery would want) and stop once we've
-    // collected enough aged rows or reached maxPages.
-    for (var pg = 1; pg <= maxPages && added.length < 250; pg++) {
-      var pageLeads = await scraper.fetchGazetteHTML(50, pg);
-      var keep = false;
-      for (var li = 0; li < (pageLeads || []).length; li++) {
-        var l = pageLeads[li];
-        if (!l || !l.id) continue;
-        if (existing[l.id]) { dupes++; continue; }
-        var pubMs = 0;
-        try { var pd = new Date(l.publishedDate || ''); if (!isNaN(pd.getTime())) pubMs = pd.getTime(); } catch(e) {}
-        if (!pubMs) continue;
-        var ageDays = (nowMs - pubMs) / 86400000;
-        if (ageDays < 3) continue; // keep out of the fresh delivery window
-        if (ageDays > days) continue;
-        // Needs a usable address+postcode to ever count as saleable bulk.
-        var pc = String(l.postcode || '').toUpperCase().trim();
-        if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/.test(pc)) {
-          var addrScan = String(l.deceasedAddress || l.fullAddress || l.address || '').toUpperCase();
-          var m = addrScan.match(/([A-Z]{1,2}[0-9][A-Z0-9]?)\s?([0-9][A-Z]{2})\b/);
-          if (!m) continue;
-          pc = m[1] + ' ' + m[2];
-          l.postcode = pc;
+    res.json({ success: true, background: true, note: 'Probate bulk backfill started in the background - refresh Bulk Pool in ~1-2 min.' });
+    (async function() {
+      try {
+        var scraper = require('./probate_leads_scraper');
+        var arr = readPoolFile('probate');
+        var existing = {};
+        (arr || []).forEach(function(l){ if (l && l.id) existing[l.id] = 1; });
+        var nowMs = Date.now();
+        var added = [], dupes = 0, errs = 0;
+        for (var pg = 1; pg <= maxPages && added.length < 250; pg++) {
+          var pageLeads = [];
+          try { pageLeads = await scraper.fetchGazetteHTML(50, pg); } catch(e) { errs++; }
+          var keep = false;
+          for (var li = 0; li < (pageLeads || []).length; li++) {
+            var l = pageLeads[li];
+            if (!l || !l.id) continue;
+            if (existing[l.id]) { dupes++; continue; }
+            var pubMs = 0;
+            try { var pd = new Date(l.publishedDate || ''); if (!isNaN(pd.getTime())) pubMs = pd.getTime(); } catch(e) {}
+            if (!pubMs) continue;
+            var ageDays = (nowMs - pubMs) / 86400000;
+            if (ageDays < 3) continue;
+            if (ageDays > days) continue;
+            var pc = String(l.postcode || '').toUpperCase().trim();
+            if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/.test(pc)) {
+              var addrScan = String(l.deceasedAddress || l.fullAddress || l.address || '').toUpperCase();
+              var m = addrScan.match(/([A-Z]{1,2}[0-9][A-Z0-9]?)\s?([0-9][A-Z]{2})\b/);
+              if (!m) continue;
+              pc = m[1] + ' ' + m[2];
+              l.postcode = pc;
+            }
+            var addr = String(l.fullAddress || l.address || l.deceasedAddress || '').trim();
+            if (!addr || addr.length < 8) continue;
+            l.fullAddress = l.fullAddress || l.address || l.deceasedAddress || '';
+            l.deceasedAddress = l.deceasedAddress || l.fullAddress;
+            l.bulk_pooled_at = new Date().toISOString();
+            existing[l.id] = 1;
+            added.push(l);
+            keep = true;
+          }
+          await new Promise(function(r){ setTimeout(r, 350); });
+          if (!keep && pg > 1) break;
         }
-        var addr = String(l.fullAddress || l.address || l.deceasedAddress || '').trim();
-        if (!addr || addr.length < 8) continue;
-        l.fullAddress = l.fullAddress || l.address || l.deceasedAddress || '';
-        l.deceasedAddress = l.deceasedAddress || l.fullAddress;
-        l.bulk_pooled_at = new Date().toISOString();
-        existing[l.id] = 1;
-        added.push(l);
-        keep = true;
-      }
-      // tiny pause so the Gazette isn't hammered
-      await new Promise(function(r){ setTimeout(r, 400); });
-      if (!keep && pg > 1) break; // no new older rows left on this page - stop
-    }
-    // Append in one write (dedup guard above prevents the daily scrape's rows being duplicated).
-    if (added.length) {
-      arr = arr.concat(added);
-      var file = path.join(DATA_DIR, PRODUCT_LEAD_FILES.probate ? PRODUCT_LEAD_FILES.probate.file : 'probate-leads.json');
-      fs.writeFileSync(file, JSON.stringify(arr, null, 2));
-    }
-    var bands = null;
-    try { bands = (function(prod){ var a2=readPoolFile(prod), now2=Date.now(), out={total:a2.length,'0-2d':0,'3-7d':0,tm:0,'1m':0,'2m':0,reserved:0,sold:0}; (a2||[]).forEach(function(l){ if(!l)return; if(l.bulk_sold||l.boost_sold){out.sold++;return;} if(l.bulk_reserved||l.boost_reserved){out.reserved++;return;} var dd=l.sourceListedDate||((function(ld){try{return ld.firstVisibleDate||ld.publishedDate||ld.grantDate||ld.incorporationDate||ld.scrapedAt||''}catch(e){return''}})(l))||''; var t=dd?new Date(dd).getTime():0; if(!t)return; var age=(now2-t)/86400000; if(age<=2)out['0-2d']++; else if(age<28)out.tm++; else if(age<=35)out['1m']++; else if(age>=58&&age<=65)out['2m']++; }); return out; })('probate');
-    } catch(e) {}
-    res.json({ success: true, added: added.length, duplicates_skipped: dupes, pool_total: arr.length, probate_bands: bands, note: 'Manual backfill only. Daily 09:00 probate scrape untouched.' });
+        if (added.length) {
+          arr = arr.concat(added);
+          var file = path.join(DATA_DIR, PRODUCT_LEAD_FILES.probate ? PRODUCT_LEAD_FILES.probate.file : 'probate-leads.json');
+          try { fs.writeFileSync(file, JSON.stringify(arr, null, 2)); } catch(we) { console.log('[PROBATE-BACKFILL] write error', we.message); }
+        }
+        console.log('[PROBATE-BACKFILL] done added=' + added.length + ' dupes=' + dupes + ' errors=' + errs + ' pool_total=' + arr.length);
+      } catch(be) { console.log('[PROBATE-BACKFILL] error:', be.message); }
+    })();
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
