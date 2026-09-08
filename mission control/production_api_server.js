@@ -8718,6 +8718,47 @@ app.post('/api/admin/leads/cleanup', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/clear-bulk-pack — release a customer's pending bulk/boost pack and
+// unreserve its reserved leads (used to undo test grants / refund scenarios). Body:
+// { email }
+app.post('/api/admin/clear-bulk-pack', adminAuth, (req, res) => {
+  try {
+    var em = String((req.body && req.body.email) || '').toLowerCase().trim();
+    if (!em) return res.status(400).json({ error: 'email required' });
+    var c = db.prepare('SELECT * FROM customers WHERE email = ?').get(em);
+    if (!c) return res.status(404).json({ error: 'Customer not found' });
+    var clearedPack = null, releasedLeads = 0;
+    var bulkPack = getCustomerBulkPack(c);
+    if (bulkPack && bulkPack.status !== 'sent' && bulkPack.status !== 'sending') {
+      // release reserved newbusiness bulk leads
+      try {
+        var nb = path.join(DATA_DIR, PRODUCT_LEAD_FILES.newbusiness.file);
+        var nbRaw = JSON.parse(fs.readFileSync(nb, 'utf-8'));
+        function relNB(l){ if (l && l.bulk_reserved_by === c.id && !l.bulk_sold) { l.bulk_reserved = 0; l.bulk_reserved_by = ''; l.bulk_reserved_at = ''; releasedLeads++; } }
+        if (Array.isArray(nbRaw)) { nbRaw.forEach(relNB); fs.writeFileSync(nb, JSON.stringify(nbRaw, null, 2)); }
+      } catch(e) {}
+      db.prepare('UPDATE customers SET bulk_pack = NULL WHERE id = ?').run(c.id);
+      clearedPack = 'bulk';
+    }
+    try {
+      var bp2 = c.boost_pack ? JSON.parse(c.boost_pack) : null;
+      if (bp2 && bp2.status !== 'sent' && bp2.status !== 'sending') {
+        var prod = bp2.product;
+        var f = path.join(DATA_DIR, PRODUCT_LEAD_FILES[prod] ? PRODUCT_LEAD_FILES[prod].file : '');
+        if (f) {
+          var rawB2 = JSON.parse(fs.readFileSync(f, 'utf-8'));
+          function relB2(l){ if (l && l.boost_reserved_by === c.id && !l.boost_sold) { l.boost_reserved = 0; l.boost_reserved_by = ''; l.boost_reserved_at = ''; releasedLeads++; } }
+          if (Array.isArray(rawB2)) { rawB2.forEach(relB2); fs.writeFileSync(f, JSON.stringify(rawB2, null, 2)); }
+        }
+        db.prepare('UPDATE customers SET boost_pack = NULL WHERE id = ?').run(c.id);
+        clearedPack = clearedPack ? clearedPack + '+boost' : 'boost';
+      }
+    } catch(e) {}
+    saveDb();
+    res.json({ success: true, cleared: clearedPack || 'none', released_leads: releasedLeads, email: em });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/admin/rejected-leads — admin review queue of all customer-rejected leads.
 app.get('/api/admin/rejected-leads', adminAuth, (req, res) => {
   try {
