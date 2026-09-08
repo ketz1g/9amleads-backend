@@ -24625,7 +24625,7 @@ app.get('/api/buyer-scrape/status', (req, res) => {
     var out = { running: false, lock: null, subtypes: {}, log_tail: [] };
     try {
       var lockFile = path.join(DATA_DIR, 'buyer-scrape.lock');
-      if (fs.existsSync(lockFile)) out.lock = fs.readFileSync(lockFile, 'utf-8');
+      if (fs.existsSync(lockFile)) { out.lock = fs.readFileSync(lockFile, 'utf-8'); out.running = true; }
     } catch (e) {}
     try {
       var logFile = path.join(DATA_DIR, 'buyer-scrape.log');
@@ -24633,8 +24633,9 @@ app.get('/api/buyer-scrape/status', (req, res) => {
         var logTxt = fs.readFileSync(logFile, 'utf-8');
         var logLines = logTxt.split('\n').filter(Boolean);
         out.log_tail = logLines.slice(-15);
-        var lastLine = logLines[logLines.length - 1] || '';
-        out.running = /towns-exhausted|ALL DONE|RESULT/.test(logTxt) ? !/ALL DONE/.test(logTxt) : true;
+        // A fresh "launched" line after the last "ALL DONE / cleared" means a new
+        // run is active; lock file presence is the authoritative running signal.
+        if (!fs.existsSync(lockFile)) out.running = false;
       }
     } catch (e) {}
     try {
