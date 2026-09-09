@@ -12666,6 +12666,34 @@ app.get('/api/admin/stats', adminAuth, (req, res) => {
 });
 
 // GET /api/admin/customers — list all customers (paginated)
+// Customer email-series label map: which retention email each template is, so the
+// admin can see what an (expired-trial) customer has already been auto-sent.
+var EMAIL_SERIES_LABELS = {
+  trial_day1: 'Day 1 — welcome/how to win',
+  trial_day3: 'Day 3 — how are leads looking',
+  trial_day5: 'Day 5 — 3 tips to convert',
+  trial_day7: 'Day 7 — trial ends tomorrow',
+  trial_day9: 'Day 9 (trial over) — leads paused, come back',
+  trial_day12: 'Day 12 — still not sure? let us help',
+  trial_day16: 'Day 16 — success stories',
+  trial_day21: 'Day 21 — leads still waiting',
+  trial_day30: 'Day 30 — restart invite',
+  trial_month3: 'Month 3 — fresh free week offer'
+};
+function emailSeriesReceived(c) {
+  var sent = [];
+  try { sent = JSON.parse(c.campaign_sent || '[]'); } catch (e) { sent = []; }
+  var labels = Object.assign({}, EMAIL_SERIES_LABELS);
+  if (typeof WEEKLY_FOLLOWUP_SUBJECTS !== 'undefined') {
+    for (var wk in WEEKLY_FOLLOWUP_SUBJECTS) labels['trial_wk' + wk] = 'Week ' + wk + ' follow-up';
+  }
+  return sent.map(function(t) { return { key: t, label: labels[t] || ('Email ' + String(t).replace('trial_', '')) }; });
+}
+function customerTrialExpired(c) {
+  if (String(c.plan || '') !== 'free_trial') return false;
+  if (!c.trial_ends) return false;
+  return new Date(c.trial_ends) < new Date();
+}
 app.get('/api/admin/customers', adminAuth, (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 50;
@@ -12685,19 +12713,50 @@ app.get('/api/admin/customers', adminAuth, (req, res) => {
     });
   const total = db.prepare('SELECT COUNT(*) as count FROM customers').get();
   const customers = allCustomers.slice((page - 1) * limit, page * limit);
+  const totalExpiredTrials = (getDb().customers || []).filter(customerTrialExpired).length;
 
   // Get lead counts for each customer
   const result = customers.map(c => {
     const leadCount = db.prepare('SELECT COUNT(*) as count FROM leads WHERE customer_id = ?').get(c.id);
-    return { ...c, lead_count: leadCount.count };
+    return Object.assign({}, c, {
+      lead_count: leadCount.count,
+      trial_expired: customerTrialExpired(c),
+      email_log: emailSeriesReceived(c)
+    });
   });
 
   res.json({
     customers: result,
     total: total.count,
+    total_expired_trials: totalExpiredTrials,
     page,
     total_pages: Math.ceil(total.count / limit)
   });
+});
+
+// GET /api/admin/expired-trials/export — download all expired-trial customers as a
+// CSV (email + company + product + areas + last email date + emails auto-sent), so
+// they can be re-imported into Brevo later for a retention/mass campaign.
+app.get('/api/admin/expired-trials/export', adminAuth, (req, res) => {
+  try {
+    var dbE = getDb();
+    var rows = (dbE.customers || []).filter(customerTrialExpired);
+    var csvHeaders = ['email', 'company', 'contact_name', 'product', 'lead_type', 'target_areas', 'trial_ends', 'last_email_date', 'emails_received', 'signup_date'];
+    var esc = function(v) { return '"' + String(v === null || v === undefined ? '' : v).replace(/"/g, '""') + '"'; };
+    var lines = [csvHeaders.join(',')];
+    rows.forEach(function(c) {
+      var areas = '';
+      try { areas = JSON.parse(c.target_areas || '[]').join('; '); } catch (e) { areas = ''; }
+      var received = emailSeriesReceived(c).map(function(x) { return x.label; }).join(' | ');
+      lines.push([esc(c.email), esc(c.company), esc(c.contact_name), esc(c.product), esc(c.lead_type), esc(areas), esc(c.trial_ends), esc(c.last_email_date), esc(received), esc(c.created_at)].join(','));
+    });
+    var csv = lines.join('\n');
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="9amleads-expired-trials.csv"');
+    res.send('\uFEFF' + csv);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // POST /api/admin/bulk-create-customers — create test customers directly in DB// (bypasses the signup rate limit for bulk testing). Admin auth only.

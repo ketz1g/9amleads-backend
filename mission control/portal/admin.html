@@ -161,7 +161,10 @@ tbody tr:hover td{background:#f8fafc}
 <input type="text" id="searchInput" placeholder="Search by name, email or company..." oninput="filterCustomers()" class="input" style="flex:1;min-width:200px">
 <select id="filterPlan" onchange="filterCustomers()" class="input"><option value="">All Plans</option><option value="free_trial">Free Trial</option><option value="starter">Starter</option><option value="pro">Pro</option><option value="enterprise">Enterprise</option><option value="cancelled">Cancelled</option></select>
 <select id="filterProduct" onchange="filterCustomers()" class="input"><option value="">All Products</option><option value="moving">Moving</option><option value="probate">Probate</option><option value="newbusiness">New Business</option><option value="planning">Planning</option><option value="tenders">Tenders</option></select>
+<button id="expiredFilterBtn" class="btn btn-sm" onclick="setExpiredFilter(true)" style="background:rgba(124,58,237,0.1);color:#7c3aed;border:1px solid rgba(124,58,237,0.25)"><i class="fas fa-clock"></i> Expired Trials</button>
+<button id="allFilterBtn" class="btn btn-sm" onclick="setExpiredFilter(false)" style="background:rgba(100,116,139,0.08);color:#64748b;border:1px solid rgba(100,116,139,0.2)">All</button>
 <button class="btn btn-outline btn-sm" onclick="exportCsv()"><i class="fas fa-download"></i> Export CSV</button>
+<button class="btn btn-outline btn-sm" onclick="exportExpiredCsv()" title="Download just the expired-trial customers (email + what they were auto-sent) for a future Brevo campaign"><i class="fas fa-file-csv"></i> Expired Trials CSV</button>
 <button class="btn btn-outline btn-sm" onclick="showImpersonationLogs()"><i class="fas fa-shield-alt"></i> Impersonation Logs</button>
 </div>
 <div class="table-wrap" style="margin-bottom:18px">
@@ -176,8 +179,9 @@ tbody tr:hover td{background:#f8fafc}
 <th onclick="sortBy('booked_count')">Booked<span class="sort-icon"></span></th>
 <th>CRM</th>
 <th onclick="sortBy('created_at')">Signup<span class="sort-icon"></span></th>
+<th>Auto emails sent</th>
 <th></th>
-</tr></thead><tbody id="customerTable"><tr><td colspan="11" class="loading">Loading customers...</td></tr></tbody></table>
+</tr></thead><tbody id="customerTable"><tr><td colspan="12" class="loading">Loading customers...</td></tr></tbody></table>
 </div>
 <div class="card">
 <div class="card-title" style="margin-bottom:12px"><i class="fas fa-layer-group" style="color:#0ea5e9;margin-right:6px"></i> Customers by Plan</div>
@@ -1248,6 +1252,8 @@ async function loadData() {
     const custResp = await fetch(API + '/api/admin/customers?t=' + Date.now(), { headers: adminHeaders() });
     const custData = custResp.ok ? await custResp.json() : { customers: [] };
     allCustomers = custData.customers || [];
+    var expBtn = document.getElementById('expiredFilterBtn');
+    if (expBtn && custData.total_expired_trials) { expBtn.innerHTML = '<i class="fas fa-clock"></i> Expired Trials <span style="background:#7c3aed;color:#fff;border-radius:100px;padding:0 6px;font-size:10px">' + custData.total_expired_trials + '</span>'; }
     renderCustomers(allCustomers);
     renderPlanBreakdown(allCustomers);
     loadLeadMonitor();
@@ -1407,8 +1413,25 @@ function deleteCustomerAdmin(emailEnc) {
     .catch(function(e) { alert('Error: ' + e.message); });
 }
 
+// Renders the auto retention emails a customer has already received (from the
+// server-enriched email_log array). Shows count + a tooltip list; red badge for
+// expired trials so you can see their full auto-sequence at a glance.
+function autoEmailsHtml(c) {
+  var log = c.email_log || [];
+  var expired = c.trial_expired;
+  if (!log.length) {
+    return expired
+      ? '<span style="color:#ef4444;font-weight:700">Expired trial</span>'
+      : '<span style="color:#cbd5e1">-</span>';
+  }
+  var names = log.map(function(x){ return x.label || x.key; });
+  var chip = '<span style="background:rgba(124,58,237,0.12);color:#6d28d9;border:1px solid rgba(124,58,237,0.2);border-radius:100px;padding:2px 8px;font-size:10px;font-weight:700">' + log.length + ' sent</span>';
+  var title = (expired ? 'Trial EXPIRED - ' : '') + 'Auto emails received:\n' + names.join('\n');
+  return '<div title="' + title.replace(/"/g, '&quot;') + '" style="cursor:help;white-space:nowrap">' + (expired ? '<span style="color:#ef4444;font-weight:700;margin-right:3px">&#9888;</span>' : '') + chip + '</div>';
+}
+
 function renderCustomers(customers) {  const tbody = document.getElementById('customerTable');
-  if (customers.length === 0) { tbody.innerHTML = '<tr><td colspan="11" class="empty">No customers found</td></tr>'; return; }
+  if (customers.length === 0) { tbody.innerHTML = '<tr><td colspan="12" class="empty">No customers found</td></tr>'; return; }
   tbody.innerHTML = customers.map(c => {
     const areas = c.target_areas ? JSON.parse(c.target_areas).slice(0, 3).join(', ') + (JSON.parse(c.target_areas).length > 3 ? '...' : '') : '';
     // Trial end + days remaining
@@ -1442,6 +1465,7 @@ function renderCustomers(customers) {  const tbody = document.getElementById('cu
       '<td style="font-size:11px">' + bookedVal + ' <span style="color:#64748b">(' + convPct + '%)</span></td>' +
       '<td>' + hasCrm + '</td>' +
       '<td style="font-size:11px;color:#64748b">' + signupDate + '</td>' +
+      '<td style="font-size:10px;color:#7c3aed;max-width:160px">' + autoEmailsHtml(c) + '</td>' +
       '<td><div style="display:flex;gap:4px;flex-wrap:wrap"><a class="btn btn-view btn-sm" href="/portal/admin-customer.html?email=' + encodeURIComponent(c.email || '') + '" target="_blank" rel="noopener" title="View this customer\'s leads (new tab)"><i class="fas fa-list"></i> Leads</a><a class="btn btn-view btn-sm" href="/portal/admin-customer.html?email=' + encodeURIComponent(c.email || '') + '&action=dashboard" target="_blank" rel="noopener" title="Login as this customer - open their dashboard (new tab)" style="background:rgba(245,158,11,0.12)!important;color:#f59e0b!important;border-color:rgba(245,158,11,0.2)!important"><i class="fas fa-shield-alt"></i> Login as</a><button class="btn btn-view btn-sm" style="background:rgba(239,68,68,0.1)!important;color:#ef4444!important;border-color:rgba(239,68,68,0.25)!important" onclick="deleteCustomerAdmin(\'' + encodeURIComponent(c.email || '') + '\')" title="Permanently delete this customer and all their data">Delete</button></div></td></tr>';
   }).join('');
 }
@@ -1450,11 +1474,20 @@ function filterCustomers() {
   const search = document.getElementById('searchInput').value.toLowerCase();
   const plan = document.getElementById('filterPlan').value;
   const product = document.getElementById('filterProduct').value;
+  const expiredOnly = window.__expiredOnly === true;
   let filtered = allCustomers;
   if (search) filtered = filtered.filter(c => (c.company || '').toLowerCase().includes(search) || c.email.toLowerCase().includes(search) || (c.contact_name || '').toLowerCase().includes(search));
   if (plan) filtered = filtered.filter(c => c.plan === plan || (plan === 'paid' && c.plan !== 'free_trial' && c.plan !== 'cancelled'));
+  if (expiredOnly) filtered = filtered.filter(c => c.trial_expired === true);
   if (product) filtered = filtered.filter(c => c.product === product);
   renderCustomers(filtered);
+}
+function setExpiredFilter(on) {
+  window.__expiredOnly = on === true;
+  var btn = document.getElementById('expiredFilterBtn');
+  if (btn) { btn.style.outline = on ? '2px solid #7c3aed' : ''; btn.style.background = on ? 'rgba(124,58,237,0.15)' : ''; }
+  if (on) { var sel = document.getElementById('filterPlan'); if (sel) sel.value = 'free_trial'; }
+  filterCustomers();
 }
 
 // ===== SORTING =====
@@ -1741,6 +1774,18 @@ function exportCsv() {
   const csv = [headers.join(','), ...rows.map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(','))].join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = '9amleads-customers.csv'; a.click();
+}
+
+// Download ALL expired-trial customers as a CSV (server-generated, includes the
+// auto retention emails each one has been sent) - ready to re-import into Brevo.
+function exportExpiredCsv() {
+  fetch(API + '/api/admin/expired-trials/export?t=' + Date.now(), { headers: adminHeaders() })
+    .then(function(r) { if (!r.ok) throw new Error('Request failed'); return r.blob(); })
+    .then(function(blob) {
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = '9amleads-expired-trials.csv'; a.click();
+      URL.revokeObjectURL(a.href);
+    })
+    .catch(function(e) { alert('Could not export expired trials: ' + e.message); });
 }
 
 // Impersonation logs
