@@ -575,7 +575,7 @@ async function distributeAll(force) {
   console.log('========================================\n');
 
   if (dayOfWeek === 0 && !force) {
-    console.log('  Sunday — no lead distribution (Mon-Sat only). Use --force to override.\n');
+    console.log('  Sunday — no lead distribution (Mon-Fri only). Use --force to override.\n');
     return [];
   }
 

@@ -1605,7 +1605,7 @@ cron.schedule('0 9 * * *', async () => {
   // Sunday check — no lead delivery on Sundays
   const dayOfWeek = new Date().getDay();
   if (dayOfWeek === 0) {
-    console.log('[SCHEDULER] Sunday — no lead delivery (Mon-Sat only). Skipping.');
+    console.log('[SCHEDULER] Weekend — no lead delivery (Mon-Fri only). Skipping.');
     return;
   }
 
@@ -2612,7 +2612,7 @@ app.listen(PORT, () => {
   console.log('  Database: ' + DB_FILE);
   console.log('  Brevo: ' + (BREVO_API_KEY ? 'CONFIGURED' : 'NOT SET'));
   console.log('  Stripe: ' + (STRIPE_SECRET_KEY ? 'CONFIGURED' : 'NOT SET'));
-  console.log('  Scheduler: Active (9:00 AM daily, Mon-Sat)');
+  console.log('  Scheduler: Active (9:00 AM daily, Mon-Fri)');
   console.log('========================================\n');
   console.log('Endpoints:');
   console.log('  POST /api/auth/signup   - Create account');

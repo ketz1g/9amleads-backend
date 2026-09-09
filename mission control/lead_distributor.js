@@ -1243,8 +1243,8 @@ async function distributeAll(force) {
   console.log(`  ${new Date().toLocaleString()}`);
   console.log('========================================\n');
 
-  if (dayOfWeek === 0 && !force) {
-    console.log('  Sunday — no lead distribution (Mon-Sat only). Use --force to override.\n');
+  if ((dayOfWeek === 0 || dayOfWeek === 6) && !force) {
+    console.log('  Weekend — no lead distribution (Mon-Fri only). Use --force to override.\n');
     return [];
   }
 

@@ -3794,7 +3794,7 @@ app.listen(PORT, () => {
   console.log('  Database: ' + DB_FILE);
   console.log('  Brevo: ' + (BREVO_API_KEY ? 'CONFIGURED' : 'NOT SET'));
   console.log('  Stripe: ' + (STRIPE_SECRET_KEY ? 'CONFIGURED' : 'NOT SET'));
-  console.log('  Scheduler: Active (9:00 AM daily, Mon-Sat)');
+  console.log('  Scheduler: Active (9:00 AM daily, Mon-Fri)');
   console.log('========================================\n');
   console.log('Endpoints:');
   console.log('  POST /api/auth/signup   - Create account');
