@@ -34694,6 +34694,25 @@ try {
     } else {
       console.log('[BOOT] Buyer subtype scraper not started (RUN_BUYER_SCRAPE != 1)');
     }
+
+    // AUTO-IMPORT completed buyer CSV scrapes into Brevo lists + campaigns. Runs as a
+    // detached child watching the shared data dir; only imports subtypes that still
+    // have a live campaign (skips removed subtypes). Records progress on the disk.
+    try {
+      if (process.env.RUN_BUYER_SCRAPE === '1') {
+        var aiCp = require('child_process');
+        var aiLogFd = null;
+        try { aiLogFd = fs.openSync(path.join(DATA_DIR, 'autoimport.log'), 'a'); } catch (e) { aiLogFd = null; }
+        var aiChild = aiCp.spawn(process.execPath, ['mission control/autoimport_buyer_lists.js'], { cwd: path.join(__dirname, '..'), detached: true, stdio: aiLogFd ? ['ignore', aiLogFd, aiLogFd] : 'ignore', env: Object.assign({}, process.env) });
+        aiChild.unref();
+        if (aiLogFd) { try { fs.writeSync(aiLogFd, '\n=== auto-import launched ' + new Date().toISOString() + ' pid=' + (aiChild.pid || '?') + ' ===\n'); } catch (e) {} }
+        console.log('[BOOT] Buyer list auto-import launched pid=' + (aiChild.pid || '?'));
+      } else {
+        console.log('[BOOT] Buyer list auto-import not started (RUN_BUYER_SCRAPE != 1)');
+      }
+    } catch (aiErr) {
+      console.log('[BOOT] Buyer auto-import launch error: ' + (aiErr && aiErr.message || aiErr));
+    }
   } catch (buyerErr) {
     console.log('[BOOT] Buyer scraper launch error: ' + (buyerErr && buyerErr.message || buyerErr));
   }
