@@ -5177,8 +5177,13 @@ app.get(/^\/blog\/(?:img|og)\/([^\/]+)\.png$/i, function(req, res) {
 
 // Standalone admin pages are served from publish/admin and must be registered BEFORE the
 // SPA fallback (otherwise the catch-all swallows them and /admin/health etc. error 500).
-app.use('/admin', express.static(path.join(__dirname, '..', 'publish', 'admin'), { index: false }));
-app.get(['/admin', '/admin/'], function(req, res) { res.redirect('/admin/health'); });
+app.get('/admin/health', (req, res) => {
+  var page = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Platform Health - 9amLeads</title><style>body{font-family:Inter,system-ui,sans-serif;background:#07090f;color:#dce2f0;margin:0;padding:24px;line-height:1.5}.wrap{max-width:900px;margin:0 auto}h1{font-size:20px;font-weight:800}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin:16px 0 24px}.card{background:#0c0f1a;border:1px solid #151929;border-radius:10px;padding:14px}.card h3{font-size:12px;margin:0 0 6px;text-transform:capitalize}.st{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px}.ok{background:rgba(34,197,94,.12);color:#22c55e}.bad{background:rgba(239,68,68,.12);color:#ef4444}.muted{font-size:11px;color:#5a6280;margin-top:6px}.err{color:#ef4444;font-size:11px;margin-top:6px}.over{font-size:26px;font-weight:900;margin:4px 0}</style></head><body><div class="wrap"><h1><span style="color:#0ea5e9">&#9724;</span> Platform Health</h1><div id="c"><div class="muted">Loading...</div></div></div><script>var T=prompt("Admin password:")||"";fetch("/api/admin/platform-health",{headers:{Authorization:"Bearer "+T}}).then(function(r){return r.json()}).then(function(d){if(!d.success){document.getElementById("c").innerHTML="<p class=\\"err\\">Auth failed</p>";return}var h="<div class=\\"over\\" style=\\"color:"+(d.overall==="healthy"?"#22c55e":"#ef4444")+"\\">"+String(d.overall||"unknown").toUpperCase()+"</div><div class=\\"muted\\">Checked "+new Date(d.checked_at).toLocaleString()+"</div><div class=\\"grid\\">"+Object.keys(d.services).map(function(k){var s=d.services[k];var ok=s.status==="healthy";return "<div class=\\"card\\"><h3>"+k.replace(/_/g," ")+"</h3><span class=\\"st "+(ok?"ok":"bad")+"\\">"+(s.status||"unknown")+"</span>"+(s.last_ok?"<div class=\\"muted\\">Last OK: "+new Date(s.last_ok).toLocaleString()+"</div>":"")+(s.db_size?"<div class=\\"muted\\">Size: "+s.db_size+"</div>":"")+(s.pending!==undefined?"<div class=\\"muted\\">Pending: "+s.pending+"</div>":"")+(s.error?"<div class=\\"err\\">"+s.error+"</div>":"")+"</div>"}).join("")+"</div>";document.getElementById("c").innerHTML=h}).catch(function(){document.getElementById("c").innerHTML="<p class=\\"err\\">Could not load health data</p>"});</script></body></html>';
+  res.type('html').send(page);
+});
+app.get('/admin/direct-mail', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'publish', 'admin', 'direct-mail.html'));
+});
 
 // SPA fallback - serve index.html for unknown routes (but not API routes)
 app.get(/^\/(?!api\/|admin\/).*$/, (req, res) => {
