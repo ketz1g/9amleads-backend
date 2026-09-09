@@ -16414,12 +16414,14 @@ cron.schedule('*/30 * * * *', async () => {
 }, { timezone: 'Europe/London' });
 
 
-// 09:15 DELIVERY VERIFICATION + AUTO-TOPUP (bullet-proof safety net)
-// After the 09:00 delivery + 09:02 watchdog, verify every active customer got
-// their promised daily count. If any customer is short, auto top-up from the pool
+// ===== 09:07 DELIVERY VERIFICATION + AUTO-TOPUP (bullet-proof safety net)
+// After the 09:00 delivery (which itself auto-top-ups within ~2 min) verify every
+// active customer got their promised daily count. 09:07 gives the 9am run + instant
+// top-up time to settle, then confirms the TRUE outcome as early as safely possible
+// (~8 min after 9am). If any customer is short, auto top-up from the pool
 // and alert hello@9amleads.com immediately - an under-delivery can NEVER go
 // unnoticed or unrepaired again.
-cron.schedule('15 9 * * 1-5', async () => {
+cron.schedule('7 9 * * 1-5', async () => {
   try {
     var vToday = new Date().toISOString().split('T')[0];
     var vDb = getDb();
