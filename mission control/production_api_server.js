@@ -24735,6 +24735,22 @@ app.get('/api/buyer-scrape/status', (req, res) => {
         } catch (e) {}
       });
     } catch (e) {}
+    // Auto-import state: completed CSVs, imported progress, and log tail.
+    try {
+      var csvFiles = fs.readdirSync(DATA_DIR).filter(function(f) { return /^buyer-.*-emails\.csv$/.test(f); });
+      out.completed_csvs = csvFiles.map(function(f) { return f.replace('buyer-', '').replace('-emails.csv', ''); });
+    } catch (e) { out.completed_csvs = []; }
+    try {
+      var progFile = path.join(DATA_DIR, 'autoimport-progress.json');
+      if (fs.existsSync(progFile)) { out.autoimport_progress = JSON.parse(fs.readFileSync(progFile, 'utf-8')); }
+    } catch (e) { out.autoimport_progress = {}; }
+    try {
+      var aiLogFile = path.join(DATA_DIR, 'autoimport.log');
+      if (fs.existsSync(aiLogFile)) {
+        var aiTxt = fs.readFileSync(aiLogFile, 'utf-8');
+        out.autoimport_log_tail = aiTxt.split('\n').filter(Boolean).slice(-15);
+      }
+    } catch (e) { out.autoimport_log_tail = []; }
     res.json({ success: true, ...out });
   } catch (e) {
     res.status(500).json({ error: e.message });
