@@ -14738,11 +14738,13 @@ cron.schedule('15 7 * * 1-5', async () => {
 cron.schedule('0 18 * * *', async () => {
   try { await runOtmDailyScrape(); } catch(e) { console.log('[OTM-18-CRON] ' + e.message); }
 }, { timezone: 'Europe/London' });
-// SECOND PLANNING SCRAPE (08:20 UK Mon-Fri): force-reruns the PLOTA/council
+// SECOND PLANNING SCRAPE (07:10 UK Mon-Fri): force-reruns the PLOTA/council
 // collectors so planning applications published after the early scrape still land
-// in the pool before the 9am delivery (supply safety net - pool holds 24h primary
-// + 48h fallback, delivery guarantees the promised count from it).
-cron.schedule('20 8 * * 1-5', async () => {
+// in the pool. Timed just AFTER the 07:00 morning report + early top-up and BEFORE
+// the 07:15 fulfilment check, so the pool holds the latest planning supply and the
+// 07:15 check reports the TRUE final count ~1h45m before the 9am delivery — early
+// enough to act, tightly grouped (07:00 report -> 07:10 re-scrape -> 07:15 verify).
+cron.schedule('10 7 * * 1-5', async () => {
   try {
     const httpP2 = require('http');
     var bP2 = JSON.stringify({ product: 'planning', force: true });
