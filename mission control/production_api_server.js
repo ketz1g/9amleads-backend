@@ -5143,8 +5143,45 @@ app.get('/blog/:slug', (req, res) => {
   } catch(e) { res.status(500).send('Error loading post'); }
 });
 
+// Blog / OG images: serve a real file if it exists on disk, otherwise a branded SVG
+// placeholder. The blog references images that are not stored in the repo, which used
+// to fall through to the SPA fallback below, throw, and break every post card on /blog.
+app.get(/^\/blog\/(?:img|og)\/([^\/]+)\.png$/i, function(req, res) {
+  try {
+    var name = String(req.params[0] || '');
+    var candidates = [
+      path.join(DATA_DIR, 'blog', 'img', name + '.png'),
+      path.join(DATA_DIR, 'blog', 'og', name + '.png'),
+      path.join(ROOT_DIR, 'blog', 'img', name + '.png'),
+      path.join(ROOT_DIR, 'blog', 'og', name + '.png'),
+      path.join(FRONTEND_DIR, 'blog', 'img', name + '.png')
+    ];
+    for (var bi = 0; bi < candidates.length; bi++) {
+      if (fs.existsSync(candidates[bi])) {
+        res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
+        return res.sendFile(candidates[bi]);
+      }
+    }
+    var pretty = name.replace(/[-_]+/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630">' +
+      '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0ea5e9"/><stop offset="1" stop-color="#6366f1"/></linearGradient></defs>' +
+      '<rect width="1200" height="630" fill="#0a0f1e"/><rect x="40" y="40" width="1120" height="550" rx="24" fill="none" stroke="url(#g)" stroke-width="3"/>' +
+      '<text x="600" y="300" font-family="Outfit,Arial,sans-serif" font-size="64" font-weight="800" fill="#ffffff" text-anchor="middle">9amLeads</text>' +
+      '<text x="600" y="390" font-family="Arial,sans-serif" font-size="36" fill="#94a3b8" text-anchor="middle">' + pretty + '</text></svg>';
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.type('image/svg+xml').send(svg);
+  } catch (e) {
+    res.status(200).type('image/svg+xml').send('<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630"><rect width="1200" height="630" fill="#0a0f1e"/><text x="600" y="320" font-family="Arial,sans-serif" font-size="56" fill="#0ea5e9" text-anchor="middle">9amLeads</text></svg>');
+  }
+});
+
+// Standalone admin pages are served from publish/admin and must be registered BEFORE the
+// SPA fallback (otherwise the catch-all swallows them and /admin/health etc. error 500).
+app.use('/admin', express.static(path.join(__dirname, '..', 'publish', 'admin'), { index: false }));
+app.get(['/admin', '/admin/'], function(req, res) { res.redirect('/admin/health'); });
+
 // SPA fallback - serve index.html for unknown routes (but not API routes)
-app.get(/^\/(?!api\/).*$/, (req, res) => {
+app.get(/^\/(?!api\/|admin\/).*$/, (req, res) => {
   const paths = [
     path.join(FRONTEND_DIR, req.path === '/' ? 'index.html' : req.path),
     path.join(FRONTEND_DIR, req.path, 'index.html'),
