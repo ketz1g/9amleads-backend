@@ -41,9 +41,9 @@ const PRICING_DATA = {
     { id: 'nb-power',   name: 'New Business Power',   price: 4900, interval: 'week', leadsLabel: '15-40 estimated leads/day' }
   ],
   planning: [
-    { id: 'plan-starter', name: 'Planning Starter', price: 4900, interval: 'week', leadsLabel: '1-3 estimated leads/day' },
-    { id: 'plan-growth',  name: 'Planning Growth',  price: 9900, interval: 'week', leadsLabel: '3-10 estimated leads/day' },
-    { id: 'plan-power',   name: 'Planning Power',   price: 9900, interval: 'week', leadsLabel: '10-25 estimated leads/day' }
+    { id: 'plan-starter', name: 'Planning Starter', price: 2500, interval: 'week', leadsLabel: '1 estimated lead/day' },
+    { id: 'plan-growth',  name: 'Planning Growth',  price: 4900, interval: 'week', leadsLabel: '3 estimated leads/day' },
+    { id: 'plan-power',   name: 'Planning Power',   price: 9900, interval: 'week', leadsLabel: '5 estimated leads/day' }
   ],
   tenders: [
     { id: 'tend-starter', name: 'Tenders Starter', price: 4900, interval: 'week', leadsLabel: '3-5 estimated tenders/day' },

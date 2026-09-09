@@ -13510,13 +13510,13 @@ const LEAD_TYPE_RULES = {
     name: 'Planning Permissions', key: 'planning', local: false, model: 'weekly',
     coverage: ['county', 'ukwide'],
     area_limit: { free_trial: 3, starter: 3, pro: 999, enterprise: 999 },
-    plans: { free_trial: { default: 2, county: 2, region: 2, ukwide: 2 }, starter: { default: 2, county: 2, region: 2, ukwide: 2 }, pro: { default: 5, county: 5, region: 5, ukwide: 5 }, enterprise: { default: 10, county: 10, region: 10, ukwide: 10 } },
+    plans: { free_trial: { default: 1, county: 1, region: 1, ukwide: 1 }, starter: { default: 1, county: 1, region: 1, ukwide: 1 }, pro: { default: 3, county: 3, region: 3, ukwide: 3 }, enterprise: { default: 5, county: 5, region: 5, ukwide: 5 } },
     min_area: 'county', up_to: true, enabled: true,
     price_starter: 'price_1TmEKSADspDnFpfBrCHXJBFu',
     price_growth: 'price_1TmEKTADspDnFpfBVdi1APEq',
     price_power: 'price_1TmEKTADspDnFpfBxFjHeoP9',
-    weekly_est: { free_trial: 10, starter: 10, pro: 25, enterprise: 50 },
-    monthly_est: { starter: 40, pro: 100, enterprise: 200 }
+    weekly_est: { free_trial: 5, starter: 5, pro: 15, enterprise: 25 },
+    monthly_est: { starter: 20, pro: 60, enterprise: 100 }
   },
   probate: {
     name: 'Probate Leads', key: 'probate', local: false, model: 'weekly',
