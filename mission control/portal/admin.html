@@ -97,6 +97,7 @@ tbody tr:hover td{background:#f8fafc}
 <div class="nav">
 <button class="active" onclick="switchTab('overview')"><i class="fas fa-gauge-high"></i> Overview</button>
 <button onclick="switchTab('customers')"><i class="fas fa-users"></i> Customers <span id="custCountBadge" style="display:inline-block;background:#eff6ff;color:#0ea5e9;font-size:10px;font-weight:700;border-radius:20px;padding:1px 7px;margin-left:2px">-</span></button>
+<button onclick="switchTab('expired')"><i class="fas fa-hourglass-end"></i> Expired Trials <span id="expiredCountBadge" style="display:inline-block;background:#f5f3ff;color:#7c3aed;font-size:10px;font-weight:700;border-radius:20px;padding:1px 7px;margin-left:2px">-</span></button>
 <button onclick="switchTab('health')"><i class="fas fa-heart-pulse"></i> Health</button>
 <button onclick="switchTab('fulfilment')"><i class="fas fa-clipboard-check"></i> Fulfilment</button>
 <button onclick="switchTab('bulkpool')"><i class="fas fa-boxes-stacked"></i> Bulk Pool</button>
@@ -154,6 +155,17 @@ tbody tr:hover td{background:#f8fafc}
 </div>
 </div>
 
+<!-- ============ EXPIRED TRIALS ============ -->
+<div class="tab-panel" id="tab-expired">
+<div class="hero"><div class="hero-text"><h1><i class="fas fa-hourglass-end"></i> Expired Trials</h1><p>Customers whose free trial has ended. They are kept on file (nothing deleted) so you can see the retention emails they were auto-sent, and re-import them into Brevo later with the CSV button.</p></div><div class="hero-actions"><button class="btn btn-primary" onclick="exportExpiredCsv()"><i class="fas fa-file-csv"></i> Download CSV</button></div></div>
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px"><div style="font-size:15px;font-weight:800;font-family:'Outfit',sans-serif">Expired trial customers <span id="expiredCountLabel" style="font-size:12px;font-weight:600;color:#7c3aed">-</span></div></div>
+<div class="table-wrap" style="margin-bottom:18px">
+<table><thead><tr>
+<th>Company</th><th>Email</th><th>Products</th><th>Trial ended</th><th>Areas</th><th>Leads</th><th>Auto emails sent</th><th>Last email</th><th>Signup</th><th></th>
+</tr></thead><tbody id="expiredTable"><tr><td colspan="10" class="loading">Loading...</td></tr></tbody></table>
+</div>
+</div>
+
 <!-- ============ CUSTOMERS ============ -->
 <div class="tab-panel" id="tab-customers">
 <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px"><div style="font-size:15px;font-weight:800;font-family:'Outfit',sans-serif">All Customers <span id="custCountLabel" style="font-size:12px;font-weight:600;color:#64748b">-</span></div></div>
@@ -161,10 +173,7 @@ tbody tr:hover td{background:#f8fafc}
 <input type="text" id="searchInput" placeholder="Search by name, email or company..." oninput="filterCustomers()" class="input" style="flex:1;min-width:200px">
 <select id="filterPlan" onchange="filterCustomers()" class="input"><option value="">All Plans</option><option value="free_trial">Free Trial</option><option value="starter">Starter</option><option value="pro">Pro</option><option value="enterprise">Enterprise</option><option value="cancelled">Cancelled</option></select>
 <select id="filterProduct" onchange="filterCustomers()" class="input"><option value="">All Products</option><option value="moving">Moving</option><option value="probate">Probate</option><option value="newbusiness">New Business</option><option value="planning">Planning</option><option value="tenders">Tenders</option></select>
-<button id="expiredFilterBtn" class="btn btn-sm" onclick="setExpiredFilter(true)" style="background:rgba(124,58,237,0.1);color:#7c3aed;border:1px solid rgba(124,58,237,0.25)"><i class="fas fa-clock"></i> Expired Trials</button>
-<button id="allFilterBtn" class="btn btn-sm" onclick="setExpiredFilter(false)" style="background:rgba(100,116,139,0.08);color:#64748b;border:1px solid rgba(100,116,139,0.2)">All</button>
 <button class="btn btn-outline btn-sm" onclick="exportCsv()"><i class="fas fa-download"></i> Export CSV</button>
-<button class="btn btn-outline btn-sm" onclick="exportExpiredCsv()" title="Download just the expired-trial customers (email + what they were auto-sent) for a future Brevo campaign"><i class="fas fa-file-csv"></i> Expired Trials CSV</button>
 <button class="btn btn-outline btn-sm" onclick="showImpersonationLogs()"><i class="fas fa-shield-alt"></i> Impersonation Logs</button>
 </div>
 <div class="table-wrap" style="margin-bottom:18px">
@@ -361,6 +370,7 @@ tbody tr:hover td{background:#f8fafc}
 // No CORS/preflight. works reliably from 9amleads.com in any browser.
 const API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:8012' : '';
 let allCustomers = [];
+let expiredCustomers = [];
 
 // PERMANENT STALE-CACHE FIX: if this page is restored from the browser's
 // back-forward cache (bfcache) it would show an OLD build (the recurring "section
@@ -1251,9 +1261,13 @@ async function loadData() {
 
     const custResp = await fetch(API + '/api/admin/customers?t=' + Date.now(), { headers: adminHeaders() });
     const custData = custResp.ok ? await custResp.json() : { customers: [] };
-    allCustomers = custData.customers || [];
-    var expBtn = document.getElementById('expiredFilterBtn');
-    if (expBtn && custData.total_expired_trials) { expBtn.innerHTML = '<i class="fas fa-clock"></i> Expired Trials <span style="background:#7c3aed;color:#fff;border-radius:100px;padding:0 6px;font-size:10px">' + custData.total_expired_trials + '</span>'; }
+    allCustomers = (custData.customers || []).filter(c => !c.trial_expired);   // active only - expired trials live in their own section
+    expiredCustomers = (custData.customers || []).filter(c => c.trial_expired === true);
+    var cBadge = document.getElementById('custCountBadge'); if (cBadge) cBadge.textContent = allCustomers.length || '';
+    var cLabel = document.getElementById('custCountLabel'); if (cLabel) cLabel.textContent = '(' + allCustomers.length + ' active - ' + (expiredCustomers.length) + ' expired trials moved to their own section)';
+    var expBadge = document.getElementById('expiredCountBadge'); if (expBadge) expBadge.textContent = (custData.total_expired_trials || expiredCustomers.length || '');
+    var expLabel = document.getElementById('expiredCountLabel'); if (expLabel) expLabel.textContent = '(' + (custData.total_expired_trials || expiredCustomers.length) + ')';
+    renderExpiredCustomers(expiredCustomers);
     renderCustomers(allCustomers);
     renderPlanBreakdown(allCustomers);
     loadLeadMonitor();
@@ -1470,24 +1484,46 @@ function renderCustomers(customers) {  const tbody = document.getElementById('cu
   }).join('');
 }
 
+// Expired-trials dedicated section table
+function renderExpiredCustomers(customers) {
+  const tbody = document.getElementById('expiredTable');
+  if (!tbody) return;
+  if (!customers || customers.length === 0) { tbody.innerHTML = '<tr><td colspan="10" class="empty">No expired trials yet</td></tr>'; return; }
+  tbody.innerHTML = customers.map(c => {
+    const areas = c.target_areas ? JSON.parse(c.target_areas).slice(0, 3).join(', ') + (JSON.parse(c.target_areas).length > 3 ? '...' : '') : '';
+    const trialEnd = c.trial_ends ? new Date(c.trial_ends).toLocaleDateString() : '-';
+    const signupDate = c.created_at ? new Date(c.created_at).toLocaleDateString() : '';
+    const log = c.email_log || [];
+    const emailsChip = log.length
+      ? '<span style="background:rgba(124,58,237,0.12);color:#6d28d9;border:1px solid rgba(124,58,237,0.2);border-radius:100px;padding:2px 8px;font-size:10px;font-weight:700;cursor:help" title="' + log.map(x => x.label || x.key).join('\\n').replace(/"/g, '&quot;') + '">' + log.length + ' sent</span>'
+      : '<span style="color:#94a3b8;font-size:11px">-</span>';
+    let productsHtml = '<span class="badge ' + badgeClass(c.product) + '">' + (c.lead_type || c.product) + '</span>';
+    try { var extraProds = JSON.parse(c.biz_field3 || '[]'); if (Array.isArray(extraProds) && extraProds.length > 0) { productsHtml += extraProds.map(function(p) { return ' <span class="badge ' + badgeClass(p) + '">' + p + '</span>'; }).join(''); } } catch(e) {}
+    const leadsVal = parseInt(c.lead_count) || 0;
+    return '<tr>' +
+      '<td><strong>' + (c.company || '-') + '</strong></td>' +
+      '<td style="font-size:12px;color:#64748b">' + c.email + '</td>' +
+      '<td style="white-space:nowrap">' + productsHtml + '</td>' +
+      '<td><span style="font-size:11px;color:#ef4444;font-weight:700">' + trialEnd + '</span></td>' +
+      '<td style="font-size:11px;color:#64748b;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + areas + '</td>' +
+      '<td>' + leadsVal + '</td>' +
+      '<td>' + emailsChip + '</td>' +
+      '<td style="font-size:11px;color:#64748b">' + (c.last_email_date || '-') + '</td>' +
+      '<td style="font-size:11px;color:#64748b">' + signupDate + '</td>' +
+      '<td><div style="display:flex;gap:4px;flex-wrap:wrap"><a class="btn btn-view btn-sm" href="/portal/admin-customer.html?email=' + encodeURIComponent(c.email || '') + '" target="_blank" rel="noopener" title="View this customer\'s leads"><i class="fas fa-list"></i> Leads</a><a class="btn btn-view btn-sm" href="/portal/admin-customer.html?email=' + encodeURIComponent(c.email || '') + '&action=dashboard" target="_blank" rel="noopener" title="Login as this customer" style="background:rgba(245,158,11,0.12)!important;color:#f59e0b!important;border-color:rgba(245,158,11,0.2)!important"><i class="fas fa-shield-alt"></i> Login as</a></div></td>' +
+      '</tr>';
+  }).join('');
+}
+
 function filterCustomers() {
   const search = document.getElementById('searchInput').value.toLowerCase();
   const plan = document.getElementById('filterPlan').value;
   const product = document.getElementById('filterProduct').value;
-  const expiredOnly = window.__expiredOnly === true;
   let filtered = allCustomers;
   if (search) filtered = filtered.filter(c => (c.company || '').toLowerCase().includes(search) || c.email.toLowerCase().includes(search) || (c.contact_name || '').toLowerCase().includes(search));
   if (plan) filtered = filtered.filter(c => c.plan === plan || (plan === 'paid' && c.plan !== 'free_trial' && c.plan !== 'cancelled'));
-  if (expiredOnly) filtered = filtered.filter(c => c.trial_expired === true);
   if (product) filtered = filtered.filter(c => c.product === product);
   renderCustomers(filtered);
-}
-function setExpiredFilter(on) {
-  window.__expiredOnly = on === true;
-  var btn = document.getElementById('expiredFilterBtn');
-  if (btn) { btn.style.outline = on ? '2px solid #7c3aed' : ''; btn.style.background = on ? 'rgba(124,58,237,0.15)' : ''; }
-  if (on) { var sel = document.getElementById('filterPlan'); if (sel) sel.value = 'free_trial'; }
-  filterCustomers();
 }
 
 // ===== SORTING =====
