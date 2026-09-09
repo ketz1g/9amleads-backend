@@ -15489,6 +15489,25 @@ async function runDailyDeliveryReport() {
     // no morning email is sent — the single 09:10 "delivery summary" is the one daily
     // confirmation, and real problems are also flagged by the 07:15/07:45 guarantee
     // alerts. The self-heal re-scrape + DB metrics above ALWAYS still run.
+    // EARLY TOP-UP (07:00): if any customer is short on their CHOSEN AREAS, force
+    // re-scrape those products NOW — not at the 08:20 planning run / 9am delivery —
+    // so the founder has ~2 hours of real time to fix before 9am. The total-pool
+    // supply thresholds above can look fine while a specific area is dry, so act on
+    // the per-customer preview result (rShort) rather than pool totals.
+    if (rShort.length) {
+      try {
+        var rpProds = {};
+        rShort.forEach(function(s2) { var mp = /\(([^)]+)\)/.exec(s2); if (mp) rpProds[mp[1]] = 1; });
+        Object.keys(rpProds).forEach(function(prod) {
+          try {
+            console.log('[07:00 REPORT] Early top-up: force re-scraping ' + prod + ' (customer area short)');
+            var rpBody = JSON.stringify({ product: prod, force: true });
+            var rpReq = require('http').request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer ' + (ADMIN_PASSWORD || ''), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(rpBody) } }, function(rpRes) { rpRes.resume(); });
+            rpReq.on('error', function(){}); rpReq.write(rpBody); rpReq.end();
+          } catch(rpE) { console.log('[07:00 REPORT] early top-up scrape error ' + prod + ':', rpE.message); }
+        });
+      } catch(rtE) { console.log('[07:00 REPORT] early top-up error:', rtE.message); }
+    }
     if (rShort.length) {
       await sendBrevoEmail({ email: process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com', name: '9amLeads Admin' }, '9amLeads morning report — ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + (rShort.length ? ' · ' + rShort.length + ' need(s) attention' : ' · all ready'), html);
     } else {
