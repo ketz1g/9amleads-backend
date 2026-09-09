@@ -15856,8 +15856,13 @@ async function runFulfilmentGuarantee(label) {
     } catch(sge) {}
   } catch(e) { console.log('[GUARANTEE] ' + label + ' error:', e.message); }
 }
-cron.schedule('15 7 * * 1-5', function() { runFulfilmentGuarantee('07:15'); }, { timezone: 'Europe/London' });
-cron.schedule('45 7 * * 1-5', function() { runFulfilmentGuarantee('07:45'); }, { timezone: 'Europe/London' });
+cron.schedule('25 7 * * 1-5', function() { runFulfilmentGuarantee('07:25'); }, { timezone: 'Europe/London' });
+// FINAL CHECK runs 07:25 UK — 15 min after the 07:10 planning re-scrape kicks off
+// (enough for the collector to land fresh apps) and right inside the 07:00 report /
+// 07:10 re-scrape / 07:25 verify cluster. This is the decisive "what will truly be
+// delivered" answer ~1h35m before the 9am delivery, leaving time to act. The old
+// 07:45 second check was dropped as redundant — one tight post-scrape verify is
+// enough, and 09:00 delivery + 09:15 auto-top-up backstop anything remaining.
 // NOTE: the guarantee finalise (auto top-up + dedupe + email reconcile + pending purge +
 // audit + founder report) now runs IMMEDIATELY inside the 09:00 delivery job (see the
 // delivery cron), so nothing is deferred to later cron times.
