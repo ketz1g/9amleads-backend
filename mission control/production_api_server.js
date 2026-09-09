@@ -5211,14 +5211,17 @@ app.post('/api/auth/signup', async (req, res) => {
     // postcode areas for moving" rule entirely.)
     var coverage = req.body.coverage || 'postcode';
 
-    if (!company || !email || !password) {
-      return res.status(400).json({ error: 'Company, email and password are required' });
+    if (!company || !email || !phone || !password) {
+      return res.status(400).json({ error: 'Company, phone, email and password are required' });
     }
     if (source === 'web' && !acceptTerms) {
       return res.status(400).json({ error: 'Please accept the Terms & Conditions to create an account' });
     }
     if (!validateEmail(email)) {
       return res.status(400).json({ error: 'Invalid email format' });
+    }
+    if (phone && !/^[0-9+\s()-]{7,20}$/.test(phone)) {
+      return res.status(400).json({ error: 'Invalid phone number. Please use a valid UK phone number.' });
     }
     if (password.length < 8) {
       return res.status(400).json({ error: 'Password must be at least 8 characters' });
