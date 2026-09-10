@@ -31419,6 +31419,35 @@ function syncCustomers(product) {
           var propStore = require('./property_store');
           leads = (leads || []).map(function(pl) { return propStore.enrichLead(pl); });
         } catch(pe) { console.log('[SCRAPER] Property store error:', pe.message); }
+        // LOCATION ENRICHMENT (planning/tenders): many source records have no county
+        // or postcode, which starves per-county delivery and the signup estimate.
+        // Backfill: pull a UK postcode out of any address text, and infer the county
+        // from council/address keywords (or the postcode area) so area matching works.
+        if ((product === 'planning' || product === 'tenders') && leads && leads.length) {
+          try {
+            var _revPc = {};
+            Object.keys(COUNTY_POSTCODE_MAP).forEach(function(k) { (COUNTY_POSTCODE_MAP[k] || []).forEach(function(pa) { if (!_revPc[pa]) _revPc[pa] = k; }); });
+            var _enr = 0;
+            leads.forEach(function(l) {
+              if (!l.postcode) {
+                var _m = String(l.address || l.fullAddress || l.description || '').toUpperCase().match(/\b([A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2})\b/);
+                if (_m) l.postcode = _m[1].replace(/\s+/g, ' ').trim();
+              }
+              if (!l.county) {
+                var _hay = (String(l.address || '') + ' ' + String(l.council || '') + ' ' + String(l.description || '') + ' ' + String(l.proposal || '') + ' ' + String(l.applicationType || '') + ' ' + String(l.title || '')).toLowerCase();
+                var _found = '';
+                for (var _ak in AREA_MATCH_KEYWORDS) {
+                  var _kws = AREA_MATCH_KEYWORDS[_ak];
+                  for (var _ki = 0; _ki < _kws.length; _ki++) { if (_kws[_ki] && _hay.indexOf(_kws[_ki]) !== -1) { _found = _ak; break; } }
+                  if (_found) break;
+                }
+                if (!_found && l.postcode) { var _pa = extractPostcodeArea(l.postcode); if (_pa && _revPc[_pa]) _found = _revPc[_pa]; }
+                if (_found) { l.county = _found; _enr++; }
+              } else { _enr++; }
+            });
+            console.log('[SCRAPER] ' + product + ': location enriched for ' + _enr + '/' + leads.length + ' leads');
+          } catch(enrE) { console.log('[SCRAPER] location enrich error:', enrE.message); }
+        }
         // MERGE into the existing pool — NEVER overwrite. A 0-result scrape (e.g.
         // Rightmove blocking the Render IP) must not wipe existing supply. New
         // leads are added on top; existing leads are kept as fallback. Fresh leads
