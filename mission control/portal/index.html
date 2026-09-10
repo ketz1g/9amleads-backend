@@ -1010,16 +1010,7 @@ function updateTenderCompetition() {
         (d.areas || []).forEach(function(a){ _competitionAreas[a.name] = a.count; });
         populateCountySelect();
         var note = document.getElementById('s-competition-note');
-        if (note) {
-          if (specCounties.length) {
-            var n = d.overlap_count || 0;
-            note.innerHTML = '<b>Before you sign up:</b> Tender leads are public opportunities shared with other businesses. ' +
-              (n > 0 ? n + ' other business' + (n === 1 ? '' : 'es') + ' currently receive' + (n === 1 ? 's' : '') + ' tender leads in your selected area' + (specCounties.length === 1 ? '' : 's') + '. Whoever responds first with the strongest bid wins.' : 'No other businesses are currently set up to receive tender leads in your selected areas. You will be among the first here. Whoever responds first with the strongest bid still wins.');
-          } else {
-            note.innerHTML = '<b>Before you sign up:</b> Tender leads are public opportunities shared with other businesses. Choose your areas above to see how many businesses currently receive tender leads there. Whoever responds first with the strongest bid wins.';
-          }
-          note.style.display = 'block';
-        }
+        if (note) note.style.display = 'none';
       }
     })
     .catch(function(){});
