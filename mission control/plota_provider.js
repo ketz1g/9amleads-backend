@@ -9,7 +9,7 @@ const https = require('https');
 const planningProvider = require('./planning_provider');
 
 const BASE = 'api.plota.co.uk';
-const API_KEY = process.env.PLOTA_API_KEY || '';
+const API_KEY = process.env.PLOTA_API_KEY || process.env.PLOTA_KEY || process.env.PLOTA_TOKEN || '';
 
 // Trade categorisation from proposal descriptions
 const TRADE_KEYWORDS = {
