@@ -5365,7 +5365,17 @@ app.post('/api/auth/signup', async (req, res) => {
     // code, the customer gets an extended trial (14 days default) and is
     // attributed to the partner. Only ACTIVE partners qualify.
     var affRef = null;
-    try { affRef = resolveAffiliate(req.body.affiliateCode || req.body.referralCode || req.body.ref); } catch(e) {}
+    // Explicit code (typed) or ?ref= link ALWAYS wins. If neither was sent, fall back
+    // to the 30-day 9am_aff cookie set by the /r/:code short link — this credits the
+    // affiliate for late sign-ups WITHOUT the client ever showing a partner message.
+    var _affCode = req.body.affiliateCode || req.body.referralCode || req.body.ref;
+    if (!_affCode) {
+      try {
+        var _ck = String(req.headers.cookie || '').match(/(?:^|; )9am_aff=([^;]+)/);
+        if (_ck) _affCode = decodeURIComponent(_ck[1]);
+      } catch(e) {}
+    }
+    try { affRef = resolveAffiliate(_affCode); } catch(e) {}
     if (affRef && !partnerStatusActive(affRef)) affRef = null;
     var cfgTrial = partnerConfig();
     var trialDays = affRef ? (Number(cfgTrial[partnerTypeOf(affRef) === 'sales_partner' ? 'sales_partner_trial_days' : 'affiliate_trial_days']) || 14) : (Number(cfgTrial.standard_trial_days) || 7);

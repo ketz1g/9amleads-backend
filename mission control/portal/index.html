@@ -1346,10 +1346,12 @@ var pLimit = getPostcodeAreaLimit();
         // Free trial: remind the customer to click the verification email we just sent,
         // then take them to their dashboard (card setup happens there).
         localStorage.removeItem('payment_setup_done');
+        var _extNote = '';
+        try { if (d.customer && Number(d.customer.trial_days) > 7) _extNote = '<div style="margin-top:10px;padding:8px 10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;font-size:12px;color:#1e40af">🎁 Your extended ' + d.customer.trial_days + '-day free trial has been applied.</div>'; } catch(e) {}
         if (d.customer && d.customer.email_verified === 0) {
-          success.innerHTML = '<b>Account created!</b> We\'ve emailed a verification link to <b>' + email + '</b> — please click it (check spam too) to activate your account.<br/><br/><button onclick="resendVerify(\'' + email.replace(/'/g,'') + '\')" style="padding:8px 14px;border:none;border-radius:8px;background:#0ea5e9;color:#fff;font-size:12px;font-weight:700;cursor:pointer">Re-send verification email</button>';
+          success.innerHTML = '<b>Account created!</b> We\'ve emailed a verification link to <b>' + email + '</b> — please click it (check spam too) to activate your account.<br/><br/><button onclick="resendVerify(\'' + email.replace(/'/g,'') + '\')" style="padding:8px 14px;border:none;border-radius:8px;background:#0ea5e9;color:#fff;font-size:12px;font-weight:700;cursor:pointer">Re-send verification email</button>' + _extNote;
         } else {
-          success.innerHTML = 'Account created! Redirecting...';
+          success.innerHTML = 'Account created! Redirecting...' + _extNote;
         }
         button.innerHTML = '<i class="fas fa-check"></i> Redirecting...';
         setTimeout(function() { window.location.href = '/portal/dashboard.html?onboard=1'; }, 2000);
