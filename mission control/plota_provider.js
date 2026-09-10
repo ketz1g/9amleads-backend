@@ -111,34 +111,23 @@ async function collectFresh(config) {
   var now = new Date();
   var cutoff = new Date(now - freshnessHours * 3600000);
   var dateFrom = cutoff.toISOString().split('T')[0];
-  // The counties/areas to collect for. If none passed, fall back to the customer
-  // counties map used by the planning collector. (No more single-letter area codes
-  // - Plota rejects them with HTTP 400.)
-  var rawAreas = config.counties || config.areas || [];
-  var districts = [];
-  (Array.isArray(rawAreas) ? rawAreas : [rawAreas]).forEach(function(ar) {
-    var d = resolveDistricts(ar);
-    if (d.length) districts = districts.concat(d);
-  });
-  if (districts.length === 0) {
-    // No explicit areas -> collect a broad but district-level national sweep so a
-    // fresh customer's county is never starved. (Covers the main UK districts.)
-    districts = [];
-    Object.keys(COUNTY_DISTRICTS).forEach(function(c) { districts = districts.concat(COUNTY_DISTRICTS[c]); });
-    // de-dup
-    districts = districts.filter(function(v, i, s) { return s.indexOf(v) === i; });
-  }
-
+  // NATIONWIDE: Plota returns applications across ALL UK councils when no postcode
+  // is supplied. We page through with the cursor to pull the whole country. (The old
+  // district-by-district sweep only covered a handful of counties and starved
+  // everywhere else.) Delivery still filters to each customer's own areas.
+  var maxPages = config.maxPages || 40;
   var allApps = [];
-  for (var ari = 0; ari < districts.length; ari++) {
+  var cursor = null;
+  for (var pg = 0; pg < maxPages; pg++) {
     try {
-      var dataPage = await apiRequest('/v1/applications?postcode=' + districts[ari] + '&date_from=' + dateFrom + '&limit=50');
-      if (dataPage && dataPage.data && dataPage.data.length > 0) {
-        allApps = allApps.concat(dataPage.data);
-      }
-      // Gentle pacing (Plota rate limit + paid credits).
-      if (ari % 5 === 4) await new Promise(function(r) { setTimeout(r, 600); });
-    } catch(ae) { /* skip a district that errors */ }
+      var reqPath = '/v1/applications?date_from=' + dateFrom + '&limit=50' + (cursor ? '&cursor=' + encodeURIComponent(cursor) : '');
+      var dataPage = await apiRequest(reqPath);
+      if (!dataPage || !dataPage.data || dataPage.data.length === 0) break;
+      allApps = allApps.concat(dataPage.data);
+      cursor = dataPage.meta && dataPage.meta.next_cursor;
+      if (!cursor) break;
+      await new Promise(function(r) { setTimeout(r, 250); });
+    } catch(ae) { break; }
   }
 
   // Dedup by reference + council
@@ -185,7 +174,7 @@ async function collectFresh(config) {
     });
   }
 
-  console.log('[PLOTA] Total collected: ' + leads.length + ' applications (districts: ' + districts.length + ')');
+  console.log('[PLOTA] Total collected: ' + leads.length + ' applications (fetched: ' + allApps.length + ')');
   return { leads: leads, status: 'ok', message: leads.length + ' applications collected' };
 }
 
