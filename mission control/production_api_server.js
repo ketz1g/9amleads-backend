@@ -15545,7 +15545,7 @@ async function runDailyDeliveryReport() {
       }
     });
     // ---- 2) PER-CUSTOMER PREVIEW: check what each real customer would receive at 9am.
-    var rCusts = (rDb.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && !isLeadsPaused(c) && String(c.email || '').indexOf('test.') !== 0; });
+    var rCusts = (rDb.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && !isLeadsPaused(c) && String(c.email || '').indexOf('test.') !== 0 && !(String(c.plan) === 'free_trial' && c.trial_ends && new Date(c.trial_ends) < new Date()); });
     var rRows = [];
     var rShort = [];
     for (var ri = 0; ri < rCusts.length; ri++) {
