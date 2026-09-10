@@ -22,7 +22,7 @@ const CAMPAIGN_MAP = {
   'moving-packers':447, 'moving-skipwaste':448,
   'probate-solicitor':449, 'probate-estateagent':450, 'probate-funeraldirector':451, 'probate-financial':452, 'probate-willwriter':453,
   'nb-accountant':454, 'nb-webdesign':455, 'nb-marketing':456, 'nb-it':457, 'nb-insurance':458, 'nb-recruitment':459, 'nb-businesssupport':460,
-  'plan-builder':461, 'plan-roofing':462, 'plan-electrician':463, 'plan-plumber':464, 'plan-extensions':465, 'plan-architect':466, 'plan-landscaper':467, 'plan-developer':468,
+  'plan-builder':461, 'plan-roofing':462, 'plan-architect':466, 'plan-landscaper':467,
   'tend-construction':469, 'tend-cleaning':470, 'tend-security':471, 'tend-it':472, 'tend-facilities':473, 'tend-logistics':475, 'tend-healthcare':510
 };
 // readable plural for list naming (matches import_buyer_list.js naming)
@@ -31,7 +31,7 @@ const PLURAL = {
   'moving-packers':'Packing & Relocation Services', 'moving-skipwaste':'Skip & Waste Companies',
   'probate-solicitor':'Solicitors', 'probate-estateagent':'Estate Agents', 'probate-funeraldirector':'Funeral Directors', 'probate-financial':'Financial Advisers', 'probate-willwriter':'Will Writers',
   'nb-accountant':'Accountants & Bookkeepers', 'nb-webdesign':'Web Designers & Developers', 'nb-marketing':'Marketing & SEO Agencies', 'nb-it':'IT & Support Providers', 'nb-insurance':'Insurance Brokers', 'nb-recruitment':'Recruitment Agencies', 'nb-businesssupport':'Business Support & Consultancy Firms',
-  'plan-builder':'Builders & Contractors', 'plan-roofing':'Roofers', 'plan-electrician':'Electricians', 'plan-plumber':'Plumbers & Heating Engineers', 'plan-extensions':'Extension & Loft Specialists', 'plan-architect':'Architects', 'plan-landscaper':'Landscapers & Gardeners', 'plan-developer':'Property Developers',
+  'plan-builder':'Builders & Contractors', 'plan-roofing':'Roofers', 'plan-architect':'Architects', 'plan-landscaper':'Landscapers & Gardeners',
   'tend-construction':'Construction Contractors', 'tend-cleaning':'Cleaning Companies', 'tend-security':'Security Companies', 'tend-it':'IT & Technology Providers', 'tend-facilities':'Facilities Management Companies', 'tend-logistics':'Transport & Logistics Companies', 'tend-healthcare':'Healthcare & Social Care Providers'
 };
 const NOISE = /\b(courier|haulage|freight|trucking|parcel|same.?day\s?delivery|logistics|van hire|van\s*sales)\b/i;

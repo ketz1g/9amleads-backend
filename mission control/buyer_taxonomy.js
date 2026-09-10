@@ -395,23 +395,6 @@ const SUBTYPES = {
       '7 days free - no card'
     ]
   },
-  'plan-extensions': {
-    plural: 'extension &amp; loft specialists',    product:'planning', slug:'loft-conversions', alts:['extensions'], label:'Extension &amp; loft specialist', singular:'extension and loft specialist',
-    pains:[
-      'Every extension starts with a planning application - and whoever quotes first usually builds it',
-      'Being the second or third company the homeowner spoke to',
-      'No way to spot extensions starting in your area'
-    ],
-    hook:'New extension and loft planning applications in your areas, the day they appear - so you are first to quote.',
-    how:'We flag extension and loft applications near you each morning with the address, so you can visit and quote before competitors.',
-    feats:[
-      'Extension &amp; loft applications daily',
-      'Address so you can visit before calling',
-      'Your own exclusive allocation',
-      'Replace a wrong lead instantly',
-      '7 days free - no card'
-    ]
-  },
   'plan-architect': {
     plural: 'architects',    product:'planning', slug:'architects', label:'Architect', singular:'architect',
     pains:[
@@ -443,23 +426,6 @@ const SUBTYPES = {
       'Your chosen areas only',
       'Print &amp; Post letters from \u00a31.49',
       'Replace a wrong lead instantly',
-      '7 days free - no card'
-    ]
-  },
-  'plan-developer': {
-    plural: 'property developers',    product:'planning', slug:'property-developers', label:'Property developer', singular:'property developer',
-    pains:[
-      'The best sites are snapped up by developers who hear about planning activity first',
-      'Hours spent searching for development opportunities before they are gone',
-      'No reliable way to track what is being proposed where'
-    ],
-    hook:'New planning activity in your areas - so you spot development opportunities before they are gone.',
-    how:'We track planning activity and email you applications matched to your areas and project size, so you act early.',
-    feats:[
-      'New planning activity across your chosen areas',
-      'Filter by area and project size',
-      'Source links on every lead',
-      'Bulk packs available',
       '7 days free - no card'
     ]
   },
