@@ -5185,6 +5185,44 @@ app.get('/admin/direct-mail', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'publish', 'admin', 'direct-mail.html'));
 });
 
+// GET /api/signup/filter-supply — approximate current supply for a product + areas,
+// with per-option counts for planning/tenders, so signup can show how narrow a
+// selection is before the customer commits.
+app.get('/api/signup/filter-supply', (req, res) => {
+  try {
+    var product = String(req.query.product || 'planning');
+    if (!PRODUCT_LEAD_FILES[product]) return res.json({ success: false, error: 'unknown product' });
+    var areas = String(req.query.areas || '').split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+    var ukwide = areas.some(function(a){ return /all.?uk|uk.?wide|nationwide|whole.?uk/i.test(a); });
+    var pool = loadProductPool(product) || [];
+    var counts = {}, total = 0;
+    for (var i = 0; i < pool.length; i++) {
+      var l = pool[i];
+      var pcArea = extractPostcodeArea(l.postcode || l.address || l.fullAddress || l.deceasedAddress || '');
+      var matched = ukwide;
+      if (!matched && areas.length) {
+        var lc = String(l.county || '').toLowerCase().replace(/[\s-]+/g, '-');
+        matched = areas.some(function(a) {
+          var ak = String(a).toLowerCase().replace(/[\s-]+/g, '-');
+          if (lc && lc === ak) return true;
+          var m = COUNTY_POSTCODE_MAP[ak];
+          return m ? m.indexOf(pcArea) !== -1 : false;
+        });
+      }
+      if (!matched) continue;
+      total++;
+      if (product === 'planning') {
+        var pt = (String(l.applicationType || l.proposal || l.type || l.category || '') + ' ' + String(l.description || '')).toLowerCase();
+        Object.keys(PLANNING_APP_GROUPS).forEach(function(g){ if (planningAppTypeMatches(g, pt)) counts[g] = (counts[g] || 0) + 1; });
+      } else if (product === 'tenders') {
+        var tt = (String(l.title || '') + ' ' + String(l.description || '') + ' ' + String(l.cpvCode || '') + ' ' + String(l.procurementType || '')).toLowerCase();
+        Object.keys(TENDER_SECTORS).forEach(function(s){ if (tenderSectorMatches(s, tt)) counts[s] = (counts[s] || 0) + 1; });
+      }
+    }
+    res.json({ success: true, product: product, total: total, options: counts, note: 'Approximate current pool in your selected areas. Fresh supply is added daily.' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // SPA fallback - serve index.html for unknown routes (but not API routes)
 app.get(/^\/(?!api\/|admin\/).*$/, (req, res) => {
   const paths = [
@@ -5246,7 +5284,7 @@ app.get('/api/auth/signup-overlap', (req, res) => {
 // POST /api/auth/signup
 app.post('/api/auth/signup', async (req, res) => {
   try {
-    const { company, name, email, phone, password, product, products, plan, targetAreas, leadFilters, bizField2, bizField3, source, marketingConsent, crmWebhookUrl, movingType, acceptTerms } = req.body;
+    const { company, name, email, phone, password, product, products, plan, targetAreas, leadFilters, bizField2, bizField3, source, marketingConsent, crmWebhookUrl, movingType, acceptTerms, strictFilters } = req.body;
     // Default coverage EARLY so the postcode-area validation below ALWAYS runs.
     // (Previously the validation was gated on `coverage === 'postcode'` BEFORE this
     // default existed, so a signup that omitted `coverage` skipped the "exactly 5
@@ -5422,11 +5460,20 @@ app.post('/api/auth/signup', async (req, res) => {
     }
 
     var signupIp = req.ip || req.connection?.remoteAddress || '';
+    // Persist the STRICT-mode choice inside the stored filters JSON (so it works even
+    // when the customer chose no specific filters).
+    var leadFiltersToStore = leadFilters || bizField2 || '';
+    try {
+      var _lfStore = JSON.parse(leadFiltersToStore || '{}');
+      if (typeof _lfStore !== 'object' || _lfStore === null) _lfStore = {};
+      _lfStore._strict = !!strictFilters;
+      leadFiltersToStore = JSON.stringify(_lfStore);
+    } catch(e) { leadFiltersToStore = JSON.stringify({ _strict: !!strictFilters }); }
     db.prepare(`INSERT INTO customers (id, email, company, contact_name, phone, password_hash, product, lead_type, business_type, target_areas, coverage, biz_field2, biz_field3, source, plan, trial_ends, marketing_consent, created_at, extra_postcodes, crm_webhook_url, campaign_sent, signup_ip, affiliate_id, affiliate_code, affiliate_applied_at, affiliate_trial_days, affiliate_payout_status, affiliate_payout_due)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
       id, email.toLowerCase(), company, name || '', phone || '', password_hash,
       product, productInfo.lead_type, productInfo.business_type,
-      JSON.stringify(areas || []), coverage || 'postcode', leadFilters || bizField2 || '', bizField3 || JSON.stringify(products && Array.isArray(products) ? products : [product]),
+      JSON.stringify(areas || []), coverage || 'postcode', leadFiltersToStore, bizField3 || JSON.stringify(products && Array.isArray(products) ? products : [product]),
       source || 'direct', plan || 'free_trial', plan === 'free_trial' ? trial_ends : null, marketingConsent ? 1 : 0,
       new Date().toISOString(), '0', crmWebhookUrl || '', '[]', signupIp,
       affRef ? affRef.id : null, affRef ? affRef.code : null, affiliateAppliedAt, affRef ? trialDays : null,
@@ -10323,7 +10370,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
   try { var f2P = JSON.parse(cust.biz_field2 || '{}'); var fPP = f2P.moving || f2P; maxBedsF = parseInt(fPP['f-maxbeds'] || fPP['f-bed-max'] || fPP.maxBedrooms) || 99; } catch(e) { maxBedsF = 99; }
   // CUSTOMER FILTERS (same parsing as the 9am delivery) so the preview applies the
   // same planning/newbusiness/tenders/moving filters the customer chose at signup.
-  var custLeadFilters = { minBedrooms: 0, maxBedrooms: 99, maxPrice: 0, propertyType: '', appTypes: [], industries: [], minContractVal: 0, keywords: '' };
+  var custLeadFilters = { minBedrooms: 0, maxBedrooms: 99, maxPrice: 0, propertyType: '', appTypes: [], industries: [], minContractVal: 0, keywords: '', sectors: [], strict: false };
   try { var _lfP = JSON.parse(cust.biz_field2 || '{}'); var _lfFlat = _lfP[cust.product] || _lfP;
     custLeadFilters.maxBedrooms = parseInt(_lfFlat['f-maxbeds'] || _lfFlat['f-bed-max'] || _lfFlat.maxBedrooms) || 99;
     custLeadFilters.maxPrice = parseInt(_lfFlat['f-maxprice'] || _lfFlat.maxPrice) || 0;
@@ -10332,6 +10379,8 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
     custLeadFilters.industries = (Array.isArray(_lfFlat['f-industries']) ? _lfFlat['f-industries'] : (_lfFlat['f-industries'] ? [_lfFlat['f-industries']] : []));
     custLeadFilters.minContractVal = parseInt(_lfFlat['f-min-val'] || _lfFlat.minContractValue) || 0;
     custLeadFilters.keywords = String(_lfFlat['f-keywords'] || _lfFlat.keywords || '').toLowerCase();
+    custLeadFilters.sectors = (Array.isArray(_lfFlat['f-sectors']) ? _lfFlat['f-sectors'] : (_lfFlat['f-sectors'] ? [_lfFlat['f-sectors']] : []));
+    custLeadFilters.strict = !!(_lfFlat._strict || _lfP._strict);
   } catch(e) {}
   var interleaved = interleavePoolByAreas(pool, areas);
   // Preview copy of leadPassesFilters (mirrors the delivery's filter application).
@@ -10355,11 +10404,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
       }
       if (cust.product === 'planning' && custLeadFilters.appTypes && custLeadFilters.appTypes.length) {
         var at = String(ld2.applicationType || ld2.proposal || ld2.type || ld2.category || '').toLowerCase();
-        var appOk = custLeadFilters.appTypes.some(function(t) {
-          var tt = String(t || '').toLowerCase();
-          if (!tt) return true;
-          return at.indexOf(tt) !== -1 || tt.indexOf(at) !== -1;
-        });
+        var appOk = custLeadFilters.appTypes.some(function(t) { return planningAppTypeMatches(t, at); });
         if (!appOk) return false;
       }
       if (cust.product === 'newbusiness' && custLeadFilters.industries && custLeadFilters.industries.length) {
@@ -10383,10 +10428,12 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
       if (cust.product === 'tenders') {
         var cv = parseFloat(String(ld2.contractValue || ld2.contractValueLabel || '0').replace(/[^0-9.]/g, '')) || 0;
         if (custLeadFilters.minContractVal > 0 && cv > 0 && cv < custLeadFilters.minContractVal) return false;
-        if (custLeadFilters.keywords) {
-          var kwText = (String(ld2.title || '') + ' ' + String(ld2.description || '') + ' ' + String(ld2.cpvCode || '') + ' ' + String(ld2.procurementType || '')).toLowerCase();
+        var tx = (String(ld2.title || '') + ' ' + String(ld2.description || '') + ' ' + String(ld2.cpvCode || '') + ' ' + String(ld2.procurementType || '')).toLowerCase();
+        if (custLeadFilters.sectors && custLeadFilters.sectors.length) {
+          if (!custLeadFilters.sectors.some(function(s) { return tenderSectorMatches(s, tx); })) return false;
+        } else if (custLeadFilters.keywords) {
           var kwList = custLeadFilters.keywords.split(',').map(function(k){ return k.trim(); }).filter(Boolean);
-          if (kwList.length && !kwList.some(function(k){ return kwText.indexOf(k.toLowerCase()) !== -1; })) return false;
+          if (kwList.length && !kwList.some(function(k){ return tx.indexOf(k.toLowerCase()) !== -1; })) return false;
         }
       }
       return true;
@@ -10407,7 +10454,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
   var previewHasOptional = (cust.product === 'moving' && custLeadFilters.maxBedrooms < 99) ||
     (cust.product === 'planning' && custLeadFilters.appTypes && custLeadFilters.appTypes.length > 0) ||
     (cust.product === 'newbusiness' && custLeadFilters.industries && custLeadFilters.industries.length > 0) ||
-    (cust.product === 'tenders' && ((custLeadFilters.minContractVal > 0) || !!custLeadFilters.keywords));
+    (cust.product === 'tenders' && (((custLeadFilters.sectors && custLeadFilters.sectors.length) > 0) || (custLeadFilters.minContractVal > 0) || !!custLeadFilters.keywords));
   var candCap = Math.max(limit * 4, 30);
   for (var i = 0; i < interleaved.length && candidates.length < candCap; i++) {
     var l = interleaved[i];
@@ -10474,7 +10521,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
     // FILTER = PRIORITY, NEVER UNDER-DELIVER (preview mirror): once the strict
     // in-area tiers can't fill the promised count, relax optional signup filters so
     // the preview matches what the delivery's guaranteed-fill will actually send.
-    if (previewHasOptional) { previewFilterRelax = true; }
+    if (previewHasOptional && !custLeadFilters.strict) { previewFilterRelax = true; }
     var pcSeen2 = {};
     candidates.forEach(function(c) { var k = String(c.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); if (k) pcSeen2[k] = 1; });
     var fallbackPool = interleaved.slice().filter(function(c2) { return isFallbackLeadAcceptable(c2.postcode || c2.address || c2.fullAddress || '', areas); }).sort(function(a, b) {
@@ -10918,6 +10965,39 @@ function cleanUkPostcode(raw) {
 function isLeadsPaused(c) {
   var v = c && c.leads_paused;
   return v === true || v === 1 || v === '1' || v === 'true' || v === 'TRUE' || v === 'yes';
+}
+// PLANNING application-type GROUPS (signup now offers 4 broad groups instead of 9
+// narrow types). Legacy exact types (Householder, Full Planning...) still match too.
+var PLANNING_APP_GROUPS = {
+  'residential': ['householder', 'full planning', 'outline', 'lawful', 'permitted', 'prior approval', 'residential', 'dwelling', 'extension', 'loft', 'conversion', 'annex', 'garage', 'new home', 'two storey', 'single storey'],
+  'commercial & change of use': ['commercial', 'change of use', 'office', 'retail', 'shop', 'restaurant', 'cafe', 'industrial', 'warehouse', 'leisure', 'hotel', 'mixed use', 'a1', 'a2', 'a3', 'a4', 'a5', 'b1', 'b2', 'b8', 'sui generis'],
+  'listed buildings & heritage': ['listed', 'heritage', 'conservation', 'historic', 'grade ii', 'grade i'],
+  'adverts, trees & minor works': ['advert', 'sign', 'signage', 'tree', 'tpo', 'telecom', 'solar', 'minor', 'frontage', 'shopfront', 'fence', 'wall']
+};
+function planningAppTypeMatches(selected, leadText) {
+  var sel = String(selected || '').toLowerCase().trim();
+  var at = String(leadText || '').toLowerCase();
+  if (!sel) return true;
+  if (PLANNING_APP_GROUPS[sel]) return PLANNING_APP_GROUPS[sel].some(function(k) { return at.indexOf(k) !== -1; });
+  return at.indexOf(sel) !== -1 || sel.indexOf(at) !== -1;
+}
+// TENDERS sector groups (replaces free-text keywords with a curated, broader list).
+var TENDER_SECTORS = {
+  'construction': ['construction', 'build', 'refurb', 'works', 'civils', 'roofing', 'groundworks', 'mechanical', 'electrical', 'demolition', 'fit-out', 'scaffold'],
+  'it & digital': ['it ', 'software', 'digital', 'cloud', 'cyber', 'data', 'system', 'computer', 'technology', 'network', 'saas', 'ict'],
+  'facilities & cleaning': ['facilities', 'cleaning', 'janitorial', 'grounds', 'maintenance', 'waste', 'security', ' fm '],
+  'healthcare & social care': ['health', 'nhs', 'care', 'medical', 'clinical', 'social care', 'pharmacy', 'dental'],
+  'transport & logistics': ['transport', 'logistics', 'fleet', 'haulage', 'distribution', 'travel', 'vehicle', 'bus ', 'courier'],
+  'professional services': ['professional', 'consultancy', 'consulting', 'legal', 'financial', 'audit', 'account', ' hr ', 'recruitment'],
+  'training & education': ['training', 'education', 'school', 'learning', 'apprentice', 'tuition', 'college', 'university'],
+  'environmental & energy': ['environment', 'recycl', 'sustainab', 'energy', 'solar', 'carbon', 'utilit', 'arboricult', 'landscap']
+};
+function tenderSectorMatches(selected, leadText) {
+  var sel = String(selected || '').toLowerCase().trim();
+  var at = String(leadText || '').toLowerCase();
+  if (!sel) return true;
+  if (TENDER_SECTORS[sel]) return TENDER_SECTORS[sel].some(function(k) { return at.indexOf(k) !== -1; });
+  return at.indexOf(sel) !== -1;
 }
 // Robust property identity key: street name + house number + postcode. Same physical
 // property scraped by different providers/runs often has different full-address
@@ -19880,6 +19960,10 @@ _deliverDiag[cust.email].products = products;
         custLeadFilters.industries = (Array.isArray(lfFlat['f-industries']) ? lfFlat['f-industries'] : (lfFlat['f-industries'] ? [lfFlat['f-industries']] : []));
         custLeadFilters.minContractVal = parseInt(lfFlat['f-min-val'] || lfFlat.minContractValue) || 0;
         custLeadFilters.keywords = String(lfFlat['f-keywords'] || lfFlat.keywords || '').toLowerCase();
+        custLeadFilters.sectors = (Array.isArray(lfFlat['f-sectors']) ? lfFlat['f-sectors'] : (lfFlat['f-sectors'] ? [lfFlat['f-sectors']] : []));
+        // STRICT MODE: customer opted out of automatic widening — filters stay hard,
+        // even if that means fewer than the promised count (their explicit choice).
+        custLeadFilters.strict = !!(lfFlat._strict || lf2._strict);
       } catch(e) {}
       // FILTER = PRIORITY, NEVER UNDER-DELIVER: a customer's optional signup filters
       // (planning app-type, tenders keywords/min-value, newbusiness industry, moving
@@ -19894,7 +19978,7 @@ _deliverDiag[cust.email].products = products;
       var hasOptionalFilter = (cust.product === 'moving' && custLeadFilters.maxBedrooms < 99) ||
         (cust.product === 'planning' && custLeadFilters.appTypes && custLeadFilters.appTypes.length > 0) ||
         (cust.product === 'newbusiness' && custLeadFilters.industries && custLeadFilters.industries.length > 0) ||
-        (cust.product === 'tenders' && ((custLeadFilters.minContractVal > 0) || !!custLeadFilters.keywords));
+        (cust.product === 'tenders' && (((custLeadFilters.sectors && custLeadFilters.sectors.length) > 0) || (custLeadFilters.minContractVal > 0) || !!custLeadFilters.keywords));
       function leadPassesFilters(ld2) {
         try {
           // RELAXED FILL: optional signup filters are skipped once the guaranteed-fill
@@ -19921,16 +20005,11 @@ _deliverDiag[cust.email].products = products;
             return true;
           }
           if (cust.product === 'planning' && custLeadFilters.appTypes && custLeadFilters.appTypes.length) {
-            // PLANNING: customer chose specific application types (Householder, Full
-            // Planning, Listed Building, etc.). Match against the lead's applicationType
-            // / proposal text. If the lead has no type we can read, keep it (don't
-            // under-deliver); only reject when a type is clearly different.
+            // PLANNING: customer chose application-type GROUPS (Residential, Commercial &
+            // Change of Use, Listed & Heritage, Adverts/Trees/Minor) or a legacy exact
+            // type. If the lead has no type we can read, keep it (don't under-deliver).
             var at = String(ld2.applicationType || ld2.proposal || ld2.type || ld2.category || '').toLowerCase();
-            var appOk = custLeadFilters.appTypes.some(function(t) {
-              var tt = String(t || '').toLowerCase();
-              if (!tt) return true;
-              return at.indexOf(tt) !== -1 || tt.indexOf(at) !== -1 || (tt === 'full planning' && /full planning/i.test(at)) || (tt === 'householder' && /householder/i.test(at)) || (tt === 'listed building' && /listed building/i.test(at)) || (tt === 'change of use' && /change of use/i.test(at));
-            });
+            var appOk = custLeadFilters.appTypes.some(function(t) { return planningAppTypeMatches(t, at); });
             if (!appOk) return false;
           }
           if (cust.product === 'newbusiness' && custLeadFilters.industries && custLeadFilters.industries.length) {
@@ -19955,13 +20034,16 @@ _deliverDiag[cust.email].products = products;
             if (!indOk) return false;
           }
           if (cust.product === 'tenders') {
-            // TENDERS: min contract value + keyword filter.
+            // TENDERS: min contract value + curated SECTOR match (legacy free-text
+            // keywords still honoured for older accounts).
             var cv = parseFloat(String(ld2.contractValue || ld2.contractValueLabel || '0').replace(/[^0-9.]/g, '')) || 0;
             if (custLeadFilters.minContractVal > 0 && cv > 0 && cv < custLeadFilters.minContractVal) return false;
-            if (custLeadFilters.keywords) {
-              var kwText = (String(ld2.title || '') + ' ' + String(ld2.description || '') + ' ' + String(ld2.cpvCode || '') + ' ' + String(ld2.procurementType || '')).toLowerCase();
+            var tx = (String(ld2.title || '') + ' ' + String(ld2.description || '') + ' ' + String(ld2.cpvCode || '') + ' ' + String(ld2.procurementType || '')).toLowerCase();
+            if (custLeadFilters.sectors && custLeadFilters.sectors.length) {
+              if (!custLeadFilters.sectors.some(function(s) { return tenderSectorMatches(s, tx); })) return false;
+            } else if (custLeadFilters.keywords) {
               var kwList = custLeadFilters.keywords.split(',').map(function(k){ return k.trim(); }).filter(Boolean);
-              if (kwList.length && !kwList.some(function(k){ return kwText.indexOf(k.toLowerCase()) !== -1; })) return false;
+              if (kwList.length && !kwList.some(function(k){ return tx.indexOf(k.toLowerCase()) !== -1; })) return false;
             }
           }
           return true;
@@ -20661,7 +20743,7 @@ _deliverDiag[cust.email].products = products;
         // FILTER = PRIORITY, NEVER UNDER-DELIVER: relax optional signup filters for
         // this fill so a filtered customer still gets their full promised count when
         // filter-matching supply is exhausted (area/door/freshness still enforced).
-        if (hasOptionalFilter) { filterRelaxForFill = true; console.log('[DELIVERY] ' + cust.email + ': relaxing optional filters for guaranteed fill (short after strict tiers)'); }
+        if (hasOptionalFilter && !custLeadFilters.strict) { filterRelaxForFill = true; console.log('[DELIVERY] ' + cust.email + ': relaxing optional filters for guaranteed fill (short after strict tiers)'); }
         if (!_deliverDiag[cust.email]) _deliverDiag[cust.email] = { global: 0, poolfile: 0, poolfile_total: 0, areas: custAreas.slice(0,5) };
         _deliverDiag[cust.email].poolfile_total++;
         _deliverDiag[cust.email].final_pass = 'has=' + custLeads.length + ' need=' + totalNeeded + ' areas=' + JSON.stringify(custAreas) + ' poolfile=' + (PRODUCT_LEAD_FILES[products[0]] ? PRODUCT_LEAD_FILES[products[0]].file : '?');

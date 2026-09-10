@@ -900,11 +900,11 @@ function renderFilters(product) {
       { id:'f-maxbeds', label:'Max Bedrooms', type:'select', opts:['','1','2','3','4','5','6','7','8','9','10'], labels:['Any','1','2','3','4','5','6','7','8','9','10'] }
     ],
     planning: [
-      { id:'f-app-type', label:'Application Types', type:'multicheck', opts:['Householder','Full Planning','Outline Planning','Listed Building','Change of Use','Lawful Development','Permitted Development','Prior Approval'] }
+      { id:'f-app-type', label:'Application Types (pick 2+ for your full daily guarantee)', type:'multicheck', opts:['Residential','Commercial & change of use','Listed buildings & heritage','Adverts, trees & minor works'] }
     ],
     tenders: [
       { id:'f-min-val', label:'Min Contract Value', type:'select', opts:['','10000','50000','100000','250000','500000','1000000'], labels:['Any','£10k','£50k','£100k','£250k','£500k','£1M'] },
-      { id:'f-keywords', label:'Keywords', type:'text', placeholder:'construction, IT, healthcare...' }
+      { id:'f-sectors', label:'Sectors (pick 2+ for your full daily guarantee)', type:'multicheck', opts:['Construction','IT & digital','Facilities & cleaning','Healthcare & social care','Transport & logistics','Professional services','Training & education','Environmental & energy'] }
     ],
     newbusiness: [
       { id:'f-keywords', label:'Sector / Keywords', type:'text', placeholder:'construction, cleaning, tech...' }
@@ -931,12 +931,18 @@ function renderFilters(product) {
   html += '</div>';
   if (product === 'moving') html += '<p style="font-size:11px;color:var(--text2);margin-top:6px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:8px 10px;line-height:1.6">You\'ll receive leads from <strong>1 bed up to your chosen maximum</strong> (choose Any for all home sizes). Daily volumes vary due to limited listing supply and lead exclusivity.</p>';
   html += '<p style="font-size:11px;color:var(--muted);margin-top:6px">Filters apply to all new leads. Changes take effect on next delivery.</p>';
+  html += '<div style="margin-top:10px;padding:10px 12px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.18);border-radius:8px">'
+    + '<div style="font-size:11px;color:var(--text2);line-height:1.6">Filters are <b>preferences</b>. If your chosen categories are quiet we top you up from related categories so you still get your full daily count.</div>'
+    + '<label style="display:flex;gap:6px;align-items:flex-start;margin-top:8px;font-size:11px;color:var(--text2);cursor:pointer"><input type="checkbox" id="f-strict" onchange="saveFilters()" style="margin-top:2px"> <span><b>Strict mode</b> &mdash; only send my chosen filters. I understand I may receive fewer than my daily allowance on quiet days.</span></label>'
+    + '</div>';
   container.innerHTML = html;
   // Load saved values
-  apiCall('GET', '/api/settings/lead-filters', null, function(err, d) {
+    apiCall('GET', '/api/settings/lead-filters', null, function(err, d) {
     if (!d || !d.leadFilters) return;
     var saved = {};
     try { saved = JSON.parse(d.leadFilters); } catch(e) {}
+    var strictEl = document.getElementById('f-strict');
+    if (strictEl) strictEl.checked = !!saved._strict;
     fields.forEach(function(f){
       var el = document.getElementById(f.id);
       if (!el) return;
@@ -961,6 +967,7 @@ function saveFilters() {
   if (!container) return;
   var f = {};
   container.querySelectorAll('input, select').forEach(function(el){
+    if (el.id === 'f-strict') { f._strict = !!el.checked; return; }
     if (el.type === 'checkbox') {
       if (el.checked) {
         f[el.className.replace('-cb','')] = f[el.className.replace('-cb','')] || [];

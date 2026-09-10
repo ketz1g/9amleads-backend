@@ -516,6 +516,12 @@ function updateMovingTypeLabel() {
 
 <div id="s-filters-container"></div>
 
+<div id="s-filter-help" style="display:none;margin-top:8px;padding:10px 12px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.18);border-radius:8px">
+  <div style="font-size:10.5px;color:#8890a8;line-height:1.65">Filters are <b style="color:#cbd5e1">preferences</b>. If your chosen categories are quiet on a given day we top you up from related categories, so you still receive your full daily count.</div>
+  <label style="display:flex;align-items:flex-start;gap:6px;margin-top:8px;font-size:10.5px;color:#8890a8;line-height:1.55;cursor:pointer"><input type="checkbox" id="s-strict-filters" style="margin-top:2px;accent-color:#0ea5e9"> <span><b style="color:#cbd5e1">Strict mode</b> &mdash; only send my chosen filters. I understand I may receive fewer than my daily allowance on quiet days.</span></label>
+  <div id="s-filter-supply" style="font-size:10.5px;color:#38bdf8;margin-top:8px;display:none"></div>
+</div>
+
 <div class="crm-b">
 <div class="crm-t">🔌 CRM Integration <span class="tag-g">Free</span></div>
 <div class="crm-d">Paste a webhook URL and leads arrive in your CRM at 9am.</div>
@@ -722,6 +728,7 @@ function renderSignupPostcodes() {
   applyAllUKState();
   updateCompetitionNote();
   updateTenderCompetition();
+  updateFilterSupply();
 }
 
 // Honest lead-sharing disclosure: shows the customer how many other businesses
@@ -761,8 +768,8 @@ var filterDefs = {
   moving: [{ id:'f-bed-min', label:'Min Bedrooms', type:'select', opts:['Any','1','2','3','4','5','6','7','8','9','10+'] }, { id:'f-bed-max', label:'Max Bedrooms', type:'select', opts:['Any','1','2','3','4','5','6','7','8','9','10+'] }, { id:'f-prop-type', label:'Property Type', type:'select', opts:['Any','House','Flat','Bungalow','Maisonette','Townhouse'] }, { id:'f-max-price', label:'Max Property Value', type:'select', opts:['Any','£100k','£200k','£350k','£500k','£750k','£1M','£2M','£3M','£5M','£10M'] } ],
   probate: [],
   newbusiness: [{ id:'f-industries', label:'Industries', type:'checkboxes', opts:['Tech & Software','Construction','Retail','Hospitality','Healthcare','Professional Services','Financial','Creative'] }],
-  planning: [{ id:'f-app-type', label:'Application Types', type:'checkboxes', opts:['Householder','Full Planning','Outline Planning','Listed Building','Change of Use','Lawful Development','Permitted Development','Prior Approval','Advertisement Consent'] }],
-  tenders: [{ id:'f-min-val', label:'Min Contract Value', type:'select', opts:['Any','£10k','£50k','£100k','£250k','£500k','£1M','£2M','£5M','£10M'] }, { id:'f-keywords', label:'Keywords', type:'text', placeholder:'construction, IT, healthcare...' }]
+  planning: [{ id:'f-app-type', label:'Application Types (pick 2+ for your full daily guarantee)', type:'checkboxes', opts:['Residential','Commercial & change of use','Listed buildings & heritage','Adverts, trees & minor works'] }],
+  tenders: [{ id:'f-min-val', label:'Min Contract Value', type:'select', opts:['Any','£10k','£50k','£100k','£250k','£500k','£1M','£2M','£5M','£10M'] }, { id:'f-sectors', label:'Sectors (pick 2+ for your full daily guarantee)', type:'checkboxes', opts:['Construction','IT & digital','Facilities & cleaning','Healthcare & social care','Transport & logistics','Professional services','Training & education','Environmental & energy'] }]
 };
 var filterNames = { moving: 'Moving', probate: 'Probate', newbusiness: 'New Business', planning: 'Planning', tenders: 'Tenders' };
 var filterColors = { moving:'#ff6b35', probate:'#a855f7', newbusiness:'#06b6d4', planning:'#10b981', tenders:'#6366f1' };
@@ -794,6 +801,42 @@ function renderSignupFilters() {
     html += '</div>';
   }
   container.innerHTML = html;
+  var _help = document.getElementById('s-filter-help');
+  if (_help) _help.style.display = html ? 'block' : 'none';
+  updateFilterSupply();
+}
+
+// Approximate live supply for the selected product + areas, plus a nudge when a
+// filter selection is very narrow. Never blocks signup — guidance only.
+var _filterSupplyTimer = null;
+function updateFilterSupply() {
+  var el = document.getElementById('s-filter-supply');
+  if (!el) return;
+  var types = getSelectedLeadTypes();
+  var prod = types.indexOf('planning') !== -1 ? 'planning' : (types.indexOf('tenders') !== -1 ? 'tenders' : null);
+  if (!prod) { el.style.display = 'none'; return; }
+  var areas = signupPostcodes.concat(specCounties).filter(function(a){ return !/all.?uk|uk.?wide|nationwide|whole.?uk/i.test(String(a)); });
+  var allUk = signupPostcodes.some(function(a){ return /all.?uk|uk.?wide|nationwide|whole.?uk/i.test(String(a)); });
+  if (!areas.length && !allUk) { el.style.display = 'none'; return; }
+  clearTimeout(_filterSupplyTimer);
+  _filterSupplyTimer = setTimeout(function() {
+    var q = new URLSearchParams();
+    q.set('product', prod);
+    q.set('areas', allUk ? 'all-uk' : areas.join(','));
+    fetch(API + '/api/signup/filter-supply?' + q.toString())
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if (!d || !d.success) { el.style.display = 'none'; return; }
+        var sel = getFilters()[prod] || {};
+        var chosen = prod === 'planning' ? (sel['f-app-type'] || []) : (sel['f-sectors'] || []);
+        var msg = 'In your areas right now: <b>' + d.total + '</b> ' + prod + ' leads available.';
+        if (chosen.length === 1) msg += ' <span style="color:#fbbf24">You picked just 1 category — we recommend 2+ so we can keep your full daily count.</span>';
+        else if (chosen.length >= 2) msg += ' Your selection matches well.';
+        el.innerHTML = msg;
+        el.style.display = 'block';
+      })
+      .catch(function(){ el.style.display = 'none'; });
+  }, 350);
 }
 
 // ===== SIGNUP FILTER COLLECTION =====
@@ -820,6 +863,8 @@ function getFilters() {
     }
     if (Object.keys(pf).length > 0) allFilters[p] = pf;
   }
+  var strictEl = document.getElementById('s-strict-filters');
+  if (Object.keys(allFilters).length > 0) allFilters._strict = !!(strictEl && strictEl.checked);
   return allFilters;
 }
 
@@ -1206,6 +1251,20 @@ function doSignup() {
     document.getElementById('signup-error').style.display = 'block'; button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false; return;
   }
 
+  // SOFT MINIMUM: if a customer narrows a filterable product to a single category,
+  // ask them to pick 2+ (or leave blank for Any) so the daily guarantee holds.
+  var _signupFilters = getFilters();
+  var _planningPicks = (_signupFilters.planning && _signupFilters.planning['f-app-type']) || [];
+  if (products.indexOf('planning') !== -1 && _planningPicks.length === 1) {
+    document.getElementById('signup-error').textContent = 'Please pick at least 2 planning application types (or leave them all unticked for "Any"). A single category is often too quiet to guarantee your daily leads.';
+    document.getElementById('signup-error').style.display = 'block'; button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false; return;
+  }
+  var _tenderPicks = (_signupFilters.tenders && _signupFilters.tenders['f-sectors']) || [];
+  if (products.indexOf('tenders') !== -1 && _tenderPicks.length === 1) {
+    document.getElementById('signup-error').textContent = 'Please pick at least 2 tender sectors (or leave them all unticked for "Any"). A single sector is often too quiet to guarantee your daily leads.';
+    document.getElementById('signup-error').style.display = 'block'; button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false; return;
+  }
+
   var product = products[0];
   var targetAreas = signupPostcodes;
   // For county/region coverage, get the selected county/region instead of postcodes.
@@ -1271,7 +1330,7 @@ var pLimit = getPostcodeAreaLimit();
   button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating account...'; button.disabled = true;
   fetch(API + '/api/auth/signup', {
     method:'POST', headers:{ 'Content-Type':'application/json' },
-    body:JSON.stringify({ company:company, name:name, email:email, phone:phone, password:password, product:product, products:products, plan:plan, coverage:selectedCoverage, targetAreas:targetAreas, source:'web', analytics_id:getAid(), acceptTerms:document.getElementById('s-terms').checked, marketingConsent:document.getElementById('s-consent').checked, crmWebhookUrl:document.getElementById('s-crm').value.trim(), leadFilters:JSON.stringify(getFilters()), movingType:(document.querySelector('#s-moving-type input[type=radio]:checked')?.value || 'both'), affiliateCode:affiliateCode })
+    body:JSON.stringify({ company:company, name:name, email:email, phone:phone, password:password, product:product, products:products, plan:plan, coverage:selectedCoverage, targetAreas:targetAreas, source:'web', analytics_id:getAid(), acceptTerms:document.getElementById('s-terms').checked, marketingConsent:document.getElementById('s-consent').checked, crmWebhookUrl:document.getElementById('s-crm').value.trim(), leadFilters:JSON.stringify(getFilters()), strictFilters:!!(document.getElementById('s-strict-filters') && document.getElementById('s-strict-filters').checked), movingType:(document.querySelector('#s-moving-type input[type=radio]:checked')?.value || 'both'), affiliateCode:affiliateCode })
   }).then(function(r) { return r.json(); }).then(function(d) {
     if (d.token) {
       localStorage.setItem('mld_portal_session', JSON.stringify({ token:d.token, clientId:d.customer?.id || email, name:d.customer?.name || name, plan:plan, email:email, product:product, products:products }));
