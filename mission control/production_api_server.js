@@ -11000,10 +11000,11 @@ function isLeadsPaused(c) {
 // PLANNING application-type GROUPS (signup now offers 4 broad groups instead of 9
 // narrow types). Legacy exact types (Householder, Full Planning...) still match too.
 var PLANNING_APP_GROUPS = {
-  'residential': ['householder', 'full planning', 'outline', 'lawful', 'permitted', 'prior approval', 'residential', 'dwelling', 'extension', 'loft', 'conversion', 'annex', 'garage', 'new home', 'two storey', 'single storey'],
-  'commercial & change of use': ['commercial', 'change of use', 'office', 'retail', 'shop', 'restaurant', 'cafe', 'industrial', 'warehouse', 'leisure', 'hotel', 'mixed use', 'a1', 'a2', 'a3', 'a4', 'a5', 'b1', 'b2', 'b8', 'sui generis'],
+  'full planning & new builds': ['full planning', 'full application', 'full permission', 'full', 'outline', 'new dwelling', 'new build', 'new home', 'residential', 'dwelling', 'permitted', 'prior approval', 'lawful'],
+  'extensions & alterations': ['extension', 'extensions', 'alteration', 'alterations', 'householder', 'loft', 'conversion', 'garage', 'dormer', 'two storey', 'single storey', 'annex', 'storey'],
   'listed buildings & heritage': ['listed', 'heritage', 'conservation', 'historic', 'grade ii', 'grade i'],
-  'adverts, trees & minor works': ['advert', 'sign', 'signage', 'tree', 'tpo', 'telecom', 'solar', 'minor', 'frontage', 'shopfront', 'fence', 'wall']
+  'trees & landscaping': ['tree', 'trees', 'tpo', 'landscap', 'hedge', 'garden', 'felling'],
+  'change of use & commercial': ['change of use', 'commercial', 'office', 'retail', 'shop', 'restaurant', 'cafe', 'industrial', 'warehouse', 'leisure', 'hotel', 'mixed use', 'a1', 'a2', 'a3', 'a4', 'a5', 'b1', 'b2', 'b8', 'sui generis', 'advert', 'sign', 'signage']
 };
 function planningAppTypeMatches(selected, leadText) {
   var sel = String(selected || '').toLowerCase().trim();
