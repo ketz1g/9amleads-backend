@@ -518,7 +518,6 @@ function updateMovingTypeLabel() {
 
 <div id="s-filter-help" style="display:none;margin-top:8px;padding:10px 12px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.18);border-radius:8px">
   <div style="font-size:10.5px;color:#8890a8;line-height:1.65">Filters are <b style="color:#cbd5e1">preferences</b>. If your chosen categories are quiet on a given day we top you up from related categories, so you still receive your full daily count.</div>
-  <label style="display:flex;align-items:flex-start;gap:6px;margin-top:8px;font-size:10.5px;color:#8890a8;line-height:1.55;cursor:pointer"><input type="checkbox" id="s-strict-filters" style="margin-top:2px;accent-color:#0ea5e9"> <span><b style="color:#cbd5e1">Strict mode</b> &mdash; only send my chosen filters. I understand that on quiet days I may receive <b style="color:#cbd5e1">fewer leads than my daily allowance, or none at all</b>. You can switch this off anytime.</span></label>
   <div id="s-filter-supply" style="font-size:10.5px;color:#38bdf8;margin-top:8px;display:none"></div>
 </div>
 
@@ -768,8 +767,8 @@ var filterDefs = {
   moving: [{ id:'f-bed-min', label:'Min Bedrooms', type:'select', opts:['Any','1','2','3','4','5','6','7','8','9','10+'] }, { id:'f-bed-max', label:'Max Bedrooms', type:'select', opts:['Any','1','2','3','4','5','6','7','8','9','10+'] }, { id:'f-prop-type', label:'Property Type', type:'select', opts:['Any','House','Flat','Bungalow','Maisonette','Townhouse'] }, { id:'f-max-price', label:'Max Property Value', type:'select', opts:['Any','£100k','£200k','£350k','£500k','£750k','£1M','£2M','£3M','£5M','£10M'] } ],
   probate: [],
   newbusiness: [{ id:'f-industries', label:'Industries', type:'checkboxes', opts:['Tech & Software','Construction','Retail','Hospitality','Healthcare','Professional Services','Financial','Creative'] }],
-  planning: [{ id:'f-app-type', label:'Application Types (pick 2+ for your full daily guarantee)', type:'checkboxes', opts:['Residential','Commercial & change of use','Listed buildings & heritage','Adverts, trees & minor works'] }],
-  tenders: [{ id:'f-min-val', label:'Min Contract Value', type:'select', opts:['Any','£10k','£50k','£100k','£250k','£500k','£1M','£2M','£5M','£10M'] }, { id:'f-sectors', label:'Sectors (pick 2+ for your full daily guarantee)', type:'checkboxes', opts:['IT & digital','Transport & logistics','Healthcare & social care','Construction'] }]
+  planning: [{ id:'f-app-type', label:'Application Types', type:'checkboxes', opts:['Residential','Commercial & change of use','Listed buildings & heritage','Adverts, trees & minor works'] }],
+  tenders: [{ id:'f-min-val', label:'Min Contract Value', type:'select', opts:['Any','£10k','£50k','£100k','£250k','£500k','£1M','£2M','£5M','£10M'] }, { id:'f-sectors', label:'Sectors', type:'checkboxes', opts:['IT & digital','Transport & logistics','Healthcare & social care','Construction'] }]
 };
 var filterNames = { moving: 'Moving', probate: 'Probate', newbusiness: 'New Business', planning: 'Planning', tenders: 'Tenders' };
 var filterColors = { moving:'#ff6b35', probate:'#a855f7', newbusiness:'#06b6d4', planning:'#10b981', tenders:'#6366f1' };
@@ -1248,20 +1247,6 @@ function doSignup() {
   var minProducts = 1;
   if (products.length > maxProducts) {
     document.getElementById('signup-error').textContent = (planVal === 'free_trial' ? 'Free Trial' : planVal.charAt(0).toUpperCase() + planVal.slice(1)) + ' allows up to ' + maxProducts + ' lead type' + (maxProducts > 1 ? 's' : '') + '. ' + (maxProducts < 99 ? 'Upgrade to ' + (planVal === 'free_trial' ? 'Starter' : 'Pro') + ' for more.' : '');
-    document.getElementById('signup-error').style.display = 'block'; button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false; return;
-  }
-
-  // SOFT MINIMUM: if a customer narrows a filterable product to a single category,
-  // ask them to pick 2+ (or leave blank for Any) so the daily guarantee holds.
-  var _signupFilters = getFilters();
-  var _planningPicks = (_signupFilters.planning && _signupFilters.planning['f-app-type']) || [];
-  if (products.indexOf('planning') !== -1 && _planningPicks.length === 1) {
-    document.getElementById('signup-error').textContent = 'Please pick at least 2 planning application types (or leave them all unticked for "Any"). A single category is often too quiet to guarantee your daily leads.';
-    document.getElementById('signup-error').style.display = 'block'; button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false; return;
-  }
-  var _tenderPicks = (_signupFilters.tenders && _signupFilters.tenders['f-sectors']) || [];
-  if (products.indexOf('tenders') !== -1 && _tenderPicks.length === 1) {
-    document.getElementById('signup-error').textContent = 'Please pick at least 2 tender sectors (or leave them all unticked for "Any"). A single sector is often too quiet to guarantee your daily leads.';
     document.getElementById('signup-error').style.display = 'block'; button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false; return;
   }
 
