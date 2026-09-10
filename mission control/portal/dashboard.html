@@ -931,9 +931,6 @@ function renderFilters(product) {
   html += '</div>';
   if (product === 'moving') html += '<p style="font-size:11px;color:var(--text2);margin-top:6px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:8px 10px;line-height:1.6">You\'ll receive leads from <strong>1 bed up to your chosen maximum</strong> (choose Any for all home sizes). Daily volumes vary due to limited listing supply and lead exclusivity.</p>';
   html += '<p style="font-size:11px;color:var(--muted);margin-top:6px">Filters apply to all new leads. Changes take effect on next delivery.</p>';
-  html += '<div style="margin-top:10px;padding:10px 12px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.18);border-radius:8px">'
-    + '<div style="font-size:11px;color:var(--text2);line-height:1.6">Filters are <b>preferences</b>. If your chosen categories are quiet we top you up from related categories so you still get your full daily count.</div>'
-    + '</div>';
   html += '<div id="filter-supply" style="font-size:11px;color:#38bdf8;margin-top:8px;display:none"></div>';
   container.innerHTML = html;
   updateDashboardSupply();
