@@ -5185,6 +5185,38 @@ app.get('/admin/direct-mail', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'publish', 'admin', 'direct-mail.html'));
 });
 
+// POST /api/admin/enrich-planning-pool — one-off backfill of county/postcode onto
+// already-stored planning/tenders leads (new scrapes are enriched automatically).
+app.post('/api/admin/enrich-planning-pool', adminAuth, (req, res) => {
+  try {
+    var prod = String((req.body && req.body.product) || 'planning');
+    if (prod !== 'planning' && prod !== 'tenders') return res.status(400).json({ error: 'planning/tenders only' });
+    var file = path.join(DATA_DIR, PRODUCT_LEAD_FILES[prod].file);
+    var arr = [];
+    try { arr = JSON.parse(fs.readFileSync(file, 'utf-8')); } catch(e) { arr = []; }
+    if (!Array.isArray(arr)) arr = [];
+    var _revPc = {};
+    Object.keys(COUNTY_POSTCODE_MAP).forEach(function(k) { (COUNTY_POSTCODE_MAP[k] || []).forEach(function(pa) { if (!_revPc[pa]) _revPc[pa] = k; }); });
+    var enriched = 0, withCounty = 0;
+    arr.forEach(function(l) {
+      if (!l.postcode) {
+        var m = String(l.address || l.fullAddress || l.description || '').toUpperCase().match(/\b([A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2})\b/);
+        if (m) l.postcode = m[1].replace(/\s+/g, ' ').trim();
+      }
+      if (!l.county) {
+        var hay = (String(l.address || '') + ' ' + String(l.council || '') + ' ' + String(l.description || '') + ' ' + String(l.proposal || '') + ' ' + String(l.applicationType || '') + ' ' + String(l.title || '')).toLowerCase();
+        var found = '';
+        for (var ak in AREA_MATCH_KEYWORDS) { var kws = AREA_MATCH_KEYWORDS[ak]; for (var ki = 0; ki < kws.length; ki++) { if (kws[ki] && hay.indexOf(kws[ki]) !== -1) { found = ak; break; } } if (found) break; }
+        if (!found && l.postcode) { var pa = extractPostcodeArea(l.postcode); if (pa && _revPc[pa]) found = _revPc[pa]; }
+        if (found) { l.county = found; enriched++; }
+      }
+      if (l.county) withCounty++;
+    });
+    fs.writeFileSync(file, JSON.stringify(arr, null, 2));
+    res.json({ success: true, product: prod, total: arr.length, newly_enriched: enriched, with_county: withCounty });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/signup/filter-supply — approximate current supply for a product + areas,
 // with per-option counts for planning/tenders, so signup can show how narrow a
 // selection is before the customer commits.
