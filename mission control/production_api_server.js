@@ -10552,7 +10552,9 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
     // FILTER = PRIORITY, NEVER UNDER-DELIVER (preview mirror): once the strict
     // in-area tiers can't fill the promised count, relax optional signup filters so
     // the preview matches what the delivery's guaranteed-fill will actually send.
-    if (previewHasOptional && !custLeadFilters.strict) { previewFilterRelax = true; }
+    // STRICT FIDELITY: preview reflects exactly what will be delivered (filters enforced,
+    // no top-up from other categories).
+    if (previewHasOptional) { previewFilterRelax = false; }
     var pcSeen2 = {};
     candidates.forEach(function(c) { var k = String(c.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); if (k) pcSeen2[k] = 1; });
     var fallbackPool = interleaved.slice().filter(function(c2) { return isFallbackLeadAcceptable(c2.postcode || c2.address || c2.fullAddress || '', areas); }).sort(function(a, b) {
@@ -20869,7 +20871,10 @@ _deliverDiag[cust.email].products = products;
         // FILTER = PRIORITY, NEVER UNDER-DELIVER: relax optional signup filters for
         // this fill so a filtered customer still gets their full promised count when
         // filter-matching supply is exhausted (area/door/freshness still enforced).
-        if (hasOptionalFilter && !custLeadFilters.strict) { filterRelaxForFill = true; console.log('[DELIVERY] ' + cust.email + ': relaxing optional filters for guaranteed fill (short after strict tiers)'); }
+        // STRICT FIDELITY: a customer only ever receives leads that match the filters
+        // they chose at signup. We do NOT relax optional filters to hit the daily count
+        // (they may receive fewer on a quiet day, which is what they opted into).
+        if (hasOptionalFilter) console.log('[DELIVERY] ' + cust.email + ': strict filters enforced (no top-up from other categories)');
         if (!_deliverDiag[cust.email]) _deliverDiag[cust.email] = { global: 0, poolfile: 0, poolfile_total: 0, areas: custAreas.slice(0,5) };
         _deliverDiag[cust.email].poolfile_total++;
         _deliverDiag[cust.email].final_pass = 'has=' + custLeads.length + ' need=' + totalNeeded + ' areas=' + JSON.stringify(custAreas) + ' poolfile=' + (PRODUCT_LEAD_FILES[products[0]] ? PRODUCT_LEAD_FILES[products[0]].file : '?');
