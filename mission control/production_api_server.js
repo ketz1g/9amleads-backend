@@ -30892,7 +30892,10 @@ function syncCustomers(product) {
             // (planning supply is intentionally scoped to signed-up customers' areas —
             // with few planning customers the pool stays small, which is fine).
             var planCusts = (getDb().customers || []).filter(function(c) { return c.product === 'planning' || ((c.biz_field3 || '').indexOf('planning') !== -1); });
-            var planAreas = [];
+            // UK-WIDE by default: query PLOTA across all major UK regions (free-text
+            // queries are lighter than expanding every postcode area), then merge in
+            // any specific customer areas on top.
+            var planAreas = ['greater-london','greater-manchester','west-midlands','liverpool','leeds','sheffield','bristol','cardiff','edinburgh','glasgow','north-east','essex','kent','surrey','sussex','hampshire','berkshire','buckinghamshire','oxfordshire','hertfordshire','east-midlands','east-of-england','south-west','wales','scotland'];
             var planFilters = [];
             planCusts.forEach(function(c) {
               var cfg = {};
