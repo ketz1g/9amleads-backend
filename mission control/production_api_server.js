@@ -30897,9 +30897,14 @@ function syncCustomers(product) {
             // then merge in any specific customer areas on top.
             var planAreas = [];
             try {
-              var uka = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'uk-postcode-areas.json'), 'utf-8'));
-              Object.keys(uka).forEach(function(k) { var n = uka[k] && uka[k].name; if (n) planAreas.push('q:' + n); });
-            } catch(e) {}
+              var _tj = JSON.parse(fs.readFileSync(path.join(__dirname, 'towns-uk.json'), 'utf-8'));
+              Object.keys(_tj).forEach(function(k) { var n = _tj[k] && _tj[k].name; if (n) planAreas.push('q:' + n); });
+            } catch(e) {
+              try {
+                var _uka = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'uk-postcode-areas.json'), 'utf-8'));
+                Object.keys(_uka).forEach(function(k) { var n = _uka[k] && _uka[k].name; if (n) planAreas.push('q:' + n); });
+              } catch(e2) {}
+            }
             var planFilters = [];
             planCusts.forEach(function(c) {
               var cfg = {};
