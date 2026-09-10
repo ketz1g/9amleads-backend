@@ -1446,7 +1446,9 @@ function setHeroView(v) {
   window.addEventListener('load', function() { setTimeout(showFormByHash, 50); });
   var params = new URLSearchParams(window.location.search);
   var refParam = params.get('ref');
-  if (!refParam) { try { var m = (document.cookie || '').match(/(?:^|; )9am_aff=([^;]+)/); if (m) refParam = decodeURIComponent(m[1]); } catch(e) {} }
+  // ONLY apply an affiliate when the visitor actually arrived via a referral link
+  // (?ref=) — never automatically from a stale 9am_aff cookie, which used to show
+  // "you've arrived via a partner" (e.g. jim21) to returning visitors.
   if (refParam) {
     try {
       var affField = document.getElementById('s-affiliate');
@@ -1455,6 +1457,18 @@ function setHeroView(v) {
       if (ptn) ptn.style.display = 'block';
     } catch(e) {}
   }
+  // Manual entry: show the extended-trial note only when a code is actually typed.
+  try {
+    var _affInput = document.getElementById('s-affiliate');
+    if (_affInput) {
+      var _syncAffNote = function() {
+        var ptn2 = document.getElementById('partner-trial-note');
+        if (ptn2) ptn2.style.display = _affInput.value.trim() ? 'block' : 'none';
+      };
+      _affInput.addEventListener('input', _syncAffNote);
+      _syncAffNote();
+    }
+  } catch(e) {}
   if (params.get('verified') === 'true') {
     showLogin();
     var el = document.getElementById('login-error');
