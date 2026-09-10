@@ -83,23 +83,6 @@ const SUBTYPES = {
       '7 days free - no card'
     ]
   },
-  'moving-estateagent': {
-    plural: 'estate agents',    product:'moving', slug:'estate-agents', label:'Estate agent', singular:'estate agent',
-    pains:[
-      'Finding out a seller has already chosen another agent',
-      'Valuations going to whoever spots the move first',
-      'No way to know who is thinking of selling until the board goes up'
-    ],
-    hook:'People preparing to move in your patch, flagged early - so you can ask for the instruction before a competitor does.',
-    how:'We watch for homeowners about to move in the areas you cover and email you each morning. Approach them for the valuation while it is still yours to win.',
-    feats:[
-      'Potential sellers in your area, daily at 9am',
-      'The address on every lead',
-      'Print &amp; Post letters to win instructions',
-      'Replace a wrong lead instantly',
-      '7 days free - no card'
-    ]
-  },
   'moving-packers': {
     plural: 'packing &amp; relocation services',    product:'moving', slug:'removals', alts:['moving-services'], label:'Packing &amp; relocation', singular:'packing and relocation service',
     pains:[
@@ -567,23 +550,6 @@ const SUBTYPES = {
       '7 days free - no card'
     ]
   },
-  'tend-catering': {
-    plural: 'catering companies',    product:'tenders', slug:'catering', label:'Catering &amp; hospitality', singular:'catering company',
-    pains:[
-      'School meals and public catering contracts are big reliable revenue - if you see them in time',
-      'Deadlines missed because you found the tender too late',
-      'Competing with caterers that got there first'
-    ],
-    hook:'Catering and hospitality tenders across the public sector - delivered at 9am, before the deadline.',
-    how:'We watch public procurement for catering and hospitality contracts and email you the relevant ones each morning.',
-    feats:[
-      'Catering contracts as they appear',
-      'Deadlines and values shown clearly',
-      'Matched to your area',
-      'Bid summaries included',
-      '7 days free - no card'
-    ]
-  },
   'tend-logistics': {
     plural: 'transport &amp; logistics companies',    product:'tenders', slug:'transport', label:'Transport &amp; logistics', singular:'transport and logistics company',
     pains:[
@@ -599,6 +565,23 @@ const SUBTYPES = {
       'Filter to your size &amp; region',
       'Replace an irrelevant tender instantly',
       '7 days free - no card'
+    ]
+  },
+  'tend-healthcare': {
+    plural: 'healthcare &amp; social care providers',    product:'tenders', slug:'healthcare', label:'Healthcare &amp; social care', singular:'healthcare provider',
+    pains:[
+      'Health and care contracts go to providers who spot them first',
+      'Missing NHS, council and ICB opportunities across your region',
+      'Hours spent checking portals for relevant frameworks'
+    ],
+    hook:'Healthcare and social care tenders from NHS, councils and ICBs - matched to your services and delivered at 9am.',
+    how:'We watch government procurement for health and care contracts and email the relevant ones each morning, scope and deadline included.',
+    feats:[
+      'Health &amp; social care tenders',
+      'NHS, council &amp; ICB buyers',
+      'Filter to your region &amp; service',
+      'Replace an irrelevant tender instantly',
+      '1 week free trial - no card'
     ]
   }
 };
