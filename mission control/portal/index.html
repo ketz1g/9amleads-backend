@@ -540,7 +540,7 @@ function updateMovingTypeLabel() {
 
 <label class="consent"><input type="checkbox" id="s-consent" checked> I agree to receive daily lead emails. <a href="/privacy.html">Privacy Policy</a></label>
 <label class="consent"><input type="checkbox" id="s-terms" required> I have read and agree to the <a href="/terms.html" target="_blank">Terms &amp; Conditions</a>.</label>
-<label class="consent" id="s-tender-share-row" style="display:none"><input type="checkbox" id="s-tender-share"> I understand that tender leads are public opportunities shared with other businesses in my chosen areas, and I agree to receive leads on that basis. <a href="/tenders/#faq" target="_blank">Learn more</a></label>
+
 
 <div class="status" id="signup-error"></div>
 <div class="success" id="signup-success">Account created! Redirecting...</div>
@@ -767,7 +767,7 @@ var filterDefs = {
   moving: [{ id:'f-bed-min', label:'Min Bedrooms', type:'select', opts:['Any','1','2','3','4','5','6','7','8','9','10+'] }, { id:'f-bed-max', label:'Max Bedrooms', type:'select', opts:['Any','1','2','3','4','5','6','7','8','9','10+'] }, { id:'f-prop-type', label:'Property Type', type:'select', opts:['Any','House','Flat','Bungalow','Maisonette','Townhouse'] }, { id:'f-max-price', label:'Max Property Value', type:'select', opts:['Any','£100k','£200k','£350k','£500k','£750k','£1M','£2M','£3M','£5M','£10M'] } ],
   probate: [],
   newbusiness: [{ id:'f-industries', label:'Industries', type:'checkboxes', opts:['Tech & Software','Construction','Retail','Hospitality','Healthcare','Professional Services','Financial','Creative'] }],
-  planning: [{ id:'f-app-type', label:'Application Types', type:'checkboxes', opts:['Residential','Commercial & change of use','Listed buildings & heritage','Adverts, trees & minor works'] }],
+  planning: [{ id:'f-app-type', label:'Application Types', type:'checkboxes', opts:['Residential','Listed buildings & heritage','Adverts, trees & minor works'] }],
   tenders: [{ id:'f-min-val', label:'Min Contract Value', type:'select', opts:['Any','£10k','£50k','£100k','£250k','£500k','£1M','£2M','£5M','£10M'] }, { id:'f-sectors', label:'Sectors', type:'checkboxes', opts:['IT & digital','Transport & logistics','Healthcare & social care','Construction'] }]
 };
 var filterNames = { moving: 'Moving', probate: 'Probate', newbusiness: 'New Business', planning: 'Planning', tenders: 'Tenders' };
@@ -997,9 +997,7 @@ function populateCountySelect() {
 }
 function updateTenderCompetition() {
   var prod = getSelectedLeadTypes()[0];
-  var shareRow = document.getElementById('s-tender-share-row');
-  if (prod === 'tenders') { if (shareRow) shareRow.style.display = 'inline-flex'; }
-  else { if (shareRow) shareRow.style.display = 'none'; return; }
+  if (prod !== 'tenders') return;
   var q = 'product=tenders';
   if (specCounties.length) q += '&areas=' + encodeURIComponent(specCounties.join(','));
   fetch('/api/signup/competition-areas?' + q + '&t=' + Date.now())
@@ -1228,10 +1226,6 @@ function doSignup() {
   var products = Array.from(productCheckboxes).map(function(cb) { return cb.value; });
   if (products.length === 0) { document.getElementById('signup-error').textContent = 'Please select at least one lead type'; document.getElementById('signup-error').style.display = 'block'; return; }
   if (!document.getElementById('s-terms').checked) { document.getElementById('signup-error').textContent = 'Please tick the box to confirm you have read and agree to the Terms &amp; Conditions.'; document.getElementById('signup-error').style.display = 'block'; return; }
-  if (getSelectedLeadTypes().indexOf('tenders') !== -1) {
-    var tShare = document.getElementById('s-tender-share');
-    if (!tShare || !tShare.checked) { document.getElementById('signup-error').textContent = 'For tenders, please tick the box confirming you understand tender leads are shared with other businesses.'; document.getElementById('signup-error').style.display = 'block'; return; }
-  }
   var selectedPlan = document.querySelector('#s-plan-container input[type=radio]:checked');
   var planVal = selectedPlan ? selectedPlan.value : 'free_trial';
   var maxProducts = planVal === 'free_trial' ? 1 : planVal === 'starter' ? 2 : 99;
