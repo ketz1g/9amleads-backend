@@ -5198,18 +5198,7 @@ app.get('/api/signup/filter-supply', (req, res) => {
     var counts = {}, total = 0;
     for (var i = 0; i < pool.length; i++) {
       var l = pool[i];
-      var pcArea = extractPostcodeArea(l.postcode || l.address || l.fullAddress || l.deceasedAddress || '');
-      var matched = ukwide;
-      if (!matched && areas.length) {
-        var lc = String(l.county || '').toLowerCase().replace(/[\s-]+/g, '-');
-        matched = areas.some(function(a) {
-          var ak = String(a).toLowerCase().replace(/[\s-]+/g, '-');
-          if (lc && lc === ak) return true;
-          var m = COUNTY_POSTCODE_MAP[ak];
-          return m ? m.indexOf(pcArea) !== -1 : false;
-        });
-      }
-      if (!matched) continue;
+      if (!areaMatchesLead(l, areas, ukwide)) continue;
       total++;
       if (product === 'planning') {
         var pt = (String(l.applicationType || l.proposal || l.type || l.category || '') + ' ' + String(l.description || '')).toLowerCase();
@@ -10998,6 +10987,100 @@ function tenderSectorMatches(selected, leadText) {
   if (!sel) return true;
   if (TENDER_SECTORS[sel]) return TENDER_SECTORS[sel].some(function(k) { return at.indexOf(k) !== -1; });
   return at.indexOf(sel) !== -1;
+}
+// County/region -> town/council keywords. Planning/tender leads frequently have no
+// county or postcode populated, so we also match on council/address/description text.
+var AREA_MATCH_KEYWORDS = {
+  'kent': ['kent', 'canterbury', 'dover', 'maidstone', 'ashford', 'folkestone', 'thanet', 'tunbridge', 'sevenoaks', 'dartford', 'gravesend', 'gillingham', 'rochester', 'chatham', 'margate', 'ramsgate', 'swale', 'tonbridge'],
+  'essex': ['essex', 'chelmsford', 'colchester', 'basildon', 'southend', 'brentwood', 'harlow', 'braintree', 'grays', 'thurrock', 'romford', 'billericay', 'clacton'],
+  'hertfordshire': ['hertford', 'watford', 'st albans', 'stevenage', 'hemel hempstead', 'hitchin', 'broxbourne', 'welwyn', 'borehamwood', 'bishop\'s stortford'],
+  'surrey': ['surrey', 'guildford', 'woking', 'croydon', 'epsom', 'redhill', 'reigate', 'farnham', 'camberley', 'leatherhead', 'dorking', 'weybridge'],
+  'sussex': ['sussex', 'brighton', 'hove', 'eastbourne', 'worthing', 'crawley', 'hastings', 'chichester', 'bognor', 'horsham', 'lewes'],
+  'east-sussex': ['east sussex', 'brighton', 'hove', 'eastbourne', 'hastings', 'lewes', 'wealden', 'rother'],
+  'west-sussex': ['west sussex', 'worthing', 'crawley', 'chichester', 'bognor', 'horsham', 'mid sussex'],
+  'hampshire': ['hampshire', 'southampton', 'portsmouth', 'winchester', 'basingstoke', 'fareham', 'gosport', 'eastleigh', 'andover', 'farnborough', 'isle of wight'],
+  'berkshire': ['berkshire', 'reading', 'slough', 'maidenhead', 'bracknell', 'wokingham', 'newbury', 'windsor'],
+  'buckinghamshire': ['buckinghamshire', 'milton keynes', 'aylesbury', 'high wycombe', 'slough', 'beaconsfield'],
+  'oxfordshire': ['oxford', 'oxfordshire', 'banbury', 'abingdon', 'bicester', 'witney', 'didcot'],
+  'bedfordshire': ['bedford', 'luton', 'dunstable', 'leighton buzzard', 'biggleswade'],
+  'cambridgeshire': ['cambridge', 'cambridgeshire', 'peterborough', 'huntingdon', 'ely', 'st neots', 'wisbech'],
+  'norfolk': ['norfolk', 'norwich', 'great yarmouth', 'kings lynn', 'thetford', 'dereham'],
+  'suffolk': ['suffolk', 'ipswich', 'bury st edmunds', 'lowestoft', 'sudbury', 'felixstowe', 'newmarket'],
+  'london': ['london', 'westminster', 'camden', 'islington', 'hackney', 'tower hamlets', 'southwark', 'lambeth', 'wandsworth', 'greenwich', 'hammersmith', 'kensington', 'chelsea', 'croydon', 'ealing', 'barnet', 'haringey', 'newham', 'bexley', 'bromley', 'enfield', 'harrow', 'hillingdon', 'hounslow', 'lewisham', 'merton', 'redbridge', 'richmond', 'sutton', 'waltham forest', 'barking', 'dagenham', 'city of london'],
+  'greater-london': ['london', 'westminster', 'camden', 'islington', 'hackney', 'tower hamlets', 'southwark', 'lambeth', 'wandsworth', 'greenwich', 'hammersmith', 'kensington', 'chelsea', 'croydon', 'ealing', 'barnet', 'haringey', 'newham', 'bexley', 'bromley', 'enfield', 'harrow', 'hillingdon', 'hounslow', 'lewisham', 'merton', 'redbridge', 'richmond', 'sutton', 'waltham forest', 'barking', 'dagenham', 'city of london'],
+  'birmingham': ['birmingham', 'solihull', 'sutton coldfield', 'wolverhampton', 'dudley', 'walsall', 'west bromwich'],
+  'west-midlands': ['birmingham', 'coventry', 'wolverhampton', 'dudley', 'walsall', 'solihull', 'west bromwich', 'stourbridge', 'halesowen'],
+  'west-midlands-region': ['birmingham', 'coventry', 'wolverhampton', 'dudley', 'walsall', 'solihull'],
+  'manchester': ['manchester', 'salford', 'stockport', 'oldham', 'bolton', 'rochdale', 'bury', 'wigan', 'tameside', 'trafford'],
+  'greater-manchester': ['manchester', 'salford', 'stockport', 'oldham', 'bolton', 'rochdale', 'bury', 'wigan', 'tameside', 'trafford'],
+  'liverpool': ['liverpool', 'merseyside', 'sefton', 'wirral', 'knowsley', 'st helens', 'bootle', 'birkenhead'],
+  'merseyside': ['liverpool', 'sefton', 'wirral', 'knowsley', 'st helens', 'bootle', 'birkenhead'],
+  'leeds': ['leeds', 'wakefield', 'bradford', 'york', 'harrogate', 'keighley', 'halifax'],
+  'sheffield': ['sheffield', 'rotherham', 'doncaster', 'barnsley', 'chesterfield'],
+  'bristol': ['bristol', 'bath', 'south gloucestershire', 'north somerset'],
+  'nottingham': ['nottingham', 'nottinghamshire', 'mansfield', 'newark', 'worksop'],
+  'nottinghamshire': ['nottingham', 'mansfield', 'newark', 'worksop'],
+  'leicester': ['leicester', 'leicestershire', 'loughborough', 'hinckley', 'melton'],
+  'leicestershire': ['leicester', 'loughborough', 'hinckley', 'melton'],
+  'cardiff': ['cardiff', 'wales', 'swansea', 'newport', 'vale of glamorgan'],
+  'wales': ['cardiff', 'swansea', 'newport', 'wrexham', 'bangor', 'carmarthen', 'wales'],
+  'edinburgh': ['edinburgh', 'lothian', 'midlothian', 'fife', 'scotland'],
+  'glasgow': ['glasgow', 'lanarkshire', 'renfrewshire', 'paisley', 'scotland'],
+  'scotland': ['edinburgh', 'glasgow', 'aberdeen', 'dundee', 'inverness', 'fife', 'scotland', 'lothian', 'lanarkshire'],
+  'belfast': ['belfast', 'northern ireland', 'antrim', 'down', 'lisburn', 'bangor'],
+  'northern-ireland': ['belfast', 'antrim', 'down', 'lisburn', 'derry', 'londonderry', 'northern ireland'],
+  'devon': ['devon', 'exeter', 'plymouth', 'torquay', 'torbay', 'barnstaple', 'exmouth', 'newton abbot'],
+  'cornwall': ['cornwall', 'truro', 'falmouth', 'penzance', 'st austell', 'newquay', 'bodmin'],
+  'somerset': ['somerset', 'taunton', 'bath', 'weston-super-mare', 'yeovil', 'bridgwater'],
+  'dorset': ['dorset', 'bournemouth', 'poole', 'weymouth', 'dorchester', 'christchurch'],
+  'wiltshire': ['wiltshire', 'swindon', 'salisbury', 'chippenham', 'trowbridge', 'devizes'],
+  'gloucestershire': ['gloucestershire', 'gloucester', 'cheltenham', 'bristol', 'stroud', 'cirencester'],
+  'worcestershire': ['worcestershire', 'worcester', 'redditch', 'kidderminster', 'bromsgrove', 'evesham'],
+  'warwickshire': ['warwickshire', 'coventry', 'rugby', 'warwick', 'leamington', 'nuneaton', 'stratford'],
+  'staffordshire': ['staffordshire', 'stoke', 'stafford', 'wolverhampton', 'burton', 'lichfield', 'cannock'],
+  'shropshire': ['shropshire', 'shrewsbury', 'telford', 'oswestry', 'ludlow'],
+  'cumbria': ['cumbria', 'carlisle', 'kendal', 'barrow', 'whitehaven', 'penrith', 'workington'],
+  'lancashire': ['lancashire', 'preston', 'blackpool', 'blackburn', 'burnley', 'lancaster', 'chorley', 'accrington'],
+  'cheshire': ['cheshire', 'chester', 'warrington', 'crewe', 'macclesfield', 'runcorn', 'widnes', 'ellesmere port'],
+  'derbyshire': ['derbyshire', 'derby', 'chesterfield', 'buxton', 'ilford', 'swadlincote'],
+  'lincolnshire': ['lincolnshire', 'lincoln', 'grimsby', 'scunthorpe', 'boston', 'grantham'],
+  'northamptonshire': ['northamptonshire', 'northampton', 'kettering', 'corby', 'wellingborough', 'rushden'],
+  'north-east': ['newcastle', 'sunderland', 'durham', 'gateshead', 'middlesbrough', 'northumberland', 'tyne', 'washington'],
+  'tyne-and-wear': ['newcastle', 'sunderland', 'gateshead', 'south shields', 'tyne', 'washington'],
+  'durham': ['durham', 'darlington', 'hartlepool', 'stockton', 'bishop auckland'],
+  'northumberland': ['northumberland', 'newcastle', 'berwick', 'morpeth', 'alnwick', 'ashington'],
+  'yorkshire': ['yorkshire', 'leeds', 'sheffield', 'york', 'bradford', 'hull', 'huddersfield', 'wakefield', 'doncaster'],
+  'yorkshire-and-the-humber': ['yorkshire', 'leeds', 'sheffield', 'york', 'bradford', 'hull', 'huddersfield', 'wakefield', 'doncaster', 'humber'],
+  'north-yorkshire': ['york', 'northallerton', 'harrogate', 'scarborough', 'north yorkshire', 'richmond'],
+  'south-yorkshire': ['sheffield', 'doncaster', 'rotherham', 'barnsley', 'south yorkshire'],
+  'west-yorkshire': ['leeds', 'bradford', 'wakefield', 'huddersfield', 'halifax', 'west yorkshire'],
+  'isle-of-wight': ['isle of wight', 'newport', 'ryde', 'cowes', 'sandown', 'ventnor'],
+  'herefordshire': ['hereford', 'herefordshire', 'ledbury', 'ross-on-wye'],
+  'north-west': ['manchester', 'liverpool', 'lancashire', 'cheshire', 'cumbria', 'merseyside', 'preston', 'bolton'],
+  'east-midlands': ['nottingham', 'leicester', 'derby', 'lincoln', 'northampton', 'east midlands'],
+  'south-east': ['kent', 'surrey', 'sussex', 'hampshire', 'berkshire', 'oxford', 'brighton', 'southampton'],
+  'south-west': ['devon', 'cornwall', 'somerset', 'dorset', 'bristol', 'plymouth', 'exeter'],
+  'east-of-england': ['essex', 'norfolk', 'suffolk', 'cambridge', 'hertford', 'colchester', 'ipswich'],
+  'north-england': ['manchester', 'leeds', 'newcastle', 'liverpool', 'sheffield', 'yorkshire']
+};
+function areaMatchesLead(l, areas, ukwide) {
+  if (ukwide) return true;
+  if (!areas || !areas.length) return false;
+  var pcArea = extractPostcodeArea(l.postcode || l.address || l.fullAddress || l.deceasedAddress || '');
+  var county = String(l.county || '').toLowerCase().replace(/[\s-]+/g, '-');
+  var hay = (String(l.address || '') + ' ' + String(l.council || '') + ' ' + String(l.description || '') + ' ' + String(l.proposal || '') + ' ' + String(l.applicationType || '')).toLowerCase();
+  for (var i = 0; i < areas.length; i++) {
+    var a = String(areas[i] || '').toLowerCase().trim();
+    if (!a) continue;
+    var ak = a.replace(/[\s-]+/g, '-');
+    if (county && county === ak) return true;
+    var m = COUNTY_POSTCODE_MAP[ak];
+    if (m && pcArea && m.indexOf(pcArea) !== -1) return true;
+    var kws = AREA_MATCH_KEYWORDS[ak];
+    if (!kws) kws = a.split(/[\s-]+/).filter(function(w){ return w.length > 3; });
+    for (var k = 0; k < kws.length; k++) { if (kws[k] && hay.indexOf(kws[k]) !== -1) return true; }
+  }
+  return false;
 }
 // Robust property identity key: street name + house number + postcode. Same physical
 // property scraped by different providers/runs often has different full-address

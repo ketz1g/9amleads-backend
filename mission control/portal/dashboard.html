@@ -933,9 +933,11 @@ function renderFilters(product) {
   html += '<p style="font-size:11px;color:var(--muted);margin-top:6px">Filters apply to all new leads. Changes take effect on next delivery.</p>';
   html += '<div style="margin-top:10px;padding:10px 12px;background:rgba(14,165,233,0.04);border:1px solid rgba(14,165,233,0.18);border-radius:8px">'
     + '<div style="font-size:11px;color:var(--text2);line-height:1.6">Filters are <b>preferences</b>. If your chosen categories are quiet we top you up from related categories so you still get your full daily count.</div>'
-    + '<label style="display:flex;gap:6px;align-items:flex-start;margin-top:8px;font-size:11px;color:var(--text2);cursor:pointer"><input type="checkbox" id="f-strict" onchange="saveFilters()" style="margin-top:2px"> <span><b>Strict mode</b> &mdash; only send my chosen filters. I understand I may receive fewer than my daily allowance on quiet days.</span></label>'
+    + '<label style="display:flex;gap:6px;align-items:flex-start;margin-top:8px;font-size:11px;color:var(--text2);cursor:pointer"><input type="checkbox" id="f-strict" onchange="saveFilters()" style="margin-top:2px"> <span><b>Strict mode</b> &mdash; only send my chosen filters. On quiet days I may receive <b>fewer leads than my daily allowance, or none at all</b>. You can switch this off anytime.</span></label>'
     + '</div>';
+  html += '<div id="filter-supply" style="font-size:11px;color:#38bdf8;margin-top:8px;display:none"></div>';
   container.innerHTML = html;
+  updateDashboardSupply();
   // Load saved values
     apiCall('GET', '/api/settings/lead-filters', null, function(err, d) {
     if (!d || !d.leadFilters) return;
@@ -958,6 +960,22 @@ function renderFilters(product) {
         if (saved[f.id] !== undefined) el.value = String(saved[f.id]);
       }
     });
+  });
+}
+
+function updateDashboardSupply() {
+  var el = document.getElementById('filter-supply');
+  if (!el) return;
+  var prod = _sessionProduct || 'moving';
+  if (prod !== 'planning' && prod !== 'tenders') { el.style.display = 'none'; return; }
+  var areas = (typeof dashboardAreas !== 'undefined' && dashboardAreas) ? dashboardAreas.slice() : [];
+  var allUk = _myCoverage === 'ukwide' || prod === 'tenders' || areas.some(function(a){ return /all.?uk|uk.?wide|nationwide|whole.?uk/i.test(String(a)); });
+  if (!allUk && areas.length === 0) { el.style.display = 'none'; return; }
+  var q = '?product=' + prod + '&areas=' + encodeURIComponent(allUk ? 'all-uk' : areas.join(','));
+  apiCall('GET', '/api/signup/filter-supply' + q, null, function(err, d) {
+    if (err || !d || !d.success) { el.style.display = 'none'; return; }
+    el.innerHTML = 'In your areas right now: <b>' + d.total + '</b> ' + prod + ' leads available. Pick 2+ categories so we can keep your full daily count.';
+    el.style.display = 'block';
   });
 }
 
@@ -2038,6 +2056,7 @@ document.querySelectorAll('.modal').forEach(function(m){
         }
       } catch(e) {}
       if (data.target_areas) renderPostcodes(data.target_areas); loadPlanForAreas();
+    try { updateDashboardSupply(); } catch(e) {}
       if (data.plan) document.getElementById('plan-name').textContent = data.plan === 'free_trial' ? 'Free Trial' : data.plan.charAt(0).toUpperCase() + data.plan.slice(1);
       // Free-trial countdown timer: show a live countdown to trial end for free
       // trial users. Hide it entirely once the account is paid (starter/pro/
