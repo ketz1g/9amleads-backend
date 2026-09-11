@@ -69,6 +69,12 @@ function getDailyBudget() {
 // false if the daily budget is exhausted or Postcoder is disabled.
 function spend() {
   if (!enabled()) return false;
+  // DELIVERY-ONLY: paid Postcoder lookups are reserved for the 9am delivery (and any
+  // address we actually send to a customer). Scrape-time pool pre-enrichment must NOT
+  // spend credits unless explicitly enabled with POSTCODER_SCRAPE_ENABLED=true — the
+  // founder wants the absolute minimum credit use. Delivery sets the global context
+  // flag for the duration of the run.
+  if (!global.__POSTCODER_DELIVERY_CTX__ && process.env.POSTCODER_SCRAPE_ENABLED !== 'true') return false;
   var today = new Date().toISOString().split('T')[0];
   var u = load();
   if (u.date !== today) { u.date = today; u.used = 0; }

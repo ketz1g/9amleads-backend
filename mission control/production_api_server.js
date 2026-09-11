@@ -19854,6 +19854,11 @@ app.get('/api/admin/moving-leads-log', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 app.post('/api/admin/deliver', adminAuth, async (req, res) => {
+  // POSTCODER DELIVERY-ONLY: paid lookups are permitted ONLY during a delivery run.
+  // Scrape-time pool pre-enrichment is blocked by postcoder_budget (unless
+  // POSTCODER_SCRAPE_ENABLED=true), so credits are spent only on addresses we send.
+  global.__POSTCODER_DELIVERY_CTX__ = true;
+  setTimeout(function() { try { global.__POSTCODER_DELIVERY_CTX__ = false; } catch(e) {} }, 15 * 60 * 1000);
   // CONCURRENT-DELIVERY LOCK: never run two deliveries at once (e.g. the 09:00
   // cron + the 09:30 watchdog overlapping, or a manual run mid-flight). Without
   // this, both runs could send the daily email to the same customer (duplicate
@@ -25089,7 +25094,12 @@ app.get('/api/health', (req, res) => {
           var need = { moving: 0, probate: 0, newbusiness: 0, planning: 0, tenders: 0 };
           var activeByProd = {};
           (dbS.customers || []).forEach(function(c) {
-            if (!c.plan || c.plan === 'cancelled' || isLeadsPaused(c)) return;
+      if (!c.plan || c.plan === 'cancelled' || isLeadsPaused(c)) return;
+      // Never alert on internal/test accounts or EXPIRED free trials — they are not
+      // owed leads, so "no leads in X" is expected and not actionable.
+      if (isInternalAccount(c)) return;
+      if (String(c.email || '').indexOf('test.') === 0) return;
+      if (c.plan === 'free_trial' && c.trial_ends) { try { var teQ = new Date(c.trial_ends); if (!isNaN(teQ.getTime()) && new Date() > teQ) return; } catch(e) {} }
             if (c.trial_ends && new Date(c.trial_ends) <= new Date()) return; // expired trial
             var p = c.product || 'moving';
             var lim = getPlanLimit(p, c.plan, c.coverage) || 5;
