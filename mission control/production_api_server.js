@@ -29053,7 +29053,7 @@ function runDeliveryTestReport() {
         // delivery caps correctly. The deliver endpoint's test/force mode
         // re-delivers the FULL quota each run regardless, so every 30-min run
         // produces fresh leads + emails for the founder to inspect.
-        var TEST_CAP = { moving: 5, probate: 2, newbusiness: 5, planning: 1, tenders: 1 };
+        var TEST_CAP = { moving: 5, probate: 2, newbusiness: 5, planning: 1, tenders: 5 };
         testCusts.forEach(function(c) { c.leads_per_day = TEST_CAP[c.product] || 1; });
         saveDb();
         // CLEAN SLATE + UNIQUE RUN ID: delete ALL test-account leads (delivered AND
@@ -29069,7 +29069,12 @@ function runDeliveryTestReport() {
         // so it never emails a second daily batch — the founder reads the report email.
         var _testIds = {};
         testCusts.forEach(function(c) { if (!/^test\./.test(String(c.email || ''))) return; _testIds[c.id] = true; });
-        db.leads = (db.leads || []).filter(function(l) { return !(l.customer_id && _testIds[l.customer_id]); });
+        // KEEP DELIVERED leads (only clear PENDING rows). The delivery dedupe is built
+        // from delivered leads — deleting them wiped the memory and made every test run
+        // re-deliver the SAME leads. Keeping them means no repeat leads, ever, for test
+        // and real customers alike. The per-run report still works because each run tags
+        // its leads with a unique run_id + delivered_at timestamp.
+        db.leads = (db.leads || []).filter(function(l) { return !(l.customer_id && _testIds[l.customer_id] && !l.delivered); });
         testCusts.forEach(function(c) { if (/^test\./.test(String(c.email || ''))) c.last_email_date = ''; });
         saveDb();
         var runId = 'test-' + date + '-' + Date.now().toString(36);
