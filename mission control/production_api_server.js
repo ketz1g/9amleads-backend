@@ -842,6 +842,20 @@ function pickFreshDate(lead) {
     var iso = toIsoDate(v);
     if (iso && (!latest || iso > latest)) latest = iso;
   }
+  // TENDERS: a notice is a LIVE opportunity until its closing deadline, not just the
+  // day it was published. The scraper only collects Open notices, and many frameworks/
+  // DPS are published long ago but stay open for years. If the deadline is still in
+  // the future and the publication date is older than 48h, treat it as fresh so open
+  // tenders are deliverable. (Per-customer dedupe stops repeat deliveries.)
+  if (lead.deadlineDate) {
+    var dl = toIsoDate(lead.deadlineDate);
+    if (dl) {
+      var dlMs = new Date(dl).getTime();
+      if (!isNaN(dlMs) && dlMs > Date.now() && (!latest || (Date.now() - new Date(latest).getTime()) > 48 * 3600000)) {
+        return new Date().toISOString();
+      }
+    }
+  }
   return latest;
 }
 
