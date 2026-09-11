@@ -16365,6 +16365,26 @@ function runHealthAlerts() {
       var recent = (global.__lastErrors || []).filter(function(e) { return e && e.at && (Date.now() - new Date(e.at).getTime()) < 6 * 3600000; }).slice(0, 3);
       if (recent.length) issues.push('Recent errors: ' + recent.map(function(e) { return e.message; }).join(' | '));
     } catch(e) {}
+    // 5. DUPLICATE DELIVERIES: the same lead delivered twice to the same customer.
+    // This is the guard that would have caught the repeat-tenders bug immediately.
+    try {
+      var dbDup = getDb();
+      var dupFound = [];
+      (dbDup.customers || []).forEach(function(c) {
+        var seen = {}, dup = 0;
+        (dbDup.leads || []).forEach(function(l) {
+          if (l.customer_id !== c.id || !l.delivered) return;
+          try {
+            var dd = JSON.parse(l.data || '{}');
+            var k = String(dd.url || dd.reference || dd.tenderNoticeId || dd.companyNumber || '').toLowerCase().trim();
+            if (!k) return;
+            if (seen[k]) dup++; seen[k] = 1;
+          } catch(e) {}
+        });
+        if (dup > 0) dupFound.push(c.email + ' (' + dup + ' dup)');
+      });
+      if (dupFound.length) issues.push('DUPLICATE leads delivered to: ' + dupFound.join(', '));
+    } catch(e) {}
     if (issues.length) {
       var html = '<div style="font-family:Arial;color:#e2e8f0;background:#0b1120;padding:20px"><h2>⚠ 9amLeads — issues detected</h2><ul style="color:#fecaca;line-height:1.8">' + issues.map(function(i) { return '<li>' + i + '</li>'; }).join('') + '</ul><p style="color:#94a3b8;font-size:12px">Check /api/health and the admin delivery preview.</p></div>';
       // OWNER-EMAIL DIGEST MODE: throttle genuine problem alerts to ~once per 12h
