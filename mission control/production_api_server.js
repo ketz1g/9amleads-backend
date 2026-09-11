@@ -10266,11 +10266,11 @@ app.get('/api/admin/delivery-preview', adminAuth, async (req, res) => {
     var emailFilter = String((req.query && req.query.email) || '').toLowerCase().trim();
     var dbP = getDb();
     var customers = (dbP.customers || []).filter(function(c) {
-      // Match real delivery (line 19022): an EXPIRED free trial gets NO leads until
-      // they pay. Previously the preview included them, over-reporting "short"
-      // customers that real 9am delivery actually skips.
+      // Match real delivery: an EXPIRED trial with no active subscription gets NO
+      // leads until they pay. Previously the preview included them, over-reporting
+      // "short" customers that real 9am delivery actually skips.
       if (!c.plan || c.plan === 'cancelled' || isLeadsPaused(c)) return false;
-      if (String(c.plan) === 'free_trial' && c.trial_ends && new Date(c.trial_ends) < new Date()) return false;
+      if (trialExpiredUnpaid(c)) return false;
       if (emailFilter && String(c.email || '').toLowerCase() !== emailFilter) return false;
       return true;
     });
@@ -11254,8 +11254,7 @@ app.get('/api/admin/readiness', adminAuth, async (req, res) => {
     var custs = (dbR.customers || []).filter(function(c) {
       if (c.plan === 'cancelled') return false;
       if (isLeadsPaused(c)) return false;
-      var te = c.trial_ends ? new Date(c.trial_ends) : null;
-      if (c.plan === 'free_trial' && te && new Date() > te) return false;
+      if (trialExpiredUnpaid(c)) return false;
       return true;
     });
     var rows = [];
@@ -15437,15 +15436,27 @@ function isInternalAccount(c) {
   var e = String((c && c.email) || '').toLowerCase();
   return e.indexOf('@9amleads.com') !== -1 || e === 'ketzman1g@gmail.com';
 }
+// An account is "trial-expired" (and therefore NOT owed leads) when its 7-day trial
+// has passed and it is not paying — i.e. no Stripe subscription. This applies to
+// EVERY plan, not just free_trial: a paid-plan signup that never pays is cut off the
+// same as a free trial. Internal/test accounts and active subscribers are exempt.
+function trialExpiredUnpaid(c) {
+  if (!c || !c.trial_ends) return false;
+  var te = new Date(c.trial_ends);
+  if (isNaN(te.getTime())) return false;
+  if (new Date() <= te) return false;
+  var sub = c.stripe_subscription_id;
+  if (sub && String(sub).toUpperCase() !== 'NULL') return false;
+  if (isInternalAccount(c)) return false;
+  return true;
+}
 // Same entitlement rule the 9am delivery uses (production_api_server 09:00 run):
 // a free-trial whose trial_ends is in the past is NOT owed leads. Paused/cancelled are
 // not owed. Everything else IS owed its exact promised count.
 function isEntitledForDelivery(c) {
   if (!c || !c.plan || c.plan === 'cancelled') return false;
   if (isLeadsPaused(c)) return false;
-  if (c.plan === 'free_trial' && c.trial_ends) {
-    try { var te = new Date(c.trial_ends); if (!isNaN(te.getTime()) && new Date() > te) return false; } catch(e) {}
-  }
+  if (trialExpiredUnpaid(c)) return false;
   return true;
 }
 function autoFillDeliveryShortfalls(cbDone) {
@@ -20119,8 +20130,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
     var _inRunSeen = {};
     for (var ci = 0; ci < customers.length; ci++) {
       var cust = customers[ci];
-      var trialEnds = cust.trial_ends ? new Date(cust.trial_ends) : null;
-      if (trialEnds && new Date() > trialEnds && cust.plan === 'free_trial') continue;
+      if (trialExpiredUnpaid(cust)) continue;
       // PAYMENT GATE: a customer whose subscription payment failed (leads_paused)
       // stops receiving leads until they recover payment (invoice.paid / re-subscribe).
       if (isLeadsPaused(cust)) continue;
