@@ -7710,6 +7710,34 @@ app.post('/api/admin/set-plan', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/clean-trial-ends — one-off: replace the literal string "NULL"
+// (and any invalid date) stored in trial_ends with a real SQL NULL for paid plans,
+// and repair free-trial rows that lost a valid date. Safe to re-run.
+app.post('/api/admin/clean-trial-ends', adminAuth, (req, res) => {
+  try {
+    var all = db.prepare('SELECT id, plan, created_at, trial_ends FROM customers').all();
+    var fixedPaid = 0, fixedTrial = 0;
+    all.forEach(function(c) {
+      var raw = c.trial_ends;
+      var invalid = !raw || String(raw).toUpperCase() === 'NULL' || isNaN(new Date(raw).getTime());
+      var isPaid = c.plan && c.plan !== 'free_trial' && c.plan !== 'cancelled';
+      if (isPaid && !(raw === null || raw === undefined)) {
+        try { db.prepare('UPDATE customers SET trial_ends = NULL WHERE id = ?').run(c.id); fixedPaid++; } catch(e) {}
+      } else if (!isPaid && c.plan === 'free_trial' && invalid) {
+        // Free trial with no valid end date -> give it 7 days from signup.
+        try {
+          var base = c.created_at ? new Date(c.created_at).getTime() : Date.now();
+          var end = new Date(base + 7 * 86400000).toISOString();
+          db.prepare('UPDATE customers SET trial_ends = ? WHERE id = ?').run(end, c.id);
+          fixedTrial++;
+        } catch(e) {}
+      }
+    });
+    saveDb();
+    res.json({ success: true, fixed_paid: fixedPaid, fixed_trials: fixedTrial });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/delete-lead — permanently delete ONE lead row by id (admin tool).
 app.post('/api/admin/delete-lead', adminAuth, (req, res) => {
   try {
