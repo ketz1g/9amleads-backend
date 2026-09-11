@@ -20363,10 +20363,18 @@ _deliverDiag[cust.email].products = products;
           } catch(e) {}
         }
       });
+      // PERSISTENT per-customer delivered refs (urls + references). Stored on the
+      // customer object so it survives lead-table cleanup and can never be lost —
+      // this is the hard guarantee that a customer NEVER receives the same lead twice.
+      var custDeliveredRefs = {};
+      try { (JSON.parse(cust.delivered_refs || '[]')).forEach(function(u) { custDeliveredRefs[u] = true; }); } catch(e) {}
       function notDeliveredBefore(l) {
         try {
           var dd = (l && typeof l.data === 'string' && l.data) ? JSON.parse(l.data) : (l || {});
           var u = dd.url || '';
+          // PERSISTENT check first (survives every clean-slate / store quirk).
+          if (u && custDeliveredRefs[u]) return false;
+          if (dd.reference && custDeliveredRefs['r:' + String(dd.reference).toLowerCase()]) return false;
           // Never deliver a lead already delivered to THIS customer OR ANY customer
           // (global exclusivity) — shared leads between overlapping areas are prevented.
           if (u && (deliveredUrls[u] || globalDeliveredUrls[u])) return false;
@@ -21077,6 +21085,15 @@ _deliverDiag[cust.email].products = products;
       var seenAddrs = {}; custLeads = custLeads.filter(function(cl) {
         try { var cd = JSON.parse(cl.data || '{}'); var key = String(cd.url || cd.reference || cd.tenderNoticeId || cd.companyNumber || cd.address || cd.postcode || cl.id || '').toLowerCase().trim(); return key && !seenAddrs[key] ? (seenAddrs[key]=true) : false; } catch(e) { return true; }
       });
+      // Record these leads on the customer's PERSISTENT delivered-refs set so they can
+      // never be delivered again (across days, clean-slates or store quirks).
+      try {
+        var _refSet = {};
+        (JSON.parse(cust.delivered_refs || '[]')).forEach(function(u) { _refSet[u] = 1; });
+        custLeads.forEach(function(cl) { try { var cd = JSON.parse(cl.data || '{}'); if (cd.url) _refSet[cd.url] = 1; if (cd.reference) _refSet['r:' + String(cd.reference).toLowerCase()] = 1; } catch(e) {} });
+        cust.delivered_refs = JSON.stringify(Object.keys(_refSet));
+        saveDb();
+      } catch(e) {}
       // HARD EXACT-COUNT CAP: the customer is promised EXACTLY totalDailyLimit
       // leads today (their plan quota), no more and no less. The primary-lead
       // push + rounds + global/pool fallbacks can overshoot on re-runs, so cap the
