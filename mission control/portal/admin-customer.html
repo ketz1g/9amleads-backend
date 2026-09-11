@@ -1,33 +1,3 @@
-async function rejectLeadAdmin(leadId) {
-  if (!confirm('Reject & Replace this lead? It will be marked rejected and a replacement will be sent with the next delivery.')) return;
-  try {
-    var r = await fetch(API + '/api/admin/reject-lead', { method: 'POST', headers: headers(), body: JSON.stringify({ lead_id: leadId }) });
-    var d = await r.json();
-    if (d.success) { alert(d.message); loadCustomerLeads(); }
-    else { alert('Reject failed: ' + (d.error || 'unknown')); }
-  } catch(e) { alert('Error: ' + e.message); }
-}
-async function replacePendingLead(leadId) {
-  if (!confirm("Replace this pending lead with another valid lead in the customer's area?")) return;
-  try {
-    var r = await fetch(API + '/api/admin/replace-pending-lead', { method: 'POST', headers: headers(), body: JSON.stringify({ lead_id: leadId }) });
-    var d = await r.json();
-    if (d.success) {
-      alert(d.message);
-      loadCustomerLeads();
-    } else { alert('Replace failed: ' + (d.error || 'unknown')); }
-  } catch(e) { alert('Error: ' + e.message); }
-}
-async function deleteLeadAdmin(leadId) {
-  if (!confirm('Permanently delete this lead? This removes it from the customer\'s history and it cannot be undone.')) return;
-  try {
-    var r = await fetch(API + '/api/admin/delete-lead', { method: 'POST', headers: headers(), body: JSON.stringify({ id: leadId }) });
-    var d = await r.json();
-    if (d.success) { alert(d.message || 'Lead deleted.'); loadCustomerLeads(); }
-    else { alert('Delete failed: ' + (d.error || 'unknown')); }
-  } catch(e) { alert('Error: ' + e.message); }
-}
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -111,6 +81,33 @@ function getPass() {
 }
 function headers() { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getPass() }; }
 function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+async function rejectLeadAdmin(leadId) {
+  if (!confirm('Reject & Replace this lead? It will be marked rejected and a replacement will be sent with the next delivery.')) return;
+  try {
+    var r = await fetch(API + '/api/admin/reject-lead', { method: 'POST', headers: headers(), body: JSON.stringify({ lead_id: leadId }) });
+    var d = await r.json();
+    if (d.success) { alert(d.message); load(); }
+    else { alert('Reject failed: ' + (d.error || 'unknown')); }
+  } catch(e) { alert('Error: ' + e.message); }
+}
+async function replacePendingLead(leadId) {
+  if (!confirm("Replace this pending lead with another valid lead in the customer's area?")) return;
+  try {
+    var r = await fetch(API + '/api/admin/replace-pending-lead', { method: 'POST', headers: headers(), body: JSON.stringify({ lead_id: leadId }) });
+    var d = await r.json();
+    if (d.success) { alert(d.message); load(); }
+    else { alert('Replace failed: ' + (d.error || 'unknown')); }
+  } catch(e) { alert('Error: ' + e.message); }
+}
+async function deleteLeadAdmin(leadId) {
+  if (!confirm('Permanently delete this lead? This removes it from the customer\'s history and it cannot be undone.')) return;
+  try {
+    var r = await fetch(API + '/api/admin/delete-lead', { method: 'POST', headers: headers(), body: JSON.stringify({ id: leadId }) });
+    var d = await r.json();
+    if (d.success) { alert(d.message || 'Lead deleted.'); load(); }
+    else { alert('Delete failed: ' + (d.error || 'unknown')); }
+  } catch(e) { alert('Error: ' + e.message); }
+}
 var email = decodeURIComponent(new URLSearchParams(window.location.search).get('email') || '');
 async function load() {
   if (!email) { document.getElementById('statusLine').innerHTML = '<span style="color:#ef4444">No customer email provided. Use ?email=...</span>'; return; }
