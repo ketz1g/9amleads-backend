@@ -12989,6 +12989,9 @@ app.get('/api/admin/customers', adminAuth, (req, res) => {
   const result = customers.map(c => {
     const leadCount = db.prepare('SELECT COUNT(*) as count FROM leads WHERE customer_id = ?').get(c.id);
     return Object.assign({}, c, {
+      // The SQL shim stores a JS null as the string "NULL" for paid-plan customers.
+      // Normalise to a real null so the admin UI never renders "Invalid Date".
+      trial_ends: (c.plan === 'free_trial' && c.trial_ends && String(c.trial_ends).toUpperCase() !== 'NULL' && !isNaN(new Date(c.trial_ends).getTime())) ? c.trial_ends : null,
       lead_count: leadCount.count,
       trial_expired: customerTrialExpired(c),
       email_log: emailSeriesReceived(c)
