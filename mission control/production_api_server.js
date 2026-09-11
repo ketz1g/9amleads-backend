@@ -7473,6 +7473,9 @@ app.post('/api/admin/clear-customer-leads', adminAuth, (req, res) => {
     if (!cust) return res.status(404).json({ error: 'Customer not found' });
     var before = (dbC.leads || []).filter(function(l) { return l.customer_id === cust.id; }).length;
     dbC.leads = (dbC.leads || []).filter(function(l) { return l.customer_id !== cust.id; });
+    // Also reset the persistent delivered-refs so a cleared customer can be re-delivered
+    // (used for clean test runs).
+    cust.delivered_refs = '[]';
     saveDb();
     res.json({ success: true, email: email, removed: before });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -21136,6 +21139,12 @@ _deliverDiag[cust.email].products = products;
             var tpPicked = null;
             for (var tpi = 0; tpi < tpArr.length; tpi++) {
               var tl = tpArr[tpi];
+              // NEVER re-deliver a lead this customer (or any customer) already had —
+              // the top-up used to ignore delivered history and re-send the same tenders.
+              var _tlUrl = String(tl.url || '').trim();
+              var _tlRef = String(tl.reference || tl.tenderNoticeId || '').toLowerCase().trim();
+              if (_tlUrl && (custDeliveredRefs[_tlUrl] || globalDeliveredUrls[_tlUrl] || deliveredUrls[_tlUrl])) continue;
+              if (_tlRef && custDeliveredRefs['r:' + _tlRef]) continue;
               var tlD = pickFreshDate(tl);;
               if (!tlD || tlD < freshCutoffNow) continue;
               if (!leadPassesFilters(tl)) continue;
@@ -21208,6 +21217,15 @@ _deliverDiag[cust.email].products = products;
         } catch(tpErr) { console.log('[DELIVERY-TOPDUP] error:', tpErr.message); }
       }
       if (custLeads.length === 0) continue;
+      // FINAL persistent refs update (covers leads added by the top-up too) so this
+      // customer can never receive any of these leads again.
+      try {
+        var _refSet2 = {};
+        (JSON.parse(cust.delivered_refs || '[]')).forEach(function(u) { _refSet2[u] = 1; });
+        custLeads.forEach(function(cl) { try { var cd = JSON.parse(cl.data || '{}'); if (cd.url) _refSet2[cd.url] = 1; if (cd.reference) _refSet2['r:' + String(cd.reference).toLowerCase()] = 1; } catch(e) {} });
+        cust.delivered_refs = JSON.stringify(Object.keys(_refSet2));
+        saveDb();
+      } catch(e) {}
       // POSTCODER ON DELIVERY ONLY: Royal Mail PAF is paid per lookup (~4.5p), so
       // we enrich ONLY the exact leads going out to this customer (never the pool).
       // Credits spent == leads delivered (e.g. 5 leads = 5 credits). The shared
