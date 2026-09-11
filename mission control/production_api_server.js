@@ -21070,9 +21070,12 @@ _deliverDiag[cust.email].products = products;
         } catch(alE) { console.log('[DELIVERY] alert err:', alE.message); }
         continue;
       }
-      // Deduplicate leads by address within batch
+      // Deduplicate leads within the batch by URL / reference / address. Tenders and
+      // new-business leads have no street address, so the key MUST include url/
+      // reference (previously it fell back to the unique row id, so the same tender
+      // could be delivered several times).
       var seenAddrs = {}; custLeads = custLeads.filter(function(cl) {
-        try { var cd = JSON.parse(cl.data || '{}'); var key = (cd.address || cd.postcode || cl.id || '').toLowerCase().trim(); return key && !seenAddrs[key] ? (seenAddrs[key]=true) : false; } catch(e) { return true; }
+        try { var cd = JSON.parse(cl.data || '{}'); var key = String(cd.url || cd.reference || cd.tenderNoticeId || cd.companyNumber || cd.address || cd.postcode || cl.id || '').toLowerCase().trim(); return key && !seenAddrs[key] ? (seenAddrs[key]=true) : false; } catch(e) { return true; }
       });
       // HARD EXACT-COUNT CAP: the customer is promised EXACTLY totalDailyLimit
       // leads today (their plan quota), no more and no less. The primary-lead
