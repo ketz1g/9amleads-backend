@@ -5519,7 +5519,7 @@ app.post('/api/auth/signup', async (req, res) => {
       id, email.toLowerCase(), company, name || '', phone || '', password_hash,
       product, productInfo.lead_type, productInfo.business_type,
       JSON.stringify(areas || []), coverage || 'postcode', leadFiltersToStore, bizField3 || JSON.stringify(products && Array.isArray(products) ? products : [product]),
-      source || 'direct', plan || 'free_trial', plan === 'free_trial' ? trial_ends : null, marketingConsent ? 1 : 0,
+      source || 'direct', plan || 'free_trial', trial_ends, marketingConsent ? 1 : 0,
       new Date().toISOString(), '0', crmWebhookUrl || '', '[]', signupIp,
       affRef ? affRef.id : null, affRef ? affRef.code : null, affiliateAppliedAt, affRef ? trialDays : null,
       affRef ? 'referral_pending' : null, affRef ? affiliatePayoutDue : null
@@ -7716,25 +7716,22 @@ app.post('/api/admin/set-plan', adminAuth, (req, res) => {
 app.post('/api/admin/clean-trial-ends', adminAuth, (req, res) => {
   try {
     var all = db.prepare('SELECT id, plan, created_at, trial_ends FROM customers').all();
-    var fixedPaid = 0, fixedTrial = 0;
+    var fixed = 0;
     all.forEach(function(c) {
       var raw = c.trial_ends;
       var invalid = !raw || String(raw).toUpperCase() === 'NULL' || isNaN(new Date(raw).getTime());
-      var isPaid = c.plan && c.plan !== 'free_trial' && c.plan !== 'cancelled';
-      if (isPaid && !(raw === null || raw === undefined)) {
-        try { db.prepare('UPDATE customers SET trial_ends = NULL WHERE id = ?').run(c.id); fixedPaid++; } catch(e) {}
-      } else if (!isPaid && c.plan === 'free_trial' && invalid) {
-        // Free trial with no valid end date -> give it 7 days from signup.
+      if (invalid) {
+        // Give it a real 7-day trial end from signup (every plan starts with a trial).
         try {
           var base = c.created_at ? new Date(c.created_at).getTime() : Date.now();
           var end = new Date(base + 7 * 86400000).toISOString();
           db.prepare('UPDATE customers SET trial_ends = ? WHERE id = ?').run(end, c.id);
-          fixedTrial++;
+          fixed++;
         } catch(e) {}
       }
     });
     saveDb();
-    res.json({ success: true, fixed_paid: fixedPaid, fixed_trials: fixedTrial });
+    res.json({ success: true, fixed: fixed });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -13017,9 +13014,9 @@ app.get('/api/admin/customers', adminAuth, (req, res) => {
   const result = customers.map(c => {
     const leadCount = db.prepare('SELECT COUNT(*) as count FROM leads WHERE customer_id = ?').get(c.id);
     return Object.assign({}, c, {
-      // The SQL shim stores a JS null as the string "NULL" for paid-plan customers.
-      // Normalise to a real null so the admin UI never renders "Invalid Date".
-      trial_ends: (c.plan === 'free_trial' && c.trial_ends && String(c.trial_ends).toUpperCase() !== 'NULL' && !isNaN(new Date(c.trial_ends).getTime())) ? c.trial_ends : null,
+      // The SQL shim stores a JS null as the string "NULL". Show the trial end date
+      // for ANY plan that has a valid one (everyone starts a 7-day trial).
+      trial_ends: (c.trial_ends && String(c.trial_ends).toUpperCase() !== 'NULL' && !isNaN(new Date(c.trial_ends).getTime())) ? c.trial_ends : null,
       lead_count: leadCount.count,
       trial_expired: customerTrialExpired(c),
       email_log: emailSeriesReceived(c)
