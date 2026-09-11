@@ -20039,8 +20039,10 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       // delivery NEVER sends to test accounts — only real paying customers. This
       // keeps test data out of the live email + dashboard + Print & Post pipeline.
       var _isTest = /^test\./.test(String(c.email || '').toLowerCase());
-      if (testOnly) { if (!_isTest) return false; }
-      else { if (_isTest) return false; }
+      // test.* accounts now receive the REAL 9am Mon-Fri delivery like any other
+      // customer (the 15-min test cron is disabled). test_only mode still limits to
+      // test accounts for manual testing.
+      if (testOnly && !_isTest) return false;
       return true;
     });
     console.log('[DELIVERY] Running for ' + customers.length + ' customer(s)' + (onlyEmail ? ' (filtered to ' + onlyEmail + ')' : ''));
@@ -31552,22 +31554,23 @@ function syncCustomers(product) {
           var propStore = require('./property_store');
           leads = (leads || []).map(function(pl) { return propStore.enrichLead(pl); });
         } catch(pe) { console.log('[SCRAPER] Property store error:', pe.message); }
-        // LOCATION ENRICHMENT (planning/tenders): many source records have no county
-        // or postcode, which starves per-county delivery and the signup estimate.
-        // Backfill: pull a UK postcode out of any address text, and infer the county
-        // from council/address keywords (or the postcode area) so area matching works.
-        if ((product === 'planning' || product === 'tenders') && leads && leads.length) {
+        // LOCATION + LINK ENRICHMENT (ALL products): many source records have no
+        // county/postcode or URL, which starves per-county delivery, the signup
+        // estimate and the per-customer dedupe. Backfill: pull a UK postcode out of
+        // any address text, infer the county from council/address keywords (or the
+        // postcode area), and add a canonical source URL where the source omitted it.
+        if (leads && leads.length) {
           try {
             var _revPc = {};
             Object.keys(COUNTY_POSTCODE_MAP).forEach(function(k) { (COUNTY_POSTCODE_MAP[k] || []).forEach(function(pa) { if (!_revPc[pa]) _revPc[pa] = k; }); });
-            var _enr = 0;
+            var _enr = 0, _urls = 0;
             leads.forEach(function(l) {
               if (!l.postcode) {
                 var _m = String(l.address || l.fullAddress || l.description || '').toUpperCase().match(/\b([A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2})\b/);
                 if (_m) l.postcode = _m[1].replace(/\s+/g, ' ').trim();
               }
               if (!l.county) {
-                var _hay = (String(l.address || '') + ' ' + String(l.council || '') + ' ' + String(l.description || '') + ' ' + String(l.proposal || '') + ' ' + String(l.applicationType || '') + ' ' + String(l.title || '')).toLowerCase();
+                var _hay = (String(l.address || '') + ' ' + String(l.council || '') + ' ' + String(l.contractingAuthority || '') + ' ' + String(l.description || '') + ' ' + String(l.proposal || '') + ' ' + String(l.applicationType || '') + ' ' + String(l.title || '')).toLowerCase();
                 var _found = '';
                 for (var _ak in AREA_MATCH_KEYWORDS) {
                   var _kws = AREA_MATCH_KEYWORDS[_ak];
@@ -31577,8 +31580,13 @@ function syncCustomers(product) {
                 if (!_found && l.postcode) { var _pa = extractPostcodeArea(l.postcode); if (_pa && _revPc[_pa]) _found = _revPc[_pa]; }
                 if (_found) { l.county = _found; _enr++; }
               } else { _enr++; }
+              // Canonical source URL where the source omitted it (helps dedupe + email links).
+              if (!l.url) {
+                if (l.companyNumber) { l.url = 'https://find-and-update.company-information.service.gov.uk/company/' + encodeURIComponent(l.companyNumber); _urls++; }
+                else if (l.reference && /[0-9]{4}\/S/.test(String(l.reference))) { l.url = 'https://www.contractsfinder.service.gov.uk/notice/' + encodeURIComponent(l.reference); _urls++; }
+              }
             });
-            console.log('[SCRAPER] ' + product + ': location enriched for ' + _enr + '/' + leads.length + ' leads');
+            console.log('[SCRAPER] ' + product + ': location enriched ' + _enr + '/' + leads.length + ', urls added ' + _urls);
           } catch(enrE) { console.log('[SCRAPER] location enrich error:', enrE.message); }
         }
         // MERGE into the existing pool — NEVER overwrite. A 0-result scrape (e.g.
