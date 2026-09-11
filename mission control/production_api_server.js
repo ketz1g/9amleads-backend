@@ -21217,6 +21217,12 @@ _deliverDiag[cust.email].products = products;
         } catch(tpErr) { console.log('[DELIVERY-TOPDUP] error:', tpErr.message); }
       }
       if (custLeads.length === 0) continue;
+      // FINAL dedupe AFTER the top-up — the top-up can add a lead already in the batch
+      // (tenders have no address, so it must dedupe on url/reference).
+      var _seenFinal = {};
+      custLeads = custLeads.filter(function(cl) {
+        try { var cd = JSON.parse(cl.data || '{}'); var k = String(cd.url || cd.reference || cd.tenderNoticeId || cd.companyNumber || cd.address || cd.postcode || cl.id || '').toLowerCase().trim(); return k && !_seenFinal[k] ? (_seenFinal[k] = 1) : false; } catch(e) { return true; }
+      });
       // FINAL persistent refs update (covers leads added by the top-up too) so this
       // customer can never receive any of these leads again.
       try {
