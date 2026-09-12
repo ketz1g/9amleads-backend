@@ -5269,6 +5269,9 @@ app.get(/^\/(?!api\/|admin\/).*$/, (req, res) => {
   ];
   for (const p of paths) {
     if (fs.existsSync(p)) {
+      // Never sendFile a directory (e.g. ROOT_DIR for '/') — fall through to the
+      // index.html candidate instead.
+      try { if (fs.statSync(p).isDirectory()) continue; } catch(e) { continue; }
       // Block serving sensitive files
       const ext = path.extname(p).toLowerCase();
       if (ext === '.json' || ext === '.md' || ext === '.env' || ext === '.py' || path.basename(p) === 'node_modules') continue;
@@ -5282,7 +5285,12 @@ app.get(/^\/(?!api\/|admin\/).*$/, (req, res) => {
   if (req.path === '/affiliates' || req.path === '/affiliate') {
     return res.redirect('/portal/affiliate.html');
   }
-  res.sendFile(path.join(FRONTEND_DIR, 'index.html'));
+  // Homepage fallback. FRONTEND_DIR ('9amleads') was retired (commit dfd5c8a moved it
+  // to _storage); the live homepage is now ROOT_DIR/index.html. Never sendFile a
+  // path that doesn't exist — that threw ENOENT and tripped the health alert.
+  var _spaHome = path.join(ROOT_DIR, 'index.html');
+  if (fs.existsSync(_spaHome)) return res.sendFile(_spaHome);
+  return res.status(404).send('Not found');
 });
 
 // ===== AUTH ENDPOINTS =====
@@ -16409,10 +16417,18 @@ function runHealthAlerts() {
     try {
       var dbDup = getDb();
       var dupFound = [];
+      // Only look at leads delivered in the last 48h — historical duplicates from
+      // before the dedupe fix would otherwise alert forever. Skip internal/test
+      // accounts and expired trials (not owed leads).
+      var _dupCut = Date.now() - 48 * 3600000;
       (dbDup.customers || []).forEach(function(c) {
+        if (isInternalAccount(c)) return;
+        if (c.trial_ends && new Date(c.trial_ends) <= new Date()) return;
         var seen = {}, dup = 0;
         (dbDup.leads || []).forEach(function(l) {
           if (l.customer_id !== c.id || !l.delivered) return;
+          var _when = l.delivered_at || l.created_at;
+          if (!_when || new Date(_when).getTime() < _dupCut) return;
           try {
             var dd = JSON.parse(l.data || '{}');
             var k = String(dd.url || dd.reference || dd.tenderNoticeId || dd.companyNumber || '').toLowerCase().trim();
