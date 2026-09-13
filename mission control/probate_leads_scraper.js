@@ -210,6 +210,81 @@ function fetchGazetteHTML(maxItems, pageNum) {
   });
 }
 
+// FREE PROXY FALLBACK: The Gazette blocks Render's datacenter IP, so the direct
+// HTML scrape returns 0 from the server. r.jina.ai fetches the page from ITS
+// servers (not ours) and returns it as markdown, which we parse into the same
+// lead shape as fetchGazetteHTML. No Apify needed.
+function fetchGazetteViaJina(maxItems, pageNum) {
+  return new Promise((resolve) => {
+    const searchPath = '/wills-and-probate/notice?notice-type=deceased-estates&results-page-size=' + (maxItems || 50) + '&sort-by=latest-date' + (pageNum && pageNum > 1 ? '&results-page=' + pageNum : '');
+    const target = 'https://www.thegazette.co.uk' + searchPath;
+    const req = https.request({ hostname: 'r.jina.ai', path: '/' + target, method: 'GET', headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'text/plain' }, timeout: 70000 }, (res) => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => {
+        if (res.statusCode !== 200) { console.log('    Gazette(jina) HTTP ' + res.statusCode); resolve([]); return; }
+        const parts = body.split(/###\s*\[/);
+        const leads = [];
+        const seen = {};
+        for (let i = 1; i < parts.length; i++) {
+          const a = parts[i];
+          const head = a.match(/^([^\]\n]+)\]\((https:\/\/www\.thegazette\.co\.uk\/notice\/(\d+))/);
+          if (!head) continue;
+          const rawName = head[1].replace(/\s+/g, ' ').trim();
+          const noticeId = head[3];
+          if (seen[noticeId]) continue; seen[noticeId] = 1;
+          const pubMatch = a.match(/Publication date\s+([0-9]{1,2} [A-Za-z]+ [0-9]{4})/);
+          const pubDate = pubMatch ? pubMatch[1] : '';
+          const addrMatch = a.match(/Address of Deceased\s+([\s\S]*?)\s*(?:Date of Claim Deadline|Deceased Estates|\[View full|$)/);
+          const deceasedAddress = addrMatch ? addrMatch[1].replace(/\s+/g, ' ').trim() : '';
+          const pcMatch = deceasedAddress.match(/([A-Z]{1,2}[0-9][0-9A-Z]?\s?[0-9][A-Z]{2})\s*$/i);
+          const postcode = pcMatch ? pcMatch[1].toUpperCase() : '';
+          let deceasedName = rawName, surname = '', firstNames = rawName;
+          if (rawName.indexOf(',') > -1) {
+            const pp = rawName.split(',').map(s => s.trim());
+            surname = pp[0]; firstNames = pp.slice(1).join(' ').trim();
+            deceasedName = (firstNames + ' ' + surname).trim();
+          } else {
+            const bits = rawName.split(' ');
+            if (bits.length > 1) { surname = bits[bits.length - 1]; firstNames = bits.slice(0, -1).join(' '); }
+          }
+          let pubIso = new Date().toISOString();
+          try { const dd = new Date(pubDate); if (!isNaN(dd.getTime()) && dd.getFullYear() > 2000) pubIso = dd.toISOString(); } catch(e) {}
+          leads.push({
+            id: 'GAZ_' + noticeId,
+            name: deceasedName,
+            surname: surname,
+            firstNames: firstNames,
+            deceasedAddress: deceasedAddress,
+            postcode: postcode,
+            dateOfDeath: '',
+            grantDate: pubDate,
+            publishedDate: pubIso,
+            claimExpiry: '',
+            estateValue: 0,
+            estateValueLabel: '',
+            solicitor: '',
+            executorName: '',
+            executorAddress: '',
+            solicitorAddress: '',
+            noticeUrl: 'https://www.thegazette.co.uk/notice/' + noticeId,
+            url: 'https://www.thegazette.co.uk/notice/' + noticeId,
+            occupation: '',
+            grantType: 'Deceased Estates',
+            source: 'The Gazette',
+            scrapedAt: new Date().toISOString()
+          });
+        }
+        console.log('    Gazette (jina) returned ' + leads.length + ' deceased estate notices');
+        resolve(leads);
+      });
+    });
+    req.on('error', (e) => { console.log('    Gazette jina error: ' + e.message); resolve([]); });
+    req.setTimeout(70000, () => { req.destroy(); resolve([]); });
+    req.end();
+  });
+}
+
 // Fetch a single Gazette notice detail page and extract the deceased's
 // structured address (street, locality, postcode, region). Free, reliable.
 // Strategy: try the fast linked-data JSON endpoint first (returns decomposed
@@ -1181,6 +1256,25 @@ async function collectProbateLeads(config) {
         try { results = await enrichGazetteLeads(results, maxItems); } catch(e) { console.log('[PROBATE] Enrich error: ' + e.message); }
       }
       if (results.length > 0) return results;
+    }
+    // FREE PROXY FALLBACK: the direct HTML is blocked from Render, so fetch the
+    // same page through r.jina.ai (which fetches from its own servers).
+    if (results.length === 0) {
+      console.log('[PROBATE] Gazette HTML empty - trying free r.jina.ai proxy...');
+      try {
+        var jina = await fetchGazetteViaJina(maxItems, 1);
+        if (jina && jina.length >= 25) {
+          var jina2 = await fetchGazetteViaJina(maxItems, 2);
+          if (jina2 && jina2.length) {
+            var seenJ = {}; jina.forEach(function(r){ seenJ[r.id] = 1; });
+            jina2.forEach(function(r){ if (!seenJ[r.id]) { seenJ[r.id] = 1; jina.push(r); } });
+          }
+        }
+        if (jina && jina.length > 0) {
+          console.log('[PROBATE] Jina proxy returned ' + jina.length + ' notices');
+          return jina;
+        }
+      } catch(e) { console.log('[PROBATE] Jina error: ' + e.message); }
     }
     if (results.length === 0) {
     // Fallback: Gazette via Apify actor (if useApifyFirst was false or both empty). Retry once.
