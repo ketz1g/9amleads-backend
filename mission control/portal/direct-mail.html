@@ -187,50 +187,16 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 <div id="artwork-validation" style="margin-top:10px;display:none"></div>
 </div>
 <div style="margin-top:8px;padding:9px 12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;font-size:11px;color:#0369a1">
-<i class="fas fa-info-circle" style="margin-right:4px"></i>The recipient's address is printed automatically in a reserved <b>clear zone</b>, kept white so Royal Mail can machine-read it. The template below shows the 6mm bleed and safe-zone guides.
+<i class="fas fa-info-circle" style="margin-right:4px"></i>The recipient's address is printed automatically in a reserved <b>clear zone</b>, kept white so Royal Mail can machine-read it. We print edge-to-edge with a 6mm bleed, and the safe-zone is handled for you.
 </div>
 
-<!-- Design Templates -->
+<!-- Save leaflet -->
 <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border)">
-<div class="sect-title"><i class="fas fa-ruler-combined" style="color:var(--accent)"></i> Design Template (Print Specs)</div>
-<p style="font-size:12px;color:var(--text2);margin-bottom:10px">Download the blank template for your chosen format — it shows the bleed (red), safe zone (blue) and address clear zone (orange).</p>
-<div id="tpl-downloads" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px"></div>
-<div style="font-size:11px;color:var(--muted)">Design on the template, then upload front &amp; back below. We print edge-to-edge (300 DPI) and keep the address clear zone white for Royal Mail.</div>
+
 <button class="btn btn-primary" onclick="saveFlyerSetup()" id="save-flyer-btn" style="margin-top:12px;width:100%;justify-content:center"><i class="fas fa-save"></i> Save My Leaflet (Front &amp; Back)</button>
 <div style="font-size:11px;color:#15803d;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:8px 12px;margin-top:8px"><i class="fas fa-check-circle" style="margin-right:4px"></i><b>Save your leaflet and cover letter, then review the Print-Ready preview above</b> before you send. If you need to change anything, use <b>Edit / Position</b> and save again.</div>
 <div id="save-flyer-status" style="font-size:12px;color:var(--success);margin-top:8px;text-align:center"></div>
 
-<!-- Print specs guide (Clear Zones / Bleed / Safe Zones / Trim Marks) -->
-<div style="margin-top:14px;border:1px solid var(--border);border-radius:10px;overflow:hidden">
-  <button onclick="togglePrintGuide(this)" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#f8fafc;border:none;cursor:pointer;font-family:var(--ff-b);font-size:12px;font-weight:700;color:var(--text);text-align:left"><span><i class="fas fa-drafting-compass" style="color:var(--accent);margin-right:6px"></i> How to read the template. Clear Zones, Bleed, Safe Zones &amp; Trim Marks</span><span class="pp-guide-arrow" style="color:var(--accent)">▾</span></button>
-  <div id="pp-print-guide" style="display:none;padding:14px 16px;border-top:1px solid var(--border);font-size:12px;color:var(--text2);line-height:1.7">
-    <p style="margin-bottom:10px">Each region's postal provider (e.g. Royal Mail) has <b>strict requirements</b> on where the address sits so your mail can be machine-read, sorted and delivered correctly. We print the address and the postage indicia stamp directly onto your item. The template markings show you the exact borders to design within. they are <b>guides only</b> and never printed on the final item.</p>
-    <div style="display:grid;gap:10px;margin-top:4px">
-      <div style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:#fff;border:1px solid var(--border);border-radius:8px">
-        <span style="flex-shrink:0;width:26px;height:26px;border-radius:50%;background:#dc2626;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800">1</span>
-        <div><div style="font-weight:700;color:var(--text)">Trim Marks (red line)</div>
-        <div style="font-size:11px">We print on larger paper and then <b>cut it down to size</b>. The trim marks are where we cut. Anything outside them is removed.</div></div>
-      </div>
-      <div style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:#fff;border:1px solid var(--border);border-radius:8px">
-        <span style="flex-shrink:0;width:26px;height:26px;border-radius:50%;background:#dc2626;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800">2</span>
-        <div><div style="font-weight:700;color:var(--text)">Bleed Margin</div>
-        <div style="font-size:11px">The area aligned with the trim marks that gets <b>cut off</b>. Make your <b>background colour / design overflow into this margin</b> so you get an <b>edge-to-edge</b> print with no white edges. <span style="color:var(--success)">✓ We do this automatically. your design is upscaled so it fills the full sheet.</span></div></div>
-      </div>
-      <div style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:#fff;border:1px solid var(--border);border-radius:8px">
-        <span style="flex-shrink:0;width:26px;height:26px;border-radius:50%;background:#2563eb;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800">3</span>
-        <div><div style="font-weight:700;color:var(--text)">Safe Zone (blue line)</div>
-        <div style="font-size:11px">Keep all <b>important text, logos, QR codes, contact details and your call to action</b> inside this area. Printers can print with a <b>minor skew</b>, so anything outside the safe zone risks being cut off. Recommended: everything within the Safe Zone.</div></div>
-      </div>
-      <div style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:#fff;border:1px solid var(--border);border-radius:8px">
-        <span style="flex-shrink:0;width:26px;height:26px;border-radius:50%;background:#f59e0b;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800">4</span>
-        <div><div style="font-weight:700;color:var(--text)">Clear Zone (orange area)</div>
-        <div style="font-size:11px">The <b>recipient address and barcode</b> are printed here and must be <b>machine-readable</b>. A white overlay is applied by default so nothing disturbs reading. <b>Do not put dark colours, images or markings across this area</b>. it can incur a hand-sorting charge or leave your item undeliverable. We keep this zone white for you automatically.</div></div>
-      </div>
-    </div>
-    <div style="margin-top:10px;padding:10px 12px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;font-size:11px;color:#92400e"><i class="fas fa-exclamation-triangle" style="margin-right:4px;color:#d97706"></i><b>Important:</b> If the address area is not kept clear, the item may not be machine-readable, may incur a hand-sorting charge, and could be <b>undeliverable</b>. Address visibility is the sender's responsibility. so please design with the clear zone in mind.</div>
-    <div style="margin-top:8px;padding:10px 12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;font-size:11px;color:#0369a1"><i class="fas fa-info-circle" style="margin-right:4px;color:#0ea5e9"></i><b>Return address:</b> On postcards and greeting cards we can also print a <b>return address</b> inside the clear zone. Add it in your business profile and it's printed automatically.</div>
-  </div>
-</div>
 </div>
 </div>
 <button class="btn btn-outline" onclick="uploadMaterials()" style="margin-top:10px"><i class="fas fa-upload"></i> Upload Files</button>
@@ -678,6 +644,7 @@ function loadLetterPreview(){
 function renderTemplateDownloads(){
   var f=_formats.find(function(x){return x.id===_selectedFormat;});
   var el=document.getElementById('tpl-downloads');
+  if(!el){return;}
   if(!f){return;}
   var base=f.template.replace(/\.pdf$/,'');
   var dl='';
