@@ -8645,6 +8645,55 @@ app.post('/api/support', authMiddleware, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/assistant/ask — in-dashboard AI assistant. Answers customer questions
+// about 9amLeads (products, delivery, Print & Post, Auto Send, Bulk, billing, etc.)
+app.post('/api/assistant/ask', authMiddleware, async (req, res) => {
+  try {
+    var question = String(req.body.question || '').trim();
+    var page = String(req.body.page || '').trim();
+    if (!question) return res.status(400).json({ error: 'Please type a question.' });
+    if (question.length > 600) question = question.slice(0, 600);
+    var cust = null;
+    try { cust = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id); } catch(e) {}
+    var plan = (cust && cust.plan) || 'free_trial';
+    var leadType = (cust && cust.lead_type) || 'leads';
+    var products = [];
+    try { products = JSON.parse((cust && cust.biz_field3) || '[]'); } catch(e) {}
+    var areas = (cust && cust.target_areas) || '';
+    var sys = 'You are the friendly, concise 9amLeads in-dashboard assistant for UK customers. '
+      + 'Answer ONLY questions about 9amLeads and how to use it. Keep answers short (2-5 sentences or a short list), practical and in plain English. '
+      + 'Never invent prices or policies. If you are unsure, tell them to email hello@9amleads.com.\n\n'
+      + 'About 9amLeads:\n'
+      + '- We deliver fresh UK business leads every weekday morning at 9am, matched to the customer\'s chosen lead type(s) and areas.\n'
+      + '- Lead types: Moving Leads (home movers), Probate Leads (new probate grants), New Business Leads (new Companies House registrations), Planning Leads (new planning applications), Public Sector Tenders (Contracts Finder).\n'
+      + '- Data comes from official UK sources: HM Land Registry / property listings, the Gov.uk probate register, Companies House, the Planning Portal and Contracts Finder.\n'
+      + '- Pricing: plans start from 25 pounds per week. Every plan includes a 7-day free trial with no card or payment required, cancel anytime. Pro and Enterprise give more leads per day and wider areas.\n'
+      + '- Print & Post: the customer uploads a leaflet (front AND back) and a cover letter; we print, address and post it to their leads for them. Prices: A4 letter 2.49, A5 leaflet 2.99, leaflet + letter 4.49 per item.\n'
+      + '- Auto Send: automatically prints and posts to every new lead each day.\n'
+      + '- Bulk Send: buy a pack of never-sent archive leads (great for quiet periods).\n'
+      + '- Repeat mailing: available in the My Leads bulk send (send now + 2 weeks + 1 month, paid upfront).\n'
+      + '- Areas and filters can be changed in Settings; changes apply to the next day\'s delivery.\n'
+      + '- Success Centre has playbooks, tips and ready-to-use templates for the customer\'s lead type.\n'
+      + '- Support: hello@9amleads.com.\n\n'
+      + 'Customer context: plan=' + plan + ', lead type=' + leadType + ', products=' + (products.join(', ') || 'n/a') + ', areas=' + areas + ', current page=' + page + '.';
+    var OPENAI_KEY = process.env.OPENAI_API_KEY;
+    if (!OPENAI_KEY) return res.json({ answer: 'The assistant is being set up. Please email hello@9amleads.com and we will help right away.' });
+    var reqBody = JSON.stringify({ model: 'gpt-4o-mini', temperature: 0.4, max_tokens: 400,
+      messages: [{ role: 'system', content: sys }, { role: 'user', content: question }] });
+    var result = await new Promise(function(resolve) {
+      var https = require('https');
+      var r = https.request({ hostname: 'api.openai.com', path: '/v1/chat/completions', method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + OPENAI_KEY, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(reqBody) } },
+        function(rr) { var b = ''; rr.on('data', function(c) { b += c; }); rr.on('end', function() { try { resolve(JSON.parse(b)); } catch(e) { resolve({ error: { message: e.message } }); } }); });
+      r.on('error', function(e) { resolve({ error: { message: e.message } }); });
+      r.write(reqBody); r.end();
+    });
+    var answer = result && result.choices && result.choices[0] && result.choices[0].message && result.choices[0].message.content;
+    if (!answer) return res.json({ answer: 'Sorry, I could not answer that just now. Please email hello@9amleads.com and we will help.' });
+    res.json({ answer: String(answer).trim() });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== LEAD ENDPOINTS =====
 
 // GET /api/leads

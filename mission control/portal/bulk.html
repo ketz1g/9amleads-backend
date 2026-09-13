@@ -207,5 +207,6 @@ document.addEventListener('DOMContentLoaded', load);
 // Stripe redirect back from a purchase
 if (window.location.search.indexOf('bulk_paid=success') !== -1) { setTimeout(function(){ try { load(); } catch(e){} }, 400); }
 </script>
+<script src="/portal/assistant.js" defer></script>
 </body>
 </html>
