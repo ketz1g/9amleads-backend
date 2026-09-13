@@ -226,12 +226,12 @@ var LEAD = [
 ];
 
 var TEMPLATES = [
- { name:'Moving Introduction Letter', meta:'Moving · Letter', body:'Dear {{lead_name}},\n\nWe understand you are considering a move to {{lead_address}}.\n\nAs a local removal company, we offer:\n- Free no-obligation survey\n- Full packing service\n- Insurance included\n- Storage options\n\nCall us on {{customer_phone}} for a free quote.\n\nBest regards,\n{{customer_business_name}}' },
- { name:'Moving Phone Script', meta:'Moving · Phone', body:'Hello, this is {{customer_business_name}}.\n\nWe saw you are planning a move to {{lead_address}}. We specialise in {{postcode}} area moves.\n\nWould you like a free no-obligation survey and quote?\n\nWe offer full packing, storage and insurance.' },
- { name:'Probate Introduction Letter', meta:'Probate · Letter', body:'Dear {{lead_name}},\n\nWe were sorry to learn of your recent loss.\n\nAt {{customer_business_name}}, we handle probate property matters with care and sensitivity.\n\nWe offer:\n- Free probate valuation\n- Sensitive handling\n- Clear guidance through the process\n\nPlease call {{customer_phone}} when you are ready.\n\nWith condolences,\n{{customer_business_name}}' },
- { name:'Builder Planning Letter', meta:'Planning · Letter', body:'Dear {{lead_name}},\n\nWe note you have a planning application at {{lead_address}}.\n\n{{customer_business_name}} specialises in projects like this. We can provide a competitive quote.\n\nCall {{customer_phone}} for a free site visit.\n\nBest regards,\n{{customer_business_name}}' },
- { name:'New Business Welcome Email', meta:'New Business · Email', body:'Subject: Welcome to {{lead_name}}\n\nDear {{contact_name}},\n\nCongratulations on your new venture.\n\n{{customer_business_name}} can help you with:\n- Accounting / Insurance / Marketing support\n- Free initial consultation\n- Local expertise\n\nCall {{customer_phone}} or reply to this email.\n\nBest regards,\n{{customer_business_name}}' },
- { name:'Tender Introduction Email', meta:'Tenders · Email', body:'Subject: Expression of Interest\n\nTo the procurement team,\n\n{{customer_business_name}} wishes to express interest in the tender opportunity.\n\nWe have experience delivering similar contracts and can provide full capability documentation.\n\nPlease contact {{customer_email}} for our credentials.\n\nYours faithfully,\n{{customer_business_name}}' }
+ { lead:'moving', name:'Moving Introduction Letter', meta:'Moving · Letter', body:'Dear {{lead_name}},\n\nWe understand you are preparing to move from {{lead_address}}, and we would love to help.\n\nAs an established local removal company, we take the stress out of moving day with:\n\n- A free, no-obligation home survey and a fixed, no-surprise quote\n- Careful packing, wrapping and loading by an experienced, uniformed crew\n- Full goods-in-transit insurance for complete peace of mind\n- Secure storage if your dates do not quite line up\n\nWe will give you a clear, fixed price - no hidden extras, ever.\n\nTo book your free survey, simply call us on {{customer_phone}} or email {{customer_email}}.\n\nWe look forward to helping you move.\n\nKind regards,\n{{customer_business_name}}\n{{customer_phone}} | {{customer_website}}' },
+ { lead:'moving', name:'Moving Phone Script', meta:'Moving · Phone', body:'Hello, this is {{customer_business_name}}.\n\nWe understand you are planning a move from {{lead_address}}, and we are a local removal company covering the {{postcode}} area.\n\nWould you like a free, no-obligation home survey and a fixed quote? It usually takes about 20 minutes, and there is no pressure at all.\n\nWe offer careful packing, full insurance and secure storage if you need it.\n\nWhat day would suit you best for the survey?' },
+ { lead:'probate', name:'Probate Introduction Letter', meta:'Probate · Letter', body:'Dear {{lead_name}},\n\nPlease accept our sincere condolences for your recent loss.\n\nWe understand this is a difficult time, and that managing a property as part of an estate can feel overwhelming. Our experienced team is here to help, with sensitivity and complete discretion.\n\nWe can assist with:\n\n- A free, no-obligation probate valuation\n- Professional, respectful handling of the property\n- Clear, plain-English guidance through every step\n- Support with clearing and preparing the property for sale, if needed\n\nThere is no pressure and no obligation. When you feel ready, we would be glad to help.\n\nPlease call us on {{customer_phone}} or email {{customer_email}} whenever you wish.\n\nWith warm regards,\n{{customer_business_name}}\n{{customer_phone}} | {{customer_website}}' },
+ { lead:'planning', name:'Builder Planning Letter', meta:'Planning · Letter', body:'Dear {{lead_name}},\n\nWe noticed your planning application for {{lead_address}}, and wanted to introduce ourselves.\n\n{{customer_business_name}} specialises in projects just like yours. We can help you get the most from your approval, with:\n\n- A free, no-obligation site visit and a detailed quote\n- A portfolio of similar completed projects\n- Clear timelines and fixed pricing\n- Full insurance and qualified, experienced tradespeople\n\nPlanning permission usually lasts three years - and getting the right team in early saves both time and money.\n\nCall us on {{customer_phone}} or email {{customer_email}} to arrange your free site visit.\n\nKind regards,\n{{customer_business_name}}\n{{customer_phone}} | {{customer_website}}' },
+ { lead:'newbusiness', name:'New Business Welcome Email', meta:'New Business · Email', body:'Subject: Congratulations on your new company - can we help?\n\nDear {{contact_name}},\n\nCongratulations on launching {{lead_name}} - a very exciting step.\n\nNew businesses often need trusted support early on. {{customer_business_name}} helps companies like yours with:\n\n- A free initial consultation, with no obligation\n- Clear, fixed pricing and plain-English advice\n- Fast turnaround so you can get on with running your business\n- A local team who understand what new companies need\n\nWe would love to offer you a free consultation to see how we can help.\n\nSimply reply to this email, call {{customer_phone}} or visit {{customer_website}}.\n\nCongratulations again - we look forward to speaking.\n\nBest regards,\n{{customer_business_name}}\n{{customer_phone}} | {{customer_website}}' },
+ { lead:'tenders', name:'Tender Introduction Email', meta:'Tenders · Email', body:'Subject: Expression of Interest - {{customer_business_name}}\n\nTo the procurement team,\n\n{{customer_business_name}} wishes to express our interest in this contract opportunity.\n\nWe have a proven track record delivering similar contracts and would welcome the chance to provide our full capability statement, including:\n\n- Relevant experience and case studies\n- Insurance, accreditations and compliance documents\n- References from comparable public-sector clients\n\nWe are ready to respond within your timescales and can provide any further information you require.\n\nPlease contact {{customer_email}} or call {{customer_phone}}.\n\nYours faithfully,\n{{customer_business_name}}\n{{customer_phone}} | {{customer_website}}' }
 ];
 
 var CHECKLIST = [
@@ -296,13 +296,17 @@ function renderPanel(){
    '<div class="kpis">'+kpis+'</div>'+
   '</div>';
 }
+var SHOWN_TPL = [];
 function renderTemplates(){
- document.getElementById('tpl-grid').innerHTML = TEMPLATES.map(function(t,i){
+ var ids = SHOWN.map(function(l){return l.id;});
+ SHOWN_TPL = TEMPLATES.filter(function(t){return ids.indexOf(t.lead)!==-1;});
+ if(!SHOWN_TPL.length) SHOWN_TPL = TEMPLATES.slice();
+ document.getElementById('tpl-grid').innerHTML = SHOWN_TPL.map(function(t,i){
   return '<div class="tpl"><h4>'+t.name+'</h4><div class="meta">'+t.meta+'</div><pre id="tpl-'+i+'">'+esc(t.body)+'</pre><button class="copy" onclick="copyTpl('+i+')"><i class="fas fa-copy"></i> Copy template</button></div>';
  }).join('');
 }
 function copyTpl(i){
- var txt = TEMPLATES[i].body;
+ var txt = SHOWN_TPL[i].body;
  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(showToast);}
  else{var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(ta);showToast();}
 }
@@ -333,7 +337,7 @@ function applyProducts(prods){
   var only = SHOWN[0].name;
   document.getElementById('pb-sub').textContent = 'The exact steps to win work from your ' + only.toLowerCase() + ' - and how to let us do the hard work for you.';
  }
- renderTabs(); renderPanel();
+ renderTabs(); renderPanel(); renderTemplates();
 }
 function loadProducts(){
  try{
