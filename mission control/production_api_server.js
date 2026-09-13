@@ -14191,6 +14191,51 @@ function buildWelcomeEmail(customer, productName, accent, prod) {
     + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">Any questions, just reply and I\u2019ll answer personally.</p>'
     + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0">All the best,<br><strong>Ketz Mandalia</strong><br><span style="color:#64748b">Founder, 9amLeads</span></p>';
 }
+// Full dark, premium welcome email (trial_day1). Standalone: navy header + footer
+// (buildEmailHeader/buildEmailFooter), a white-on-dark hero, a clean summary card
+// and one CTA. Returned directly from getCampaignEmailHTML for trial_day1.
+function buildWelcomeEmailFull(customer, productName, accent, allProds) {
+  var dashboardUrl = PUBLIC_URL + '/portal/dashboard.html';
+  var prodNames = { moving: 'Moving Leads', probate: 'Probate Leads', newbusiness: 'New Business Alerts', planning: 'Planning Permissions', tenders: 'Public Tenders' };
+  var _all = (Array.isArray(allProds) && allProds.length) ? allProds : [customer.product];
+  var leadLabel = _all.map(function(p) { return prodNames[p] || p; }).join(' + ') || (customer.lead_type || 'Your leads');
+  var areas = trialAreasLabel(customer);
+  var alloc = customer.leads_per_day || 5;
+  var trialEnd = fmtTrialEnd(customer) || '7 days';
+  var BG = '#07090f', PANEL = '#0f172a', CARD = '#172033', LINE = 'rgba(255,255,255,0.09)';
+  var rowsArr = [['Lead type', leadLabel], ['Areas', areas], ['Daily leads', alloc + ' per day'], ['Trial ends', trialEnd], ['First delivery', 'Tomorrow, 9am']];
+  var rowsHtml = rowsArr.map(function(r, i) {
+    var bb = i < rowsArr.length - 1 ? 'border-bottom:1px solid ' + LINE + ';' : '';
+    return '<tr><td style="padding:10px 0;font-size:13px;color:#94a3b8;' + bb + '">' + r[0] + '</td>'
+      + '<td style="padding:10px 0;font-size:13px;font-weight:700;color:#ffffff;text-align:right;' + bb + '">' + r[1] + '</td></tr>';
+  }).join('');
+  return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark"><style>@media only screen and (max-width:480px){.mob{padding-left:18px!important;padding-right:18px!important}}</style></head>'
+    + '<body style="margin:0;padding:0;background-color:' + BG + ';font-family:Inter,Arial,Helvetica,sans-serif">'
+    + '<table width="100%" cellpadding="0" cellspacing="0" bgcolor="' + BG + '"><tr><td align="center" style="padding:28px 16px">'
+    + '<table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%">'
+    + buildEmailHeader()
+    + '<tr><td bgcolor="' + PANEL + '" class="mob" style="background-color:' + PANEL + ';padding:30px 30px 6px">'
+    + '<div style="font-size:11px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;color:#38bdf8;margin-bottom:10px">Free trial active</div>'
+    + '<h1 style="margin:0 0 10px;font-size:26px;line-height:1.25;font-weight:900;color:#ffffff;font-family:Outfit,Arial,sans-serif">Welcome to 9amLeads</h1>'
+    + '<p style="margin:0;font-size:14px;line-height:1.7;color:#cbd5e1">Your 7-day free trial is live. Here is everything you need to get started.</p>'
+    + '</td></tr>'
+    + '<tr><td bgcolor="' + PANEL + '" class="mob" style="background-color:' + PANEL + ';padding:20px 30px 4px">'
+    + '<div style="background-color:' + CARD + ';border:1px solid ' + LINE + ';border-radius:14px;padding:6px 20px">'
+    + '<table width="100%" cellpadding="0" cellspacing="0">' + rowsHtml + '</table></div>'
+    + '</td></tr>'
+    + '<tr><td bgcolor="' + PANEL + '" class="mob" style="background-color:' + PANEL + ';padding:22px 30px 6px">'
+    + '<a href="' + dashboardUrl + '" style="display:block;text-align:center;padding:15px;background-color:#0ea5e9;background-image:linear-gradient(135deg,#0ea5e9,#2563eb);color:#ffffff;text-decoration:none;border-radius:50px;font-weight:800;font-size:15px">Open my dashboard</a>'
+    + '<p style="text-align:center;color:#64748b;font-size:11px;margin:10px 0 0">No card required. Nothing will be charged at the end of your trial.</p>'
+    + '</td></tr>'
+    + '<tr><td bgcolor="' + PANEL + '" class="mob" style="background-color:' + PANEL + ';padding:24px 30px 28px">'
+    + '<p style="color:#e8edf5;font-size:14px;line-height:1.75;margin:0 0 12px">From tomorrow, your fresh <strong style="color:#ffffff">' + leadLabel + '</strong> will land in your inbox every weekday at 9am.</p>'
+    + '<p style="color:#94a3b8;font-size:13.5px;line-height:1.75;margin:0 0 12px">To get set up: upload your flyer and cover letter in Print &amp; Post (or pick a ready-made template), choose more areas if you would like to widen your coverage, and turn on Auto Send. We handle the delivery and the post \u2014 you just answer the phone.</p>'
+    + '<p style="color:#94a3b8;font-size:13.5px;line-height:1.75;margin:0 0 18px">Any questions, just reply and I will answer personally.</p>'
+    + '<p style="color:#e8edf5;font-size:14px;line-height:1.6;margin:0">All the best,<br><strong style="color:#ffffff">Ketz Mandalia</strong><br><span style="color:#64748b">Founder, 9amLeads</span></p>'
+    + '</td></tr>'
+    + buildEmailFooter()
+    + '</td></tr></table></td></tr></table></body></html>';
+}
 function getCampaignEmailHTML(customer, template) {
   var allProds = [customer.product];
   try { var extra = JSON.parse(customer.biz_field3 || '[]'); if (Array.isArray(extra) && extra.length > 0) allProds = extra; } catch(e) {}
@@ -14593,6 +14638,8 @@ console.log('  Outbound campaigns: ' + Object.keys(OUTBOUND_CAMPAIGNS).length + 
   };
   var insight = insightCards[prod] || { emoji: '\uD83D\uDCA1', tip: 'Send a letter or flyer with Print &amp; Post to win the work.', metric: '', link: PUBLIC_URL + '/pricing' };
   
+  // Welcome email (trial_day1) uses the dedicated dark, premium layout.
+  if (template === 'trial_day1') return buildWelcomeEmailFull(customer, productName, accent, allProds);
   return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"><style>:root{color-scheme:light}@media only screen and (max-width:480px){.mob{padding-left:16px!important;padding-right:16px!important}.mobbtn{display:block!important;width:100%!important;box-sizing:border-box!important;margin:6px 0!important}}</style></head><body style="margin:0;padding:0;background:#f1f5f9;font-family:Inter,Arial,sans-serif;color:#1e293b"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f1f5f9"><tr><td align="center" style="padding:24px 16px"><table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%">' + buildEmailHeader() +
   // Welcome summary (trial_day1) sits at the TOP of the email; for later templates
   // the personalised usage block sits below the body.
