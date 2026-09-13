@@ -107,6 +107,7 @@ tbody tr:hover td{background:#f8fafc}
 <button onclick="switchTab('affiliates')"><i class="fas fa-handshake"></i> Affiliates</button>
 
 <button onclick="switchTab('emails')"><i class="fas fa-envelope-open-text"></i> Emails <span id="emailCountBadge" style="display:none;background:#eff6ff;color:#0ea5e9;font-size:10px;font-weight:700;border-radius:20px;padding:1px 7px;margin-left:2px"></span></button>
+<button onclick="switchTab('activity')"><i class="fas fa-bolt"></i> Activity</button>
 <button onclick="openDeliveryPreview()" title="See which leads each customer will get at the next 9am"><i class="fas fa-eye"></i> Delivery Preview</button> <button onclick="openQuietAreas()" title="Which chosen postcode areas have had no leads for 3-5 days"><i class="fas fa-exclamation-triangle"></i> Quiet Areas</button> <a href="/portal/seo.html"><i class="fas fa-magnifying-glass"></i> SEO</a>
 <a href="/portal/"><i class="fas fa-arrow-right-to-bracket"></i> Portal</a>
 </div>
@@ -340,6 +341,18 @@ tbody tr:hover td{background:#f8fafc}
   <div id="emailLibraryBody"><div class="loading">Loading email library...</div></div>
 </div>
 
+<!-- ACTIVITY FEED -->
+<div class="tab-panel" id="tab-activity">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+    <div style="font-size:15px;font-weight:800;font-family:'Outfit',sans-serif">Customer Activity <span style="font-size:12px;font-weight:600;color:#64748b">- what customers are doing right now</span></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+      <input id="activityFilter" placeholder="Filter by email or company..." oninput="renderActivity()" style="padding:7px 11px;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:inherit;min-width:220px">
+      <button class="btn btn-outline btn-sm" onclick="loadActivity()"><i class="fas fa-refresh"></i> Refresh</button>
+    </div>
+  </div>
+  <div id="activityBody"><div class="loading">Loading activity...</div></div>
+</div>
+
 <!-- Email preview modal -->
 <div class="modal" id="emailPreviewModal" style="display:none">
   <div style="position:fixed;inset:0;background:rgba(15,23,42,.7);z-index:9990"></div>
@@ -535,7 +548,39 @@ function switchTab(name) {
   if (name === 'analytics') loadAnalytics();
   if (name === 'bulkpool') loadBulkPoolPage();
   if (name === 'emails') loadEmailLibrary();
+  if (name === 'activity') loadActivity();
   window.scrollTo(0, 0);
+}
+
+// ===== ACTIVITY FEED =====
+var __activity = [];
+function loadActivity() {
+  var body = document.getElementById('activityBody');
+  if (!body) return;
+  body.innerHTML = '<div class="loading">Loading activity...</div>';
+  fetch(API + '/api/admin/activity?limit=300', { headers: adminHeaders() })
+    .then(function(r){ return r.json(); })
+    .then(function(d){ __activity = (d && d.activity) || []; renderActivity(); })
+    .catch(function(){ body.innerHTML = '<div class="loading">Could not load activity.</div>'; });
+}
+function actEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function renderActivity() {
+  var body = document.getElementById('activityBody');
+  if (!body) return;
+  var q = (document.getElementById('activityFilter') ? document.getElementById('activityFilter').value : '').trim().toLowerCase();
+  var items = __activity;
+  if (q) items = items.filter(function(a){ return (a.email||'').toLowerCase().indexOf(q)!==-1 || (a.company||'').toLowerCase().indexOf(q)!==-1; });
+  if (!items.length) { body.innerHTML = '<div class="loading">No activity' + (q ? ' matching "' + actEsc(q) + '"' : ' yet') + '.</div>'; return; }
+  var icons = { upload:'📤', auto_send_on:'🤖', bulk_buy:'📦', print_post_sent:'✉️', print_post_sample:'🧪' };
+  var labels = { upload:'Uploaded materials', auto_send_on:'Auto Send ON', bulk_buy:'Bulk pack', print_post_sent:'Print & Post', print_post_sample:'Sample' };
+  body.innerHTML = '<div class="table-wrap"><table><thead><tr><th style="width:150px">When</th><th>Customer</th><th style="width:170px">Action</th><th>Detail</th></tr></thead><tbody>' +
+    items.map(function(a){
+      var when = new Date(a.created_at).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+      var icon = icons[a.type] || '•';
+      var label = labels[a.type] || a.type;
+      return '<tr><td style="color:#64748b;font-size:11px">' + when + '</td><td><b>' + actEsc(a.company || '-') + '</b><div style="font-size:11px;color:#64748b">' + actEsc(a.email || '') + '</div></td><td>' + icon + ' ' + label + '</td><td style="font-size:12px">' + actEsc(a.detail || '') + '</td></tr>';
+    }).join('') +
+    '</tbody></table></div>';
 }
 
 // ===== EMAIL LIBRARY =====

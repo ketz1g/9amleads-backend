@@ -3080,6 +3080,16 @@ function authMiddleware(req, res, next) {
   }
 }
 
+// OPTIONAL AUTH: attach req.user if a valid token is present, but never block.
+// Used by the public assistant widget on the marketing site (works logged out).
+function optionalAuth(req, res, next) {
+  var auth = req.headers.authorization;
+  if (auth && auth.startsWith('Bearer ')) {
+    try { req.user = jwt.verify(auth.split(' ')[1], JWT_SECRET); } catch(e) {}
+  }
+  next();
+}
+
 // AUTH WITH QUERY TOKEN: <img src> tags in the dashboard cannot send an
 // Authorization header, so the preview image endpoints accept the JWT via
 // ?token=... as an alternative. Same verification as authMiddleware.
@@ -8704,14 +8714,14 @@ function suggestionsFor(q) {
 }
 // POST /api/assistant/ask — in-dashboard AI assistant. Answers customer questions
 // about 9amLeads (products, delivery, Print & Post, Auto Send, Bulk, billing, etc.)
-app.post('/api/assistant/ask', authMiddleware, async (req, res) => {
+app.post('/api/assistant/ask', optionalAuth, async (req, res) => {
   try {
     var question = String(req.body.question || '').trim();
     var page = String(req.body.page || '').trim();
     if (!question) return res.status(400).json({ error: 'Please type a question.' });
-    if (question.length > 600) question = question.slice(0, 600);
+    if (question.length > 800) question = question.slice(0, 800);
     var cust = null;
-    try { cust = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id); } catch(e) {}
+    try { if (req.user && req.user.id) cust = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id); } catch(e) {}
     var plan = (cust && cust.plan) || 'free_trial';
     var leadType = (cust && cust.lead_type) || 'leads';
     var products = [];
