@@ -942,7 +942,11 @@ async function collectMovingLeads(config) {
       });
     });
     if (extraLocs.length) {
-      locations = extraLocs.concat(locations);
+      // When we have the customers' own areas, scrape ONLY those (not the 14 default
+      // cities too). This roughly halves the work so the run finishes fast and the
+      // web service stays responsive to Render's health check (which was timing out
+      // and restarting the service mid-scrape).
+      locations = extraLocs;
       console.log('[RIGHTMOVE] Added ' + extraLocs.length + ' area-targeted regions for ' + config.areas.join(','));
     }
   }
