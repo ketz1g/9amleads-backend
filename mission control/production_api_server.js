@@ -31529,7 +31529,7 @@ function syncCustomers(product) {
             //   supply same-day listings on its own.
             leads = [];
             try {
-              leads = await withTimeout(rmScraper.collectMovingLeads({ areas: mvAreas, commercial: mvWantCommercial, commercial_let: true, commercial_force_apify: true }), 10 * 60000, 'Rightmove moving scrape');
+              leads = await withTimeout(rmScraper.collectMovingLeads({ areas: mvAreas, commercial: mvWantCommercial, commercial_let: true, commercial_force_apify: true }), 18 * 60000, 'Rightmove moving scrape');
               console.log('[SCRAPER] Moving: ' + (leads||[]).length + ' total (Rightmove fresh source)');
               // COLLECTION-TIME ADDRESS ENRICHMENT (free): Rightmove's list view hides
               // house numbers. Fetch each fresh lead's free Rightmove detail page to

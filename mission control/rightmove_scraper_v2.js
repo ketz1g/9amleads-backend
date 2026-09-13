@@ -937,7 +937,7 @@ async function collectMovingLeads(config) {
         const locKey = 'REGION%5E' + rid;
         if (!added[locKey]) {
           added[locKey] = true;
-          extraLocs.push({ id: locKey, name: key + ' area', pages: 5 });
+          extraLocs.push({ id: locKey, name: key + ' area', pages: 2 });
         }
       });
     });
