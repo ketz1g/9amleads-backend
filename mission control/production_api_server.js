@@ -16517,6 +16517,11 @@ async function runFulfilmentGuarantee(label) {
       console.log('[GUARANTEE] ' + label + ': ⚠ ' + gShort.length + ' would shortfall: ' + gShort.join(' | '));
     } else {
       console.log('[GUARANTEE] ' + label + ': All ' + gCusts.length + ' customers guaranteed their full count for 9am');
+      // ALL-GOOD CONFIRMATION: let the founder know the check ran and everyone is covered.
+      try {
+        var _okHtml = '<div style="font-family:Inter,Arial,sans-serif;max-width:540px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px"><h2 style="color:#4ade80;margin:0 0 10px;font-size:18px">&#9989; Fulfilment check (' + label + '): all good</h2><p style="font-size:14px;line-height:1.6;color:#cbd5e1">All <b>' + gCusts.length + '</b> active customers are guaranteed their full promised count for the 9am delivery. Nothing to do.</p></div>';
+        await sendBrevoEmail({ email: process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com', name: '9amLeads Admin' }, 'Fulfilment check (' + label + '): all ' + gCusts.length + ' customers covered', _okHtml);
+      } catch(okErr) { console.log('[GUARANTEE] all-good email error:', okErr.message); }
     }
     // STORE the latest guarantee result so the admin delivery-preview shows the final,
     // post-check state the moment the founder opens it (no waiting / re-guessing).
