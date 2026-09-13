@@ -39,11 +39,18 @@ function getFreshCutoffIso(nowMs) {
     // Timestamp whose UTC clock-read equals the UK wall clock.
     var ukMs = nowMs + offMin * 60000;
     var ukD = new Date(ukMs);
-    if (ukD.getUTCDay() === 1) { // Monday in UK
+    var dow = ukD.getUTCDay(); // 0=Sun, 1=Mon, 6=Sat
+    // SAT / SUN / MON: floor back to the most recent FRIDAY 09:00 UK (the last 9am
+    // delivery). This makes the weekend scrapes collect ALL of Friday's leads so
+    // Monday's delivery has a full supply — not just Saturday/Sunday.
+    if (dow === 6 || dow === 0 || dow === 1) {
+      var back = dow === 1 ? 3 : (dow === 6 ? 1 : 2); // Mon->Fri, Sat->Fri, Sun->Fri
       var fri = new Date(ukMs);
-      fri.setUTCDate(fri.getUTCDate() - 3); // back to Friday
-      fri.setUTCHours(9, 0, 0, 0);          // Fri 09:00 UK wall clock (last delivery)
-      return new Date(fri.getTime() - offMin * 60000).toISOString(); // real UTC instant
+      fri.setUTCDate(fri.getUTCDate() - back);
+      fri.setUTCHours(9, 0, 0, 0);
+      var friIso = new Date(fri.getTime() - offMin * 60000).toISOString();
+      var hoursIso = new Date(nowMs - FRESH_HOURS * 3600000).toISOString();
+      return friIso < hoursIso ? friIso : hoursIso; // earlier (more inclusive) wins
     }
   } catch(e) {}
   return new Date(nowMs - FRESH_HOURS * 3600000).toISOString();
@@ -59,12 +66,15 @@ function getPruneCutoffIso(nowMs) {
     var offMin = ukOffsetMin(nowMs);
     var ukMs = nowMs + offMin * 60000;
     var ukD = new Date(ukMs);
-    if (ukD.getUTCDay() === 1) { // Monday in UK
+    var dow = ukD.getUTCDay(); // 0=Sun, 1=Mon, 6=Sat
+    // SAT / SUN / MON: prune back to the most recent FRIDAY 09:00 UK so Friday's
+    // leads survive the weekend to fill Monday's delivery.
+    if (dow === 6 || dow === 0 || dow === 1) {
+      var back = dow === 1 ? 3 : (dow === 6 ? 1 : 2);
       var fri = new Date(ukMs);
-      fri.setUTCDate(fri.getUTCDate() - 3); // back to Friday
-      fri.setUTCHours(9, 0, 0, 0);          // Fri 09:00 UK (last delivery)
-      var mondayFloor = new Date(fri.getTime() - offMin * 60000).getTime();
-      if (mondayFloor > nowMs - PRUNE_HOURS * 3600000) return new Date(mondayFloor).toISOString();
+      fri.setUTCDate(fri.getUTCDate() - back); // back to Friday
+      fri.setUTCHours(9, 0, 0, 0);             // Fri 09:00 UK (last delivery)
+      return new Date(fri.getTime() - offMin * 60000).toISOString();
     }
   } catch(e) {}
   return new Date(nowMs - PRUNE_HOURS * 3600000).toISOString();
