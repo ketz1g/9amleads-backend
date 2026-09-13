@@ -31531,6 +31531,7 @@ function syncCustomers(product) {
             try {
               leads = await withTimeout(rmScraper.collectMovingLeads({ areas: mvAreas, commercial: mvWantCommercial, commercial_let: true, commercial_force_apify: true }), 18 * 60000, 'Rightmove moving scrape');
               console.log('[SCRAPER] Moving: ' + (leads||[]).length + ' total (Rightmove fresh source)');
+              try { lastScrape.moving_raw = (leads||[]).length; lastScrape.moving_at = new Date().toISOString(); lastScrape.moving_areas = (mvAreas||[]).length; fs.writeFileSync(lastScrapeFile, JSON.stringify(lastScrape)); } catch(lsE) {}
               // COLLECTION-TIME ADDRESS ENRICHMENT (free): Rightmove's list view hides
               // house numbers. Fetch each fresh lead's free Rightmove detail page to
               // embed the numbered full address + full postcode into the pool, so every
