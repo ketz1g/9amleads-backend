@@ -14182,34 +14182,15 @@ const PAID_EMAIL_SERIES = [
   { week: 12, subject: '3 months in. Here\u2019s how to scale', template: 'paid_checkin2' }
 ];
 
-// Redesigned welcome email body (trial_day1). Clean, no repetition: each feature
-// explained once, setup steps merged from the old checklist + tips. Personalised
-// with the customer's product name and accent. Used by getCampaignEmailHTML.
+// Redesigned welcome email body (trial_day1). Short and professional: a brief
+// welcome, one line on how to get set up, and a sign-off. The shared value/why/how
+// blocks are skipped for this template (see getCampaignEmailHTML).
 function buildWelcomeEmail(customer, productName, accent, prod) {
-  var dashboardUrl = PUBLIC_URL + '/portal/dashboard.html';
-  var pricingUrl = PUBLIC_URL + '/pricing/';
-  return '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#0f172a;margin:0 0 6px;text-align:center">Welcome to 9amLeads. Your free week starts now.</h2>'
-    + '<p style="color:#64748b;font-size:13px;text-align:center;margin:0 0 20px">Your daily <strong style="color:#0f172a">' + productName + '</strong> arrive at <strong style="color:' + accent + '">9am</strong>. Here\u2019s how to turn them into work.</p>'
-    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 16px">Welcome aboard. For the next 7 days you\u2019ll receive exclusive <strong>' + productName + '</strong> in your inbox every morning at 9am \u2014 nobody else gets the same leads. Be first to make contact and you win the work.</p>'
-    + '<div style="background:rgba(14,165,233,0.05);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px">'
-    + '<p style="color:#1e293b;font-size:13px;line-height:2;margin:0">'
-    + '<strong style="color:#0f172a">9:00am</strong> : your daily lead sheet, ready to action<br>'
-    + '<strong style="color:#0f172a">Full details</strong> : the key information and a source link on every lead<br>'
-    + '<strong style="color:#0f172a">Print &amp; Post</strong> : we print, address and post your flyer or letter to each lead for you<br>'
-    + '<strong style="color:#0f172a">Auto Send</strong> : switch it on and every new lead gets your marketing posted automatically'
-    + '</p></div>'
-    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 8px"><strong style="color:' + accent + '">Get set up in 3 minutes</strong></p>'
-    + '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 16px"><tbody>'
-    + '<tr><td style="padding:6px 0;color:#1e293b;font-size:14px;line-height:1.6"><strong style="color:' + accent + '">1.</strong> Upload your flyer (front and back) and cover letter in the Print &amp; Post section \u2014 or pick a ready-made template.</td></tr>'
-    + '<tr><td style="padding:6px 0;color:#1e293b;font-size:14px;line-height:1.6"><strong style="color:' + accent + '">2.</strong> Add more areas in your dashboard settings. The more you cover, the more leads you get.</td></tr>'
-    + '<tr><td style="padding:6px 0;color:#1e293b;font-size:14px;line-height:1.6"><strong style="color:' + accent + '">3.</strong> Turn on Auto Send so your marketing goes out to every new lead without lifting a finger.</td></tr>'
-    + '</tbody></table>'
-    + '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px 18px;margin:0 0 16px">'
-    + '<p style="color:#1e293b;font-size:13.5px;line-height:1.7;margin:0 0 6px"><strong style="color:#0f172a">Want more? Upgrade to Pro or Enterprise</strong></p>'
-    + '<p style="color:#475569;font-size:13px;line-height:1.7;margin:0">Your free week includes up to 5 leads a day. <strong style="color:#0f172a">Pro</strong> gives you more leads per day, wider areas and more lead types. <strong style="color:#0f172a">Enterprise</strong> gives you the maximum daily volume, unlimited areas and priority support.</p>'
-    + '</div>'
-    + '<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + dashboardUrl + '" style="display:inline-block;padding:13px 34px;background-color:' + accent + ';background-image:linear-gradient(135deg,' + accent + ',#0284c7);color:#ffffff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Open my dashboard</a></td></tr></table>'
-    + '<p style="color:#64748b;font-size:13px;text-align:center;margin:12px 0 0">We handle the delivery and the post \u2014 you just answer the phone. <a href="' + pricingUrl + '" style="color:' + accent + ';font-weight:700;text-decoration:none">See Pro &amp; Enterprise plans</a></p>';
+  return '<h2 style="font-family:Outfit,sans-serif;font-size:21px;font-weight:800;color:#0f172a;margin:0 0 14px">Welcome to 9amLeads</h2>'
+    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">Your free week is active. From tomorrow, your fresh <strong>' + productName + '</strong> will arrive in your inbox every weekday at 9am.</p>'
+    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">To get set up: log in, upload your flyer and cover letter in Print &amp; Post (or pick a ready-made template), add the areas you cover, and turn on Auto Send. We handle the delivery and the post \u2014 you just answer the phone.</p>'
+    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">Any questions, just reply and I\u2019ll answer personally.</p>'
+    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0">All the best,<br><strong>Ketz Mandalia</strong><br><span style="color:#64748b">Founder, 9amLeads</span></p>';
 }
 function getCampaignEmailHTML(customer, template) {
   var allProds = [customer.product];
@@ -14616,6 +14597,9 @@ console.log('  Outbound campaigns: ' + Object.keys(OUTBOUND_CAMPAIGNS).length + 
   return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"><style>:root{color-scheme:light}@media only screen and (max-width:480px){.mob{padding-left:16px!important;padding-right:16px!important}.mobbtn{display:block!important;width:100%!important;box-sizing:border-box!important;margin:6px 0!important}}</style></head><body style="margin:0;padding:0;background:#f1f5f9;font-family:Inter,Arial,sans-serif;color:#1e293b"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f1f5f9"><tr><td align="center" style="padding:24px 16px"><table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%">' + buildEmailHeader() + '<tr><td bgcolor="#ffffff" class="mob" style="background:#ffffff;padding:20px 30px 26px">' + (  templates[template] || templates.trial_day1) + '</td></tr>' +
   // Personalised trial block: welcome summary OR real-usage metrics with CTAs.
   buildTrialPersonalBlock(customer, template) +
+  // Welcome (trial_day1) stays short and professional: summary + single CTA only.
+  // The shared value / why / how / insight blocks are for the nurture emails.
+  (template === 'trial_day1' ? '' : (
   // Print & Post / Auto Send / postal-marketing value block (shared, all campaign emails)
   buildPrintPostValueBlock(allProds[0] || 'moving', accent) +
   // Why 9amLeads is the best leads service (shared, all campaign emails)
@@ -14631,7 +14615,8 @@ console.log('  Outbound campaigns: ' + Object.keys(OUTBOUND_CAMPAIGNS).length + 
 '<p style="font-size:10px;color:#ffffff;margin:0 0 4px">Need help? <a href="mailto:hello@9amleads.com" style="color:#38bdf8;text-decoration:underline">hello@9amleads.com</a> &bull; <a href="https://www.9amleads.com" style="color:#38bdf8;text-decoration:underline">9amLeads.com</a></p>' +
 '' +
    '<div style="margin-top:6px"><a href="https://www.facebook.com/share/1SBwDAUuxh/" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#94a3b8">fb</a><a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#94a3b8">tt</a><a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#94a3b8">ig</a></div>' +
-   '</div></div></td></tr>' +
+   '</div></div></td></tr>'
+  )) +
   // Footer
   ' + buildEmailFooter() + </td></tr></table></td></tr></table></body></html>';
 }
