@@ -13595,6 +13595,48 @@ function sendAdminAlert(subject, bodyHtml) {
   } catch(e) { console.log('[ALERT] send error:', e.message); }
 }
 
+// ===== CUSTOMER ACTIVITY LOG =====
+// Records meaningful customer actions (uploads, Auto Send, bulk buys, Print & Post
+// sends) so the admin can see what each customer is doing. High-signal events also
+// email the admin.
+function logActivity(customerId, type, detail, opts) {
+  try {
+    var d = getDb();
+    if (!d.customer_activity) d.customer_activity = [];
+    var cust = null;
+    try { cust = db.prepare('SELECT id, email, company, contact_name FROM customers WHERE id = ?').get(customerId); } catch(e) {}
+    var entry = {
+      id: uuidv4(),
+      customer_id: customerId,
+      email: (cust && cust.email) || '',
+      company: (cust && cust.company) || '',
+      type: type,
+      detail: String(detail || '').slice(0, 400),
+      created_at: new Date().toISOString()
+    };
+    d.customer_activity.push(entry);
+    if (d.customer_activity.length > 3000) d.customer_activity = d.customer_activity.slice(-3000);
+    saveDb();
+    if (opts && opts.email) {
+      var who = (cust && (cust.company || cust.contact_name || cust.email)) || customerId;
+      sendAdminAlert((opts.subject || 'Customer activity') + ': ' + who,
+        '<div style="font-size:14px;color:#e2e8f0;line-height:1.7"><b style="color:#fff">' + who + '</b> (' + ((cust && cust.email) || '') + ')<br><br>' + detail + '</div>');
+    }
+    return entry;
+  } catch(e) { console.log('[ACTIVITY] log error:', e.message); }
+}
+
+// GET /api/admin/activity — recent customer activity feed (uploads, Auto Send,
+// bulk buys, Print & Post orders).
+app.get('/api/admin/activity', adminAuth, (req, res) => {
+  try {
+    var d = getDb();
+    var limit = Math.min(parseInt(req.query.limit, 10) || 150, 500);
+    var items = (d.customer_activity || []).slice(-limit).reverse();
+    res.json({ success: true, count: items.length, activity: items });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== NEAREST-AREA FALLBACK =====
 // When a customer's exact areas are dry, the delivery broadens to the NEAREST
 // neighbouring areas first (geographically close) before the full pool. This keeps
@@ -18994,6 +19036,7 @@ app.post('/api/newbusiness/bulk/checkout', authMiddleware, async (req, res) => {
       'metadata[bulk_mail_type]': mailType
     };
     var session = await stripeApiRequest('POST', 'checkout/sessions', sessionBody);
+    try { if (session.url) logActivity(req.user.id, 'bulk_buy', 'Started buying a bulk pack - ' + count + ' ' + typeLabel + ' leads (£' + (amountPence / 100).toFixed(2) + ')', { email: true, subject: 'Bulk pack purchase' }); } catch(e) {}
     if (session.url) res.json({ success: true, checkout_url: session.url });
     else res.status(400).json({ error: session.error && session.error.message || 'Checkout creation failed' });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -27677,6 +27720,7 @@ app.post('/api/direct-mail/auto-toggle', authMiddleware, (req, res) => {
       var scheduleMsg = sendSchedule === 'repeat'
         ? 'Auto Print & Post is ON. Every day at 9am, your new leads are printed and posted now, again in 2 weeks, then again in 4 weeks.'
         : 'Auto Print & Post is ON. Every day at 9am, your new leads are printed and posted once.';
+      try { logActivity(req.user.id, 'auto_send_on', 'Turned on Auto Print & Post (' + sendSchedule + ')', { email: true, subject: 'Auto Send switched on' }); } catch(e) {}
       return res.json({ success: true, enabled: true, send_schedule: sendSchedule, message: scheduleMsg });
     } else {
       if (settings) {
@@ -28094,6 +28138,7 @@ app.post('/api/direct-mail/send-lead', authMiddleware, async (req, res) => {
     var session = await stripeApiRequest('POST', 'checkout/sessions', sessionBody);
     if (session.url) {
       db.prepare('UPDATE direct_mail_campaigns SET stripe_session_id = ?, stripe_payment_status = ?, updated_at = ? WHERE id = ?').run(session.id, 'pending', nowIso, campaignId);
+      try { logActivity(req.user.id, 'print_post_sent', 'Started a Print & Post order - 1 item, £' + price.toFixed(2) + ' (' + mailType + ')', { email: true, subject: 'Print & Post order' }); } catch(e) {}
       res.json({ success: true, campaign_id: campaignId, checkout_url: session.url, price: price, mail_type: mailType });
     } else {
       res.status(400).json({ error: session.error?.message || 'Checkout creation failed' });
@@ -28182,6 +28227,7 @@ app.post('/api/direct-mail/send-sample', authMiddleware, async (req, res) => {
     var session = await stripeApiRequest('POST', 'checkout/sessions', sessionBody);
     if (session.url) {
       db.prepare('UPDATE direct_mail_campaigns SET stripe_session_id = ?, stripe_payment_status = ?, updated_at = ? WHERE id = ?').run(session.id, 'pending', nowIso, campaignId);
+      try { logActivity(req.user.id, 'print_post_sample', 'Sent themselves a sample (' + mailType + ', £' + price.toFixed(2) + ')', { email: false }); } catch(e) {}
       res.json({ success: true, campaign_id: campaignId, checkout_url: session.url, price: price, mail_type: mailType, sample: true });
     } else {
       res.status(400).json({ error: (session.error && session.error.message) || 'Checkout creation failed' });
@@ -28496,6 +28542,7 @@ app.post('/api/direct-mail/send-bulk', authMiddleware, async (req, res) => {
     var session = await stripeApiRequest('POST', 'checkout/sessions', sessionBody);
     if (session.url) {
       db.prepare('UPDATE direct_mail_campaigns SET stripe_session_id = ?, stripe_payment_status = ?, updated_at = ? WHERE id = ?').run(session.id, 'pending', nowIso, campaignId);
+      try { logActivity(req.user.id, 'print_post_sent', 'Started a bulk Print & Post order - ' + recipients.length + ' items, £' + total.toFixed(2) + ' (' + mailType + ')', { email: true, subject: 'Print & Post bulk order' }); } catch(e) {}
       res.json({
         success: true,
         campaign_id: campaignId,
@@ -28680,6 +28727,7 @@ app.post('/api/direct-mail/send-bulk-repeat', authMiddleware, async (req, res) =
     var session = await stripeApiRequest('POST', 'checkout/sessions', sessionBody);
     if (session.url) {
       db.prepare('UPDATE direct_mail_campaigns SET stripe_session_id = ?, stripe_payment_status = ?, updated_at = ? WHERE id = ?').run(session.id, 'pending', nowIso, primaryCampaignId);
+      try { logActivity(req.user.id, 'print_post_sent', 'Started a repeat Print & Post series - ' + recipients.length + ' leads x ' + intervals.length + ' mailings, £' + total.toFixed(2), { email: true, subject: 'Print & Post repeat order' }); } catch(e) {}
       res.json({
         success: true, campaign_id: primaryCampaignId, checkout_url: session.url,
         recipient_count: recipients.length, total: total, price_per_item: price,
@@ -28738,6 +28786,10 @@ app.post('/api/direct-mail/upload', authMiddleware, (req, res) => {
       material.created_at
     );
 
+        try {
+      var _lt = { flyer_front: 'leaflet front', flyer_back: 'leaflet back', letter: 'cover letter', logo: 'logo', extra: 'extra file' }[fileType] || fileType;
+      logActivity(req.user.id, 'upload', 'Uploaded their ' + _lt + ' (' + fileName + ')', { email: true, subject: 'Materials uploaded' });
+    } catch(e) {}
     res.json({ success: true, material: { id: material.id, name: material.name, type: material.type, file_type: material.file_type, file_size: material.file_size, description: material.description, campaign_id: material.campaign_id, template_id: material.template_id, created_at: material.created_at } });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
