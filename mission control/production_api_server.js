@@ -14620,7 +14620,7 @@ console.log('  Outbound campaigns: ' + Object.keys(OUTBOUND_CAMPAIGNS).length + 
    '</div></div></td></tr>'
   )) +
   // Footer
-  ' + buildEmailFooter() + </td></tr></table></td></tr></table></body></html>';
+  buildEmailFooter() + '</td></tr></table></td></tr></table></body></html>';
 }
 
 // POST /api/admin/send-tip-sample — email a single paid/tip campaign template to
