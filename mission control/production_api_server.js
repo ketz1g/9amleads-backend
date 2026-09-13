@@ -10440,6 +10440,24 @@ app.get('/api/admin/customer-leads', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/admin/moving-pool-diagnose — per-postcode-area counts in the moving pool
+// (all leads, not just fresh) to debug missing customer areas.
+app.get('/api/admin/moving-pool-diagnose', adminAuth, (req, res) => {
+  try {
+    var arr = readPoolFile('moving') || [];
+    var byArea = {}, noPc = 0, total = arr.length;
+    arr.forEach(function(l) {
+      var pc = String(l.postcode || '').toUpperCase().trim();
+      var area = pc ? pc.replace(/[0-9].*$/, '').trim() : '';
+      if (!area) { var m = String(l.address || l.fullAddress || '').toUpperCase().match(/([A-Z]{1,2})[0-9]/); if (m) area = m[1]; }
+      area = area || '(none)';
+      byArea[area] = (byArea[area] || 0) + 1;
+      if (!pc) noPc++;
+    });
+    res.json({ success: true, total: total, no_postcode: noPc, by_area: Object.keys(byArea).sort().map(function(k){ return { area: k, count: byArea[k] }; }) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/admin/delivery-preview - show which leads each active customer
 // will receive at the next 9am delivery (same selection rules: exact areas,
 // moving_type, freshness 24-48h, lead filters, not-already-delivered, exact
