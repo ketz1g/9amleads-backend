@@ -8678,6 +8678,30 @@ app.post('/api/support', authMiddleware, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// Keyword fallback + follow-up suggestions for the assistant.
+function faqFallback(q) {
+  var s = String(q || '').toLowerCase();
+  if (/price|cost|how much|pricing|per week|subscription/.test(s)) return 'Plans start from £25/week, and every plan begins with a 7-day free trial with no card or payment required. Pro and Enterprise give more leads per day and wider areas. You can see the full breakdown on the Pricing page or under Plans & Billing.';
+  if (/print|post|letter|leaflet|flyer|mail/.test(s)) return 'With Print & Post you upload your leaflet (front and back) and a cover letter once, and we print, address and post it to your leads for you. It is £2.49 per A4 letter, £2.99 per A5 leaflet, or £4.49 for a leaflet plus letter. If uploading is tricky, email your files to hello@9amleads.com and we will upload them for you.';
+  if (/auto ?send|automatic/.test(s)) return 'Auto Send automatically prints and posts to every new lead each day after the 9am delivery. To switch it on you need your leaflet (front and back) and letter uploaded, a saved card, and a daily spend limit set. You can switch it off anytime, and no mailing means no charge.';
+  if (/bulk/.test(s)) return 'Bulk Send lets you buy a pack of never-sent archive leads, which is great for quiet periods. It is available on Pro and Enterprise.';
+  if (/area|postcode|coverage|county/.test(s)) return 'You can change the areas and filters you cover in Settings, and changes take effect for the next day delivery. If an area is quiet, adding nearby postcodes or counties gives a fuller daily mix.';
+  if (/cancel|stop|end my/.test(s)) return 'There is no contract. You can cancel anytime from Plans & Billing, or email hello@9amleads.com and we will sort it.';
+  if (/more leads|increase|not enough|fewer/.test(s)) return 'To get more leads you can widen your areas in Settings, or upgrade to Pro or Enterprise for a higher daily allocation and wider coverage.';
+  if (/fresh|data|source|where.*from/.test(s)) return 'Our data comes from official UK sources: the Gov.uk probate register, Companies House, the UK Planning Portal and Contracts Finder, plus property move signals. Leads are prioritised from the last 24 hours.';
+  if (/success centre|playbook|template|guide|convert/.test(s)) return 'The Success Centre in your dashboard has step-by-step playbooks, tips, common mistakes and ready-to-use letter, email and phone templates for your lead type. It is free on every plan.';
+  if (/trial|free/.test(s)) return 'Every plan starts with a 7-day free trial, no card or payment required. You get real leads every weekday at 9am, and you can cancel anytime.';
+  if (/invoice|receipt|billing|card|payment|charge/.test(s)) return 'You can view your plan, update your card and download invoices and receipts under Plans & Billing (dashboard, Your Tools, Billing & invoices).';
+  return 'I want to make sure you get an accurate answer. Please email hello@9amleads.com and our small UK team will help you personally, usually the same working day.';
+}
+function suggestionsFor(q) {
+  var s = String(q || '').toLowerCase();
+  if (/price|cost|plan|upgrade/.test(s)) return ['How do I upgrade?', 'What is included in the free trial?'];
+  if (/print|post|letter|leaflet|flyer/.test(s)) return ['How do I upload my leaflet?', 'How does Auto Send work?'];
+  if (/auto ?send/.test(s)) return ['How much does Auto Send cost?', 'How do I set a spend limit?'];
+  if (/area|postcode/.test(s)) return ['How do I get more leads?', 'How do I change my lead type?'];
+  return ['How do I get more leads?', 'How does Print & Post work?'];
+}
 // POST /api/assistant/ask — in-dashboard AI assistant. Answers customer questions
 // about 9amLeads (products, delivery, Print & Post, Auto Send, Bulk, billing, etc.)
 app.post('/api/assistant/ask', authMiddleware, async (req, res) => {
@@ -8693,37 +8717,96 @@ app.post('/api/assistant/ask', authMiddleware, async (req, res) => {
     var products = [];
     try { products = JSON.parse((cust && cust.biz_field3) || '[]'); } catch(e) {}
     var areas = (cust && cust.target_areas) || '';
-    var sys = 'You are the friendly, concise 9amLeads in-dashboard assistant for UK customers. '
-      + 'Answer ONLY questions about 9amLeads and how to use it. Keep answers short (2-5 sentences or a short list), practical and in plain English. '
-      + 'Never invent prices or policies. If you are unsure, tell them to email hello@9amleads.com.\n\n'
-      + 'About 9amLeads:\n'
-      + '- We deliver fresh UK business leads every weekday morning at 9am, matched to the customer\'s chosen lead type(s) and areas.\n'
-      + '- Lead types: Moving Leads (home movers), Probate Leads (new probate grants), New Business Leads (new Companies House registrations), Planning Leads (new planning applications), Public Sector Tenders (Contracts Finder).\n'
-      + '- Data comes from official UK sources: HM Land Registry / property listings, the Gov.uk probate register, Companies House, the Planning Portal and Contracts Finder.\n'
-      + '- Pricing: plans start from 25 pounds per week. Every plan includes a 7-day free trial with no card or payment required, cancel anytime. Pro and Enterprise give more leads per day and wider areas.\n'
-      + '- Print & Post: the customer uploads a leaflet (front AND back) and a cover letter; we print, address and post it to their leads for them. Prices: A4 letter 2.49, A5 leaflet 2.99, leaflet + letter 4.49 per item.\n'
-      + '- Auto Send: automatically prints and posts to every new lead each day.\n'
-      + '- Bulk Send: buy a pack of never-sent archive leads (great for quiet periods).\n'
-      + '- Repeat mailing: available in the My Leads bulk send (send now + 2 weeks + 1 month, paid upfront).\n'
-      + '- Areas and filters can be changed in Settings; changes apply to the next day\'s delivery.\n'
-      + '- Success Centre has playbooks, tips and ready-to-use templates for the customer\'s lead type.\n'
-      + '- Support: hello@9amleads.com.\n\n'
-      + 'Customer context: plan=' + plan + ', lead type=' + leadType + ', products=' + (products.join(', ') || 'n/a') + ', areas=' + areas + ', current page=' + page + '.';
+    // Multi-turn: accept a short history of prior messages.
+    var history = Array.isArray(req.body.history) ? req.body.history.slice(-6) : [];
+    var msgs = [];
+    for (var hi = 0; hi < history.length; hi++) {
+      var h = history[hi];
+      if (!h || !h.content) continue;
+      msgs.push({ role: (h.role === 'assistant' ? 'assistant' : 'user'), content: String(h.content).slice(0, 800) });
+    }
+    msgs.push({ role: 'user', content: question });
+
+    var sys = [
+      'You are Ava, the friendly 9amLeads assistant for UK customers. You help customers get the most from their account.',
+      'RULES:',
+      '- ALWAYS try to answer using the facts below. Be warm, helpful, concise and in plain UK English. Use short paragraphs or a short list. Never use em dashes.',
+      '- Only discuss 9amLeads and using it. If asked something unrelated, politely steer back to how you can help with their leads.',
+      '- Never invent prices, policies or promises. Use the facts below. If something is genuinely not covered, say so and suggest emailing hello@9amleads.com.',
+      '- If the customer sounds frustrated, be understanding and offer a clear next step.',
+      '',
+      'WHAT 9AMLEADS IS',
+      'We deliver fresh UK business leads to the customer inbox and dashboard every weekday morning at 9am, matched to their chosen lead type(s) and areas. We also offer Print & Post, where we print, address and post their marketing to those leads for them.',
+      '',
+      'LEAD TYPES',
+      '- Moving Leads: homeowners who have listed or sold and are planning a move.',
+      '- Probate Leads: newly granted probate, from the official Gov.uk probate register.',
+      '- New Business Leads: newly registered companies, from Companies House.',
+      '- Planning Leads: new planning applications, from the UK Planning Portal and council registers.',
+      '- Public Sector Tenders: live public-sector contracts, from Contracts Finder.',
+      'All data is from official UK sources, so it is fresh and verifiable.',
+      '',
+      'DELIVERY',
+      '- Leads arrive every weekday (Monday to Friday) at 9am in the dashboard and by email.',
+      '- Customers can pause delivery any time from the dashboard Delivery status card, optionally with a resume date, for example for a holiday.',
+      '- Areas and filters can be changed in Settings; changes apply to the next day delivery.',
+      '- If an area is quiet, they can add nearby postcodes or counties for a fuller daily mix.',
+      '',
+      'PRICING',
+      '- Plans start from 25 pounds per week. Every plan starts with a 7-day free trial, no card or payment required, cancel anytime.',
+      '- Starter is the entry plan. Pro and Enterprise give more leads per day, wider areas, and unlock Bulk Send. Customers can upgrade from the Upgrade page or Plans & Billing.',
+      '',
+      'PRINT & POST (add-on)',
+      '- The customer uploads their leaflet (front AND back) and a cover letter once. We print, address and post it to their leads for them.',
+      '- We print double-sided: a strong front and an informative back doubles the impact. Front is the attention-grabbing headline and offer; back is the phone, website, email, reviews and a QR code.',
+      '- Prices per item: A4 letter 2.49, A5 leaflet 2.99, leaflet plus letter 4.49. Customers are only charged for what is actually mailed.',
+      '- We print edge-to-edge with a 6mm bleed and keep the address clear zone white for Royal Mail.',
+      '- Having trouble uploading? They can email their leaflet and letter to hello@9amleads.com and we will upload them.',
+      '',
+      'AUTO SEND (add-on)',
+      '- Auto Send automatically prints and posts to every new lead each day after the 9am delivery. The customer does not press anything.',
+      '- Before switching it on they need: their leaflet (front and back) and letter uploaded, a saved card for billing, and to set a daily spend limit.',
+      '- They stay in control with a daily spend limit and a monthly cap, and can switch it off anytime. No mailing means no charge.',
+      '',
+      'BULK SEND',
+      '- Bulk Send lets customers buy a pack of never-sent archive leads, which is great for quiet periods. It is a Pro and Enterprise feature.',
+      '',
+      'REPEAT MAILING',
+      '- In My Leads, when sending a batch, customers can choose now plus 2 weeks plus 1 month, so the same leads are mailed again automatically. It is paid upfront for the whole series.',
+      '',
+      'SUCCESS CENTRE',
+      '- The Success Centre in the dashboard has step-by-step playbooks, winning tips, common mistakes and ready-to-use letter, email and phone templates tailored to the customer lead type.',
+      '',
+      'BILLING',
+      '- Customers can view their plan, update their card and download invoices and receipts under Plans & Billing (dashboard, Your Tools, Billing & invoices).',
+      '',
+      'CANCELLING',
+      '- There is no contract. Customers can cancel anytime from Plans & Billing or by emailing hello@9amleads.com.',
+      '',
+      'SUPPORT',
+      '- Email hello@9amleads.com. A small UK team answers personally, usually the same working day.',
+      '',
+      'CUSTOMER CONTEXT',
+      'plan=' + plan + ', lead type=' + leadType + ', products=' + (products.join(', ') || 'n/a') + ', areas=' + areas + ', trial ends=' + trialEnds + ', current page=' + page + '.',
+      'Use this context to give specific answers where you can, for example their plan or lead type.'
+    ].join('\n');
     var OPENAI_KEY = process.env.OPENAI_API_KEY;
-    if (!OPENAI_KEY) return res.json({ answer: 'The assistant is being set up. Please email hello@9amleads.com and we will help right away.' });
-    var reqBody = JSON.stringify({ model: 'gpt-4o-mini', temperature: 0.4, max_tokens: 400,
-      messages: [{ role: 'system', content: sys }, { role: 'user', content: question }] });
-    var result = await new Promise(function(resolve) {
-      var https = require('https');
-      var r = https.request({ hostname: 'api.openai.com', path: '/v1/chat/completions', method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + OPENAI_KEY, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(reqBody) } },
-        function(rr) { var b = ''; rr.on('data', function(c) { b += c; }); rr.on('end', function() { try { resolve(JSON.parse(b)); } catch(e) { resolve({ error: { message: e.message } }); } }); });
-      r.on('error', function(e) { resolve({ error: { message: e.message } }); });
-      r.write(reqBody); r.end();
-    });
-    var answer = result && result.choices && result.choices[0] && result.choices[0].message && result.choices[0].message.content;
-    if (!answer) return res.json({ answer: 'Sorry, I could not answer that just now. Please email hello@9amleads.com and we will help.' });
-    res.json({ answer: String(answer).trim() });
+    var answer = '';
+    if (OPENAI_KEY) {
+      var reqBody = JSON.stringify({ model: 'gpt-4o-mini', temperature: 0.3, max_tokens: 650,
+        messages: [{ role: 'system', content: sys }].concat(msgs) });
+      var result = await new Promise(function(resolve) {
+        var https = require('https');
+        var r = https.request({ hostname: 'api.openai.com', path: '/v1/chat/completions', method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + OPENAI_KEY, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(reqBody) } },
+          function(rr) { var b = ''; rr.on('data', function(c) { b += c; }); rr.on('end', function() { try { resolve(JSON.parse(b)); } catch(e) { resolve({ error: { message: e.message } }); } }); });
+        r.on('error', function(e) { resolve({ error: { message: e.message } }); });
+        r.write(reqBody); r.end();
+      });
+      answer = (result && result.choices && result.choices[0] && result.choices[0].message && result.choices[0].message.content) || '';
+    }
+    if (!answer) answer = faqFallback(question);
+    res.json({ answer: String(answer).trim(), suggested: suggestionsFor(question) });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 

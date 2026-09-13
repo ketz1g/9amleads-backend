@@ -59,13 +59,16 @@
   var input = panel.querySelector('#a9-in');
   var sendBtn = panel.querySelector('#a9-send');
 
-  function addMsg(text, who) {
+  var HISTORY = [];
+  function addMsg(text, who, noHist) {
     var m = el('div', null, esc(text)); m.className = 'a9-msg ' + (who === 'me' ? 'a9-me' : 'a9-bot');
-    body.appendChild(m); body.scrollTop = body.scrollHeight; return m;
+    body.appendChild(m); body.scrollTop = body.scrollHeight;
+    if (!noHist) { try { HISTORY.push({ role: who === 'me' ? 'user' : 'assistant', content: String(text) }); if (HISTORY.length > 12) HISTORY = HISTORY.slice(-12); } catch (e) {} }
+    return m;
   }
-  function addChips() {
+  function addChips(list) {
     var wrap = el('div'); wrap.className = 'a9-chips';
-    SUGGEST.forEach(function (q) {
+    (list && list.length ? list : SUGGEST).forEach(function (q) {
       var c = el('button', null, esc(q)); c.className = 'a9-chip';
       c.onclick = function () { input.value = q; send(); };
       wrap.appendChild(c);
@@ -85,6 +88,7 @@
     var q = (input.value || '').trim();
     if (!q) return;
     input.value = '';
+    var priorHistory = HISTORY.slice(-6);
     addMsg(q, 'me');
     var chips = body.querySelector('.a9-chips'); if (chips) chips.remove();
     var typing = el('div', null, 'Thinking...'); typing.className = 'a9-typing'; body.appendChild(typing); body.scrollTop = body.scrollHeight;
@@ -99,6 +103,7 @@
       var d = {}; try { d = JSON.parse(x.responseText); } catch (e) {}
       if (d && d.answer) addMsg(d.answer, 'bot');
       else addMsg('Sorry, I couldn\'t answer that just now. Please email hello@9amleads.com and we\'ll help.', 'bot');
+      try { addChips(d && d.suggested); } catch (e) {}
       BUSY = false; sendBtn.disabled = false; try { input.focus(); } catch (e) {}
     };
     x.onerror = function () {
@@ -106,7 +111,7 @@
       addMsg('Connection problem - please try again, or email hello@9amleads.com.', 'bot');
       BUSY = false; sendBtn.disabled = false;
     };
-    x.send(JSON.stringify({ question: q, page: location.pathname }));
+    x.send(JSON.stringify({ question: q, page: location.pathname, history: priorHistory }));
   }
 
   btn.onclick = open;
