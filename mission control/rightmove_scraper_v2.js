@@ -948,31 +948,38 @@ async function collectMovingLeads(config) {
   }
   const allProperties = [];
 
-  for (const loc of locations) {
-    try {
-      _usageInc('searches', 1);
-      var isAreaTargeted = !!(config.areas && Array.isArray(config.areas) && config.areas.length > 0 && / area$/.test(loc.name || ''));
-      var maxPages = loc.pages || 2;
-      for (var pi = 0; pi < maxPages; pi++) {
-        var pg = await fetchRightmovePage(loc.id, loc.name, pi * 24);
-        _usageInc('rightmove_pages', 1);
-        if (pg.length === 0) { _usageInc('failed_searches', 1); break; }
-        if (isAreaTargeted) {
-          var areaTag = String(loc.name).replace(' area', '').toUpperCase();
-          pg.forEach(function(p) { p.areaTargeted = areaTag; });
+  // Fetch locations with BOUNDED CONCURRENCY. The old sequential loop (with 300ms
+  // gaps) took >18 min for ~34 areas and hit the scraper timeout, returning 0 leads
+  // and leaving some customer areas (ML/KA/PA/MK) empty. Running 6 at a time cuts
+  // the full run to a few minutes so every area completes.
+  const CONC = Math.max(1, parseInt(process.env.MOVING_SCRAPE_CONCURRENCY || '6', 10));
+  let locIdx = 0;
+  async function scrapeLoc() {
+    while (locIdx < locations.length) {
+      const loc = locations[locIdx++];
+      try {
+        _usageInc('searches', 1);
+        var isAreaTargeted = !!(config.areas && Array.isArray(config.areas) && config.areas.length > 0 && / area$/.test(loc.name || ''));
+        var maxPages = loc.pages || 2;
+        for (var pi = 0; pi < maxPages; pi++) {
+          var pg = await fetchRightmovePage(loc.id, loc.name, pi * 24);
+          _usageInc('rightmove_pages', 1);
+          if (pg.length === 0) { _usageInc('failed_searches', 1); break; }
+          if (isAreaTargeted) {
+            var areaTag = String(loc.name).replace(' area', '').toUpperCase();
+            pg.forEach(function(p) { p.areaTargeted = areaTag; });
+          }
+          console.log('[RIGHTMOVE] ' + loc.name + ' page ' + (pi + 1) + ': ' + pg.length);
+          allProperties.push.apply(allProperties, pg);
+          if (pg.length < 24) break;
         }
-        console.log('[RIGHTMOVE] ' + loc.name + ' page ' + (pi + 1) + ': ' + pg.length);
-        allProperties.push.apply(allProperties, pg);
-        if (pg.length < 24) break;
+      } catch (e) {
+        console.log('[RIGHTMOVE] Error scraping ' + loc.name + ':', e.message);
       }
-
-      if (loc !== locations[locations.length - 1]) {
-        await new Promise(function(r) { setTimeout(r, 300); });
-      }
-    } catch (e) {
-      console.log('[RIGHTMOVE] Error scraping ' + loc.name + ':', e.message);
+      await new Promise(function(r) { setTimeout(r, 120); });
     }
   }
+  await Promise.all(Array.from({ length: Math.min(CONC, locations.length) }, scrapeLoc));
 
   var seenIds = {};
   var deduped = allProperties.filter(function(p) {
