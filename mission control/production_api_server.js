@@ -8717,6 +8717,7 @@ app.post('/api/assistant/ask', authMiddleware, async (req, res) => {
     var products = [];
     try { products = JSON.parse((cust && cust.biz_field3) || '[]'); } catch(e) {}
     var areas = (cust && cust.target_areas) || '';
+    var trialEnds = (cust && cust.trial_ends) || '';
     // Multi-turn: accept a short history of prior messages.
     var history = Array.isArray(req.body.history) ? req.body.history.slice(-6) : [];
     var msgs = [];
