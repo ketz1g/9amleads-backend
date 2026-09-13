@@ -14225,7 +14225,6 @@ function buildWelcomeEmailFull(customer, productName, accent, allProds) {
     + '</td></tr>'
     + '<tr><td bgcolor="' + PANEL + '" class="mob" style="background-color:' + PANEL + ';padding:22px 30px 6px">'
     + '<a href="' + dashboardUrl + '" style="display:block;text-align:center;padding:15px;background-color:#0ea5e9;background-image:linear-gradient(135deg,#0ea5e9,#2563eb);color:#ffffff;text-decoration:none;border-radius:50px;font-weight:800;font-size:15px">Open my dashboard</a>'
-    + '<p style="text-align:center;color:#64748b;font-size:11px;margin:10px 0 0">No card required. Nothing will be charged at the end of your trial.</p>'
     + '</td></tr>'
     + '<tr><td bgcolor="' + PANEL + '" class="mob" style="background-color:' + PANEL + ';padding:24px 30px 28px">'
     + '<p style="color:#e8edf5;font-size:14px;line-height:1.75;margin:0 0 12px">From tomorrow, your fresh <strong style="color:#ffffff">' + leadLabel + '</strong> will land in your inbox every weekday at 9am.</p>'
