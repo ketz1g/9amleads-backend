@@ -953,9 +953,12 @@ async function collectMovingLeads(config) {
   // and leaving some customer areas (ML/KA/PA/MK) empty. Running 6 at a time cuts
   // the full run to a few minutes so every area completes.
   const CONC = Math.max(1, parseInt(process.env.MOVING_SCRAPE_CONCURRENCY || '6', 10));
+  // HARD INTERNAL DEADLINE: always return what we have within this budget so the
+  // caller never times out and discards the whole run (which left areas empty).
+  const DEADLINE = Date.now() + Math.max(60000, parseInt(process.env.MOVING_SCRAPE_BUDGET_MS || '480000', 10));
   let locIdx = 0;
   async function scrapeLoc() {
-    while (locIdx < locations.length) {
+    while (locIdx < locations.length && Date.now() < DEADLINE) {
       const loc = locations[locIdx++];
       try {
         _usageInc('searches', 1);
