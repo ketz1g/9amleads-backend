@@ -25474,6 +25474,13 @@ app.get('/api/buyer-scrape/status', (req, res) => {
 });
 
 app.get('/api/health', (req, res) => {
+  // FAST PATH: Render's health check hits this every few seconds. The full-table
+  // COUNT queries below scan the whole DB and were timing out (5s) under scrape
+  // load, causing Render to restart the service mid-scrape. Return instantly
+  // unless ?full=1 is requested.
+  if (!req.query || req.query.full !== '1') {
+    return res.json({ status: 'running', domain: 'www.9amleads.com', ts: Date.now() });
+  }
   const customerCount = db.prepare('SELECT COUNT(*) as count FROM customers').get();
   const leadCount = db.prepare('SELECT COUNT(*) as count FROM leads').get();
   const activeTrials = db.prepare('SELECT COUNT(*) as count FROM customers WHERE plan = \'free_trial\' AND trial_ends > datetime(\'now\')').get();
