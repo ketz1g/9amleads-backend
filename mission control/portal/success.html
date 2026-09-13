@@ -8,156 +8,327 @@
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--bg:#0a0c14;--card:#0f1220;--card2:#0b0d18;--border:#1a1e32;--border2:#282e48;--text:#e8edf5;--text2:#a0a8c0;--muted:#6b7280;--primary:#0ea5e9;--success:#22c55e;--warning:#f59e0b;--danger:#ef4444;--ff-h:'Outfit',sans-serif;--ff-b:'Inter',sans-serif}
 body{font-family:var(--ff-b);background:var(--bg);color:var(--text);font-size:14px;line-height:1.7;min-height:100vh}
-.container{max-width:900px;margin:0 auto;padding:32px 20px}
-.back-link{display:inline-flex;align-items:center;gap:6px;color:var(--muted);text-decoration:none;font-size:13px;margin-bottom:20px;transition:color .2s}
-.back-link:hover{color:var(--primary)}
-h1{font-family:var(--ff-h);font-size:28px;font-weight:800;margin-bottom:4px;line-height:1.2}
-.subtitle{color:var(--muted);font-size:14px;margin-bottom:32px}
-.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:20px;transition:border-color .3s}
-.card:hover{border-color:var(--border2)}
-.card h2{font-family:var(--ff-h);font-size:18px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
-.card h3{font-family:var(--ff-h);font-size:14px;font-weight:700;margin-bottom:6px;color:var(--text)}
-.card p,.card li{color:var(--text2);font-size:13px;line-height:1.8}
-.card ul{list-style:none;padding:0}
-.card ul li{padding:6px 0 6px 20px;position:relative}
-.card ul li::before{content:'\2713';position:absolute;left:0;color:var(--success);font-weight:700}
-.tip-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
-.tip-card{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:16px;transition:border-color .2s}
-.tip-card:hover{border-color:var(--primary)}
-.tip-card .icon{font-size:24px;display:block;margin-bottom:6px}
-.tip-card h4{font-size:13px;font-weight:700;margin-bottom:4px;color:var(--text)}
-.tip-card p{font-size:11px;color:var(--muted);line-height:1.6}
-.strategy-flow{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
-.strategy-step{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;text-align:center;flex:1;min-width:100px}
-.strategy-step .step-num{width:22px;height:22px;border-radius:50%;background:var(--primary);color:#fff;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;margin-bottom:4px}
-.strategy-step .step-label{font-size:10px;color:var(--muted2);font-weight:600;text-transform:uppercase;letter-spacing:.3px}
-.strategy-step .step-desc{font-size:11px;color:var(--text2);font-weight:500;margin-top:2px}
-.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;margin-right:4px;margin-bottom:4px}
-.tag-moving{background:rgba(255,107,53,.15);color:#ff6b35}
-.tag-probate{background:rgba(168,85,247,.15);color:#a855f7}
-.tag-newbusiness{background:rgba(6,182,212,.15);color:#06b6d4}
-.tag-planning{background:rgba(16,185,129,.15);color:#10b981}
-.tag-tenders{background:rgba(99,102,241,.15);color:#6366f1}
-@media(max-width:600px){.tip-grid{grid-template-columns:1fr}.strategy-flow{flex-direction:column}}
+a{color:inherit}
+.container{max-width:1080px;margin:0 auto;padding:28px 20px 60px}
+.topbar{position:sticky;top:0;z-index:40;background:rgba(10,12,20,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.topbar .logo{font-family:var(--ff-h);font-weight:900;font-size:18px}.topbar .logo span{color:var(--primary)}
+.back-link{display:inline-flex;align-items:center;gap:6px;color:var(--muted);text-decoration:none;font-size:13px;transition:color .2s}.back-link:hover{color:var(--primary)}
+.hero{background:linear-gradient(150deg,#0f1422,#0a0c14);border:1px solid var(--border);border-radius:18px;padding:30px 28px;margin-bottom:22px}
+.hero h1{font-family:var(--ff-h);font-size:30px;font-weight:900;margin-bottom:6px;line-height:1.15}
+.hero p{color:var(--text2);font-size:14.5px;max-width:720px}
+.hero-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:20px}
+.stat{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
+.stat .n{font-family:var(--ff-h);font-size:22px;font-weight:900;color:var(--primary)}
+.stat .l{font-size:11.5px;color:var(--muted);margin-top:2px}
+.section-title{font-family:var(--ff-h);font-size:20px;font-weight:800;margin:30px 0 12px;display:flex;align-items:center;gap:9px}
+.section-sub{color:var(--muted);font-size:13px;margin-bottom:14px}
+/* Checklist */
+.checklist{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px 22px}
+.checklist .bar{height:8px;background:var(--card2);border-radius:99px;overflow:hidden;margin:10px 0 16px}
+.checklist .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#0ea5e9,#22c55e);transition:width .3s}
+.chk{display:flex;align-items:flex-start;gap:11px;padding:9px 0;border-bottom:1px solid var(--border);cursor:pointer}
+.chk:last-child{border-bottom:none}
+.chk input{margin-top:3px;width:17px;height:17px;accent-color:var(--primary);flex-shrink:0;cursor:pointer}
+.chk .t{font-weight:600;color:var(--text);font-size:13.5px}
+.chk .d{font-size:11.5px;color:var(--muted)}
+.chk.done .t{color:var(--muted);text-decoration:line-through}
+/* Tabs */
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.tab{border:1px solid var(--border);background:var(--card);color:var(--text2);padding:10px 16px;border-radius:99px;font-size:13px;font-weight:700;cursor:pointer;transition:.18s;font-family:inherit}
+.tab:hover{border-color:var(--border2);color:var(--text)}
+.tab.active{background:var(--tc,#0ea5e9);border-color:transparent;color:#fff}
+/* Panel */
+.panel{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px 26px 22px;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.panel-head{display:flex;align-items:center;gap:14px;margin-bottom:6px}
+.panel-head .emoji{font-size:34px}
+.panel-head h2{font-family:var(--ff-h);font-size:23px;font-weight:800}
+.panel-head .accent-line{height:4px;width:52px;border-radius:9px;margin-top:4px}
+.overview{color:var(--text2);font-size:14px;margin:10px 0 16px}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:20px}
+.kv .box{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:11px 13px}
+.kv .box .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:700}
+.kv .box .v{font-size:13.5px;color:var(--text);font-weight:700;margin-top:3px}
+.block-h{font-family:var(--ff-h);font-size:14px;font-weight:800;margin:18px 0 10px;display:flex;align-items:center;gap:8px;text-transform:uppercase;letter-spacing:.4px;font-size:12.5px}
+.steps{counter-reset:st;display:grid;gap:10px}
+.step{display:flex;gap:13px;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:13px 15px}
+.step .num{width:26px;height:26px;border-radius:50%;background:var(--tc,#0ea5e9);color:#fff;font-weight:800;font-size:12.5px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.step .st{font-weight:700;color:var(--text);font-size:13.5px}
+.step .sd{font-size:12.5px;color:var(--text2);line-height:1.65}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tip{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:14px;transition:border-color .2s}
+.tip:hover{border-color:var(--tc,#0ea5e9)}
+.tip .ic{font-size:20px}.tip h4{font-size:13px;font-weight:700;margin:5px 0 3px}.tip p{font-size:12px;color:var(--text2);line-height:1.65}
+.avoid{background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.25);border-radius:12px;padding:14px 16px}
+.avoid li{color:#fca5a5;font-size:12.5px;margin:6px 0 6px 18px}
+.cadence{display:grid;gap:8px}
+.cad{display:flex;gap:12px;align-items:flex-start;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:11px 14px}
+.cad .when{flex-shrink:0;width:78px;font-weight:800;font-size:12px;color:var(--tc,#0ea5e9)}
+.cad .what{font-size:12.5px;color:var(--text2)}
+.kpis{display:flex;flex-wrap:wrap;gap:8px}
+.kpi{background:var(--card2);border:1px solid var(--border);border-radius:99px;padding:7px 14px;font-size:12px;color:var(--text2);font-weight:600}
+/* Templates */
+.tpl-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tpl{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px}
+.tpl h4{font-size:13.5px;font-weight:700;margin-bottom:4px}
+.tpl .meta{font-size:11px;color:var(--muted);margin-bottom:10px}
+.tpl pre{background:var(--card2);border:1px solid var(--border);border-radius:9px;padding:12px;font-size:11.5px;color:var(--text2);white-space:pre-wrap;max-height:190px;overflow:auto;font-family:ui-monospace,Menlo,Consolas,monospace;line-height:1.6}
+.copy{margin-top:10px;display:inline-flex;align-items:center;gap:7px;background:var(--card2);border:1px solid var(--border2);color:var(--text);padding:8px 15px;border-radius:99px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
+.copy:hover{border-color:var(--primary);color:var(--primary)}
+/* FAQ */
+.faq{border:1px solid var(--border);border-radius:12px;margin-bottom:10px;background:var(--card);overflow:hidden}
+.faq button{width:100%;text-align:left;background:none;border:none;color:var(--text);font-family:var(--ff-h);font-size:14px;font-weight:700;padding:15px 18px;cursor:pointer;display:flex;justify-content:space-between;gap:10px;align-items:center}
+.faq .a{display:none;padding:0 18px 16px;color:var(--text2);font-size:13px}
+.faq.open .a{display:block}
+.faq .chev{transition:transform .2s}.faq.open .chev{transform:rotate(180deg)}
+.footer-cta{text-align:center;margin-top:26px;color:var(--muted);font-size:12.5px}
+.toast{position:fixed;bottom:22px;right:22px;background:#0f172a;border:1px solid var(--primary);color:#fff;padding:11px 18px;border-radius:10px;font-size:13px;font-weight:600;z-index:99;display:none}
+@media(max-width:700px){.grid2,.tpl-grid{grid-template-columns:1fr}.hero h1{font-size:24px}.panel{padding:20px 16px}}
 </style>
 </head>
 <body>
+<div class="topbar">
+<div class="logo">9am<span>Leads</span> &middot; Success Centre</div>
+<a href="/portal/dashboard.html" class="back-link"><i class="fas fa-arrow-left"></i> Dashboard</a>
+</div>
+
 <div class="container">
-<a href="/portal/dashboard.html" class="back-link"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
-<h1><i class="fas fa-graduation-cap" style="color:var(--primary)"></i> Success Centre</h1>
-<p class="subtitle">Proven strategies and practical tips to help you convert more leads into paying customers.</p>
-
-<!-- Moving Leads -->
-<div class="card">
-<h2><span style="font-size:24px">🚚</span> Moving Leads</h2>
-<p style="margin-bottom:12px">People who have listed their home for sale are actively planning a move. They need removal services, packing, and storage. Speed and professionalism win the business.</p>
-<div class="strategy-flow">
-<div class="strategy-step"><div class="step-num">1</div><div class="step-label">Research</div><div class="step-desc">Visit the property listing online to review property details and understand what the customer might need.</div></div>
-<div class="strategy-step"><div class="step-num">2</div><div class="step-label">Tailor Quote</div><div class="step-desc">Create a specific quote based on property size, number of bedrooms, and estimated move distance.</div></div>
-<div class="strategy-step"><div class="step-num">3</div><div class="step-label">Follow Up</div><div class="step-desc">Send a professional quote with a clear breakdown and a time-limited discount to encourage a quick decision.</div></div>
-</div>
-<div class="tip-grid">
-<div class="tip-card"><span class="icon">🗺️</span><h4>Target Your Area</h4><p>Focus on properties within your operational radius. Local moves are your bread and butter. you can offer site visits easily and build a strong local reputation.</p></div>
-<div class="tip-card"><span class="icon">📸</span><h4>Visual Your Service</h4><p>Include photos of your team, your van, and past moves when presenting your quote. People trust what they can see.</p></div>
-<div class="tip-card"><span class="icon">⭐</span><h4>Leverage Reviews</h4><p>Share your Google or Trustpilot reviews in your communications. Social proof is one of the strongest conversion tools.</p></div>
-<div class="tip-card"><span class="icon">📋</span><h4>Offer a Checklist</h4><p>Provide a free moving-day checklist for your customers. It adds value and positions you as the helpful expert.</p></div>
+<div class="hero">
+<h1>Success Centre</h1>
+<p>Everything you need to turn your 9am leads into paying customers. Follow the playbooks, avoid the common mistakes, and use the ready-made templates below.</p>
+<div class="hero-stats">
+<div class="stat"><div class="n">5</div><div class="l">Lead types covered</div></div>
+<div class="stat"><div class="n">30+</div><div class="l">Proven tactics</div></div>
+<div class="stat"><div class="n">6</div><div class="l">Copy-and-paste templates</div></div>
+<div class="stat"><div class="n">24h</div><div class="l">Best time to respond</div></div>
 </div>
 </div>
 
-<!-- Probate Leads -->
-<div class="card">
-<h2><span style="font-size:24px">⚖️</span> Probate Leads</h2>
-<p style="margin-bottom:12px">Estate executors need professional guidance to value and manage a deceased person's estate. Sensitivity and expertise are critical.</p>
-<div class="strategy-flow">
-<div class="strategy-step"><div class="step-num">1</div><div class="step-label">Understand</div><div class="step-desc">Research the estate and gather sufficient information about the property and its value to prepare a relevant proposal.</div></div>
-<div class="strategy-step"><div class="step-num">2</div><div class="step-label">Proposal</div><div class="step-desc">Present a clear service package including probate valuation and any additional services you offer.</div></div>
-<div class="strategy-step"><div class="step-num">3</div><div class="step-label">Guide</div><div class="step-desc">Provide a step-by-step guide to the probate process. Executors often feel overwhelmed and will appreciate clear, supportive advice.</div></div>
-</div>
-<div class="tip-grid">
-<div class="tip-card"><span class="icon">📚</span><h4>Educate Your Prospect</h4><p>Executors are often unfamiliar with the probate process. A simple guide explaining the timeline and requirements will build trust and establish you as the authority.</p></div>
-<div class="tip-card"><span class="icon">💼</span><h4>Offer a Full Service</h4><p>Many estate agents and solicitors offer probate valuations as a gateway to securing the house sale instruction. Position yourself as a full-service partner.</p></div>
-<div class="tip-card"><span class="icon">🤝</span><h4>Be Compassionate</h4><p>This is a difficult time for the family. Professionalism with empathy goes a long way. Follow up thoughtfully and give them time to make decisions.</p></div>
-</div>
+<!-- FIRST WEEK CHECKLIST -->
+<h2 class="section-title"><i class="fas fa-rocket" style="color:#0ea5e9"></i> Your first week</h2>
+<p class="section-sub">Tick these off to get the most out of your trial. Your progress saves automatically.</p>
+<div class="checklist">
+<div class="bar"><i id="chk-bar"></i></div>
+<div id="chk-list"></div>
 </div>
 
-<!-- New Business Alerts -->
-<div class="card">
-<h2><span style="font-size:24px">🏢</span> New Business Alerts</h2>
-<p style="margin-bottom:12px">Newly registered companies are actively setting up operations. They need accountants, websites, insurance, office supplies, and more. You can reach them even without direct contact details.</p>
-<div class="strategy-flow">
-<div class="strategy-step"><div class="step-num">1</div><div class="step-label">Search Online</div><div class="step-desc">Search for the company name on Google. Many new businesses have a website, social media page, or directory listing with contact information.</div></div>
-<div class="strategy-step"><div class="step-num">2</div><div class="step-label">Visit or Mail</div><div class="step-desc">Use the registered address to send a professional brochure, introductory letter, or leave a leaflet at their premises if local.</div></div>
-<div class="strategy-step"><div class="step-num">3</div><div class="step-label">Connect</div><div class="step-desc">Send a LinkedIn connection request or follow their company page. Engage with their content to build familiarity before reaching out.</div></div>
-</div>
-<div class="tip-grid">
-<div class="tip-card"><span class="icon">🌐</span><h4>Check Their Website</h4><p>Most limited companies will register a website soon after incorporation. Check the company name on Google. many will have at least a holding page with contact details listed.</p></div>
-<div class="tip-card"><span class="icon">📮</span><h4>Leaflet Campaign</h4><p>If the business is local, visit their registered address in person. A well-designed leaflet or introductory letter delivered by hand can be very effective. You can simply post it through their letterbox.</p></div>
-<div class="tip-card"><span class="icon">🔍</span><h4>Use LinkedIn</h4><p>Search for the company or director name on LinkedIn. Many directors list their profiles publicly. A polite connection request with a brief introduction can open the door.</p></div>
-<div class="tip-card"><span class="icon">📊</span><h4>Track Your Outreach</h4><p>Keep a simple log of which companies you have contacted, the method used, and the response. This helps you identify which approach works best for your area.</p></div>
-</div>
-</div>
+<!-- LEAD TYPE PLAYBOOKS -->
+<h2 class="section-title"><i class="fas fa-book-open" style="color:#22c55e"></i> Lead-type playbooks</h2>
+<p class="section-sub">Pick your lead type for the exact steps, tips, mistakes to avoid and follow-up cadence.</p>
+<div class="tabs" id="tabs"></div>
+<div id="panels"></div>
 
-<!-- Planning Permission -->
-<div class="card">
-<h2><span style="font-size:24px">🔨</span> Planning Permission</h2>
-<p style="margin-bottom:12px">Property owners applying for planning permission will soon need architects, builders, structural engineers, and interior designers. Get in early to secure the project.</p>
-<div class="strategy-flow">
-<div class="strategy-step"><div class="step-num">1</div><div class="step-label">Review Plans</div><div class="step-desc">Look up the application details on the council's planning portal to understand the scope of work.</div></div>
-<div class="strategy-step"><div class="step-num">2</div><div class="step-desc">Provide a relevant proposal or portfolio showing similar projects you have worked on, whether you are an architect, builder, or supplier.</div></div>
-<div class="strategy-step"><div class="step-num">3</div><div class="step-label">Follow Up</div><div class="step-desc">Once permission is granted, contact the applicant promptly. There is often a window of opportunity immediately after approval.</div></div>
-</div>
-<div class="tip-grid">
-<div class="tip-card"><span class="icon">📋</span><h4>Council Portal Research</h4><p>Each council publishes planning applications online with detailed plans, documents, and contact details. Use the reference number from your lead to pull up the full application.</p></div>
-<div class="tip-card"><span class="icon">🏗️</span><h4>Showcase Your Work</h4><p>Whether you are an architect, builder, or interior designer, having a portfolio of similar projects ready will help the applicant visualise what you can deliver for them.</p></div>
-<div class="tip-card"><span class="icon">⏱️</span><h4>Timing Matters</h4><p>Planning permission typically lasts 3 years. Contact applicants soon after approval is granted, as they are most likely to be planning their next steps during this period.</p></div>
-</div>
-</div>
+<!-- TEMPLATES -->
+<h2 class="section-title"><i class="fas fa-file-lines" style="color:#f59e0b"></i> Ready-to-use templates</h2>
+<p class="section-sub">Click copy, then paste into your email, letter or phone script. Replace the {{placeholders}} with your details.</p>
+<div class="tpl-grid" id="tpl-grid"></div>
 
-<!-- Public Tenders -->
-<div class="card">
-<h2><span style="font-size:24px">📋</span> Public Tenders</h2>
-<p style="margin-bottom:12px">Government and public sector organisations publish contract opportunities. These are formal bidding processes that require careful preparation.</p>
-<div class="strategy-flow">
-<div class="strategy-step"><div class="step-num">1</div><div class="step-label">Review</div><div class="step-desc">Read the full tender document carefully. Understand the requirements, evaluation criteria, and submission deadline.</div></div>
-<div class="strategy-step"><div class="step-num">2</div><div class="step-label">Prepare</div><div class="step-desc">Gather all necessary documentation including insurance certificates, quality accreditations, and case studies of similar contracts.</div></div>
-<div class="strategy-step"><div class="step-num">3</div><div class="step-label">Submit</div><div class="step-desc">Complete the tender response thoroughly, addressing each evaluation criterion. Submit well before the deadline to avoid last-minute issues.</div></div>
-</div>
-<div class="tip-grid">
-<div class="tip-card"><span class="icon">📂</span><h4>Prepare a Tender Template</h4><p>Create a standard tender response template with your company information, insurance details, and policies. This will save hours when new opportunities arise.</p></div>
-<div class="tip-card"><span class="icon">🎯</span><h4>Quality Over Quantity</h4><p>Focus on tenders where you have relevant experience. A focused, high-quality submission is far more likely to succeed than generic bids for everything available.</p></div>
-<div class="tip-card"><span class="icon">📅</span><h4>Track Deadlines</h4><p>Set calendar reminders for tender deadlines at least 3 days before the closing date. This gives you time to handle any last-minute document requests or technical issues.</p></div>
-</div>
-</div>
-
-<!-- General Tips -->
-<div class="card">
-<h2><span style="font-size:24px">💡</span> Universal Tips for All Lead Types</h2>
-<div class="tip-grid">
-<div class="tip-card"><span class="icon">⚡</span><h4>Speed Is Key</h4><p>Contact prospects promptly. Being first to respond gives you a significant advantage over competitors who wait until later.</p></div>
-<div class="tip-card"><span class="icon">🎯</span><h4>Personalise Everything</h4><p>Reference their specific situation, property, or industry in your communications. Generic messages get ignored. Personalised approaches build trust and get responses.</p></div>
-<div class="tip-card"><span class="icon">📊</span><h4>Track Your Results</h4><p>Log every lead, every contact attempt, and every conversion on your dashboard. Review which lead types and areas deliver the best return and focus your efforts there.</p></div>
-<div class="tip-card"><span class="icon">🔄</span><h4>Follow Up More Than Once</h4><p>Most conversions happen after the second or third contact. A polite follow-up a few days later can turn a maybe into a yes.</p></div>
-<div class="tip-card"><span class="icon">📝</span><h4>Keep Records</h4><p>Maintain a simple spreadsheet of prospects you have contacted, the date, method used, and any response. This helps you refine your approach over time.</p></div>
-<div class="tip-card"><span class="icon">📈</span><h4>Review and Refine</h4><p>Check your dashboard regularly to see which lead types and postcode areas perform best. Adjust your filters and territories to maximise your return.</p></div>
-</div>
-</div>
+<!-- UNIVERSAL -->
+<h2 class="section-title"><i class="fas fa-star" style="color:#a855f7"></i> Universal rules for every lead</h2>
+<div class="grid2" id="universal"></div>
 
 <!-- FAQ -->
-<div class="card">
-<h2><span style="font-size:24px">❓</span> Frequently Asked Questions</h2>
-<div style="margin-top:8px">
-<h3 style="margin-top:16px">How do I set my postcode areas?</h3>
-<p>Go to your dashboard and click "Edit Territories" in the My Areas section. You can search for postcode areas or type specific sectors (e.g., "EN1 3", "SG13 7"). Your plan includes a set number of areas ,  free trial includes 5. You can add more areas from your subscription settings.</p>
-<h3 style="margin-top:16px">How fresh are the leads?</h3>
-<p>Opportunities are prioritised from the last 24 hours and gathered daily from official UK data sources including Companies House, the Planning Portal, and Contracts Finder. You receive the most recent opportunities available.</p>
-<h3 style="margin-top:16px">What if I don't have contact details?</h3>
-<p>Some lead types do not include direct contact information. For new business alerts, check the company's website or search for them on LinkedIn. You can also send a leaflet or letter to the registered address listed in your lead. For moving leads, the property address is provided for your reference.</p>
-<h3 style="margin-top:16px">Can I change my lead type or postcode areas?</h3>
-<p>Yes. Go to Settings in your dashboard to update your lead types and postcode areas. Changes take effect for the next day's delivery.</p>
-<h3 style="margin-top:16px">How do I set up filters?</h3>
-<p>Go to Settings in your dashboard and click "Edit Filters" under Lead Filters. You can set criteria for each lead type individually, such as minimum bedrooms for moving leads or industry categories for new business alerts.</p>
-</div>
+<h2 class="section-title"><i class="fas fa-circle-question" style="color:#0ea5e9"></i> Frequently asked questions</h2>
+<div id="faq-list"></div>
+
+<p class="footer-cta">Need a hand? Email <a href="mailto:hello@9amleads.com" style="color:#0ea5e9;font-weight:700">hello@9amleads.com</a> and we'll help you get set up.</p>
 </div>
 
-</div>
+<div class="toast" id="toast">Copied to clipboard</div>
+
+<script>
+var LEAD = [
+ { id:'moving', emoji:'🚚', name:'Moving Leads', accent:'#ff6b35',
+   tagline:'Homeowners who have listed or sold and need to move.',
+   overview:'These people are actively planning a move right now. They need removals, packing and often storage. The company that responds first and offers a free survey usually wins the job.',
+   kv:[['Average job value','£1,000 – £3,000'],['Best contact','Phone, then email'],['Response window','Same hour'],['Key edge','Speed + free survey']],
+   playbook:[
+     ['Call within the hour','The first removal company to speak to the customer wins most jobs. Don\'t wait until tomorrow.'],
+     ['Check the property listing','Look the address up on Rightmove/Zoopla to see bedrooms, property type and access before you call.'],
+     ['Offer a free, no-obligation survey','A free survey converts far better than a quote over the phone.'],
+     ['Send a clear written quote within 24h','Break it down: van size, crew, packing, materials, insurance. No vague "from £X".'],
+     ['Add a reason to decide now','A small time-limited incentive (free packing boxes, 10% off midweek) nudges a fast yes.'],
+     ['Follow up on day 2 and day 7','Most removals are won on the follow-up, not the first call.']
+   ],
+   tips:[['🗺️','Stay local','Focus on moves within your radius so you can offer site visits and arrive on time.'],['📸','Show your team','Photos of your van, crew and past moves build instant trust.'],['⭐','Lead with reviews','Put your best Google/Trustpilot reviews in every quote.'],['📋','Give a moving checklist','A free moving-day checklist adds value and keeps you front of mind.']],
+   avoid:['Waiting until the next day to call','Quoting "from £X" without seeing the property','Forgetting to upsell packing, storage and materials','Not following up after sending the quote'],
+   cadence:[['Day 0','Call + book a survey'],['Day 2','Text or email check-in'],['Day 7','Call with a time-limited offer'],['Day 14','Final polite follow-up']],
+   kpis:['Time to first contact','Survey-to-quote rate','Quote-to-win rate','Average job value']
+ },
+ { id:'probate', emoji:'⚖️', name:'Probate Leads', accent:'#a855f7',
+   tagline:'Executors who have just been granted probate.',
+   overview:'A probate grant means an estate needs professional help with valuation, property and often clearance. Estates are high-value and the family is dealing with a lot, so sensitivity and clear guidance win the instruction.',
+   kv:[['Average estate value','£150,000+'],['Best contact','Letter, then phone'],['Response window','Within 24-48h'],['Key edge','Empathy + expertise']],
+   playbook:[
+     ['Write a compassionate letter first','A gentle, professional letter to the executor stands out. Never a hard sell.'],
+     ['Offer a free probate valuation','This is the natural first step and a low-commitment way to start the relationship.'],
+     ['Explain the process simply','Executors are often overwhelmed. A short, plain-English guide builds trust and positions you as the expert.'],
+     ['Follow up by phone after about a week','Give them space, then call to offer help with no pressure.'],
+     ['Position as full service','Valuation, property sale, clearance and legal referrals - one trusted partner.'],
+     ['Nurture over months','Estates move slowly. Keep in touch; the instruction often comes weeks or months later.']
+   ],
+   tips:[['📚','Educate, don\'t sell','A simple guide to probate timelines and requirements builds authority.'],['💼','Offer the full service','Valuation as a gateway to the property sale and clearance work.'],['🤝','Be patient and kind','This is a difficult time. Empathy converts where pressure fails.'],['🔗','Build referral links','Partner with solicitors and funeral directors for a steady stream.']],
+   avoid:['Pushy, salesy language','Jargon the family won\'t understand','Rushing the decision','Giving up after one letter'],
+   cadence:[['Day 0','Send the compassionate letter'],['Day 7','Follow-up phone call'],['Day 21','Check-in with helpful information'],['Monthly','Gentle nurture until they\'re ready']],
+   kpis:['Letter response rate','Valuation-to-instruction rate','Average estate value','Referral sources']
+ },
+ { id:'newbusiness', emoji:'🏢', name:'New Business Leads', accent:'#06b6d4',
+   tagline:'Brand-new companies that need suppliers and support.',
+   overview:'A newly registered company is setting up everything from scratch: accountant, insurance, website, IT and marketing. Reach them early and you can win a long-term client before competitors even know they exist.',
+   kv:[['Average client value','2-5 years LTV'],['Best contact','Email, then LinkedIn'],['Response window','First 7 days'],['Key edge','Be first + add value']],
+   playbook:[
+     ['Search the company name online','Many new companies have a website, social page or directory listing with contact details.'],
+     ['Send a welcome email or letter','Congratulate them and offer something genuinely useful - a free consultation or audit.'],
+     ['Connect on LinkedIn','Find the director and send a short, friendly connection request with context.'],
+     ['Offer a clear first step','Free consultation, free audit, or a simple fixed-price starter package.'],
+     ['Follow up in a week','One email rarely converts. A short follow-up doubles your reply rate.'],
+     ['Track and refine','Log who you contacted and how, then double down on what works.']
+   ],
+   tips:[['🌐','Check their website','Most register a site soon after incorporation - often with contact details.'],['📮','Letter to the registered office','A professional letter stands out when their inbox is empty.'],['🔍','Use LinkedIn','Directors often have public profiles. A polite intro opens the door.'],['📊','Track your outreach','A simple log shows which approach wins for your area.']],
+   avoid:['Generic, copy-paste pitches','Giving up after one email','Ignoring LinkedIn','Pitching before offering value'],
+   cadence:[['Day 0','Welcome email'],['Day 2','LinkedIn connection'],['Day 7','Call or letter'],['Day 21','Value-led follow-up']],
+   kpis:['Email open rate','Reply rate','Meeting-to-client rate','Average client value']
+ },
+ { id:'planning', emoji:'🔨', name:'Planning Permission', accent:'#10b981',
+   tagline:'Homeowners and developers starting building work.',
+   overview:'A planning application means work is coming. Whether you\'re a builder, architect or supplier, getting in early - before it goes to tender - is how you win high-value projects.',
+   kv:[['Average project value','£20,000 – £100,000+'],['Best contact','Phone + site visit'],['Response window','Before approval'],['Key edge','Early + portfolio']],
+   playbook:[
+     ['Look up the application','Use the reference number to read the plans on the council portal and understand the scope.'],
+     ['Contact the applicant early','Don\'t wait for approval. Early conversations put you ahead of everyone else.'],
+     ['Offer a free site visit or quote','A no-obligation visit is the easiest way to start a real conversation.'],
+     ['Show similar projects','A portfolio of comparable work helps them picture the result.'],
+     ['Follow up around approval','Permission often triggers a burst of decision-making - be ready.'],
+     ['Stay in touch through the build','Projects take time; the patient supplier often wins.']
+   ],
+   tips:[['📋','Use the council portal','Applications include plans, documents and sometimes contact details.'],['🏗️','Showcase your work','A ready portfolio helps the applicant visualise the outcome.'],['⏱️','Timing matters','Permission usually lasts 3 years - stay visible.'],['🎯','Target the right projects','Focus on the applications that match your specialism.']],
+   avoid:['Waiting until permission is granted','Having no portfolio to show','Ignoring the applicant\'s architect','Quoting without a site visit'],
+   cadence:[['Day 0','Call or email the applicant'],['Day 3','Offer a free site visit'],['Day 10','Send a detailed quote'],['Post-approval','Immediate follow-up']],
+   kpis:['Quote-to-win rate','Average project value','Time to quote','Site-visit conversion']
+ },
+ { id:'tenders', emoji:'📋', name:'Public Tenders', accent:'#6366f1',
+   tagline:'Public-sector contracts you can bid for.',
+   overview:'Government and public bodies publish contracts worth £50k to £500k+. They\'re formal and competitive, but with a reusable template and careful reading you can build a steady pipeline of public work.',
+   kv:[['Average contract value','£50,000 – £500,000+'],['Best contact','Tender portal + email'],['Response window','Before the deadline'],['Key edge','Preparation + accuracy']],
+   playbook:[
+     ['Read the full tender document','Understand the requirements, evaluation criteria and submission deadline before anything else.'],
+     ['Check you qualify','Insurance levels, accreditations and references are often mandatory - confirm early.'],
+     ['Keep a reusable response template','Company info, policies, insurance and case studies ready to drop in saves hours.'],
+     ['Answer every evaluation criterion','Mirror their wording and evidence each point - this is what scores the marks.'],
+     ['Submit early','Aim for at least 2 days before the deadline to avoid technical problems.'],
+     ['Ask for feedback if you lose','Feedback is how you improve your next bid.']
+   ],
+   tips:[['📂','Build a bid library','Store standard answers, certificates and case studies for fast reuse.'],['🎯','Quality over quantity','Focused bids where you have real experience win more than scattershot ones.'],['📅','Track deadlines','Set reminders 3+ days ahead of every closing date.'],['🤝','Get on frameworks','Approved supplier lists and frameworks bring repeat work.']],
+   avoid:['Missing the deadline','Submitting generic, un-tailored bids','Ignoring the evaluation criteria','Never asking for post-bid feedback'],
+   cadence:[['Day 0','Read and assess the tender'],['Day 3','Decide bid / no-bid'],['2 days before','Submit the response'],['After result','Request feedback']],
+   kpis:['Win rate','Bid-to-shortlist rate','Average contract value','Number of live bids']
+ }
+];
+
+var TEMPLATES = [
+ { name:'Moving Introduction Letter', meta:'Moving · Letter', body:'Dear {{lead_name}},\n\nWe understand you are considering a move to {{lead_address}}.\n\nAs a local removal company, we offer:\n- Free no-obligation survey\n- Full packing service\n- Insurance included\n- Storage options\n\nCall us on {{customer_phone}} for a free quote.\n\nBest regards,\n{{customer_business_name}}' },
+ { name:'Moving Phone Script', meta:'Moving · Phone', body:'Hello, this is {{customer_business_name}}.\n\nWe saw you are planning a move to {{lead_address}}. We specialise in {{postcode}} area moves.\n\nWould you like a free no-obligation survey and quote?\n\nWe offer full packing, storage and insurance.' },
+ { name:'Probate Introduction Letter', meta:'Probate · Letter', body:'Dear {{lead_name}},\n\nWe were sorry to learn of your recent loss.\n\nAt {{customer_business_name}}, we handle probate property matters with care and sensitivity.\n\nWe offer:\n- Free probate valuation\n- Sensitive handling\n- Clear guidance through the process\n\nPlease call {{customer_phone}} when you are ready.\n\nWith condolences,\n{{customer_business_name}}' },
+ { name:'Builder Planning Letter', meta:'Planning · Letter', body:'Dear {{lead_name}},\n\nWe note you have a planning application at {{lead_address}}.\n\n{{customer_business_name}} specialises in projects like this. We can provide a competitive quote.\n\nCall {{customer_phone}} for a free site visit.\n\nBest regards,\n{{customer_business_name}}' },
+ { name:'New Business Welcome Email', meta:'New Business · Email', body:'Subject: Welcome to {{lead_name}}\n\nDear {{contact_name}},\n\nCongratulations on your new venture.\n\n{{customer_business_name}} can help you with:\n- Accounting / Insurance / Marketing support\n- Free initial consultation\n- Local expertise\n\nCall {{customer_phone}} or reply to this email.\n\nBest regards,\n{{customer_business_name}}' },
+ { name:'Tender Introduction Email', meta:'Tenders · Email', body:'Subject: Expression of Interest\n\nTo the procurement team,\n\n{{customer_business_name}} wishes to express interest in the tender opportunity.\n\nWe have experience delivering similar contracts and can provide full capability documentation.\n\nPlease contact {{customer_email}} for our credentials.\n\nYours faithfully,\n{{customer_business_name}}' }
+];
+
+var CHECKLIST = [
+ ['Upload your flyer & letter','Add your front, back and cover letter in Print & Post so we can mail for you.'],
+ ['Turn on Auto Send','So every new lead gets your marketing posted automatically.'],
+ ['Set your areas and filters','Widen your postcode areas or filters to get more matching leads.'],
+ ['Contact your first lead','Call or email one lead today - speed is the single biggest win.'],
+ ['Send a follow-up','Follow up a lead you contacted 2+ days ago.'],
+ ['Review your results','Check which lead types and areas perform best and focus there.']
+];
+
+var UNIVERSAL = [
+ ['⚡','Speed wins','The first business to respond usually wins the job. Contact leads the same morning.'],
+ ['🎯','Personalise','Reference their property, company or project. Generic messages get ignored.'],
+ ['🔄','Follow up 2-3 times','Most conversions happen after the second or third contact, not the first.'],
+ ['📊','Track everything','Log every contact and outcome so you can see what actually works.'],
+ ['📝','Keep records','A simple log of who you contacted, when and how refines your approach.'],
+ ['📈','Review and refine','Check your dashboard regularly and adjust areas and filters to maximise return.']
+];
+
+var FAQ = [
+ ['How do I set my postcode areas?','Go to your dashboard and click "Edit Territories" in the My Areas section. Search for postcode areas or type specific sectors (e.g. "EN1 3"). Your plan includes a set number of areas; the free trial includes 5.'],
+ ['How fresh are the leads?','Opportunities are prioritised from the last 24 hours and gathered daily from official UK sources including Companies House, the Planning Portal and Contracts Finder.'],
+ ['What if I don\'t have contact details?','Some lead types don\'t include direct contact info. For new business, check the company website or LinkedIn, or post to the registered address. For moving leads, the property address is provided.'],
+ ['Can I change my lead type or areas?','Yes. Go to Settings in your dashboard to update lead types and postcode areas. Changes take effect for the next day\'s delivery.'],
+ ['How do I set up filters?','Go to Settings and click "Edit Filters" under Lead Filters. Set criteria per lead type, such as minimum bedrooms for moving leads or industries for new business.']
+];
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+var active = LEAD[0].id;
+
+function renderTabs(){
+ document.getElementById('tabs').innerHTML = LEAD.map(function(l){
+  return '<button class="tab'+(l.id===active?' active':'')+'" style="--tc:'+l.accent+'" onclick="selectTab(\''+l.id+'\')">'+l.emoji+' '+l.name+'</button>';
+ }).join('');
+}
+function selectTab(id){ active=id; renderTabs(); renderPanel(); }
+function renderPanel(){
+ var l = LEAD.filter(function(x){return x.id===active;})[0];
+ var kv = l.kv.map(function(b){return '<div class="box"><div class="k">'+b[0]+'</div><div class="v">'+b[1]+'</div></div>';}).join('');
+ var steps = l.playbook.map(function(s,i){return '<div class="step"><div class="num">'+(i+1)+'</div><div><div class="st">'+s[0]+'</div><div class="sd">'+s[1]+'</div></div></div>';}).join('');
+ var tips = l.tips.map(function(t){return '<div class="tip"><span class="ic">'+t[0]+'</span><h4>'+t[1]+'</h4><p>'+t[2]+'</p></div>';}).join('');
+ var avoid = l.avoid.map(function(a){return '<li>'+a+'</li>';}).join('');
+ var cad = l.cadence.map(function(c){return '<div class="cad"><div class="when">'+c[0]+'</div><div class="what">'+c[1]+'</div></div>';}).join('');
+ var kpis = l.kpis.map(function(k){return '<span class="kpi">'+k+'</span>';}).join('');
+ document.getElementById('panels').innerHTML =
+  '<div class="panel" style="--tc:'+l.accent+'">'+
+   '<div class="panel-head"><span class="emoji">'+l.emoji+'</span><div><h2>'+l.name+'</h2><div class="accent-line" style="background:'+l.accent+'"></div></div></div>'+
+   '<p class="overview">'+l.overview+'</p>'+
+   '<div class="kv">'+kv+'</div>'+
+   '<div class="block-h"><i class="fas fa-list-check" style="color:'+l.accent+'"></i> The playbook</div>'+
+   '<div class="steps">'+steps+'</div>'+
+   '<div class="block-h"><i class="fas fa-lightbulb" style="color:'+l.accent+'"></i> Winning tips</div>'+
+   '<div class="grid2">'+tips+'</div>'+
+   '<div class="block-h"><i class="fas fa-triangle-exclamation" style="color:#ef4444"></i> Common mistakes to avoid</div>'+
+   '<div class="avoid"><ul>'+avoid+'</ul></div>'+
+   '<div class="block-h"><i class="fas fa-clock" style="color:'+l.accent+'"></i> Follow-up cadence</div>'+
+   '<div class="cadence">'+cad+'</div>'+
+   '<div class="block-h"><i class="fas fa-chart-line" style="color:'+l.accent+'"></i> What to track</div>'+
+   '<div class="kpis">'+kpis+'</div>'+
+  '</div>';
+}
+function renderTemplates(){
+ document.getElementById('tpl-grid').innerHTML = TEMPLATES.map(function(t,i){
+  return '<div class="tpl"><h4>'+t.name+'</h4><div class="meta">'+t.meta+'</div><pre id="tpl-'+i+'">'+esc(t.body)+'</pre><button class="copy" onclick="copyTpl('+i+')"><i class="fas fa-copy"></i> Copy template</button></div>';
+ }).join('');
+}
+function copyTpl(i){
+ var txt = TEMPLATES[i].body;
+ if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(showToast);}
+ else{var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(ta);showToast();}
+}
+function showToast(){var t=document.getElementById('toast');t.style.display='block';setTimeout(function(){t.style.display='none';},1800);}
+function renderUniversal(){
+ document.getElementById('universal').innerHTML = UNIVERSAL.map(function(u){return '<div class="tip"><span class="ic">'+u[0]+'</span><h4>'+u[1]+'</h4><p>'+u[2]+'</p></div>';}).join('');
+}
+function renderFaq(){
+ document.getElementById('faq-list').innerHTML = FAQ.map(function(f,i){
+  return '<div class="faq" id="faq-'+i+'"><button onclick="toggleFaq('+i+')">'+f[0]+'<i class="fas fa-chevron-down chev"></i></button><div class="a">'+f[1]+'</div></div>';
+ }).join('');
+}
+function toggleFaq(i){document.getElementById('faq-'+i).classList.toggle('open');}
+// Checklist with localStorage
+var CHK_KEY='success_centre_checklist';
+function loadChk(){try{return JSON.parse(localStorage.getItem(CHK_KEY)||'{}');}catch(e){return {};}}
+function saveChk(s){try{localStorage.setItem(CHK_KEY,JSON.stringify(s));}catch(e){}}
+function renderChk(){
+ var s=loadChk();
+ document.getElementById('chk-list').innerHTML = CHECKLIST.map(function(c,i){
+  var done=s[i]?' done':'';
+  return '<label class="chk'+done+'"><input type="checkbox" '+(s[i]?'checked':'')+' onchange="toggleChk('+i+',this.checked)"><div><div class="t">'+c[0]+'</div><div class="d">'+c[1]+'</div></div></label>';
+ }).join('');
+ var n=Object.keys(s).filter(function(k){return s[k];}).length;
+ document.getElementById('chk-bar').style.width=Math.round(n/CHECKLIST.length*100)+'%';
+}
+function toggleChk(i,val){var s=loadChk();s[i]=val;saveChk(s);renderChk();}
+
+renderTabs();renderPanel();renderTemplates();renderUniversal();renderFaq();renderChk();
+</script>
 </body></html>
