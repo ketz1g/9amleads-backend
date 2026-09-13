@@ -27,6 +27,11 @@ function isMondayUK(nowMs) {
   return false;
 }
 
+// Configurable freshness floor. Default 48h, but can be widened via FRESH_HOURS so
+// thin regions (Scotland, the North) still get supplied when few new listings appear.
+var FRESH_HOURS = Math.max(24, parseInt(process.env.FRESH_HOURS || '48', 10) || 48);
+var PRUNE_HOURS = Math.max(parseInt(process.env.PRUNE_HOURS || '72', 10) || 72, FRESH_HOURS + 24);
+
 function getFreshCutoffIso(nowMs) {
   nowMs = nowMs || Date.now();
   try {
@@ -41,7 +46,7 @@ function getFreshCutoffIso(nowMs) {
       return new Date(fri.getTime() - offMin * 60000).toISOString(); // real UTC instant
     }
   } catch(e) {}
-  return new Date(nowMs - 48 * 3600000).toISOString();
+  return new Date(nowMs - FRESH_HOURS * 3600000).toISOString();
 }
 
 // POOL PRUNE CUTOFF: leads older than this are deleted from the pools so we never
@@ -59,10 +64,10 @@ function getPruneCutoffIso(nowMs) {
       fri.setUTCDate(fri.getUTCDate() - 3); // back to Friday
       fri.setUTCHours(9, 0, 0, 0);          // Fri 09:00 UK (last delivery)
       var mondayFloor = new Date(fri.getTime() - offMin * 60000).getTime();
-      if (mondayFloor > nowMs - 72 * 3600000) return new Date(mondayFloor).toISOString();
+      if (mondayFloor > nowMs - PRUNE_HOURS * 3600000) return new Date(mondayFloor).toISOString();
     }
   } catch(e) {}
-  return new Date(nowMs - 72 * 3600000).toISOString();
+  return new Date(nowMs - PRUNE_HOURS * 3600000).toISOString();
 }
 
 module.exports = { ukOffsetMin: ukOffsetMin, getFreshCutoffIso: getFreshCutoffIso, isMondayUK: isMondayUK, getPruneCutoffIso: getPruneCutoffIso };
