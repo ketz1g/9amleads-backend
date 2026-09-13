@@ -31699,10 +31699,10 @@ function syncCustomers(product) {
               // When commercial is enabled, reserve ~25% of the pool for commercial
               // properties so they aren't completely crowded out by residential.
               // Commercial leads are already appended by collectMovingLeads(config.commercial).
-              var residentialCap = mvWantCommercial ? 400 : 500;
+              var residentialCap = mvWantCommercial ? 700 : 900;
               var residentialKept = guaranteed.filter(function(l){ return !l.commercial; }).concat(rest.filter(function(l){ return !l.commercial; })).slice(0, residentialCap);
               var commercialKept = guaranteed.filter(function(l){ return l.commercial; }).concat(rest.filter(function(l){ return l.commercial; })).slice(0, 150);
-              leads = residentialKept.concat(commercialKept).slice(0, 500);
+              leads = residentialKept.concat(commercialKept).slice(0, 900);
               console.log('[SCRAPER] Rightmove: ' + freshPool.length + ' <24h, ' + fallbackPool.length + ' 24-48h, ' + otherPool.length + ' DROPPED (>48h), ' + guaranteed.length + ' area-guaranteed, using ' + leads.length + ' listings (' + residentialKept.length + ' residential, ' + commercialKept.length + ' commercial)');
             }
             // ENRICH moving leads with FULL addresses (door number + street +
@@ -31722,8 +31722,12 @@ function syncCustomers(product) {
               // street + postcode). This is free (no Postcoder credits), so we cover every
               // fresh lead so the pool is fully address-complete and the final-guarantee
               // pass never pulls a bare street-name lead. Bounded for runtime.
-              var enrichCap = parseInt(process.env.MOVING_ENRICH_CAP || '250', 10);
-              var toEnrich = noPcFirst.concat(hasPcThen).slice(0, enrichCap);
+              var enrichCap = parseInt(process.env.MOVING_ENRICH_CAP || '700', 10);
+              // Prioritise area-targeted leads (one per customer area) so every area
+              // gets mailable addresses even when the cap is hit.
+              var areaFirst = noPcFirst.filter(function(l){ return l.areaTargeted; });
+              var restNoPc = noPcFirst.filter(function(l){ return !l.areaTargeted; });
+              var toEnrich = areaFirst.concat(restNoPc).concat(hasPcThen).slice(0, enrichCap);
               var enrichedNow = await rmScraper.enrichMovingLeads(toEnrich, 4);
               var enrichedMap = {};
               enrichedNow.forEach(function(le) { enrichedMap[le.id] = le; });
