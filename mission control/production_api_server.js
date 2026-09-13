@@ -14182,6 +14182,35 @@ const PAID_EMAIL_SERIES = [
   { week: 12, subject: '3 months in. Here\u2019s how to scale', template: 'paid_checkin2' }
 ];
 
+// Redesigned welcome email body (trial_day1). Clean, no repetition: each feature
+// explained once, setup steps merged from the old checklist + tips. Personalised
+// with the customer's product name and accent. Used by getCampaignEmailHTML.
+function buildWelcomeEmail(customer, productName, accent, prod) {
+  var dashboardUrl = PUBLIC_URL + '/portal/dashboard.html';
+  var pricingUrl = PUBLIC_URL + '/pricing/';
+  return '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#0f172a;margin:0 0 6px;text-align:center">Welcome to 9amLeads. Your free week starts now.</h2>'
+    + '<p style="color:#64748b;font-size:13px;text-align:center;margin:0 0 20px">Your daily <strong style="color:#0f172a">' + productName + '</strong> arrive at <strong style="color:' + accent + '">9am</strong>. Here\u2019s how to turn them into work.</p>'
+    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 16px">Welcome aboard. For the next 7 days you\u2019ll receive exclusive <strong>' + productName + '</strong> in your inbox every morning at 9am \u2014 nobody else gets the same leads. Be first to make contact and you win the work.</p>'
+    + '<div style="background:rgba(14,165,233,0.05);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px">'
+    + '<p style="color:#1e293b;font-size:13px;line-height:2;margin:0">'
+    + '<strong style="color:#0f172a">9:00am</strong> : your daily lead sheet, ready to action<br>'
+    + '<strong style="color:#0f172a">Full details</strong> : the key information and a source link on every lead<br>'
+    + '<strong style="color:#0f172a">Print &amp; Post</strong> : we print, address and post your flyer or letter to each lead for you<br>'
+    + '<strong style="color:#0f172a">Auto Send</strong> : switch it on and every new lead gets your marketing posted automatically'
+    + '</p></div>'
+    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 8px"><strong style="color:' + accent + '">Get set up in 3 minutes</strong></p>'
+    + '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 16px"><tbody>'
+    + '<tr><td style="padding:6px 0;color:#1e293b;font-size:14px;line-height:1.6"><strong style="color:' + accent + '">1.</strong> Upload your flyer (front and back) and cover letter in the Print &amp; Post section \u2014 or pick a ready-made template.</td></tr>'
+    + '<tr><td style="padding:6px 0;color:#1e293b;font-size:14px;line-height:1.6"><strong style="color:' + accent + '">2.</strong> Add more areas in your dashboard settings. The more you cover, the more leads you get.</td></tr>'
+    + '<tr><td style="padding:6px 0;color:#1e293b;font-size:14px;line-height:1.6"><strong style="color:' + accent + '">3.</strong> Turn on Auto Send so your marketing goes out to every new lead without lifting a finger.</td></tr>'
+    + '</tbody></table>'
+    + '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px 18px;margin:0 0 16px">'
+    + '<p style="color:#1e293b;font-size:13.5px;line-height:1.7;margin:0 0 6px"><strong style="color:#0f172a">Want more? Upgrade to Pro or Enterprise</strong></p>'
+    + '<p style="color:#475569;font-size:13px;line-height:1.7;margin:0">Your free week includes up to 5 leads a day. <strong style="color:#0f172a">Pro</strong> gives you more leads per day, wider areas and more lead types. <strong style="color:#0f172a">Enterprise</strong> gives you the maximum daily volume, unlimited areas and priority support.</p>'
+    + '</div>'
+    + '<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 0"><a href="' + dashboardUrl + '" style="display:inline-block;padding:13px 34px;background-color:' + accent + ';background-image:linear-gradient(135deg,' + accent + ',#0284c7);color:#ffffff;text-decoration:none;border-radius:50px;font-weight:700;font-size:14px">Open my dashboard</a></td></tr></table>'
+    + '<p style="color:#64748b;font-size:13px;text-align:center;margin:12px 0 0">We handle the delivery and the post \u2014 you just answer the phone. <a href="' + pricingUrl + '" style="color:' + accent + ';font-weight:700;text-decoration:none">See Pro &amp; Enterprise plans</a></p>';
+}
 function getCampaignEmailHTML(customer, template) {
   var allProds = [customer.product];
   try { var extra = JSON.parse(customer.biz_field3 || '[]'); if (Array.isArray(extra) && extra.length > 0) allProds = extra; } catch(e) {}
@@ -14226,6 +14255,8 @@ for (var _wt = 5; _wt <= 26; _wt++) {
 // full trial. CTA goes to the dashboard where they click "activate" (the
 // reactivate-trial endpoint does the reset).
 templates['trial_month3'] = buildMonth3OfferTemplate(customer, productName, accent, allProds[0]);
+  // Redesigned welcome email (cleaner, no repetition) overrides the legacy trial_day1.
+  templates['trial_day1'] = buildWelcomeEmail(customer, productName, accent, allProds[0]);
 
 // ===== BREVO OUTBOUND CAMPAIGN UPLOAD INFRASTRUCTURE =====
 // Master HTML template matching existing 9am Leads email design
