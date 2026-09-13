@@ -14186,9 +14186,8 @@ const PAID_EMAIL_SERIES = [
 // welcome, one line on how to get set up, and a sign-off. The shared value/why/how
 // blocks are skipped for this template (see getCampaignEmailHTML).
 function buildWelcomeEmail(customer, productName, accent, prod) {
-  return '<h2 style="font-family:Outfit,sans-serif;font-size:21px;font-weight:800;color:#0f172a;margin:0 0 14px">Welcome to 9amLeads</h2>'
-    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">Your free week is active. From tomorrow, your fresh <strong>' + productName + '</strong> will arrive in your inbox every weekday at 9am.</p>'
-    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">To get set up: log in, upload your flyer and cover letter in Print &amp; Post (or pick a ready-made template), add the areas you cover, and turn on Auto Send. We handle the delivery and the post \u2014 you just answer the phone.</p>'
+  return '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">From tomorrow, your fresh <strong>' + productName + '</strong> will arrive in your inbox every weekday at 9am.</p>'
+    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">To get set up, log in, upload your flyer and cover letter in Print &amp; Post (or pick a ready-made template), choose more areas if you\u2019d like to widen your coverage, and turn on Auto Send. We handle the delivery and the post \u2014 you just answer the phone.</p>'
     + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">Any questions, just reply and I\u2019ll answer personally.</p>'
     + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0">All the best,<br><strong>Ketz Mandalia</strong><br><span style="color:#64748b">Founder, 9amLeads</span></p>';
 }
@@ -14594,9 +14593,12 @@ console.log('  Outbound campaigns: ' + Object.keys(OUTBOUND_CAMPAIGNS).length + 
   };
   var insight = insightCards[prod] || { emoji: '\uD83D\uDCA1', tip: 'Send a letter or flyer with Print &amp; Post to win the work.', metric: '', link: PUBLIC_URL + '/pricing' };
   
-  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"><style>:root{color-scheme:light}@media only screen and (max-width:480px){.mob{padding-left:16px!important;padding-right:16px!important}.mobbtn{display:block!important;width:100%!important;box-sizing:border-box!important;margin:6px 0!important}}</style></head><body style="margin:0;padding:0;background:#f1f5f9;font-family:Inter,Arial,sans-serif;color:#1e293b"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f1f5f9"><tr><td align="center" style="padding:24px 16px"><table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%">' + buildEmailHeader() + '<tr><td bgcolor="#ffffff" class="mob" style="background:#ffffff;padding:20px 30px 26px">' + (  templates[template] || templates.trial_day1) + '</td></tr>' +
-  // Personalised trial block: welcome summary OR real-usage metrics with CTAs.
-  buildTrialPersonalBlock(customer, template) +
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"><style>:root{color-scheme:light}@media only screen and (max-width:480px){.mob{padding-left:16px!important;padding-right:16px!important}.mobbtn{display:block!important;width:100%!important;box-sizing:border-box!important;margin:6px 0!important}}</style></head><body style="margin:0;padding:0;background:#f1f5f9;font-family:Inter,Arial,sans-serif;color:#1e293b"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f1f5f9"><tr><td align="center" style="padding:24px 16px"><table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%">' + buildEmailHeader() +
+  // Welcome summary (trial_day1) sits at the TOP of the email; for later templates
+  // the personalised usage block sits below the body.
+  (template === 'trial_day1' ? buildTrialPersonalBlock(customer, template) : '') +
+  '<tr><td bgcolor="#ffffff" class="mob" style="background:#ffffff;padding:20px 30px 26px">' + (  templates[template] || templates.trial_day1) + '</td></tr>' +
+  (template === 'trial_day1' ? '' : buildTrialPersonalBlock(customer, template)) +
   // Welcome (trial_day1) stays short and professional: summary + single CTA only.
   // The shared value / why / how / insight blocks are for the nurture emails.
   (template === 'trial_day1' ? '' : (
@@ -14693,8 +14695,10 @@ function buildTrialPersonalBlock(customer, template) {
     var pricingUrl = PUBLIC_URL + '/pricing/';
     var prodNames = { moving: 'Moving Leads', probate: 'Probate Leads', newbusiness: 'New Business Alerts', planning: 'Planning Permissions', tenders: 'Public Tenders' };
     var prod = customer.product || 'moving';
-    var prodName = prodNames[prod] || (customer.lead_type || 'your selected');
-    var alloc = customer.leads_per_day || (customer.plan ? 'your' : 'your');
+    var _allProds = [customer.product];
+    try { var _ex = JSON.parse(customer.biz_field3 || '[]'); if (Array.isArray(_ex) && _ex.length > 0) _allProds = _ex; } catch(e) {}
+    var prodName = _allProds.map(function(p) { return prodNames[p] || p; }).join(' + ') || (customer.lead_type || 'your selected');
+    var alloc = customer.leads_per_day || 5;
     var metrics = getTrialMetrics(customer);
     var noCardLine = '<p style="color:#64748b;font-size:11px;text-align:center;margin:8px 0 0;line-height:1.6">No card required. Nothing will be charged automatically at the end of your trial.</p>';
 
@@ -14702,7 +14706,7 @@ function buildTrialPersonalBlock(customer, template) {
       // Welcome summary
       var rows = '<tr><td style="padding:4px 0;font-size:12px;color:#475569;width:120px">Lead Type</td><td style="padding:4px 0;font-size:12px;font-weight:700;color:#1e293b">' + prodName + '</td></tr>';
       rows += '<tr><td style="padding:4px 0;font-size:12px;color:#475569">Selected Areas</td><td style="padding:4px 0;font-size:12px;font-weight:700;color:#1e293b">' + trialAreasLabel(customer) + '</td></tr>';
-      rows += '<tr><td style="padding:4px 0;font-size:12px;color:#475569">Daily Allocation</td><td style="padding:4px 0;font-size:12px;font-weight:700;color:#1e293b">' + alloc + ' per day</td></tr>';
+      rows += '<tr><td style="padding:4px 0;font-size:12px;color:#475569">Daily leads</td><td style="padding:4px 0;font-size:12px;font-weight:700;color:#1e293b">' + alloc + ' per day</td></tr>';
       rows += '<tr><td style="padding:4px 0;font-size:12px;color:#475569">Trial Ends</td><td style="padding:4px 0;font-size:12px;font-weight:700;color:#1e293b">' + (fmtTrialEnd(customer) || '7 days') + '</td></tr>';
       rows += '<tr><td style="padding:4px 0;font-size:12px;color:#475569">Next Delivery</td><td style="padding:4px 0;font-size:12px;font-weight:700;color:#1e293b">9am (Mon-Fri)</td></tr>';
       return '<tr><td class="mob" bgcolor="#eff6ff" style="background-color:#eff6ff;padding:0 30px 16px"><div style="border:1px solid #bfdbfe;border-radius:12px;padding:16px 20px">' +
