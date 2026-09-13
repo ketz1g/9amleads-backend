@@ -8012,7 +8012,9 @@ app.get('/api/onboarding', authMiddleware, (req, res) => {
     const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
     if (!customer) return res.status(404).json({ error: 'User not found' });
     const leads = (db2.leads || []).filter(l => l.customer_id === req.user.id);
+    const today = new Date().toISOString().split('T')[0];
     const hasLeads = leads.length > 0;
+    const deliveredToday = leads.filter(l => l.delivered && String(l.delivered_at || l.created_at || '').slice(0, 10) === today).length;
     const hasContacted = leads.some(l => l.lead_status === 'contacted' || l.lead_status === 'interested' || l.lead_status === 'quoted' || l.lead_status === 'won');
     const hasPipeline = leads.some(l => l.lead_status && l.lead_status !== 'new' && l.lead_status !== 'lost');
     const hasWon = leads.some(l => l.lead_status === 'won');
@@ -8020,16 +8022,24 @@ app.get('/api/onboarding', authMiddleware, (req, res) => {
     const hasProfile = !!(customer.company && customer.contact_name);
     const hasAreas = (customer.target_areas && JSON.parse(customer.target_areas).length > 0);
     const hasFilters = !!(customer.biz_field2);
+    // Print & Post readiness (for the activation checklist)
+    var tpl = (db2.direct_mail_templates || []).filter(function(t) { return t.customer_id === req.user.id; }).sort(function(a, b) { return String(b.created_at || '').localeCompare(String(a.created_at || '')); })[0];
+    var hasFront = !!(tpl && tpl.flyer_front_material_id);
+    var hasBack = !!(tpl && tpl.flyer_back_material_id);
+    var hasLetter = !!(tpl && (tpl.letter_material_id || tpl.ai_generated_text));
+    var hasMaterials = hasFront && hasLetter;
+    var hasCard = !!(customer.stripe_payment_method_id || customer.stripe_customer_id);
+    var dmSettings = (db2.direct_mail_automation_settings || []).find(function(s) { return s.customer_id === req.user.id; });
+    var autoSend = !!(dmSettings && dmSettings.enable_auto_send);
+    var paused = isLeadsPaused(customer);
 
     const checklist = [
-      { id: 'profile', label: 'Complete business profile', done: hasProfile },
-      { id: 'lead_type', label: 'Confirm lead type', done: !!customer.product },
-      { id: 'coverage', label: 'Confirm coverage area', done: hasAreas },
-      { id: 'crm', label: 'Connect CRM', done: hasCrm },
-      { id: 'first_delivery', label: 'View first 9am delivery', done: hasLeads },
-      { id: 'first_contact', label: 'Contact first lead', done: hasContacted },
-      { id: 'pipeline', label: 'Move first lead to pipeline', done: hasPipeline },
-      { id: 'win', label: 'Mark lead outcome (won/lost)', done: hasWon }
+      { id: 'coverage', label: 'Set the areas you cover', done: hasAreas, href: '/portal/dashboard.html' },
+      { id: 'materials', label: 'Upload your leaflet (front & back) + letter', done: hasMaterials, href: '/portal/direct-mail.html' },
+      { id: 'card', label: 'Save a card for Print & Post', done: hasCard, href: '/portal/direct-mail.html' },
+      { id: 'auto_send', label: 'Turn on Auto Send', done: autoSend, href: '/portal/auto.html' },
+      { id: 'first_delivery', label: 'Get your first 9am delivery', done: hasLeads, href: '/portal/leads.html' },
+      { id: 'first_contact', label: 'Contact your first lead', done: hasContacted, href: '/portal/leads.html' }
     ];
     const total = checklist.length;
     const completed = checklist.filter(i => i.done).length;
@@ -8042,7 +8052,30 @@ app.get('/api/onboarding', authMiddleware, (req, res) => {
       saveDb();
     }
 
-    res.json({ state, progress, completed, total, checklist, customer_name: customer.contact_name || customer.company || '' });
+    res.json({ state, progress, completed, total, checklist, customer_name: customer.contact_name || customer.company || '',
+      today_delivered: deliveredToday, paused: paused, pause_resume_at: customer.pause_resume_at || '',
+      has_materials: hasMaterials, has_front: hasFront, has_back: hasBack, has_letter: hasLetter,
+      has_card: hasCard, auto_send: autoSend, plan: customer.plan || 'free_trial', trial_ends: customer.trial_ends || '' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/delivery/pause — pause or resume daily lead delivery + Auto Send
+// (e.g. for a holiday). An optional resume_date auto-resumes on that day.
+app.post('/api/delivery/pause', authMiddleware, (req, res) => {
+  try {
+    var cust = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+    if (!cust) return res.status(404).json({ error: 'User not found' });
+    var pause = req.body.pause === true || req.body.pause === 1 || req.body.pause === 'true' || req.body.pause === '1';
+    var resumeDate = String(req.body.resume_date || '').slice(0, 10);
+    if (pause) {
+      db.prepare('UPDATE customers SET leads_paused = ?, auto_send_paused = ?, paused_at = ?, pause_resume_at = ? WHERE id = ?').run(1, 1, new Date().toISOString(), resumeDate, req.user.id);
+      saveDb();
+      res.json({ success: true, paused: true, resume_date: resumeDate });
+    } else {
+      db.prepare('UPDATE customers SET leads_paused = ?, auto_send_paused = ?, paused_at = ?, pause_resume_at = ? WHERE id = ?').run(0, 0, '', '', req.user.id);
+      saveDb();
+      res.json({ success: true, paused: false });
+    }
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -15380,10 +15413,21 @@ function clearStuckPausedFlags() {
     var dbj = dbc;
     // Any paying customer stuck paused with no reason for > 24h gets unpaused.
     var cleared = 0;
+    var todayStr = new Date().toISOString().split('T')[0];
     (dbj.customers || []).forEach(function(c) {
       // NEVER auto-unpause test/seed accounts — they stay paused so the real
       // customer pools aren't drained by the test fleet.
       if (/test\.|@9amleads\.com|\.1788\d*@/i.test(String(c.email || ''))) return;
+      // Intentional holiday pause (customer set a resume date): resume only on/after
+      // that date; never auto-clear it early.
+      if (c.pause_resume_at) {
+        if (String(c.pause_resume_at).slice(0, 10) <= todayStr) {
+          c.leads_paused = 0; c.auto_send_paused = 0; c.pause_resume_at = ''; c.paused_at = '';
+          cleared++;
+          console.log('[AUTO-HEAL] Resumed scheduled pause for ' + c.email);
+        }
+        return;
+      }
       if (c.plan && c.plan !== 'free_trial' && c.plan !== 'cancelled' && (c.leads_paused || c.auto_send_paused)) {
         if (!c.paused_at || (Date.now() - new Date(c.paused_at).getTime()) > 24*3600000) {
           var was = (c.leads_paused?'leads':'') + (c.auto_send_paused?'+auto_send':'');

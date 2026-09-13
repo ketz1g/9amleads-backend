@@ -110,6 +110,7 @@
   }
 
   btn.onclick = open;
+  window.a9Open = open;
   panel.querySelector('.a9-x').onclick = close;
   sendBtn.onclick = send;
   input.addEventListener('keydown', function (e) { if (e.key === 'Enter') send(); });

@@ -187,6 +187,36 @@ footer a{color:var(--accent);text-decoration:underline}
 </div>
 </div>
 
+<!-- ACTIVATION CHECKLIST + WHAT HAPPENS NEXT -->
+<div class="card" id="activation-card" style="display:none;border:1px solid var(--border);margin-bottom:16px">
+<div class="sect-title"><i class="fas fa-rocket" style="color:var(--accent)"></i> Get set up <span id="activation-progress-label" style="margin-left:auto;font-size:11px;color:var(--muted)"></span></div>
+<div style="height:8px;background:#f1f5f9;border-radius:99px;overflow:hidden;margin-bottom:14px"><div id="activation-bar" style="height:100%;width:0;background:linear-gradient(90deg,#0ea5e9,#22c55e);transition:width .3s"></div></div>
+<div id="activation-steps" style="display:grid;gap:8px"></div>
+<div id="activation-nudge" style="display:none;margin-top:12px"></div>
+<details style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px">
+<summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--text2)">What happens next?</summary>
+<div style="margin-top:10px;font-size:12px;color:var(--text2);line-height:1.9">
+<div>1. <b>Every weekday at 9am</b> your fresh leads arrive in your inbox and dashboard.</div>
+<div>2. <b>We can print &amp; post</b> your leaflet/letter to every lead for you &mdash; just switch on Auto Send.</div>
+<div>3. <b>You answer the phone</b> and win the work &mdash; mark leads Contacted / Quoted / Won in My Leads.</div>
+</div>
+</details>
+<div style="margin-top:12px;text-align:right"><button onclick="dismissActivation()" style="background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer">Hide this</button></div>
+</div>
+
+<!-- DELIVERY STATUS + PAUSE -->
+<div class="card" id="delivery-status-card" style="display:none;border:1px solid var(--border);margin-bottom:16px">
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+<div id="ds-icon" style="font-size:20px">📬</div>
+<div style="flex:1;min-width:200px">
+<div style="font-size:13px;font-weight:700;color:var(--text)">Delivery status</div>
+<div id="ds-text" style="font-size:12px;color:var(--text2);line-height:1.6">Loading...</div>
+</div>
+<button id="pause-btn" onclick="togglePause()" class="btn btn-outline btn-sm" style="flex-shrink:0">Pause delivery</button>
+</div>
+<div id="pause-info" style="display:none;margin-top:10px;font-size:12px;color:var(--text2);background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:10px 12px"></div>
+</div>
+
 <!-- Print & Post tip banner -->
 <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;margin-bottom:16px;flex-wrap:wrap">
 <i class="fas fa-mail-bulk" style="color:#16a34a;font-size:18px"></i>
@@ -222,6 +252,7 @@ document.addEventListener('DOMContentLoaded', function(){
 <a href="/portal/auto.html" data-htip="Automatically send your chosen flyer or letter to every new matching lead. You stay in control with a daily limit + pause anytime." style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:#fff;border:1px solid var(--border);border-radius:10px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;transition:.15s"><span style="font-size:20px">🤖</span> Auto Print &amp; Post<span style="font-size:10px;color:var(--muted);font-weight:400">Automatic mailings</span></a>
 <a href="/portal/tracking.html" data-htip="See the status of every mailing: printing, dispatched, out for delivery, delivered. Download your proof of posting here." style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:#fff;border:1px solid var(--border);border-radius:10px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;transition:.15s"><span style="font-size:20px">📬</span> Live Post Tracking<span style="font-size:10px;color:var(--muted);font-weight:400">Track delivery in real time</span></a>
 <a href="/portal/success.html" data-htip="Step-by-step playbooks, winning tips and ready-to-use letter, email and phone templates for your exact lead type. Free on every plan." style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:#fff;border:1px solid var(--border);border-radius:10px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;transition:.15s"><span style="font-size:20px">🎓</span> Success Centre<span style="font-size:10px;color:var(--muted);font-weight:400">Conversion playbooks</span></a>
+<a href="#" onclick="showModal('settings-modal');switchTab('subscription');return false" data-htip="View your plan, update your card and download past invoices and receipts." style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:#fff;border:1px solid var(--border);border-radius:10px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;transition:.15s"><span style="font-size:20px">🧾</span> Billing &amp; invoices<span style="font-size:10px;color:var(--muted);font-weight:400">Plan, card &amp; receipts</span></a>
 </div>
 </div>
 
@@ -355,7 +386,7 @@ document.addEventListener('DOMContentLoaded', function(){
 <div style="font-size:12px;font-weight:700;color:var(--text);margin:14px 0 8px"><i class="fas fa-image" style="color:var(--accent);margin-right:4px"></i> 2. Your Leaflet Design <span style="font-weight:400;color:var(--text2);font-size:11px">(A5: <a href="#" onclick="downloadTemplate('a5-leaflet.pdf','9amLeads_A5_Leaflet_Template.pdf');return false" style="color:var(--accent)">download official template</a>, PDF/PNG/JPG)</span></div>
 <div class="grid-2">
 <div><label class="label">Leaflet Front</label><input type="file" class="input" id="pp-front" accept=".pdf,.png,.jpg,.jpeg"></div>
-<div><label class="label">Leaflet Back <span style="color:var(--muted);font-weight:400">(optional)</span></label><input type="file" class="input" id="pp-back" accept=".pdf,.png,.jpg,.jpeg"></div>
+<div><label class="label">Leaflet Back <span style="color:#16a34a;font-weight:600">(recommended &mdash; front &amp; back doubles your impact)</span></label><input type="file" class="input" id="pp-back" accept=".pdf,.png,.jpg,.jpeg"></div>
 </div>
 
 <!-- Leaflet / letter preview + address clear-zone reminder -->
@@ -2237,5 +2268,62 @@ setTimeout(function(){
 </div>
 </div>
 
+<script>
+// ===== ACTIVATION CHECKLIST + DELIVERY STATUS + PAUSE =====
+function _onbToken(){ try{ var s=JSON.parse(localStorage.getItem('mld_portal_session')||'{}'); return s&&s.token; }catch(e){ return ''; } }
+function _onbApi(method,path,body,cb){ var x=new XMLHttpRequest(); x.open(method,path,true); x.setRequestHeader('Content-Type','application/json'); var t=_onbToken(); if(t) x.setRequestHeader('Authorization','Bearer '+t); x.onload=function(){ var d={}; try{d=JSON.parse(x.responseText);}catch(e){} cb(d); }; x.onerror=function(){ cb(null); }; x.send(body?JSON.stringify(body):null); }
+function dismissActivation(){ try{ localStorage.setItem('activation_dismissed','1'); }catch(e){} var c=document.getElementById('activation-card'); if(c) c.style.display='none'; }
+var _pausedState=false;
+function renderActivation(d){
+  var card=document.getElementById('activation-card'); if(!card) return;
+  _pausedState=!!d.paused;
+  var dismissed=false; try{ dismissed=localStorage.getItem('activation_dismissed')==='1'; }catch(e){}
+  if(d.progress>=100 || dismissed){ card.style.display='none'; } else { card.style.display='block'; }
+  var pl=document.getElementById('activation-progress-label'); if(pl) pl.textContent=d.completed+' of '+d.total+' done';
+  var bar=document.getElementById('activation-bar'); if(bar) bar.style.width=d.progress+'%';
+  var steps=document.getElementById('activation-steps');
+  if(steps) steps.innerHTML=(d.checklist||[]).map(function(s){
+    var icon = s.done ? '<i class="fas fa-check-circle" style="color:#22c55e"></i>' : '<i class="far fa-circle" style="color:#cbd5e1"></i>';
+    var label = s.done ? '<span style="color:var(--muted);text-decoration:line-through">'+s.label+'</span>' : '<a href="'+(s.href||'#')+'" style="color:var(--text);font-weight:600;text-decoration:none">'+s.label+' &rarr;</a>';
+    return '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;font-size:13px">'+icon+' '+label+'</div>';
+  }).join('');
+  var nudge=document.getElementById('activation-nudge');
+  if(nudge){
+    var msg='';
+    if(d.has_materials && !d.auto_send) msg='Your materials are ready. <b>Turn on Auto Send</b> and we will print, address and post to every new lead for you. <a href="/portal/auto.html" style="color:var(--accent);font-weight:700">Turn on Auto Send &rarr;</a>';
+    else if(!d.has_materials) msg='<b>Upload your leaflet (front &amp; back) and letter</b> and we can post to every new lead for you. <a href="/portal/direct-mail.html" style="color:var(--accent);font-weight:700">Upload materials &rarr;</a>';
+    else if(!d.has_card) msg='<b>Save a card</b> so Auto Print &amp; Post can charge you only when leads are mailed. <a href="/portal/direct-mail.html" style="color:var(--accent);font-weight:700">Add a card &rarr;</a>';
+    if(msg){ nudge.style.display='block'; nudge.style.cssText='display:block;margin-top:12px;padding:11px 14px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;font-size:12px;color:#1e40af;line-height:1.6'; nudge.innerHTML='💡 '+msg; }
+    else { nudge.style.display='none'; }
+  }
+  var ds=document.getElementById('delivery-status-card'); if(ds) ds.style.display='block';
+  var icon=document.getElementById('ds-icon'), txt=document.getElementById('ds-text');
+  if(icon) icon.textContent = _pausedState ? '⏸️' : '📬';
+  if(txt){
+    var line = _pausedState
+      ? 'Your delivery is <b>paused</b>' + (d.pause_resume_at ? ' until <b>'+d.pause_resume_at+'</b>' : '') + '. No leads or Auto Send mailings will go out.'
+      : (d.today_delivered>0 ? '<b>Delivered today at 9am ✓</b> &middot; '+d.today_delivered+' lead'+(d.today_delivered!==1?'s':'')+' emailed to you.' : 'Next delivery: <b>tomorrow at 9am</b>. We will email you when it lands.');
+    txt.innerHTML=line;
+  }
+  var pb=document.getElementById('pause-btn'); if(pb) pb.textContent = _pausedState ? 'Resume delivery' : 'Pause delivery';
+  var pi=document.getElementById('pause-info');
+  if(pi){ if(_pausedState){ pi.style.display='block'; pi.innerHTML='You won\'t receive leads while paused. <a href="#" onclick="togglePause();return false" style="color:var(--accent);font-weight:700">Resume now</a>.'; } else pi.style.display='none'; }
+}
+function loadActivation(){ _onbApi('GET','/api/onboarding',null,function(d){ if(d && d.checklist) renderActivation(d); }); }
+function togglePause(){
+  var wantPause = !_pausedState;
+  var body={ pause: wantPause };
+  if(wantPause){
+    var rd=prompt('Pause delivery until when? Enter a date as YYYY-MM-DD, or leave blank to pause until you resume manually:','');
+    if(rd===null) return;
+    if(rd) body.resume_date=rd;
+  }
+  _onbApi('POST','/api/delivery/pause',body,function(d){
+    if(d && d.success){ _pausedState=!!d.paused; loadActivation(); }
+    else alert('Sorry, that did not work. Please email hello@9amleads.com.');
+  });
+}
+loadActivation();
+</script>
 <script src="/portal/assistant.js" defer></script>
 </body></html>
