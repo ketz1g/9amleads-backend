@@ -27475,7 +27475,8 @@ app.get('/api/direct-mail/auto-status', authMiddleware, (req, res) => {
       // Material readiness so the Auto page can validate the "what to send" choice.
       has_flyer: !!(template && (template.flyer_front_material_id || template.flyer_back_material_id)),
       has_letter: !!(template && (template.ai_generated_text || template.letter_material_id)),
-      last_status: settings && settings.enable_auto_send ? 'active' : 'off'
+      last_status: settings && settings.enable_auto_send ? 'active' : 'off',
+      auto_paused_reason: settings ? (settings.auto_paused_reason || '') : ''
     });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });

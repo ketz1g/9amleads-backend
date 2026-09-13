@@ -63,6 +63,7 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 <span style="position:absolute;content:'';height:26px;width:26px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.2)"></span>
 </label>
 </div>
+<div id="auto-pp-readiness" style="display:none;margin-top:12px;padding:12px 14px;border-radius:10px;font-size:12px;line-height:1.7"></div>
 
 <!-- What to send. which mailpiece auto-send creates for each lead -->
 <div id="auto-pp-mt-wrap" style="margin-top:14px;border:1px solid var(--border);border-radius:10px;padding:14px">
@@ -192,6 +193,29 @@ function autoPpLoad(){
       else detail.textContent='Ready to go. Uses your saved "'+(d.template_name||'materials')+'". Switch on below.';
     }
     if(status) status.textContent='';
+    // READINESS BANNER: tell the customer exactly why Auto Send can't run yet.
+    var readyEl=document.getElementById('auto-pp-readiness');
+    if(readyEl){
+      var reasons=[];
+      if(!d.ready) reasons.push('your Print &amp; Post setup (upload your leaflet <b>front and back</b> + cover letter and save it)');
+      if(!d.has_card) reasons.push('a saved card for billing');
+      var paused=(d.auto_paused_reason||'').trim();
+      if(paused){
+        readyEl.style.display='block';
+        readyEl.style.background='#fef2f2'; readyEl.style.border='1px solid #fecaca'; readyEl.style.color='#991b1b';
+        readyEl.innerHTML='<b><i class="fas fa-pause-circle"></i> Auto Print &amp; Post is paused:</b> '+paused+'. <a href="/portal/direct-mail.html" style="color:#991b1b;font-weight:700">Open Print &amp; Post</a>';
+      } else if(d.enabled && reasons.length){
+        readyEl.style.display='block';
+        readyEl.style.background='#fffbeb'; readyEl.style.border='1px solid #fde68a'; readyEl.style.color='#92400e';
+        readyEl.innerHTML='<b><i class="fas fa-exclamation-triangle"></i> Auto Print &amp; Post can\'t run yet.</b> You still need to add '+reasons.join(' and ')+'. Until then we can\'t mail your new leads automatically. <a href="/portal/direct-mail.html" style="color:#92400e;font-weight:700">Set it up</a>';
+      } else if(d.enabled){
+        readyEl.style.display='block';
+        readyEl.style.background='#f0fdf4'; readyEl.style.border='1px solid #bbf7d0'; readyEl.style.color='#166534';
+        readyEl.innerHTML='<b><i class="fas fa-check-circle"></i> All set.</b> We\'ll print, address and post to every new lead at 9am. You don\'t need to do anything &mdash; just wait and watch the phone ring.';
+      } else {
+        readyEl.style.display='none';
+      }
+    }
     if(cardStatus){
       if(d.enabled){
         cardStatus.innerHTML = d.has_card
