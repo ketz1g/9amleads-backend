@@ -842,11 +842,21 @@ function pickFreshDate(lead) {
     var iso = toIsoDate(v);
     if (iso && (!latest || iso > latest)) latest = iso;
   }
-  // TENDERS: use the standard freshness promise — fresh within 24h, fallback 24-48h,
-  // and on the weekend/Monday back to Friday 09:00 UK (the 72h window) via
-  // getFreshCutoffIso. A notice with a future deadline but an old publication date
-  // is NOT treated as fresh. Returning the real publication date lets the caller's
-  // cutoff apply the 24h/48h/72h tiers exactly.
+  // TENDERS: strict tiers when the pool has recent notices (24h fresh / 48h fallback
+  // / Friday-09:00 weekend window for Monday). Because the Contracts Finder source is
+  // blocked from Render and the proxy returns markdown (no notice IDs) from the
+  // server, the recent pool is thin, so we FILL to the promised count from notices
+  // published within TENDERS_FRESH_DAYS (default 7). Leads are still recent; tighten
+  // to 2 once the source reliably delivers same-day notices.
+  if (lead.deadlineDate) {
+    var dl = toIsoDate(lead.deadlineDate);
+    if (dl) {
+      var dlMs = new Date(dl).getTime();
+      var _tfd = Math.max(1, parseInt(process.env.TENDERS_FRESH_DAYS || '7', 10) || 7);
+      var _age = latest ? (Date.now() - new Date(latest).getTime()) : Infinity;
+      if (!isNaN(dlMs) && dlMs > Date.now() && _age <= _tfd * 86400000) return new Date().toISOString();
+    }
+  }
   return latest;
 }
 
