@@ -858,13 +858,14 @@ function pickFreshDate(lead) {
 function toIsoDate(v) {
   if (!v) return '';
   v = String(v).trim();
-  if (/^\d{4}-\d{2}-\d{2}/.test(v)) return v;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v + 'T12:00:00.000Z'; // date-only -> midday so it counts for its whole day
+  if (/^\d{4}-\d{2}-\d{2}T/.test(v)) return v;
   var m = v.match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/);
   if (m) {
     var months = { january:0, february:1, march:2, april:3, may:4, june:5, july:6, august:7, september:8, october:9, november:10, december:11, jan:0, feb:1, mar:2, apr:3, jun:5, jul:6, aug:7, sep:8, oct:9, nov:10, dec:11 };
     var mon = months[String(m[2]).toLowerCase()];
     if (mon !== undefined) {
-      var d = new Date(Date.UTC(parseInt(m[3], 10), mon, parseInt(m[1], 10)));
+      var d = new Date(Date.UTC(parseInt(m[3], 10), mon, parseInt(m[1], 10), 12, 0, 0));
       if (!isNaN(d.getTime())) return d.toISOString();
     }
   }
@@ -883,7 +884,7 @@ function toIsoDate(v) {
       month = b; day = a;
     }
     if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
-      var du = new Date(Date.UTC(y, month - 1, day));
+      var du = new Date(Date.UTC(y, month - 1, day, 12, 0, 0));
       if (!isNaN(du.getTime())) return du.toISOString();
     }
   }
