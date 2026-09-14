@@ -1002,7 +1002,11 @@ async function distributeProduct(product) {
     // assigning it just wastes the customer's quota (the delivery gate drops it and
     // the customer gets a shortfall). Commercial leads are checked the same way
     // ("Unit 5, Kings Wharf" passes because it has a unit number).
-    if (product === 'moving' || product === 'probate') {
+    // NEW BUSINESS / PLANNING are held to the same rule: a Companies House registered
+    // office or a planning applicant address with no door number is not mailable, so
+    // only door-numbered leads are pre-assigned (the delivery guaranteed-fill can
+    // still top up from the wider pool if an area is genuinely short).
+    if (product === 'moving' || product === 'probate' || product === 'newbusiness' || product === 'planning') {
       var gAddr = String((rl && (rl.fullAddress || rl.address || rl.deceasedAddress)) || (nl && (nl.fullAddress || nl.address || nl.deceasedAddress)) || '').trim();
       var gPc = String((rl && rl.postcode) || (nl && nl.postcode) || '').trim();
       // MOVING: never assign a lead without a real street name (number + street
