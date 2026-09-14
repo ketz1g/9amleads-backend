@@ -842,22 +842,11 @@ function pickFreshDate(lead) {
     var iso = toIsoDate(v);
     if (iso && (!latest || iso > latest)) latest = iso;
   }
-  // TENDERS: only treat a notice as fresh if it has a FUTURE deadline AND was
-  // PUBLISHED recently (default 14 days). Previously any open notice counted as
-  // fresh no matter how old, so months-old frameworks/DPS (e.g. published Feb 2025
-  // with a 2027 closing) were delivered as "new" leads. Customers want FRESH
-  // tenders, so an old-but-open notice no longer qualifies.
-  if (lead.deadlineDate) {
-    var dl = toIsoDate(lead.deadlineDate);
-    if (dl) {
-      var dlMs = new Date(dl).getTime();
-      var _tenderFreshDays = Math.max(1, parseInt(process.env.TENDERS_FRESH_DAYS || '14', 10) || 14);
-      var _ageMs = latest ? (Date.now() - new Date(latest).getTime()) : Infinity;
-      if (!isNaN(dlMs) && dlMs > Date.now() && _ageMs <= _tenderFreshDays * 86400000) {
-        return new Date().toISOString();
-      }
-    }
-  }
+  // TENDERS: use the SAME freshness window as every other product — fresh within
+  // 24h, fallback 24-48h, and on weekends back to Friday 09:00 UK for Monday's
+  // delivery. We no longer special-case "old but still open" notices: an old
+  // framework/DPS must not be delivered as a new lead. The caller's cutoff
+  // (getFreshCutoffIso) applies the 24h/48h/weekend tiers to the returned date.
   return latest;
 }
 
