@@ -10959,6 +10959,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
       executor_home: c.executorType === 'home', solicitor: c.solicitor || '',
       probate_date: c.grantDate || c.dateOfDeath || '' };
   });
+  if (cust.email === 'sales@redlionremovals.com') console.log('[PV2] limit=' + limit + ' candidates=' + candidates.length + ' selected=' + selected.length + ' out_before=' + out.length);
   // HARD DISTANCE GATE (moving): regardless of how a lead was selected (in-area match,
   // fallback, preview replacement), an out-of-area moving lead MUST be within a
   // reasonable radius of the customer's chosen areas. A Croydon removals firm should
@@ -10977,15 +10978,16 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
       // Allow a PAF candidate (full postcode + street, no door YET): the delivery's
       // PAF pass adds the door number before the mailable-address gate. Without this
       // the preview dropped every door-less-but-enrichable lead and under-reported.
-      if (_vres !== '' && !(o.paf_candidate && _vres === 'no-premise-number')) return false;
+      if (_vres !== '' && !(o.paf_candidate && _vres === 'no-premise-number')) { if (cust.email === 'sales@redlionremovals.com') console.log('[PV2] drop vres=' + _vres + ' paf=' + o.paf_candidate + ' addr=' + String(o.address).slice(0, 45)); return false; }
       // Doorless check — same allowance for PAF candidates.
-      try { if (!hasUsablePremiseAddress(o.address || '', o.postcode || '') && !o.paf_candidate) return false; } catch(e) { return false; }
+      try { if (!hasUsablePremiseAddress(o.address || '', o.postcode || '') && !o.paf_candidate) { if (cust.email === 'sales@redlionremovals.com') console.log('[PV2] drop doorless paf=' + o.paf_candidate + ' addr=' + String(o.address).slice(0, 45)); return false; } } catch(e) { return false; }
       // Property-identity dedup — the delivery drops duplicate properties.
       try { var _k = propertyIdentityKey(o.address || '', o.postcode || ''); if (_k && _prevSeen[_k]) return false; if (_k) _prevSeen[_k] = 1; } catch(e) {}
       return true;
     });
   }
   var fallbackCount = out.filter(function(o) { return !o.in_area; }).length;
+  if (cust.email === 'sales@redlionremovals.com') console.log('[PV2] out_after=' + out.length + ' paf_cands=' + out.filter(function(o) { return o.paf_candidate; }).length);
   var fallbackNote = fallbackCount ? (fallbackCount + ' lead' + (fallbackCount > 1 ? 's' : '') + ' from closest postcode' + (fallbackCount > 1 ? 's' : '') + ' (your chosen areas were short this morning)') : '';
   return { email: cust.email, company: cust.company || '', product: cust.product, plan: cust.plan, areas: areas, promised: limit, count: out.length, leads: out, fallback_count: fallbackCount, fallback_note: fallbackNote, error: out.length < limit ? 'supply low in ' + areas.join(', ') : '', debug: (cust.email === 'info@afsremovals.com') ? { pool_total: pool.length, interleaved: interleaved.length, candidates: candidates.length, selected: selected.length, candidate_errors: candidateErrors, firstCandidates: candidates.slice(0, 3).map(function(cl) { return { addr: String(cl.fullAddress || cl.address || '').slice(0, 40), pc: cl.postcode, commercial: isCommercialLead(cl), matched: areas.indexOf(extractPostcodeArea(cl.postcode || cl.address || '')) !== -1 }; }) } : undefined };
 }
