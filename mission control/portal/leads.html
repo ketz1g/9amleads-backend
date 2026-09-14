@@ -336,6 +336,11 @@ function renderLeadList(dayLeads, noGroup) {
     var dateStr = l.created_at ? new Date(l.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'}) : '';
     var status = d.listingStatus || d.status || 'New';
     var pc = d.postcode || '';
+    // WHEN the lead came in: delivered_at = the day the 9am email delivered it;
+    // created_at = when it was added (used for leads not yet delivered). Shown on
+    // EVERY product card so the customer always knows the day a lead arrived.
+    var sentOn = l.delivered_at ? 'Sent ' + new Date(l.delivered_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : (l.created_at ? 'Added ' + new Date(l.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '');
+    var sentOnHtml = sentOn ? '<div style="font-size:10px;color:var(--muted);margin-top:3px;text-align:right">' + sentOn + '</div>' : '';
     var score = scoreLead(l, d, product);
     var scoreBadge = score ? '<span style="display:inline-block;margin-left:6px;padding:2px 8px;border-radius:5px;font-size:10px;font-weight:800;background:' + score.color + '22;color:' + score.color + '"> ' + score.value + '/100</span>' : '';
     var replacedBadge = d.is_replacement
@@ -358,7 +363,7 @@ function renderLeadList(dayLeads, noGroup) {
         '<div class="addr">' + biz + '</div>' +
         '<div class="meta">' + (d.address||'') + '</div>' +
         '<div class="meta">' + metaParts.join(' \u00b7 ') + (chLink ? ' \u00b7 ' + chLink : '') + '</div></div>' +
-        '<div class="right"><span class="badge">' + status + '</span>' + postBadge(d, l.id) + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:4px">' + mailBtn(l.id, d) + rejectBtn(l.id, d) + '</div>' + outcomeBtn(l.id, d) + '</div></div>';
+        '<div class="right"><span class="badge">' + status + '</span>' + postBadge(d, l.id) + sentOnHtml + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:4px">' + mailBtn(l.id, d) + rejectBtn(l.id, d) + '</div>' + outcomeBtn(l.id, d) + '</div></div>';
     } else if (product === 'probate') {
       var pName = d.deceasedName || d.name || 'Probate Estate';
       var pAddr = d.deceasedAddress || d.address || '';
@@ -378,7 +383,7 @@ function renderLeadList(dayLeads, noGroup) {
         '<div class="addr">' + pName + '</div>' +
         '<div class="meta">' + pFullAddr + '</div>' +
         '<div class="meta">' + pMeta.join(' \u00b7 ') + '</div></div>' +
-        '<div class="right"><span class="badge">' + status + '</span>' + postBadge(d, l.id) + (pSrcLink ? pSrcLink : '') + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:4px">' + mailBtn(l.id, d) + rejectBtn(l.id, d) + '</div>' + outcomeBtn(l.id, d) + '</div></div>';
+        '<div class="right"><span class="badge">' + status + '</span>' + postBadge(d, l.id) + (pSrcLink ? pSrcLink : '') + sentOnHtml + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:4px">' + mailBtn(l.id, d) + rejectBtn(l.id, d) + '</div>' + outcomeBtn(l.id, d) + '</div></div>';
     } else if (product === 'planning') {
       var planTitle = cleanPlanAddr(d.address) || (d.description||'').substring(0,40) || 'Planning Application';
       var planDate = d.dateSubmitted || d.receivedDate || d.date_received || l.created_at || '';
@@ -389,7 +394,7 @@ function renderLeadList(dayLeads, noGroup) {
       html += '<div class="lead' + selClass + '">' + chk + '<div style="flex:1"><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' + replacedBadge +
         '<div class="addr">' + planTitle + '</div>' +
         '<div class="meta">' + planMeta.join(' \u00b7 ') + '</div>' + planDesc + planApplicant + '</div>' +
-        '<div class="right"><span class="badge">' + status + '</span>' + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:4px">' + mailBtn(l.id) + rejectBtn(l.id, null) + '</div>' + '</div></div>';
+        '<div class="right"><span class="badge">' + status + '</span>' + sentOnHtml + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:4px">' + mailBtn(l.id) + rejectBtn(l.id, null) + '</div>' + '</div></div>';
     } else if (product === 'tenders') {
       // Tenders are applied for ONLINE (portal/email), not via post, so show the
       // buyer contact + apply button instead of a Print & Post button.
@@ -406,7 +411,7 @@ function renderLeadList(dayLeads, noGroup) {
       html += '<div class="lead' + selClass + '">' + chk + '<div style="flex:1"><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' + replacedBadge +
         '<div class="addr">' + tendTitle + '</div>' +
         '<div class="meta">' + tendMeta.join(' \u00b7 ') + (tendLink ? ' \u00b7 ' + tendLink : '') + '</div>' + tendDesc + tendContactHtml + '</div>' +
-        '<div class="right"><span class="badge">' + status + '</span>' + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:4px">' + applyBtn + rejectBtn(l.id, d) + '</div>' + '</div></div>';
+        '<div class="right"><span class="badge">' + status + '</span>' + sentOnHtml + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:4px">' + applyBtn + rejectBtn(l.id, d) + '</div>' + '</div></div>';
     } else {
       // moving / default
       var addr = d.address || d.title || 'Property';
@@ -421,15 +426,12 @@ function renderLeadList(dayLeads, noGroup) {
       if (town && fullAddr.toLowerCase().indexOf(town.toLowerCase()) === -1) fullAddr += ', ' + town;
       if (pc && fullAddr.toLowerCase().indexOf(pc.toLowerCase()) === -1) fullAddr += ', ' + pc;
       var rmLink = d.url ? '<a href="' + d.url + '" target="_blank" style="color:var(--accent);text-decoration:underline;font-size:11px">View on Rightmove</a>' : '';
-      // Show WHEN each lead was sent to the customer's inbox (delivered_at = the
-      // day the daily email went out with this lead; created_at = when it was added).
-      var sentOn = l.delivered_at ? 'Sent ' + new Date(l.delivered_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : (l.created_at ? 'Added ' + new Date(l.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '');
       var moveMeta = [(d.bedrooms ? d.bedrooms+' bed' : ''), d.propertyType||'', d.agent||'', rmLink].filter(Boolean);
       html += '<div class="lead' + selClass + '">' + chk + '<div style="flex:1"><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' + replacedBadge +
         '<div class="addr">' + fullAddr + '</div>' +
         '<div class="meta">' + moveMeta.join(' \u00b7 ') + '</div></div>' +
         '<div class="right"><div class="price">' + (d.price ? '\u00a3'+Number(d.price).toLocaleString() : '') + '</div><span class="badge ' + (status === 'newly listed' ? 'badge-new' : '') + '">' + status + '</span>' +
-        (sentOn ? '<div style="font-size:10px;color:var(--muted);margin-top:3px;text-align:right">' + sentOn + '</div>' : '') +
+        sentOnHtml +
         postBadge(d, l.id) + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:4px">' + mailBtn(l.id, d) + rejectBtn(l.id, d) + '</div>' + '</div></div>';
     }
   }
@@ -979,7 +981,7 @@ function setRange(range) {
   document.getElementById('date-label').textContent = labels[range] || 'All time';
   filterLeads();
 }
-function leadCreatedDay(l) { return (l.created_at||'').split('T')[0]; }
+function leadCreatedDay(l) { return ((l.delivered_at || l.created_at || '').split('T')[0]); }
 function inRange(l, range) {
   var day = leadCreatedDay(l);
   if (!day) return true;

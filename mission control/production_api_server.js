@@ -8867,8 +8867,12 @@ app.get('/api/leads', authMiddleware, (req, res) => {
     // A reset marks today's leads delivered=0 + status='removed' so a force re-delivery
     // REPLACES them — the customer must only ever see their CURRENT, correct batch.
     if (l.status === 'removed') return false;
-    if (l.delivered || l.delivered_at) return true;
-    return !(l.release_at && l.release_at > nowIso);
+    // ONLY DELIVERED leads are shown to the customer. Undelivered rows are INTERNAL
+    // delivery candidates (the 9am run creates/fills them and discards the unused
+    // ones). Previously a pending row was shown once its release_at had passed, which
+    // inflated the customer's lead total far above their 5/day promise (e.g. 15
+    // delivered + 21 pending showed as 36 instead of 15).
+    return !!(l.delivered || l.delivered_at);
   });
 
     res.json(visible
@@ -11776,8 +11780,20 @@ app.post('/api/admin/set-customer-lead-total', adminAuth, async (req, res) => {
       if (!areas.length) { try { var cfgS = JSON.parse(cust.product_config || '{}'); areas = (cfgS[cust.product] && cfgS[cust.product].target_areas) ? JSON.parse(cfgS[cust.product].target_areas) : []; } catch(e2) { areas = []; } }
       var pool = loadProductPool(cust.product);
       var interleaved = interleavePoolByAreas(pool, areas);
+      // DOOR-NUMBER PREFERENCE: fill from door-numbered leads first so backfilled
+      // history is mailable (new business / probate / planning included).
+      try { interleaved.sort(function(a, b) { function cf(l2){ return hasUsablePremiseAddress(l2.fullAddress || l2.address || l2.deceasedAddress || '', l2.postcode || ''); } var ca=cf(a), cb=cf(b); return ca===cb?0:(ca?-1:1); }); } catch(e) {}
       var usedKeys = {};
-      (dbS.leads || []).forEach(function(l) { if (l.customer_id === cust.id) { try { var dd = JSON.parse(l.data || '{}'); var du = dd.url || ''; if (du) usedKeys['u:' + du] = 1; var da = dd.fullAddress || dd.address || ''; var dp = dd.postcode || ''; if (da && dp) usedKeys['a:' + String(da).toLowerCase().replace(/\s+/g,' ').trim() + '|' + String(dp).toUpperCase().replace(/\s+/g,' ').trim()] = 1; } catch(e) {} } });
+      // DEDUPE KEY NORMALISERS: the previous build stored keys as 'u:'+url and
+      // 'a:'+address+'|'+postcode, but the lookup below used the BARE url, so the
+      // URL check never matched and an already-delivered lead (same Companies House
+      // page, different address string) was re-added as a duplicate. Normalise BOTH
+      // sides identically here.
+      function _stNormUrl(u) { return String(u || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim(); }
+      function _stNormAddr(addr, pc) { return String(addr || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30) + '|' + String(pc || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
+      // Build the key set from EVERY delivered lead (any customer) so a backfill can
+      // never re-use a lead this customer — or anyone — has already received.
+      (dbS.leads || []).forEach(function(l) { try { var dd = JSON.parse(l.data || '{}'); var du = _stNormUrl(dd.url || ''); if (du) usedKeys['u:' + du] = 1; var da = dd.fullAddress || dd.deceasedAddress || dd.address || ''; var dp = dd.postcode || ''; if (da && dp) usedKeys['a:' + _stNormAddr(da, dp)] = 1; } catch(e) {} });
       var nowIso = new Date().toISOString();
       var freshCutoff = getFreshCutoffIso();
       var need = target - currentAfterTrims;
@@ -11818,7 +11834,8 @@ app.post('/api/admin/set-customer-lead-total', adminAuth, async (req, res) => {
         else { var countyMatch = areas.some(function(a) { return String(a).toLowerCase().replace(/[\s-]+/g,'-') === String(pl.county || '').toLowerCase().replace(/[\s-]+/g,'-'); }); matched = countyMatch; }
         if (!matched) continue;
         var fv = pickFreshDate(pl); if (!fv) continue;
-        var key = pl.url || ('a:' + String(pl.address || pl.fullAddress || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30));
+        var _plUrl = _stNormUrl(pl.url || '');
+        var key = _plUrl ? ('u:' + _plUrl) : ('a:' + _stNormAddr(pl.address || pl.fullAddress || '', pl.postcode || ''));
         if (usedKeys[key]) continue;
         usedKeys[key] = 1;
         var dS = { address: pl.address || pl.fullAddress || '', fullAddress: pl.fullAddress || pl.address || '', postcode: pl.postcode || '', url: pl.url || '', street: pl.street || '', building_number: pl.building_number || '', source: pl.source || '', firstVisibleDate: pl.firstVisibleDate || nowIso, scrapedAt: nowIso };
@@ -11897,9 +11914,13 @@ app.post('/api/admin/top-up-today', adminAuth, (req, res) => {
       var p = String(pc || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
       return (a || '').substring(0, 26) + '|' + p;
     }
-    (dbT.leads || []).forEach(function(l) { if (l.customer_id === cust.id) { try { var dd = JSON.parse(l.data || '{}'); var du = dd.url || ''; if (du) usedKeys['u:' + du] = 1; usedKeys['a:' + _tuAddrKey(dd.fullAddress || dd.address || '', dd.postcode || '')] = 1; } catch(e) {} } });
+    // Normalise URLs on BOTH sides (strip #/query/trailing slash, lowercase) so a
+    // top-up can never re-add a lead already delivered whose URL differs only by a
+    // trailing slash / query string / case.
+    function _tuNormUrl(u) { return String(u || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim(); }
+    (dbT.leads || []).forEach(function(l) { if (l.customer_id === cust.id) { try { var dd = JSON.parse(l.data || '{}'); var du = _tuNormUrl(dd.url || ''); if (du) usedKeys['u:' + du] = 1; usedKeys['a:' + _tuAddrKey(dd.fullAddress || dd.address || '', dd.postcode || '')] = 1; } catch(e) {} } });
     // Global exclusivity: never give a lead already delivered to ANOTHER customer.
-    (dbT.leads || []).forEach(function(l) { if (l.customer_id !== cust.id && l.delivered) { try { var dd = JSON.parse(l.data || '{}'); var du = dd.url || ''; if (du) usedKeys['u:' + du] = 1; } catch(e) {} } });
+    (dbT.leads || []).forEach(function(l) { if (l.customer_id !== cust.id && l.delivered) { try { var dd = JSON.parse(l.data || '{}'); var du = _tuNormUrl(dd.url || ''); if (du) usedKeys['u:' + du] = 1; } catch(e) {} } });
     var picked = null;
     for (var ti = 0; ti < interleaved.length; ti++) {
       var pl = interleaved[ti];
@@ -11919,7 +11940,7 @@ app.post('/api/admin/top-up-today', adminAuth, (req, res) => {
       // Check BOTH the url key AND the address key: a pool lead may carry a different
       // portal URL than the copy already delivered, but the SAME property address —
       // the address key (postcode/region-normalised) catches that cross-source dup.
-      if (pl.url && usedKeys['u:' + pl.url]) continue;
+      if (pl.url && usedKeys['u:' + _tuNormUrl(pl.url)]) continue;
       var addrKeyT = 'a:' + _tuAddrKey(pl.fullAddress || pl.address || '', pl.postcode || '');
       if (usedKeys[addrKeyT]) continue;
       picked = pl;
@@ -20559,7 +20580,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       try {
         var gdd = JSON.parse(l.data || '{}');
         var gu = gdd.url || '';
-        if (gu) globalDeliveredUrls[gu] = true;
+        if (gu) { globalDeliveredUrls[gu] = true; var guN = String(gu).split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim(); if (guN) globalDeliveredUrls[guN] = true; }
         var gAddr = String(gdd.fullAddress || gdd.deceasedAddress || gdd.address || '').toLowerCase().replace(/\s+/g, ' ').trim();
         var gRef = String(gdd.reference || gdd.companyNumber || gdd.deceasedName || gdd.tenderNoticeId || '').toLowerCase().trim();
         var gPc = String(gdd.postcode || '').toUpperCase().replace(/\s+/g, ' ').trim();
@@ -20857,7 +20878,7 @@ _deliverDiag[cust.email].products = products;
           try {
             var ldd = JSON.parse(l.data || '{}');
             var lu = ldd.url || '';
-            if (lu) deliveredUrls[lu] = true;
+            if (lu) { deliveredUrls[lu] = true; var luN = String(lu).split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim(); if (luN) deliveredUrls[luN] = true; }
             // Build a broader dedup key (address+postcode, or reference/company
             // number, or deceased name) so leads WITHOUT a url (probate/planning/
             // newbusiness/tenders) are never re-delivered either.
@@ -20905,6 +20926,34 @@ _deliverDiag[cust.email].products = products;
           if (rKey && (deliveredKeys[rKey] || globalDeliveredKeys[rKey])) return false;
           return true;
         } catch(e) { return true; }
+      }
+      // FILL/TOP-UP DEDUPE: the guaranteed-fill / door-number / PAF top-up passes
+      // below pull candidates from the RAW scrape pool file, which is NOT pre-filtered
+      // by notDeliveredBefore(). On a repeated run (watchdog/manual re-run) they could
+      // therefore re-add a lead already delivered to this customer today — a duplicate
+      // row the dashboard (which de-dupes by URL) counts once, leaving the customer
+      // silently short. Returns true if the candidate was already delivered to this
+      // customer (or anyone), by URL, address+postcode, property identity or reference.
+      function alreadyDeliveredLead(l) {
+        try {
+          var dd = (l && typeof l.data === 'string' && l.data) ? JSON.parse(l.data) : (l || {});
+          var u = dd.url || '';
+          var un = String(u).split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
+          if (u && (custDeliveredRefs[u] || deliveredUrls[u] || globalDeliveredUrls[u])) return true;
+          if (un && (custDeliveredRefs[un] || deliveredUrls[un] || globalDeliveredUrls[un])) return true;
+          var refRaw = String(dd.reference || '');
+          if (refRaw && custDeliveredRefs['r:' + refRaw.toLowerCase()]) return true;
+          var aKey = String(dd.fullAddress || dd.deceasedAddress || dd.address || '').toLowerCase().replace(/\s+/g, ' ').trim();
+          var pKey = String(dd.postcode || '').toUpperCase().replace(/\s+/g, ' ').trim();
+          var rKey = String(dd.reference || dd.companyNumber || dd.deceasedName || dd.tenderNoticeId || '').toLowerCase().trim();
+          if (aKey && pKey && (deliveredKeys[aKey + '|' + pKey] || globalDeliveredKeys[aKey + '|' + pKey])) return true;
+          if (pKey) {
+            var pKeyId = 'gg:' + propertyIdentityKey(dd.fullAddress || dd.deceasedAddress || dd.address || '', dd.postcode || '');
+            if (deliveredKeys[pKeyId] || globalDeliveredKeys[pKeyId]) return true;
+          }
+          if (rKey && (deliveredKeys[rKey] || globalDeliveredKeys[rKey])) return true;
+          return false;
+        } catch(e) { return false; }
       }
       products.forEach(function(p) {
         var pool = (db.leads || []).filter(function(l) {
@@ -21454,6 +21503,8 @@ _deliverDiag[cust.email].products = products;
             var fgCreated = 0;
             for (var fgi = 0; fgi < fgArr.length && fgCreated < fgNeed; fgi++) {
               var fgLead = fgArr[fgi];
+              // Never re-add a lead already delivered to this customer (or anyone).
+              if (alreadyDeliveredLead(fgLead)) continue;
               // FRESHNESS (this pass only runs when the customer is SHORT of their
               // promised count): prefer leads with a listing date within 48h but
               // don't hard-reject older real in-area listings — PAF confirms the
@@ -22010,6 +22061,7 @@ _deliverDiag[cust.email].products = products;
           for (var ti = 0; ti < alreadyNumbered.length && added < shortBy; ti++) {
             var al = alreadyNumbered[ti];
             if (pickedIds.indexOf(al.id) !== -1) continue;
+            if (alreadyDeliveredLead(al)) continue;
             if (!hasPremiseNumber((function(){ var ld = al.data ? (function(){ try { return JSON.parse(al.data); } catch(e) { return al; } })() : al; return ld.fullAddress||ld.address||ld.deceasedAddress||''; })(), (function(){ var ld = al.data ? (function(){ try { return JSON.parse(al.data); } catch(e) { return al; } })() : al; return ld.postcode||''; })())) continue;
             custLeads.push(al); pickedIds.push(al.id); added++;
           }
@@ -22028,6 +22080,7 @@ _deliverDiag[cust.email].products = products;
               var srcLead = null;
               (db.leads || []).forEach(function(ll) { if (ll.id === topNorm[tj].id) srcLead = ll; });
               if (!srcLead) continue;
+              if (alreadyDeliveredLead(srcLead)) continue;
               var tld = {}; try { tld = JSON.parse(srcLead.data || '{}'); } catch(e) {}
               var eAddr = te.fullAddress || te.address || '';
               var eStreet = te.street || ''; var eNum = te.buildingNumber || '';
@@ -22074,6 +22127,7 @@ _deliverDiag[cust.email].products = products;
               for (var fc=0; fc<fpoolArr.length && fcreated.length < finalShort && custLeads.length < totalDailyLimit; fc++) {
                 var fl = fpoolArr[fc];
                 if (fl.commercial) continue;
+                if (alreadyDeliveredLead(fl)) continue;
                 var flD = pickFreshDate(fl);
                 if (!flD || flD < freshCutoffNow) continue;
                 if (!leadPassesFilters(fl)) continue;
@@ -22211,6 +22265,7 @@ _deliverDiag[cust.email].products = products;
               for (var ncp = 0; ncp < ncPoolArr.length && ncPicked.length < ncShort; ncp++) {
                 var ncl = ncPoolArr[ncp];
                 if (ncl.commercial) continue;
+                if (alreadyDeliveredLead(ncl)) continue;
                 // FRESHNESS (top-up only, runs when the customer is short): prefer
                 // leads whose LISTING date is within 48h, but don't hard-reject older
                 // in-area listings — they are real, current on-market properties and
@@ -22276,6 +22331,7 @@ _deliverDiag[cust.email].products = products;
                   var qPool = interleavePoolByAreas(getDeliveryPool('moving'), custAreas);
                   for (var qi = 0; qi < qPool.length && qvLeads.length < totalNeeded; qi++) {
                     var ql2 = qPool[qi];
+                    if (alreadyDeliveredLead(ql2)) continue;
                     var qd2 = ql2.data ? (typeof ql2.data === 'string' ? JSON.parse(ql2.data) : ql2.data) : ql2;
                     if (qd2.address) {
                       qd2.address = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(qd2.address)));
@@ -22303,7 +22359,11 @@ _deliverDiag[cust.email].products = products;
               custLeads = custLeads.filter(function(l) {
                 var ld = null; try { ld = JSON.parse(l.data || '{}'); } catch(e) { ld = null; }
                 if (!ld || typeof ld !== 'object') ld = { postcode: l.postcode || '', address: l.address || l.fullAddress || '', fullAddress: l.fullAddress || l.address || '' };
-                var k = propertyIdentityKey(ld.fullAddress || ld.address || ld.deceasedAddress || '', ld.postcode || '');
+                // URL FIRST (matches the dashboard's own de-dup rule), then property
+                // identity. This is the last line of defence so the delivered batch can
+                // never contain a URL-duplicate the dashboard would count as one.
+                var _gu = String(ld.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
+                var k = _gu ? ('u:' + _gu) : propertyIdentityKey(ld.fullAddress || ld.address || ld.deceasedAddress || '', ld.postcode || '');
                 if (k && _seenF[k]) return false;
                 if (k) _seenF[k] = 1;
                 return true;
