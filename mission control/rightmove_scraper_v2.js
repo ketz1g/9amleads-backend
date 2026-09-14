@@ -401,11 +401,11 @@ function lookupPostcoderAddress(postcode, streetHint, doorNumber) {
       const pcBudget = require('./postcoder_budget');
       if (!pcBudget.canLookup()) {
         console.log('[POSTCODER] Daily/rate limit reached — skipping lookup for ' + (postcode || ''));
-        return resolve(null);
+        return resolve({ budgetExhausted: true });
       }
     } catch(pe) { console.log('[POSTCODER] Budget guard error:', pe.message); }
     const key = process.env.POSTCODER_API_KEY;
-    if (!key) return resolve(null);
+    if (!key) return resolve({ transient: true });
     const opts = {
       hostname: 'ws.postcoder.com',
       path: '/pcw/' + key + '/address/uk/' + cleanPc + '?format=json&lines=10&page=0',
@@ -422,7 +422,7 @@ function lookupPostcoderAddress(postcode, streetHint, doorNumber) {
           resolve({ rateLimited: true });
           return;
         }
-        if (res.statusCode !== 200) { resolve(null); return; }
+        if (res.statusCode !== 200) { resolve({ transient: true }); return; }
         try {
           const parsed = JSON.parse(body);
           if (!Array.isArray(parsed) || parsed.length === 0) { resolve(null); return; }
@@ -432,11 +432,11 @@ function lookupPostcoderAddress(postcode, streetHint, doorNumber) {
             pcCache.set(cleanPc, parsed);
           } catch(ce) {}
           resolve(matchPafAddress(parsed, cleanPc, streetHint, doorNumber));
-        } catch(e) { resolve(null); }
+        } catch(e) { resolve({ transient: true }); }
       });
     });
-    req.on('error', () => resolve(null));
-    req.setTimeout(20000, () => { req.destroy(); resolve(null); });
+    req.on('error', () => resolve({ transient: true }));
+    req.setTimeout(20000, () => { req.destroy(); resolve({ transient: true }); });
     req.end();
   });
 }

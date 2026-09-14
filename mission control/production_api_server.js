@@ -11105,7 +11105,10 @@ async function runMovingPafPostScrape() {
         await new Promise(function(r) { setTimeout(r, 30000); });
         full = await pcDeliver.lookupPostcoderAddress(pc0, addr0, hint);
       }
-      var numOk = full && !full.rateLimited && hasUsablePremiseAddress((full.fullAddress || full.address1 || addr0), full.postcode || pc0);
+      // TRANSIENT/BUDGET (not a real failure): leave the lead for a later pass — do
+      // NOT mark paf_failed, or a resolvable lead is permanently excluded.
+      if (full && (full.rateLimited || full.budgetExhausted || full.transient)) { l.paf_done = false; continue; }
+      var numOk = full && hasUsablePremiseAddress((full.fullAddress || full.address1 || addr0), full.postcode || pc0);
       // PHOTO READER: if PAF can't pin a number and the listing has a photo, read the
       // house number from the photo, then retry PAF with that hint (mirrors delivery).
       if (!numOk && !hint && l.photo) {
@@ -11113,7 +11116,8 @@ async function runMovingPafPostScrape() {
         if (hint) {
           full = await pcDeliver.lookupPostcoderAddress(pc0, addr0, hint);
           if (full && full.rateLimited) { await new Promise(function(r) { setTimeout(r, 30000); }); full = await pcDeliver.lookupPostcoderAddress(pc0, addr0, hint); }
-          numOk = full && !full.rateLimited && hasUsablePremiseAddress((full.fullAddress || full.address1 || addr0), full.postcode || pc0);
+          if (full && (full.rateLimited || full.budgetExhausted || full.transient)) { l.paf_done = false; continue; }
+          numOk = full && hasUsablePremiseAddress((full.fullAddress || full.address1 || addr0), full.postcode || pc0);
         }
       }
       if (numOk) {
@@ -11224,7 +11228,8 @@ async function runProbatePafPostScrape() {
         full = await pcDeliver.searchPostcoderAddress(addr0);
         if (full && full.rateLimited) { await new Promise(function(r) { setTimeout(r, 30000); }); full = await pcDeliver.searchPostcoderAddress(addr0); }
       }
-      var numOk = full && !full.rateLimited && hasUsablePremiseAddress((full.fullAddress || full.address1 || full.summary_line || addr0), full.postcode || pc0);
+      if (full && (full.rateLimited || full.budgetExhausted || full.transient)) { l.paf_done = false; continue; }
+      var numOk = full && hasUsablePremiseAddress((full.fullAddress || full.address1 || full.summary_line || addr0), full.postcode || pc0);
       if (!numOk && !hint && l.photo) {
         try { hint = await pcDeliver.readDoorNumberFromPhoto(l.photo); } catch(e) {}
         if (hint) { full = await pcDeliver.lookupPostcoderAddress(pc0, addr0, hint); if (full && full.rateLimited) { await new Promise(function(r) { setTimeout(r, 30000); }); full = await pcDeliver.lookupPostcoderAddress(pc0, addr0, hint); } numOk = full && !full.rateLimited && hasUsablePremiseAddress((full.fullAddress || full.address1 || addr0), full.postcode || pc0); }
@@ -17109,15 +17114,28 @@ async function warmUpDeliveryPaf() {
       if (attempted > 1) await new Promise(function(r) { setTimeout(r, 250); });
       var pc0 = String(lead.postcode || '').toUpperCase().trim();
       var addr0 = lead.fullAddress || lead.address || '';
-      var full = await pcDeliver.lookupPostcoderAddress(pc0, addr0, lead.doorNumberHint || '');
-      if (full && full.rateLimited) { await new Promise(function(r) { setTimeout(r, 30000); }); full = await pcDeliver.lookupPostcoderAddress(pc0, addr0, lead.doorNumberHint || ''); }
-      var numOk = full && !full.rateLimited && hasUsablePremiseAddress((full.fullAddress || full.address1 || addr0), full.postcode || pc0);
+      var hint = lead.doorNumberHint || '';
+      var full = await pcDeliver.lookupPostcoderAddress(pc0, addr0, hint);
+      if (full && full.rateLimited) { await new Promise(function(r) { setTimeout(r, 30000); }); full = await pcDeliver.lookupPostcoderAddress(pc0, addr0, hint); }
+      // TRANSIENT/BUDGET: leave for a later pass, do NOT mark failed.
+      if (full && (full.rateLimited || full.budgetExhausted || full.transient)) { lead.paf_done = false; continue; }
+      var numOk = full && hasUsablePremiseAddress((full.fullAddress || full.address1 || addr0), full.postcode || pc0);
+      // PHOTO READER (mirrors delivery): read the door number from the listing photo.
+      if (!numOk && !hint && lead.photo) {
+        try { hint = await pcDeliver.readDoorNumberFromPhoto(lead.photo); } catch(e) {}
+        if (hint) {
+          full = await pcDeliver.lookupPostcoderAddress(pc0, addr0, hint);
+          if (full && full.rateLimited) { await new Promise(function(r) { setTimeout(r, 30000); }); full = await pcDeliver.lookupPostcoderAddress(pc0, addr0, hint); }
+          if (full && (full.rateLimited || full.budgetExhausted || full.transient)) { lead.paf_done = false; continue; }
+          numOk = full && hasUsablePremiseAddress((full.fullAddress || full.address1 || addr0), full.postcode || pc0);
+        }
+      }
       if (numOk) {
         var nAddr = full.fullAddress || full.address1 || '';
         lead.address = nAddr || addr0; lead.fullAddress = nAddr || lead.fullAddress || addr0;
         lead.postcode = (full.postcode || pc0).toUpperCase();
         lead.street = full.street || lead.street || '';
-        lead.buildingNumber = full.buildingNumber || lead.buildingNumber || '';
+        lead.buildingNumber = full.buildingNumber || hint || lead.buildingNumber || '';
         lead.udprn = full.udprn || lead.udprn || '';
         lead.paf_failed = false; enriched++;
       } else { lead.paf_failed = true; failed++; }
