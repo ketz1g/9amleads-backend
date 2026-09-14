@@ -10436,7 +10436,16 @@ app.get('/api/admin/customer-leads', adminAuth, (req, res) => {
 // (all leads, not just fresh) to debug missing customer areas.
 app.get('/api/admin/moving-pool-diagnose', adminAuth, (req, res) => {
   try {
-    var arr = readPoolFile('moving') || [];
+    var prod = String(req.query.product || 'moving');
+    var arr = readPoolFile(prod) || [];
+    var withDate = 0, recent = 0, sample = [];
+    var cutoff = new Date(getFreshCutoffIso()).getTime();
+    arr.forEach(function(l) {
+      var d = pickFreshDate(l);
+      if (d) withDate++;
+      if (d && new Date(d).getTime() >= cutoff) recent++;
+    });
+    arr.slice(0, 6).forEach(function(l) { sample.push({ title: String(l.title || l.name || '').slice(0, 45), publishedDate: l.publishedDate || l.firstVisibleDate || '', deadlineDate: l.deadlineDate || '', freshDate: pickFreshDate(l), source: l.source }); });
     var byArea = {}, noPc = 0, total = arr.length;
     arr.forEach(function(l) {
       var pc = String(l.postcode || '').toUpperCase().trim();
@@ -10446,7 +10455,7 @@ app.get('/api/admin/moving-pool-diagnose', adminAuth, (req, res) => {
       byArea[area] = (byArea[area] || 0) + 1;
       if (!pc) noPc++;
     });
-    res.json({ success: true, total: total, no_postcode: noPc, by_area: Object.keys(byArea).sort().map(function(k){ return { area: k, count: byArea[k] }; }) });
+    res.json({ success: true, product: prod, total: total, no_postcode: noPc, with_fresh_date: withDate, recent_fresh: recent, fresh_cutoff: new Date(cutoff).toISOString(), sample: sample, by_area: Object.keys(byArea).sort().map(function(k){ return { area: k, count: byArea[k] }; }) });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
