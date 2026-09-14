@@ -10807,7 +10807,8 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
         var mPc = l.postcode || '';
         // Deliverable if it already has a door number, OR PAF can add one (full
         // postcode + street). Mirrors the delivery: PAF-enrich, then gate.
-        if (!mailOK(mAddr, mPc) && !pafEligible(l, mAddr, mPc)) { if (candidateErrors) candidateErrors.push('area=' + pcArea + ' addr=' + String(mAddr).slice(0, 40) + ' -> no door and not PAF-eligible'); continue; }
+        if (!mailOK(mAddr, mPc) && !pafEligible(l, mAddr, mPc)) { if (cust.email === 'sales@redlionremovals.com') console.log('[PV-DBG] REJECT area=' + pcArea + ' st=' + hasStreetName(mAddr) + ' pf=' + !!l.paf_failed + ' pc=' + mPc + ' addr=' + String(mAddr).replace(/\n/g, ' ').slice(0, 50)); if (candidateErrors) candidateErrors.push('area=' + pcArea + ' addr=' + String(mAddr).slice(0, 40) + ' -> no door and not PAF-eligible'); continue; }
+        if (cust.email === 'sales@redlionremovals.com' && candidates.length < 8) console.log('[PV-DBG] PASS area=' + pcArea + ' addr=' + String(mAddr).replace(/\n/g, ' ').slice(0, 50));
       }
     } else {
       if (ukwide) matched = true;
