@@ -160,6 +160,12 @@ function fetchRightmovePage(locationId, locationName, pageIndex) {
       });
       req.on('error', function(e) { console.log('[RIGHTMOVE] req error', e.message); resolve([]); });
       req.setTimeout(30000, function() { req.destroy(); resolve([]); });
+      // HARD TIMER: req.setTimeout only covers SOCKET INACTIVITY and can miss a
+      // stalled connect/TLS handshake, which hung the whole moving scrape for the full
+      // 18-minute budget (returning 0 leads and starving every area). Destroy the
+      // request and resolve after 25s no matter what.
+      var _hardT = setTimeout(function() { try { req.destroy(); } catch(e) {} console.log('[RIGHTMOVE] hard timeout ' + locationId + ' idx=' + pageIndex); resolve([]); }, 25000);
+      req.on('close', function() { clearTimeout(_hardT); });
       req.end();
     }
     var path = '/property-for-sale/find.html?locationIdentifier=' + locationId + '&index=' + pageIndex + '&includeSSTC=true&sortType=6&propertyTypes=&mustHave=&dontShow=&furnishTypes=&keywords=';
@@ -250,6 +256,9 @@ function fetchCommercialRightmovePage(locationId, locationName, pageIndex, isLet
     });
     req.on('error', function(e) { resolve([]); });
     req.setTimeout(30000, function() { req.destroy(); resolve([]); });
+    // HARD TIMER: see fetchRightmovePage — a stalled connect must not hang the run.
+    var _hardTc = setTimeout(function() { try { req.destroy(); } catch(e) {} console.log('[RIGHTMOVE-COMMERCIAL] hard timeout ' + locationId + ' idx=' + pageIndex); resolve([]); }, 25000);
+    req.on('close', function() { clearTimeout(_hardTc); });
     req.end();
   });
 }
@@ -959,7 +968,7 @@ async function collectMovingLeads(config) {
   const CONC = Math.max(1, parseInt(process.env.MOVING_SCRAPE_CONCURRENCY || '6', 10));
   // HARD INTERNAL DEADLINE: always return what we have within this budget so the
   // caller never times out and discards the whole run (which left areas empty).
-  const DEADLINE = Date.now() + Math.max(60000, parseInt(process.env.MOVING_SCRAPE_BUDGET_MS || '480000', 10));
+  const DEADLINE = Date.now() + Math.max(60000, parseInt(process.env.MOVING_SCRAPE_BUDGET_MS || '300000', 10));
   let locIdx = 0;
   async function scrapeLoc() {
     while (locIdx < locations.length && Date.now() < DEADLINE) {
@@ -986,7 +995,14 @@ async function collectMovingLeads(config) {
       await new Promise(function(r) { setTimeout(r, 120); });
     }
   }
-  await Promise.all(Array.from({ length: Math.min(CONC, locations.length) }, scrapeLoc));
+  // HARD DEADLINE RACE: the while-loop deadline above cannot fire while a single
+  // await is stuck. Race the whole worker pool against the deadline so
+  // collectMovingLeads ALWAYS returns within budget and the caller's OTM fallback
+  // (and the 9am delivery) run promptly instead of waiting out an 18-minute hang.
+  await Promise.race([
+    Promise.all(Array.from({ length: Math.min(CONC, locations.length) }, scrapeLoc)),
+    new Promise(function(r) { setTimeout(function() { console.log('[RIGHTMOVE] scrape deadline reached - continuing with partial results'); r(); }, Math.max(30000, DEADLINE - Date.now())); })
+  ]);
 
   var seenIds = {};
   var deduped = allProperties.filter(function(p) {
