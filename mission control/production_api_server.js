@@ -32004,7 +32004,18 @@ function syncCustomers(product) {
               if (mt === 'commercial' || mt === 'both') mvWantCommercial = true;
               var cAreas = [];
               try { cAreas = prim.target_areas ? JSON.parse(prim.target_areas) : JSON.parse(c.target_areas || '[]'); } catch(e) { cAreas = []; }
-              cAreas.forEach(function(a) { if (a && mvAreas.indexOf(a) === -1) mvAreas.push(a); });
+              // The moving scraper expects POSTCODE AREAS (SO, PO, SP, ...). County/region
+              // targets ("Dorset", "Hampshire", "Wiltshire") must be EXPANDED to their
+              // postcode areas first — otherwise the scraper can't map them and silently
+              // falls back to the default cities, so the customer's OWN areas never get
+              // scraped (a county moving account would get zero in-area leads).
+              cAreas.forEach(function(a) {
+                var s = String(a || '').trim(); if (!s) return;
+                var _k = s.toLowerCase().replace(/[\s-]+/g, '-');
+                var _exp = COUNTY_POSTCODE_MAP[_k] || REGION_TO_POSTCODE_AREAS[_k];
+                if (_exp && _exp.length) { _exp.forEach(function(pc) { if (mvAreas.indexOf(pc) === -1) mvAreas.push(pc); }); }
+                else if (mvAreas.indexOf(s) === -1) mvAreas.push(s);
+              });
             });
             // MOVING COLLECTION — HYBRID (freshness + exact address):
             //   Rightmove supplies the FRESH 0-24h listings (the business promise).
