@@ -1007,7 +1007,14 @@ async function collectMovingLeads(config) {
   // each customer's moving_type (residential/commercial/both).
   if (config.commercial) {
     try {
-      var comm = await collectCommercialLeads({ areas: config.areas, locations: config.commercialLocations || config.locations, include_let: config.commercial_let !== false, pages: config.commercial_pages || 2, force_apify: config.commercial_force_apify });
+      // HARD TIMEOUT: the commercial scrape uses Apify, which can HANG when the
+      // account is unavailable (e.g. unpaid invoices). That was hanging the WHOLE
+      // moving scrape so the pool never saved (leaving areas like ML/KA/PA/MK empty).
+      // Cap it and continue with the residential leads we already have.
+      var comm = await Promise.race([
+        collectCommercialLeads({ areas: config.areas, locations: config.commercialLocations || config.locations, include_let: config.commercial_let !== false, pages: config.commercial_pages || 2, force_apify: config.commercial_force_apify }),
+        new Promise(function(r) { setTimeout(function() { console.log('[RIGHTMOVE] Commercial scrape timed out - continuing with residential'); r([]); }, 60000); })
+      ]);
       if (comm && comm.length) {
         comm.forEach(function(c) { if (!seenIds[c.id]) { seenIds[c.id] = true; deduped.push(c); } });
         console.log('[RIGHTMOVE] Added ' + comm.length + ' commercial leads (total now ' + deduped.length + ')');
