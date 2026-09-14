@@ -17068,6 +17068,68 @@ cron.schedule('45 8 * * 1-5', function() { try { sendExpectedBatchReport('delta'
 app.post('/api/admin/expected-batch', adminAuth, async (req, res) => {
   try { res.json(await sendExpectedBatchReport('full')); } catch(e) { res.status(500).json({ error: e.message }); }
 });
+// PRE-DELIVERY PAF WARM-UP (07:20 UK, weekdays): run the SAME selection each moving
+// customer will get, then PAF-enrich EXACTLY those leads in the pool, so the 9am
+// delivery finds them numbered and SKIPS its own PAF. This moves the last-mile PAF
+// from 9am to ~07:20, giving hours of visibility (the 07:45+ reports show resolved
+// doors). Cost-neutral: it only spends on selected leads the early pool pass missed.
+async function warmUpDeliveryPaf() {
+  if (!(process.env.POSTCODER_ENABLED === 'true' || process.env.POSTCODER_ENABLED === '1') || !process.env.POSTCODER_API_KEY) {
+    return { skipped: 'postcoder disabled' };
+  }
+  var dbW = getDb();
+  var custs = (dbW.customers || []).filter(function(c) {
+    return c.product === 'moving' && c.plan && c.plan !== 'cancelled' && !isLeadsPaused(c) && !trialExpiredUnpaid(c) && !/test\.|@9amleads\.com|\.1788\d*@/i.test(String(c.email || ''));
+  });
+  if (!custs.length) return { customers: 0, enriched: 0 };
+  var targetUrls = {};
+  var seen = {};
+  for (var ci = 0; ci < custs.length; ci++) {
+    try {
+      var pv = await deliveryPreviewForCustomer(custs[ci], seen);
+      (pv.leads || []).forEach(function(l) { if (l.url && !l.has_door_number && !l.paf_failed) targetUrls[l.url] = 1; });
+    } catch(e) {}
+  }
+  var urls = Object.keys(targetUrls);
+  if (!urls.length) { console.log('[PAF-WARMUP] all selected moving leads already numbered'); return { customers: custs.length, enriched: 0 }; }
+  var file = path.join(DATA_DIR, PRODUCT_LEAD_FILES.moving ? PRODUCT_LEAD_FILES.moving.file : 'moving-leads.json');
+  var raw = null; try { raw = JSON.parse(fs.readFileSync(file, 'utf-8')); } catch(e) { return { error: 'pool unreadable' }; }
+  var arr = [];
+  if (Array.isArray(raw)) arr = raw;
+  else if (raw && typeof raw === 'object') { Object.keys(raw).forEach(function(k) { if (k.indexOf('_') !== 0 && Array.isArray(raw[k])) raw[k].forEach(function(x) { arr.push(x); }); }); }
+  var pcDeliver = require('./rightmove_scraper_v2');
+  var enriched = 0, failed = 0, attempted = 0;
+  for (var ui = 0; ui < urls.length; ui++) {
+    var lead = null;
+    for (var ai = 0; ai < arr.length; ai++) { if (arr[ai].url === urls[ui]) { lead = arr[ai]; break; } }
+    if (!lead) continue;
+    if (hasUsablePremiseAddress(lead.fullAddress || lead.address || '', lead.postcode || '')) { lead.paf_done = true; continue; }
+    attempted++;
+    try {
+      if (attempted > 1) await new Promise(function(r) { setTimeout(r, 250); });
+      var pc0 = String(lead.postcode || '').toUpperCase().trim();
+      var addr0 = lead.fullAddress || lead.address || '';
+      var full = await pcDeliver.lookupPostcoderAddress(pc0, addr0, lead.doorNumberHint || '');
+      if (full && full.rateLimited) { await new Promise(function(r) { setTimeout(r, 30000); }); full = await pcDeliver.lookupPostcoderAddress(pc0, addr0, lead.doorNumberHint || ''); }
+      var numOk = full && !full.rateLimited && hasUsablePremiseAddress((full.fullAddress || full.address1 || addr0), full.postcode || pc0);
+      if (numOk) {
+        var nAddr = full.fullAddress || full.address1 || '';
+        lead.address = nAddr || addr0; lead.fullAddress = nAddr || lead.fullAddress || addr0;
+        lead.postcode = (full.postcode || pc0).toUpperCase();
+        lead.street = full.street || lead.street || '';
+        lead.buildingNumber = full.buildingNumber || lead.buildingNumber || '';
+        lead.udprn = full.udprn || lead.udprn || '';
+        lead.paf_failed = false; enriched++;
+      } else { lead.paf_failed = true; failed++; }
+    } catch(e) { failed++; }
+    lead.paf_done = true; lead.paf_attempts = (lead.paf_attempts || 0) + 1;
+  }
+  try { fs.writeFileSync(file, JSON.stringify(raw, null, 2)); } catch(e) {}
+  console.log('[PAF-WARMUP] ' + custs.length + ' moving customer(s), ' + urls.length + ' selected door-less lead(s): enriched ' + enriched + ', failed ' + failed);
+  return { customers: custs.length, selected: urls.length, enriched: enriched, failed: failed };
+}
+cron.schedule('20 7 * * 1-5', function() { try { warmUpDeliveryPaf(); } catch(e) { console.log('[PAF-WARMUP] error: ' + e.message); } }, { timezone: 'Europe/London' });
+app.post('/api/admin/paf-warmup', adminAuth, async (req, res) => { try { res.json(await warmUpDeliveryPaf()); } catch(e) { res.status(500).json({ error: e.message }); } });
 // POST-DELIVERY STANNP NORMALISE (09:45 UK, weekdays): after the 9am send, normalise
 // every delivered non-tender lead's address so ALL dashboard leads are print & post
 // ready without manual fixes. Idempotent + self-healing — covers moving, probate,
