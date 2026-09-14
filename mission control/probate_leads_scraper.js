@@ -294,6 +294,30 @@ function fetchGazetteViaJina(maxItems, pageNum) {
 // contains an "Address of Deceased" / "Person Address Details" dd — parse that
 // full string and split it into street + locality + postcode. This guarantees
 // every probate lead gets a real street so the PAF pass can add a door number.
+// Fetch the Gazette's linked-data JSON THROUGH r.jina.ai so detail enrichment also
+// works from datacenter IPs (Render) where the direct Gazette request is blocked.
+// Returns the same parsed detail shape as parseGazetteLinkedData (or null).
+function fetchGazetteDetailViaJina(noticeId) {
+  return new Promise((resolve) => {
+    const target = 'https://www.thegazette.co.uk/notice/' + noticeId + '/data.json?view=linked-data&_metadata=all';
+    const req = https.request({ hostname: 'r.jina.ai', path: '/' + target, method: 'GET', headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json', 'x-return-format': 'text' }, timeout: 30000 }, (res) => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => {
+        if (res.statusCode !== 200) { resolve(null); return; }
+        // Jina may prepend a "Title:/URL Source:/Markdown Content:" header — strip
+        // to the first '{' so the JSON parses.
+        const brace = body.indexOf('{');
+        if (brace > 0) body = body.slice(brace);
+        try { resolve(parseGazetteLinkedData(body)); } catch(e) { resolve(null); }
+      });
+    });
+    req.on('error', () => resolve(null));
+    req.setTimeout(30000, () => { req.destroy(); resolve(null); });
+    req.end();
+  });
+}
+
 function fetchGazetteDetail(noticeId) {
   return new Promise((resolve) => {
     // Fast path: linked-data JSON (decomposed streetAddress/locality/postalCode).
@@ -313,15 +337,23 @@ function fetchGazetteDetail(noticeId) {
         // many notices and can be rate-limited).
         fetchGazetteDetailHTML(noticeId).then(function(htmlDetail) {
           if (htmlDetail) { resolve(htmlDetail); return; }
-          resolve(detail); // whatever the JSON gave (may be null)
+          // Last resort: the direct Gazette is blocked from datacenter IPs
+          // (Render), so pull the same linked-data JSON through r.jina.ai. This
+          // guarantees every probate lead gets a real street from the server too.
+          fetchGazetteDetailViaJina(noticeId).then(function(jinaDetail) {
+            resolve(jinaDetail || detail); // whatever we have (may be null)
+          });
         });
       });
     });
     req.on('error', () => {
       // JSON endpoint unreachable — go straight to the HTML fallback.
-      fetchGazetteDetailHTML(noticeId).then(function(htmlDetail) { resolve(htmlDetail); });
+      fetchGazetteDetailHTML(noticeId).then(function(htmlDetail) {
+        if (htmlDetail) { resolve(htmlDetail); return; }
+        fetchGazetteDetailViaJina(noticeId).then(function(jinaDetail) { resolve(jinaDetail); });
+      });
     });
-    req.setTimeout(15000, () => { req.destroy(); fetchGazetteDetailHTML(noticeId).then(function(htmlDetail) { resolve(htmlDetail); }); });
+    req.setTimeout(15000, () => { req.destroy(); fetchGazetteDetailHTML(noticeId).then(function(htmlDetail) { if (htmlDetail) { resolve(htmlDetail); return; } fetchGazetteDetailViaJina(noticeId).then(function(jinaDetail) { resolve(jinaDetail); }); }); });
     req.end();
   });
 }
@@ -1272,6 +1304,13 @@ async function collectProbateLeads(config) {
         }
         if (jina && jina.length > 0) {
           console.log('[PROBATE] Jina proxy returned ' + jina.length + ' notices');
+          // ENRICH: the listing markdown sometimes carries only a town/county (no
+          // street). The linked-data JSON (direct or via the Jina fallback) always
+          // has the deceased's full street address, so enrich before returning —
+          // otherwise delivered probate leads can arrive without a street/door.
+          if (config.skipEnrich !== true) {
+            try { jina = await enrichGazetteLeads(jina, Math.min(jina.length, 100)); } catch(e) { console.log('[PROBATE] Jina enrich error: ' + e.message); }
+          }
           return jina;
         }
       } catch(e) { console.log('[PROBATE] Jina error: ' + e.message); }

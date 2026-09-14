@@ -18705,6 +18705,82 @@ app.post('/api/admin/backfill-delivered-addresses', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/probate-reenrich — re-fetch the Gazette linked-data detail for
+// probate leads whose address is missing a street (town/county/postcode only) or
+// is really the deceased's name, and fix BOTH the pool copy and any delivered /
+// pending copy. Uses the same detail fetch as scrape time (direct JSON → HTML →
+// r.jina.ai), so it works from the server where the direct Gazette is blocked.
+// Body: { limit } (default 60).
+app.post('/api/admin/probate-reenrich', adminAuth, async (req, res) => {
+  try {
+    var limit = Math.min(parseInt((req.body && req.body.limit) || '60', 10) || 60, 300);
+    var scraper = require('./probate_leads_scraper');
+    function needsFix(addr, name) {
+      var a = String(addr || '').trim();
+      if (!a) return true;
+      if (!/,/.test(a)) return true;                 // no comma → not a full address
+      if (name && a.toLowerCase().indexOf(String(name).toLowerCase()) === 0) return true; // address is the name
+      if (!/\d/.test(a)) return true;                // no door/street number
+      return false;
+    }
+    function noticeIdOf(u) {
+      var m = String(u || '').match(/thegazette\.co\.uk\/notice\/(\d+)/);
+      return m ? m[1] : '';
+    }
+    var out = { checked: 0, pool_fixed: 0, delivered_fixed: 0, skipped: 0 };
+    // 1) POOL
+    var pf = path.join(DATA_DIR, PRODUCT_LEAD_FILES.probate.file);
+    var pool = [];
+    try { pool = JSON.parse(fs.readFileSync(pf, 'utf-8')); if (!Array.isArray(pool)) pool = []; } catch(e) {}
+    for (var i = 0; i < pool.length && out.pool_fixed < limit; i++) {
+      var l = pool[i];
+      var nid = noticeIdOf(l.url || l.noticeUrl);
+      if (!nid) { out.skipped++; continue; }
+      if (!needsFix(l.address || l.fullAddress || l.deceasedAddress, l.name || l.deceasedName)) continue;
+      out.checked++;
+      var det = null;
+      try { det = await scraper.fetchGazetteDetail(nid); } catch(e) {}
+      if (det && (det.fullAddress || det.street)) {
+        var full = det.fullAddress || [det.street, det.locality, det.region, det.postcode].filter(Boolean).join(', ');
+        if (full) {
+          l.address = full; l.fullAddress = full; l.deceasedAddress = full;
+          l.street = det.street || l.street || '';
+          if (det.postcode) l.postcode = det.postcode;
+          out.pool_fixed++;
+        }
+      }
+      await new Promise(function(r){ setTimeout(r, 150); });
+    }
+    if (out.pool_fixed > 0) fs.writeFileSync(pf, JSON.stringify(pool, null, 2));
+    // 2) DELIVERED / PENDING copies in the DB
+    var dbP = getDb();
+    for (var j = 0; j < (dbP.leads || []).length && out.delivered_fixed < limit; j++) {
+      var row = dbP.leads[j];
+      if (String(row.product || '') !== 'probate') continue;
+      var d = null; try { d = JSON.parse(row.data || '{}'); } catch(e) {}
+      if (!d || typeof d !== 'object') continue;
+      var nid2 = noticeIdOf(d.url || d.noticeUrl);
+      if (!nid2) continue;
+      if (!needsFix(d.address || d.fullAddress || d.deceasedAddress, d.deceasedName || d.name)) continue;
+      var det2 = null;
+      try { det2 = await scraper.fetchGazetteDetail(nid2); } catch(e) {}
+      if (det2 && (det2.fullAddress || det2.street)) {
+        var full2 = det2.fullAddress || [det2.street, det2.locality, det2.region, det2.postcode].filter(Boolean).join(', ');
+        if (full2) {
+          d.address = full2; d.fullAddress = full2; d.deceasedAddress = full2;
+          d.street = det2.street || d.street || '';
+          if (det2.postcode) d.postcode = det2.postcode;
+          row.data = JSON.stringify(d);
+          out.delivered_fixed++;
+        }
+      }
+      await new Promise(function(r){ setTimeout(r, 150); });
+    }
+    if (out.delivered_fixed > 0) saveDb();
+    res.json(Object.assign({ success: true }, out));
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== POOL PRUNE (no unused-lead backlog) =====
 // Leads are scraped daily, so any pool lead NOT used within 3 days (72h) is deleted
 // — fresh = 24h, fallback = 48h, gone after 72h. Monday keeps Friday-9am-and-later
