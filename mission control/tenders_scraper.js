@@ -183,34 +183,40 @@ function formatApifyTenders(items, locationFilter) {
 // results page (www.contractsfinder.service.gov.uk/search/results) still
 // returns real, current notices and is parseable without a key.
 function fetchTendersFromHTML(keywords, location, maxCount, pageNum) {
-  return new Promise((resolve) => {
-    const searchTerm = Array.isArray(keywords) ? keywords.join(' ') : (keywords || '');
-    // Paginated Contracts Finder search. page=1 is the first page; the site
-    // returns ~20 results per page. Add statuses=current + stage so we capture
-    // live opportunities only.
-    const pg = pageNum && pageNum > 1 ? '&page=' + pageNum : '';
-    const searchPath = '/search/results?keywords=' + encodeURIComponent(searchTerm) + '&tenderStage=2&statuses=current' + pg;
-    const options = {
-      hostname: 'www.contractsfinder.service.gov.uk',
-      path: searchPath,
-      method: 'GET',
-      headers: {
-        'Accept': 'text/html',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36',
-        'Accept-Language': 'en-GB,en;q=0.9'
-      },
-      timeout: 30000
-    };
-    const req = https.request(options, (res) => {
-      let body = '';
-      res.on('data', chunk => body += chunk);
-      res.on('end', () => {
-        if (res.statusCode !== 200) { resolve([]); return; }
+  const searchTerm = Array.isArray(keywords) ? keywords.join(' ') : (keywords || '');
+  const pg = pageNum && pageNum > 1 ? '&page=' + pageNum : '';
+  const searchPath = '/search/results?keywords=' + encodeURIComponent(searchTerm) + '&tenderStage=2&statuses=current' + pg;
+
+  function fetchDirect() {
+    return new Promise((resolve) => {
+      const req = https.request({ hostname: 'www.contractsfinder.service.gov.uk', path: searchPath, method: 'GET', headers: { 'Accept': 'text/html', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36', 'Accept-Language': 'en-GB,en;q=0.9' }, timeout: 30000 }, (res) => {
+        let body = ''; res.on('data', c => body += c); res.on('end', () => resolve(res.statusCode === 200 ? body : ''));
+      });
+      req.on('error', () => resolve(''));
+      req.setTimeout(30000, () => { req.destroy(); resolve(''); });
+      req.end();
+    });
+  }
+  // FREE PROXY FALLBACK: Contracts Finder blocks Render's datacenter IP (socket hang
+  // up), so fetch the same page through r.jina.ai (fetches from its own servers) and
+  // ask for raw HTML so the notice IDs/links are preserved.
+  function fetchJina() {
+    return new Promise((resolve) => {
+      const req = https.request({ hostname: 'r.jina.ai', path: '/' + 'https://www.contractsfinder.service.gov.uk' + searchPath, method: 'GET', headers: { 'Accept': 'text/html', 'User-Agent': 'Mozilla/5.0', 'x-return-format': 'html' }, timeout: 70000 }, (res) => {
+        let body = ''; res.on('data', c => body += c); res.on('end', () => resolve(res.statusCode === 200 ? body : ''));
+      });
+      req.on('error', () => resolve(''));
+      req.setTimeout(70000, () => { req.destroy(); resolve(''); });
+      req.end();
+    });
+  }
+  function parseBody(body) {
+        if (!body) return [];
         const leads = [];
         const blocks = body.split('<div class="search-result">');
         for (let i = 1; i < blocks.length; i++) {
           const b = blocks[i];
-          const titleMatch = b.match(/<h2[^>]*id=([a-f0-9-]+)><a[^>]*>([\s\S]*?)<\/a>/);
+          const titleMatch = b.match(/<h2[^>]*id=([a-f0-9-]+)[^>]*>\s*<a[^>]*>([\s\S]*?)<\/a>/);
           if (!titleMatch) continue;
           const noticeId = titleMatch[1];
           const title = titleMatch[2].replace(/<[^>]+>/g, '').trim();
@@ -219,7 +225,6 @@ function fetchTendersFromHTML(keywords, location, maxCount, pageNum) {
           let buyer = '';
           const buyerMatch = text.match(/(?:by|for|authority|org)(?:,?\s)+([A-Z][A-Za-z0-9 &]+?)(?:\s+Procurement|\s+Notice|\s+Closing|\s+&nbsp;|$)/);
           if (buyerMatch) buyer = buyerMatch[1].trim();
-          // Extract buyer from title block (2nd line of text)
           if (!buyer) {
             const lines = text.split(/\s{2,}|&nbsp;/).filter(Boolean);
             if (lines.length > 1 && lines[1].length > 3 && lines[1].length < 80) buyer = lines[1];
@@ -230,15 +235,12 @@ function fetchTendersFromHTML(keywords, location, maxCount, pageNum) {
           const pubMatch = text.match(/Publication date\s+([0-9]{1,2} [A-Za-z]+ [0-9]{4})/);
           const stageMatch = text.match(/Procurement stage\s+([A-Za-z ]+?)\s+Notice/);
           const locText = locMatch ? locMatch[1].trim() : '';
-          // Extract a clean postcode from the location text (e.g. "N22 7TY")
           const locPc = (locMatch ? (locMatch[1].match(/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}/i) || [])[0] : '') || (text.match(/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}/i) || [])[0];
-          // Extract buyer email if present
           const emailMatch = (b.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/) || [])[0];
           if (location) {
             const loc = (locText + ' ' + text).toLowerCase();
             if (!loc.includes(location.toLowerCase())) continue;
           }
-          // Build a clean contract value label
           const cleanValue = valueMatch ? valueMatch[1].trim().replace(/\u00a3/g, '£').replace(/&pound;/gi, '£') : '';
           leads.push({
             id: noticeId || 'CF_' + Date.now() + '_' + i,
@@ -261,13 +263,17 @@ function fetchTendersFromHTML(keywords, location, maxCount, pageNum) {
           });
           if (maxCount && leads.length >= maxCount) break;
         }
-        console.log('    Contracts Finder (HTML) returned ' + leads.length + ' notices');
-        resolve(leads);
-      });
+        return leads;
+  }
+  return fetchDirect().then(function(body) {
+    var leads = parseBody(body);
+    if (leads.length > 0) { console.log('    Contracts Finder (HTML) returned ' + leads.length + ' notices'); return leads; }
+    console.log('    Contracts Finder (HTML) direct empty/blocked - trying r.jina.ai proxy...');
+    return fetchJina().then(function(jb) {
+      var jl = parseBody(jb);
+      console.log('    Contracts Finder (HTML via jina) returned ' + jl.length + ' notices');
+      return jl;
     });
-    req.on('error', (e) => { console.log('    Contracts Finder (HTML) error: ' + e.message); resolve([]); });
-    req.setTimeout(30000, () => { req.destroy(); resolve([]); });
-    req.end();
   });
 }
 
