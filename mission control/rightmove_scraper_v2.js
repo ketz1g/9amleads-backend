@@ -337,6 +337,12 @@ async function collectCommercialLeads(config) {
   // datacenter IPs. If we got nothing, retry via the Apify actor with a residential
   // proxy so commercial leads still reach the pool.
   if (deduped.length === 0) {
+    // COMMERCIAL APIFY IS OPT-IN (default OFF) — it was billing every morning. Only
+    // fall back to the paid actor when APIFY_COMMERCIAL_ENABLED=true.
+    var _commApifyOn = String(process.env.APIFY_COMMERCIAL_ENABLED || 'false').toLowerCase() === 'true';
+    if (!_commApifyOn) {
+      console.log('[RIGHTMOVE-COMMERCIAL] Direct scrape empty - paid Apify fallback disabled (APIFY_COMMERCIAL_ENABLED != true); skipping to save cost');
+    } else {
     try {
       var apifyAreas = (config.areas && Array.isArray(config.areas) && config.areas.length) ? config.areas : (config.locations || []).map(function(l){ return String(l.name || '').replace(' area', '').trim(); }).filter(Boolean);
       if (apifyAreas.length) {
@@ -346,6 +352,7 @@ async function collectCommercialLeads(config) {
         console.log('[RIGHTMOVE-COMMERCIAL] Apify fallback added ' + (apifyLeads || []).length + ' (total ' + deduped.length + ')');
       }
     } catch (apifyErr) { console.log('[RIGHTMOVE-COMMERCIAL] Apify fallback error: ' + apifyErr.message); }
+    }
   }
   return deduped;
 }

@@ -10771,6 +10771,16 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
   // A property lead is only deliverable (Print & Post) with a confirmed door number
   // AND a full postcode — mirrors the delivery door-number gate exactly.
   function mailOK(addr, pc) { return hasUsablePremiseAddress(addr, pc) && /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(pc || '').trim()); }
+  // A moving lead without a door number is STILL deliverable when it has a full
+  // postcode + a street name: the delivery's PAF pass resolves the exact door number
+  // before the mailable-address gate. Counting these makes the preview match what the
+  // 9am delivery actually sends (previously they were excluded, so a well-supplied
+  // area falsely previewed as "short").
+  function pafEligible(lead, addr, pc) {
+    if (!lead || lead.paf_failed) return false;
+    if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(pc || '').trim())) return false;
+    return hasStreetName(addr);
+  }
   var leadFilters = {};
   try { leadFilters = JSON.parse(cust.biz_field2 || '{}'); } catch(e) { leadFilters = {}; }
   // FILTER = PRIORITY, NEVER UNDER-DELIVER (preview mirror): relax optional filters in
@@ -10793,8 +10803,11 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
     if (cust.product === 'moving') {
       if (ukwide || (areas.indexOf(pcArea) !== -1 && (movingType !== 'residential' || !isCommercialLead(l)) && (movingType !== 'commercial' || isCommercialLead(l)))) matched = true;
       if (matched) {
-        var vReason = validateMovingLead({ fullAddress: l.fullAddress || l.address || '', postcode: l.postcode || '', url: l.url || '' });
-        if (vReason) { if (candidateErrors) candidateErrors.push('area=' + pcArea + ' addr=' + String(l.fullAddress || l.address || '').slice(0, 40) + ' -> ' + vReason); continue; }
+        var mAddr = l.fullAddress || l.address || '';
+        var mPc = l.postcode || '';
+        // Deliverable if it already has a door number, OR PAF can add one (full
+        // postcode + street). Mirrors the delivery: PAF-enrich, then gate.
+        if (!mailOK(mAddr, mPc) && !pafEligible(l, mAddr, mPc)) { if (candidateErrors) candidateErrors.push('area=' + pcArea + ' addr=' + String(mAddr).slice(0, 40) + ' -> no door and not PAF-eligible'); continue; }
       }
     } else {
       if (ukwide) matched = true;
@@ -10865,7 +10878,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
       // take leads up to 48h old (never older) to fill a short promised count.
       var fFv = pickFreshDate(fl);
       if (!fFv || fFv < freshCutoff48p) continue;
-      if (mailOK(fAddr, fPc)) {
+      if (mailOK(fAddr, fPc) || pafEligible(fl, fAddr, fPc)) {
         var pk2 = String(fPc).toUpperCase().replace(/[^A-Z0-9]/g, '');
         if (usedPostcode[pk2] || pcSeen2[pk2]) continue;
         var fKey = fl.url || ('a:' + String(fAddr).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30));
@@ -31770,23 +31783,38 @@ function syncCustomers(product) {
             // the free Rightmove scrape + PAF enrichment already cover the customers
             // (fresh 48h supply >= 40 AND every active area has >= 20 mailable leads),
             // skip the Apify run and save the credits. Commercial still forces Apify.
+            // APIFY COST GATE: only launch when moving supply is ACTUALLY low. The free
+            // Rightmove + OTM scrapers cover the customers, so Apify is a last resort.
+            // Commercial no longer forces a paid run (that was billing every morning).
             var _needDeep = true;
             try {
-              if (!mvWantCommercial) {
-                var _mvPoolG = [];
-                try { _mvPoolG = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'moving-leads.json'), 'utf-8')); if (!Array.isArray(_mvPoolG)) _mvPoolG = []; } catch(eG) { _mvPoolG = []; }
-                var _cut48G = new Date(Date.now() - 48 * 3600000).toISOString();
-                var _freshG = _mvPoolG.filter(function(pl) { return (pl.firstVisibleDate || pl.scrapedAt || '') >= _cut48G; }).length;
-                var _areasLowG = (mvAreas || []).some(function(ar) {
-                  return _mvPoolG.filter(function(pl) {
-                    var pcG = String(pl.postcode || '').trim();
-                    return /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(pcG) && extractPostcodeArea(pcG) === ar;
-                  }).length < 20;
-                });
-                _needDeep = _freshG < 40 || _areasLowG;
-              }
+              var _mvPoolG = [];
+              try { _mvPoolG = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'moving-leads.json'), 'utf-8')); if (!Array.isArray(_mvPoolG)) _mvPoolG = []; } catch(eG) { _mvPoolG = []; }
+              var _cut48G = new Date(Date.now() - 48 * 3600000).toISOString();
+              var _freshG = _mvPoolG.filter(function(pl) { return (pl.firstVisibleDate || pl.scrapedAt || '') >= _cut48G; }).length;
+              // An area counts as "low" only below 5 MAILABLE leads (door + full
+              // postcode) — not 20 raw, which fired the paid worker almost daily.
+              var _areasLowG = (mvAreas || []).some(function(ar) {
+                return _mvPoolG.filter(function(pl) {
+                  var pcG = String(pl.postcode || '').trim();
+                  return /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(pcG) && extractPostcodeArea(pcG) === ar && hasUsablePremiseAddress(pl.fullAddress || pl.address || '', pcG);
+                }).length < 5;
+              });
+              _needDeep = _freshG < 40 || _areasLowG;
             } catch(eG2) { _needDeep = true; }
+            // DAILY APIFY RUN CAP + KILL-SWITCH: a hard ceiling so Apify can never
+            // runaway-bill. Default max 2 deep runs/day (06:00 + one manual rescue).
+            // APIFY_DEEP_ENABLED=false disables the paid deep worker entirely.
+            var _apifyDeepEnabled = String(process.env.APIFY_DEEP_ENABLED || 'true').toLowerCase() !== 'false';
+            var _apifyCap = parseInt(process.env.APIFY_MAX_RUNS_PER_DAY || '2', 10) || 2;
+            var _todayA = new Date().toISOString().split('T')[0];
+            if (!global.__apifyRuns || global.__apifyRuns.day !== _todayA) global.__apifyRuns = { day: _todayA, n: 0 };
+            if (_needDeep && (!_apifyDeepEnabled || global.__apifyRuns.n >= _apifyCap)) {
+              console.log('[SCRAPER] Deep Apify worker SKIPPED - ' + (!_apifyDeepEnabled ? 'APIFY_DEEP_ENABLED=false' : 'daily Apify cap reached (' + global.__apifyRuns.n + '/' + _apifyCap + ')'));
+              _needDeep = false;
+            }
             if (_needDeep) {
+              global.__apifyRuns.n++;
             try {
               var workerFileD = path.join(__dirname, 'scrape_moving_deep.js');
               var maxPropsD = process.env.MOVING_MAX_PROPS || '50';
@@ -31824,7 +31852,11 @@ function syncCustomers(product) {
             //   supply same-day listings on its own.
             leads = [];
             try {
-              leads = await withTimeout(rmScraper.collectMovingLeads({ areas: mvAreas, commercial: mvWantCommercial, commercial_let: true, commercial_force_apify: true }), 10 * 60000, 'Rightmove moving scrape');
+              // COMMERCIAL APIFY IS OPT-IN (default OFF): commercial scraping now uses
+              // the FREE direct Rightmove scrape; the paid Apify path is only used when
+              // APIFY_COMMERCIAL_ENABLED=true (and it was billing every morning before).
+              var _apifyCommercialOn = String(process.env.APIFY_COMMERCIAL_ENABLED || 'false').toLowerCase() === 'true';
+              leads = await withTimeout(rmScraper.collectMovingLeads({ areas: mvAreas, commercial: mvWantCommercial, commercial_let: true, commercial_force_apify: _apifyCommercialOn }), 10 * 60000, 'Rightmove moving scrape');
               console.log('[SCRAPER] Moving: ' + (leads||[]).length + ' total (Rightmove fresh source)');
               try { lastScrape.moving_raw = (leads||[]).length; lastScrape.moving_at = new Date().toISOString(); lastScrape.moving_areas = (mvAreas||[]).length; fs.writeFileSync(lastScrapeFile, JSON.stringify(lastScrape)); } catch(lsE) {}
               // COLLECTION-TIME ADDRESS ENRICHMENT (free): Rightmove's list view hides
