@@ -16956,7 +16956,9 @@ async function sendExpectedBatchReport() {
   try {
     var dbB = getDb();
     var customers = (dbB.customers || []).filter(function(c) {
-      return c.plan && c.plan !== 'cancelled' && !isLeadsPaused(c) && !/test\.|@9amleads\.com|\.1788\d*@/i.test(String(c.email || ''));
+      // Mirror the REAL 9am delivery exactly: an expired trial with no active
+      // subscription gets no leads, so it must not appear as "short" here.
+      return c.plan && c.plan !== 'cancelled' && !isLeadsPaused(c) && !trialExpiredUnpaid(c) && !/test\.|@9amleads\.com|\.1788\d*@/i.test(String(c.email || ''));
     });
     var seen = {};
     var sections = [];
