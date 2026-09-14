@@ -29874,7 +29874,11 @@ app.post('/api/admin/replace-leads', adminAuth, async (req, res) => {
     //    reset_all clears EVERY delivered lead today so the customer starts fresh.
     dbR.leads = (dbR.leads || []).map(function(l) {
       if (l.customer_id !== cust.id) return l;
-      if (!(l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0)) return l;
+      if (!(l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0)) {
+        // ID-targeted swaps may reach PAST-day delivered leads (e.g. a doorless lead
+        // emailed on an earlier day). URL / reset_all swaps stay today-only.
+        if (!(idsToRemove.length && idsToRemove.indexOf(String(l.id)) !== -1)) return l;
+      }
       var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
       var lu = String(d.url || '').split('#')[0].split('?')[0].replace(/\/+$/,'');
       if (resetAll || (idsToRemove.length && idsToRemove.indexOf(String(l.id)) !== -1) || urlsToRemove.some(function(u){ var un = String(u).split('#')[0].split('?')[0].replace(/\/+$/,''); return un === lu; })) {
