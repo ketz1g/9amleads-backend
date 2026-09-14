@@ -11050,6 +11050,29 @@ async function runMovingPafPostScrape() {
     if (d && d < cut48) return;                                             // only fresh candidates (likely to be delivered)
     need.push(e);
   });
+  // PRIORITISE the paid early pass: leads in ACTIVE customer areas first (the ones
+  // most likely to be delivered), then freshest first. Otherwise the cap is spent on
+  // random pool entries and the leads customers will actually get stay door-less
+  // until 9am — exactly the uncertainty we're removing.
+  try {
+    var _dbj = getDb();
+    var _activeAreas = {};
+    (_dbj.customers || []).forEach(function(c) {
+      if (!c.plan || c.plan === 'cancelled') return;
+      var _cfg = {}; try { _cfg = JSON.parse(c.product_config || '{}'); } catch(e) {}
+      var _a = [];
+      Object.keys(_cfg).forEach(function(p) { try { var t = _cfg[p] && _cfg[p].target_areas; if (t) _a = _a.concat(JSON.parse(t)); } catch(e) {} });
+      try { if (c.target_areas) _a = _a.concat(JSON.parse(c.target_areas)); } catch(e) {}
+      _a.forEach(function(a) { var s = String(a).toUpperCase().trim(); if (s) _activeAreas[s] = 1; });
+    });
+    need.sort(function(a, b) {
+      var la = a._item || a, lb = b._item || b;
+      var ia = _activeAreas[extractPostcodeArea(la.postcode || la.address || '').toUpperCase()] ? 1 : 0;
+      var ib = _activeAreas[extractPostcodeArea(lb.postcode || lb.address || '').toUpperCase()] ? 1 : 0;
+      if (ia !== ib) return ib - ia;
+      return (pickFreshDate(lb) || '').localeCompare(pickFreshDate(la) || '');
+    });
+  } catch(e) {}
   need = need.slice(0, cap);
   if (!need.length) return { enriched: 0, failed: 0 };
   var pcDeliver = require('./rightmove_scraper_v2');
@@ -16924,6 +16947,51 @@ function sendDailyDeliveryPreview(when) {
 }
 cron.schedule('30 6 * * 1-5', function() { try { sendDailyDeliveryPreview('pre'); } catch(e) {} }, { timezone: 'Europe/London' });
 cron.schedule('10 9 * * 1-5', function() { try { sendDailyDeliveryPreview('post'); } catch(e) {} }, { timezone: 'Europe/London' });
+// EXPECTED-BATCH REPORT (08:30 UK, weekdays): emails the founder the EXACT list that
+// will go out at 9am — per customer, the promised vs expected count and the FULL
+// address of every lead (after the early PAF pass), flagging any lead whose door
+// number will only be resolved at 9am. This is the "see what's being prepared, and
+// know of any issue well before 9am" check.
+async function sendExpectedBatchReport() {
+  try {
+    var dbB = getDb();
+    var customers = (dbB.customers || []).filter(function(c) {
+      return c.plan && c.plan !== 'cancelled' && !isLeadsPaused(c) && !/test\.|@9amleads\.com|\.1788\d*@/i.test(String(c.email || ''));
+    });
+    var seen = {};
+    var sections = [];
+    var totalShort = 0;
+    for (var i = 0; i < customers.length; i++) {
+      var c = customers[i];
+      var pv;
+      try { pv = await deliveryPreviewForCustomer(c, seen); }
+      catch(e) { pv = { email: c.email, product: c.product, promised: (getPlanLimit(c.product, c.plan, c.coverage) || 5), count: 0, leads: [], error: 'preview error' }; }
+      var short = pv.count < pv.promised;
+      if (short) totalShort++;
+      var rows = (pv.leads || []).map(function(l, idx) {
+        var flag = l.has_door_number ? '' : (l.paf_candidate ? ' <span style="color:#fbbf24">[PAF at 9am]</span>' : ' <span style="color:#f87171">[NO DOOR]</span>');
+        return '<li>' + (idx + 1) + '. ' + String(l.address || '') + ' — <b>' + (l.postcode || '') + '</b> <span style="color:#64748b">(' + (l.source || '') + ')</span>' + flag + '</li>';
+      }).join('');
+      sections.push('<div style="margin:14px 0;padding:12px;border:1px solid ' + (short ? '#7f1d1d' : '#14532d') + ';border-radius:8px">' +
+        '<div style="font-weight:700;color:' + (short ? '#f87171' : '#4ade80') + '">' + c.email + ' — ' + pv.product + ': ' + pv.count + '/' + pv.promised + (short ? ' SHORT' : ' OK') + '</div>' +
+        '<ul style="color:#cbd5e1;font-size:12px;line-height:1.7;margin:8px 0 0;padding-left:18px">' + (rows || '<li>(no leads)</li>') + '</ul>' +
+        (pv.fallback_count ? '<div style="color:#fbbf24;font-size:11px;margin-top:4px">' + pv.fallback_count + ' from nearest area (within cap)</div>' : '') +
+        '</div>');
+    }
+    var html = '<div style="font-family:Arial;background:#0b1120;color:#e2e8f0;padding:20px;max-width:720px;margin:0 auto">' +
+      '<h2 style="color:#38bdf8;margin:0 0 4px">9amLeads — expected batch for today\'s 9am</h2>' +
+      '<p style="color:#94a3b8;font-size:12px;margin:0 0 10px">Generated ' + new Date().toLocaleString('en-GB', { timeZone: 'Europe/London' }) + ' UK &middot; ' + customers.length + ' customer(s) &middot; ' + totalShort + ' short</p>' +
+      sections.join('') +
+      '<p style="color:#64748b;font-size:11px">This is the exact list the 9am delivery will send (addresses shown after the early PAF pass). <span style="color:#fbbf24">[PAF at 9am]</span> = the door number is resolved at delivery; <span style="color:#f87171">[NO DOOR]</span> = will be dropped/replaced.</p></div>';
+    await sendBrevoEmail({ email: process.env.OWNER_EMAIL || 'ketzman1g@gmail.com', name: 'Owner' }, '9amLeads expected batch — ' + customers.length + ' customers, ' + totalShort + ' short', html);
+    console.log('[EXPECTED-BATCH] sent to owner (' + customers.length + ' customers, ' + totalShort + ' short)');
+    return { sent: true, customers: customers.length, short: totalShort };
+  } catch(e) { console.log('[EXPECTED-BATCH] error: ' + e.message); return { error: e.message }; }
+}
+cron.schedule('30 8 * * 1-5', function() { try { sendExpectedBatchReport(); } catch(e) {} }, { timezone: 'Europe/London' });
+app.post('/api/admin/expected-batch', adminAuth, async (req, res) => {
+  try { res.json(await sendExpectedBatchReport()); } catch(e) { res.status(500).json({ error: e.message }); }
+});
 // POST-DELIVERY STANNP NORMALISE (09:45 UK, weekdays): after the 9am send, normalise
 // every delivered non-tender lead's address so ALL dashboard leads are print & post
 // ready without manual fixes. Idempotent + self-healing — covers moving, probate,
