@@ -15485,6 +15485,12 @@ cron.schedule('5 6 * * *', async () => {
 cron.schedule('30 6 * * *', async () => {
   try { await runMovingPafPostScrape(); await runProbatePafPostScrape(); } catch(e) { console.log('[PAF-POSTSCRAPE] 06:30 error: ' + e.message); }
 }, { timezone: 'Europe/London' });
+// 07:00 pass (weekdays): catches leads added by the 06:15 AUTO RE-SCRAPE (which can
+// finish after the 06:30 pass), so the 07:15 expected-batch check shows resolved door
+// numbers. The per-run cap is lowered so the TOTAL daily Postcoder spend is unchanged.
+cron.schedule('0 7 * * 1-5', async () => {
+  try { await runMovingPafPostScrape(); await runProbatePafPostScrape(); } catch(e) { console.log('[PAF-POSTSCRAPE] 07:00 error: ' + e.message); }
+}, { timezone: 'Europe/London' });
 // EARLY SUPPLY CHECK + AUTO RE-SCRAPE (06:15 UK): right after the 06:00 scrape,
 // verify every product's pool has enough fresh-48h supply. If any is below its
 // minimum, auto re-trigger a scrape for it so the 9am delivery always has leads.
