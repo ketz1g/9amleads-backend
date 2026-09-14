@@ -842,11 +842,20 @@ function pickFreshDate(lead) {
     var iso = toIsoDate(v);
     if (iso && (!latest || iso > latest)) latest = iso;
   }
-  // TENDERS: use the SAME freshness window as every other product — fresh within
-  // 24h, fallback 24-48h, and on weekends back to Friday 09:00 UK for Monday's
-  // delivery. We no longer special-case "old but still open" notices: an old
-  // framework/DPS must not be delivered as a new lead. The caller's cutoff
-  // (getFreshCutoffIso) applies the 24h/48h/weekend tiers to the returned date.
+  // TENDERS: TEMPORARY wider window while the tenders pool is being fixed (Friday's
+  // notices aren't saving into the pool yet). A notice with a future deadline AND
+  // published within TENDERS_FRESH_DAYS (default 7) counts as fresh. Set
+  // TENDERS_FRESH_DAYS=2 to restore the strict 24h/48h/weekend behaviour once the
+  // pool is filling correctly with recent notices.
+  if (lead.deadlineDate) {
+    var dl = toIsoDate(lead.deadlineDate);
+    if (dl) {
+      var dlMs = new Date(dl).getTime();
+      var _tfd = Math.max(1, parseInt(process.env.TENDERS_FRESH_DAYS || '7', 10) || 7);
+      var _age = latest ? (Date.now() - new Date(latest).getTime()) : Infinity;
+      if (!isNaN(dlMs) && dlMs > Date.now() && _age <= _tfd * 86400000) return new Date().toISOString();
+    }
+  }
   return latest;
 }
 
