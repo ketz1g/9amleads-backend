@@ -999,10 +999,27 @@ async function collectMovingLeads(config) {
   // await is stuck. Race the whole worker pool against the deadline so
   // collectMovingLeads ALWAYS returns within budget and the caller's OTM fallback
   // (and the 9am delivery) run promptly instead of waiting out an 18-minute hang.
-  await Promise.race([
-    Promise.all(Array.from({ length: Math.min(CONC, locations.length) }, scrapeLoc)),
-    new Promise(function(r) { setTimeout(function() { console.log('[RIGHTMOVE] scrape deadline reached - continuing with partial results'); r(); }, Math.max(30000, DEADLINE - Date.now())); })
-  ]);
+  // The timer is CLEARED when the workers finish so it can't log/fire after success.
+  await new Promise(function(resolveRace) {
+    var _done = false;
+    var _t = setTimeout(function() {
+      if (_done) return;
+      _done = true;
+      console.log('[RIGHTMOVE] scrape deadline reached - continuing with partial results');
+      resolveRace();
+    }, Math.max(30000, DEADLINE - Date.now()));
+    Promise.all(Array.from({ length: Math.min(CONC, locations.length) }, scrapeLoc)).then(function() {
+      if (_done) return;
+      _done = true;
+      clearTimeout(_t);
+      resolveRace();
+    }).catch(function() {
+      if (_done) return;
+      _done = true;
+      clearTimeout(_t);
+      resolveRace();
+    });
+  });
 
   var seenIds = {};
   var deduped = allProperties.filter(function(p) {
