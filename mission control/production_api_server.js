@@ -10972,7 +10972,9 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
   if (cust.product === 'moving') {
     var _prevSeen = {};
     out = out.filter(function(o) {
-      if (!o.in_area && !isFallbackLeadAcceptable(o.postcode || '', areas)) return false;
+      var _dbg = (cust.email === 'sales@redlionremovals.com');
+      if (_dbg) console.log('[PV3] cand in_area=' + o.in_area + ' paf=' + o.paf_candidate + ' door=' + o.has_door_number + ' pc=' + o.postcode + ' addr=' + String(o.address).slice(0, 40));
+      if (!o.in_area && !isFallbackLeadAcceptable(o.postcode || '', areas)) { if (_dbg) console.log('[PV3] DROP not-in-area'); return false; }
       var _vd = { fullAddress: o.address || '', address: o.address || '', postcode: o.postcode || '', url: o.url || '' };
       var _vres = validateMovingLead(_vd);
       // Allow a PAF candidate (full postcode + street, no door YET): the delivery's
@@ -10982,7 +10984,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
       // Doorless check — same allowance for PAF candidates.
       try { if (!hasUsablePremiseAddress(o.address || '', o.postcode || '') && !o.paf_candidate) { if (cust.email === 'sales@redlionremovals.com') console.log('[PV2] drop doorless paf=' + o.paf_candidate + ' addr=' + String(o.address).slice(0, 45)); return false; } } catch(e) { return false; }
       // Property-identity dedup — the delivery drops duplicate properties.
-      try { var _k = propertyIdentityKey(o.address || '', o.postcode || ''); if (_k && _prevSeen[_k]) return false; if (_k) _prevSeen[_k] = 1; } catch(e) {}
+      try { var _k = propertyIdentityKey(o.address || '', o.postcode || ''); if (_k && _prevSeen[_k]) { if (_dbg) console.log('[PV3] DROP dedup key=' + _k); return false; } if (_k) _prevSeen[_k] = 1; } catch(e) {}
       return true;
     });
   }
