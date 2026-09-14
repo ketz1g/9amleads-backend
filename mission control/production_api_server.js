@@ -10807,8 +10807,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
         var mPc = l.postcode || '';
         // Deliverable if it already has a door number, OR PAF can add one (full
         // postcode + street). Mirrors the delivery: PAF-enrich, then gate.
-        if (!mailOK(mAddr, mPc) && !pafEligible(l, mAddr, mPc)) { if (cust.email === 'sales@redlionremovals.com') console.log('[PV-DBG] REJECT area=' + pcArea + ' st=' + hasStreetName(mAddr) + ' pf=' + !!l.paf_failed + ' pc=' + mPc + ' addr=' + String(mAddr).replace(/\n/g, ' ').slice(0, 50)); if (candidateErrors) candidateErrors.push('area=' + pcArea + ' addr=' + String(mAddr).slice(0, 40) + ' -> no door and not PAF-eligible'); continue; }
-        if (cust.email === 'sales@redlionremovals.com' && candidates.length < 8) console.log('[PV-DBG] PASS area=' + pcArea + ' addr=' + String(mAddr).replace(/\n/g, ' ').slice(0, 50));
+        if (!mailOK(mAddr, mPc) && !pafEligible(l, mAddr, mPc)) { if (candidateErrors) candidateErrors.push('area=' + pcArea + ' addr=' + String(mAddr).slice(0, 40) + ' -> no door and not PAF-eligible'); continue; }
       }
     } else {
       if (ukwide) matched = true;
@@ -10974,12 +10973,13 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
     out = out.filter(function(o) {
       if (!o.in_area && !isFallbackLeadAcceptable(o.postcode || '', areas)) return false;
       var _vd = { fullAddress: o.address || '', address: o.address || '', postcode: o.postcode || '', url: o.url || '' };
-      if (validateMovingLead(_vd) !== '') return false;
-      // Doorless check — the delivery's final hard gate drops any moving lead whose
-      // address has no door/flat number or named premise. Preview must too.
-      // (Uses hasUsablePremiseAddress directly — it's module-level; the delivery's
-      // local hasPremiseNumber is a thin wrapper around it.)
-      try { if (!hasUsablePremiseAddress(o.address || '', o.postcode || '')) return false; } catch(e) { return false; }
+      var _vres = validateMovingLead(_vd);
+      // Allow a PAF candidate (full postcode + street, no door YET): the delivery's
+      // PAF pass adds the door number before the mailable-address gate. Without this
+      // the preview dropped every door-less-but-enrichable lead and under-reported.
+      if (_vres !== '' && !(o.paf_candidate && _vres === 'no-premise-number')) return false;
+      // Doorless check — same allowance for PAF candidates.
+      try { if (!hasUsablePremiseAddress(o.address || '', o.postcode || '') && !o.paf_candidate) return false; } catch(e) { return false; }
       // Property-identity dedup — the delivery drops duplicate properties.
       try { var _k = propertyIdentityKey(o.address || '', o.postcode || ''); if (_k && _prevSeen[_k]) return false; if (_k) _prevSeen[_k] = 1; } catch(e) {}
       return true;
