@@ -901,6 +901,23 @@ function toIsoDate(v) {
   return '';
 }
 
+// TOP-LEVEL pool reader used by the delivery AND the post-delivery verify/top-up
+// passes. (A nested copy inside the /api/admin/deliver handler shadows this one
+// there with a per-run cache; the verify pass previously had no such function,
+// which threw "getDeliveryPool is not defined" and broke auto top-up.)
+function getDeliveryPool(prod) {
+  try {
+    var f = path.join(DATA_DIR, PRODUCT_LEAD_FILES[prod] ? PRODUCT_LEAD_FILES[prod].file : 'moving-leads.json');
+    var raw = null;
+    try { raw = JSON.parse(fs.readFileSync(f, 'utf-8')); } catch(e) { raw = null; }
+    var arr = [];
+    if (Array.isArray(raw)) arr = raw;
+    else if (raw && typeof raw === 'object') {
+      Object.keys(raw).forEach(function(k){ if (k.indexOf('_') !== 0 && Array.isArray(raw[k])) arr = arr.concat(raw[k]); });
+    }
+    return arr;
+  } catch(e) { return []; }
+}
 function getMatchingArea(code, areas) {
   const upper = code.toUpperCase().replace(/[^A-Z]/g, '');
   if (areas[upper]) return upper;
@@ -18404,7 +18421,7 @@ cron.schedule('30 8 * * 1', async () => {
       var leadCount = weekLeads.length;
       var leadTypeLabel = cc.lead_type || 'opportunities';
 
-      var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark"><style>:root{color-scheme:dark}@media only screen and (max-width:480px){.mob{padding-left:16px!important;padding-right:16px!important}.mobv{padding:20px 16px!important}.mobstat{display:block!important;width:100%!important;margin-bottom:10px!important}}</style></head><body style="margin:0;padding:0;background:#0f111a;font-family:Inter,Arial,Helvetica,sans-serif;color:#e2e8f0">';
+      var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark"><style>:root{color-scheme:dark}@media only screen and (max-width:480px){.mob{padding-left:16px!important;padding-right:16px!important}.mobv{padding:20px 16px!important}.mobstat{display:block!important;width:100%!important;margin:0 0 10px!important}.mobspacer{display:none!important;width:0!important;height:0!important;font-size:0!important;line-height:0!important}}</style></head><body style="margin:0;padding:0;background:#0f111a;font-family:Inter,Arial,Helvetica,sans-serif;color:#e2e8f0">';
       html += '<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0f111a"><tr><td align="center" style="padding:24px 16px">';
       html += '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">';
       html += '<tr><td bgcolor="#0f111a" style="background-color:#0f111a;background-image:linear-gradient(135deg,#0f111a,#1a1b2e);padding:22px 30px 16px;border-radius:16px 16px 0 0;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06)">';
@@ -21234,7 +21251,7 @@ _deliverDiag[cust.email].products = products;
                     // Reserve it for the whole run so another overlapping customer
                     // never picks the same pool lead in this delivery (exclusive).
                     if (poolUrlKey) _inRunSeen[poolUrlKey] = true;
-                    if (addrKeyRun) _inRunSeen[addrKeyRun] = true;
+                    try { var _akr = 'aa:' + propertyIdentityKey(poolLeadData.fullAddress || poolLeadData.deceasedAddress || poolLeadData.address || '', poolLeadData.postcode || ''); if (_akr) _inRunSeen[_akr] = true; } catch(e) {}
                     createdFromPool.push(newLead);
                   }
                   } // end _fp freshness passes (24h -> 48h fallback)
