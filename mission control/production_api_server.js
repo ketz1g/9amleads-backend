@@ -20918,6 +20918,15 @@ _deliverDiag[cust.email].products = products;
           if (!notDeliveredBefore(l)) return false;
           return true;
         });
+        // DOOR-NUMBER PREFERENCE: rank confirmed (door-numbered) leads first so a
+        // customer is never handed a street-only lead while a mailable one exists.
+        // Applies to new business / probate / planning too, not just moving.
+        pool.sort(function(a, b) {
+          function cf(l2) { try { var dd = JSON.parse(l2.data || '{}'); return hasPremiseNumber(dd.fullAddress || dd.address || dd.deceasedAddress || '', dd.postcode || ''); } catch(e) { return false; } }
+          var ca = cf(a), cb = cf(b);
+          if (ca !== cb) return ca ? -1 : 1;
+          return 0;
+        });
         availByProd[p] = pool;
         // GLOBAL-POOL fallback: if this customer's pre-assigned pool is short, pull
         // from ANY undelivered lead in this product. For moving this allows 24-48h
