@@ -16952,7 +16952,8 @@ cron.schedule('10 9 * * 1-5', function() { try { sendDailyDeliveryPreview('post'
 // address of every lead (after the early PAF pass), flagging any lead whose door
 // number will only be resolved at 9am. This is the "see what's being prepared, and
 // know of any issue well before 9am" check.
-async function sendExpectedBatchReport() {
+async function sendExpectedBatchReport(mode) {
+  mode = mode || 'full';
   try {
     var dbB = getDb();
     var customers = (dbB.customers || []).filter(function(c) {
@@ -16963,6 +16964,7 @@ async function sendExpectedBatchReport() {
     var FONT = "-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
     var seen = {};
     var cards = [];
+    var sigParts = [];
     var totalShort = 0, totalLeads = 0, totalPaf = 0, totalNoDoor = 0, totalCustomers = 0;
     for (var i = 0; i < customers.length; i++) {
       var c = customers[i];
@@ -16974,6 +16976,7 @@ async function sendExpectedBatchReport() {
       totalLeads += pv.count;
       var short = pv.count < pv.promised;
       if (short) totalShort++;
+      sigParts.push(c.email + ':' + pv.count + '/' + pv.promised + ':' + (pv.leads || []).filter(function(l) { return !l.has_door_number; }).length);
       var leadRows = (pv.leads || []).map(function(l, idx) {
         var isPaf = !l.has_door_number && l.paf_candidate;
         var noDoor = !l.has_door_number && !l.paf_candidate;
@@ -17033,16 +17036,31 @@ async function sendExpectedBatchReport() {
         '<b style="color:#991b1b">no door</b> = dropped and replaced.' +
         '</div>' +
       '</td></tr></table></div></div>';
+    var sig = sigParts.join('|');
+    // DELTA MODE: the morning re-checks only email when the batch actually CHANGES
+    // (a shortfall appears/disappears, or a door number gets resolved). No change = no email.
+    if (mode === 'delta' && global.__expectedBatchSig === sig) {
+      console.log('[EXPECTED-BATCH] delta check — no change since last report (skipped)');
+      return { skipped: true, customers: totalCustomers, leads: totalLeads, short: totalShort, noDoor: totalNoDoor };
+    }
     var subjIssues = (totalShort + totalNoDoor);
     await sendBrevoEmail({ email: process.env.OWNER_EMAIL || 'ketzman1g@gmail.com', name: 'Owner' },
-      '9amLeads batch — ' + totalCustomers + ' customers, ' + totalLeads + ' leads' + (subjIssues ? ', ' + subjIssues + ' issue(s)' : ', all ready'), html);
-    console.log('[EXPECTED-BATCH] sent to owner (' + totalCustomers + ' customers, ' + totalLeads + ' leads, ' + totalShort + ' short)');
-    return { sent: true, customers: totalCustomers, leads: totalLeads, short: totalShort, noDoor: totalNoDoor };
+      (mode === 'delta' ? '9amLeads batch UPDATE — ' : '9amLeads batch — ') + totalCustomers + ' customers, ' + totalLeads + ' leads' + (subjIssues ? ', ' + subjIssues + ' issue(s)' : ', all ready'), html);
+    global.__expectedBatchSig = sig;
+    console.log('[EXPECTED-BATCH] ' + mode + ' sent to owner (' + totalCustomers + ' customers, ' + totalLeads + ' leads, ' + totalShort + ' short)');
+    return { sent: true, mode: mode, customers: totalCustomers, leads: totalLeads, short: totalShort, noDoor: totalNoDoor };
   } catch(e) { console.log('[EXPECTED-BATCH] error: ' + e.message); return { error: e.message }; }
 }
-cron.schedule('30 8 * * 1-5', function() { try { sendExpectedBatchReport(); } catch(e) {} }, { timezone: 'Europe/London' });
+// 06:45 = FULL report (right after the 06:00 scrape + early PAF, so you see the whole
+// day's batch as early as possible). 07:15/07:45/08:15/08:45 = CHANGE-ONLY re-checks
+// (they email only if the batch changed), so there are no long blind gaps before 9am.
+cron.schedule('45 6 * * 1-5', function() { try { sendExpectedBatchReport('full'); } catch(e) {} }, { timezone: 'Europe/London' });
+cron.schedule('15 7 * * 1-5', function() { try { sendExpectedBatchReport('delta'); } catch(e) {} }, { timezone: 'Europe/London' });
+cron.schedule('45 7 * * 1-5', function() { try { sendExpectedBatchReport('delta'); } catch(e) {} }, { timezone: 'Europe/London' });
+cron.schedule('15 8 * * 1-5', function() { try { sendExpectedBatchReport('delta'); } catch(e) {} }, { timezone: 'Europe/London' });
+cron.schedule('45 8 * * 1-5', function() { try { sendExpectedBatchReport('delta'); } catch(e) {} }, { timezone: 'Europe/London' });
 app.post('/api/admin/expected-batch', adminAuth, async (req, res) => {
-  try { res.json(await sendExpectedBatchReport()); } catch(e) { res.status(500).json({ error: e.message }); }
+  try { res.json(await sendExpectedBatchReport('full')); } catch(e) { res.status(500).json({ error: e.message }); }
 });
 // POST-DELIVERY STANNP NORMALISE (09:45 UK, weekdays): after the 9am send, normalise
 // every delivered non-tender lead's address so ALL dashboard leads are print & post
