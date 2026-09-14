@@ -26292,8 +26292,16 @@ function generateLeadEmailHTML(customer, leads) {  const brand = getProductBrand
       subtitle = [pPubStr, pFull, pDod, pClaims].filter(Boolean).join(', ');
     } else if (leadProduct === 'newbusiness') {
       title = d.companyName || d.name || d.company || 'New Company Registration';
+      // FULL registered address (number + street + town + full postcode) in the email —
+      // the customer needs the exact postal address, not just the town/city.
+      var nbAddr = d.address || d.fullAddress || l.address || '';
+      var nbPc = d.postcode || l.postcode || '';
+      var nbTown = d.town || d.city || '';
+      var nbFull = String(nbAddr || '').trim();
+      if (nbTown && nbFull && nbFull.toLowerCase().indexOf(String(nbTown).toLowerCase()) === -1) nbFull += (nbFull ? ', ' : '') + nbTown;
+      if (nbPc && nbFull && nbFull.toLowerCase().indexOf(String(nbPc).toLowerCase()) === -1) nbFull += (nbFull ? ', ' : '') + nbPc;
       var incDate = d.incorporationDate || d.dateOfCreation;
-      subtitle = incDate ? (d.city ? d.city + ' · ' : '') + 'Incorporated ' + new Date(incDate).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : (d.city || '');
+      subtitle = nbFull || (incDate ? 'Incorporated ' + new Date(incDate).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '');
     } else if (leadProduct === 'planning') {
       // Full site address in the title (number + street + town + postcode).
       // Plota's raw `address` field is sometimes a messy concatenation that repeats
