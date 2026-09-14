@@ -470,6 +470,13 @@ function hasFullAddress(addr, pc) {
   if (!hasStreetName(a)) return false;
   return /[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(pc || '').trim());
 }
+// A delivered row the customer has REJECTED must never count towards their delivered
+// total (it is queued for replacement). Counting it inflated the internal delivered
+// count, suppressed top-ups and made the guarantee audit report "ok" while the
+// customer's dashboard showed fewer leads.
+function _leadIsRejected(l) {
+  try { return !!JSON.parse(l.data || '{}').rejected; } catch(e) { return false; }
+}
 
 // ---- Capacity / usage telemetry (exposed on /api/health) ----
 // Brevo daily send counter (1 email per customer per day). In-memory, reset on
@@ -612,10 +619,18 @@ function leadClosestKm(leadPc, custAreas) {
   if (!c) return 9999;
   var best = 9999;
   (custAreas || []).forEach(function(a) {
-    var g = POSTCODE_AREA_GEO[postcodeAreaLetters(a)];
-    if (!g) return;
-    var d = haversineKm(c[0], c[1], g[0], g[1]);
-    if (d < best) best = d;
+    // Expand a county/region target to its postcode areas so the distance is measured
+    // to the REAL region, not to a 2-letter prefix guessed from the county name
+    // (e.g. 'Somerset' -> 'SO' wrongly measured against Southampton).
+    var _ak = String(a || '').toLowerCase().replace(/[\s-]+/g, '-');
+    var _exp = COUNTY_POSTCODE_MAP[_ak] || REGION_TO_POSTCODE_AREAS[_ak];
+    var codes = (_exp && _exp.length) ? _exp : [a];
+    codes.forEach(function(code) {
+      var g = POSTCODE_AREA_GEO[postcodeAreaLetters(code)];
+      if (!g) return;
+      var d = haversineKm(c[0], c[1], g[0], g[1]);
+      if (d < best) best = d;
+    });
   });
   return best;
 }
@@ -11892,7 +11907,7 @@ app.post('/api/admin/top-up-today', adminAuth, (req, res) => {
     if (!cust) return res.status(404).json({ error: 'Customer not found' });
     var dailyLimit = getPlanLimit(cust.product, cust.plan, cust.coverage) || 5;
     var today = new Date().toISOString().split('T')[0];
-    var todayCount = (dbT.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0; }).length;
+    var todayCount = (dbT.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0 && !_leadIsRejected(l); }).length;
     if (todayCount >= dailyLimit) return res.json({ success: true, email: email, note: 'Already at daily promise (' + todayCount + '/' + dailyLimit + ')', added: 0 });
     var areas = [];
     try { areas = JSON.parse(cust.target_areas || '[]'); } catch(e) { areas = []; }
@@ -15541,8 +15556,8 @@ cron.schedule('30 7 * * *', async () => {
 cron.schedule('5 9 * * 1-5', async () => {
   try {
     var todayStr = new Date().toISOString().split('T')[0];
-    if (__lastDeliveryDate === todayStr) return; // already fired today
-    console.log('[BACKSTOP] 09:30 delivery did not fire today — re-triggering now (safety)');
+    if (__lastDeliveryDate === todayStr || __deliveryStartedDate === todayStr) return; // already fired/started today
+    console.log('[BACKSTOP] 09:05 delivery did not fire today — re-triggering now (safety)');
     try {
       const http = require('http');
       var bsBody = JSON.stringify({});
@@ -15794,6 +15809,11 @@ var _testReportLock = false;
 var _testReportLockAt = 0;
 var __lastDeliveryFire = '';
 var __lastDeliveryDate = ''; // YYYY-MM-DD of the most recent delivery fire (daily watchdog)
+// YYYY-MM-DD the 09:00 delivery cron STARTED (set at fire, before the run finishes).
+// The 09:01 watchdog/09:05 backstop use this to avoid a FALSE "leads had a lie-in"
+// alarm to every customer while the 9am run is still in progress (it can take a
+// couple of minutes with PAF enrichment).
+var __deliveryStartedDate = '';
 
 // NO OVER / NO UNDER GUARANTEE — the customer promise is "exactly your daily count in
 // your inbox at 9am". Two failure modes were seen: (1) the 9am run sometimes delivered
@@ -15855,7 +15875,7 @@ function autoFillDeliveryShortfalls(cbDone) {
       if (!isEntitledForDelivery(c)) return;
       var promised = getPlanLimit(c.product, c.plan, c.coverage) || 0;
       if (promised <= 0) return;
-      var have = (dbA.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0; }).length;
+      var have = (dbA.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0 && !_leadIsRejected(l); }).length;
       var need = promised - have;
       if (need > 0) tasks.push({ email: c.email, need: need });
     });
@@ -15969,7 +15989,7 @@ function runFinalGuaranteeAudit() {
       if (!isEntitledForDelivery(c)) return;
       var promised = getPlanLimit(c.product, c.plan, c.coverage) || 0;
       if (promised <= 0) return;
-      var delivered = (dbA.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0; }).length;
+      var delivered = (dbA.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0 && !_leadIsRejected(l); }).length;
       var pending = (dbA.leads || []).filter(function(l) { return l.customer_id === c.id && !l.delivered; }).length;
       out.checked++;
       var status = delivered === promised ? 'ok' : delivered < promised ? 'short' : 'over';
@@ -15979,6 +15999,11 @@ function runFinalGuaranteeAudit() {
     if (out.short.length) {
       try { sendAdminAlert('⚠ GUARANTEE: ' + out.short.length + ' customer(s) below promised count', '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="color:#f87171;margin:0 0 8px">Delivery guarantee breach</h1><p style="color:#ccc;line-height:1.7">After the 9am run, auto top-up and reconciliation, these customers are still below their promised daily count:</p><ul style="color:#ccc;line-height:1.9">' + out.short.map(function(s){ return '<li>' + s + '</li>'; }).join('') + '</ul><p style="color:#888;font-size:13px">Check supply for their areas or contact them with a courtesy note.</p></div>'); } catch(al) {}
     }
+    // OVER-DELIVERY is also a promise breach ("no more no less"): alert the founder so
+    // a duplicate/over-delivery is caught the same morning, not by a customer.
+    if (out.over.length) {
+      try { sendAdminAlert('⚠ GUARANTEE: ' + out.over.length + ' customer(s) OVER promised count', '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="color:#fbbf24;margin:0 0 8px">Over-delivery detected</h1><p style="color:#ccc;line-height:1.7">These customers received MORE than their promised daily count (check for duplicate rows):</p><ul style="color:#ccc;line-height:1.9">' + out.over.map(function(s){ return '<li>' + s + '</li>'; }).join('') + '</ul></div>'); } catch(al2) {}
+    }
     console.log('[GUARANTEE] audit: ok=' + out.ok + ' checked=' + out.checked + ' short=' + out.short.length + ' over=' + out.over.length + ' dupes=' + out.duplicates_removed + ' resent=' + out.emails_resent);
     return out;
   } catch(e) { console.log('[GUARANTEE] audit error:', e.message); out.ok = false; return out; }
@@ -15987,6 +16012,9 @@ function runFinalGuaranteeAudit() {
 cron.schedule('0 9 * * 1-5', async () => {
   __deliveryFireCount++;
   __lastDeliveryFire = new Date().toISOString();
+  // Mark the run as STARTED (not completed) so the 09:01 watchdog / 09:05 backstop
+  // do not fire a false alarm or duplicate trigger while this run is still going.
+  __deliveryStartedDate = new Date().toISOString().split('T')[0];
   try { purgeFuneralProbateLeads(); } catch(eP) {}
   // NOTE: __lastDeliveryDate is NOT set here. It is set only AFTER the delivery
   // call succeeds, so a failed/401 9am run does NOT suppress the 09:01 watchdog
@@ -16663,8 +16691,8 @@ cron.schedule('30 9 * * 1-5', async () => {
 cron.schedule('1 9 * * 1-5', async () => {
   try {
     var todayStr = new Date().toISOString().split('T')[0];
-    if (__lastDeliveryDate === todayStr) return; // already fired today
-    console.log('[WATCHDOG] 09:02 delivery did not fire today — re-triggering now (safety)');
+    if (__lastDeliveryDate === todayStr || __deliveryStartedDate === todayStr) return; // already fired/started today
+    console.log('[WATCHDOG] 09:01 delivery did not fire today — re-triggering now (safety)');
     // NOTIFY CUSTOMERS: let every active customer know their leads are on the way.
     // Funny + lighthearted so a delay never sounds alarming. Sent once per day via a
     // watchdog_notified flag so a customer isn't spammed across retries.
@@ -16863,8 +16891,8 @@ function sendDailyDeliveryPreview(when) {
     } catch(e) { console.log('[PRE-CHECK] error:', e.message); resolve([]); }
   });
 }
-cron.schedule('30 6 * * 1-5', function() { try { sendDailyDeliveryPreview('pre'); } catch(e) {} });
-cron.schedule('10 8 * * 1-5', function() { try { sendDailyDeliveryPreview('post'); } catch(e) {} });
+cron.schedule('30 6 * * 1-5', function() { try { sendDailyDeliveryPreview('pre'); } catch(e) {} }, { timezone: 'Europe/London' });
+cron.schedule('10 9 * * 1-5', function() { try { sendDailyDeliveryPreview('post'); } catch(e) {} }, { timezone: 'Europe/London' });
 // POST-DELIVERY STANNP NORMALISE (09:45 UK, weekdays): after the 9am send, normalise
 // every delivered non-tender lead's address so ALL dashboard leads are print & post
 // ready without manual fixes. Idempotent + self-healing — covers moving, probate,
@@ -20447,6 +20475,50 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
     function hasPremiseNumber(addr, pc) {
       return hasUsablePremiseAddress(addr, pc);
     }
+    // MAILABLE-ADDRESS GATE (ALL postcode products): every delivered lead must carry
+    // a FULL postcode AND a street AND a door/flat/house number, so Print & Post can
+    // reach the exact property and the dashboard shows a complete address. Tenders are
+    // national opportunities with no postal address, so they are exempt. This is the
+    // single source of truth used by the main gate, every top-up pass and the final
+    // pre-email safety net.
+    function leadMailableAddress(ld, prod) {
+      if (prod === 'tenders') return true;
+      if (!ld) return false;
+      var addr = String(ld.fullAddress || ld.address || ld.deceasedAddress || '').trim();
+      var pc = String(ld.postcode || '').trim();
+      if (!addr || !pc) return false;
+      if (!/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(pc)) return false;
+      if (!hasStreetName(addr)) return false;
+      return hasUsablePremiseAddress(addr, pc);
+    }
+    // AREA GATE (ALL products): a candidate must sit inside the customer's chosen
+    // areas. Handles postcode-AREA targets (SW, L, CH), postcode-DISTRICT targets
+    // (CR0), county/region targets and keyword matches (areaMatchesLead). Moving
+    // additionally allows a genuinely NEARBY fallback (<= MOVING_MAX_FALLBACK_KM) so
+    // a sparse area can still reach its promised count. Never returns true for a
+    // far-away lead — the customer gets fewer leads rather than a useless one.
+    function candidateInArea(ld, areas, prod, ukwide) {
+      if (ukwide) return true;
+      if (!areas || !areas.length) return true; // no areas configured: don't block
+      if (prod === 'tenders') return true;
+      var pc = String(ld.postcode || ld.address || ld.fullAddress || ld.deceasedAddress || '');
+      var pcArea = extractPostcodeArea(pc).toUpperCase();
+      var outward = (String(pc).toUpperCase().replace(/\s+/g, '').match(/^([A-Z]{1,2}\d[A-Z\d]?)/) || [])[1] || '';
+      for (var i = 0; i < areas.length; i++) {
+        var a = String(areas[i] || '').trim();
+        if (!a) continue;
+        if (/^[A-Z]{1,2}\d?$/i.test(a)) { if (pcArea && a.toUpperCase() === pcArea) return true; }
+        else if (/^[A-Z]{1,2}\d[A-Z\d]?$/i.test(a)) { if (outward && (a.toUpperCase() === outward || outward.startsWith(a.toUpperCase()))) return true; }
+        // County/region target -> expand to postcode areas via BOTH maps so a chosen
+        // region ("Wales", "South England") matches any of its postcode areas.
+        var _ak = a.toLowerCase().replace(/[\s-]+/g, '-');
+        var _exp = COUNTY_POSTCODE_MAP[_ak] || REGION_TO_POSTCODE_AREAS[_ak];
+        if (_exp && _exp.length && pcArea && _exp.indexOf(pcArea) !== -1) return true;
+      }
+      if (areaMatchesLead({ postcode: ld.postcode, address: ld.fullAddress || ld.address || ld.deceasedAddress || '', county: ld.county, council: ld.council, description: ld.description, proposal: ld.proposal, applicationType: ld.applicationType }, areas, false)) return true;
+      if (prod === 'moving' && isFallbackLeadAcceptable(pc, areas)) return true;
+      return false;
+    }
     // PER-RUN POOL CACHE: the scrape pool files (e.g. moving-leads.json holds 1600+
     // properties) are large. Reading + JSON.parse-ing them for EVERY customer on the
     // 9am run would delay later customers' emails past 09:00. Read each product's
@@ -20752,6 +20824,10 @@ _deliverDiag[cust.email].products = products;
         });
         totalDailyLimit = Math.max(totalDailyLimit, sumLimits);
       }
+      // ADMIN CAP OVERRIDE: cust.leads_per_day may raise (or lower) the daily quota.
+      // The override set at the top of this customer's block was previously dropped by
+      // the re-declaration above; re-apply it so admin changes actually stick.
+      if (capOverride && capOverride > totalDailyLimit) totalDailyLimit = capOverride;
       // Ensure customer's primary product always has at least 1 lead
       var primaryPickedId = null;
       if (cust.product) {
@@ -20769,6 +20845,8 @@ _deliverDiag[cust.email].products = products;
       // full count. Disable via DISABLE_AREA_BROADENING=true to deliver ONLY within
       // the customer's chosen postcode areas (exact match only).
       var expandedAreas = (process.env.DISABLE_AREA_BROADENING === 'true') ? [] : expandedAreaFallback(custAreas);
+      // "All UK" customers are exempt from every area gate.
+      var _custUkwide = /all.?uk|uk.?wide|nationwide|whole.?uk/i.test((custAreas || []).join(' '));
       // Helper: count leads per area in current batch
       function areaCounts(leadsArr, areasArr) {
         var counts = {};
@@ -21012,7 +21090,7 @@ _deliverDiag[cust.email].products = products;
       // both fired), only deliver the remaining gap so the customer gets EXACTLY the
       // promised count — no more, no less.
       var alreadyDeliveredToday = (db.leads || []).filter(function(l) {
-        return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.startsWith(today);
+        return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.startsWith(today) && !_leadIsRejected(l);
       }).length;
       // TEST/FORCE MODE: if body has force=true (a test delivery), ignore today's
       // already-delivered count and send the full quota so we can verify output.
@@ -21736,14 +21814,11 @@ _deliverDiag[cust.email].products = products;
                   // (fresh supply low), relax to the closest available areas so the
                   // exact-count promise is met. Lead area stays within the same region
                   // where possible. Matches the 'quiet-day delivery' policy in our T&Cs.
-                  var exactHit = topupAreas.some(function(a){ return extractPostcodeArea(a) === tlArea; }) || (expandedAreas && expandedAreas.indexOf(tlArea) !== -1);
-                  if (exactHit) {
-                    tlAreaOk = true;
-                  } else {
-                    // Fallback: allow any fresh lead from a nearby region once the
-                    // customer's exact areas are used up, so the count is always met.
-                    tlAreaOk = true;
-                  }
+                  // AREA GATE: only accept a lead genuinely inside the customer's
+                  // chosen areas (or a NEARBY moving fallback within the distance cap).
+                  // Previously this branch accepted ANY lead, which is how far-away
+                  // leads reached customers. Fewer correct leads beats a wrong one.
+                  tlAreaOk = candidateInArea(tl, topupAreas, tpProd, _custUkwide);
                 }
               } else { tlAreaOk = true; }
               // NATIONAL fallback ONLY for genuinely postcode-less public notices
@@ -21994,31 +22069,18 @@ _deliverDiag[cust.email].products = products;
       // (newbusiness, tenders, planning) have company addresses, not house
       // numbers, so they must NOT be gated — otherwise every business lead is
       // dropped and customers get 0.
-      var needsDoorNumber = products.some(function(p){ return p === 'moving' || p === 'probate'; });
+      // MAILABLE-ADDRESS GATE (ALL postcode products): every lead we email must have
+      // a full postcode + street + door/flat/house number. Previously ONLY moving and
+      // probate were gated, so newbusiness/planning leads without a real premise could
+      // reach the customer. Tenders are national (no postal address) and exempt.
+      var needsDoorNumber = products.some(function(p){ return p !== 'tenders'; });
       custLeads = custLeads.filter(function(l) {
-        if (!needsDoorNumber) return true; // business products: keep all leads
-        // Robust lead-data read: prefer l.data (JSON) but fall back to top-level
-        // fields (postcode/address/scrapedAt) which some creation paths store.
         var ld = null;
         try { ld = JSON.parse(l.data || ''); } catch(e) { ld = null; }
         if (!ld || typeof ld !== 'object') {
-          ld = { postcode: l.postcode || '', address: l.address || l.fullAddress || '', fullAddress: l.fullAddress || l.address || '', scrapedAt: l.scrapedAt || '' };
+          ld = { postcode: l.postcode || '', address: l.address || l.fullAddress || '', fullAddress: l.fullAddress || l.address || '', deceasedAddress: l.deceasedAddress || '', scrapedAt: l.scrapedAt || '' };
         }
-        // REQUIRED: a real, deliverable address = a postcode AND a non-empty street
-        // address AND a confirmed door number (house/flat number). Print & Post needs
-        // the exact premise, so a lead without a door number (e.g. a named development
-        // like "Eeko") is dropped and replaced by the top-up/final-pass with a lead
-        // that HAS a resolvable door number.
-        var addr = ld.fullAddress || ld.address || ld.deceasedAddress || '';
-        var pc = ld.postcode || '';
-        if (!addr || !pc) return false; // broken lead: no address/postcode
-        // A valid full postcode (with the trailing inward code) is required for
-        // mail to be deliverable. Bare area codes (SW1) are not enough.
-        if (!/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(pc.trim())) return false;
-        // STRICT: require a confirmed door number for property products (moving/probate).
-        // A lead with only a street name and no house number cannot be printed/posted
-        // to the right property, so it is not deliverable.
-        return hasPremiseNumber(addr, pc);
+        return leadMailableAddress(ld, l.product || cust.product);
       });
       if (custLeads.length !== doorGatedBefore) {
         console.log('[DELIVERY] Door-number gate: dropped ' + (doorGatedBefore - custLeads.length) + ' of ' + doorGatedBefore + ' leads for ' + cust.email + ' (no verified house number) — kept ' + custLeads.length);
@@ -22038,8 +22100,10 @@ _deliverDiag[cust.email].products = products;
           products.forEach(function(p) {
             (availByProd[p] || []).forEach(function(pl) { if (pickedIds.indexOf(pl.id) === -1) topUpPool.push(pl); });
             (availGlobalByProd[p] || []).forEach(function(pl) { if (pickedIds.indexOf(pl.id) === -1) topUpPool.push(pl); });
-            // Also pull scrape POOL FILE leads so the top-up always finds verified-numbered leads.
-            try { var tpPoolFile = getDeliveryPool('moving'); (tpPoolFile || []).forEach(function(pl) { if (pickedIds.indexOf(pl.id) === -1) topUpPool.push(pl); }); } catch(tpf) {}
+            // Also pull scrape POOL FILE leads (for THIS product) so the top-up always
+            // finds verified-numbered leads. (Was hard-coded to 'moving', which could
+            // inject a moving lead into a probate/newbusiness customer.)
+            try { var tpPoolFile = getDeliveryPool(p); (tpPoolFile || []).forEach(function(pl) { if (pickedIds.indexOf(pl.id) === -1) topUpPool.push(pl); }); } catch(tpf) {}
           });
           // Dedupe by id, prefer freshest, and only door-less ones (those already
           // numbered in the pool can be added directly without PAF spend).
@@ -22062,7 +22126,10 @@ _deliverDiag[cust.email].products = products;
             var al = alreadyNumbered[ti];
             if (pickedIds.indexOf(al.id) !== -1) continue;
             if (alreadyDeliveredLead(al)) continue;
-            if (!hasPremiseNumber((function(){ var ld = al.data ? (function(){ try { return JSON.parse(al.data); } catch(e) { return al; } })() : al; return ld.fullAddress||ld.address||ld.deceasedAddress||''; })(), (function(){ var ld = al.data ? (function(){ try { return JSON.parse(al.data); } catch(e) { return al; } })() : al; return ld.postcode||''; })())) continue;
+            var alD = null; try { alD = al.data ? JSON.parse(al.data) : al; } catch(e) { alD = al; }
+            // FULL address (postcode + street + door/flat) AND correct area only.
+            if (!leadMailableAddress(alD, al.product || cust.product)) continue;
+            if (!candidateInArea(alD, custAreas, al.product || cust.product, _custUkwide)) continue;
             custLeads.push(al); pickedIds.push(al.id); added++;
           }
           // 2) Enrich remaining door-less candidates via PAF, keep only confirmed.
@@ -22088,7 +22155,8 @@ _deliverDiag[cust.email].products = products;
               tld.buildingNumber = eNum; tld.street = eStreet; tld.postcode = te.postcode || tld.postcode; tld.udprn = te.udprn || '';
               tld.address = eAddr; tld.fullAddress = eAddr;
               srcLead.data = JSON.stringify(tld);
-              if (!hasPremiseNumber(eAddr, tld.postcode || '')) continue;
+              if (!leadMailableAddress(tld, tld.product || cust.product)) continue;
+              if (!candidateInArea(tld, custAreas, tld.product || cust.product, _custUkwide)) continue;
               custLeads.push(srcLead); pickedIds.push(srcLead.id); added++;
             }
             saveDb();
@@ -22183,6 +22251,8 @@ _deliverDiag[cust.email].products = products;
                   var fenrLead = fenr[0];
                   if (!fenrLead.postcode) fenrLead.postcode = fenrPc;
                   if (!fenrLead.fullAddress) fenrLead.fullAddress = fenrAddr;
+                  if (!leadMailableAddress(fenrLead, fprod)) continue;
+                  if (!candidateInArea(fenrLead, custAreas, fprod, _custUkwide)) continue;
                   fcreated.push(fenrLead);
                   custLeads.push(fenrLead);
                   pickedIds.push(fenrLead.id);
@@ -22402,6 +22472,35 @@ _deliverDiag[cust.email].products = products;
             console.log('[DELIVERY] Final PAF pass: ' + cust.email + ' confirmed ' + custLeads.length + '/' + totalDailyLimit + ' moving leads');
           } catch(pafErr) { console.log('[DELIVERY] Final PAF pass outer error:', pafErr.message); }
         }
+        // ===== UNIVERSAL FINAL GATE (ALL products, unconditional) =====
+        // Last line of defence before the email/dashboard, for EVERY product (the
+        // moving-only gates above never ran for newbusiness/planning/probate):
+        //   (1) drop out-of-area leads,
+        //   (2) drop leads without a full mailable address (full postcode + street +
+        //       door/flat/house number),
+        //   (3) de-dupe by URL then property identity,
+        //   (4) hard-cap at the exact promised count (never over-deliver).
+        // This guarantees a customer never receives an out-of-area or incomplete lead
+        // even if an earlier pass slipped. If supply of valid leads runs out we deliver
+        // FEWER, correct leads rather than wrong ones, and the founder is alerted.
+        if (custLeads && custLeads.length) {
+          var _preUni = custLeads.length;
+          var _seenU = {};
+          custLeads = custLeads.filter(function(l) {
+            var ld = null; try { ld = JSON.parse(l.data || '{}'); } catch(e) { ld = null; }
+            if (!ld || typeof ld !== 'object') ld = { postcode: l.postcode || '', address: l.address || l.fullAddress || '', fullAddress: l.fullAddress || l.address || '', deceasedAddress: l.deceasedAddress || '', url: l.url || '' };
+            var prod = l.product || ld.product || cust.product;
+            if (!leadMailableAddress(ld, prod)) return false;
+            if (!candidateInArea(ld, custAreas, prod, _custUkwide)) return false;
+            var _gu2 = String(ld.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
+            var _k2 = _gu2 ? ('u:' + _gu2) : propertyIdentityKey(ld.fullAddress || ld.address || ld.deceasedAddress || '', ld.postcode || '');
+            if (_k2 && _seenU[_k2]) return false;
+            if (_k2) _seenU[_k2] = 1;
+            return true;
+          });
+          if (custLeads.length !== _preUni) console.log('[FINAL-GATE-ALL] ' + cust.email + ': dropped ' + (_preUni - custLeads.length) + ' lead(s) failing address/area/dedupe (kept ' + custLeads.length + '/' + totalNeeded + ')');
+          if (custLeads.length > totalNeeded) custLeads = custLeads.slice(0, totalNeeded);
+        }
         // MOVING FINAL ADDRESS NORMALISE: ALWAYS run last (after PAF enrich + town
         // backfill) so EVERY delivered moving lead shows the door/flat number +
         // street first — never a leading building/company/court name. This applies
@@ -22494,7 +22593,11 @@ _deliverDiag[cust.email].products = products;
           // 09:00 run. The 9am promise is "email + dashboard together at 9am", and
           // email-first guarantees the customer never sees dashboard leads without
           // the matching email. Persist last_email_date so a crash can't duplicate.
-          try { cust.last_email_date = today; } catch(leErr) {}
+          // last_email_date is set ONLY after a CONFIRMED send (below). Setting it
+          // before the send meant a failed 9am email was never retried: the failed-
+          // email queue entry was skipped by resendFailedEmails() because
+          // last_email_date already equalled today. Now a failure leaves the flag
+          // unset so the resend crons deliver it minutes later.
           var _emailHtml = generateLeadEmailHTML(cust, custLeads);
           var _emailSubj = '9amLeads \u2022 Your Daily Opportunities for ' + (cust.coverage ? (COVERAGE_LABELS[cust.coverage] || cust.coverage) : 'your area') + ' on ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
           // Send synchronously for this customer (email first), so by the time the
@@ -22502,6 +22605,7 @@ _deliverDiag[cust.email].products = products;
           // the failed-email queue for the catch-up cron.
           try {
             await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, _emailSubj, _emailHtml);
+            try { cust.last_email_date = today; } catch(leErr) {}
             console.log('[DELIVERY] Email sent to ' + cust.email + ' (' + custLeads.length + ' leads)');
           } catch(sendErr) {
             console.log('[DELIVERY] Email failed ' + cust.email + ': ' + sendErr.message);
