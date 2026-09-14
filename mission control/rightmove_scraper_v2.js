@@ -71,7 +71,7 @@ const AREA_TO_REGIONS = {
 
 function fetchRightmovePage(locationId, locationName, pageIndex) {
   return new Promise((resolve) => {
-    function doFetch(path, redirects) {
+    function doFetch(path, redirects, retriesLeft) {
       const opts = {
         hostname: 'www.rightmove.co.uk',
         path: path,
@@ -90,7 +90,7 @@ function fetchRightmovePage(locationId, locationName, pageIndex) {
           var loc = res.headers.location;
           var nextPath = loc.startsWith('http') ? new URL(loc).pathname + new URL(loc).search : loc;
           console.log('[RIGHTMOVE] ' + locationId + ' -> ' + res.statusCode + ' redirect to ' + nextPath.substring(0, 60));
-          doFetch(nextPath, redirects + 1);
+          doFetch(nextPath, redirects + 1, retriesLeft);
           return;
         }
         let body = '';
@@ -99,6 +99,14 @@ function fetchRightmovePage(locationId, locationName, pageIndex) {
         res.on('end', () => {
           if (tooBig2 || res.statusCode !== 200) {
             console.log('[RIGHTMOVE] HTTP ' + res.statusCode + ' for ' + locationId + ' index=' + pageIndex);
+            // RETRY 503/429/403 (Rightmove rate-limits the datacenter IP): a short
+            // backoff usually succeeds. Without this, a single 503 left a whole area
+            // (e.g. Bournemouth/Dorset, REGION^194) with zero leads for the day.
+            if ((res.statusCode === 503 || res.statusCode === 429 || res.statusCode === 403) && retriesLeft > 0) {
+              var _retryDelay = 3000 + Math.floor(Math.random() * 4000);
+              setTimeout(function() { doFetch(path, redirects, retriesLeft - 1); }, _retryDelay);
+              return;
+            }
             resolve([]);
             return;
           }
@@ -169,7 +177,7 @@ function fetchRightmovePage(locationId, locationName, pageIndex) {
       req.end();
     }
     var path = '/property-for-sale/find.html?locationIdentifier=' + locationId + '&index=' + pageIndex + '&includeSSTC=true&sortType=6&propertyTypes=&mustHave=&dontShow=&furnishTypes=&keywords=';
-    doFetch(path, 0);
+    doFetch(path, 0, 2);
   });
 }
 // COMMERCIAL PROPERTY — Rightmove's commercial section (offices, retail, warehouses,
