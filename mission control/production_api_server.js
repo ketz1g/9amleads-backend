@@ -10896,18 +10896,35 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
   // here so the preview shows the FINAL deliverable (what customers actually receive)
   // for BOTH moving and probate (both need door numbers for Print & Post).
   if (cust.product === 'moving' || cust.product === 'probate') {
+    var _rUkwide = /all.?uk|uk.?wide|nationwide|whole.?uk/i.test((areas || []).join(' '));
+    function _rInArea(pcR, addrR) {
+      if (_rUkwide) return true;
+      var ra = extractPostcodeArea(pcR || addrR);
+      return areas.some(function(a) {
+        var al = String(a || '').toLowerCase().replace(/[\s-]+/g, '-');
+        return (COUNTY_POSTCODE_MAP[al] || []).indexOf(ra) !== -1 || extractPostcodeArea(a) === ra;
+      });
+    }
     for (var rpi = 0; rpi < selected.length; rpi++) {
       var curLeadR = selected[rpi];
       var curAddrR = curLeadR.fullAddress || curLeadR.address || curLeadR.deceasedAddress || '';
       var curPcR = curLeadR.postcode || '';
       if (mailOK(curAddrR, curPcR)) continue; // has a door + full postcode — fine
-      if (curLeadR.paf_candidate && !curLeadR.paf_failed) continue; // gets a number at delivery — fine
+      // PAF candidate (full postcode + street): the delivery's PAF pass adds the door
+      // number, so keep it — do NOT swap it out. (The old check read a `paf_candidate`
+      // field that only exists on the OUTPUT object, so it was always undefined and
+      // every door-less lead was needlessly replaced.)
+      if (pafEligible(curLeadR, curAddrR, curPcR)) continue;
       for (var siR = 0; siR < interleaved.length; siR++) {
         var repR = interleaved[siR];
         if (selected.indexOf(repR) !== -1) continue;
         var rAddrR = repR.fullAddress || repR.address || repR.deceasedAddress || '';
         var rPcR = repR.postcode || '';
         if (!mailOK(rAddrR, rPcR)) continue;
+        // NEVER swap a local lead for a far-away one: the replacement must be in the
+        // customer's areas (or a within-cap nearby fallback). This is what leaked
+        // London/Liverpool leads into a Cardiff/Bristol customer's preview.
+        if (!_rInArea(rPcR, rAddrR) && !isFallbackLeadAcceptable(rPcR, areas)) continue;
         var rKeyR = repR.url || ('a:' + String(rAddrR).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30));
         var rAKeyR = 'aa:' + propertyIdentityKey(rAddrR, rPcR);
         if (_sharedSeen[rKeyR] || (rAKeyR.length > 5 && _sharedSeen[rAKeyR])) continue;
@@ -10959,7 +10976,6 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
       executor_home: c.executorType === 'home', solicitor: c.solicitor || '',
       probate_date: c.grantDate || c.dateOfDeath || '' };
   });
-  if (cust.email === 'sales@redlionremovals.com') console.log('[PV2] limit=' + limit + ' candidates=' + candidates.length + ' selected=' + selected.length + ' out_before=' + out.length);
   // HARD DISTANCE GATE (moving): regardless of how a lead was selected (in-area match,
   // fallback, preview replacement), an out-of-area moving lead MUST be within a
   // reasonable radius of the customer's chosen areas. A Croydon removals firm should
@@ -10972,24 +10988,21 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
   if (cust.product === 'moving') {
     var _prevSeen = {};
     out = out.filter(function(o) {
-      var _dbg = (cust.email === 'sales@redlionremovals.com');
-      if (_dbg) console.log('[PV3] cand in_area=' + o.in_area + ' paf=' + o.paf_candidate + ' door=' + o.has_door_number + ' pc=' + o.postcode + ' addr=' + String(o.address).slice(0, 40));
-      if (!o.in_area && !isFallbackLeadAcceptable(o.postcode || '', areas)) { if (_dbg) console.log('[PV3] DROP not-in-area'); return false; }
+      if (!o.in_area && !isFallbackLeadAcceptable(o.postcode || '', areas)) return false;
       var _vd = { fullAddress: o.address || '', address: o.address || '', postcode: o.postcode || '', url: o.url || '' };
       var _vres = validateMovingLead(_vd);
       // Allow a PAF candidate (full postcode + street, no door YET): the delivery's
       // PAF pass adds the door number before the mailable-address gate. Without this
       // the preview dropped every door-less-but-enrichable lead and under-reported.
-      if (_vres !== '' && !(o.paf_candidate && _vres === 'no-premise-number')) { if (cust.email === 'sales@redlionremovals.com') console.log('[PV2] drop vres=' + _vres + ' paf=' + o.paf_candidate + ' addr=' + String(o.address).slice(0, 45)); return false; }
+      if (_vres !== '' && !(o.paf_candidate && _vres === 'no-premise-number')) return false;
       // Doorless check — same allowance for PAF candidates.
-      try { if (!hasUsablePremiseAddress(o.address || '', o.postcode || '') && !o.paf_candidate) { if (cust.email === 'sales@redlionremovals.com') console.log('[PV2] drop doorless paf=' + o.paf_candidate + ' addr=' + String(o.address).slice(0, 45)); return false; } } catch(e) { return false; }
+      try { if (!hasUsablePremiseAddress(o.address || '', o.postcode || '') && !o.paf_candidate) return false; } catch(e) { return false; }
       // Property-identity dedup — the delivery drops duplicate properties.
-      try { var _k = propertyIdentityKey(o.address || '', o.postcode || ''); if (_k && _prevSeen[_k]) { if (_dbg) console.log('[PV3] DROP dedup key=' + _k); return false; } if (_k) _prevSeen[_k] = 1; } catch(e) {}
+      try { var _k = propertyIdentityKey(o.address || '', o.postcode || ''); if (_k && _prevSeen[_k]) return false; if (_k) _prevSeen[_k] = 1; } catch(e) {}
       return true;
     });
   }
   var fallbackCount = out.filter(function(o) { return !o.in_area; }).length;
-  if (cust.email === 'sales@redlionremovals.com') console.log('[PV2] out_after=' + out.length + ' paf_cands=' + out.filter(function(o) { return o.paf_candidate; }).length);
   var fallbackNote = fallbackCount ? (fallbackCount + ' lead' + (fallbackCount > 1 ? 's' : '') + ' from closest postcode' + (fallbackCount > 1 ? 's' : '') + ' (your chosen areas were short this morning)') : '';
   return { email: cust.email, company: cust.company || '', product: cust.product, plan: cust.plan, areas: areas, promised: limit, count: out.length, leads: out, fallback_count: fallbackCount, fallback_note: fallbackNote, error: out.length < limit ? 'supply low in ' + areas.join(', ') : '', debug: (cust.email === 'info@afsremovals.com') ? { pool_total: pool.length, interleaved: interleaved.length, candidates: candidates.length, selected: selected.length, candidate_errors: candidateErrors, firstCandidates: candidates.slice(0, 3).map(function(cl) { return { addr: String(cl.fullAddress || cl.address || '').slice(0, 40), pc: cl.postcode, commercial: isCommercialLead(cl), matched: areas.indexOf(extractPostcodeArea(cl.postcode || cl.address || '')) !== -1 }; }) } : undefined };
 }
