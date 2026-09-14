@@ -528,7 +528,7 @@ var COUNTY_POSTCODE_MAP = {
   'birmingham':['B'],'manchester':['M'],'liverpool':['L'],'leeds':['LS'],'sheffield':['S'],
   'bristol':['BS'],'nottingham':['NG'],'leicester':['LE'],'cardiff':['CF'],'edinburgh':['EH'],
   'devon':['EX','PL','TQ'],'cornwall':['TR'],'east-sussex':['BN','RH','TN'],'west-sussex':['BN','RH','GU'],
-  'somerset':['TA','BS'],'dorset':['BH','DT'],'wiltshire':['SN','BA','SP'],'gloucestershire':['GL'],
+  'somerset':['TA','BS','BA'],'dorset':['BH','DT'],'wiltshire':['SN','SP'],'gloucestershire':['GL'],
   'worcestershire':['WR'],'warwickshire':['CV','B'],'staffordshire':['ST','WS','WV'],'herefordshire':['HR'],
   'shropshire':['SY'],'northumberland':['NE'],'cumbria':['CA','LA'],'devon-cornwall':['EX','PL','TQ','TR'],
   'glasgow':['G'],'belfast':['BT'],'cheshire':['CH','WA'],'lancashire':['BB','BL','FY','LA','PR'],
