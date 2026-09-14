@@ -16956,38 +16956,88 @@ async function sendExpectedBatchReport() {
   try {
     var dbB = getDb();
     var customers = (dbB.customers || []).filter(function(c) {
-      // Mirror the REAL 9am delivery exactly: an expired trial with no active
-      // subscription gets no leads, so it must not appear as "short" here.
+      // Mirror the REAL 9am delivery exactly: expired unpaid trials and paused/test
+      // accounts get no leads, so they must never appear here.
       return c.plan && c.plan !== 'cancelled' && !isLeadsPaused(c) && !trialExpiredUnpaid(c) && !/test\.|@9amleads\.com|\.1788\d*@/i.test(String(c.email || ''));
     });
+    var FONT = "-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
     var seen = {};
-    var sections = [];
-    var totalShort = 0;
+    var cards = [];
+    var totalShort = 0, totalLeads = 0, totalPaf = 0, totalNoDoor = 0, totalCustomers = 0;
     for (var i = 0; i < customers.length; i++) {
       var c = customers[i];
       var pv;
       try { pv = await deliveryPreviewForCustomer(c, seen); }
-      catch(e) { pv = { email: c.email, product: c.product, promised: (getPlanLimit(c.product, c.plan, c.coverage) || 5), count: 0, leads: [], error: 'preview error' }; }
+      catch(e) { pv = { email: c.email, product: c.product, promised: (getPlanLimit(c.product, c.plan, c.coverage) || 5), count: 0, leads: [], areas: [], error: 'preview error' }; }
+      if (!pv.promised) continue;
+      totalCustomers++;
+      totalLeads += pv.count;
       var short = pv.count < pv.promised;
       if (short) totalShort++;
-      var rows = (pv.leads || []).map(function(l, idx) {
-        var flag = l.has_door_number ? '' : (l.paf_candidate ? ' <span style="color:#fbbf24">[PAF at 9am]</span>' : ' <span style="color:#f87171">[NO DOOR]</span>');
-        return '<li>' + (idx + 1) + '. ' + String(l.address || '') + ' — <b>' + (l.postcode || '') + '</b> <span style="color:#64748b">(' + (l.source || '') + ')</span>' + flag + '</li>';
+      var leadRows = (pv.leads || []).map(function(l, idx) {
+        var isPaf = !l.has_door_number && l.paf_candidate;
+        var noDoor = !l.has_door_number && !l.paf_candidate;
+        if (isPaf) totalPaf++;
+        if (noDoor) totalNoDoor++;
+        var flag = isPaf
+          ? '<span style="display:inline-block;background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:6px">PAF at 9am</span>'
+          : noDoor
+            ? '<span style="display:inline-block;background:#fee2e2;color:#991b1b;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:6px">no door</span>'
+            : '';
+        return '<tr><td style="padding:7px 0;border-bottom:1px solid #f1f5f9;font-size:13px;color:#1e293b;line-height:1.45">' +
+          '<span style="display:inline-block;min-width:16px;color:#94a3b8;font-weight:700">' + (idx + 1) + '</span> ' +
+          String(l.address || '') + ' <b style="color:#0f172a;white-space:nowrap">' + (l.postcode || '') + '</b>' + flag +
+          '<div style="color:#94a3b8;font-size:11px;margin-top:2px;padding-left:16px">' + (l.source || '') + (l.in_area ? '' : ' &middot; nearest area') + '</div>' +
+          '</td></tr>';
       }).join('');
-      sections.push('<div style="margin:14px 0;padding:12px;border:1px solid ' + (short ? '#7f1d1d' : '#14532d') + ';border-radius:8px">' +
-        '<div style="font-weight:700;color:' + (short ? '#f87171' : '#4ade80') + '">' + c.email + ' — ' + pv.product + ': ' + pv.count + '/' + pv.promised + (short ? ' SHORT' : ' OK') + '</div>' +
-        '<ul style="color:#cbd5e1;font-size:12px;line-height:1.7;margin:8px 0 0;padding-left:18px">' + (rows || '<li>(no leads)</li>') + '</ul>' +
-        (pv.fallback_count ? '<div style="color:#fbbf24;font-size:11px;margin-top:4px">' + pv.fallback_count + ' from nearest area (within cap)</div>' : '') +
-        '</div>');
+      var badge = short
+        ? '<span style="background:#fee2e2;color:#991b1b;font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px;white-space:nowrap">' + pv.count + '/' + pv.promised + ' SHORT</span>'
+        : '<span style="background:#dcfce7;color:#166534;font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px;white-space:nowrap">' + pv.count + '/' + pv.promised + ' READY</span>';
+      cards.push(
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:0;margin:0 0 14px;border:1px solid ' + (short ? '#fecaca' : '#e2e8f0') + ';border-radius:12px;overflow:hidden">' +
+        '<tr><td style="background:' + (short ? '#fef2f2' : '#f8fafc') + ';padding:13px 16px;border-bottom:1px solid ' + (short ? '#fecaca' : '#e2e8f0') + '">' +
+          '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>' +
+            '<td style="font-family:' + FONT + ';font-size:14px;font-weight:700;color:#0f172a">' + c.email + '</td>' +
+            '<td align="right">' + badge + '</td>' +
+          '</tr></table>' +
+          '<div style="font-family:' + FONT + ';font-size:11px;color:#64748b;margin-top:3px">' +
+            (pv.product ? pv.product.charAt(0).toUpperCase() + pv.product.slice(1) : '') + ' &middot; ' + ((pv.areas || []).join(', ') || 'All UK') +
+          '</div>' +
+        '</td></tr>' +
+        '<tr><td style="padding:4px 16px 12px 16px">' +
+          '<table role="presentation" width="100%" cellpadding="0" cellspacing="0">' + (leadRows || '<tr><td style="padding:8px 0;color:#94a3b8;font-size:13px">No leads</td></tr>') + '</table>' +
+          (pv.fallback_count ? '<div style="font-family:' + FONT + ';font-size:11px;color:#b45309;margin-top:6px">' + pv.fallback_count + ' from nearest postcode (within cap)</div>' : '') +
+        '</td></tr>' +
+        '</table>'
+      );
     }
-    var html = '<div style="font-family:Arial;background:#0b1120;color:#e2e8f0;padding:20px;max-width:720px;margin:0 auto">' +
-      '<h2 style="color:#38bdf8;margin:0 0 4px">9amLeads — expected batch for today\'s 9am</h2>' +
-      '<p style="color:#94a3b8;font-size:12px;margin:0 0 10px">Generated ' + new Date().toLocaleString('en-GB', { timeZone: 'Europe/London' }) + ' UK &middot; ' + customers.length + ' customer(s) &middot; ' + totalShort + ' short</p>' +
-      sections.join('') +
-      '<p style="color:#64748b;font-size:11px">This is the exact list the 9am delivery will send (addresses shown after the early PAF pass). <span style="color:#fbbf24">[PAF at 9am]</span> = the door number is resolved at delivery; <span style="color:#f87171">[NO DOOR]</span> = will be dropped/replaced.</p></div>';
-    await sendBrevoEmail({ email: process.env.OWNER_EMAIL || 'ketzman1g@gmail.com', name: 'Owner' }, '9amLeads expected batch — ' + customers.length + ' customers, ' + totalShort + ' short', html);
-    console.log('[EXPECTED-BATCH] sent to owner (' + customers.length + ' customers, ' + totalShort + ' short)');
-    return { sent: true, customers: customers.length, short: totalShort };
+    var issues = totalShort + totalNoDoor;
+    var summary = '<div style="font-family:' + FONT + ';font-size:13px;color:#334155;margin:0 0 18px;padding:12px 16px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0">' +
+      '<b style="color:#0f172a">' + totalCustomers + '</b> customers &nbsp;&middot;&nbsp; ' +
+      '<b style="color:#0f172a">' + totalLeads + '</b> leads &nbsp;&middot;&nbsp; ' +
+      '<span style="color:#92400e"><b>' + totalPaf + '</b> need PAF at 9am</span> &nbsp;&middot;&nbsp; ' +
+      '<span style="color:' + (issues ? '#991b1b' : '#166534') + '"><b>' + issues + '</b> issue' + (issues === 1 ? '' : 's') + '</span>' +
+      '</div>';
+    var html = '<div style="background:#eef2f7;padding:24px 12px">' +
+      '<div style="max-width:680px;margin:0 auto">' +
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:0;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 14px rgba(15,23,42,.08)">' +
+      '<tr><td style="background:#0f172a;padding:22px 26px">' +
+        '<div style="font-family:' + FONT + ';color:#38bdf8;font-size:19px;font-weight:800;letter-spacing:-.2px">9amLeads</div>' +
+        '<div style="font-family:' + FONT + ';color:#e2e8f0;font-size:15px;margin-top:3px">Expected batch for today&rsquo;s 9am</div>' +
+        '<div style="font-family:' + FONT + ';color:#64748b;font-size:12px;margin-top:6px">' + new Date().toLocaleString('en-GB', { timeZone: 'Europe/London', weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) + ' UK</div>' +
+      '</td></tr>' +
+      '<tr><td style="padding:20px 26px 26px 26px">' + summary + cards.join('') +
+        '<div style="font-family:' + FONT + ';font-size:11px;color:#94a3b8;line-height:1.6;border-top:1px solid #e2e8f0;padding-top:12px">' +
+        'This is the exact list the 9am delivery will send, after the early PAF pass. ' +
+        '<b style="color:#92400e">PAF at 9am</b> = door number resolved at delivery &middot; ' +
+        '<b style="color:#991b1b">no door</b> = dropped and replaced.' +
+        '</div>' +
+      '</td></tr></table></div></div>';
+    var subjIssues = (totalShort + totalNoDoor);
+    await sendBrevoEmail({ email: process.env.OWNER_EMAIL || 'ketzman1g@gmail.com', name: 'Owner' },
+      '9amLeads batch — ' + totalCustomers + ' customers, ' + totalLeads + ' leads' + (subjIssues ? ', ' + subjIssues + ' issue(s)' : ', all ready'), html);
+    console.log('[EXPECTED-BATCH] sent to owner (' + totalCustomers + ' customers, ' + totalLeads + ' leads, ' + totalShort + ' short)');
+    return { sent: true, customers: totalCustomers, leads: totalLeads, short: totalShort, noDoor: totalNoDoor };
   } catch(e) { console.log('[EXPECTED-BATCH] error: ' + e.message); return { error: e.message }; }
 }
 cron.schedule('30 8 * * 1-5', function() { try { sendExpectedBatchReport(); } catch(e) {} }, { timezone: 'Europe/London' });
