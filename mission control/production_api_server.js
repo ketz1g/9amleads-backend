@@ -18720,7 +18720,8 @@ app.post('/api/admin/probate-reenrich', adminAuth, async (req, res) => {
       if (!a) return true;
       if (!/,/.test(a)) return true;                 // no comma → not a full address
       if (name && a.toLowerCase().indexOf(String(name).toLowerCase()) === 0) return true; // address is the name
-      if (!/\d/.test(a)) return true;                // no door/street number
+      var first = a.split(',')[0];
+      if (!/\d/.test(first)) return true;            // first segment (the street) has no number
       return false;
     }
     function noticeIdOf(u) {
