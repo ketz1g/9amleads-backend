@@ -31848,13 +31848,23 @@ function syncCustomers(product) {
                   // We already have full postcodes on the rest; this tops up numbers
                   // on the newest leads most likely to be delivered today.
                   mvNeedEnrich.sort(function(a, b) { return new Date(b.scrapedAt || b.firstVisibleDate || 0) - new Date(a.scrapedAt || a.firstVisibleDate || 0); });
-                  // Enrich the WHOLE fresh door-less pool so the promised daily count is
+                  // Enrich the fresh door-less pool so the promised daily count is
                   // deliverable in every customer area (a bare street can't be mailed).
-                  // Standard instance (2GB) handles this easily; 8 concurrent detail fetches.
-                  var mvEnrichMax = Math.min(mvNeedEnrich.length, parseInt(process.env.MOVING_ENRICH_MAX || '500', 10));
+                  // HEAP GUARD: enrichment (detail fetch + photo OCR + address parse) is
+                  // the biggest memory consumer of the run. On a 2GB instance a big
+                  // scrape previously pushed RSS past ~1.1GB and the process was
+                  // OOM-killed mid-run. Scale the batch DOWN as RSS climbs and skip it
+                  // entirely when critically high, so the server can never be OOM-killed
+                  // (and the 09:00 delivery is never disrupted).
+                  var _rssMb = Math.round(process.memoryUsage().rss / 1048576);
+                  var _enrichDefault = _rssMb > 1100 ? 0 : (_rssMb > 850 ? 100 : 200);
+                  var mvEnrichMax = Math.min(mvNeedEnrich.length, parseInt(process.env.MOVING_ENRICH_MAX || String(_enrichDefault), 10));
+                  if (_rssMb > 850) console.log('[SCRAPER] Memory high (' + _rssMb + 'MB) — moving enrichment capped at ' + mvEnrichMax);
                   var mvToEnrich = mvNeedEnrich.slice(0, mvEnrichMax);
-                  var mvEnriched = await rmScraper.enrichMovingLeads(mvToEnrich, 8);
+                  if (mvToEnrich.length > 0) {
+                  var mvEnriched = await rmScraper.enrichMovingLeads(mvToEnrich, 4);
                   console.log('[SCRAPER] Moving: enriched ' + mvEnriched.length + '/' + mvToEnrich.length + ' leads with numbered full addresses (of ' + mvNeedEnrich.length + ' door-less)');
+                  }
                 }
               } catch(mvEnrErr) { console.log('[SCRAPER] Moving enrich error:', mvEnrErr.message); }
               // Resolve via Propalt when enabled + key present. GUARDED by
