@@ -7454,8 +7454,18 @@ app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
       if (cust.plan === 'cancelled') return;
       if (onlyEmail && String(cust.email || '').toLowerCase() !== onlyEmail) return;
       var cap = parseInt(cust.leads_per_day, 10) || 5;
-      // current = leads already on the customer's dashboard today (delivered today or pending)
-      var cur = (dbT.leads || []).filter(function(l) { return l.customer_id === cust.id; }).length;
+      // current = DELIVERABLE leads already queued for the customer (undelivered, not
+      // rejected, with a mailable door-numbered address). Door-less pending leads must
+      // NOT satisfy the cap, otherwise the top-up reports "need 0" while the customer
+      // is actually short of deliverable leads (this left redlion at 1/5). Delivered
+      // leads are in the past and don't count toward the next 9am.
+      var cur = (dbT.leads || []).filter(function(l) {
+        if (l.customer_id !== cust.id) return false;
+        if (l.status === 'removed' || l.delivered) return false;
+        var _ld = {}; try { _ld = JSON.parse(l.data || '{}'); } catch(e) { _ld = {}; }
+        if (_ld.rejected) return false;
+        return leadMailableAddress(_ld, 'moving');
+      }).length;
       var need = cap - cur;
       var entry = { email: cust.email, cap: cap, current: cur, need: Math.max(0, need), added: 0 };
       if (need <= 0) { summary.push(entry); return; }
@@ -7473,7 +7483,11 @@ app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
       for (var i = 0; i < poolForCust.length && assigned < need; i++) {
         var l = poolForCust[i];
         var pcArea = extractPostcodeArea(l.postcode || l.address || l.fullAddress || '');
-        if (!areas.some(function(a) { return String(a).toUpperCase() === pcArea; })) continue;
+        // RIGHT AREA OR NEAREST AREA: exact area first, else accept a geographically
+        // nearest-area lead (within the distance cap) so a dry area still gets topped up
+        // rather than the customer going short at 9am.
+        var _inArea = areas.some(function(a) { return String(a).toUpperCase() === pcArea; });
+        if (!_inArea && !isFallbackLeadAcceptable(l.postcode || l.address || l.fullAddress || '', areas)) continue;
         if (custMovingType === 'residential' && isCommercialLead(l)) continue;
         if (custMovingType === 'commercial' && !isCommercialLead(l)) continue;
         var fd = pickFreshDate(l);
