@@ -7560,7 +7560,7 @@ var __topUpInterval = setInterval(function() {
     rT2.on('error', function(e) { console.log('[TOP-UP] auto top-up error:', e.message); });
     rT2.write(bT2); rT2.end();
   } catch(e) {}
-}, 120 * 60000);
+}, 15 * 60000); // every 15 min (was 120): keep customer queues topped up tightly before 9am
 setTimeout(function() { __topUpInterval.unref(); }, 1000);
 
 // POST /api/admin/backfill-towns — append a town/area to moving leads that have
