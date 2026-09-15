@@ -10607,6 +10607,22 @@ app.get('/api/admin/delivery-status', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/admin/asset-check — diagnostic: where does /assets resolve on the live server?
+app.get('/api/admin/asset-check', adminAuth, (req, res) => {
+  try {
+    var rel = 'assets/email-campaign/removal-companies.jpg';
+    var p1 = path.join(ROOT_DIR, rel), p2 = path.join(__dirname, rel), p3 = path.join(process.cwd(), rel);
+    var assetsDir = path.join(ROOT_DIR, 'assets');
+    res.json({ __dirname: __dirname, ROOT_DIR: ROOT_DIR, cwd: process.cwd(),
+      existsROOT: fs.existsSync(p1), existsDirname: fs.existsSync(p2), existsCwd: fs.existsSync(p3),
+      assetsDir: assetsDir, assetsDirExists: fs.existsSync(assetsDir),
+      assetsList: (function(){ try { return fs.readdirSync(assetsDir); } catch(e){ return 'ERR:' + e.message; } })(),
+      emailCampaignExists: fs.existsSync(path.join(assetsDir, 'email-campaign')),
+      emailCampaignCount: (function(){ try { return fs.readdirSync(path.join(assetsDir, 'email-campaign')).length; } catch(e){ return 'ERR:' + e.message; } })()
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/delivery-recover — manually run the completion watchdog now: detect
 // any customer below their promised count today and top them up (frees a stalled lock
 // first). Useful for the founder, and the basis of the recovery test.
