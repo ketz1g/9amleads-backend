@@ -23158,6 +23158,7 @@ _deliverDiag[cust.email].products = products;
             if (custLeads && custLeads.length) {
               try {
                 var _tbArr = custLeads.map(function(cl) { var d = {}; try { d = JSON.parse(cl.data || '{}'); } catch(e) {} return d; });
+                var rmScraper = require('./rightmove_scraper_v2');
                 var _tbN = await rmScraper.backfillLeadTowns(_tbArr);
                 if (_tbN) {
                   _tbArr.forEach(function(d, i) { if (d.fullAddress || d.address) custLeads[i].data = JSON.stringify(d); });
