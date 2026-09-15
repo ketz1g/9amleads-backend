@@ -12249,39 +12249,43 @@ app.post('/api/admin/probate-backfill', adminAuth, async (req, res) => {
 app.post('/api/admin/send-missed-lead-email', adminAuth, async (req, res) => {
   try {
     var email = String((req.body && req.body.email) || '').toLowerCase().trim();
-    var leadId = String((req.body && req.body.lead_id) || '').trim();
-    if (!email || !leadId) return res.status(400).json({ error: 'email and lead_id required' });
+    // Accept a single lead_id OR an array lead_ids so the auto-fill can send ONE email
+    // covering every added lead (previously it emailed once per lead = spam).
+    var leadIds = [];
+    if (req.body && Array.isArray(req.body.lead_ids)) leadIds = req.body.lead_ids.map(String);
+    else if (req.body && req.body.lead_id) leadIds = [String(req.body.lead_id)];
+    if (!email || !leadIds.length) return res.status(400).json({ error: 'email and lead_id(s) required' });
     var dbM = getDb();
     var cust = (dbM.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
     if (!cust) return res.status(404).json({ error: 'Customer not found' });
-    var lead = (dbM.leads || []).find(function(l) { return l.customer_id === cust.id && l.id === leadId; });
-    if (!lead) return res.status(404).json({ error: 'Lead not found for this customer' });
-    var ld = {}; try { ld = JSON.parse(lead.data || '{}'); } catch(e) {}
+    var leads = leadIds.map(function(id) { return (dbM.leads || []).find(function(l) { return l.customer_id === cust.id && l.id === id; }); }).filter(Boolean);
+    if (!leads.length) return res.status(404).json({ error: 'Lead not found for this customer' });
     // Mint a magic link to the dashboard.
     var _tk = ''; try { _tk = jwt.sign({ id: cust.id, email: cust.email, product: cust.product }, JWT_SECRET, { expiresIn: '48h' }); } catch(te) {}
     var dashUrl = 'https://www.9amleads.com/portal/dashboard.html?token=' + encodeURIComponent(_tk) + '&email=' + encodeURIComponent(cust.email || '');
-    var fullAddr = ld.fullAddress || ld.address || ld.deceasedAddress || '';
-    var pc = String(ld.postcode || '').toUpperCase();
-    var price = ld.priceLabel || (ld.price ? '\u00a3' + Number(ld.price).toLocaleString() : '');
-    var beds = ld.bedrooms ? ld.bedrooms + (ld.bedrooms === 1 ? ' bed' : ' beds') : '';
-    var url = ld.url || '';
-    // Build a clean address display. Never use raw HTML entities here — they get
-    // escaped below and show up as literal "&middot;" text in the inbox. Show the
-    // address on its own line, and only append the postcode if it is not already part
-    // of the address (avoids "...PR1 5JQ  PR1 5JQ").
     function _escE(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-    var pcClean = String(pc).replace(/[^A-Z0-9]/g, '');
-    var addrHasPc = pcClean && new RegExp(pcClean).test(String(fullAddr).toUpperCase().replace(/[^A-Z0-9]/g, ''));
-    var addrLine = fullAddr ? _escE(fullAddr) : 'Address on file';
-    if (pc && !addrHasPc) addrLine += ' ' + _escE(pc);
-    var metaBits = [];
-    if (price) metaBits.push(_escE(price));
-    if (beds) metaBits.push(_escE(beds));
-    var extra = fullAddr + (pc && !addrHasPc ? ', ' + pc : '') + (price ? ' - ' + price : '') + (beds ? ' - ' + beds : '');
-    var leadBlock = '<table cellpadding="0" cellspacing="0" width="100%" style="background:#ffffff;border:1px solid #e2e8f0;border-radius:12px"><tr><td style="padding:16px 20px"><div style="font-size:13px;font-weight:700;color:#1e293b">' + addrLine + '</div>' + (metaBits.length ? '<div style="font-size:12px;color:#64748b;margin-top:4px">' + metaBits.join('  ') + '</div>' : '') + (url ? '<div style="font-size:12px;color:#0ea5e9;margin-top:4px"><a href="' + _escE(url) + '" style="color:#0ea5e9;text-decoration:underline">View the listing</a></div>' : '') + '</td></tr></table>';
-    var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background-color:#f1f5f9;font-family:Inter,Arial,sans-serif;color:#1e293b"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 16px"><table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%"><tr><td style="background-color:#0f172a;padding:24px 30px;border-radius:16px 16px 0 0;text-align:center;border-bottom:3px solid #38bdf8"><div style="font-family:Outfit,Arial,sans-serif;font-size:24px;font-weight:900;color:#38bdf8">9am<span style="color:#38bdf8">Leads</span></div><div style="font-size:10px;color:#94a3b8;letter-spacing:1.2px;text-transform:uppercase;margin-top:4px">An extra lead for you</div></td></tr><tr><td style="background:#ffffff;padding:28px 30px"><h2 style="margin:0 0 10px;font-size:18px;color:#0f172a">We missed one, and we\u2019re sorry &#128583;</h2><p style="font-size:14px;line-height:1.7;color:#334155;margin:0 0 6px">A lead that should have been in your 9am email was held up this morning. It\u2019s now in your dashboard and we\u2019ve included it below.</p><p style="font-size:14px;line-height:1.7;color:#334155;margin:0 0 18px">Sorry for the inconvenience. Your full set of leads is always in your dashboard.</p>' + leadBlock + '<table cellpadding="0" cellspacing="0" style="margin-top:18px"><tr><td><a href="' + dashUrl + '" style="display:inline-block;background:#0ea5e9;background-image:linear-gradient(135deg,#0ea5e9,#2563eb);color:#ffffff;font-weight:800;font-size:13px;padding:11px 18px;border-radius:8px;text-decoration:none">Open your dashboard</a></td></tr></table></td></tr><tr><td style="background:#0f172a;padding:18px 30px;border-radius:0 0 16px 16px;text-align:center"><span style="color:#94a3b8;font-size:11px">9amLeads &middot; hello@9amleads.com &middot; <a href="https://www.9amleads.com" style="color:#38bdf8;text-decoration:none">9amleads.com</a></span></td></tr></table></td></tr></table></body></html>';
-    await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, 'One more lead for you today', html);
-    res.json({ success: true, email: cust.email, lead: extra });
+    var blocks = leads.map(function(lead) {
+      var ld = {}; try { ld = JSON.parse(lead.data || '{}'); } catch(e) {}
+      var fullAddr = ld.fullAddress || ld.address || ld.deceasedAddress || '';
+      var pc = String(ld.postcode || '').toUpperCase();
+      var price = ld.priceLabel || (ld.price ? '\u00a3' + Number(ld.price).toLocaleString() : '');
+      var beds = ld.bedrooms ? ld.bedrooms + (ld.bedrooms === 1 ? ' bed' : ' beds') : '';
+      var url = ld.url || '';
+      var pcClean = String(pc).replace(/[^A-Z0-9]/g, '');
+      var addrHasPc = pcClean && new RegExp(pcClean).test(String(fullAddr).toUpperCase().replace(/[^A-Z0-9]/g, ''));
+      var addrLine = fullAddr ? _escE(fullAddr) : 'Address on file';
+      if (pc && !addrHasPc) addrLine += ' ' + _escE(pc);
+      var metaBits = [];
+      if (price) metaBits.push(_escE(price));
+      if (beds) metaBits.push(_escE(beds));
+      return '<table cellpadding="0" cellspacing="0" width="100%" style="background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:10px"><tr><td style="padding:16px 20px"><div style="font-size:13px;font-weight:700;color:#1e293b">' + addrLine + '</div>' + (metaBits.length ? '<div style="font-size:12px;color:#64748b;margin-top:4px">' + metaBits.join('  ') + '</div>' : '') + (url ? '<div style="font-size:12px;color:#0ea5e9;margin-top:4px"><a href="' + _escE(url) + '" style="color:#0ea5e9;text-decoration:underline">View the listing</a></div>' : '') + '</td></tr></table>';
+    }).join('');
+    var n = leads.length;
+    var heading = n > 1 ? ('We missed ' + n + ', and we\u2019re sorry &#128583;') : 'We missed one, and we\u2019re sorry &#128583;';
+    var subject = n > 1 ? (n + ' more leads for you today') : 'One more lead for you today';
+    var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background-color:#f1f5f9;font-family:Inter,Arial,sans-serif;color:#1e293b"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 16px"><table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%"><tr><td style="background-color:#0f172a;padding:24px 30px;border-radius:16px 16px 0 0;text-align:center;border-bottom:3px solid #38bdf8"><div style="font-family:Outfit,Arial,sans-serif;font-size:24px;font-weight:900;color:#38bdf8">9am<span style="color:#38bdf8">Leads</span></div><div style="font-size:10px;color:#94a3b8;letter-spacing:1.2px;text-transform:uppercase;margin-top:4px">' + (n > 1 ? (n + ' extra leads for you') : 'An extra lead for you') + '</div></td></tr><tr><td style="background:#ffffff;padding:28px 30px"><h2 style="margin:0 0 10px;font-size:18px;color:#0f172a">' + heading + '</h2><p style="font-size:14px;line-height:1.7;color:#334155;margin:0 0 6px">' + (n > 1 ? 'Some leads that should have been in your 9am email were held up this morning.' : 'A lead that should have been in your 9am email was held up this morning.') + ' They\u2019re now in your dashboard and we\u2019ve included ' + (n > 1 ? 'them' : 'it') + ' below.</p><p style="font-size:14px;line-height:1.7;color:#334155;margin:0 0 18px">Sorry for the inconvenience. Your full set of leads is always in your dashboard.</p>' + blocks + '<table cellpadding="0" cellspacing="0" style="margin-top:18px"><tr><td><a href="' + dashUrl + '" style="display:inline-block;background:#0ea5e9;background-image:linear-gradient(135deg,#0ea5e9,#2563eb);color:#ffffff;font-weight:800;font-size:13px;padding:11px 18px;border-radius:8px;text-decoration:none">Open your dashboard</a></td></tr></table></td></tr><tr><td style="background:#0f172a;padding:18px 30px;border-radius:0 0 16px 16px;text-align:center"><span style="color:#94a3b8;font-size:11px">9amLeads &middot; hello@9amleads.com &middot; <a href="https://www.9amleads.com" style="color:#38bdf8;text-decoration:none">9amleads.com</a></span></td></tr></table></td></tr></table></body></html>';
+    await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, subject, html);
+    res.json({ success: true, email: cust.email, count: n });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -16060,7 +16064,13 @@ function autoFillDeliveryShortfalls(cbDone) {
             var cust = (dbN.customers || []).find(function(x) { return String(x.email || '').toLowerCase() === t.email.toLowerCase(); });
             var rows = (dbN.leads || []).filter(function(l) { return l.customer_id && cust && l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0; })
               .sort(function(a, b) { return String(b.created_at || '').localeCompare(String(a.created_at || '')); }).slice(0, addedLeads);
-            for (var k = 0; k < rows.length; k++) { await post('/api/admin/send-missed-lead-email', { email: t.email, lead_id: rows[k].id }); }
+            // ONE email covering every added lead, and only ONCE per customer per day
+            // (the auto-fill can run after the 09:00 run AND at 09:08/09:15/09:25).
+            var alreadySentExtra = cust && (cust.extra_lead_emailed_date === today);
+            if (rows.length && !alreadySentExtra) {
+              await post('/api/admin/send-missed-lead-email', { email: t.email, lead_ids: rows.map(function(r) { return r.id; }) });
+              if (cust) { cust.extra_lead_emailed_date = today; try { saveDb(); } catch(e) {} }
+            }
           } catch(emErr) { console.log('[AUTOFILL] email step error:', emErr.message); }
         }
         next();
