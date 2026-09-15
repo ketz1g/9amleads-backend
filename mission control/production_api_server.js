@@ -31575,6 +31575,41 @@ app.get('/api/admin/gsc/data', adminAuth, async function(req, res) {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/admin/gsc/inspect?url=... — check whether a specific URL is indexed by Google.
+app.get('/api/admin/gsc/inspect', adminAuth, async function(req, res) {
+  try {
+    var g = getGsc();
+    if (!g.isConnected()) return res.status(400).json({ error: 'Not connected to Google Search Console.' });
+    var url = String(req.query.url || '').trim();
+    if (!url) return res.status(400).json({ error: 'url required' });
+    var result = await g.inspectUrl(url);
+    res.json({ success: true, result: result });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/gsc/inspect-blog — index status for every public blog post, so we can
+// see exactly which posts Google has indexed vs not (and the coverage reason).
+app.get('/api/admin/gsc/inspect-blog', adminAuth, async function(req, res) {
+  try {
+    var g = getGsc();
+    if (!g.isConnected()) return res.status(400).json({ error: 'Not connected to Google Search Console.' });
+    var dbB = getDb();
+    var posts = (dbB.blog_posts || []).filter(isPostPublic).slice(0, parseInt(req.query.limit, 10) || 80);
+    var out = [], indexed = 0, notIndexed = 0, errors = 0;
+    for (var i = 0; i < posts.length; i++) {
+      var u = 'https://9amleads.com/blog/' + posts[i].slug;
+      try {
+        var r = await g.inspectUrl(u);
+        var isIndexed = r.verdict === 'PASS';
+        if (isIndexed) indexed++; else notIndexed++;
+        out.push({ url: u, indexed: isIndexed, verdict: r.verdict, coverage: r.coverageState, lastCrawl: r.lastCrawlTime });
+      } catch(ie) { errors++; out.push({ url: u, error: ie.message }); }
+      await new Promise(function(r2) { setTimeout(r2, 250); });
+    }
+    res.json({ success: true, total: posts.length, indexed: indexed, not_indexed: notIndexed, errors: errors, results: out });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/admin/gsc/opportunities?days=90 — keywords closest to page 1 (best ROI).
 app.get('/api/admin/gsc/opportunities', adminAuth, async function(req, res) {
   try {

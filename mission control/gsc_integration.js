@@ -176,6 +176,29 @@ async function searchAnalytics(siteUrl, startDate, endDate, dims, rowLimit) {
   return r;
 }
 
+// URL Inspection API: check whether a specific URL is indexed by Google and why.
+// Returns the indexStatusResult (verdict PASS/NEUTRAL/FAIL, coverageState, last crawl).
+async function inspectUrl(url, siteUrl) {
+  var cfg = loadConfig();
+  var prop = siteUrl || cfg.property || '';
+  if (!prop) throw new Error('No Search Console property set.');
+  var r = await gscRequest('POST', '/v1/urlInspection/index:inspect', { inspectionUrl: url, siteUrl: prop });
+  var j = r.json || {};
+  if (j.error) throw new Error('Inspect failed (' + r.status + '): ' + (j.error.message || ''));
+  var res = (j.inspectionResult && j.inspectionResult.indexStatusResult) || {};
+  return {
+    url: url,
+    verdict: res.verdict || '',
+    coverageState: res.coverageState || '',
+    indexingState: res.indexingState || '',
+    robotsTxtState: res.robotsTxtState || '',
+    pageFetchState: res.pageFetchState || '',
+    lastCrawlTime: res.lastCrawlTime || '',
+    googleCanonical: res.googleCanonical || '',
+    userCanonical: res.userCanonical || ''
+  };
+}
+
 function isoDaysAgo(n) {
   var d = new Date(Date.now() - n * 86400000);
   return d.toISOString().slice(0, 10);
@@ -272,6 +295,7 @@ module.exports = {
   searchAnalytics: searchAnalytics,
   fetchDashboard: fetchDashboard,
   fetchOpportunities: fetchOpportunities,
+  inspectUrl: inspectUrl,
   PUBLIC_BASE: PUBLIC_BASE,
   REDIRECT_URI: REDIRECT_URI,
   SCOPE: SCOPE,
