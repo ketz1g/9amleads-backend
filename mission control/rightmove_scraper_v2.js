@@ -710,10 +710,10 @@ async function lookupZooplaAddress(postcode, streetHint, priceGbp) {
       const body = JSON.stringify(input);
       const req = https.request({
         hostname: 'api.apify.com',
-        path: '/v2/acts/shahidirfan~zoopla-scraper/run-sync-get-dataset-items?token=' + key + '&memory=256&timeout=60',
+        path: '/v2/acts/shahidirfan~zoopla-scraper/run-sync-get-dataset-items?token=' + key + '&memory=256&timeout=12',
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body), 'Accept': 'application/json' },
-        timeout: 90000
+        timeout: 12000
       }, function(res) {
         let b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() {
           try {
@@ -731,20 +731,20 @@ async function lookupZooplaAddress(postcode, streetHint, priceGbp) {
             // Fetch the Zoopla detail page and parse the real street address.
             if (!url) { resolve(null); return; }
             const u = new URL(url);
-            const req2 = https.get({ hostname: u.hostname, path: u.pathname, headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0 Safari/537.36', 'Accept': 'text/html', 'Accept-Language': 'en-GB,en;q=0.9' }, rejectUnauthorized: false, timeout: 25000 }, function(res2) {
+            const req2 = https.get({ hostname: u.hostname, path: u.pathname, headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0 Safari/537.36', 'Accept': 'text/html', 'Accept-Language': 'en-GB,en;q=0.9' }, rejectUnauthorized: false, timeout: 8000 }, function(res2) {
               let html = ''; res2.on('data', function(c) { html += c; }); res2.on('end', function() {
                 const addr = parseZooplaAddress(html);
                 if (addr) resolve(addr); else resolve(null);
               });
             });
             req2.on('error', function() { resolve(null); });
-            req2.setTimeout(25000, function() { req2.destroy(); resolve(null); });
+            req2.setTimeout(8000, function() { req2.destroy(); resolve(null); });
             req2.end();
           } catch(e) { resolve(null); }
         });
       });
       req.on('error', function() { resolve(null); });
-      req.setTimeout(90000, function() { req.destroy(); resolve(null); });
+      req.setTimeout(12000, function() { req.destroy(); resolve(null); });
       req.write(body); req.end();
     } catch(e) { resolve(null); }
   });
@@ -798,10 +798,10 @@ async function lookupLandRegistryAddress(postcode, streetHint, soldPrice, soldYe
       const body = JSON.stringify({ ...input });
       const req = https.request({
         hostname: 'api.apify.com',
-        path: '/v2/acts/dhrumil~rightmove-landregistry-full-address-house-number-finder/run-sync-get-dataset-items?token=' + key + '&memory=256&timeout=60',
+        path: '/v2/acts/dhrumil~rightmove-landregistry-full-address-house-number-finder/run-sync-get-dataset-items?token=' + key + '&memory=256&timeout=12',
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body), 'Accept': 'application/json' },
-        timeout: 90000
+        timeout: 12000
       }, function(res) {
         let b = ''; res.on('data', function(c) { b += c; }); res.on('end', function() {
           try {
@@ -828,7 +828,7 @@ async function lookupLandRegistryAddress(postcode, streetHint, soldPrice, soldYe
         });
       });
       req.on('error', function() { resolve(null); });
-      req.setTimeout(90000, function() { req.destroy(); resolve(null); });
+      req.setTimeout(12000, function() { req.destroy(); resolve(null); });
       req.write(body); req.end();
     } catch(e) { resolve(null); }
   });
@@ -922,8 +922,10 @@ async function enrichMovingLeadsPostcoder(leads) {
         // If the photo/PAF route could not determine a house number (vision
         // failed or the number wasn't found in PAF), fall back to the Apify
         // Land Registry actor as an authoritative source, then to Zoopla's
-        // published detail-page address.
-        if (!lead.buildingNumber) {
+        // published detail-page address. These are slow/paid, so they are SKIPPED
+        // once a delivery run has passed its time budget (keeps the 9am send on time).
+        var _dlPast = !!(global.__DELIVERY_DEADLINE__ && Date.now() > global.__DELIVERY_DEADLINE__);
+        if (!lead.buildingNumber && !_dlPast) {
           const lr = await lookupLandRegistryAddress(lead.postcode, streetHint, lead.price, lead.soldYear);
           if (lr && lr.buildingNumber) {
             console.log('[LAND-REGISTRY] Fallback match for ' + (lead.address||'').substring(0,40) + ': ' + lr.buildingNumber + ' ' + lr.street);
@@ -934,7 +936,7 @@ async function enrichMovingLeadsPostcoder(leads) {
             lead.postcode = lr.postcode || lead.postcode;
             lead.udprn = lr.udprn || lead.udprn || '';
           }
-          if (!lead.buildingNumber) {
+          if (!lead.buildingNumber && !(global.__DELIVERY_DEADLINE__ && Date.now() > global.__DELIVERY_DEADLINE__)) {
             const zl = await lookupZooplaAddress(lead.postcode, streetHint, lead.price);
             if (zl && zl.buildingNumber) {
               console.log('[ZOOPLA] Fallback match for ' + (lead.address||'').substring(0,40) + ': ' + zl.fullAddress);
