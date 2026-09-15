@@ -15631,8 +15631,8 @@ cron.schedule('30 7 * * *', async () => {
 cron.schedule('5 9 * * 1-5', async () => {
   try {
     var todayStr = new Date().toISOString().split('T')[0];
-    if (__lastDeliveryDate === todayStr || __deliveryStartedDate === todayStr) return; // already fired/started today
-    console.log('[BACKSTOP] 09:05 delivery did not fire today — re-triggering now (safety)');
+    if (__lastDeliveryDate === todayStr) return; // already COMPLETED today
+    console.log('[BACKSTOP] 09:05 delivery not complete — re-triggering now (safety)');
     try {
       const http = require('http');
       var bsBody = JSON.stringify({});
@@ -15693,8 +15693,8 @@ function checkErrorRate() {
 }
 function releaseStaleDeliveryLock() {
   try {
-    // If a delivery has been holding the lock for > 20 minutes, it crashed -> release.
-    if (_deliveryLock && _deliveryLockAt && (Date.now() - _deliveryLockAt) > 20 * 60 * 1000) {
+    // If a delivery has been holding the lock for > 6 minutes, it crashed/stalled -> release.
+    if (_deliveryLock && _deliveryLockAt && (Date.now() - _deliveryLockAt) > 6 * 60 * 1000) {
       _deliveryLock = false;
       console.log('[AUTO-HEAL] Released stale delivery lock (held ' + Math.round((Date.now() - _deliveryLockAt)/60000) + 'min)');
       recordError('auto-heal', 'Released stale delivery lock');
@@ -15988,6 +15988,64 @@ function autoFillDeliveryShortfalls(cbDone) {
     next();
   } catch(e) { console.log('[AUTOFILL] error:', e.message); if (typeof cbDone === 'function') { try { cbDone(); } catch(e2) {} } }
 }
+
+// ===== DELIVERY COMPLETION WATCHDOG =====
+// The 09:01/09:05 backstops only fire when the 9am run never STARTED. This is the
+// missing piece: it verifies, PER CUSTOMER, that everyone got their promised count
+// and — if not — frees a stalled lock, re-triggers the delivery, and alerts the
+// founder. Runs at 09:08, 09:15 and 09:25 so the 9am promise is kept even if the
+// first run stalls or under-delivers.
+function deliveryCompletionWatchdog(label) {
+  try {
+    var dbW = getDb();
+    var today = new Date().toISOString().split('T')[0];
+    var short = [];
+    (dbW.customers || []).forEach(function(c) {
+      try {
+        if (typeof isInternalAccount === 'function' && isInternalAccount(c)) return;
+        if (typeof isEntitledForDelivery === 'function' && !isEntitledForDelivery(c)) return;
+        if (!c.plan || c.plan === 'cancelled') return;
+        var promised = (typeof getPlanLimit === 'function' ? getPlanLimit(c.product, c.plan, c.coverage) : 0) || 0;
+        if (promised <= 0) return;
+        var have = (dbW.leads || []).filter(function(l) {
+          return l.customer_id === c.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0 && !(typeof _leadIsRejected === 'function' && _leadIsRejected(l));
+        }).length;
+        if (have < promised) short.push({ email: c.email, have: have, promised: promised });
+      } catch(ce) {}
+    });
+    if (!short.length) { console.log('[COMPLETION-WATCHDOG ' + label + '] all customers fulfilled ✓'); return; }
+    console.log('[COMPLETION-WATCHDOG ' + label + '] SHORT: ' + short.map(function(s){ return s.email + '(' + s.have + '/' + s.promised + ')'; }).join(', '));
+    // Free a stalled lock so the re-trigger can actually run.
+    try {
+      if (typeof _deliveryLock !== 'undefined' && _deliveryLock && (Date.now() - (_deliveryLockAt || 0)) > 6 * 60 * 1000) {
+        _deliveryLock = false;
+        console.log('[COMPLETION-WATCHDOG ' + label + '] released stale delivery lock');
+      }
+    } catch(le) {}
+    // Re-trigger the delivery (exact-count: only tops up the short customers).
+    try {
+      var httpW = require('http');
+      var bodyW = JSON.stringify({});
+      var wreq = httpW.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (ADMIN_PASSWORD || ''), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyW) } }, function(wres) {
+        var wb = ''; wres.on('data', function(c) { wb += c; }); wres.on('end', function() { console.log('[COMPLETION-WATCHDOG ' + label + '] re-run: ' + wb.substring(0, 160)); });
+      });
+      wreq.on('error', function(e) { console.log('[COMPLETION-WATCHDOG] re-run error:', e.message); });
+      wreq.write(bodyW); wreq.end();
+    } catch(te) { console.log('[COMPLETION-WATCHDOG] trigger error:', te.message); }
+    // Alert the founder (only-action).
+    try {
+      sendAdminAlert('⚠ Delivery incomplete at ' + label + ' — auto-recovery triggered',
+        '<div style="font-family:Inter,Arial,sans-serif;font-size:13px;color:#e2e8f0;line-height:1.7">'
+        + '<b style="color:#f87171">' + short.length + ' customer(s) below their promised count</b> at ' + label + ':'
+        + '<ul style="padding-left:18px;margin:6px 0">' + short.map(function(s){ return '<li>' + s.email + ' — ' + s.have + '/' + s.promised + '</li>'; }).join('') + '</ul>'
+        + 'A recovery delivery has been triggered automatically. If it stays short, it is a supply issue for those areas.</div>');
+    } catch(al) {}
+  } catch(e) { console.log('[COMPLETION-WATCHDOG] error:', e.message); }
+}
+cron.schedule('8 9 * * 1-5', function() { try { deliveryCompletionWatchdog('09:08'); } catch(e) {} }, { timezone: 'Europe/London' });
+cron.schedule('15 9 * * 1-5', function() { try { deliveryCompletionWatchdog('09:15'); } catch(e) {} }, { timezone: 'Europe/London' });
+cron.schedule('25 9 * * 1-5', function() { try { deliveryCompletionWatchdog('09:25'); } catch(e) {} }, { timezone: 'Europe/London' });
+
 function purgeAllPendingRows() {
   try {
     var dbP = getDb();
@@ -16739,15 +16797,28 @@ cron.schedule('30 9 * * 1-5', async () => {
     var errs = (global.__lastErrors || []).slice(-3).map(function(e){ return e.message || e.kind || ''; }).filter(Boolean);
     var pcLow = (typeof cap.postcoder === 'number' && cap.postcoder < 50);
     var stLow = (typeof cap.stannp === 'number' && cap.stannp < 20);
+    // Per-customer shortfall count (any customer below their promised count today).
+    var shortCount = 0;
+    try {
+      (ddDb.customers || []).forEach(function(c) {
+        if (!c.plan || c.plan === 'cancelled') return;
+        if (typeof isInternalAccount === 'function' && isInternalAccount(c)) return;
+        var promised = (typeof getPlanLimit === 'function' ? getPlanLimit(c.product, c.plan, c.coverage) : 0) || 0;
+        if (promised <= 0) return;
+        var have = (ddDb.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && String(l.delivered_at).startsWith(todayD); }).length;
+        if (have < promised) shortCount++;
+      });
+    } catch(sce) {}
     // ONLY-ACTION DIGEST: a healthy day sends no email. We only message the founder
     // when something genuinely needs a manual decision (delivery errors, low
     // budgets, shortfalls). Everything else is auto-healed silently.
-    var hasIssue = errs.length > 0 || pcLow || stLow || delToday === 0;
+    var hasIssue = errs.length > 0 || pcLow || stLow || delToday === 0 || shortCount > 0;
     if (!hasIssue) { console.log('[DIGEST] Healthy day — no action email needed'); return; }
     var errHtml = errs.length ? '<li>' + errs.join('</li><li>') + '</li>' : '<li>None recorded (may need a check)</li>';
     sendAdminAlert('⚠ 9amLeads needs your attention — ' + todayD, '<div style="font-size:13px;color:#e2e8f0;line-height:1.7">' +
       '<b style="color:#38bdf8">Active customers:</b> ' + activeC + '<br>' +
       '<b style="color:#38bdf8">Leads delivered today:</b> ' + delToday + '<br>' +
+      '<b style="color:#38bdf8">Customers below promise:</b> ' + (shortCount > 0 ? ('<b style="color:#f87171">' + shortCount + ' ⚠</b>') : '0') + '<br>' +
       '<b style="color:#38bdf8">Postcoder budget:</b> ' + (cap.postcoder || 'n/a') + (pcLow ? ' ⚠ LOW' : '') + '<br>' +
       '<b style="color:#38bdf8">Stannp balance:</b> ' + (cap.stannp || 'n/a') + (stLow ? ' ⚠ LOW' : '') + '<br><br>' +
       '<b style="color:#38bdf8">Recent errors:</b><ul style="margin:4px 0;padding-left:18px">' + errHtml + '</ul><br>' +
@@ -16766,8 +16837,10 @@ cron.schedule('30 9 * * 1-5', async () => {
 cron.schedule('1 9 * * 1-5', async () => {
   try {
     var todayStr = new Date().toISOString().split('T')[0];
-    if (__lastDeliveryDate === todayStr || __deliveryStartedDate === todayStr) return; // already fired/started today
-    console.log('[WATCHDOG] 09:01 delivery did not fire today — re-triggering now (safety)');
+    if (__lastDeliveryDate === todayStr) return; // already COMPLETED today (only skip when done)
+    var __wStarted = (__deliveryStartedDate === todayStr);
+    console.log('[WATCHDOG] 09:01 delivery not complete' + (__wStarted ? ' (run in progress/stalled)' : ' (never fired)') + ' — re-triggering now (safety)');
+    if (!__wStarted) {
     // NOTIFY CUSTOMERS: let every active customer know their leads are on the way.
     // Funny + lighthearted so a delay never sounds alarming. Sent once per day via a
     // watchdog_notified flag so a customer isn't spammed across retries.
@@ -16796,6 +16869,7 @@ cron.schedule('1 9 * * 1-5', async () => {
       wDb.watchdog_notified = wNotified;
       saveDb();
     } catch(wnErr2) { console.log('[WATCHDOG] Delay notification error:', wnErr2.message); }
+    }
     const httpW = require('http');
     var bodyW = JSON.stringify({});
     var wreq = httpW.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (ADMIN_PASSWORD ) + '', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyW) } }, function(wres) {
@@ -20739,7 +20813,9 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
   } catch(tzErr) { console.log('[DELIVERY] timezone guard error:', tzErr.message); }
   if (_deliveryLock) {
     var _lockAge = Date.now() - (_deliveryLockAt || 0);
-    if (_lockAge > 15 * 60 * 1000) {
+    // 6 min (was 15): a stalled run must free the lock quickly so the 09:08/09:15/09:25
+    // recovery watchdogs can re-run and still hit the 9am promise.
+    if (_lockAge > 6 * 60 * 1000) {
       console.log('[DELIVERY] Stale delivery lock (' + Math.round(_lockAge / 1000) + 's) — releasing and continuing');
       _deliveryLock = false;
     } else {
