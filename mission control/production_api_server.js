@@ -16133,6 +16133,80 @@ cron.schedule('8 9 * * 1-5', function() { try { deliveryCompletionWatchdog('09:0
 cron.schedule('15 9 * * 1-5', function() { try { deliveryCompletionWatchdog('09:15'); } catch(e) {} }, { timezone: 'Europe/London' });
 cron.schedule('25 9 * * 1-5', function() { try { deliveryCompletionWatchdog('09:25'); } catch(e) {} }, { timezone: 'Europe/London' });
 
+// ===== DAILY DELIVERY SUMMARY (09:12 UK Mon-Fri) =====
+// Positive confirmation every weekday: "X/Y customers fulfilled". Sent even on a
+// healthy day so the founder never has to guess or check the status page.
+function sendDailySummaryEmail() {
+  try {
+    var db = getDb();
+    var today = new Date().toISOString().split('T')[0];
+    var rows = [];
+    (db.customers || []).forEach(function(c) {
+      if (!c.plan || c.plan === 'cancelled') return;
+      if (typeof isInternalAccount === 'function' && isInternalAccount(c)) return;
+      var promised = (typeof getPlanLimit === 'function' ? getPlanLimit(c.product, c.plan, c.coverage) : 0) || 0;
+      if (promised <= 0) return;
+      var delivered = (db.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0; }).length;
+      rows.push({ email: c.email, promised: promised, delivered: delivered, emailed: (c.last_email_date === today) });
+    });
+    var fulfilled = rows.filter(function(r) { return r.delivered >= r.promised; }).length;
+    var short = rows.filter(function(r) { return r.delivered < r.promised; });
+    var totalDelivered = rows.reduce(function(s, r) { return s + r.delivered; }, 0);
+    var totalPromised = rows.reduce(function(s, r) { return s + r.promised; }, 0);
+    var ok = (short.length === 0);
+    var subject = (ok ? '✅' : '⚠️') + ' 9am delivery report — ' + fulfilled + '/' + rows.length + ' customers fulfilled (' + today + ')';
+    var shortHtml = short.length ? ('<p style="color:#f87171"><b>Below promise:</b></p><ul style="color:#cbd5e1;padding-left:18px">' + short.map(function(r){ return '<li>' + r.email + ' — ' + r.delivered + '/' + r.promised + (r.emailed ? '' : ' (no email)') + '</li>'; }).join('') + '</ul>') : '<p style="color:#34d399"><b>Every customer received their full count and email.</b></p>';
+    var html = '<div style="font-family:Inter,Arial,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:28px;max-width:600px;margin:0 auto;border-radius:14px">'
+      + '<h1 style="font-family:Outfit,Arial,sans-serif;color:' + (ok ? '#34d399' : '#f87171') + ';margin:0 0 6px;font-size:20px">' + (ok ? 'Delivery complete ✅' : 'Delivery needs attention ⚠️') + '</h1>'
+      + '<p style="color:#94a3b8;margin:0 0 16px">' + new Date().toLocaleString('en-GB', { timeZone: 'Europe/London' }) + ' · ' + today + '</p>'
+      + '<table style="width:100%;color:#e2e8f0;font-size:14px;border-collapse:collapse">'
+      + '<tr><td style="padding:6px 0;color:#94a3b8">Customers fulfilled</td><td style="padding:6px 0;text-align:right;font-weight:800">' + fulfilled + ' / ' + rows.length + '</td></tr>'
+      + '<tr><td style="padding:6px 0;color:#94a3b8">Leads delivered</td><td style="padding:6px 0;text-align:right;font-weight:800">' + totalDelivered + ' / ' + totalPromised + '</td></tr>'
+      + '</table><hr style="border:0;border-top:1px solid #262626;margin:14px 0">' + shortHtml
+      + '<p style="color:#64748b;font-size:12px;margin-top:16px">Live status: <a href="https://9amleads.com/portal/delivery-status.html" style="color:#38bdf8">delivery-status</a></p></div>';
+    sendBrevoEmail({ email: (process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com'), name: '9amLeads Owner' }, subject, html).catch(function() {});
+    console.log('[DAILY-SUMMARY] ' + fulfilled + '/' + rows.length + ' fulfilled, ' + totalDelivered + '/' + totalPromised + ' leads');
+  } catch(e) { console.log('[DAILY-SUMMARY] error:', e.message); }
+}
+cron.schedule('12 9 * * 1-5', function() { try { sendDailySummaryEmail(); } catch(e) {} }, { timezone: 'Europe/London' });
+
+// ===== PRE-9AM READINESS CHECK (08:45 UK Mon-Fri) =====
+// The last line of defence BEFORE the run: verify the things that silently break email
+// or the dashboard, so you can fix them before 9am rather than after.
+//   - Brevo reachable + key valid (email would silently fail otherwise)
+//   - JWT_SECRET present (dashboard magic links in the email would break without it)
+//   - every product pool file exists
+//   - Postcoder budget > 0 (PAF door-number enrichment)
+async function preDeliveryReadinessCheck() {
+  var issues = [];
+  try {
+    if (!BREVO_API_KEY) issues.push('Brevo API key is NOT configured — no emails can send.');
+    else {
+      await new Promise(function(resolve) {
+        try {
+          var r = https.request({ hostname: 'api.brevo.com', path: '/v3/account', method: 'GET', headers: { 'api-key': BREVO_API_KEY, 'Accept': 'application/json' }, timeout: 12000 }, function(resp) { var b = ''; resp.on('data', function(c){ b+=c; }); resp.on('end', function(){ if (resp.statusCode === 401 || resp.statusCode === 403) issues.push('Brevo API key REJECTED (HTTP ' + resp.statusCode + ') — emails will fail.'); else if (resp.statusCode >= 500) issues.push('Brevo API error (HTTP ' + resp.statusCode + ').'); resolve(); }); });
+          r.on('error', function() { issues.push('Brevo UNREACHABLE — emails may fail.'); resolve(); });
+          r.on('timeout', function() { try { r.destroy(); } catch(e){} issues.push('Brevo timed out — emails may fail.'); resolve(); });
+          r.end();
+        } catch(e) { resolve(); }
+      });
+    }
+  } catch(e) {}
+  try { if (!(typeof JWT_SECRET !== 'undefined' && JWT_SECRET)) issues.push('JWT_SECRET missing — dashboard login links would break.'); } catch(e) {}
+  try { Object.keys(PRODUCT_LEAD_FILES || {}).forEach(function(p) { var f = PRODUCT_LEAD_FILES[p] && PRODUCT_LEAD_FILES[p].file; if (f && !fs.existsSync(path.join(DATA_DIR, f))) issues.push('Pool file missing: ' + f); }); } catch(e) {}
+  try { var _pb = require('./postcoder_budget'); if (_pb && typeof _pb.getDailyBudget === 'function' && (_pb.getDailyBudget() - _pb.usage()) < 10) issues.push('Postcoder budget nearly exhausted — some door numbers may be missing.'); } catch(e) {}
+  if (!issues.length) { console.log('[READINESS] Pre-9am check: all good'); return; }
+  console.log('[READINESS] ISSUES: ' + issues.join(' | '));
+  try {
+    sendAdminAlert('⚠ Pre-9am readiness check failed — action needed before 9am',
+      '<div style="font-family:Inter,Arial,sans-serif;font-size:14px;color:#e2e8f0;line-height:1.7">'
+      + '<b style="color:#f87171">These would break the 9am delivery — fix before 9am:</b>'
+      + '<ul style="padding-left:18px;margin:8px 0">' + issues.map(function(x){ return '<li>' + x + '</li>'; }).join('') + '</ul>'
+      + 'Live status: <a href="https://9amleads.com/portal/delivery-status.html" style="color:#38bdf8">delivery-status</a></div>');
+  } catch(e) {}
+}
+cron.schedule('45 8 * * 1-5', function() { try { preDeliveryReadinessCheck(); } catch(e) {} }, { timezone: 'Europe/London' });
+
 // ===== PRE-9AM SUPPLY WARNING =====
 // 07:45 UK Mon-Fri: check each entitled customer's mailable IN-AREA supply BEFORE the
 // 9am run. If anyone is likely to fall short, alert the founder early so they can top
