@@ -5186,7 +5186,7 @@ app.get('/sitemap.xml', (req, res) => {
   try {
     promoteDueScheduledPosts();
     var dbData = getDb();
-    var posts = (dbData.blog_posts || []).filter(isPostPublic);
+    var posts = (dbData.blog_posts || []).filter(function(p) { return isPostPublic(p) && !p.duplicate_of; });
     var today = new Date().toISOString().split('T')[0];
     var urls = [
       '<url><loc>https://9amleads.com/</loc><priority>1.0</priority><changefreq>weekly</changefreq><lastmod>' + today + '</lastmod></url>',
@@ -5212,11 +5212,24 @@ app.get('/sitemap.xml', (req, res) => {
 
 // ===== PUBLIC BLOG ROUTES ===== (must be before the SPA fallback below)
 // GET /blog — list all published posts (due scheduled posts count as live)
+// Normalised title key used to detect near-duplicate blog posts (British/American
+// spelling, "-2" suffixes, generic wording). Posts that collide are consolidated: the
+// best one is kept, the rest 301-redirect to it and are dropped from the index and
+// sitemap, so Google stops seeing dozens of near-identical pages.
+function normBlogTitleKey(title) {
+  return String(title || '')
+    .toLowerCase()
+    .replace(/ising\b/g, 'izing').replace(/isation\b/g, 'ization').replace(/ised\b/g, 'ized').replace(/ise\b/g, 'ize')
+    .replace(/\b(a|an|the|your|our|for|in|of|to|and|on|with|how|complete|comprehensive|practical|ultimate|essential|proven|strategies|strategy|success|guide|guides|business|potential|opportunities)\b/g, '')
+    .replace(/[^a-z0-9]/g, '')
+    .replace(/\d+$/, '');
+}
+
 app.get('/blog', (req, res) => {
   try {
     promoteDueScheduledPosts();
     var dbData = getDb();
-    var posts = (dbData.blog_posts || []).filter(isPostPublic).sort(function(a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); });
+    var posts = (dbData.blog_posts || []).filter(function(p) { return isPostPublic(p) && !p.duplicate_of; }).sort(function(a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); });
     var cards = posts.map(function(p) {
       return '<a href="/blog/' + p.slug + '" style="display:block;text-decoration:none;color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:0;margin-bottom:16px;background:rgba(255,255,255,0.03);overflow:hidden"><img src="https://9amleads.com/blog/img/' + p.slug + '.png" alt="' + (p.title || '') + '" loading="lazy" style="width:100%;height:200px;object-fit:cover;display:block"><div style="padding:16px"><div style="font-size:11px;color:#0ea5e9;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;font-weight:700">' + (p.product_name || p.category || '') + '</div><div style="font-weight:700;margin-bottom:6px;font-size:18px;line-height:1.35">' + p.title + '</div><div style="font-size:13px;color:#999">' + (p.description || '') + '</div><div style="font-size:12px;color:#0ea5e9;margin-top:10px;font-weight:600">Read guide &rarr;</div></div></a>';
     }).join('') || '<p style="color:#888">No posts yet.</p>';
@@ -5241,6 +5254,9 @@ app.get('/blog/:slug', (req, res) => {
     var dbData = getDb();
     var posts = dbData.blog_posts || [];
     var post = posts.find(function(p) { return p.slug === req.params.slug && isPostPublic(p); });
+    // Consolidated near-duplicate: permanently redirect to the canonical post so the
+    // duplicate carries no standalone SEO value (and Google drops it from the index).
+    if (post && post.duplicate_of) return res.redirect(301, '/blog/' + post.duplicate_of);
     if (!post) {
       return res.status(404).send('<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Post not found</title></head><body style="background:#000;color:#fff;font-family:Inter,sans-serif;padding:40px;text-align:center"><h1>Post not found</h1><a href="/blog" style="color:#0ea5e9">Back to Blog</a></body></html>');
     }
@@ -30462,15 +30478,27 @@ function blogTemplateUsedMap(dbData) {
 }
 function blogAvailableTemplates(dbData) {
   var used = blogTemplateUsedMap(dbData);
+  // TITLE-KEY GUARD: never offer a template/variation whose rendered title is a
+  // near-duplicate (British/American spelling, "-2" suffix, generic wording) of a
+  // post that already exists. Without this the generator keeps producing dozens of
+  // near-identical pages that Google refuses to index.
+  var usedTitleKeys = {};
+  (dbData.blog_posts || []).forEach(function(p) { if (p.title) usedTitleKeys[normBlogTitleKey(p.title)] = 1; });
   var out = [];
   for (var bi = 0; bi < BLOG_TEMPLATES.length; bi++) {
     var key = 'base_' + bi;
-    if (!used[key]) out.push({ template: BLOG_TEMPLATES[bi], key: key, varIndex: -1 });
+    if (used[key]) continue;
+    var btk = normBlogTitleKey(blogRenderTitle(BLOG_TEMPLATES[bi], -1));
+    if (btk && usedTitleKeys[btk]) continue;
+    out.push({ template: BLOG_TEMPLATES[bi], key: key, varIndex: -1 });
   }
   for (var vi = 0; vi < BLOG_VARIATIONS.length; vi++) {
     for (var bj = 0; bj < BLOG_TEMPLATES.length; bj++) {
       var vkey = blogTemplateKey(bj, vi);
-      if (!used[vkey]) out.push({ template: BLOG_TEMPLATES[bj], key: vkey, varIndex: vi });
+      if (used[vkey]) continue;
+      var vtk = normBlogTitleKey(blogRenderTitle(BLOG_TEMPLATES[bj], vi));
+      if (vtk && usedTitleKeys[vtk]) continue;
+      out.push({ template: BLOG_TEMPLATES[bj], key: vkey, varIndex: vi });
     }
   }
   return out;
@@ -30489,7 +30517,7 @@ var LEAD_TYPE_PAGES = { moving: '/movingleadsdaily/', probate: '/probateleads/',
 function writeSitemap() {
   try {
     var dbData = getDb();
-    var posts = (dbData.blog_posts || []).filter(isPostPublic).sort(function(a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); });
+    var posts = (dbData.blog_posts || []).filter(function(p) { return isPostPublic(p) && !p.duplicate_of; }).sort(function(a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); });
     var today = new Date().toISOString().split('T')[0];
     var urls = [
       '<url><loc>https://9amleads.com/</loc><priority>1.0</priority><changefreq>weekly</changefreq><lastmod>' + today + '</lastmod></url>',
@@ -31607,6 +31635,43 @@ app.get('/api/admin/gsc/inspect-blog', adminAuth, async function(req, res) {
       await new Promise(function(r2) { setTimeout(r2, 250); });
     }
     res.json({ success: true, total: posts.length, indexed: indexed, not_indexed: notIndexed, errors: errors, results: out });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/blog/consolidate — detect near-duplicate posts (by normalised title)
+// and mark all but the best in each cluster as duplicates of the keeper. Duplicates
+// 301-redirect to the keeper and are excluded from the blog index + sitemap. Body:
+// { dry_run: true } to preview without writing.
+app.post('/api/admin/blog/consolidate', adminAuth, function(req, res) {
+  try {
+    var dry = !!(req.body && req.body.dry_run);
+    var dbB = getDb();
+    var posts = (dbB.blog_posts || []).filter(isPostPublic);
+    var clusters = {};
+    posts.forEach(function(p) {
+      var k = normBlogTitleKey(p.title || p.slug);
+      if (!k) return;
+      (clusters[k] = clusters[k] || []).push(p);
+    });
+    var marked = [], keeperCount = 0;
+    Object.keys(clusters).forEach(function(k) {
+      var group = clusters[k];
+      if (group.length < 2) {
+        group.forEach(function(p) { if (p.duplicate_of) { marked.push({ slug: p.slug, action: 'unmarked' }); if (!dry) delete p.duplicate_of; } });
+        return;
+      }
+      // keeper = longest content (most complete); tie-break oldest.
+      group.sort(function(a, b) { return (String(b.html || '').length - String(a.html || '').length) || String(a.created_at || '').localeCompare(String(b.created_at || '')); });
+      var keeper = group[0];
+      keeperCount++;
+      group.slice(1).forEach(function(p) {
+        marked.push({ slug: p.slug, action: 'duplicate_of', keeper: keeper.slug });
+        if (!dry) p.duplicate_of = keeper.slug;
+      });
+      if (!dry) delete keeper.duplicate_of;
+    });
+    if (!dry) { saveDb(); try { writeSitemap(); } catch(e) {} }
+    res.json({ success: true, dry_run: dry, posts: posts.length, clusters: keeperCount, marked: marked.length, detail: marked.slice(0, 300) });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
