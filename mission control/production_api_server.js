@@ -16069,7 +16069,11 @@ function deliveryCompletionWatchdog(label) {
         console.log('[COMPLETION-WATCHDOG ' + label + '] released stale delivery lock');
       }
     } catch(le) {}
-    // Re-trigger the delivery (exact-count: only tops up the short customers).
+    // Recover. TWO paths, because they cover different cases:
+    //  1) /api/admin/deliver — handles customers NOT yet emailed (sends their daily email).
+    //  2) autoFillDeliveryShortfalls — tops up customers ALREADY emailed today via
+    //     top-up-today + emails each added lead (the main run DISCARDS candidates for
+    //     already-emailed customers, so it cannot recover them on its own).
     try {
       var httpW = require('http');
       var bodyW = JSON.stringify({});
@@ -16079,6 +16083,11 @@ function deliveryCompletionWatchdog(label) {
       wreq.on('error', function(e) { console.log('[COMPLETION-WATCHDOG] re-run error:', e.message); });
       wreq.write(bodyW); wreq.end();
     } catch(te) { console.log('[COMPLETION-WATCHDOG] trigger error:', te.message); }
+    try {
+      if (typeof autoFillDeliveryShortfalls === 'function') {
+        autoFillDeliveryShortfalls(function() { console.log('[COMPLETION-WATCHDOG ' + label + '] auto-fill recovery finished'); });
+      }
+    } catch(te2) { console.log('[COMPLETION-WATCHDOG] auto-fill error:', te2.message); }
     // Alert the founder (only-action).
     try {
       sendAdminAlert('⚠ Delivery incomplete at ' + label + ' — auto-recovery triggered',
