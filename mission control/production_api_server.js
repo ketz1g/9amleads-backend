@@ -18216,11 +18216,26 @@ async function trialAutoChargeCustomer(cust, opts) {
     // otherwise default to Starter. This lets a customer select the package they
     // want at trial-end instead of always being charged Starter.
     var prodKeyMap2 = { moving: 'mov', planning: 'plan', probate: 'prob', newbusiness: 'nb', tenders: 'tend' };
-    var pKey2 = prodKeyMap2[cust.product] || 'mov';
     var chosenTier2 = (cust.selected_plan === 'pro') ? 'growth' : (cust.selected_plan === 'enterprise') ? 'power' : 'starter';
     var chosenLabel2 = (cust.selected_plan === 'pro') ? 'Pro' : (cust.selected_plan === 'enterprise') ? 'Enterprise' : 'Starter';
-    var priceId2 = getStripePriceId(cust.product, pKey2 + '-' + chosenTier2);
+    // OPTION 2: charge one subscription item per subscribed lead type (biz_field3),
+    // so trial-end billing matches the multi-product checkout (sum of all types).
+    var subs2 = [];
+    try { subs2 = JSON.parse(cust.biz_field3 || '[]'); } catch(e) { subs2 = []; }
+    if (!Array.isArray(subs2)) subs2 = [];
+    subs2 = subs2.filter(function(p){ return p; }).filter(function(p,i,a){ return a.indexOf(p) === i; });
+    if (subs2.length === 0) subs2 = [cust.product];
+    if (subs2.indexOf(cust.product) === -1) subs2.unshift(cust.product);
+    var priceIds2 = [];
+    for (var s2 = 0; s2 < subs2.length; s2++) {
+      var pk2 = prodKeyMap2[subs2[s2]] || subs2[s2];
+      var pid2 = getStripePriceId(subs2[s2], pk2 + '-' + chosenTier2);
+      if (pid2) priceIds2.push(pid2);
+    }
+    var priceId2 = priceIds2[0] || '';
     res2.price_id = priceId2 || '';
+    res2.price_ids = priceIds2;
+    res2.subscribed_products = subs2;
     res2.chosen_plan = chosenLabel2;
     if (!priceId2) { res2.status = 'skip_no_price'; res2.message = 'No ' + chosenLabel2 + ' price id configured for ' + cust.product; return res2; }
 
@@ -18250,16 +18265,21 @@ async function trialAutoChargeCustomer(cust, opts) {
 
     // Actually create the subscription (charges the card now)
     var finalPlan = (cust.selected_plan === 'pro' || cust.selected_plan === 'enterprise') ? cust.selected_plan : 'starter';
-    var subResult = await stripeApiRequest('POST', 'subscriptions', {
+    var subBody2 = {
       customer: cust.stripe_customer_id,
-      'items[0][price]': priceId2,
       'default_payment_method': cust.stripe_payment_method_id,
       'metadata[customer_id]': cust.id,
       'metadata[product]': cust.product,
       'metadata[plan]': finalPlan,
       off_session: 'true',
       'payment_behavior': 'allow_incomplete'
-    });
+    };
+    // OPTION 2: one item per subscribed lead type — recurs at the weekly sum.
+    for (var ii2 = 0; ii2 < priceIds2.length; ii2++) {
+      subBody2['items[' + ii2 + '][price]'] = priceIds2[ii2];
+    }
+    if (priceIds2.length > 1) subBody2['metadata[subscribed_products]'] = subs2.join(',');
+    var subResult = await stripeApiRequest('POST', 'subscriptions', subBody2);
     if (subResult && subResult.id) {
       // Ensure the FIRST invoice is paid immediately (auto-charge the saved card)
       // off-session. allow_incomplete can leave the first invoice open if the card
@@ -23134,20 +23154,51 @@ app.post('/api/auth/change-plan', authMiddleware, async (req, res) => {
     var sub = db.prepare('SELECT * FROM subscriptions WHERE customer_id = ? ORDER BY updated_at DESC LIMIT 1').get(customer.id);
     var subId = sub && sub.stripe_id ? sub.stripe_id : '';
     var productKeyMap = { moving: 'mov', probate: 'prob', newbusiness: 'nb', planning: 'plan', tenders: 'tend' };
-    var pk = productKeyMap[customer.product] || customer.product;
     var pm = { starter: 'starter', pro: 'growth', enterprise: 'power' };
-    var newPrice = getStripePriceId(customer.product, pk + '-' + pm[plan]);
+    // OPTION 2: one price per subscribed lead type at the new tier.
+    var subsC = [];
+    try { subsC = JSON.parse(customer.biz_field3 || '[]'); } catch(e) { subsC = []; }
+    if (!Array.isArray(subsC)) subsC = [];
+    subsC = subsC.filter(function(p){ return p; }).filter(function(p,i,a){ return a.indexOf(p) === i; });
+    if (subsC.length === 0) subsC = [customer.product];
+    if (subsC.indexOf(customer.product) === -1) subsC.unshift(customer.product);
+    var priceByProduct = {};
+    var newPrices = [];
+    for (var ci = 0; ci < subsC.length; ci++) {
+      var cpk = productKeyMap[subsC[ci]] || subsC[ci];
+      var cpid = getStripePriceId(subsC[ci], cpk + '-' + pm[plan]);
+      if (cpid) { priceByProduct[subsC[ci]] = cpid; newPrices.push(cpid); }
+    }
+    var newPrice = newPrices[0] || '';
     if (!newPrice) return res.status(400).json({ error: 'Pricing not found for this plan' });
     if (isDowngrade && subId.indexOf('sub_') === 0) {
-      // Update the existing subscription's price - no payment now, lower charge next cycle.
+      // Update each existing subscription item to the new tier price (no payment now).
       var applied = false;
       try {
         var subObj = await stripeApiRequest('GET', 'subscriptions/' + encodeURIComponent(subId), null);
-        var item = subObj && subObj.items && subObj.items.data && subObj.items.data[0];
-        if (item && item.id) {
-          var upd = await stripeApiRequest('POST', 'subscriptions/' + encodeURIComponent(subId), {
-            'items[0][id]': item.id, 'items[0][price]': newPrice, 'proration_behavior': 'create_prorations'
+        var items = (subObj && subObj.items && subObj.items.data) || [];
+        // Reverse map: any known price id -> product name.
+        var priceToProduct = {};
+        Object.keys(productKeyMap).forEach(function(pr){
+          ['starter','growth','power'].forEach(function(t){
+            var rp = getStripePriceId(pr, productKeyMap[pr] + '-' + t);
+            if (rp) priceToProduct[rp] = pr;
           });
+        });
+        var updParams = { 'proration_behavior': 'create_prorations' };
+        var updCount = 0;
+        for (var it = 0; it < items.length; it++) {
+          var curPid = items[it].price && items[it].price.id;
+          var prodName = priceToProduct[curPid] || (it === 0 ? customer.product : null);
+          var newPid = prodName ? priceByProduct[prodName] : null;
+          if (items[it].id && newPid) {
+            updParams['items[' + updCount + '][id]'] = items[it].id;
+            updParams['items[' + updCount + '][price]'] = newPid;
+            updCount++;
+          }
+        }
+        if (updCount > 0) {
+          var upd = await stripeApiRequest('POST', 'subscriptions/' + encodeURIComponent(subId), updParams);
           applied = !!(upd && upd.id);
         }
       } catch (updErr) { console.log('[CHANGE-PLAN] sub update error:', updErr.message); applied = false; }
@@ -23159,15 +23210,20 @@ app.post('/api/auth/change-plan', authMiddleware, async (req, res) => {
         return res.json({ success: true, applied: true, plan: plan, leads_per_day: dlimit, message: 'Plan updated - your next charge will be at the ' + plan + ' price and tomorrow\'s delivery matches it.' });
       }
     }
-    // Upgrade (or no subscription): send them to a payment checkout for the new price.
+    // Upgrade (or no subscription): payment checkout with one line item per product.
     var baseUrl = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
-    var session = await stripeApiRequest('POST', 'checkout/sessions', {
+    var chkBody = {
       mode: 'subscription', customer_email: customer.email,
-      'line_items[0][price]': newPrice, 'line_items[0][quantity]': '1',
       success_url: baseUrl + '/portal/dashboard.html?checkout=success&session_id={CHECKOUT_SESSION_ID}',
       cancel_url: baseUrl + '/portal/dashboard.html?checkout=cancel',
       'metadata[customer_id]': customer.id, 'metadata[product]': customer.product, 'metadata[plan]': plan
-    });
+    };
+    for (var xi = 0; xi < newPrices.length; xi++) {
+      chkBody['line_items[' + xi + '][price]'] = newPrices[xi];
+      chkBody['line_items[' + xi + '][quantity]'] = '1';
+    }
+    if (newPrices.length > 1) chkBody['metadata[subscribed_products]'] = subsC.join(',');
+    var session = await stripeApiRequest('POST', 'checkout/sessions', chkBody);
     if (session && session.url) return res.json({ success: true, applied: false, url: session.url });
     res.status(400).json({ error: (session && session.error && session.error.message) || 'Could not create checkout' });
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -23206,22 +23262,41 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
     // standalone 9amLeads Pro package uses `plan='pro-plan'` (£249/wk) and is
     // passed explicitly by the front-end when offering that product.
     var priceId;
+    var lineItemPrices = [];              // OPTION 2: one Stripe price per subscribed lead type
+    var subscribedProducts = [customer.product]; // resolved list, used for metadata
     var packageMap = { 'builder-package': 'builder-package', 'marketing-package': 'marketing-package', 'property-package': 'property-package', 'moving-package': 'moving-package', 'pro-plan': 'pro' };
     if (packageKeys[plan]) {
       priceId = getStripePriceId(packageMap[plan], packageKeys[plan]);
       if (!priceId) {
         return res.status(400).json({ error: 'Package pricing not found. Run node stripe_handler.js --setup first.' });
       }
+      lineItemPrices = [priceId];
     } else {
-      const productKey = { moving: 'mov', probate: 'prob', newbusiness: 'nb', planning: 'plan', tenders: 'tend' }[customer.product] || customer.product;
-      // Map modal plan names to Stripe price name format
+      // OPTION 2 — PER-LEAD-TYPE BILLING.
+      // Charge ONE line item per subscribed lead type on a SINGLE Stripe
+      // subscription, so the weekly charge recurs at the SUM of every product's
+      // price (e.g. Moving £25 + Probate £25 = £50/wk). The subscribed types are
+      // stored in biz_field3 (set at signup from req.body.products).
+      var productKeyMap = { moving: 'mov', probate: 'prob', newbusiness: 'nb', planning: 'plan', tenders: 'tend' };
       var planMap = { starter: 'starter', pro: 'growth', enterprise: 'power' };
       var mappedPlan = planMap[plan] || plan;
-      const planKey = productKey + '-' + mappedPlan;
-      priceId = getStripePriceId(customer.product, planKey);
-      if (!priceId) {
-        return res.status(400).json({ error: 'Pricing not found for this plan (' + planKey + '). Run node stripe_handler.js --setup first.' });
+      var subs = [];
+      try { subs = JSON.parse(customer.biz_field3 || '[]'); } catch(e) { subs = []; }
+      if (!Array.isArray(subs)) subs = [];
+      subs = subs.filter(function(p){ return p; }).filter(function(p, i, a){ return a.indexOf(p) === i; });
+      if (subs.length === 0) subs = [customer.product];
+      if (subs.indexOf(customer.product) === -1) subs.unshift(customer.product);
+      for (var si = 0; si < subs.length; si++) {
+        var pk = productKeyMap[subs[si]] || subs[si];
+        var pid = getStripePriceId(subs[si], pk + '-' + mappedPlan);
+        if (pid) lineItemPrices.push(pid);
       }
+      if (lineItemPrices.length === 0) {
+        var _pk0 = productKeyMap[customer.product] || customer.product;
+        return res.status(400).json({ error: 'Pricing not found for this plan (' + _pk0 + '-' + mappedPlan + '). Run node stripe_handler.js --setup first.' });
+      }
+      priceId = lineItemPrices[0];
+      subscribedProducts = subs;
     }
 
     const baseUrl = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
@@ -23237,14 +23312,21 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
     var sessionBody = {
       mode: 'subscription',
       customer_email: customer.email,
-      'line_items[0][price]': priceId,
-      'line_items[0][quantity]': '1',
       success_url: successUrl,
       cancel_url: cancelUrl,
       'metadata[customer_id]': customer.id,
       'metadata[product]': customer.product,
       'metadata[plan]': plan
     };
+
+    // One line item per subscribed lead type. Stripe recurs the SUM every week.
+    for (var li = 0; li < lineItemPrices.length; li++) {
+      sessionBody['line_items[' + li + '][price]'] = lineItemPrices[li];
+      sessionBody['line_items[' + li + '][quantity]'] = '1';
+    }
+    if (lineItemPrices.length > 1) {
+      sessionBody['metadata[subscribed_products]'] = subscribedProducts.join(',');
+    }
 
     // No trial period — the first weekly charge is taken immediately on checkout.
     if (trialDays > 0) {
@@ -24832,7 +24914,25 @@ app.get('/api/subscription', authMiddleware, (req, res) => {
   // Get stripe price ID for display
   var priceKey = plan === 'starter' ? 'price_starter' : (plan === 'pro' ? 'price_growth' : 'price_power');
   var stripePriceId = rule[priceKey] || '';
-  var priceAmount = plan === 'starter' ? 25 : (plan === 'pro' ? 49 : (plan === 'enterprise' ? 99 : 0));
+  // OPTION 2: weekly price = SUM of every subscribed lead type at this tier
+  // (e.g. Moving £25 + Probate £25 = £50/wk on Starter).
+  var AMOUNT_BY_PRODUCT = {
+    moving: { starter: 25, pro: 49, enterprise: 99 },
+    probate: { starter: 25, pro: 49, enterprise: 99 },
+    newbusiness: { starter: 25, pro: 25, enterprise: 49 },
+    planning: { starter: 49, pro: 99, enterprise: 99 },
+    tenders: { starter: 49, pro: 99, enterprise: 99 }
+  };
+  var _subsForPrice = [];
+  try { _subsForPrice = JSON.parse(customer.biz_field3 || '[]'); } catch(e) { _subsForPrice = []; }
+  if (!Array.isArray(_subsForPrice) || _subsForPrice.length === 0) _subsForPrice = [product];
+  if (_subsForPrice.indexOf(product) === -1) _subsForPrice.unshift(product);
+  var priceAmount = 0;
+  for (var _sp = 0; _sp < _subsForPrice.length; _sp++) {
+    var _m = AMOUNT_BY_PRODUCT[_subsForPrice[_sp]];
+    if (_m && _m[plan]) priceAmount += _m[plan];
+  }
+  if (priceAmount === 0) priceAmount = (plan === 'starter' ? 25 : (plan === 'pro' ? 49 : (plan === 'enterprise' ? 99 : 0)));
 
   // Get delivered today + this month
   const dbData = getDb();
@@ -25012,7 +25112,24 @@ app.get('/api/payments', authMiddleware, async (req, res) => {
 
     var plan = customer.plan || 'free_trial';
     var product = customer.product || 'moving';
-    var priceAmount = plan === 'starter' ? 25 : (plan === 'pro' ? 49 : (plan === 'enterprise' ? 99 : 0));
+    // OPTION 2: weekly price = SUM of every subscribed lead type at this tier.
+    var AMOUNT_BY_PRODUCT_P = {
+      moving: { starter: 25, pro: 49, enterprise: 99 },
+      probate: { starter: 25, pro: 49, enterprise: 99 },
+      newbusiness: { starter: 25, pro: 25, enterprise: 49 },
+      planning: { starter: 49, pro: 99, enterprise: 99 },
+      tenders: { starter: 49, pro: 99, enterprise: 99 }
+    };
+    var _subsP = [];
+    try { _subsP = JSON.parse(customer.biz_field3 || '[]'); } catch(e) { _subsP = []; }
+    if (!Array.isArray(_subsP) || _subsP.length === 0) _subsP = [product];
+    if (_subsP.indexOf(product) === -1) _subsP.unshift(product);
+    var priceAmount = 0;
+    for (var _spp = 0; _spp < _subsP.length; _spp++) {
+      var _mp = AMOUNT_BY_PRODUCT_P[_subsP[_spp]];
+      if (_mp && _mp[plan]) priceAmount += _mp[plan];
+    }
+    if (priceAmount === 0) priceAmount = (plan === 'starter' ? 25 : (plan === 'pro' ? 49 : (plan === 'enterprise' ? 99 : 0)));
     var rule = getLeadTypeRule(product);
     var planName = rule ? rule.name : (product || 'Moving Leads');
     var coverageLabel = COVERAGE_LABELS[customer.coverage] || customer.coverage || 'postcode';
@@ -25036,13 +25153,18 @@ app.get('/api/payments', authMiddleware, async (req, res) => {
       if (stripeSubId) {
         var sub = await stripeApiRequest('GET', 'subscriptions/' + stripeSubId, {});
         if (sub && sub.id) {
-          var item = (sub.items && sub.items.data && sub.items.data[0]) || {};
+          var items = (sub.items && sub.items.data) || [];
+          var item = items[0] || {};
           var price = item.price || {};
           var recurring = price.recurring || {};
+          // OPTION 2: sum ALL subscription items (one per lead type), not just the first.
+          var subTotalAmount = 0;
+          items.forEach(function(it){ if (it.price && it.price.unit_amount) subTotalAmount += it.price.unit_amount / 100; });
           subscription = {
             id: sub.id,
             status: sub.status,
-            plan_amount: price.unit_amount ? price.unit_amount / 100 : 0,
+            plan_amount: subTotalAmount,
+            item_count: items.length,
             currency: price.currency || 'gbp',
             interval: recurring.interval || 'week',
             current_period_start: sub.current_period_start ? new Date(sub.current_period_start * 1000).toISOString() : '',
