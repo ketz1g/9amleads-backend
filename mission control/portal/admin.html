@@ -1472,9 +1472,23 @@ function deleteCustomerAdmin(emailEnc) {
     .catch(function(e) { alert('Error: ' + e.message); });
 }
 
+// Compact badge for a single auto-email (e.g. trial_day9 -> "D9", trial_month3 -> "M3").
+function emailDayBadge(key, label) {
+  var short = String(key || '').replace('trial_', '');
+  if (short.indexOf('day') === 0) short = 'D' + short.substring(3);
+  else if (short.indexOf('month') === 0) short = 'M' + short.substring(5);
+  else if (short.indexOf('wk') === 0) short = 'W' + short.substring(2);
+  var post = String(key || '').indexOf('day') === 0 && parseInt(short.substring(1), 10) >= 9;
+  var bg = post ? 'rgba(239,68,68,0.10)' : 'rgba(34,197,94,0.12)';
+  var col = post ? '#dc2626' : '#16a34a';
+  var brd = post ? 'rgba(239,68,68,0.25)' : 'rgba(34,197,94,0.3)';
+  return '<span title="' + String(label || key).replace(/"/g, '&quot;') + '" style="display:inline-block;background:' + bg + ';color:' + col + ';border:1px solid ' + brd + ';border-radius:4px;padding:0 4px;font-size:9px;font-weight:700;margin:1px 2px 1px 0">' + short + '</span>';
+}
+
 // Renders the auto retention emails a customer has already received (from the
-// server-enriched email_log array). Shows count + a tooltip list; red badge for
-// expired trials so you can see their full auto-sequence at a glance.
+// server-enriched email_log array). Shows the actual emails as inline badges so
+// the full auto-sequence is visible at a glance (green = during trial, red = after
+// the trial ended). Hover any badge for the full email name.
 function autoEmailsHtml(c) {
   var log = c.email_log || [];
   var expired = c.trial_expired;
@@ -1483,10 +1497,10 @@ function autoEmailsHtml(c) {
       ? '<span style="color:#ef4444;font-weight:700">Expired trial</span>'
       : '<span style="color:#cbd5e1">-</span>';
   }
+  var badges = log.map(function(x){ return emailDayBadge(x.key, x.label); }).join('');
   var names = log.map(function(x){ return x.label || x.key; });
-  var chip = '<span style="background:rgba(124,58,237,0.12);color:#6d28d9;border:1px solid rgba(124,58,237,0.2);border-radius:100px;padding:2px 8px;font-size:10px;font-weight:700">' + log.length + ' sent</span>';
   var title = (expired ? 'Trial EXPIRED - ' : '') + 'Auto emails received:\n' + names.join('\n');
-  return '<div title="' + title.replace(/"/g, '&quot;') + '" style="cursor:help;white-space:nowrap">' + (expired ? '<span style="color:#ef4444;font-weight:700;margin-right:3px">&#9888;</span>' : '') + chip + '</div>';
+  return '<div title="' + title.replace(/"/g, '&quot;') + '" style="cursor:help;white-space:normal;max-width:170px">' + (expired ? '<span style="color:#ef4444;font-weight:700;margin-right:3px">&#9888;</span>' : '') + badges + '</div>';
 }
 
 function renderCustomers(customers) {  const tbody = document.getElementById('customerTable');
@@ -1540,7 +1554,7 @@ function renderExpiredCustomers(customers) {
     const signupDate = c.created_at ? new Date(c.created_at).toLocaleDateString() : '';
     const log = c.email_log || [];
     const emailsChip = log.length
-      ? '<span style="background:rgba(124,58,237,0.12);color:#6d28d9;border:1px solid rgba(124,58,237,0.2);border-radius:100px;padding:2px 8px;font-size:10px;font-weight:700;cursor:help" title="' + log.map(x => x.label || x.key).join('\\n').replace(/"/g, '&quot;') + '">' + log.length + ' sent</span>'
+      ? '<div style="white-space:normal;max-width:160px" title="' + log.map(x => x.label || x.key).join('\\n').replace(/"/g, '&quot;') + '">' + log.map(x => emailDayBadge(x.key, x.label)).join('') + '</div>'
       : '<span style="color:#94a3b8;font-size:11px">-</span>';
     let productsHtml = '<span class="badge ' + badgeClass(c.product) + '">' + (c.lead_type || c.product) + '</span>';
     try { var extraProds = JSON.parse(c.biz_field3 || '[]'); if (Array.isArray(extraProds) && extraProds.length > 0) { productsHtml += extraProds.map(function(p) { return ' <span class="badge ' + badgeClass(p) + '">' + p + '</span>'; }).join(''); } } catch(e) {}
