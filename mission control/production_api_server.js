@@ -21457,7 +21457,8 @@ _deliverDiag[cust.email].products = products;
       var usedAreas = {};
       custAreas.forEach(function(a) { usedAreas[a] = {}; });
       var areaCycle = 0;
-        for (var r1p = 0; r1p < products.length && custLeads.length < totalNeeded; r1p++) {
+                for (var r1p = 0; r1p < products.length && custLeads.length < totalNeeded; r1p++) {
+                  if (global.__DELIVERY_DEADLINE__ && Date.now() > global.__DELIVERY_DEADLINE__) break;
         var r1prod = products[r1p];
         if (prodTaken[r1prod] >= prodDailyCap(r1prod)) continue;
         if (!canTakeProduct(r1prod, cust.plan, weekStart2, today, custLeads)) continue;
@@ -21510,7 +21511,8 @@ _deliverDiag[cust.email].products = products;
       // Round 2: fill remaining slots — cycle through (product × area) round-robin
       if (custLeads.length < totalNeeded) {
         var maxRounds = Math.min(50, Math.ceil(totalNeeded * 2));
-        for (var r2 = 0; r2 < maxRounds && custLeads.length < totalNeeded; r2++) {
+                for (var r2 = 0; r2 < maxRounds && custLeads.length < totalNeeded; r2++) {
+                  if (global.__DELIVERY_DEADLINE__ && Date.now() > global.__DELIVERY_DEADLINE__) break;
           for (var r2p = 0; r2p < products.length && custLeads.length < totalNeeded; r2p++) {
             var r2prod = products[r2p];
             if (prodTaken[r2prod] >= prodDailyCap(r2prod)) continue;
@@ -21575,6 +21577,11 @@ _deliverDiag[cust.email].products = products;
                     var _cut2 = _fp === 1 ? freshCutoffNow : freshCutoff48;
                     if (_fp === 2) console.log('[DELIVERY] ' + cust.email + ': 24h supply short (' + createdFromPool.length + '/' + totalNeeded + ') - falling back to 48h leads');
                     for (var pf=0; pf<poolArr.length && createdFromPool.length < totalNeeded; pf++) {
+                      // DELIVERY TIME BUDGET: stop scanning the pool once the run has
+                      // exceeded its budget. Each candidate can trigger a slow Rightmove
+                      // detail fetch + PAF lookup, so without this a large pool stalls
+                      // the whole 9am send. Whatever has been assigned is still emailed.
+                      if (global.__DELIVERY_DEADLINE__ && Date.now() > global.__DELIVERY_DEADLINE__) { console.log('[DELIVERY] ' + cust.email + ': time budget reached - stopping pool scan'); break; }
                       var rl = poolArr[pf];
                       var rlD = pickFreshDate(rl);
                       if (!rlD || rlD < _cut2) continue;
