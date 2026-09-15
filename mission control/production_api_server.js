@@ -37027,9 +37027,15 @@ cron.schedule('23 * * * *', () => {
 });
 
 // ===== AUTOMATED CONTENT TOP-UP =====
-// Daily: if the draft queue runs low, generate high-quality posts via OpenAI
-// and schedule them for publishing (keeps the 1-2/day cadence running forever).
+// Daily: if the draft queue runs low, generate high-quality posts via OpenAI and
+// schedule them for publishing. PAUSED BY DEFAULT (2026-09-15): the templated posts
+// were not being indexed (near-duplicate/low-authority), and each run costs OpenAI
+// credits. Set BLOG_AUTOGEN_ENABLED=true to resume once there is enough authority.
 cron.schedule('0 3 * * *', () => {
+  if (String(process.env.BLOG_AUTOGEN_ENABLED || 'false').toLowerCase() !== 'true') {
+    console.log('[SEO] Auto blog generation paused (set BLOG_AUTOGEN_ENABLED=true to resume)');
+    return;
+  }
   topUpBlogQueue().then(function() {}).catch(function(e) {
     console.log('[SEO] Top-up cron error: ' + (e && e.message || e));
   });
