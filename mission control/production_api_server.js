@@ -7463,7 +7463,11 @@ app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
       if (!prod) return;
       if (cust.plan === 'cancelled') return;
       if (onlyEmail && String(cust.email || '').toLowerCase() !== onlyEmail) return;
-      var cap = parseInt(cust.leads_per_day, 10) || 5;
+      // Mirror the 9am delivery's quota: plan limit, raised by the leads_per_day
+      // override. (Previously defaulted to 5, which over-queued for limit-1 plans.)
+      var _planLimit = 5;
+      try { _planLimit = getPlanLimit(prod, cust.plan, cust.coverage) || 5; } catch(e) { _planLimit = 5; }
+      var cap = Math.max(_planLimit, parseInt(cust.leads_per_day, 10) || 0);
       // current = DELIVERABLE leads already queued for the customer (undelivered, not
       // rejected, with a mailable door-numbered address). Door-less pending leads must
       // NOT satisfy the cap, otherwise the top-up reports "need 0" while the customer
