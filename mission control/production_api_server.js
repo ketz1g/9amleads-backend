@@ -11999,6 +11999,10 @@ app.post('/api/admin/top-up-today', adminAuth, (req, res) => {
     for (var ti = 0; ti < interleaved.length; ti++) {
       var pl = interleaved[ti];
       try { if (cust.product === 'moving') { var vrT = validateMovingLead({ fullAddress: pl.fullAddress || pl.address || '', postcode: pl.postcode || '', url: pl.url || '' }); if (vrT) continue; } } catch(e) { continue; }
+      // STRICT MAILABLE GATE: never top up with a moving lead that has no door/flat
+      // number (full postcode + street + premise identifier), so the auto-fill can
+      // never put a street-only address on a customer's dashboard/email.
+      if (cust.product === 'moving' && !hasUsablePremiseAddress(pl.fullAddress || pl.address || '', pl.postcode || '')) continue;
       var pcAreaT = extractPostcodeArea(pl.postcode || pl.address || pl.fullAddress || '');
       var matchedT = false;
       if (/all.?uk|uk.?wide|nationwide|whole.?uk/i.test((areas || []).join(' '))) matchedT = true;
@@ -21111,7 +21115,16 @@ _deliverDiag[cust.email].products = products;
       // Ensure customer's primary product always has at least 1 lead
       var primaryPickedId = null;
       if (cust.product) {
-        var primaryLeads = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0 && l.product === cust.product; });
+        // MAILABLE-ADDRESS GATE on the primary pick: only promote a pending lead
+        // that has a full mailable address (door/flat number + street + full
+        // postcode), so a street-only pool lead can never reach the dashboard/email
+        // without a door number.
+        var primaryLeads = (db.leads || []).filter(function(l) {
+          if (l.customer_id !== cust.id || l.delivered !== 0 || l.product !== cust.product) return false;
+          var pld = null; try { pld = JSON.parse(l.data || '{}'); } catch(e) { pld = null; }
+          if (!pld || typeof pld !== 'object') pld = { address: l.address || '', fullAddress: l.fullAddress || '', postcode: l.postcode || '' };
+          return leadMailableAddress(pld, l.product);
+        });
         if (primaryLeads.length > 0) {
           custLeads.push(primaryLeads[0]);
           primaryPickedId = primaryLeads[0].id;
