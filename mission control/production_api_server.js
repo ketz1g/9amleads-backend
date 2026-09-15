@@ -10561,7 +10561,7 @@ app.get('/api/admin/delivery-status', adminAuth, (req, res) => {
       success: true,
       now_uk: new Date().toLocaleString('en-GB', { timeZone: 'Europe/London' }),
       today: today,
-      delivery_completed_today: (__lastDeliveryDate === today),
+      delivery_completed_today: (rows.length > 0 && shortRows.length === 0),
       delivery_started_today: (__deliveryStartedDate === today),
       lock_held: !!_deliveryLock,
       lock_age_seconds: _deliveryLock ? Math.round((Date.now() - (_deliveryLockAt || 0)) / 1000) : 0,
