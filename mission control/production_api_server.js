@@ -11668,8 +11668,14 @@ app.get('/api/admin/readiness', adminAuth, async (req, res) => {
       try {
         var prev = await deliveryPreviewForCustomer(cc);
         var promised = parseInt(cc.leads_per_day, 10) > 0 ? parseInt(cc.leads_per_day, 10) : (getPlanLimit(cc.product, cc.plan, cc.coverage) || 5);
-        var short = prev.count < promised;
-        rows.push({ email: cc.email, product: cc.product, plan: cc.plan, promised: promised, available: prev.count, status: short ? 'SHORT' : 'OK', areas: prev.areas, last_error: prev.error || '' });
+        // DOOR-NUMBERED ONLY: the readiness check must reflect leads that will actually
+        // pass the delivery's door-number gate. Counting PAF candidates as "available"
+        // made the check report OK while the customer was still short at 9am (their
+        // door-less leads failed PAF and were dropped), which delayed the top-up.
+        var doorNow = (prev.leads || []).filter(function(l) { return l.has_door_number; }).length;
+        var pafCand = (prev.leads || []).filter(function(l) { return l.paf_candidate; }).length;
+        var short = doorNow < promised;
+        rows.push({ email: cc.email, product: cc.product, plan: cc.plan, promised: promised, available: doorNow, door_numbered: doorNow, paf_candidates: pafCand, preview_count: prev.count, status: short ? 'SHORT' : 'OK', areas: prev.areas, last_error: prev.error || '' });
       } catch(e) { rows.push({ email: cc.email, product: cc.product, plan: cc.plan, status: 'ERROR', last_error: e.message }); }
     }
     var shorts = rows.filter(function(r){ return r.status === 'SHORT'; });
