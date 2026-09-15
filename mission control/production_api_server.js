@@ -10578,6 +10578,16 @@ app.get('/api/admin/delivery-status', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/delivery-recover — manually run the completion watchdog now: detect
+// any customer below their promised count today and top them up (frees a stalled lock
+// first). Useful for the founder, and the basis of the recovery test.
+app.post('/api/admin/delivery-recover', adminAuth, async (req, res) => {
+  try {
+    var result = await deliveryCompletionWatchdog('manual');
+    res.json({ success: true, result: result });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/paf-postscrape — manually run the post-scrape PAF enrichment on the
 // moving pool now (adds door numbers + full addresses to door-less leads early, flags
 // paf_failed ones so delivery drops them). Run after any scrape to top up the pool.
@@ -16050,7 +16060,7 @@ function deliveryCompletionWatchdog(label) {
         if (have < promised) short.push({ email: c.email, have: have, promised: promised });
       } catch(ce) {}
     });
-    if (!short.length) { console.log('[COMPLETION-WATCHDOG ' + label + '] all customers fulfilled ✓'); return; }
+    if (!short.length) { console.log('[COMPLETION-WATCHDOG ' + label + '] all customers fulfilled ✓'); return { label: label, short: [], triggered: false }; }
     console.log('[COMPLETION-WATCHDOG ' + label + '] SHORT: ' + short.map(function(s){ return s.email + '(' + s.have + '/' + s.promised + ')'; }).join(', '));
     // Free a stalled lock so the re-trigger can actually run.
     try {
@@ -16077,7 +16087,8 @@ function deliveryCompletionWatchdog(label) {
         + '<ul style="padding-left:18px;margin:6px 0">' + short.map(function(s){ return '<li>' + s.email + ' — ' + s.have + '/' + s.promised + '</li>'; }).join('') + '</ul>'
         + 'A recovery delivery has been triggered automatically. If it stays short, it is a supply issue for those areas.</div>');
     } catch(al) {}
-  } catch(e) { console.log('[COMPLETION-WATCHDOG] error:', e.message); }
+    return { label: label, short: short, triggered: true };
+  } catch(e) { console.log('[COMPLETION-WATCHDOG] error:', e.message); return { label: label, short: [], triggered: false, error: e.message }; }
 }
 cron.schedule('8 9 * * 1-5', function() { try { deliveryCompletionWatchdog('09:08'); } catch(e) {} }, { timezone: 'Europe/London' });
 cron.schedule('15 9 * * 1-5', function() { try { deliveryCompletionWatchdog('09:15'); } catch(e) {} }, { timezone: 'Europe/London' });
