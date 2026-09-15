@@ -8891,9 +8891,13 @@ app.get('/api/leads', authMiddleware, (req, res) => {
   // for a package (Starter/Pro/Enterprise). Once they pay, plan != free_trial and
   // their previous + new leads show again. This stops a trial account that ended
   // from continuing to use the dashboard's lead history for free.
-  var now = new Date();
-  var trialGated = customer && customer.plan === 'free_trial' && customer.trial_ends && new Date(customer.trial_ends) < now;
-  if (trialGated) {
+    var now = new Date();
+    // SAFEGUARD: never gate a customer who has a Stripe subscription — they are PAYING
+    // even if the `plan` field lagged behind (a failed/late webhook). Hiding a paying
+    // customer's leads would look like a broken dashboard and cost the account.
+    var trialGated = customer && customer.plan === 'free_trial' && customer.trial_ends && new Date(customer.trial_ends) < now
+      && !customer.stripe_subscription_id;
+    if (trialGated) {
     return res.json({ gated: true, trial_ended: true, message: 'Your free trial has ended. Upgrade to a Starter, Pro or Enterprise package to unlock your leads again.', leads: [] });
   }
   const leads = db.prepare(
