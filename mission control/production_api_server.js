@@ -201,6 +201,8 @@ function isFlatAddress(addr) {
 function stripRegionTags(addr) {
   return String(addr || '')
     .replace(/(?:^|,\s*)(?:England|Scotland|Wales|Northern\s*Ireland|South\s*East\s*England|South\s*West\s*England|East\s*of\s*England|East\s*Midlands|West\s*Midlands|North\s*West\s*England|North\s*East\s*England|Yorkshire\s*and\s*the\s*Humber|Greater\s*London|UK)(?=\s*,|\s*$)/gi, '')
+    // Standalone postcode-AREA tags the scraper bakes in (e.g. "25 Homelands Road, CF, cardiff" -> drop the "CF").
+    .replace(/,\s*[A-Z]{1,2}\s*(?=,)/g, '')
     .replace(/,\s*,/g, ',').replace(/^\s*,/, '').replace(/\s*,\s*/g, ', ').replace(/\s{2,}/g, ' ').trim();
 }
 
@@ -8934,7 +8936,7 @@ app.get('/api/leads', authMiddleware, (req, res) => {
       var _pp = [];
       if (_bn) _pp.push(String(_bn).trim() + (_st ? ' ' + String(_st).trim() : ''));
       else if (_st) _pp.push(String(_st).trim());
-      else if (_src && !/,/.test(String(_src))) _pp.push(String(_src).trim());
+      else if (_src) _pp.push(String(_src).trim());
       var _joined = _pp.join(',');
       if (_tn && _joined.toLowerCase().indexOf(String(_tn).toLowerCase()) === -1) _pp.push(String(_tn).trim());
       if (_cn && _joined.toLowerCase().indexOf(String(_cn).toLowerCase()) === -1) _pp.push(String(_cn).trim());
