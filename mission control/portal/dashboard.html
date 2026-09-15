@@ -1051,8 +1051,11 @@ function doLogout() {
 
 // ===== GDPR: DELETE MY ACCOUNT =====
 function deleteAccount() {
-  if (!confirm('Delete your account permanently? This erases ALL your data. leads, profiles, print & post history and billing. This cannot be undone.')) return;
-  if (!confirm('Are you absolutely sure? This is permanent and immediate.')) return;
+  if (!confirm('Delete your account permanently? This erases ALL your data: leads, profiles, print & post history and billing. This cannot be undone.')) return;
+  var typed = prompt('Type DELETE (in capitals) to confirm permanent account deletion:');
+  if (typed !== 'DELETE') { alert('Account not deleted — confirmation did not match.'); return; }
+  var pw = prompt('For security, enter your account password to confirm:');
+  if (!pw) { alert('Account not deleted — password required.'); return; }
   var x = new XMLHttpRequest();
   x.open('POST', '/api/account/delete', true);
   x.setRequestHeader('Authorization', 'Bearer ' + _token);
@@ -1068,7 +1071,7 @@ function deleteAccount() {
     } catch(e) { alert('Error deleting account. Please contact hello@9amleads.com.'); }
   };
   x.onerror = function() { alert('Network error. Please contact hello@9amleads.com.'); };
-  x.send(JSON.stringify({}));
+  x.send(JSON.stringify({ confirm: 'DELETE', password: pw }));
 }
 
 

@@ -10541,6 +10541,43 @@ app.get('/api/admin/delivery-preview', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/admin/delivery-status — live delivery health for today (monitor/status page).
+app.get('/api/admin/delivery-status', adminAuth, (req, res) => {
+  try {
+    var dbS = getDb();
+    var today = new Date().toISOString().split('T')[0];
+    var custs = (dbS.customers || []).filter(function(c) {
+      if (!c.plan || c.plan === 'cancelled' || isLeadsPaused(c)) return false;
+      if (typeof trialExpiredUnpaid === 'function' && trialExpiredUnpaid(c)) return false;
+      return true;
+    });
+    var rows = custs.map(function(c) {
+      var promised = getPlanLimit(c.product, c.plan, c.coverage) || 0;
+      var delivered = (dbS.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0; }).length;
+      return { email: c.email, company: c.company || '', product: c.product, plan: c.plan, promised: promised, delivered: delivered, short: Math.max(0, promised - delivered), emailed: (c.last_email_date === today) };
+    });
+    var shortRows = rows.filter(function(r) { return r.short > 0; });
+    res.json({
+      success: true,
+      now_uk: new Date().toLocaleString('en-GB', { timeZone: 'Europe/London' }),
+      today: today,
+      delivery_completed_today: (__lastDeliveryDate === today),
+      delivery_started_today: (__deliveryStartedDate === today),
+      lock_held: !!_deliveryLock,
+      lock_age_seconds: _deliveryLock ? Math.round((Date.now() - (_deliveryLockAt || 0)) / 1000) : 0,
+      customers: rows.length,
+      fulfilled: rows.length - shortRows.length,
+      short: shortRows.length,
+      total_delivered: rows.reduce(function(s, r) { return s + r.delivered; }, 0),
+      total_promised: rows.reduce(function(s, r) { return s + r.promised; }, 0),
+      rows: rows,
+      short_rows: shortRows,
+      next_run: '09:00 Europe/London (Mon-Fri)',
+      watchdogs: ['09:01', '09:05', '09:08', '09:15', '09:25', '09:30', '09:35']
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/paf-postscrape — manually run the post-scrape PAF enrichment on the
 // moving pool now (adds door numbers + full addresses to door-less leads early, flags
 // paf_failed ones so delivery drops them). Run after any scrape to top up the pool.
@@ -16046,6 +16083,41 @@ cron.schedule('8 9 * * 1-5', function() { try { deliveryCompletionWatchdog('09:0
 cron.schedule('15 9 * * 1-5', function() { try { deliveryCompletionWatchdog('09:15'); } catch(e) {} }, { timezone: 'Europe/London' });
 cron.schedule('25 9 * * 1-5', function() { try { deliveryCompletionWatchdog('09:25'); } catch(e) {} }, { timezone: 'Europe/London' });
 
+// ===== PRE-9AM SUPPLY WARNING =====
+// 07:45 UK Mon-Fri: check each entitled customer's mailable IN-AREA supply BEFORE the
+// 9am run. If anyone is likely to fall short, alert the founder early so they can top
+// up the pool / PAF budget before 9am rather than after the promise is broken.
+cron.schedule('45 7 * * 1-5', async function() {
+  try {
+    var dbS = getDb();
+    var today = new Date().toISOString().split('T')[0];
+    var custs = (dbS.customers || []).filter(function(c) {
+      if (!c.plan || c.plan === 'cancelled' || isLeadsPaused(c)) return false;
+      if (typeof trialExpiredUnpaid === 'function' && trialExpiredUnpaid(c)) return false;
+      return true;
+    });
+    var seen = {}, risky = [];
+    for (var i = 0; i < custs.length; i++) {
+      var pv = null;
+      try { pv = await deliveryPreviewForCustomer(custs[i], seen); } catch(pe) { continue; }
+      if (!pv || pv.error) continue;
+      var promised = pv.promised || 0;
+      if (promised <= 0) continue;
+      var mailable = (pv.leads || []).filter(function(l) { return l.has_door_number || l.paf_candidate; }).length;
+      if (mailable < promised) risky.push({ email: pv.email, promised: promised, mailable: mailable, areas: (pv.areas || []).join(', ') });
+    }
+    if (!risky.length) { console.log('[SUPPLY-WARN] all customers have enough mailable in-area supply'); return; }
+    console.log('[SUPPLY-WARN] at-risk: ' + risky.map(function(r){ return r.email + '(' + r.mailable + '/' + r.promised + ')'; }).join(', '));
+    try {
+      sendAdminAlert('⚠ 9am supply warning — ' + today + ' (pre-9am)',
+        '<div style="font-family:Inter,Arial,sans-serif;font-size:13px;color:#e2e8f0;line-height:1.7">'
+        + '<b style="color:#fbbf24">' + risky.length + ' customer(s) may fall short at 9am</b> (based on current mailable in-area pool supply):'
+        + '<ul style="padding-left:18px;margin:6px 0">' + risky.map(function(r){ return '<li>' + r.email + ' — ' + r.mailable + ' mailable vs ' + r.promised + ' promised <span style="color:#94a3b8">(' + r.areas + ')</span></li>'; }).join('') + '</ul>'
+        + 'Top up the pool (scrape / PAF warm-up) before 9am, or those customers will be short. The 09:08/09:15/09:25 watchdog will still attempt a top-up after delivery.</div>');
+    } catch(al) {}
+  } catch(e) { console.log('[SUPPLY-WARN] error:', e.message); }
+}, { timezone: 'Europe/London' });
+
 function purgeAllPendingRows() {
   try {
     var dbP = getDb();
@@ -18661,6 +18733,15 @@ app.post('/api/account/delete', authMiddleware, async (req, res) => {
   try {
     var customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
     if (!customer) return res.status(404).json({ error: 'Customer not found' });
+    // SECURITY: the dashboard is reachable via a passwordless magic link in the daily
+    // email, so a deletion MUST be explicitly confirmed with the account password and
+    // a typed "DELETE" — otherwise anyone with the email link could wipe the account.
+    var _cf = String((req.body && req.body.confirm) || '');
+    var _pw = String((req.body && req.body.password) || '');
+    if (_cf !== 'DELETE') return res.status(400).json({ error: 'Type DELETE to confirm account deletion.' });
+    if (!_pw || !customer.password_hash || !bcrypt.compareSync(_pw, customer.password_hash)) {
+      return res.status(401).json({ error: 'Incorrect or missing password — account not deleted.' });
+    }
     var uid = req.user.id;
     // 1. Cancel any active Stripe subscription so they're not charged again
     try {

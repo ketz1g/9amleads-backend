@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>9amLeads — Delivery Status</title>
+<style>
+  :root { --bg:#0a0a0a; --card:#141414; --line:#262626; --text:#f5f5f5; --muted:#94a3b8; --ok:#34d399; --bad:#f87171; --warn:#fbbf24; --accent:#38bdf8; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:Inter,system-ui,Arial,sans-serif; padding:24px; }
+  h1 { font-size:20px; margin:0 0 4px; } .sub { color:var(--muted); font-size:13px; margin-bottom:18px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-bottom:18px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
+  .kpi { font-size:26px; font-weight:800; } .lbl { font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); }
+  table { width:100%; border-collapse:collapse; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  th,td { text-align:left; padding:9px 12px; font-size:13px; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.4px; }
+  tr:last-child td { border-bottom:0; }
+  .ok { color:var(--ok); font-weight:700; } .bad { color:var(--bad); font-weight:700; } .warn { color:var(--warn); font-weight:700; }
+  .dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:6px; }
+  .btn { background:var(--accent); color:#05202e; border:0; border-radius:8px; padding:8px 14px; font-weight:800; cursor:pointer; }
+  .muted { color:var(--muted); font-size:12px; }
+  .bar { height:8px; background:#262626; border-radius:6px; overflow:hidden; min-width:90px; }
+  .bar > i { display:block; height:100%; background:linear-gradient(90deg,#38bdf8,#2563eb); }
+</style>
+</head>
+<body>
+  <h1>Delivery Status</h1>
+  <div class="sub">Live 9am delivery health · auto-refreshes every 30s · <span id="now">—</span></div>
+
+  <div id="authBox" class="card" style="max-width:460px">
+    <div class="lbl" style="margin-bottom:8px">Admin access</div>
+    <input id="pw" type="password" placeholder="Admin password" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);background:#0d0d0d;color:#fff">
+    <button class="btn" style="margin-top:10px" onclick="savePw()">View status</button>
+    <div class="muted" style="margin-top:8px">Stored only in this browser.</div>
+  </div>
+
+  <div id="app" style="display:none">
+    <div class="grid" id="kpis"></div>
+    <div id="banner"></div>
+    <table>
+      <thead><tr><th>Customer</th><th>Product</th><th>Plan</th><th>Promised</th><th>Delivered</th><th>Emailed</th><th>Progress</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div class="muted" id="foot" style="margin-top:12px"></div>
+  </div>
+
+<script>
+var API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'http://localhost:8012' : '';
+var _pw = localStorage.getItem('mld_status_pw') || '';
+var _timer = null;
+
+function savePw(){ _pw = document.getElementById('pw').value; localStorage.setItem('mld_status_pw', _pw); load(); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+function load(){
+  if (!_pw) { document.getElementById('authBox').style.display='block'; document.getElementById('app').style.display='none'; return; }
+  var x = new XMLHttpRequest();
+  x.open('GET', API + '/api/admin/delivery-status', true);
+  x.setRequestHeader('Authorization', 'Bearer ' + _pw);
+  x.onload = function(){
+    if (x.status === 401 || x.status === 403) { alert('Incorrect admin password'); localStorage.removeItem('mld_status_pw'); _pw=''; document.getElementById('authBox').style.display='block'; return; }
+    var d = {}; try { d = JSON.parse(x.responseText); } catch(e){}
+    if (!d.success) { alert('Error: ' + (d.error||x.status)); return; }
+    render(d);
+  };
+  x.onerror = function(){ alert('Network error'); };
+  x.send();
+}
+
+function render(d){
+  document.getElementById('authBox').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('now').textContent = d.now_uk;
+  var state = d.delivery_completed_today ? '<span class="ok">✔ Completed</span>' : (d.delivery_started_today ? '<span class="warn">⏳ Running</span>' : '<span class="bad">✗ Not run yet</span>');
+  document.getElementById('kpis').innerHTML =
+    kpi('Delivery today', state) +
+    kpi('Customers fulfilled', d.fulfilled + ' / ' + d.customers, d.short>0?'bad':'ok') +
+    kpi('Leads delivered', d.total_delivered + ' / ' + d.total_promised, d.total_delivered>=d.total_promised?'ok':'warn') +
+    kpi('Customers short', d.short, d.short>0?'bad':'ok') +
+    kpi('Lock', d.lock_held ? ('held '+d.lock_age_seconds+'s') : 'free', d.lock_held?'warn':'ok');
+
+  var b = document.getElementById('banner');
+  if (d.short > 0) {
+    b.innerHTML = '<div class="card" style="border-color:#7f1d1d;margin-bottom:14px"><span class="bad">⚠ '+d.short+' customer(s) below their promised count.</span> The 09:08/09:15/09:25 watchdog will re-run automatically. Emails: '+esc(d.short_rows.map(function(r){return r.email;}).join(', '))+'</div>';
+  } else if (d.delivery_completed_today) {
+    b.innerHTML = '<div class="card" style="border-color:#14532d;margin-bottom:14px"><span class="ok">✔ All customers delivered their promised count today.</span></div>';
+  } else { b.innerHTML=''; }
+
+  document.getElementById('rows').innerHTML = (d.rows||[]).map(function(r){
+    var pct = r.promised ? Math.min(100, Math.round(r.delivered / r.promised * 100)) : 0;
+    return '<tr><td>'+esc(r.email)+'</td><td>'+esc(r.product)+'</td><td>'+esc(r.plan)+'</td><td>'+r.promised+'</td><td class="'+(r.short>0?'bad':'ok')+'">'+r.delivered+'</td><td>'+(r.emailed?'<span class="ok">✔</span>':'<span class="bad">✗</span>')+'</td><td><div class="bar"><i style="width:'+pct+'%"></i></div></td></tr>';
+  }).join('');
+
+  document.getElementById('foot').textContent = 'Next run: ' + d.next_run + ' · Watchdogs: ' + (d.watchdogs||[]).join(', ');
+}
+function kpi(label, val, cls){ return '<div class="card"><div class="lbl">'+esc(label)+'</div><div class="kpi '+(cls||'')+'">'+val+'</div></div>'; }
+
+if (_pw) load();
+if (_timer) clearInterval(_timer);
+_timer = setInterval(function(){ if (_pw) load(); }, 30000);
+</script>
+</body>
+</html>
