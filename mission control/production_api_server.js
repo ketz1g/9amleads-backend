@@ -16168,6 +16168,10 @@ function sendDailySummaryEmail() {
     var totalDelivered = rows.reduce(function(s, r) { return s + r.delivered; }, 0);
     var totalPromised = rows.reduce(function(s, r) { return s + r.promised; }, 0);
     var ok = (short.length === 0);
+    // Routine server restarts (deploys / sleep-wake) since the last 24h — batched here
+    // instead of emailed one-by-one on every boot.
+    var boots24 = 0;
+    try { boots24 = (db.__boots || []).filter(function(t) { return Date.now() - t < 24 * 3600000; }).length; } catch(e) {}
     var subject = (ok ? '✅' : '⚠️') + ' 9am delivery report — ' + fulfilled + '/' + rows.length + ' customers fulfilled (' + today + ')';
     var shortHtml = short.length ? ('<p style="color:#f87171"><b>Below promise:</b></p><ul style="color:#cbd5e1;padding-left:18px">' + short.map(function(r){ return '<li>' + r.email + ' — ' + r.delivered + '/' + r.promised + (r.emailed ? '' : ' (no email)') + '</li>'; }).join('') + '</ul>') : '<p style="color:#34d399"><b>Every customer received their full count and email.</b></p>';
     var html = '<div style="font-family:Inter,Arial,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:28px;max-width:600px;margin:0 auto;border-radius:14px">'
@@ -16176,6 +16180,7 @@ function sendDailySummaryEmail() {
       + '<table style="width:100%;color:#e2e8f0;font-size:14px;border-collapse:collapse">'
       + '<tr><td style="padding:6px 0;color:#94a3b8">Customers fulfilled</td><td style="padding:6px 0;text-align:right;font-weight:800">' + fulfilled + ' / ' + rows.length + '</td></tr>'
       + '<tr><td style="padding:6px 0;color:#94a3b8">Leads delivered</td><td style="padding:6px 0;text-align:right;font-weight:800">' + totalDelivered + ' / ' + totalPromised + '</td></tr>'
+      + '<tr><td style="padding:6px 0;color:#94a3b8">Server restarts (24h)</td><td style="padding:6px 0;text-align:right;font-weight:800">' + boots24 + '</td></tr>'
       + '</table><hr style="border:0;border-top:1px solid #262626;margin:14px 0">' + shortHtml
       + '<p style="color:#64748b;font-size:12px;margin-top:16px">Live status: <a href="https://9amleads.com/portal/delivery-status.html" style="color:#38bdf8">delivery-status</a></p></div>';
     sendBrevoEmail({ email: (process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com'), name: '9amLeads Owner' }, subject, html).catch(function() {});
@@ -17199,10 +17204,9 @@ function runHealthAlerts() {
     } catch(e) {}
     if (issues.length) {
       var html = '<div style="font-family:Arial;color:#e2e8f0;background:#0b1120;padding:20px"><h2>⚠ 9amLeads — issues detected</h2><ul style="color:#fecaca;line-height:1.8">' + issues.map(function(i) { return '<li>' + i + '</li>'; }).join('') + '</ul><p style="color:#94a3b8;font-size:12px">Check /api/health and the admin delivery preview.</p></div>';
-      // OWNER-EMAIL DIGEST MODE: throttle genuine problem alerts to ~once per 12h
-      // (was 4h = up to 6 emails/day even for one persistent issue). Real outages
-      // still get through, healthy stretches stay silent.
-      sendAlertIfStale('health-issues', '9amLeads alert: issues detected', html, 12 * 3600000);
+      // OWNER-EMAIL DIGEST MODE: throttle genuine problem alerts to ~once per 24h
+      // (was 12h). Real outages still get through, healthy stretches stay silent.
+      sendAlertIfStale('health-issues', '9amLeads alert: issues detected', html, 24 * 3600000);
       console.log('[ALERT] Emailed owner: ' + issues.join('; '));
     }
   } catch(e) { console.log('[ALERT] check error:', e.message); }
@@ -17251,7 +17255,7 @@ function sendDailyDeliveryPreview(when) {
   });
 }
 cron.schedule('30 6 * * 1-5', function() { try { sendDailyDeliveryPreview('pre'); } catch(e) {} }, { timezone: 'Europe/London' });
-cron.schedule('10 9 * * 1-5', function() { try { sendDailyDeliveryPreview('post'); } catch(e) {} }, { timezone: 'Europe/London' });
+// 09:10 post-preview removed — the 09:12 daily delivery summary is the single post-9am email.
 // EXPECTED-BATCH REPORT (08:30 UK, weekdays): emails the founder the EXACT list that
 // will go out at 9am — per customer, the promised vs expected count and the FULL
 // address of every lead (after the early PAF pass), flagging any lead whose door
@@ -17359,10 +17363,10 @@ async function sendExpectedBatchReport(mode) {
 // 06:45 = FULL report (right after the 06:00 scrape + early PAF, so you see the whole
 // day's batch as early as possible). 07:15/07:45/08:15/08:45 = CHANGE-ONLY re-checks
 // (they email only if the batch changed), so there are no long blind gaps before 9am.
+// Consolidated to TWO pre-9am snapshots (was FIVE reports/day). The 06:45 full list +
+// the 08:45 final delta; the intermediate 07:15/07:45/08:15 deltas were pure noise and
+// the 09:10 post-preview duplicated the 09:12 daily summary.
 cron.schedule('45 6 * * 1-5', function() { try { sendExpectedBatchReport('full'); } catch(e) {} }, { timezone: 'Europe/London' });
-cron.schedule('15 7 * * 1-5', function() { try { sendExpectedBatchReport('delta'); } catch(e) {} }, { timezone: 'Europe/London' });
-cron.schedule('45 7 * * 1-5', function() { try { sendExpectedBatchReport('delta'); } catch(e) {} }, { timezone: 'Europe/London' });
-cron.schedule('15 8 * * 1-5', function() { try { sendExpectedBatchReport('delta'); } catch(e) {} }, { timezone: 'Europe/London' });
 cron.schedule('45 8 * * 1-5', function() { try { sendExpectedBatchReport('delta'); } catch(e) {} }, { timezone: 'Europe/London' });
 app.post('/api/admin/expected-batch', adminAuth, async (req, res) => {
   try { res.json(await sendExpectedBatchReport('full')); } catch(e) { res.status(500).json({ error: e.message }); }
@@ -36475,15 +36479,21 @@ app.listen(PORT, () => {
   try {
     var bootEmail = process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com';
     var dbB = getDb();
-    var minGap = parseInt(process.env.BOOT_ALERT_MIN_HOURS || '6', 10) * 3600000;
     var nowB = Date.now();
-    var lastBootAlert = (dbB.__last_boot_alert || 0);
-    if (nowB - lastBootAlert > minGap) {
-      sendBrevoEmail({ email: bootEmail, name: '9amLeads Owner' }, '9amLeads server restarted',
-        '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="font-family:Outfit,sans-serif;color:#f59e0b;margin:0 0 8px">Server restarted</h1><p style="color:#ccc;line-height:1.7">The 9amLeads backend just started up at ' + new Date().toISOString() + ' UK.</p><p style="color:#ccc;line-height:1.7">If this was an intentional deploy, ignore this. If not, the process crashed and auto-restarted - check Render logs and the auto-heal watchdog status.</p></div>').catch(function(){});
-      dbB.__last_boot_alert = nowB;
-      saveDb();
+    if (!Array.isArray(dbB.__boots)) dbB.__boots = [];
+    dbB.__boots.push(nowB);
+    if (dbB.__boots.length > 100) dbB.__boots = dbB.__boots.slice(-100);
+    // CRASH-LOOP ALERT ONLY: routine restarts (deploys / sleep-wake) are now counted and
+    // reported in the daily summary instead of emailed one-by-one. We only email if the
+    // service is restarting repeatedly (>= 4 boots in 15 min = a real crash loop), and
+    // at most once per 2h, so a genuine problem still reaches the owner.
+    var recentBoots = dbB.__boots.filter(function(t) { return nowB - t < 15 * 60000; });
+    if (recentBoots.length >= 4 && (nowB - (dbB.__last_bootalert || 0)) > 2 * 3600000) {
+      sendBrevoEmail({ email: bootEmail, name: '9amLeads Owner' }, '⚠ 9amLeads is crash-looping',
+        '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="font-family:Outfit,sans-serif;color:#f87171;margin:0 0 8px">Crash loop detected</h1><p style="color:#ccc;line-height:1.7">The 9amLeads backend has restarted ' + recentBoots.length + ' times in the last 15 minutes — this is a crash loop, not a normal deploy.</p><p style="color:#ccc;line-height:1.7">Check the Render logs immediately. Routine single restarts are no longer emailed.</p></div>').catch(function(){});
+      dbB.__last_bootalert = nowB;
     }
+    saveDb();
   } catch(e) {}
   // DELIVERY SELF-CHECK ON BOOT: if the service restarted during/after the 9am window
   // (deploy, crash, OOM, sleep-wake) and today's delivery is NOT complete, recover
