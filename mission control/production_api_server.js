@@ -7449,8 +7449,18 @@ app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
     var onlyEmail = String((req.body && req.body.email) || '').toLowerCase().trim();
     var todayStr = new Date().toISOString().split('T')[0];
     var summary = [];
+    var _FULL_PC = /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i;
+    function _mailable(ld) {
+      var addr = ld.fullAddress || ld.address || ld.deceasedAddress || '';
+      var pc = ld.postcode || '';
+      return hasUsablePremiseAddress(addr, pc) && _FULL_PC.test(String(pc).trim());
+    }
     (dbT.customers || []).forEach(function(cust) {
-      if (cust.product !== 'moving' && !((cust.biz_field3 || '').indexOf('moving') !== -1)) return;
+      // PROPERTY products that need a mailable (door-numbered) address for Print & Post.
+      var prod = null;
+      if (cust.product === 'moving' || cust.product === 'probate') prod = cust.product;
+      else if ((cust.biz_field3 || '').indexOf('moving') !== -1) prod = 'moving';
+      if (!prod) return;
       if (cust.plan === 'cancelled') return;
       if (onlyEmail && String(cust.email || '').toLowerCase() !== onlyEmail) return;
       var cap = parseInt(cust.leads_per_day, 10) || 5;
@@ -7463,45 +7473,66 @@ app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
         if (l.customer_id !== cust.id) return false;
         if (l.status === 'removed' || l.delivered) return false;
         var _ld = {}; try { _ld = JSON.parse(l.data || '{}'); } catch(e) { _ld = {}; }
-        if (_ld.rejected) return false;
-        // Deliverable = passes the same address validation the top-up itself uses.
-        return !validateMovingLead({ fullAddress: _ld.fullAddress || _ld.address || '', postcode: _ld.postcode || '', url: _ld.url || '' });
+        if (_ld.rejected || _ld.blocked || _ld.blocked_by_admin) return false;
+        return _mailable(_ld);
       }).length;
       var need = cap - cur;
-      var entry = { email: cust.email, cap: cap, current: cur, need: Math.max(0, need), added: 0 };
+      var entry = { email: cust.email, product: prod, cap: cap, current: cur, need: Math.max(0, need), added: 0 };
       if (need <= 0) { summary.push(entry); return; }
       var areas = [];
       try { areas = JSON.parse(cust.target_areas || '[]'); } catch(e) { areas = []; }
       var custMovingType = 'both';
       try { var pcfg = JSON.parse(cust.product_config || '{}'); custMovingType = (pcfg.moving && pcfg.moving.moving_type) || cust.moving_type || 'both'; } catch(e) { custMovingType = cust.moving_type || 'both'; }
-      var pool = loadProductPool('moving');
+      var ukwide = /all.?uk|uk.?wide|nationwide|whole.?uk/i.test((areas || []).join(' '));
+      var pool = loadProductPool(prod);
       var poolForCust = interleavePoolByAreas(pool, areas);
       var used = {};
       // already-assigned to this customer (avoid re-adding) — key on URL AND
       // normalized address+postcode (URLs can vary between scrape passes).
-      (dbT.leads || []).forEach(function(l) { if (l.customer_id === cust.id) { try { var ld = JSON.parse(l.data || '{}'); var u = ld.url || ''; if (u) used['u:' + String(u).split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase()] = 1; var a = String(ld.fullAddress || ld.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 24); var pc = String(ld.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); if (a && pc) used['a:' + a + '|' + pc] = 1; } catch(e) {} } });
+      (dbT.leads || []).forEach(function(l) { if (l.customer_id === cust.id) { try { var ld = JSON.parse(l.data || '{}'); var u = ld.url || ''; if (u) used['u:' + String(u).split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase()] = 1; var a = String(ld.fullAddress || ld.address || ld.deceasedAddress || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 24); var pc = String(ld.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); if (a && pc) used['a:' + a + '|' + pc] = 1; } catch(e) {} } });
       var assigned = 0;
+      // RIGHT AREA OR NEAREST AREA: exact area first, else accept a geographically
+      // nearest-area lead (moving) / county- or county-map match (probate) so a dry
+      // area still gets topped up rather than the customer going short at 9am.
+      function _inArea(l) {
+        var pcArea = extractPostcodeArea(l.postcode || l.address || l.fullAddress || l.deceasedAddress || '');
+        if (ukwide) return true;
+        if (prod === 'moving') {
+          if (areas.some(function(a) { return String(a).toUpperCase() === pcArea; })) return true;
+          return isFallbackLeadAcceptable(l.postcode || l.address || l.fullAddress || '', areas);
+        }
+        var cty = String(l.county || '').toLowerCase().replace(/[\s-]+/g, '-');
+        if (cty && areas.some(function(a) { return String(a).toLowerCase().replace(/[\s-]+/g, '-') === cty; })) return true;
+        return areas.some(function(a) { var m = COUNTY_POSTCODE_MAP[String(a).toLowerCase().replace(/[\s-]+/g, '-')]; return m ? m.indexOf(pcArea) !== -1 : false; });
+      }
       for (var i = 0; i < poolForCust.length && assigned < need; i++) {
         var l = poolForCust[i];
-        var pcArea = extractPostcodeArea(l.postcode || l.address || l.fullAddress || '');
-        // RIGHT AREA OR NEAREST AREA: exact area first, else accept a geographically
-        // nearest-area lead (within the distance cap) so a dry area still gets topped up
-        // rather than the customer going short at 9am.
-        var _inArea = areas.some(function(a) { return String(a).toUpperCase() === pcArea; });
-        if (!_inArea && !isFallbackLeadAcceptable(l.postcode || l.address || l.fullAddress || '', areas)) continue;
-        if (custMovingType === 'residential' && isCommercialLead(l)) continue;
-        if (custMovingType === 'commercial' && !isCommercialLead(l)) continue;
+        if (!_inArea(l)) continue;
+        if (prod === 'moving') {
+          if (custMovingType === 'residential' && isCommercialLead(l)) continue;
+          if (custMovingType === 'commercial' && !isCommercialLead(l)) continue;
+        }
         var fd = pickFreshDate(l);
         if (!fd) continue;
-        var reason = validateMovingLead({ fullAddress: l.fullAddress || l.address || '', postcode: l.postcode || '', url: l.url || '' });
-        if (reason) continue;
+        var mAddr = l.fullAddress || l.address || l.deceasedAddress || '';
+        var mPc = l.postcode || '';
+        if (!_mailable({ fullAddress: l.fullAddress, address: mAddr, deceasedAddress: l.deceasedAddress, postcode: mPc })) continue;
         var uk = l.url ? 'u:' + String(l.url).split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase() : '';
-        var addrK = 'a:' + String(l.fullAddress || l.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 24) + '|' + String(l.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-        if (used[uk] || used[addrK]) continue;
-        used[uk] = 1; used[addrK] = 1;
+        var addrK = 'a:' + String(mAddr).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 24) + '|' + String(mPc).toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (uk && used[uk]) continue;
+        if (used[addrK]) continue;
+        if (uk) used[uk] = 1;
+        used[addrK] = 1;
         var nowIso = new Date().toISOString();
-        var dT = { address: l.address || l.fullAddress || '', fullAddress: l.fullAddress || l.address || '', postcode: l.postcode || '', url: l.url || '', price: l.price || 0, priceLabel: l.priceLabel || '', bedrooms: l.bedrooms || 0, propertyType: l.propertyType || '', commercial: !!l.commercial, commercial_let: !!l.commercial_let, agent: l.agent || '', street: l.street || '', buildingNumber: l.buildingNumber || '', udprn: l.udprn || '', source: l.source || 'Rightmove (Apify)', firstVisibleDate: l.firstVisibleDate || nowIso, scrapedAt: nowIso };
-        dbT.leads.push({ id: uuidv4(), customer_id: cust.id, product: 'moving', data: JSON.stringify(dT), status: 'new', delivered: 0, created_at: nowIso, delivered_at: null, release_at: todayStr + 'T09:00:00.000Z' });
+        var dT = Object.assign({}, l);
+        delete dT.id;
+        if (prod === 'moving') {
+          dT.address = dT.address || dT.fullAddress || '';
+          dT.fullAddress = dT.fullAddress || dT.address || '';
+        }
+        dT.scrapedAt = nowIso;
+        if (!dT.firstVisibleDate) dT.firstVisibleDate = nowIso;
+        dbT.leads.push({ id: uuidv4(), customer_id: cust.id, product: prod, data: JSON.stringify(dT), status: 'new', delivered: 0, created_at: nowIso, delivered_at: null, release_at: todayStr + 'T09:00:00.000Z' });
         assigned++; entry.added++;
       }
       summary.push(entry);
@@ -11689,8 +11720,32 @@ app.get('/api/admin/readiness', adminAuth, async (req, res) => {
         // door-less leads failed PAF and were dropped), which delayed the top-up.
         var doorNow = (prev.leads || []).filter(function(l) { return l.has_door_number; }).length;
         var pafCand = (prev.leads || []).filter(function(l) { return l.paf_candidate; }).length;
-        var short = doorNow < promised;
-        rows.push({ email: cc.email, product: cc.product, plan: cc.plan, promised: promised, available: doorNow, door_numbered: doorNow, paf_candidates: pafCand, preview_count: prev.count, status: short ? 'SHORT' : 'OK', areas: prev.areas, last_error: prev.error || '' });
+        // ALIGN WITH DELIVERY: the 9am run consumes the customer's already-queued
+        // (undelivered, mailable) leads FIRST, then fills from the pool. The pool
+        // preview alone can't see that queue, so readiness falsely flagged customers
+        // who were actually covered. Count the UNION of queued mailable leads +
+        // door-numbered pool leads, deduped by url/address, so the check reflects what
+        // the customer will really receive.
+        function _rKey(d) {
+          var u = String(d.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
+          if (u) return 'u:' + u;
+          return 'a:' + String(d.fullAddress || d.address || d.deceasedAddress || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30) + '|' + String(d.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        }
+        var _unionKeys = {};
+        (dbR.leads || []).forEach(function(l) {
+          if (l.customer_id !== cc.id || l.delivered || l.status === 'removed') return;
+          var _d = {}; try { _d = JSON.parse(l.data || '{}'); } catch(e) { _d = {}; }
+          if (_d.rejected || _d.blocked || _d.blocked_by_admin) return;
+          var _addr = _d.fullAddress || _d.address || _d.deceasedAddress || '';
+          var _pc = _d.postcode || '';
+          if (!(hasUsablePremiseAddress(_addr, _pc) && /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(_pc).trim()))) return;
+          _unionKeys[_rKey(_d)] = 1;
+        });
+        var queuedMailable = Object.keys(_unionKeys).length;
+        (prev.leads || []).filter(function(l) { return l.has_door_number; }).forEach(function(l) { _unionKeys[_rKey(l)] = 1; });
+        var available = Object.keys(_unionKeys).length;
+        var short = available < promised;
+        rows.push({ email: cc.email, product: cc.product, plan: cc.plan, promised: promised, available: available, queued_mailable: queuedMailable, pool_door_numbered: doorNow, paf_candidates: pafCand, preview_count: prev.count, status: short ? 'SHORT' : 'OK', areas: prev.areas, last_error: prev.error || '' });
       } catch(e) { rows.push({ email: cc.email, product: cc.product, plan: cc.plan, status: 'ERROR', last_error: e.message }); }
     }
     var shorts = rows.filter(function(r){ return r.status === 'SHORT'; });
