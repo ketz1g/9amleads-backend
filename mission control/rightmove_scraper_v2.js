@@ -888,6 +888,14 @@ async function enrichMovingLeadsPostcoder(leads) {
   const enriched = [];
   for (let i = 0; i < leads.length; i++) {
     const lead = leads[i];
+    // DELIVERY TIME BUDGET: if a delivery run has exceeded its budget (a slow or
+    // hanging PAF/Propalt lookup), stop enriching and pass the lead through so the
+    // run completes and the 9am emails still go out. Scrapers (no deadline set) are
+    // unaffected.
+    if (global.__DELIVERY_DEADLINE__ && Date.now() > global.__DELIVERY_DEADLINE__) {
+      enriched.push(lead);
+      continue;
+    }
     if (lead.postcode) {
       // Space lookups so we never burst past Postcoder's 50/5min IP limit.
       if (i > 0) await new Promise(function(r) { setTimeout(r, 250); });

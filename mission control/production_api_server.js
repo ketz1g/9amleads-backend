@@ -20739,6 +20739,11 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
   }
   _deliveryLock = true;
   _deliveryLockAt = Date.now();
+  // DELIVERY TIME BUDGET: bound the run so a slow/hanging PAF/Propalt lookup can
+  // never stall the 9am promise. The per-lead enrichment (rightmove_scraper_v2
+  // enrichMovingLeadsPostcoder) checks this deadline and stops enriching once it
+  // passes, so the run always finishes and the daily emails go out.
+  global.__DELIVERY_DEADLINE__ = Date.now() + (parseInt(process.env.DELIVERY_BUDGET_MS || '180000', 10));
   try {
     var delivered = 0, errors = 0, lastErr = '';
     var _deliverDiag = {};
@@ -22991,8 +22996,9 @@ _deliverDiag[cust.email].products = products;
     } catch(auditErr) { console.log('[DELIVERY-AUDIT] error:', auditErr.message); }
     _deliveryLock = false;
     _deliveryLockAt = 0;
+    global.__DELIVERY_DEADLINE__ = 0;
     res.json({ success: true, customers_processed: customers.length, leads_delivered: delivered, errors: errors, lastError: lastErr, diag: _deliverDiag || null, per_customer: Object.keys(_deliverDiag || {}).reduce(function(acc, ek) { var dv = _deliverDiag[ek]; var m = String((dv && dv.final_len) || '').match(/^(\d+)/); acc[ek] = { delivered: m ? parseInt(m[1], 10) : -1, totalDailyLimit: dv && dv.totalDailyLimit, products: (dv && dv.products) || [] }; return acc; }, {}) });
-  } catch(e) { _deliveryLock = false; _deliveryLockAt = 0; res.status(500).json({ error: e.message }); }
+  } catch(e) { _deliveryLock = false; _deliveryLockAt = 0; global.__DELIVERY_DEADLINE__ = 0; res.status(500).json({ error: e.message }); }
 });
 
 // ===== STRIPE PAYMENTS =====
