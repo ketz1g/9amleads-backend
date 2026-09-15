@@ -28018,6 +28018,55 @@ async function sendDmCampaignInner(campaignId, customerId) {
   var addresses = recipients.map(function(r) { return { name: r.name, company: r.company, address_line1: r.address_line1, city: r.city, postcode: r.postcode, lead_id: r.lead_id, id: r.id }; });
   var validationResult = await provider.validateAddresses(addresses);
   var validAddresses = validationResult.details ? validationResult.details.filter(function(d) { return d.valid; }) : [];
+  // STRONG MAILABLE RE-CHECK: validateAddresses is only a presence check. A recipient
+  // must have a FULL UK postcode + door/flat number + street name or Stannp cannot
+  // print it. Non-mailable recipients are SUBSTITUTED with a mailable lead from the
+  // customer's pool (exact area first, then nearest) so the campaign still posts its
+  // full target count; anything unsubstitutable is logged for review.
+  var _mailableValid = [], _nonMailable = [];
+  validAddresses.forEach(function(d) {
+    var o = d.original || d;
+    var pc = cleanUkPostcode(o.postcode || '');
+    var addr = String(o.address_line1 || '').trim();
+    if (/^[A-Z]{1,2}[0-9][A-Z0-9]?\s[0-9][A-Z]{2}$/i.test(pc) && hasStreetName(addr) && hasUsablePremiseAddress(addr, pc)) _mailableValid.push(d);
+    else _nonMailable.push(d);
+  });
+  validAddresses = _mailableValid;
+  var _invalidTotal = _nonMailable.length + ((validationResult.details || []).filter(function(d) { return !d.valid; }).length);
+  if (_invalidTotal > 0) {
+    var _custRow = null; try { _custRow = db.prepare('SELECT * FROM customers WHERE id = ?').get(customerId); } catch(e) {}
+    var _prod = (_custRow && _custRow.product) || 'moving';
+    var _areas = []; try { _areas = JSON.parse((_custRow && _custRow.target_areas) || '[]'); } catch(e) {}
+    try { var _pcfg = JSON.parse((_custRow && _custRow.product_config) || '{}'); var _pa = _pcfg[_prod] && _pcfg[_prod].target_areas; if (_pa) _areas = _areas.concat(JSON.parse(_pa)); } catch(e) {}
+    var _ukwide = /all.?uk|uk.?wide|nationwide|whole.?uk/i.test((_areas || []).join(' '));
+    var _used = {};
+    validAddresses.forEach(function(d) { var o = d.original || d; _used[String((o.postcode || '') + '|' + (o.address_line1 || '')).toLowerCase()] = 1; });
+    recipients.forEach(function(r) { _used[String((r.postcode || '') + '|' + (r.address_line1 || '')).toLowerCase()] = 1; });
+    var _pool = []; try { _pool = interleavePoolByAreas(loadProductPool(_prod), _areas); } catch(e) {}
+    var _subs = 0;
+    for (var _si = 0; _si < _pool.length && _subs < _invalidTotal; _si++) {
+      var _l = _pool[_si];
+      var _pc = cleanUkPostcode(_l.postcode || '');
+      if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s[0-9][A-Z]{2}$/i.test(_pc)) continue;
+      var _addr = _l.fullAddress || _l.address || _l.deceasedAddress || '';
+      if (!hasStreetName(_addr) || !hasUsablePremiseAddress(_addr, _pc)) continue;
+      var _pcArea = extractPostcodeArea(_pc).toUpperCase();
+      var _inArea = _ukwide || _areas.some(function(a) { return String(a).toUpperCase() === _pcArea; }) || (_prod === 'moving' && isFallbackLeadAcceptable(_pc, _areas));
+      if (!_inArea) continue;
+      var _k = String(_pc + '|' + _addr).toLowerCase();
+      if (_used[_k]) continue;
+      var _rcpt = buildStannpRecipientFromLead(Object.assign({}, _l, { postcode: _pc, fullAddress: _addr, address: _addr }));
+      if (!_rcpt || !_rcpt.mailable) continue;
+      _used[_k] = 1;
+      try {
+        db.prepare('INSERT INTO direct_mail_recipients (id,customer_id,campaign_id,name,company,address_line1,city,postcode,country,lead_id,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)')
+          .run(uuidv4(), customerId, campaign.id, _rcpt.name, _rcpt.company, _rcpt.address_line1, _rcpt.city, _rcpt.postcode, 'United Kingdom', '', 'pending', new Date().toISOString());
+      } catch(insErr) {}
+      validAddresses.push({ valid: true, original: _rcpt, substituted: true });
+      _subs++;
+    }
+    console.log('[DM-SEND] campaign ' + campaign.id.substring(0, 8) + ': substituted ' + _subs + ' of ' + _invalidTotal + ' non-mailable recipient(s); ' + (_invalidTotal - _subs) + ' left out');
+  }
   var recipientCount = validAddresses.length;
   if (recipientCount === 0) return { success: false, error: 'No valid postal addresses in this campaign.' };
 
