@@ -11999,10 +11999,14 @@ app.post('/api/admin/top-up-today', adminAuth, (req, res) => {
     for (var ti = 0; ti < interleaved.length; ti++) {
       var pl = interleaved[ti];
       try { if (cust.product === 'moving') { var vrT = validateMovingLead({ fullAddress: pl.fullAddress || pl.address || '', postcode: pl.postcode || '', url: pl.url || '' }); if (vrT) continue; } } catch(e) { continue; }
-      // STRICT MAILABLE GATE: never top up with a moving lead that has no door/flat
-      // number (full postcode + street + premise identifier), so the auto-fill can
-      // never put a street-only address on a customer's dashboard/email.
-      if (cust.product === 'moving' && !hasUsablePremiseAddress(pl.fullAddress || pl.address || '', pl.postcode || '')) continue;
+      // STRICT MAILABLE GATE (all products except tenders): never top up with a lead
+      // that lacks a FULL postcode or a door/flat number, so the auto-fill can never
+      // put an incomplete address on a customer's dashboard/email.
+      if (cust.product !== 'tenders') {
+        var _tuPc = String(pl.postcode || '').trim();
+        if (!/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(_tuPc)) continue;
+        if (!hasUsablePremiseAddress(pl.fullAddress || pl.address || '', _tuPc)) continue;
+      }
       var pcAreaT = extractPostcodeArea(pl.postcode || pl.address || pl.fullAddress || '');
       var matchedT = false;
       if (/all.?uk|uk.?wide|nationwide|whole.?uk/i.test((areas || []).join(' '))) matchedT = true;
