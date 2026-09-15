@@ -7464,7 +7464,8 @@ app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
         if (l.status === 'removed' || l.delivered) return false;
         var _ld = {}; try { _ld = JSON.parse(l.data || '{}'); } catch(e) { _ld = {}; }
         if (_ld.rejected) return false;
-        return leadMailableAddress(_ld, 'moving');
+        // Deliverable = passes the same address validation the top-up itself uses.
+        return !validateMovingLead({ fullAddress: _ld.fullAddress || _ld.address || '', postcode: _ld.postcode || '', url: _ld.url || '' });
       }).length;
       var need = cap - cur;
       var entry = { email: cust.email, cap: cap, current: cur, need: Math.max(0, need), added: 0 };
