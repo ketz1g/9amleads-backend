@@ -7462,6 +7462,10 @@ app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
       else if ((cust.biz_field3 || '').indexOf('moving') !== -1) prod = 'moving';
       if (!prod) return;
       if (cust.plan === 'cancelled') return;
+      // Never queue leads for a paused account — they won't be delivered, and the
+      // queued leads would be held out of the pool (global exclusivity), starving
+      // real customers of supply.
+      if (isLeadsPaused(cust)) return;
       if (onlyEmail && String(cust.email || '').toLowerCase() !== onlyEmail) return;
       // Mirror the 9am delivery's quota: plan limit, raised by the leads_per_day
       // override. (Previously defaulted to 5, which over-queued for limit-1 plans.)
