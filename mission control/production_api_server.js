@@ -2783,6 +2783,17 @@ async sendMailpiece(mailType, recipient, files, format) {
     var added = 0, failed = 0, errors = [];
     for (var i = 0; i < recipients.length; i++) {
       var r = recipients[i];
+      // FINAL STANNP GATE: only ever post to a FULL UK postcode + premise (door/flat)
+      // number + street name. This is the single choke point before the Stannp API,
+      // so a partial/unnumbered address can never be printed or charged for.
+      var rPc = cleanUkPostcode(r.postcode || '');
+      var rLine1 = String(r.address_line1 || '').trim();
+      if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s[0-9][A-Z]{2}$/i.test(rPc) || !hasStreetName(rLine1) || !hasUsablePremiseAddress(rLine1, rPc)) {
+        failed++;
+        if (errors.length < 5) errors.push('Skipped (not mailable): ' + (rPc || '(no postcode)') + ' ' + rLine1.slice(0, 40));
+        console.log('[STANNP] Skipped non-mailable recipient: pc="' + rPc + '" line1="' + rLine1.slice(0, 60) + '"');
+        continue;
+      }
       var rName2 = String(r.name || '').trim();
       var rCompany2 = String(r.company || '').trim();
       var rCompanyDiffers2 = rCompany2 && rCompany2 !== rName2 && !(rName2 && rCompany2.toLowerCase() === rName2.split(' ')[0].toLowerCase());
@@ -2790,9 +2801,9 @@ async sendMailpiece(mailType, recipient, files, format) {
         'recipient[firstname]': (r.name || '').split(' ')[0] || '',
         'recipient[lastname]': (r.name || '').split(' ').slice(1).join(' ') || '',
         'recipient[company]': rCompanyDiffers2 ? rCompany2 : '',
-        'recipient[address1]': r.address_line1 || '',
+        'recipient[address1]': rLine1,
         'recipient[city]': r.city || '',
-        'recipient[postcode]': r.postcode || '',
+        'recipient[postcode]': rPc,
         'recipient[country]': 'GB'
       };
       var result = await this.stannpRequest('/recipients/new', params);
@@ -29108,7 +29119,9 @@ function buildStannpRecipientFromLead(parsed) {
     if (!_hasNum(address_line1) || address_line1.trim().toLowerCase() === spl.line1.trim().toLowerCase()) address_line1 = spl.line1;
   }
   if (address_line1 && !_hasNum(address_line1) && bldAddr && _hasNum(bldAddr)) address_line1 = bldAddr;
-  var postcode = parsed.postcode || '';
+  // POSTCODE: normalise to the canonical "OUTWARD INWARD" form so Stannp/Royal Mail
+  // accept it (a partial or unspaced postcode is rejected/undeliverable).
+  var postcode = cleanUkPostcode(parsed.postcode || '');
   var city = parsed.city || parsed.town || spl.city;
   // GARBAGE-CITY GUARD: a 1-2 letter "city" is a postcode area leaked into the
   // address ("L", "N", "SW") — never send that to Stannp. Replace with the cached
@@ -29122,8 +29135,23 @@ function buildStannpRecipientFromLead(parsed) {
   if (!city) {
     try { var _rmT = require('./rightmove_scraper_v2'); city = _rmT.getTownForPostcode(postcode); } catch(e) {}
   }
+  // Never let the postcode leak into address_line1 (Stannp prints it separately).
+  if (postcode) {
+    try {
+      address_line1 = String(address_line1 || '')
+        .replace(new RegExp(postcode.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'ig'), '')
+        .replace(new RegExp(postcode.replace(/\s+/g, '').split('').join('\\s*'), 'ig'), '')
+        .replace(/[,\s]+$/, '').trim();
+    } catch(e) {}
+  }
+  // STANNP MAILABILITY GATE: require a FULL UK postcode, a premise (door/flat)
+  // number and a street name. The delivery gate already enforces this, but this
+  // guards every direct-mail path (manual send, bulk, auto-send, repeat mailings)
+  // so a non-mailable address can never reach Stannp.
+  var _fullPc = /^[A-Z]{1,2}[0-9][A-Z0-9]?\s[0-9][A-Z]{2}$/i.test(postcode);
+  var _mailable = _fullPc && _hasNum(address_line1) && hasStreetName(address_line1);
   var name = parsed.company || (parsed.name && parsed.name !== parsed.address ? parsed.name : '') || 'Homeowner';
-  return { address_line1: address_line1, city: city, postcode: postcode, name: name, company: parsed.company || '' };
+  return { address_line1: address_line1, city: city, postcode: postcode, name: name, company: parsed.company || '', mailable: _mailable };
 }
 
 app.post('/api/direct-mail/send-lead', authMiddleware, async (req, res) => {
