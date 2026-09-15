@@ -58,6 +58,31 @@ const PUBLIC_URL = process.env.PUBLIC_URL || 'https://www.9amleads.com';
   });
 })();
 
+// ===== GLOBAL INTERNAL-HTTP TIMEOUT SAFETY NET =====
+// Every internal call (127.0.0.1 / localhost — crons, watchdogs, auto-fill, self-pings)
+// gets a default socket timeout so a stuck internal request can NEVER hang a cron or a
+// watchdog forever. External calls (Brevo/Apify/OpenAI/Stripe) set their own timeouts.
+(function() {
+  try {
+    var _http = require('http');
+    var _https = require('https');
+    function wrap(mod, orig) {
+      return function(options) {
+        var req = orig.apply(mod, arguments);
+        try {
+          var host = (typeof options === 'string') ? options : (options && (options.hostname || options.host));
+          if (host && (String(host).indexOf('127.0.0.1') !== -1 || String(host).indexOf('localhost') !== -1)) {
+            req.setTimeout(120000, function() { try { req.destroy(new Error('internal request timeout')); } catch(e) {} });
+          }
+        } catch(e) {}
+        return req;
+      };
+    }
+    _http.request = wrap(_http, _http.request);
+    _https.request = wrap(_https, _https.request);
+  } catch(e) { console.error('[SAFETY] http timeout patch failed:', e.message); }
+})();
+
 // Postcode district data
 const POSTCODE_DISTRICTS_FILE = path.join(DATA_DIR, 'uk-postcode-districts.json');
 const POSTCODE_AREAS_FILE = path.join(DATA_DIR, 'uk-postcode-areas.json');
@@ -13674,7 +13699,8 @@ function sendBrevoEmail(to, subject, htmlContent) {
           'Content-Type': 'application/json',
           'api-key': BREVO_API_KEY,
           'Content-Length': Buffer.byteLength(data)
-        }
+        },
+        timeout: 15000
       }, (res) => {
         let body = '';
         res.on('data', c => body += c);
@@ -13696,6 +13722,9 @@ function sendBrevoEmail(to, subject, htmlContent) {
         if (attemptNum < 4) { var d2 = 1000 * Math.pow(2, attemptNum - 1); setTimeout(function() { attempt(attemptNum + 1); }, d2); }
         else reject(err);
       });
+      // SOCKET TIMEOUT: if Brevo accepts the connection but never responds, abort and
+      // retry (via the error handler) so a stalled SMTP API can never hang the 9am run.
+      req.on('timeout', function() { try { req.destroy(new Error('brevo timeout')); } catch(e) {} });
       req.write(data);
       req.end();
     }
@@ -15988,6 +16017,7 @@ function autoFillDeliveryShortfalls(cbDone) {
           var d = ''; resp.on('data', function(c) { d += c; }); resp.on('end', function() { try { resolve(JSON.parse(d)); } catch(e) { resolve({}); } });
         });
         r.on('error', function() { resolve({}); });
+        r.setTimeout(90000, function() { try { r.destroy(); } catch(e) {} resolve({}); });
         r.write(b); r.end();
       });
     }
