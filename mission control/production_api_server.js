@@ -36397,6 +36397,34 @@ app.listen(PORT, () => {
       saveDb();
     }
   } catch(e) {}
+  // DELIVERY SELF-CHECK ON BOOT: if the service restarted during/after the 9am window
+  // (deploy, crash, OOM, sleep-wake) and today's delivery is NOT complete, recover
+  // immediately — a restart at 09:00 must never cost customers their leads.
+  try {
+    var _bootDow = new Date().toLocaleString('en-GB', { timeZone: 'Europe/London', weekday: 'short' });
+    var _bootHm = new Date().toLocaleString('en-GB', { timeZone: 'Europe/London', hour12: false }).split(', ').pop().split(':');
+    var _bootMin = parseInt(_bootHm[0], 10) * 60 + parseInt(_bootHm[1], 10);
+    var _isWeekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].indexOf(_bootDow) !== -1;
+    if (_isWeekday && _bootMin >= 540 && _bootMin < 690) { // 09:00–11:30 UK
+      setTimeout(function() {
+        try {
+          var _db = getDb();
+          var _today = new Date().toISOString().split('T')[0];
+          var _short = 0;
+          (_db.customers || []).forEach(function(c) {
+            if (!c.plan || c.plan === 'cancelled') return;
+            if (typeof isInternalAccount === 'function' && isInternalAccount(c)) return;
+            var promised = (typeof getPlanLimit === 'function' ? getPlanLimit(c.product, c.plan, c.coverage) : 0) || 0;
+            if (promised <= 0) return;
+            var have = (_db.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(_today) === 0; }).length;
+            if (have < promised) _short++;
+          });
+          if (_short > 0) { console.log('[BOOT-SELFCHECK] ' + _short + ' customer(s) short after restart — running recovery watchdog'); try { deliveryCompletionWatchdog('boot'); } catch(e) {} }
+          else console.log('[BOOT-SELFCHECK] delivery complete for today — OK');
+        } catch(e) { console.log('[BOOT-SELFCHECK] error:', e.message); }
+      }, 15000);
+    }
+  } catch(e) {}
   setTimeout(function() { try { purgeFuneralProbateLeads(); } catch(eP) {} }, 6000);
   console.log('\n========================================');
   console.log('  9amLeads Production API Server');
