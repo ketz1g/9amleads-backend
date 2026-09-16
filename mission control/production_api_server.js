@@ -10982,7 +10982,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
   var candidateErrors = (cust.email === 'info@afsremovals.com') ? [] : null;
   // A property lead is only deliverable (Print & Post) with a confirmed door number
   // AND a full postcode — mirrors the delivery door-number gate exactly.
-  function mailOK(addr, pc) { return hasUsablePremiseAddress(addr, pc) && /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(pc || '').trim()); }
+    function mailOK(addr, pc) { return hasUsablePremiseAddress(addr, pc, cust.product === 'probate' ? { relaxMultiUnit: true } : undefined) && /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(pc || '').trim()); }
   // A moving lead without a door number is STILL deliverable when it has a full
   // postcode + a street name: the delivery's PAF pass resolves the exact door number
   // before the mailable-address gate. Counting these makes the preview match what the
@@ -11829,7 +11829,7 @@ app.get('/api/admin/readiness', adminAuth, async (req, res) => {
           if (_d.rejected || _d.blocked || _d.blocked_by_admin) return;
           var _addr = _d.fullAddress || _d.address || _d.deceasedAddress || '';
           var _pc = _d.postcode || '';
-          if (!(hasUsablePremiseAddress(_addr, _pc) && /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(_pc).trim()))) return;
+          if (!(hasUsablePremiseAddress(_addr, _pc, cc.product === 'probate' ? { relaxMultiUnit: true } : undefined) && /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(_pc).trim()))) return;
           _unionKeys[_rKey(_d)] = 1;
         });
         var queuedMailable = Object.keys(_unionKeys).length;
