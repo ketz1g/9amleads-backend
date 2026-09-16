@@ -475,6 +475,21 @@ function validateMovingLead(ld) {
   return '';
 }
 
+// Module-scope mailable-address gate, mirroring the route-scoped
+// leadMailableAddress() inside /api/admin/deliver so the post-delivery goodwill
+// pass can enforce the SAME rule (full postcode + street + door/flat number).
+// Tenders are national opportunities with no postal address, so they are exempt.
+function leadMailableForDelivery(ld, prod) {
+  if (prod === 'tenders') return true;
+  if (!ld) return false;
+  var addr = String(ld.fullAddress || ld.address || ld.deceasedAddress || '').trim();
+  var pc = String(ld.postcode || '').trim();
+  if (!addr || !pc) return false;
+  if (!/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(pc)) return false;
+  if (!hasStreetName(addr)) return false;
+  return hasUsablePremiseAddress(addr, pc);
+}
+
 // True when an address contains a real street name (a door number followed by a
 // street word, OR a street suffix like Road/Street/Avenue/Lane/Close/...). Moving
 // leads must carry street + number + area + postcode - a bare building name with
@@ -11637,7 +11652,7 @@ var AREA_MATCH_KEYWORDS = {
   'cumbria': ['cumbria', 'carlisle', 'kendal', 'barrow', 'whitehaven', 'penrith', 'workington'],
   'lancashire': ['lancashire', 'preston', 'blackpool', 'blackburn', 'burnley', 'lancaster', 'chorley', 'accrington'],
   'cheshire': ['cheshire', 'chester', 'warrington', 'crewe', 'macclesfield', 'runcorn', 'widnes', 'ellesmere port'],
-  'derbyshire': ['derbyshire', 'derby', 'chesterfield', 'buxton', 'ilford', 'swadlincote'],
+  'derbyshire': ['derbyshire', 'derby', 'chesterfield', 'buxton', 'swadlincote'],
   'lincolnshire': ['lincolnshire', 'lincoln', 'grimsby', 'scunthorpe', 'boston', 'grantham'],
   'northamptonshire': ['northamptonshire', 'northampton', 'kettering', 'corby', 'wellingborough', 'rushden'],
   'north-east': ['newcastle', 'sunderland', 'durham', 'gateshead', 'middlesbrough', 'northumberland', 'tyne', 'washington'],
@@ -11658,12 +11673,26 @@ var AREA_MATCH_KEYWORDS = {
   'east-of-england': ['essex', 'norfolk', 'suffolk', 'cambridge', 'hertford', 'colchester', 'ipswich'],
   'north-england': ['manchester', 'leeds', 'newcastle', 'liverpool', 'sheffield', 'yorkshire']
 };
+// The LOCALITY text of an address: everything AFTER the first comma (town/county/
+// postcode), with the street line removed. Prevents a street name from being
+// mistaken for the customer's target area — e.g. "62 London Road, Lancashire" must
+// NOT match a London target just because the street is called "London Road", and
+// "1143 Bristol Road South, West Midlands" must NOT match a Bristol target.
+function addressLocalityText(addr) {
+  var a = String(addr || '').trim();
+  if (!a) return '';
+  var i = a.indexOf(',');
+  var tail = (i === -1 ? a : a.slice(i + 1));
+  return tail.toLowerCase();
+}
 function areaMatchesLead(l, areas, ukwide) {
   if (ukwide) return true;
   if (!areas || !areas.length) return false;
   var pcArea = extractPostcodeArea(l.postcode || l.address || l.fullAddress || l.deceasedAddress || '');
   var county = String(l.county || '').toLowerCase().replace(/[\s-]+/g, '-');
-  var hay = (String(l.address || '') + ' ' + String(l.council || '') + ' ' + String(l.description || '') + ' ' + String(l.proposal || '') + ' ' + String(l.applicationType || '')).toLowerCase();
+  // Match keywords against the LOCALITY (town/county), never the street line, plus
+  // structured fields. This is the fix for street-name false positives.
+  var hay = (addressLocalityText(l.address || l.fullAddress || l.deceasedAddress || '') + ' ' + String(l.town || l.city || '') + ' ' + String(l.council || '') + ' ' + String(l.description || '') + ' ' + String(l.proposal || '') + ' ' + String(l.applicationType || '')).toLowerCase();
   for (var i = 0; i < areas.length; i++) {
     var a = String(areas[i] || '').toLowerCase().trim();
     if (!a) continue;
@@ -11673,7 +11702,12 @@ function areaMatchesLead(l, areas, ukwide) {
     if (m && pcArea && m.indexOf(pcArea) !== -1) return true;
     var kws = AREA_MATCH_KEYWORDS[ak];
     if (!kws) kws = a.split(/[\s-]+/).filter(function(w){ return w.length > 3; });
-    for (var k = 0; k < kws.length; k++) { if (kws[k] && hay.indexOf(kws[k]) !== -1) return true; }
+    for (var k = 0; k < kws.length; k++) {
+      if (!kws[k]) continue;
+      // Word-boundary match so 'kent' can never match inside another word.
+      var kwRe = new RegExp('(^|[^a-z0-9])' + kws[k].replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '([^a-z0-9]|$)', 'i');
+      if (kwRe.test(hay)) return true;
+    }
   }
   return false;
 }
@@ -17949,7 +17983,13 @@ cron.schedule('7 9 * * 1-5', async () => {
     var vDb = getDb();
     var vIssues = [];
     (vDb.customers || []).forEach(function(c) {
-      if (!c.plan || c.plan === 'cancelled' || (c.bounced && parseInt(c.bounced) >= 3)) return;
+      // ENTITLEMENT GATE: only customers actually owed leads today. Previously this
+      // checked plan/cancelled only, so expired trials and payment-paused accounts
+      // were flagged "short" every day, received a bonus lead AND a trial extension
+      // (which un-expired them for the next day). isEntitledForDelivery() applies the
+      // SAME rule as the 9am run (plan + not paused + trial not expired).
+      if (!isEntitledForDelivery(c)) return;
+      if (c.bounced && parseInt(c.bounced) >= 3) return;
       var quota = getPlanLimit(c.product, c.plan, c.coverage) || 5;
       var todayDelivered = (vDb.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && l.delivered_at.startsWith(vToday); }).length;
       if (todayDelivered < quota) {
@@ -17975,32 +18015,49 @@ cron.schedule('7 9 * * 1-5', async () => {
         vreq.write(vb); vreq.end();
       } catch(vt) { console.log('[VERIFY-9AM] top-up call error: ' + vt.message); }
     }
-    // GOODWILL BONUS LEAD: issue resolved (top-up done) - add ONE extra full-address lead
+    // GOODWILL BONUS LEAD: the shortfall top-up has been requested; add ONE extra
+    // lead to the customer's dashboard as a goodwill gesture. The bonus lead MUST be
+    // the customer's OWN product and MUST pass the SAME mailable-address + area gate
+    // as the 9am delivery. Previously this always pulled a MOVING lead with no area
+    // or door-number check, so probate/newbusiness customers received irrelevant,
+    // out-of-area, doorless leads (and expired trials received them daily).
     for (var vi2 = 0; vi2 < vIssues.length; vi2++) {
       try {
         var gCust = (vDb.customers || []).find(function(c) { return c.id === vIssues[vi2].id; });
         if (!gCust) continue;
+        var gProd = gCust.product || 'moving';
+        if (gProd === 'tenders') continue; // national notices carry no postal address
         var gAreas = [];
-        try { var gp = JSON.parse(gCust.product_config || '{}'); if (gp.moving && gp.moving.target_areas) gAreas = JSON.parse(gp.moving.target_areas); else gAreas = JSON.parse(gCust.target_areas || '[]'); } catch(e) {}
-        var gPool = interleavePoolByAreas(getDeliveryPool('moving'), gAreas);
+        try {
+          var gp = JSON.parse(gCust.product_config || '{}');
+          var gCfg = gp[gProd] || {};
+          if (gCfg.target_areas) gAreas = JSON.parse(gCfg.target_areas);
+          else gAreas = JSON.parse(gCust.target_areas || '[]');
+        } catch(e) { gAreas = []; }
+        var gUkwide = /all.?uk|uk.?wide|nationwide|whole.?uk/i.test((gAreas || []).join(' '));
+        var gPool = interleavePoolByAreas(getDeliveryPool(gProd), gAreas);
         var gLead = null, gData = null;
         for (var gi = 0; gi < gPool.length; gi++) {
           var gl = gPool[gi];
           var gd = gl.data ? (typeof gl.data === 'string' ? JSON.parse(gl.data) : gl.data) : gl;
           if (gd.address) { gd.address = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(gd.address))); gd.fullAddress = gd.address; }
-          if (validateMovingLead(gd)) { gLead = gl; gData = gd; break; }
+          if (!leadMailableForDelivery(gd, gProd)) continue;
+          if (!gUkwide && !areaMatchesLead(gd, gAreas, false) && !(gProd === 'moving' && isFallbackLeadAcceptable(gd.postcode || gd.address || '', gAreas))) continue;
+          gLead = gl; gData = gd; break;
         }
         if (gLead && gData) {
-          var gNew = { id: 'lead_' + Date.now() + '_goodwill_' + vi2, customer_id: gCust.id, product: 'moving', data: JSON.stringify(Object.assign({}, gLead, { address: gData.address, fullAddress: gData.address, postcode: gData.postcode || '' })), status: 'new', delivered: 1, created_at: new Date().toISOString(), delivered_at: new Date().toISOString() };
+          var gNew = { id: 'lead_' + Date.now() + '_goodwill_' + vi2, customer_id: gCust.id, product: gProd, data: JSON.stringify(Object.assign({}, gLead, { address: gData.address, fullAddress: gData.address, postcode: gData.postcode || '' })), status: 'new', delivered: 1, created_at: new Date().toISOString(), delivered_at: new Date().toISOString() };
           vDb.leads.push(gNew);
-          // TRIAL EXTENSION: add 2 free days to the affected customer's trial.
+          // TRIAL EXTENSION: add 2 free days to the affected customer's trial. Only
+          // ever extends a trial that is currently ACTIVE (the entitlement gate above
+          // guarantees this) — never an expired one.
           var gExtendDays = 2;
           if (gCust.plan === 'free_trial') {
             var gTrialBase = gCust.trial_ends ? new Date(gCust.trial_ends) : new Date();
             gCust.trial_ends = new Date(gTrialBase.getTime() + gExtendDays * 86400000).toISOString();
           }
           saveDb();
-          console.log('[VERIFY-9AM] goodwill bonus lead added to ' + vIssues[vi2].email + ' - ' + gData.postcode + ' (trial +' + gExtendDays + 'd)');
+          console.log('[VERIFY-9AM] goodwill bonus lead added to ' + vIssues[vi2].email + ' (' + gProd + ') - ' + gData.postcode + ' (trial +' + gExtendDays + 'd)');
           try {
             await sendBrevoEmail(gCust.email, 'A free bonus lead from 9amLeads \u{1F389}', '<div style="font-family:Inter,Arial,Helvetica,sans-serif;background:#f1f5f9;color:#1e293b;padding:28px 20px"><div style="max-width:600px;margin:0 auto"><table width="100%" cellpadding="0" cellspacing="0"><tbody>' + buildEmailHeader() + '<tr><td style="background:#ffffff;padding:28px 30px;color:#1e293b"><div style="font-size:11px;color:#64748b;letter-spacing:1px;margin-bottom:6px">9amLeads \u2022 Customer Care</div><h2 style="color:#15803d;margin:0 0 12px;font-size:20px">A free bonus lead for you \u{1F389}</h2><p style="font-size:14px;line-height:1.7;color:#334155">Thanks for your patience. As a <b>gesture of goodwill</b> for the delivery delay, we have added a <b>free bonus lead</b> to your dashboard, plus <b>+2 days</b> on your trial. No extra charge.</p><div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px 16px;margin:14px 0"><div style="font-size:15px;font-weight:700;color:#1e293b">' + String(gData.fullAddress || gData.address || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div><div style="font-size:13px;color:#64748b;margin-top:4px">' + (gData.postcode || '') + '</div></div><p style="font-size:13px;line-height:1.6;color:#475569">This bonus lead is yours to review in your dashboard. On top of your usual daily leads. If you have any questions, just reply to this email and we will help right away.</p></td></tr>' + buildEmailFooter() + '</tbody></table></div></div>');
           } catch(gwe) { console.log('[VERIFY-9AM] goodwill email error: ' + gwe.message); }
@@ -21595,11 +21652,28 @@ _deliverDiag[cust.email].products = products;
           if (l.customer_id !== cust.id || l.delivered !== 0 || l.product !== cust.product) return false;
           var pld = null; try { pld = JSON.parse(l.data || '{}'); } catch(e) { pld = null; }
           if (!pld || typeof pld !== 'object') pld = { address: l.address || '', fullAddress: l.fullAddress || '', postcode: l.postcode || '' };
-          return leadMailableAddress(pld, l.product);
+          if (!leadMailableAddress(pld, l.product)) return false;
+          // CROSS-CUSTOMER EXCLUSIVITY: a queued/pending lead must not be promoted if
+          // the SAME property/listing was already assigned to another customer earlier
+          // in this run. Previously the primary pick ignored the in-run set, so two
+          // customers with overlapping areas could each be delivered the same property
+          // from their own pre-queued lead.
+          var _pu = String(pld.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
+          if (_pu && _inRunSeen['u:' + _pu]) return false;
+          var _pa = 'aa:' + propertyIdentityKey(pld.fullAddress || pld.deceasedAddress || pld.address || '', pld.postcode || '');
+          if (_pa && _inRunSeen[_pa]) return false;
+          return true;
         });
         if (primaryLeads.length > 0) {
           custLeads.push(primaryLeads[0]);
           primaryPickedId = primaryLeads[0].id;
+          try {
+            var _ppd = JSON.parse(primaryLeads[0].data || '{}');
+            var _ppu = String(_ppd.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
+            if (_ppu) _inRunSeen['u:' + _ppu] = true;
+            var _ppa = 'aa:' + propertyIdentityKey(_ppd.fullAddress || _ppd.deceasedAddress || _ppd.address || '', _ppd.postcode || '');
+            if (_ppa) _inRunSeen[_ppa] = true;
+          } catch(e) {}
         }
       }
       var thisWeekStart2 = new Date(); thisWeekStart2.setDate(thisWeekStart2.getDate() - (thisWeekStart2.getDay() || 7) + 1);
@@ -23351,6 +23425,30 @@ _deliverDiag[cust.email].products = products;
             try { var _cd = JSON.parse(_cl.data || '{}'); var _cPc = _cd.postcode || _cd.address || _cl.postcode || ''; var _cArea = extractPostcodeArea(_cPc); if (!_cArea) return false; var _in = custAreas.some(function(_a) { return extractPostcodeArea(_a) === _cArea; }); if (_in) return true; return isFallbackLeadAcceptable(_cPc, custAreas); } catch(e) { return false; }
           });
           if (custLeads.length !== _beforeDist) console.log('[DELIVERY-DIST] ' + cust.email + ': dropped ' + (_beforeDist - custLeads.length) + ' far out-of-area lead(s) (kept ' + custLeads.length + ')');
+        }
+        // FINAL MAILABLE + AREA SAFETY NET (all products): no matter which upstream
+        // branch (primary pick, queued lead, pool fallback, top-up, PAF pass) produced
+        // a candidate, it must carry a full mailable address AND sit in the customer's
+        // chosen area before it can be marked delivered or emailed. Tenders are
+        // national and exempt (handled inside the helpers). This guarantees a doorless,
+        // partial-postcode or out-of-area lead can never reach a customer's inbox.
+        var _preSafety = custLeads.length;
+        custLeads = custLeads.filter(function(_sl) {
+          try {
+            var _sd = {}; try { _sd = JSON.parse(_sl.data || '{}'); } catch(e) { _sd = {}; }
+            if (!_sd || typeof _sd !== 'object') _sd = {};
+            if (!_sd.address && !_sd.fullAddress && !_sd.deceasedAddress) {
+              _sd = Object.assign({}, _sd, { address: _sl.address || '', fullAddress: _sl.fullAddress || '', postcode: _sl.postcode || '' });
+            }
+            var _sprod = _sl.product || cust.product;
+            if (!leadMailableAddress(_sd, _sprod)) return false;
+            if (!candidateInArea(_sd, custAreas, _sprod, _custUkwide)) return false;
+            return true;
+          } catch(e) { return false; }
+        });
+        if (custLeads.length !== _preSafety) {
+          console.log('[DELIVERY-SAFETY] ' + cust.email + ': dropped ' + (_preSafety - custLeads.length) + ' invalid lead(s) (doorless/partial/out-of-area) before send');
+          if (_deliverDiag[cust.email]) _deliverDiag[cust.email].safety_dropped = _preSafety - custLeads.length;
         }
         if (custLeads.length > totalDailyLimit) {
           console.log('[DELIVERY-FINAL-CAP] ' + cust.email + ': hard-capped ' + custLeads.length + ' -> ' + totalDailyLimit + ' (never over-deliver) prod=' + cust.product + ' plan=' + cust.plan + ' cov=' + primCoverage + ' lpd=' + cust.leads_per_day);
