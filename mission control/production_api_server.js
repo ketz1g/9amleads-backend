@@ -947,7 +947,15 @@ function toIsoDate(v) {
 // passes. (A nested copy inside the /api/admin/deliver handler shadows this one
 // there with a per-run cache; the verify pass previously had no such function,
 // which threw "getDeliveryPool is not defined" and broke auto top-up.)
+// MEMORY/CACHED: the 9am post-processing calls this once per customer (VERIFY, auto-fill,
+// guarantee). Re-parsing the 6,000-lead pool file each time created huge transient
+// allocations and contributed to the OOM crash. Cache the parsed pool for a short TTL
+// (the scraper does not rewrite it during the 9am run, so 45s of staleness is safe).
+var _poolCache = {};
 function getDeliveryPool(prod) {
+  var _now = Date.now();
+  var _c = _poolCache[prod];
+  if (_c && (_now - _c.at) < 45000) return _c.arr;
   try {
     var f = path.join(DATA_DIR, PRODUCT_LEAD_FILES[prod] ? PRODUCT_LEAD_FILES[prod].file : 'moving-leads.json');
     var raw = null;
@@ -957,9 +965,11 @@ function getDeliveryPool(prod) {
     else if (raw && typeof raw === 'object') {
       Object.keys(raw).forEach(function(k){ if (k.indexOf('_') !== 0 && Array.isArray(raw[k])) arr = arr.concat(raw[k]); });
     }
+    _poolCache[prod] = { at: _now, arr: arr };
     return arr;
-  } catch(e) { return []; }
+  } catch(e) { return _c ? _c.arr : []; }
 }
+function invalidatePoolCache(prod) { try { if (prod) delete _poolCache[prod]; else _poolCache = {}; } catch(e) {} }
 function getMatchingArea(code, areas) {
   const upper = code.toUpperCase().replace(/[^A-Z]/g, '');
   if (areas[upper]) return upper;
@@ -1322,7 +1332,10 @@ function saveDb() {
     // mid-write crash can NEVER leave a truncated/corrupt database.json. This is
     // the root-cause fix for the recurring "database shrank to a few KB" corruption.
     var tmp = DB_FILE + '.tmp';
-    fs.writeFileSync(tmp, JSON.stringify(_dbData, null, 2));
+    // COMPACT (no pretty-print): halves the transient string size on every save. The
+    // 9am loops call saveDb() repeatedly, and the pretty-printed copy of a large DB
+    // was a major allocation spike (OOM contributor). Still valid JSON.
+    fs.writeFileSync(tmp, JSON.stringify(_dbData));
     fs.renameSync(tmp, DB_FILE);
     // An explicit saveDb() is an immediate flush, so cancel any pending coalesced
     // flush (avoids writing the big file twice for one logical change).
