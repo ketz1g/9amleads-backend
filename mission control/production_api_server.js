@@ -72,7 +72,7 @@ const PUBLIC_URL = process.env.PUBLIC_URL || 'https://www.9amleads.com';
         try {
           var host = (typeof options === 'string') ? options : (options && (options.hostname || options.host));
           if (host && (String(host).indexOf('127.0.0.1') !== -1 || String(host).indexOf('localhost') !== -1)) {
-            req.setTimeout(120000, function() { try { req.destroy(new Error('internal request timeout')); } catch(e) {} });
+            req.setTimeout(300000, function() { try { req.destroy(new Error('internal request timeout')); } catch(e) {} });
           }
         } catch(e) {}
         return req;
