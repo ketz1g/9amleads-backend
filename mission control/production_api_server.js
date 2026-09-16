@@ -15763,6 +15763,24 @@ cron.schedule('15 6 * * 1-5', async () => {
 cron.schedule('15 7 * * 1-5', async () => {
   try { await preVerifyMovingLeads(); } catch(e) { console.log('[PREVERIFY] 07:15 error: ' + e.message); }
 }, { timezone: 'Europe/London' });
+// PRE-DELIVERY TOP-UP (08:40 UK Mon-Fri): fill every customer's queue to their plan
+// limit and PAF-enrich, right before the 9am run. With full mailable queues the
+// delivery has nothing slow to do (no per-lead PAF, no fallback), so every email goes
+// out within seconds of 09:00 instead of drifting as the run walks the customer list.
+cron.schedule('40 8 * * 1-5', async () => {
+  try {
+    await new Promise(function(resolve) {
+      try {
+        var body = JSON.stringify({});
+        var rq = require('http').request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/top-up-all', headers: { 'Authorization': 'Bearer ' + (ADMIN_PASSWORD || ''), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, function(rs) { rs.resume(); rs.on('end', resolve); });
+        rq.on('error', function() { resolve(); });
+        rq.write(body); rq.end();
+      } catch(e) { resolve(); }
+    });
+    await preVerifyMovingLeads();
+    console.log('[08:40 PRE-DELIVERY] Queue top-up + PAF pre-verify complete');
+  } catch(e) { console.log('[08:40 PRE-DELIVERY] error: ' + (e && e.message || e)); }
+}, { timezone: 'Europe/London' });
 cron.schedule('0 18 * * *', async () => {
   try { await runOtmDailyScrape(); } catch(e) { console.log('[OTM-18-CRON] ' + e.message); }
 }, { timezone: 'Europe/London' });
@@ -23022,6 +23040,12 @@ _deliverDiag[cust.email].products = products;
         if (cust.product === 'moving' && (process.env.POSTCODER_ENABLED === 'true' || process.env.POSTCODER_ENABLED === '1')) {
           try {
             var confirmedLeads = [];
+            // PER-CUSTOMER PAF BUDGET: a single short customer's slow PAF lookups used
+            // to stall the whole 9am run (every customer after it drifted to ~09:04).
+            // Cap the lookups per customer; anything left is topped up by the post-run
+            // guarantee, so the emails for everyone still go out within seconds.
+            var ncPafStart = Date.now();
+            var ncPafBudgetMs = parseInt(process.env.DELIVERY_PAF_BUDGET_MS || '45000', 10);
             for (var nci = 0; nci < custLeads.length; nci++) {
               var ncLead = custLeads[nci];
               var ncData = {}; try { ncData = JSON.parse(ncLead.data || '{}'); } catch(e) {}
@@ -23038,6 +23062,11 @@ _deliverDiag[cust.email].products = products;
               if (ncData.udprn || (!ncIsFlat && ncClearNumber && ncFullPcOk && ncData.url)) {
                 confirmedLeads.push(ncLead);
                 continue;
+              }
+              // Bounded: stop PAF-ing this customer once the budget is spent (guarantee tops up).
+              if (Date.now() - ncPafStart > ncPafBudgetMs) {
+                console.log('[DELIVERY] Final PAF pass: per-customer PAF budget (' + ncPafBudgetMs + 'ms) reached for ' + cust.email + ' — deferring remaining lookups to the guarantee');
+                break;
               }
               // Enrich via Postcoder (cached) to confirm the number.
               try {
