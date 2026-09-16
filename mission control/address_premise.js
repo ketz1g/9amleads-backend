@@ -14,7 +14,8 @@
 // old "2+ words = named property" fallback.
 var STREET_SUFFIX_RE = /^(?:alley|approach|arcade|avenue|bank|bay|beach|boulevard|brae|bridge|broadway|brook|byway|causeway|chase|circus|close|common|coppice|corner|court|cove|crescent|croft|cross|crossing|dale|dell|down|downs|drive|drove|east|end|esplanade|field|fields|front|garden|gardens|gate|glade|glen|green|grove|hamlet|harbour|head|heath|heights|hill|hold|holm|ing|inlet|island|knoll|lane|la|law|links|little|loch|lodge|manor|market|marsh|mead|meadow|mews|moor|mount|north|nook|park|parkway|parade|passage|path|paddock|place|plain|platt|plaza|point|quay|ridge|rise|road|row|shaw|side|slope|south|spinney|spring|springs|square|st|station|steps|street|terrace|tops|towers|vale|view|villas|vista|walk|walkway|warren|way|west|wharf|wood|woods|yard)$/i;
 
-function hasUsablePremiseAddress(addr, pc) {
+function hasUsablePremiseAddress(addr, pc, opts) {
+  var relaxMultiUnit = !!(opts && opts.relaxMultiUnit);
   var a = String(addr || '').replace(new RegExp(String(pc || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '').trim();
   if (!a) return false;
   // Drop trailing area tags baked in by the area-targeted scraper (", E area").
@@ -31,7 +32,12 @@ function hasUsablePremiseAddress(addr, pc) {
   // 2) Flat/apartment/unit/suite/maisonette/penthouse/room + number: "Flat 12, Eaton Mansions"
   var hasFlatNumber = /(?:flat|apartment|unit|suite|maisonette|penthouse|room)\s*\d{1,5}[A-Za-z]?\b/i.test(a);
   if (hasFlatNumber) return true;
-  if (hasDoorNumber && MULTI_UNIT_RE.test(a)) return false;
+  // PROBATE (relaxMultiUnit): a numbered building/unit ("1 Byram Court",
+  // "24 Marsh Wall") is a specific, mailable premise for the deceased's registered
+  // address, so the multi-unit block is skipped for probate. Moving still requires a
+  // flat number for a multi-unit building (the number may point to the building, not
+  // the flat), so the strict rule is kept there.
+  if (hasDoorNumber && MULTI_UNIT_RE.test(a) && !relaxMultiUnit) return false;
   if (hasDoorNumber) return true;
   // 3) BARE STREET: the first comma segment ends in a street suffix -> no premise
   //    identifier (the town/area after the comma must not mask it).

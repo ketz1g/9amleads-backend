@@ -199,7 +199,7 @@ function extractPostcodeArea(postcode) {
 var ADDR_PREMISE = require('./address_premise');
 var CURATED_BLOG = require('./curated_blog_posts');
 var AFFILIATE_TOOLKIT = require('./affiliate_resources');
-function hasUsablePremiseAddress(addr, pc) { return ADDR_PREMISE.hasUsablePremiseAddress(addr, pc); }
+function hasUsablePremiseAddress(addr, pc, opts) { return ADDR_PREMISE.hasUsablePremiseAddress(addr, pc, opts); }
 
 // Strip a leading DEFAULT/UNCONFIRMED "Flat 1" prefix from an address. UK portals
 // (Rightmove etc.) hide exact flat numbers and default a flat listing's
@@ -487,7 +487,7 @@ function leadMailableForDelivery(ld, prod) {
   if (!addr || !pc) return false;
   if (!/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(pc)) return false;
   if (!hasStreetName(addr)) return false;
-  return hasUsablePremiseAddress(addr, pc);
+  return hasUsablePremiseAddress(addr, pc, prod === 'probate' ? { relaxMultiUnit: true } : undefined);
 }
 
 // True when an address contains a real street name (a door number followed by a
@@ -21302,7 +21302,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       if (!addr || !pc) return false;
       if (!/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(pc)) return false;
       if (!hasStreetName(addr)) return false;
-      return hasUsablePremiseAddress(addr, pc);
+      return hasUsablePremiseAddress(addr, pc, prod === 'probate' ? { relaxMultiUnit: true } : undefined);
     }
     // AREA GATE (ALL products): a candidate must sit inside the customer's chosen
     // areas. Handles postcode-AREA targets (SW, L, CH), postcode-DISTRICT targets
@@ -23449,6 +23449,60 @@ _deliverDiag[cust.email].products = products;
         if (custLeads.length !== _preSafety) {
           console.log('[DELIVERY-SAFETY] ' + cust.email + ': dropped ' + (_preSafety - custLeads.length) + ' invalid lead(s) (doorless/partial/out-of-area) before send');
           if (_deliverDiag[cust.email]) _deliverDiag[cust.email].safety_dropped = _preSafety - custLeads.length;
+        }
+        // FILL BACK TO EXACT PROMISE ("no more no less"): the safety net above may have
+        // removed invalid leads. Top back up to the promised count from the product pool
+        // with VALID leads only (mailable + in-area + not already delivered to anyone),
+        // so a customer is never left short just because a bad lead was filtered out.
+        // Skips repeat/watchdog runs that have already emailed (the day is settled).
+        if ((!alreadyEmailedToday || forceFull) && custLeads.length < totalDailyLimit) {
+          try {
+            var _fillNeed = totalDailyLimit - custLeads.length;
+            var _usedKeys = {};
+            custLeads.forEach(function(cl) {
+              try {
+                var cd = JSON.parse(cl.data || '{}');
+                var cid = propertyIdentityKey(cd.fullAddress || cd.deceasedAddress || cd.address || '', cd.postcode || '');
+                if (cid) _usedKeys['aa:' + cid] = 1;
+                var cu = String(cd.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
+                if (cu) _usedKeys['u:' + cu] = 1;
+              } catch(e) {}
+            });
+            for (var _pi = 0; _pi < products.length && _fillNeed > 0; _pi++) {
+              var _fp = products[_pi];
+              var _fCfg = pcfg[_fp] || {};
+              var _fCov = _fCfg.coverage || cust.coverage || 'postcode';
+              var _fLim = getPlanLimit(_fp, cust.plan, _fCov) || dailyLimitByPlan[cust.plan] || 5;
+              var _fHave = custLeads.filter(function(cl) { return cl.product === _fp; }).length;
+              var _fNeed = Math.min(_fLim - _fHave, _fillNeed);
+              if (_fNeed <= 0) continue;
+              var _fPool = interleavePoolByAreas(getDeliveryPool(_fp), custAreas);
+              for (var _fi = 0; _fi < _fPool.length && _fNeed > 0; _fi++) {
+                var _rl = _fPool[_fi];
+                var _rd = (_rl && _rl.data) ? (typeof _rl.data === 'string' ? JSON.parse(_rl.data) : _rl.data) : _rl;
+                if (!_rd) continue;
+                if (_rd.address) { _rd.address = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(_rd.address))); _rd.fullAddress = _rd.address; }
+                if (!leadMailableAddress(_rd, _fp)) continue;
+                if (!candidateInArea(_rd, custAreas, _fp, _custUkwide)) continue;
+                var _fu = String(_rd.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
+                var _fid = propertyIdentityKey(_rd.fullAddress || _rd.deceasedAddress || _rd.address || '', _rd.postcode || '');
+                if (_fu && (_usedKeys['u:' + _fu] || _inRunSeen['u:' + _fu] || globalDeliveredUrls[_fu] || globalDeliveredUrls[_rd.url])) continue;
+                if (_fid && (_usedKeys['aa:' + _fid] || _inRunSeen['aa:' + _fid] || globalDeliveredKeys['gg:' + _fid])) continue;
+                var _fNew = { id: uuidv4(), customer_id: cust.id, product: _fp, data: JSON.stringify(Object.assign({}, _rl, { address: _rd.address, fullAddress: _rd.address, postcode: _rd.postcode || '' })), status: 'new', delivered: 0, created_at: new Date().toISOString(), delivered_at: null, release_at: today + 'T09:00:00.000Z' };
+                db.leads.push(_fNew);
+                custLeads.push(_fNew);
+                if (_fu) { _usedKeys['u:' + _fu] = 1; _inRunSeen['u:' + _fu] = 1; }
+                if (_fid) { _usedKeys['aa:' + _fid] = 1; _inRunSeen['aa:' + _fid] = 1; }
+                _fNeed--; _fillNeed--;
+              }
+            }
+            if (custLeads.length < totalDailyLimit) {
+              console.log('[DELIVERY-FILL] ' + cust.email + ': still short after fill (' + custLeads.length + '/' + totalDailyLimit + ') - genuine supply gap');
+              if (_deliverDiag[cust.email]) _deliverDiag[cust.email].fill_short = custLeads.length + '/' + totalDailyLimit;
+            } else {
+              console.log('[DELIVERY-FILL] ' + cust.email + ': backfilled to promise (' + custLeads.length + '/' + totalDailyLimit + ')');
+            }
+          } catch(_fe) { console.log('[DELIVERY-FILL] error for ' + cust.email + ': ' + _fe.message); }
         }
         if (custLeads.length > totalDailyLimit) {
           console.log('[DELIVERY-FINAL-CAP] ' + cust.email + ': hard-capped ' + custLeads.length + ' -> ' + totalDailyLimit + ' (never over-deliver) prod=' + cust.product + ' plan=' + cust.plan + ' cov=' + primCoverage + ' lpd=' + cust.leads_per_day);
