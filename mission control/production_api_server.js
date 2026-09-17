@@ -1413,9 +1413,13 @@ function _flushDbNow() {
   if (_dbFlushTimer) { clearTimeout(_dbFlushTimer); _dbFlushTimer = null; }
   if (_dbDirty) { _dbDirty = false; saveDb(); }
 }
+// CLEAN-EXIT MARKER: Render sends SIGTERM on a deploy/restart. Record the time so the
+// boot crash-loop detector can tell a DEPLOY restart (clean) from a real CRASH (abrupt,
+// no SIGTERM). Without this, a burst of deploys looked like a crash loop.
+function _markCleanExit() { try { var _dce = getDb(); _dce.__cleanExitAt = Date.now(); } catch(e) {} try { _flushDbNow(); } catch(e) {} }
 try { process.on('beforeExit', function() { try { _flushDbNow(); } catch(e) {} }); } catch(e) {}
-try { process.on('SIGTERM', function() { try { _flushDbNow(); } catch(e) {} }); } catch(e) {}
-try { process.on('SIGINT', function() { try { _flushDbNow(); } catch(e) {} }); } catch(e) {}
+try { process.on('SIGTERM', function() { _markCleanExit(); }); } catch(e) {}
+try { process.on('SIGINT', function() { _markCleanExit(); }); } catch(e) {}
 
 // ===== AUTOMATED DATABASE BACKUP (bulletproofing) =====
 // The whole business (customers, leads, campaigns, payments) lives in database.json
@@ -9528,7 +9532,10 @@ async function createReplacementLead(cust, product, deliveredNow, exclude) {
       var fAddr = fl.fullAddress || fl.address || fl.deceasedAddress || '';
       if (product !== 'tenders') {
         if (!fAddr) continue;
-        if (!hasProperAddressModule(fAddr, fpc)) continue;
+        // MOVING replacements must carry number + street + TOWN + full postcode, so a
+        // rejected lead is never swapped for another malformed one.
+        if (product === 'moving') { if (!isCompleteMovingAddress(fAddr, fpc)) continue; }
+        else if (!hasProperAddressModule(fAddr, fpc)) continue;
       }
       // NATIONAL FALLBACK only for genuinely postcode-less public notices
       // (some tender/older-probate records have no address/postcode at all).
@@ -37227,7 +37234,11 @@ app.listen(PORT, () => {
     var dbB = getDb();
     var nowB = Date.now();
     if (!Array.isArray(dbB.__boots)) dbB.__boots = [];
-    dbB.__boots.push(nowB);
+    // DEPLOY vs CRASH: a boot following a clean SIGTERM exit (deploy/restart) is NOT a
+    // crash, so it must not count toward the crash-loop alert. Only abrupt exits do.
+    var _prevCleanExit = dbB.__cleanExitAt && (nowB - dbB.__cleanExitAt) < 180000;
+    if (dbB.__cleanExitAt) delete dbB.__cleanExitAt;
+    if (!_prevCleanExit) dbB.__boots.push(nowB);
     if (dbB.__boots.length > 100) dbB.__boots = dbB.__boots.slice(-100);
     // CRASH-LOOP ALERT ONLY: routine restarts (deploys / sleep-wake) are now counted and
     // reported in the daily summary instead of emailed one-by-one. We only email if the
