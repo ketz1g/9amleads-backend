@@ -16493,7 +16493,9 @@ function sendDailySummaryEmail() {
     console.log('[DAILY-SUMMARY] ' + fulfilled + '/' + rows.length + ' fulfilled, ' + totalDelivered + '/' + totalPromised + ' leads');
   } catch(e) { console.log('[DAILY-SUMMARY] error:', e.message); }
 }
-cron.schedule('12 9 * * 1-5', function() { try { sendDailySummaryEmail(); } catch(e) {} }, { timezone: 'Europe/London' });
+// DISABLED (duplicate of the immediate post-delivery report): sendDeliveryCompleteReport()
+// now fires ~2 min after the 9am run and is the single "delivery complete" email.
+// cron.schedule('12 9 * * 1-5', function() { try { sendDailySummaryEmail(); } catch(e) {} }, { timezone: 'Europe/London' });
 
 // ===== PRE-9AM READINESS CHECK (08:45 UK Mon-Fri) =====
 // The last line of defence BEFORE the run: verify the things that silently break email
@@ -16812,26 +16814,31 @@ async function sendDeliveryCompleteReport() {
     var todayS = new Date().toISOString().split('T')[0];
     var custs = (rDb.customers || []).filter(function(c2) { return c2.plan && c2.plan !== 'cancelled' && String(c2.email || '').indexOf('test.') !== 0; });
     var rows = [];
-    var totalDelivered = 0;
+    var totalDelivered = 0, totalPromised = 0, fulfilled = 0, shortList = [];
     custs.forEach(function(c2) {
       var prod = c2.product || 'moving';
       var lds = (rDb.leads || []).filter(function(l2) { return l2.customer_id === c2.id && l2.delivered_at && String(l2.delivered_at).indexOf(todayS) === 0; });
-      if (lds.length) {
-        totalDelivered += lds.length;
-        rows.push({ email: c2.email, company: c2.company || '', product: prod, count: lds.length });
-      }
+      var promised = parseInt(c2.leads_per_day, 10) > 0 ? parseInt(c2.leads_per_day, 10) : (getPlanLimit(c2.product, c2.plan, c2.coverage) || 5);
+      totalDelivered += lds.length;
+      totalPromised += promised;
+      var ok = lds.length >= promised;
+      if (ok) fulfilled++; else shortList.push(c2.email + ' (' + lds.length + '/' + promised + ')');
+      rows.push({ email: c2.email, company: c2.company || '', product: prod, count: lds.length, promised: promised, ok: ok });
     });
+    var allGood = shortList.length === 0;
     var html = '<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px">'
       + '<div style="font-size:20px;font-weight:800;color:#0f172a;margin-bottom:6px">9am delivery complete: ' + todayS + '</div>'
-      + '<p style="font-size:13px;color:#64748b;margin:0 0 16px">' + rows.length + ' customer(s) · ' + totalDelivered + ' leads delivered to email + dashboard.</p>'
+      + '<p style="font-size:14px;font-weight:700;color:' + (allGood ? '#16a34a' : '#dc2626') + ';margin:0 0 4px">' + fulfilled + '/' + rows.length + ' customers fulfilled (' + totalDelivered + '/' + totalPromised + ' leads)</p>'
+      + '<p style="font-size:13px;color:#64748b;margin:0 0 16px">Delivered to email + dashboard at 9:00am.</p>'
+      + (allGood ? '' : '<p style="font-size:13px;color:#dc2626;font-weight:700;margin:0 0 12px">Short: ' + shortList.join(', ') + '</p>')
       + '<table style="width:100%;border-collapse:collapse;font-size:13px">'
       + '<tr style="background:#eef2f7"><th style="text-align:left;padding:8px;color:#334155">Customer</th><th style="text-align:left;padding:8px;color:#334155">Product</th><th style="text-align:right;padding:8px;color:#334155">Leads</th></tr>';
     rows.forEach(function(r) {
-      html += '<tr style="border-bottom:1px solid #e2e8f0"><td style="padding:8px;color:#0f172a;font-weight:600">' + r.company + ' <span style="color:#94a3b8;font-weight:400">(' + r.email + ')</span></td><td style="padding:8px;color:#475569">' + r.product + '</td><td style="padding:8px;text-align:right;color:#16a34a;font-weight:700">' + r.count + '</td></tr>';
+      html += '<tr style="border-bottom:1px solid #e2e8f0"><td style="padding:8px;color:#0f172a;font-weight:600">' + r.company + ' <span style="color:#94a3b8;font-weight:400">(' + r.email + ')</span></td><td style="padding:8px;color:#475569">' + r.product + '</td><td style="padding:8px;text-align:right;color:' + (r.ok ? '#16a34a' : '#dc2626') + ';font-weight:700">' + r.count + '/' + r.promised + '</td></tr>';
     });
-    html += '</table><p style="font-size:11px;color:#94a3b8;margin-top:16px">Next delivery: next weekday at 9:00 UK. No action needed unless a row is missing.</p></div>';
-    await sendBrevoEmail({ email: process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com', name: '9amLeads Admin' }, '9amLeads delivery complete — ' + todayS + ' (' + totalDelivered + ' leads)', html);
-    console.log('[POST-DELIVERY-REPORT] Sent delivery summary (' + rows.length + ' customers, ' + totalDelivered + ' leads)');
+    html += '</table><p style="font-size:11px;color:#94a3b8;margin-top:16px">Next delivery: next weekday at 9:00 UK. No action needed unless a row is red.</p></div>';
+    await sendBrevoEmail({ email: process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com', name: '9amLeads Admin' }, (allGood ? '✅ ' : '⚠️ ') + '9amLeads delivery complete — ' + todayS + ' (' + fulfilled + '/' + rows.length + ' fulfilled, ' + totalDelivered + ' leads)', html);
+    console.log('[POST-DELIVERY-REPORT] Sent delivery summary (' + fulfilled + '/' + rows.length + ' fulfilled, ' + totalDelivered + ' leads)');
   } catch(e) { console.log('[POST-DELIVERY-REPORT] error:', e.message); }
 }
 
