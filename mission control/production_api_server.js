@@ -16605,7 +16605,11 @@ cron.schedule('0 9 * * 1-5', async () => {
             var dLog = b.substring(0, 200);
       // Mark "fired today" ONLY on a genuine success (2xx). On a 401/500 the flag
       // stays unset so the 09:01 watchdog re-triggers and customers still get leads.
-      if (res.statusCode >= 200 && res.statusCode < 300) __lastDeliveryDate = new Date().toISOString().split('T')[0];
+      if (res.statusCode >= 200 && res.statusCode < 300) {
+        __lastDeliveryDate = new Date().toISOString().split('T')[0];
+        // Persist completion so a later restart/catch-up knows the day is done.
+        try { var dbDone = getDb(); dbDone.delivery_completed_date = __lastDeliveryDate; saveDb(); } catch(eDc) {}
+      }
       console.log('[09:00 UK] Delivery done [' + res.statusCode + ']:', dLog);
       // Free the parsed pool files and hand memory back to the OS now the run is done,
       // so RSS does not stay high and risk an OOM kill later in the day.
@@ -17356,27 +17360,17 @@ function runMissedDeliveryCatchUp(reason) {
     if (__lastDeliveryDate === today) return;             // completed on this process
     if (__deliveryStartedDate === today) return;          // a run is in progress
     var db = getDb();
-    var needRun = false;
-    (db.customers || []).forEach(function(c) {
-      if (!isEntitledForDelivery(c)) return;
-      // Ignore customers who signed up AFTER 09:00 UK today — they get their first
-      // full delivery at the next 09:00, not a same-day catch-up.
-      if (c.created_at) {
-        var cp = _ukClock(new Date(c.created_at));
-        if (cp && cp.y === p.y && cp.mo === p.mo && cp.day === p.day && (cp.h * 60 + cp.mi) >= 9 * 60) return;
-      }
-      var promised = parseInt(c.leads_per_day, 10) > 0 ? parseInt(c.leads_per_day, 10) : (getPlanLimit(c.product, c.plan, c.coverage) || 5);
-      var have = (db.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && String(l.delivered_at).slice(0, 10) === today; }).length;
-      if (have < promised) needRun = true;
-    });
-    if (!needRun) return;
-    console.log('[CATCHUP] ' + reason + ': today\'s delivery incomplete - running now (' + p.h + ':' + ('0' + p.mi).slice(-2) + ' UK)');
+    // PERSISTED completion flag (survives restarts). Set by the 09:00 cron and by
+    // this catch-up on success. A genuine per-customer shortfall is handled by
+    // autoFillDeliveryShortfalls, NOT by re-running the whole delivery every 15 min.
+    if (db.delivery_completed_date === today) return;
+    console.log('[CATCHUP] ' + reason + ': today\'s delivery has not completed - running now (' + p.h + ':' + ('0' + p.mi).slice(-2) + ' UK)');
     __deliveryStartedDate = today;
     var http = require('http');
     var body = JSON.stringify({});
     var req = http.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (ADMIN_PASSWORD || ''), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
       var b = ''; res.on('data', function(c2) { b += c2; }); res.on('end', function() {
-        if (res.statusCode >= 200 && res.statusCode < 300) __lastDeliveryDate = today;
+        if (res.statusCode >= 200 && res.statusCode < 300) { __lastDeliveryDate = today; try { var dbc = getDb(); dbc.delivery_completed_date = today; saveDb(); } catch(eDc) {} }
         console.log('[CATCHUP] delivery done [' + res.statusCode + ']: ' + b.substring(0, 160));
         try { autoFillDeliveryShortfalls(function() { try { runFinalGuaranteeAudit(); } catch(e) {} }); } catch(e) {}
         sweepPoolCache(0); maybeGc('catchup');
