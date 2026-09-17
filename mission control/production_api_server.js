@@ -15840,16 +15840,47 @@ cron.schedule('15 6 * * 1-5', async () => {
 // PRE-DELIVERY VERIFICATION (08:30): before the 9am delivery, verify the EXACT
 // leads each moving customer is about to receive have door numbers + full addresses
 // in the pool, PAF-enriching any that don't. The 9am job then just sends them.
-// EARLY PAF WARM-UP (06:15 UK Mon-Fri): runs straight after the 06:00 scrape and
-// numbers the EXACT leads each customer will receive, so every door number is
-// resolved ~2h45m before the 9am run. The 9am delivery then has nothing left to
-// resolve and is a fast, reliable send. Re-runs at 07:15/07:20/08:40 catch any leads
-// the scrape added later; already-numbered leads cost nothing (cache + skip).
+// TIGHTENED MORNING PIPELINE (UK Mon-Fri). Each step runs soon after the one before
+// so any gap is caught and fixed within ~20-30 min (not an hour), while still giving
+// every task time to finish:
+//   06:00 scrape (~5-8 min)  ->  06:15 early PAF (number the exact selected leads)
+//   06:45 PAF re-check       ->  07:10 planning scrape  ->  07:25 PAF
+//   07:40 queue top-up + PAF ->  07:45 PAF re-check     ->  08:15 PAF
+//   08:40 queue top-up + PAF ->  08:50 readiness check  ->  09:00 delivery (plain send)
+// Already-numbered leads are skipped (free), so the extra passes cost nothing but
+// close the windows where a shortfall could otherwise sit unnoticed until 9am.
 cron.schedule('15 6 * * 1-5', async () => {
   try { await preVerifyMovingLeads(); } catch(e) { console.log('[PREVERIFY] 06:15 error: ' + e.message); }
 }, { timezone: 'Europe/London' });
-cron.schedule('15 7 * * 1-5', async () => {
-  try { await preVerifyMovingLeads(); } catch(e) { console.log('[PREVERIFY] 07:15 error: ' + e.message); }
+cron.schedule('45 6 * * 1-5', async () => {
+  try { await preVerifyMovingLeads(); } catch(e) { console.log('[PREVERIFY] 06:45 error: ' + e.message); }
+}, { timezone: 'Europe/London' });
+// 07:25 (after the 07:10 planning scrape has had ~15 min to finish)
+cron.schedule('25 7 * * 1-5', async () => {
+  try { await preVerifyMovingLeads(); } catch(e) { console.log('[PREVERIFY] 07:25 error: ' + e.message); }
+}, { timezone: 'Europe/London' });
+cron.schedule('45 7 * * 1-5', async () => {
+  try { await preVerifyMovingLeads(); } catch(e) { console.log('[PREVERIFY] 07:45 error: ' + e.message); }
+}, { timezone: 'Europe/London' });
+cron.schedule('15 8 * * 1-5', async () => {
+  try { await preVerifyMovingLeads(); } catch(e) { console.log('[PREVERIFY] 08:15 error: ' + e.message); }
+}, { timezone: 'Europe/London' });
+// MID-MORNING QUEUE TOP-UP (07:40 UK Mon-Fri): fill every customer's queue to their
+// plan limit + PAF-verify, so any shortfall is corrected ~1h20m before 9am rather than
+// waiting for the 08:40 pass. Idempotent with the 08:40 top-up.
+cron.schedule('40 7 * * 1-5', async () => {
+  try {
+    await new Promise(function(resolve) {
+      try {
+        var bodyT = JSON.stringify({});
+        var rqT = require('http').request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/top-up-all', headers: { 'Authorization': 'Bearer ' + (ADMIN_PASSWORD || ''), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyT) } }, function(rs) { rs.resume(); rs.on('end', resolve); });
+        rqT.on('error', function() { resolve(); });
+        rqT.write(bodyT); rqT.end();
+      } catch(e) { resolve(); }
+    });
+    await preVerifyMovingLeads();
+    console.log('[07:40 TOP-UP] Queue top-up + PAF pre-verify complete');
+  } catch(e) { console.log('[07:40 TOP-UP] error: ' + (e && e.message || e)); }
 }, { timezone: 'Europe/London' });
 // PRE-DELIVERY TOP-UP (08:40 UK Mon-Fri): fill every customer's queue to their plan
 // limit and PAF-enrich, right before the 9am run. With full mailable queues the
