@@ -17073,7 +17073,15 @@ async function resendFailedEmails() {
 cron.schedule('30 6 * * 1-5', async () => {
   try {
     var rdDb = getDb();
-    var rdCusts = (rdDb.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && !isLeadsPaused(c); });
+    // ENTITLEMENT GATE: skip expired trials (and test accounts) — they are not owed
+    // leads, so previewing them produced false "only X/Y" shortfall alerts (e.g. an
+    // expired account showing 4/5 in its areas even though it gets nothing).
+    var rdCusts = (rdDb.customers || []).filter(function(c) {
+      if (!c.plan || c.plan === 'cancelled' || isLeadsPaused(c)) return false;
+      if (trialExpiredUnpaid(c)) return false;
+      if (isInternalAccount(c)) return false;
+      return true;
+    });
     var rdShort = [];
     for (var rdi = 0; rdi < rdCusts.length; rdi++) {
       try {
@@ -18021,6 +18029,21 @@ cron.schedule('7 9 * * 1-5', async () => {
     // as the 9am delivery. Previously this always pulled a MOVING lead with no area
     // or door-number check, so probate/newbusiness customers received irrelevant,
     // out-of-area, doorless leads (and expired trials received them daily).
+    // Delivered-history set (URL + property identity + reference) so the bonus lead
+    // can never repeat a property the customer (or anyone) already received.
+    var gDeliveredU = {}, gDeliveredK = {};
+    (vDb.leads || []).forEach(function(l) {
+      if (!l.delivered) return;
+      try {
+        var _ld = JSON.parse(l.data || '{}');
+        var _u = String(_ld.url || '').toLowerCase().trim();
+        if (_u) { gDeliveredU[_u] = 1; gDeliveredU[_u.split('#')[0].split('?')[0].replace(/\/+$/, '')] = 1; }
+        var _id = propertyIdentityKey(_ld.fullAddress || _ld.deceasedAddress || _ld.address || '', _ld.postcode || '');
+        if (_id) gDeliveredK['gg:' + _id] = 1;
+        var _ref = String(_ld.reference || _ld.companyNumber || _ld.deceasedName || _ld.tenderNoticeId || '').toLowerCase().trim();
+        if (_ref) gDeliveredK[_ref] = 1;
+      } catch(e) {}
+    });
     for (var vi2 = 0; vi2 < vIssues.length; vi2++) {
       try {
         var gCust = (vDb.customers || []).find(function(c) { return c.id === vIssues[vi2].id; });
@@ -18043,6 +18066,12 @@ cron.schedule('7 9 * * 1-5', async () => {
           if (gd.address) { gd.address = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(gd.address))); gd.fullAddress = gd.address; }
           if (!leadMailableForDelivery(gd, gProd)) continue;
           if (!gUkwide && !areaMatchesLead(gd, gAreas, false) && !(gProd === 'moving' && isFallbackLeadAcceptable(gd.postcode || gd.address || '', gAreas))) continue;
+          var _gu = String(gd.url || '').toLowerCase().trim();
+          if (_gu && (gDeliveredU[_gu] || gDeliveredU[_gu.split('#')[0].split('?')[0].replace(/\/+$/, '')])) continue;
+          var _gid = propertyIdentityKey(gd.fullAddress || gd.deceasedAddress || gd.address || '', gd.postcode || '');
+          if (_gid && gDeliveredK['gg:' + _gid]) continue;
+          var _gref = String(gd.reference || gd.companyNumber || gd.deceasedName || gd.tenderNoticeId || '').toLowerCase().trim();
+          if (_gref && gDeliveredK[_gref]) continue;
           gLead = gl; gData = gd; break;
         }
         if (gLead && gData) {
@@ -21653,15 +21682,27 @@ _deliverDiag[cust.email].products = products;
           var pld = null; try { pld = JSON.parse(l.data || '{}'); } catch(e) { pld = null; }
           if (!pld || typeof pld !== 'object') pld = { address: l.address || '', fullAddress: l.fullAddress || '', postcode: l.postcode || '' };
           if (!leadMailableAddress(pld, l.product)) return false;
+          // NEVER promote a queued lead whose property/listing was ALREADY DELIVERED
+          // (to this customer on a previous day, or to anyone). The queue can contain a
+          // duplicate row for a property already sent, which the primary pick used to
+          // promote blindly — that is how the same listing reached a customer twice on
+          // consecutive days. Checks URL + reference + address/postcode + property id.
+          var _pu = String(pld.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
+          if (pld.url && (globalDeliveredUrls[pld.url] || (_pu && globalDeliveredUrls[_pu]))) return false;
+          if (pld.reference && globalDeliveredKeys[String(pld.reference).toLowerCase().trim()]) return false;
+          var _pid = propertyIdentityKey(pld.fullAddress || pld.deceasedAddress || pld.address || '', pld.postcode || '');
+          if (_pid && globalDeliveredKeys['gg:' + _pid]) return false;
+          var _pAddr = String(pld.fullAddress || pld.deceasedAddress || pld.address || '').toLowerCase().replace(/\s+/g, ' ').trim();
+          var _pPc = String(pld.postcode || '').toUpperCase().replace(/\s+/g, ' ').trim();
+          if (_pAddr && _pPc && globalDeliveredKeys[_pAddr + '|' + _pPc]) return false;
           // CROSS-CUSTOMER EXCLUSIVITY: a queued/pending lead must not be promoted if
           // the SAME property/listing was already assigned to another customer earlier
           // in this run. Previously the primary pick ignored the in-run set, so two
           // customers with overlapping areas could each be delivered the same property
           // from their own pre-queued lead.
-          var _pu = String(pld.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
           if (_pu && _inRunSeen['u:' + _pu]) return false;
-          var _pa = 'aa:' + propertyIdentityKey(pld.fullAddress || pld.deceasedAddress || pld.address || '', pld.postcode || '');
-          if (_pa && _inRunSeen[_pa]) return false;
+          var _pa = 'aa:' + _pid;
+          if (_pid && _inRunSeen[_pa]) return false;
           return true;
         });
         if (primaryLeads.length > 0) {
