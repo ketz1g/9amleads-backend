@@ -74,7 +74,15 @@ function spend() {
   // spend credits unless explicitly enabled with POSTCODER_SCRAPE_ENABLED=true — the
   // founder wants the absolute minimum credit use. Delivery sets the global context
   // flag for the duration of the run.
-  if (!global.__POSTCODER_DELIVERY_CTX__ && process.env.POSTCODER_SCRAPE_ENABLED !== 'true') return false;
+  // Allowed contexts:
+  //   - __POSTCODER_DELIVERY_CTX__ : the 9am delivery run
+  //   - __POSTCODER_EARLY_CTX__    : the PRE-9AM warm-up / pre-verify passes, which
+  //     number ONLY the exact leads each customer will be sent (efficient — no whole
+  //     pool stocking). This lets door numbers be resolved hours before 9am so the
+  //     9am run is a simple, reliable send.
+  //   - POSTCODER_SCRAPE_ENABLED=true : whole-pool scrape-time pre-enrichment (OFF by
+  //     default — it spends on leads that may never be delivered).
+  if (!global.__POSTCODER_DELIVERY_CTX__ && !global.__POSTCODER_EARLY_CTX__ && process.env.POSTCODER_SCRAPE_ENABLED !== 'true') return false;
   var today = new Date().toISOString().split('T')[0];
   var u = load();
   if (u.date !== today) { u.date = today; u.used = 0; }

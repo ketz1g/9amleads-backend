@@ -11500,6 +11500,11 @@ async function preVerifyMovingLeads() {
   if (!(process.env.POSTCODER_ENABLED === 'true' || process.env.POSTCODER_ENABLED === '1') || !process.env.POSTCODER_API_KEY) {
     console.log('[PREVERIFY] Postcoder disabled — skipping'); return { ok: false };
   }
+  // EARLY PAF: number the exact leads each moving customer will receive NOW, so the
+  // 9am delivery is a simple send with nothing left to resolve. Efficient — only the
+  // selected leads are looked up, never the whole pool.
+  global.__POSTCODER_EARLY_CTX__ = true;
+  setTimeout(function() { try { global.__POSTCODER_EARLY_CTX__ = false; } catch(e) {} }, 15 * 60 * 1000);
   var dbv = getDb();
   var movingCusts = (dbv.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && !isLeadsPaused(c) && c.product === 'moving'; });
   var poolFile = path.join(DATA_DIR, PRODUCT_LEAD_FILES.moving ? PRODUCT_LEAD_FILES.moving.file : 'moving-leads.json');
@@ -15835,6 +15840,14 @@ cron.schedule('15 6 * * 1-5', async () => {
 // PRE-DELIVERY VERIFICATION (08:30): before the 9am delivery, verify the EXACT
 // leads each moving customer is about to receive have door numbers + full addresses
 // in the pool, PAF-enriching any that don't. The 9am job then just sends them.
+// EARLY PAF WARM-UP (06:15 UK Mon-Fri): runs straight after the 06:00 scrape and
+// numbers the EXACT leads each customer will receive, so every door number is
+// resolved ~2h45m before the 9am run. The 9am delivery then has nothing left to
+// resolve and is a fast, reliable send. Re-runs at 07:15/07:20/08:40 catch any leads
+// the scrape added later; already-numbered leads cost nothing (cache + skip).
+cron.schedule('15 6 * * 1-5', async () => {
+  try { await preVerifyMovingLeads(); } catch(e) { console.log('[PREVERIFY] 06:15 error: ' + e.message); }
+}, { timezone: 'Europe/London' });
 cron.schedule('15 7 * * 1-5', async () => {
   try { await preVerifyMovingLeads(); } catch(e) { console.log('[PREVERIFY] 07:15 error: ' + e.message); }
 }, { timezone: 'Europe/London' });
@@ -17630,6 +17643,10 @@ async function warmUpDeliveryPaf() {
   if (!(process.env.POSTCODER_ENABLED === 'true' || process.env.POSTCODER_ENABLED === '1') || !process.env.POSTCODER_API_KEY) {
     return { skipped: 'postcoder disabled' };
   }
+  // EARLY PAF: resolve door numbers for the exact leads each moving customer will be
+  // sent, hours before 9am (see preVerifyMovingLeads). Keeps the 9am run a plain send.
+  global.__POSTCODER_EARLY_CTX__ = true;
+  setTimeout(function() { try { global.__POSTCODER_EARLY_CTX__ = false; } catch(e) {} }, 15 * 60 * 1000);
   var dbW = getDb();
   var custs = (dbW.customers || []).filter(function(c) {
     return c.product === 'moving' && c.plan && c.plan !== 'cancelled' && !isLeadsPaused(c) && !trialExpiredUnpaid(c) && !/test\.|@9amleads\.com|\.1788\d*@/i.test(String(c.email || ''));
