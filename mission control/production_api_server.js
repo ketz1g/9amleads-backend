@@ -985,6 +985,29 @@ function getDeliveryPool(prod) {
   } catch(e) { return _c ? _c.arr : []; }
 }
 function invalidatePoolCache(prod) { try { if (prod) delete _poolCache[prod]; else _poolCache = {}; } catch(e) {} }
+// MEMORY HYGIENE: the 9am run parses multi-thousand-lead pool files. Without help,
+// V8 can hold RSS high enough to trip the host OOM killer. maybeGc() forces a
+// collection ONLY when RSS is high and the process was started with --expose-gc
+// (NODE_OPTIONS=--expose-gc). sweepPoolCache() evicts stale parsed pools so they are
+// not retained for the rest of the day.
+function maybeGc(tag, thresholdMB) {
+  try {
+    if (typeof global.gc === 'function' && (process.memoryUsage().rss / 1048576) > (thresholdMB || 600)) {
+      global.gc();
+      console.log('[GC] ' + (tag || '') + ' rss=' + Math.round(process.memoryUsage().rss / 1048576) + 'MB');
+    }
+  } catch(e) {}
+}
+function sweepPoolCache(maxAgeMs) {
+  try {
+    var now = Date.now(), removed = 0;
+    Object.keys(_poolCache).forEach(function(k) {
+      if (!_poolCache[k] || (now - _poolCache[k].at) > (maxAgeMs || 120000)) { delete _poolCache[k]; removed++; }
+    });
+    if (removed) console.log('[POOL-CACHE] swept ' + removed + ' stale entr' + (removed === 1 ? 'y' : 'ies'));
+  } catch(e) {}
+}
+setInterval(function() { sweepPoolCache(120000); maybeGc('pool-sweep'); }, 5 * 60000);
 function getMatchingArea(code, areas) {
   const upper = code.toUpperCase().replace(/[^A-Z]/g, '');
   if (areas[upper]) return upper;
@@ -16584,6 +16607,9 @@ cron.schedule('0 9 * * 1-5', async () => {
       // stays unset so the 09:01 watchdog re-triggers and customers still get leads.
       if (res.statusCode >= 200 && res.statusCode < 300) __lastDeliveryDate = new Date().toISOString().split('T')[0];
       console.log('[09:00 UK] Delivery done [' + res.statusCode + ']:', dLog);
+      // Free the parsed pool files and hand memory back to the OS now the run is done,
+      // so RSS does not stay high and risk an OOM kill later in the day.
+      try { sweepPoolCache(0); maybeGc('delivery-done'); } catch(eGc) {}
       // TIGHT GUARANTEE FINALISE: immediately after the 9am run, top up any customer who
       // landed below their promised count (emailing each added lead), then run the full
       // audit — dedupe same-day rows, re-send any missing daily email, purge pending rows,
@@ -17305,6 +17331,62 @@ cron.schedule('1 9 * * 1-5', async () => {
 }, {
   timezone: 'Europe/London'
 });
+
+// STARTUP + PERIODIC CATCH-UP: a crash/restart at 09:00 (like 2026-09-17) kills the
+// 09:00 delivery mid-run and leaves customers short until the next day. On boot (and
+// every 15 min through the morning) check whether today's delivery is actually
+// complete for every entitled customer; if not, run it now. Idempotent — the delivery
+// never over-delivers and never re-emails a customer who already got today's email,
+// so a re-run only fills the gap.
+function _ukClock(d) {
+  try {
+    var s = d.toLocaleString('en-GB', { timeZone: 'Europe/London', hour12: false });
+    var m = /(\d{2})\/(\d{2})\/(\d{4}),?\s+(\d{2}):(\d{2})/.exec(s);
+    if (m) { var dt = new Date(+m[3], +m[2] - 1, +m[1]); return { day: +m[1], mo: +m[2], y: +m[3], h: +m[4], mi: +m[5], dow: dt.getDay() }; }
+  } catch(e) {}
+  return null;
+}
+function runMissedDeliveryCatchUp(reason) {
+  try {
+    var p = _ukClock(new Date());
+    if (!p || p.dow === 0 || p.dow === 6) return;         // weekdays only
+    var mins = p.h * 60 + p.mi;
+    if (mins < 9 * 60 || mins > 14 * 60) return;          // 09:00–14:00 UK only
+    var today = new Date().toISOString().split('T')[0];
+    if (__lastDeliveryDate === today) return;             // completed on this process
+    if (__deliveryStartedDate === today) return;          // a run is in progress
+    var db = getDb();
+    var needRun = false;
+    (db.customers || []).forEach(function(c) {
+      if (!isEntitledForDelivery(c)) return;
+      // Ignore customers who signed up AFTER 09:00 UK today — they get their first
+      // full delivery at the next 09:00, not a same-day catch-up.
+      if (c.created_at) {
+        var cp = _ukClock(new Date(c.created_at));
+        if (cp && cp.y === p.y && cp.mo === p.mo && cp.day === p.day && (cp.h * 60 + cp.mi) >= 9 * 60) return;
+      }
+      var promised = parseInt(c.leads_per_day, 10) > 0 ? parseInt(c.leads_per_day, 10) : (getPlanLimit(c.product, c.plan, c.coverage) || 5);
+      var have = (db.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && String(l.delivered_at).slice(0, 10) === today; }).length;
+      if (have < promised) needRun = true;
+    });
+    if (!needRun) return;
+    console.log('[CATCHUP] ' + reason + ': today\'s delivery incomplete - running now (' + p.h + ':' + ('0' + p.mi).slice(-2) + ' UK)');
+    __deliveryStartedDate = today;
+    var http = require('http');
+    var body = JSON.stringify({});
+    var req = http.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (ADMIN_PASSWORD || ''), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
+      var b = ''; res.on('data', function(c2) { b += c2; }); res.on('end', function() {
+        if (res.statusCode >= 200 && res.statusCode < 300) __lastDeliveryDate = today;
+        console.log('[CATCHUP] delivery done [' + res.statusCode + ']: ' + b.substring(0, 160));
+        try { autoFillDeliveryShortfalls(function() { try { runFinalGuaranteeAudit(); } catch(e) {} }); } catch(e) {}
+        sweepPoolCache(0); maybeGc('catchup');
+      });
+    });
+    req.on('error', function(e) { console.log('[CATCHUP] request error: ' + e.message); });
+    req.write(body); req.end();
+  } catch(e) { console.log('[CATCHUP] error: ' + e.message); }
+}
+cron.schedule('*/15 9-13 * * 1-5', function() { runMissedDeliveryCatchUp('periodic'); }, { timezone: 'Europe/London' });
 
 // KEEP-ALIVE: self-ping every 10 minutes so Render never sleeps the service.
 cron.schedule('*/10 * * * *', async () => {
@@ -33967,6 +34049,9 @@ app.get('/api/admin/system-status', adminAuth, (req, res) => {
       uk_time: new Date(now).toLocaleString('en-GB', { timeZone: 'Europe/London' }),
       uptime_s: Math.round(process.uptime()),
       memory_mb: Math.round(process.memoryUsage().heapUsed / 1048576),
+      rss_mb: Math.round(process.memoryUsage().rss / 1048576),
+      gc_enabled: (typeof global.gc === 'function'),
+      heap_limit_mb: Math.round(require('v8').getHeapStatistics().heap_size_limit / 1048576),
       version: '1.0'
     };
 
@@ -36992,6 +37077,9 @@ app.listen(PORT, () => {
   } catch(e) {
     console.log('[SEO] Startup blog seed error: ' + (e && e.message || e));
   }
+  // MISSED-DELIVERY CATCH-UP: if this boot happens after 09:00 UK and today's
+  // delivery never completed (e.g. the process crashed mid-run), run it now.
+  setTimeout(function() { try { runMissedDeliveryCatchUp('startup'); } catch(e) {} }, 45000);
   // CRASH / RESTART ALERT: if the server boots, email the owner. If this happens
   // outside a deploy, the process crashed and auto-restarted (Render restarts it).
   // THROTTLED to once per 6 hours (default) — Render restarts on every deploy /
