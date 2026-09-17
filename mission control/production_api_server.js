@@ -11915,8 +11915,8 @@ async function sendEarlyReadinessReport(label) {
     console.log('[EARLY-READINESS ' + label + '] ' + (rows.length - shorts.length) + '/' + rows.length + ' ready' + (shorts.length ? '; short: ' + shorts.map(function(s){ return s.email; }).join(', ') : ''));
   } catch(e) { console.log('[EARLY-READINESS] error:', e.message); }
 }
-cron.schedule('45 5 * * 1-5', function() { try { sendEarlyReadinessReport('05:45'); } catch(e) {} }, { timezone: 'Europe/London' });
-cron.schedule('45 6 * * 1-5', function() { try { sendEarlyReadinessReport('06:45'); } catch(e) {} }, { timezone: 'Europe/London' });
+cron.schedule('25 5 * * 1-5', function() { try { sendEarlyReadinessReport('05:25'); } catch(e) {} }, { timezone: 'Europe/London' });
+cron.schedule('30 6 * * 1-5', function() { try { sendEarlyReadinessReport('06:30'); } catch(e) {} }, { timezone: 'Europe/London' });
 
 // POST /api/admin/deep-scrape — run the deep Rightmove (Apify) worker for SPECIFIC
 // postcode areas (e.g. areas=L,WA,CH,M,WN). Used when a customer's chosen areas have
@@ -15849,12 +15849,12 @@ cron.schedule('30 6 * * *', async () => {
 cron.schedule('0 7 * * 1-5', async () => {
   try { await runMovingPafPostScrape(); await runProbatePafPostScrape(); } catch(e) { console.log('[PAF-POSTSCRAPE] 07:00 error: ' + e.message); }
 }, { timezone: 'Europe/London' });
-// EARLY SUPPLY CHECK + AUTO RE-SCRAPE (06:15 UK): right after the 06:00 scrape,
+// EARLY SUPPLY CHECK + AUTO RE-SCRAPE (05:30 UK): right after the 05:00 scrape,
 // verify every product's pool has enough fresh-48h supply. If any is below its
 // minimum, auto re-trigger a scrape for it so the 9am delivery always has leads.
-// This is the tight self-healing loop: 06:00 scrape -> 06:15 check -> re-scrape
-// if low -> 07:45 final check -> 08:58 delivery (completes by 09:00).
-cron.schedule('15 6 * * 1-5', async () => {
+// Tight self-healing loop: 05:00 scrape -> 05:15 PAF -> 05:25 report -> 05:30 check
+// -> re-scrape if low -> 07:10 planning re-scrape -> 08:40 final -> 09:00 delivery.
+cron.schedule('30 5 * * 1-5', async () => {
   try {
     var sp2 = getPoolSupply();
     var th2 = { moving: 40, probate: 20, newbusiness: 40, planning: 15, tenders: 10 };
@@ -15897,6 +15897,23 @@ cron.schedule('15 5 * * 1-5', async () => {
 }, { timezone: 'Europe/London' });
 cron.schedule('25 7 * * 1-5', async () => {
   try { await preVerifyMovingLeads(); } catch(e) { console.log('[PREVERIFY] 07:25 error: ' + e.message); }
+}, { timezone: 'Europe/London' });
+// MID-MORNING TOP-UP (08:05 UK Mon-Fri): closes the 07:45 -> 08:40 gap. Fills queues
+// and PAF-verifies again so anything that landed after the 07:25 PAF is numbered and
+// queued ~55 min before 9am instead of 20. Idempotent with the 08:40 pass.
+cron.schedule('5 8 * * 1-5', async () => {
+  try {
+    await new Promise(function(resolve) {
+      try {
+        var bodyM = JSON.stringify({});
+        var rqM = require('http').request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/top-up-all', headers: { 'Authorization': 'Bearer ' + (ADMIN_PASSWORD || ''), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyM) } }, function(rs) { rs.resume(); rs.on('end', resolve); });
+        rqM.on('error', function() { resolve(); });
+        rqM.write(bodyM); rqM.end();
+      } catch(e) { resolve(); }
+    });
+    await preVerifyMovingLeads();
+    console.log('[08:05 TOP-UP] Queue top-up + PAF pre-verify complete');
+  } catch(e) { console.log('[08:05 TOP-UP] error: ' + (e && e.message || e)); }
 }, { timezone: 'Europe/London' });
 // PRE-DELIVERY TOP-UP (08:40 UK Mon-Fri): fill every customer's queue to their plan
 // limit and PAF-enrich, right before the 9am run. With full mailable queues the
