@@ -9579,10 +9579,13 @@ async function createReplacementLead(cust, product, deliveredNow, exclude) {
       var pickExact = exactCands[0];
       return insertReplacement(pickExact);
     }
-    // Otherwise the NEAREST area with a valid lead (real geo distance).
+    // Otherwise the NEAREST area with a valid lead — but ONLY within the fallback
+    // radius. A replacement far outside the customer's area (e.g. Preston for a Leeds
+    // customer) is worse than none, so cap it at MOVING_MAX_FALLBACK_KM.
     if (nearestCands.length) {
       nearestCands.sort(function(a,b){ return (a.km||9999) - (b.km||9999); });
-      return insertReplacement(nearestCands[0]);
+      var _maxKmRep = Number(process.env.MOVING_MAX_FALLBACK_KM) || 25;
+      if ((nearestCands[0].km || 9999) <= _maxKmRep) return insertReplacement(nearestCands[0]);
     }
     return null;
   } catch(e) { console.log('[CREATE-REPL] error:', e.message); return null; }
