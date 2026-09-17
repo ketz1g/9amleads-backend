@@ -23764,6 +23764,10 @@ _deliverDiag[cust.email].products = products;
       if (!auditDb.delivery_audit) auditDb.delivery_audit = [];
       auditDb.delivery_audit.push({ date: today, at: new Date().toISOString(), customers: customers.length, leads_delivered: delivered, errors: errors, last_error: lastErr, fire_count: __deliveryFireCount });
       if (auditDb.delivery_audit.length > 90) auditDb.delivery_audit = auditDb.delivery_audit.slice(-90);
+      // PERSIST completion for FULL runs only (not test/single-customer runs) so the
+      // boot/periodic catch-up knows the day is done and never re-runs the delivery
+      // after a restart (which would otherwise fire a heavy full run on every boot).
+      if (!testOnly && !onlyEmail) auditDb.delivery_completed_date = today;
       saveDb();
       console.log('[DELIVERY-AUDIT] ' + today + ': ' + delivered + ' leads, ' + errors + ' errors');
     } catch(auditErr) { console.log('[DELIVERY-AUDIT] error:', auditErr.message); }
@@ -37072,8 +37076,10 @@ app.listen(PORT, () => {
     console.log('[SEO] Startup blog seed error: ' + (e && e.message || e));
   }
   // MISSED-DELIVERY CATCH-UP: if this boot happens after 09:00 UK and today's
-  // delivery never completed (e.g. the process crashed mid-run), run it now.
-  setTimeout(function() { try { runMissedDeliveryCatchUp('startup'); } catch(e) {} }, 45000);
+  // delivery never completed (e.g. the process crashed mid-run), run it now. Wait
+  // 2 min so deploy/restart churn settles and the persisted completion flag (written
+  // by any successful full run) is loaded before deciding.
+  setTimeout(function() { try { runMissedDeliveryCatchUp('startup'); } catch(e) {} }, 120000);
   // CRASH / RESTART ALERT: if the server boots, email the owner. If this happens
   // outside a deploy, the process crashed and auto-restarted (Render restarts it).
   // THROTTLED to once per 6 hours (default) — Render restarts on every deploy /
