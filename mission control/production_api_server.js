@@ -485,6 +485,8 @@ function leadMailableForDelivery(ld, prod) {
   var addr = String(ld.fullAddress || ld.address || ld.deceasedAddress || '').trim();
   var pc = String(ld.postcode || '').trim();
   if (!addr || !pc) return false;
+  // MOVING: number + street + town + full postcode (founder requirement).
+  if (prod === 'moving') return isCompleteMovingAddress(addr, pc);
   if (!/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(pc)) return false;
   if (!hasStreetName(addr)) return false;
   return hasUsablePremiseAddress(addr, pc, prod === 'probate' ? { relaxMultiUnit: true } : undefined);
@@ -511,6 +513,18 @@ function hasFullAddress(addr, pc) {
   if (!hasUsablePremiseAddress(a, pc)) return false;
   if (!hasStreetName(a)) return false;
   return /[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(pc || '').trim());
+}
+// STRICT moving-address gate — the founder's requirement: a moving lead must have
+// NUMBER + STREET NAME + TOWN/AREA + FULL POSTCODE. Rejects malformed pool addresses
+// like "19, West Yorkshire, LS26 8FZ" (no street) or "2, RG45AY, berkshire" that only
+// carry a number. Use this for EVERY path that queues/delivers a moving lead.
+function isCompleteMovingAddress(addr, pc) {
+  var a = String(addr || '').trim();
+  if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(pc || '').trim())) return false;
+  if (!hasUsablePremiseAddress(a, pc)) return false;
+  if (!hasStreetName(a)) return false;
+  var tc = parseTownCountyFromAddress(a, pc);
+  return !!(tc.town || tc.city || tc.county);
 }
 // A delivered row the customer has REJECTED must never count towards their delivered
 // total (it is queued for replacement). Counting it inflated the internal delivered
@@ -7555,9 +7569,11 @@ app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
     var todayStr = new Date().toISOString().split('T')[0];
     var summary = [];
     var _FULL_PC = /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i;
-    function _mailable(ld) {
+    function _mailable(ld, prod) {
       var addr = ld.fullAddress || ld.address || ld.deceasedAddress || '';
       var pc = ld.postcode || '';
+      // MOVING must carry number + street + TOWN + full postcode (founder requirement).
+      if (prod === 'moving') return isCompleteMovingAddress(addr, pc);
       return hasUsablePremiseAddress(addr, pc) && _FULL_PC.test(String(pc).trim());
     }
     (dbT.customers || []).forEach(function(cust) {
@@ -7587,7 +7603,7 @@ app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
         if (l.status === 'removed' || l.delivered) return false;
         var _ld = {}; try { _ld = JSON.parse(l.data || '{}'); } catch(e) { _ld = {}; }
         if (_ld.rejected || _ld.blocked || _ld.blocked_by_admin) return false;
-        return _mailable(_ld);
+        return _mailable(_ld, prod);
       }).length;
       var need = cap - cur;
       var entry = { email: cust.email, product: prod, cap: cap, current: cur, need: Math.max(0, need), added: 0 };
@@ -7629,7 +7645,7 @@ app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
         if (!fd) continue;
         var mAddr = l.fullAddress || l.address || l.deceasedAddress || '';
         var mPc = l.postcode || '';
-        if (!_mailable({ fullAddress: l.fullAddress, address: mAddr, deceasedAddress: l.deceasedAddress, postcode: mPc })) continue;
+        if (!_mailable({ fullAddress: l.fullAddress, address: mAddr, deceasedAddress: l.deceasedAddress, postcode: mPc }, prod)) continue;
         var uk = l.url ? 'u:' + String(l.url).split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase() : '';
         var addrK = 'a:' + String(mAddr).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 24) + '|' + String(mPc).toUpperCase().replace(/[^A-Z0-9]/g, '');
         if (uk && used[uk]) continue;
@@ -7663,7 +7679,7 @@ app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
           }
           var mAddr3 = l3.fullAddress || l3.address || l3.deceasedAddress || '';
           var mPc3 = l3.postcode || '';
-          if (!_mailable({ fullAddress: l3.fullAddress, address: mAddr3, deceasedAddress: l3.deceasedAddress, postcode: mPc3 })) continue;
+          if (!_mailable({ fullAddress: l3.fullAddress, address: mAddr3, deceasedAddress: l3.deceasedAddress, postcode: mPc3 }, prod)) continue;
           var uk3 = l3.url ? 'u:' + String(l3.url).split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase() : '';
           var addrK3 = 'a:' + String(mAddr3).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 24) + '|' + String(mPc3).toUpperCase().replace(/[^A-Z0-9]/g, '');
           if (uk3 && used[uk3]) continue;
@@ -12392,7 +12408,9 @@ app.post('/api/admin/top-up-today', adminAuth, (req, res) => {
       if (cust.product !== 'tenders') {
         var _tuPc = String(pl.postcode || '').trim();
         if (!/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(_tuPc)) continue;
-        if (!hasUsablePremiseAddress(pl.fullAddress || pl.address || '', _tuPc)) continue;
+        // MOVING: number + street + town + full postcode (founder requirement).
+        if (cust.product === 'moving') { if (!isCompleteMovingAddress(pl.fullAddress || pl.address || '', _tuPc)) continue; }
+        else if (!hasUsablePremiseAddress(pl.fullAddress || pl.address || '', _tuPc)) continue;
       }
       var pcAreaT = extractPostcodeArea(pl.postcode || pl.address || pl.fullAddress || '');
       var matchedT = false;
@@ -21511,6 +21529,8 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       var addr = String(ld.fullAddress || ld.address || ld.deceasedAddress || '').trim();
       var pc = String(ld.postcode || '').trim();
       if (!addr || !pc) return false;
+      // MOVING: number + street + town + full postcode (founder requirement).
+      if (prod === 'moving') return isCompleteMovingAddress(addr, pc);
       if (!/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(pc)) return false;
       if (!hasStreetName(addr)) return false;
       return hasUsablePremiseAddress(addr, pc, prod === 'probate' ? { relaxMultiUnit: true } : undefined);
