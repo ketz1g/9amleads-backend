@@ -21525,8 +21525,19 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
     // overlapping-area customers never receive the same property/listing.
     var globalDeliveredUrls = {};
     var globalDeliveredKeys = {};
+    // Internal/test-account deliveries (test.*, @9amleads.com monitor) must NEVER
+    // block a real customer: they are not real leads. Without this, any test/monitor
+    // delivery would be excluded from the real 9am batch and starve paying customers.
+    var _internalCustIds = {};
+    (db.customers || []).forEach(function(c) {
+      try {
+        if (typeof isInternalAccount === 'function' && isInternalAccount(c)) _internalCustIds[c.id] = 1;
+        if (/^test\.|@9amleads\.com$/i.test(String(c.email || '').toLowerCase())) _internalCustIds[c.id] = 1;
+      } catch(e) {}
+    });
     (db.leads || []).forEach(function(l) {
       if (!l.delivered) return;
+      if (_internalCustIds[l.customer_id]) return; // test/monitor deliveries don't count
       try {
         var gdd = JSON.parse(l.data || '{}');
         var gu = gdd.url || '';
