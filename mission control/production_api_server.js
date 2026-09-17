@@ -5691,6 +5691,24 @@ app.post('/api/auth/signup', async (req, res) => {
       affRef ? 'referral_pending' : null, affRef ? affiliatePayoutDue : null
     );
 
+    // NEW-CUSTOMER AREA SCRAPE: pull the new customer's areas into the pool right away
+    // so their FIRST 9am delivery is covered. Without this, areas are only scraped at
+    // the next 05:00, so someone signing up mid-morning waits until the following day.
+    // Debounced to at most once per 30 min so a burst of signups can't storm the scraper.
+    try {
+      var _nowNs = Date.now();
+      if (!global.__lastSignupScrape || (_nowNs - global.__lastSignupScrape) > 30 * 60 * 1000) {
+        global.__lastSignupScrape = _nowNs;
+        var _nsBody = JSON.stringify({});
+        var _nsReq = require('http').request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer ' + (ADMIN_PASSWORD || ''), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(_nsBody) } }, function(s) { s.resume(); });
+        _nsReq.on('error', function() {});
+        _nsReq.write(_nsBody); _nsReq.end();
+        console.log('[SIGNUP-SCRAPE] Triggered area scrape for new customer ' + email);
+      } else {
+        console.log('[SIGNUP-SCRAPE] Skipped (debounced) for ' + email);
+      }
+    } catch(e) {}
+
     // NOTIFY THE AFFILIATE: their referral just signed up for their free trial, so
     // they know to start following up. Only when a real (active) affiliate referred them.
     if (affRef && affRef.email) {
