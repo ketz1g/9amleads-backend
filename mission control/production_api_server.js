@@ -17336,51 +17336,11 @@ cron.schedule('1 9 * * 1-5', async () => {
   timezone: 'Europe/London'
 });
 
-// STARTUP + PERIODIC CATCH-UP: a crash/restart at 09:00 (like 2026-09-17) kills the
-// 09:00 delivery mid-run and leaves customers short until the next day. On boot (and
-// every 15 min through the morning) check whether today's delivery is actually
-// complete for every entitled customer; if not, run it now. Idempotent — the delivery
-// never over-delivers and never re-emails a customer who already got today's email,
-// so a re-run only fills the gap.
-function _ukClock(d) {
-  try {
-    var s = d.toLocaleString('en-GB', { timeZone: 'Europe/London', hour12: false });
-    var m = /(\d{2})\/(\d{2})\/(\d{4}),?\s+(\d{2}):(\d{2})/.exec(s);
-    if (m) { var dt = new Date(+m[3], +m[2] - 1, +m[1]); return { day: +m[1], mo: +m[2], y: +m[3], h: +m[4], mi: +m[5], dow: dt.getDay() }; }
-  } catch(e) {}
-  return null;
-}
-function runMissedDeliveryCatchUp(reason) {
-  try {
-    var p = _ukClock(new Date());
-    if (!p || p.dow === 0 || p.dow === 6) return;         // weekdays only
-    var mins = p.h * 60 + p.mi;
-    if (mins < 9 * 60 || mins > 14 * 60) return;          // 09:00–14:00 UK only
-    var today = new Date().toISOString().split('T')[0];
-    if (__lastDeliveryDate === today) return;             // completed on this process
-    if (__deliveryStartedDate === today) return;          // a run is in progress
-    var db = getDb();
-    // PERSISTED completion flag (survives restarts). Set by the 09:00 cron and by
-    // this catch-up on success. A genuine per-customer shortfall is handled by
-    // autoFillDeliveryShortfalls, NOT by re-running the whole delivery every 15 min.
-    if (db.delivery_completed_date === today) return;
-    console.log('[CATCHUP] ' + reason + ': today\'s delivery has not completed - running now (' + p.h + ':' + ('0' + p.mi).slice(-2) + ' UK)');
-    __deliveryStartedDate = today;
-    var http = require('http');
-    var body = JSON.stringify({});
-    var req = http.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (ADMIN_PASSWORD || ''), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
-      var b = ''; res.on('data', function(c2) { b += c2; }); res.on('end', function() {
-        if (res.statusCode >= 200 && res.statusCode < 300) { __lastDeliveryDate = today; try { var dbc = getDb(); dbc.delivery_completed_date = today; saveDb(); } catch(eDc) {} }
-        console.log('[CATCHUP] delivery done [' + res.statusCode + ']: ' + b.substring(0, 160));
-        try { autoFillDeliveryShortfalls(function() { try { runFinalGuaranteeAudit(); } catch(e) {} }); } catch(e) {}
-        sweepPoolCache(0); maybeGc('catchup');
-      });
-    });
-    req.on('error', function(e) { console.log('[CATCHUP] request error: ' + e.message); });
-    req.write(body); req.end();
-  } catch(e) { console.log('[CATCHUP] error: ' + e.message); }
-}
-cron.schedule('*/15 9-13 * * 1-5', function() { runMissedDeliveryCatchUp('periodic'); }, { timezone: 'Europe/London' });
+// NOTE: missed-delivery recovery on restart is handled by the existing
+// "DELIVERY SELF-CHECK ON BOOT" in the app.listen() callback (09:00–11:30 UK), which
+// calls deliveryCompletionWatchdog('boot'). It now also honours the persisted
+// delivery_completed_date flag, so a day whose delivery already completed is never
+// re-run (which previously fired a heavy full delivery on every restart).
 
 // KEEP-ALIVE: self-ping every 10 minutes so Render never sleeps the service.
 cron.schedule('*/10 * * * *', async () => {
@@ -37075,11 +37035,7 @@ app.listen(PORT, () => {
   } catch(e) {
     console.log('[SEO] Startup blog seed error: ' + (e && e.message || e));
   }
-  // MISSED-DELIVERY CATCH-UP: if this boot happens after 09:00 UK and today's
-  // delivery never completed (e.g. the process crashed mid-run), run it now. Wait
-  // 2 min so deploy/restart churn settles and the persisted completion flag (written
-  // by any successful full run) is loaded before deciding.
-  setTimeout(function() { try { runMissedDeliveryCatchUp('startup'); } catch(e) {} }, 120000);
+
   // CRASH / RESTART ALERT: if the server boots, email the owner. If this happens
   // outside a deploy, the process crashed and auto-restarted (Render restarts it).
   // THROTTLED to once per 6 hours (default) — Render restarts on every deploy /
@@ -37118,6 +37074,10 @@ app.listen(PORT, () => {
         try {
           var _db = getDb();
           var _today = new Date().toISOString().split('T')[0];
+          // Honour the persisted completion flag: if a full delivery already succeeded
+          // today (before this restart), do NOT fire another heavy full run just because
+          // a customer is genuinely short of supply (auto-fill handles that).
+          if (_db.delivery_completed_date === _today) { console.log('[BOOT-SELFCHECK] delivery already completed today — OK'); return; }
           var _short = 0;
           (_db.customers || []).forEach(function(c) {
             if (!c.plan || c.plan === 'cancelled') return;
