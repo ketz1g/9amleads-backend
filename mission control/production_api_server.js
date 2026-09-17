@@ -11915,8 +11915,10 @@ async function sendEarlyReadinessReport(label) {
     console.log('[EARLY-READINESS ' + label + '] ' + (rows.length - shorts.length) + '/' + rows.length + ' ready' + (shorts.length ? '; short: ' + shorts.map(function(s){ return s.email; }).join(', ') : ''));
   } catch(e) { console.log('[EARLY-READINESS] error:', e.message); }
 }
-cron.schedule('25 5 * * 1-5', function() { try { sendEarlyReadinessReport('05:25'); } catch(e) {} }, { timezone: 'Europe/London' });
-cron.schedule('30 6 * * 1-5', function() { try { sendEarlyReadinessReport('06:30'); } catch(e) {} }, { timezone: 'Europe/London' });
+// ONE consolidated pre-9am result email (07:45 UK Mon-Fri) — sent once, after the
+// planning scrape + final PAF, so it shows the true end state ~1h15m before 9am.
+// This replaces the previous per-stage emails (no 05:25/06:30/06:45/07:45 clutter).
+cron.schedule('45 7 * * 1-5', function() { try { sendEarlyReadinessReport('07:45'); } catch(e) {} }, { timezone: 'Europe/London' });
 
 // POST /api/admin/deep-scrape — run the deep Rightmove (Apify) worker for SPECIFIC
 // postcode areas (e.g. areas=L,WA,CH,M,WN). Used when a customer's chosen areas have
@@ -15911,8 +15913,7 @@ cron.schedule('5 8 * * 1-5', async () => {
         rqM.write(bodyM); rqM.end();
       } catch(e) { resolve(); }
     });
-    await preVerifyMovingLeads();
-    console.log('[08:05 TOP-UP] Queue top-up + PAF pre-verify complete');
+    console.log('[08:05 TOP-UP] Queue top-up complete');
   } catch(e) { console.log('[08:05 TOP-UP] error: ' + (e && e.message || e)); }
 }, { timezone: 'Europe/London' });
 // PRE-DELIVERY TOP-UP (08:40 UK Mon-Fri): fill every customer's queue to their plan
@@ -15929,8 +15930,7 @@ cron.schedule('40 8 * * 1-5', async () => {
         rq.write(body); rq.end();
       } catch(e) { resolve(); }
     });
-    await preVerifyMovingLeads();
-    console.log('[08:40 PRE-DELIVERY] Queue top-up + PAF pre-verify complete');
+    console.log('[08:40 PRE-DELIVERY] Queue top-up complete');
   } catch(e) { console.log('[08:40 PRE-DELIVERY] error: ' + (e && e.message || e)); }
 }, { timezone: 'Europe/London' });
 cron.schedule('0 18 * * *', async () => {
@@ -16537,6 +16537,7 @@ cron.schedule('45 8 * * 1-5', function() { try { preDeliveryReadinessCheck(); } 
 // 9am run. If anyone is likely to fall short, alert the founder early so they can top
 // up the pool / PAF budget before 9am rather than after the promise is broken.
 cron.schedule('45 7 * * 1-5', async function() {
+  return; // DISABLED: superseded by the single 07:45 readiness email (fewer founder emails)
   try {
     var dbS = getDb();
     var today = new Date().toISOString().split('T')[0];
@@ -17693,8 +17694,10 @@ async function sendExpectedBatchReport(mode) {
 // Consolidated to TWO pre-9am snapshots (was FIVE reports/day). The 06:45 full list +
 // the 08:45 final delta; the intermediate 07:15/07:45/08:15 deltas were pure noise and
 // the 09:10 post-preview duplicated the 09:12 daily summary.
-cron.schedule('45 6 * * 1-5', function() { try { sendExpectedBatchReport('full'); } catch(e) {} }, { timezone: 'Europe/London' });
-cron.schedule('45 8 * * 1-5', function() { try { sendExpectedBatchReport('delta'); } catch(e) {} }, { timezone: 'Europe/London' });
+// DISABLED (fewer founder emails): the single 07:45 readiness email now gives the
+// end result before 9am. Re-enable by uncommenting if you want the batch detail back.
+// cron.schedule('45 6 * * 1-5', function() { try { sendExpectedBatchReport('full'); } catch(e) {} }, { timezone: 'Europe/London' });
+// cron.schedule('45 8 * * 1-5', function() { try { sendExpectedBatchReport('delta'); } catch(e) {} }, { timezone: 'Europe/London' });
 app.post('/api/admin/expected-batch', adminAuth, async (req, res) => {
   try { res.json(await sendExpectedBatchReport('full')); } catch(e) { res.status(500).json({ error: e.message }); }
 });
