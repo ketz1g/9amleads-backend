@@ -7630,6 +7630,38 @@ app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
         dbT.leads.push({ id: uuidv4(), customer_id: cust.id, product: prod, data: JSON.stringify(dT), status: 'new', delivered: 0, created_at: nowIso, delivered_at: null, release_at: todayStr + 'T09:00:00.000Z' });
         assigned++; entry.added++;
       }
+      // FALLBACK TO OLDER IN-AREA LEADS: if the FRESH pool could not fill the promise,
+      // top up with older (48h+) in-area mailable leads so the 9am queue is NEVER short.
+      // This is the exact lead set the post-9am auto-fill used, but applied BEFORE 9am,
+      // so the customer receives their full promised count AT 9am instead of a top-up
+      // afterwards. Set TOPUP_ALLOW_OLDER=false to keep it fresh-only.
+      if (assigned < need && String(process.env.TOPUP_ALLOW_OLDER || 'true').toLowerCase() !== 'false') {
+        for (var i3 = 0; i3 < poolForCust.length && assigned < need; i3++) {
+          var l3 = poolForCust[i3];
+          if (!_inArea(l3)) continue;
+          if (prod === 'moving') {
+            if (custMovingType === 'residential' && isCommercialLead(l3)) continue;
+            if (custMovingType === 'commercial' && !isCommercialLead(l3)) continue;
+          }
+          var mAddr3 = l3.fullAddress || l3.address || l3.deceasedAddress || '';
+          var mPc3 = l3.postcode || '';
+          if (!_mailable({ fullAddress: l3.fullAddress, address: mAddr3, deceasedAddress: l3.deceasedAddress, postcode: mPc3 })) continue;
+          var uk3 = l3.url ? 'u:' + String(l3.url).split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase() : '';
+          var addrK3 = 'a:' + String(mAddr3).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 24) + '|' + String(mPc3).toUpperCase().replace(/[^A-Z0-9]/g, '');
+          if (uk3 && used[uk3]) continue;
+          if (used[addrK3]) continue;
+          if (uk3) used[uk3] = 1;
+          used[addrK3] = 1;
+          var nowIso3 = new Date().toISOString();
+          var dT3 = Object.assign({}, l3);
+          delete dT3.id;
+          if (prod === 'moving') { dT3.address = dT3.address || dT3.fullAddress || ''; dT3.fullAddress = dT3.fullAddress || dT3.address || ''; }
+          dT3.scrapedAt = dT3.scrapedAt || nowIso3;
+          if (!dT3.firstVisibleDate) dT3.firstVisibleDate = nowIso3;
+          dbT.leads.push({ id: uuidv4(), customer_id: cust.id, product: prod, data: JSON.stringify(dT3), status: 'new', delivered: 0, created_at: nowIso3, delivered_at: null, release_at: todayStr + 'T09:00:00.000Z' });
+          assigned++; entry.added++;
+        }
+      }
       summary.push(entry);
     });
     saveDb();
