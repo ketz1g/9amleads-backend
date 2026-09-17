@@ -21547,7 +21547,10 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       if (trialExpiredUnpaid(cust)) continue;
       // PAYMENT GATE: a customer whose subscription payment failed (leads_paused)
       // stops receiving leads until they recover payment (invoice.paid / re-subscribe).
-      if (isLeadsPaused(cust)) continue;
+      // EXCEPTION: test_only runs (the monitoring cron) must still deliver to the
+      // paused test accounts, otherwise every test report reads "NO-LEADS" and the
+      // founder loses their only end-to-end check. Real customers are unaffected.
+      if (isLeadsPaused(cust) && !testOnly) continue;
       if (!_deliverDiag[cust.email]) _deliverDiag[cust.email] = { global: 0, poolfile: 0, poolfile_total: 0, areas: [], stage: 'start' };
 _deliverDiag[cust.email].totalDailyLimit = totalDailyLimit;
 _deliverDiag[cust.email].products = products;
