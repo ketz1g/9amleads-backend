@@ -11877,6 +11877,47 @@ app.get('/api/admin/readiness', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// EARLY READINESS REPORT (05:45 + 06:45 UK Mon-Fri): emails the founder a per-customer
+// ready / PAF-reliant / short snapshot as soon as the 05:00 scrape + 05:15 PAF have run,
+// so any problem is known ~3h15m (05:45) and ~2h15m (06:45) before 9am instead of at
+// 9am. Read-only — it never changes leads, only tells you where you stand.
+async function sendEarlyReadinessReport(label) {
+  try {
+    var dbE = getDb();
+    var list = (dbE.customers || []).filter(function(c) {
+      if (!c.plan || c.plan === 'cancelled' || isLeadsPaused(c)) return false;
+      if (trialExpiredUnpaid(c)) return false;
+      if (typeof isInternalAccount === 'function' && isInternalAccount(c)) return false;
+      return true;
+    });
+    var rows = [];
+    for (var i = 0; i < list.length; i++) {
+      var cc = list[i];
+      try {
+        var pv = await deliveryPreviewForCustomer(cc);
+        var promised = parseInt(cc.leads_per_day, 10) > 0 ? parseInt(cc.leads_per_day, 10) : (getPlanLimit(cc.product, cc.plan, cc.coverage) || 5);
+        var doorNow = (pv.leads || []).filter(function(l) { return l.has_door_number; }).length;
+        var paf = (pv.leads || []).filter(function(l) { return l.paf_candidate; }).length;
+        rows.push({ email: cc.email, product: cc.product, promised: promised, door: doorNow, paf: paf, reachable: doorNow + paf });
+      } catch(e) { rows.push({ email: cc.email, product: cc.product, promised: 0, reachable: 0, error: e.message }); }
+    }
+    var shorts = rows.filter(function(r) { return r.reachable < r.promised; });
+    var html = '<div style="font-family:Inter,Arial,sans-serif;font-size:13px;color:#e2e8f0;line-height:1.7">'
+      + '<b style="color:' + (shorts.length ? '#f87171' : '#4ade80') + '">' + (rows.length - shorts.length) + '/' + rows.length + ' customers ready for the 9am run</b>'
+      + '<table style="width:100%;border-collapse:collapse;margin-top:8px">'
+      + rows.map(function(r) {
+          var cls = r.reachable < r.promised ? '#f87171' : (r.door < r.promised ? '#fbbf24' : '#4ade80');
+          return '<tr><td style="padding:3px 6px;color:#e2e8f0">' + r.email + '</td><td style="padding:3px 6px;color:' + cls + ';text-align:right">' + r.reachable + '/' + r.promised + (r.paf ? ' (+' + r.paf + ' PAF)' : '') + '</td><td style="padding:3px 6px;color:#94a3b8">' + (r.product || '') + '</td></tr>';
+        }).join('')
+      + '</table>'
+      + '<div style="margin-top:8px;color:#94a3b8">Green = already numbered. Amber = relies on the 9am PAF pass. Red = genuine gap, act now.</div></div>';
+    sendAdminAlert((shorts.length ? '\u26A0 ' : '\u2705 ') + 'Pre-9am readiness ' + label + ' - ' + (rows.length - shorts.length) + '/' + rows.length + ' ready', html);
+    console.log('[EARLY-READINESS ' + label + '] ' + (rows.length - shorts.length) + '/' + rows.length + ' ready' + (shorts.length ? '; short: ' + shorts.map(function(s){ return s.email; }).join(', ') : ''));
+  } catch(e) { console.log('[EARLY-READINESS] error:', e.message); }
+}
+cron.schedule('45 5 * * 1-5', function() { try { sendEarlyReadinessReport('05:45'); } catch(e) {} }, { timezone: 'Europe/London' });
+cron.schedule('45 6 * * 1-5', function() { try { sendEarlyReadinessReport('06:45'); } catch(e) {} }, { timezone: 'Europe/London' });
+
 // POST /api/admin/deep-scrape — run the deep Rightmove (Apify) worker for SPECIFIC
 // postcode areas (e.g. areas=L,WA,CH,M,WN). Used when a customer's chosen areas have
 // no fresh supply (e.g. Liverpool/North West) — normal scrape skips areas with no supply.
@@ -15749,11 +15790,13 @@ app.post('/api/admin/test-campaign', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ===== DAILY SCHEDULE: 06:00 UK scraper → 06:05 UK distributor → 09:00 UK delivery =====
-// Fresh scrapes run just 3 hours before the 09:00 UK delivery so leads are as
-// new as possible in customers' dashboards, emails and CRM.
-cron.schedule('0 6 * * *', async () => {
-  console.log('[06:00 UK] Running scraper...');
+// ===== DAILY SCHEDULE: 05:00 UK scraper → distributor → 09:00 UK delivery =====
+// The scrape now runs 4 hours before the 09:00 delivery (was 3h) so the pool is
+// refreshed and every lead numbered with ~3.5h to spare — enough for the founder to
+// see and fix any shortfall well before 9am. Freshness is still excellent; listings
+// published later are caught by the 06:15 auto re-scrape + 07:10 planning re-scrape.
+cron.schedule('0 5 * * *', async () => {
+  console.log('[05:00 UK] Running scraper...');
   global.__lastScrapeCronFire = new Date().toISOString();
   // BACKUP/RE-TRY: the scrape runs in the background, so if the trigger fails
   // (deploy/restart race, connection hiccup) we retry a couple of times so the
@@ -15770,11 +15813,11 @@ cron.schedule('0 6 * * *', async () => {
         req.setTimeout(30000, function() { req.destroy(); resolve(false); });
         req.write(body); req.end();
       });
-      if (ok) { console.log('[06:00 UK] Scraper started (attempt ' + (_scRetry + 1) + ')'); break; }
-      console.log('[06:00 UK] Scraper trigger failed (attempt ' + (_scRetry + 1) + ') — retrying');
+      if (ok) { console.log('[05:00 UK] Scraper started (attempt ' + (_scRetry + 1) + ')'); break; }
+      console.log('[05:00 UK] Scraper trigger failed (attempt ' + (_scRetry + 1) + ') — retrying');
       await new Promise(function(r){ setTimeout(r, 120000); });
     } catch(e) {
-      console.log('[06:00 UK] Scraper error:', e.message);
+      console.log('[05:00 UK] Scraper error:', e.message);
       await new Promise(function(r){ setTimeout(r, 120000); });
     }
   }
@@ -15843,14 +15886,14 @@ cron.schedule('15 6 * * 1-5', async () => {
 // PRE-9AM PIPELINE — kept deliberately LEAN and event-driven. PAF only needs to run
 // after something ADDS leads, so there are just two early passes, each tied to a
 // scrape, plus the final pass already built into the 08:40 top-up cron:
-//   06:00 scrape  ->  06:15 early PAF (number the exact selected leads)
+//   05:00 scrape  ->  05:15 early PAF (number the exact selected leads)
 //   07:10 planning scrape  ->  07:25 PAF (number the planning leads)
 //   08:40 top-up-all + PAF (final fill)  ->  08:45 readiness  ->  09:00 delivery
 // No extra mid-morning passes: they added load for no benefit because nothing changes
 // the pool between a scrape and its PAF pass. Already-numbered leads are skipped, so
 // each pass is cheap and idempotent.
-cron.schedule('15 6 * * 1-5', async () => {
-  try { await preVerifyMovingLeads(); } catch(e) { console.log('[PREVERIFY] 06:15 error: ' + e.message); }
+cron.schedule('15 5 * * 1-5', async () => {
+  try { await preVerifyMovingLeads(); } catch(e) { console.log('[PREVERIFY] 05:15 error: ' + e.message); }
 }, { timezone: 'Europe/London' });
 cron.schedule('25 7 * * 1-5', async () => {
   try { await preVerifyMovingLeads(); } catch(e) { console.log('[PREVERIFY] 07:25 error: ' + e.message); }
