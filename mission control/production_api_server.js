@@ -21053,29 +21053,20 @@ function enrichMovingLeadTown(ld) {
     if (!full || !pc) return ld;
     var segments = full.split(',').map(function(s){ return String(s).trim(); }).filter(Boolean);
     var pcCompact = pc.replace(/\s+/g, '');
+    var tail = segments.slice(1).filter(function(s){ return s && s.replace(/\s+/g, '') !== pcCompact; });
+    if (tail.length >= 1) return ld; // already has a town / area — leave it
     var streetSeg = (segments[0] || full).replace(/\s*[A-Z]{1,2}\d[A-Z0-9]?\s?\d[A-Z]{2}\s*$/i, '').trim();
     if (!streetSeg || !hasStreetName(streetSeg)) return ld;
-    // A town must be a REAL place — reject a bare postcode-area/outcode ("EN","CR","KT",
-    // "SW1"), the postcode itself, a region word, or a value already inside the street
-    // (e.g. "Boston Exchange 83 Cardigan Lane, Boston Exchange, Leeds"). Previously this
-    // function bailed out whenever ANY segment followed the street, so those junk towns
-    // survived into the customer's email/dashboard.
-    function _badTown(t) {
-      t = String(t || '').trim();
-      if (!t) return true;
-      if (/^[A-Z]{1,2}$/.test(t)) return true;
-      if (/^[A-Z]{1,2}\d[A-Z\d]?$/.test(t)) return true;
-      if (/^[A-Z]{1,2}\d[A-Z\d]{2,5}$/i.test(t)) return true;
-      if (t.toUpperCase().replace(/[^A-Z0-9]/g, '') === pcCompact) return true;
-      if (streetSeg.toLowerCase().indexOf(t.toLowerCase()) !== -1) return true;
-      return false;
-    }
     var town = ld.town || ld.city || '';
-    if (_badTown(town)) town = '';
     if (!town) {
       try {
         var _rmt = require('./rightmove_scraper_v2').getTownForPostcode(pc);
-        if (_rmt && !_badTown(_rmt)) town = String(_rmt).trim();
+        if (_rmt) {
+          var _rt = String(_rmt).trim();
+          // reject when the "town" is really the postcode itself (the area fallback
+          // returns the raw code) or an outward code.
+          if (_rt.toUpperCase().replace(/[^A-Z0-9]/g, '') !== pcCompact && !/^[A-Z]{1,2}\d[A-Z0-9]?$/.test(_rt) && !/^[A-Z]{1,2}\d[A-Z\d]{2,5}$/i.test(_rt)) town = _rt;
+        }
       } catch(e) {}
     }
     var county = ld.county || '';
