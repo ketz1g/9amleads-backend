@@ -21987,6 +21987,10 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
     for (var ci = 0; ci < customers.length; ci++) {
       var cust = customers[ci];
       var _custT0 = Date.now();
+      // TEST ACCOUNTS get a DEDICATED pool: they skip the global exclusivity checks so
+      // they can never be starved by real customers taking the same leads. This makes
+      // the monitoring/test suite a reliable pass/fail for the pipeline itself.
+      var _isTestCust = /^test\./.test(String(cust.email || '').toLowerCase());
       if (trialExpiredUnpaid(cust)) continue;
       // PAYMENT GATE: a customer whose subscription payment failed (leads_paused)
       // stops receiving leads until they recover payment (invoice.paid / re-subscribe).
@@ -22170,13 +22174,18 @@ _deliverDiag[cust.email].products = products;
           // promote blindly — that is how the same listing reached a customer twice on
           // consecutive days. Checks URL + reference + address/postcode + property id.
           var _pu = String(pld.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
-          if (pld.url && (globalDeliveredUrls[pld.url] || (_pu && globalDeliveredUrls[_pu]))) return false;
-          if (pld.reference && globalDeliveredKeys[String(pld.reference).toLowerCase().trim()]) return false;
+          // TEST ACCOUNTS skip global exclusivity (dedicated pool) so they can never be
+          // starved by real customers taking the same leads.
+          if (!_isTestCust) {
+            if (pld.url && (globalDeliveredUrls[pld.url] || (_pu && globalDeliveredUrls[_pu]))) return false;
+            if (pld.reference && globalDeliveredKeys[String(pld.reference).toLowerCase().trim()]) return false;
+            var _pid0 = propertyIdentityKey(pld.fullAddress || pld.deceasedAddress || pld.address || '', pld.postcode || '');
+            if (_pid0 && globalDeliveredKeys['gg:' + _pid0]) return false;
+            var _pAddr = String(pld.fullAddress || pld.deceasedAddress || pld.address || '').toLowerCase().replace(/\s+/g, ' ').trim();
+            var _pPc = String(pld.postcode || '').toUpperCase().replace(/\s+/g, ' ').trim();
+            if (_pAddr && _pPc && globalDeliveredKeys[_pAddr + '|' + _pPc]) return false;
+          }
           var _pid = propertyIdentityKey(pld.fullAddress || pld.deceasedAddress || pld.address || '', pld.postcode || '');
-          if (_pid && globalDeliveredKeys['gg:' + _pid]) return false;
-          var _pAddr = String(pld.fullAddress || pld.deceasedAddress || pld.address || '').toLowerCase().replace(/\s+/g, ' ').trim();
-          var _pPc = String(pld.postcode || '').toUpperCase().replace(/\s+/g, ' ').trim();
-          if (_pAddr && _pPc && globalDeliveredKeys[_pAddr + '|' + _pPc]) return false;
           // CROSS-CUSTOMER EXCLUSIVITY: a queued/pending lead must not be promoted if
           // the SAME property/listing was already assigned to another customer earlier
           // in this run. Previously the primary pick ignored the in-run set, so two
@@ -22356,7 +22365,7 @@ _deliverDiag[cust.email].products = products;
           if (dd.reference && custDeliveredRefs['r:' + String(dd.reference).toLowerCase()]) return false;
           // Never deliver a lead already delivered to THIS customer OR ANY customer
           // (global exclusivity) — shared leads between overlapping areas are prevented.
-          if (u && (deliveredUrls[u] || globalDeliveredUrls[u])) return false;
+          if (u && (deliveredUrls[u] || (!_isTestCust && globalDeliveredUrls[u]))) return false;
           // IN-RUN dedup: reject a property/listing already assigned this run.
           var normU = String(u).split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
           var iKey = normU ? 'u:' + normU : ('a:' + String(dd.fullAddress || dd.deceasedAddress || dd.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30));
@@ -22373,9 +22382,9 @@ _deliverDiag[cust.email].products = products;
           var rKey = String(dd.reference || dd.companyNumber || dd.deceasedName || dd.tenderNoticeId || '').toLowerCase().trim();
           var pKey = String(dd.postcode || '').toUpperCase().replace(/\s+/g, ' ').trim();
           var pKeyId = 'gg:' + propertyIdentityKey(dd.fullAddress || dd.deceasedAddress || dd.address || '', dd.postcode || '');
-          if (aKey && pKey && (deliveredKeys[aKey + '|' + pKey] || globalDeliveredKeys[aKey + '|' + pKey])) return false;
-          if (pKeyId && (deliveredKeys[pKeyId] || globalDeliveredKeys[pKeyId])) return false;
-          if (rKey && (deliveredKeys[rKey] || globalDeliveredKeys[rKey])) return false;
+          if (aKey && pKey && (deliveredKeys[aKey + '|' + pKey] || (!_isTestCust && globalDeliveredKeys[aKey + '|' + pKey]))) return false;
+          if (pKeyId && (deliveredKeys[pKeyId] || (!_isTestCust && globalDeliveredKeys[pKeyId]))) return false;
+          if (rKey && (deliveredKeys[rKey] || (!_isTestCust && globalDeliveredKeys[rKey]))) return false;
           return true;
         } catch(e) { return true; }
       }
