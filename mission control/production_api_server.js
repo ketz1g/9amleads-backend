@@ -21938,15 +21938,23 @@ _deliverDiag[cust.email].products = products;
           return true;
         });
         if (primaryLeads.length > 0) {
-          custLeads.push(primaryLeads[0]);
-          primaryPickedId = primaryLeads[0].id;
-          try {
-            var _ppd = JSON.parse(primaryLeads[0].data || '{}');
-            var _ppu = String(_ppd.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
-            if (_ppu) _inRunSeen['u:' + _ppu] = true;
-            var _ppa = 'aa:' + propertyIdentityKey(_ppd.fullAddress || _ppd.deceasedAddress || _ppd.address || '', _ppd.postcode || '');
-            if (_ppa) _inRunSeen[_ppa] = true;
-          } catch(e) {}
+          // SEND EVERY VALID QUEUED LEAD, not just the first. The pre-9am top-up fills
+          // the queue to the customer's exact promise; using only primaryLeads[0] meant
+          // the other queued leads were ignored and the shortfall had to be re-sourced
+          // from the pool (which is how customers fell short). The hard-cap later clamps
+          // to the daily limit, so over-filling the queue can never over-deliver.
+          var _primLimit = (typeof totalDailyLimit === 'number' && totalDailyLimit > 0) ? totalDailyLimit : ((typeof getPlanLimit === 'function' ? getPlanLimit(cust.product, cust.plan, cust.coverage) : 0) || 5);
+          for (var _pix = 0; _pix < primaryLeads.length && custLeads.length < _primLimit; _pix++) {
+            custLeads.push(primaryLeads[_pix]);
+            if (!primaryPickedId) primaryPickedId = primaryLeads[_pix].id;
+            try {
+              var _ppd = JSON.parse(primaryLeads[_pix].data || '{}');
+              var _ppu = String(_ppd.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
+              if (_ppu) _inRunSeen['u:' + _ppu] = true;
+              var _ppa = 'aa:' + propertyIdentityKey(_ppd.fullAddress || _ppd.deceasedAddress || _ppd.address || '', _ppd.postcode || '');
+              if (_ppa) _inRunSeen[_ppa] = true;
+            } catch(e) {}
+          }
         }
       }
       var thisWeekStart2 = new Date(); thisWeekStart2.setDate(thisWeekStart2.getDate() - (thisWeekStart2.getDay() || 7) + 1);
