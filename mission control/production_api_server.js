@@ -11572,6 +11572,60 @@ async function runProbatePafPostScrape() {
 // customer it computes the exact daily selection, PAF-verifies any door-less lead
 // in that selection, and writes the verified address back into the pool. The 9am
 // delivery then just sends already-numbered leads (its gate becomes a safety net).
+// APIFY MOVING DETAIL ENRICHMENT: fetch the FULL numbered address for the exact moving
+// leads a customer will receive, via the Apify Rightmove actor's DETAIL mode over a
+// residential proxy — the only reliable way past Rightmove's datacenter-IP block. This
+// is what turns a street-only pool lead ("Heron Way, Abbeydale") into a mailable one.
+// COST-CONTROLLED: opt-in (APIFY_DETAIL_ENABLED), hard daily cap (APIFY_DETAIL_MAX,
+// default 60), batched 10 URLs per actor run, and only ever run for leads that are
+// genuinely about to be delivered — never the whole pool. Returns { url: {address} }.
+async function apifyFetchMovingDetails(urls, max) {
+  var out = {};
+  try {
+    if (String(process.env.APIFY_DETAIL_ENABLED || 'false').toLowerCase() !== 'true') return out;
+    var key = process.env.APIFY_API_KEY || '';
+    if (!key || !urls || !urls.length) return out;
+    var dbA = getDb();
+    var today = new Date().toISOString().split('T')[0];
+    if (!dbA.__apifyDetail || dbA.__apifyDetail.date !== today) dbA.__apifyDetail = { date: today, used: 0 };
+    var dailyMax = Number(process.env.APIFY_DETAIL_MAX || 60);
+    var remaining = dailyMax - (dbA.__apifyDetail.used || 0);
+    if (remaining <= 0) { console.log('[APIFY-DETAIL] daily cap reached (' + dailyMax + ') — skipping'); return out; }
+    var list = urls.filter(Boolean).slice(0, Math.min(max || remaining, remaining));
+    if (!list.length) return out;
+    var https = require('https');
+    for (var b = 0; b < list.length; b += 10) {
+      var batch = list.slice(b, b + 10);
+      var body = JSON.stringify({ propertyUrls: batch.map(function(u) { return { url: u }; }), monitoringMode: false, fullPropertyDetails: true, includePriceHistory: false, includeNearestSchools: false, maxProperties: batch.length, proxy: { useApifyProxy: true } });
+      var items = await new Promise(function(resolve) {
+        try {
+          var req = https.request({ hostname: 'api.apify.com', path: '/v2/acts/dhrumil~rightmove-scraper/run-sync-get-dataset-items?token=' + key + '&memory=256&timeout=180', method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body), 'Accept': 'application/json' }, timeout: 200000 }, function(res) {
+            var s = ''; res.on('data', function(c) { s += c; }); res.on('end', function() { try { resolve(JSON.parse(s)); } catch(e) { resolve([]); } });
+          });
+          req.on('error', function() { resolve([]); });
+          req.on('timeout', function() { try { req.destroy(); } catch(e) {} resolve([]); });
+          req.write(body); req.end();
+        } catch(e) { resolve([]); }
+      });
+      if (Array.isArray(items)) {
+        items.forEach(function(p) {
+          var addr = String(p.displayAddress || p.address || p.fullAddress || '').trim();
+          var pc = String(p.postcode || p.fullPostcode || '').trim();
+          if (addr && hasUsablePremiseAddress(addr, pc || 'SW1A 1AA')) {
+            var u = p.url || ('https://www.rightmove.co.uk/properties/' + (p.id || ''));
+            out[u] = { address: addr, postcode: pc };
+          }
+        });
+      }
+      dbA.__apifyDetail.used = (dbA.__apifyDetail.used || 0) + batch.length;
+      try { saveDb(); } catch(e) {}
+      try { require('./scraper_usage').inc('apify_runs', 1); } catch(e) {}
+      console.log('[APIFY-DETAIL] batch ' + batch.length + ' -> running total ' + Object.keys(out).length + ' numbered (used ' + dbA.__apifyDetail.used + '/' + dailyMax + ')');
+    }
+    return out;
+  } catch(e) { console.log('[APIFY-DETAIL] error: ' + e.message); return out; }
+}
+
 async function preVerifyMovingLeads() {
   if (!(process.env.POSTCODER_ENABLED === 'true' || process.env.POSTCODER_ENABLED === '1') || !process.env.POSTCODER_API_KEY) {
     console.log('[PREVERIFY] Postcoder disabled — skipping'); return { ok: false };
@@ -11601,8 +11655,27 @@ async function preVerifyMovingLeads() {
     } catch(e) {}
   }
   var urls = Object.keys(targetUrls);
+  // APIFY DETAIL FIRST (reliable): fetch the full numbered address for these exact leads
+  // over a residential proxy, BEFORE spending Postcoder credits on ambiguous street-only
+  // lookups. Bounded per day; only these selected leads are ever fetched.
+  var apifyMap = {};
+  try { apifyMap = await apifyFetchMovingDetails(urls, urls.length); } catch(e) {}
   var enriched = 0, failed = 0;
   for (var u = 0; u < urls.length; u++) {
+    var _idxA = -1;
+    for (var _fa = 0; _fa < arr.length; _fa++) { if ((arr[_fa]._i || arr[_fa]).url === urls[u]) { _idxA = _fa; break; } }
+    if (_idxA !== -1) {
+      var _lA = arr[_idxA]._i || arr[_idxA];
+      var _ap = apifyMap[urls[u]];
+      if (_ap && _ap.address) {
+        _lA.address = _ap.address;
+        _lA.fullAddress = _ap.address;
+        if (_ap.postcode) _lA.postcode = _ap.postcode.toUpperCase();
+        _lA.paf_done = true; _lA.paf_failed = false;
+        enriched++;
+        continue;
+      }
+    }
     try {
       var b = require('./postcoder_budget');
       var used = b.usage ? b.usage() : 0;
