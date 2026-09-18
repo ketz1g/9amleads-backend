@@ -10976,6 +10976,16 @@ app.post('/api/admin/preverify', adminAuth, async (req, res) => {
 
 // POST /api/admin/enrich-pool — fill full addresses for incomplete moving pool leads
 // (free OTM first, bounded Apify Rightmove). Body: { max } optional.
+// GET /api/admin/epc-status — is the EPC index loaded, and does a sample resolve?
+app.get('/api/admin/epc-status', adminAuth, (req, res) => {
+  try {
+    var loaded = EPC_INDEX.isLoaded();
+    var sample = null;
+    if (req.query.street && req.query.postcode) sample = EPC_INDEX.resolveFullAddress(req.query.street, req.query.postcode);
+    res.json({ success: true, loaded: loaded, meta: EPC_INDEX.meta(), sample: sample, file_exists: fs.existsSync(path.join(__dirname, 'data', 'epc-index.json')) });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/admin/pool-postcodes?product=moving — distinct postcodes in the pool file
 // (used to build a SMALL EPC index subset that fits Render's disk/memory).
 app.get('/api/admin/pool-postcodes', adminAuth, (req, res) => {
