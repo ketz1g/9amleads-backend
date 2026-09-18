@@ -17888,6 +17888,24 @@ cron.schedule('*/5 * * * *', function() {
 });
 
 
+// MONTHLY EPC REFRESH REMINDER (1st of each month, 08:00 UK): the free EPC open data is
+// updated regularly, so the local address index should be refreshed. The download itself
+// is a manual step on the gov site (no public API), so we email the owner the steps.
+cron.schedule('0 8 1 * *', function() {
+  try {
+    sendAdminAlert('Monthly EPC address-index refresh due',
+      '<div style="font-family:Inter,Arial,sans-serif;font-size:13px;color:#e2e8f0;line-height:1.7">'
+      + '<b style="color:#38bdf8">Time to refresh the EPC address index</b> (used to give moving leads their house numbers).'
+      + '<ol style="padding-left:18px;margin:8px 0">'
+      + '<li>Download the latest <b>domestic EPC CSV zip</b> from https://epc.opendatacommunities.org (free).</li>'
+      + '<li>Rebuild the gzipped index: <code>node build_epc_index.js &lt;zip&gt; data &lt;areas&gt;</code></li>'
+      + '<li>Upload it: <code>POST /api/admin/upload-epc-gz</code> (raw gzip body).</li>'
+      + '<li>Rebuild SQLite: <code>POST /api/admin/build-epc-sqlite</code>.</li>'
+      + '</ol>'
+      + '<div style="color:#94a3b8">If you skip a month nothing breaks — the index stays valid, it just misses the newest certificates.</div></div>');
+  } catch(e) { console.log('[EPC-REFRESH] reminder error: ' + (e && e.message)); }
+}, { timezone: 'Europe/London' });
+
 // DATABASE BACKUP — writes a local snapshot every hour (disk, cheap) but pushes the
 // off-server copy to GitHub every 4 hours only (the push is the bandwidth cost; 4h is
 // still plenty of recovery granularity and keeps Render bandwidth in check).
