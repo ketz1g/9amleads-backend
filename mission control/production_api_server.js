@@ -10941,10 +10941,13 @@ app.post('/api/admin/preverify', adminAuth, async (req, res) => {
 
 // POST /api/admin/enrich-pool — fill full addresses for incomplete moving pool leads
 // (free OTM first, bounded Apify Rightmove). Body: { max } optional.
-app.post('/api/admin/enrich-pool', adminAuth, async (req, res) => {
+app.post('/api/admin/enrich-pool', adminAuth, (req, res) => {
   try {
-    var r = await enrichMovingPoolAddresses(Number((req.body && req.body.max) || 80));
-    res.json({ success: true, result: r });
+    var max = Number((req.body && req.body.max) || 120);
+    if (global.__poolEnrichRunning) return res.json({ success: true, result: { skipped: 'already running' } });
+    global.__poolEnrichRunning = true;
+    enrichMovingPoolAddresses(max).then(function(r) { global.__poolEnrichRunning = false; console.log('[POOL-ENRICH] done ' + JSON.stringify(r)); }).catch(function(e) { global.__poolEnrichRunning = false; console.log('[POOL-ENRICH] failed ' + (e && e.message)); });
+    res.json({ success: true, result: { started: true, max: max } });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -11651,14 +11654,33 @@ async function enrichMovingPoolAddresses(maxPerRun) {
     if (Array.isArray(raw)) arr = raw;
     else if (raw && typeof raw === 'object') { container = raw; Object.keys(raw).forEach(function(k) { if (k.indexOf('_') !== 0 && Array.isArray(raw[k])) raw[k].forEach(function(x) { arr.push(x); }); }); }
     if (!arr.length) return { ok: false };
+    // AREA TARGETING: only enrich leads whose postcode AREA an active customer actually
+    // wants, and put the THIN areas first — so the free OTM budget is spent exactly where
+    // customers are short (CF/NP etc.), not on areas nobody ordered.
+    var activeAreas = {};
+    try {
+      (getDb().customers || []).forEach(function(c) {
+        if (!c.plan || c.plan === 'cancelled' || isLeadsPaused(c) || trialExpiredUnpaid(c)) return;
+        try { (JSON.parse(c.target_areas || '[]') || []).forEach(function(a) { activeAreas[String(a).toUpperCase().replace(/[^A-Z0-9]/g, '')] = 1; }); } catch(e) {}
+      });
+    } catch(e) {}
+    function _areaOf(l) { var m = String(l.postcode || l.address || '').toUpperCase().replace(/\s+/g, '').match(/^([A-Z]{1,2})/); return m ? m[1] : ''; }
     var otmUrls = [], rmUrls = [], byUrl = {};
-    arr.forEach(function(l) {
+    var _cands = arr.filter(function(l) {
       var addr = l.fullAddress || l.address || '';
       var pc = String(l.postcode || '').trim();
       var complete = /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(pc) && hasUsablePremiseAddress(addr, pc);
-      if (complete) return;
+      if (complete) return false;
       var url = String(l.url || '');
-      if (url) byUrl[url] = l;
+      if (!url) return false;
+      if (Object.keys(activeAreas).length && !activeAreas[_areaOf(l)]) return false; // only ordered areas
+      return true;
+    });
+    // active-area leads first (thin areas naturally float up because they have fewer complete leads)
+    _cands.sort(function(a, b) { var aa = activeAreas[_areaOf(a)] ? 0 : 1, ab = activeAreas[_areaOf(b)] ? 0 : 1; return aa - ab; });
+    _cands.forEach(function(l) {
+      var url = String(l.url || '');
+      byUrl[url] = l;
       if (/onthemarket\.com\/details\//i.test(url)) otmUrls.push(url);
       else if (/rightmove\.co\.uk\/properties\//i.test(url)) rmUrls.push(url);
     });
@@ -11666,16 +11688,20 @@ async function enrichMovingPoolAddresses(maxPerRun) {
     var updated = 0;
     var otm = require('./onthemarket_scraper');
     var otmTried = 0;
-    for (var i = 0; i < otmUrls.length && otmTried < cap; i++) {
-      var u = otmUrls[i]; otmTried++;
-      try {
-        var d = await otm.fetchOtmDetailAddress(u);
+    var otmList = otmUrls.slice(0, cap);
+    var OTM_CONC = 6;
+    for (var ob = 0; ob < otmList.length; ob += OTM_CONC) {
+      var obatch = otmList.slice(ob, ob + OTM_CONC);
+      var ores = await Promise.all(obatch.map(function(u) { return otm.fetchOtmDetailAddress(u).catch(function() { return null; }); }));
+      for (var oj = 0; oj < obatch.length; oj++) {
+        otmTried++;
+        var d = ores[oj];
         if (d && d.address && hasUsablePremiseAddress(d.address, d.postcode || '')) {
-          var l2 = byUrl[u];
+          var l2 = byUrl[obatch[oj]];
           if (l2) { l2.address = d.address; l2.fullAddress = d.address; if (d.postcode) l2.postcode = d.postcode.toUpperCase(); updated++; }
         }
-      } catch(e) {}
-      await new Promise(function(r) { setTimeout(r, 400); });
+      }
+      await new Promise(function(r) { setTimeout(r, 250); });
     }
     if (rmUrls.length) {
       try {
