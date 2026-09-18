@@ -23627,7 +23627,13 @@ _deliverDiag[cust.email].products = products;
                     qd.fullAddress = qd.address;
                   }
                   var qr = validateMovingLead(qd);
-                  if (qr) { qvDropped++; }
+                  if (qr) {
+                    qvDropped++;
+                    // Record WHY so a drop is never a mystery.
+                    var _rv = _deliverDiag[cust.email].review;
+                    _rv.reasons[qr] = (_rv.reasons[qr] || 0) + 1;
+                    if (_rv.samples.length < 4) _rv.samples.push(qr + ' :: ' + String(qd.address || '').slice(0, 70));
+                  }
                   else qvLeads.push(cl);
                 });
                 if (qvDropped > 0) console.log('[QUALITY-REVIEW] ' + cust.email + ': dropped ' + qvDropped + ' moving leads before email');
