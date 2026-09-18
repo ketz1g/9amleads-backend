@@ -11703,6 +11703,18 @@ async function enrichMovingPoolAddresses(maxPerRun) {
       }
       await new Promise(function(r) { setTimeout(r, 250); });
     }
+    // AIM THE PAID APIFY BUDGET AT THIN AREAS: count mailable leads per postcode area
+    // and put Rightmove candidates in areas with ZERO mailable leads first, so the small
+    // Apify budget (25/day) is spent only where OTM couldn't help.
+    var areaMailable = {};
+    arr.forEach(function(l) {
+      var addr = l.fullAddress || l.address || '';
+      var pc = String(l.postcode || '').trim();
+      if (/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(pc) && hasUsablePremiseAddress(addr, pc)) {
+        var a = _areaOf(l); if (a) areaMailable[a] = (areaMailable[a] || 0) + 1;
+      }
+    });
+    rmUrls.sort(function(a, b) { return (areaMailable[_areaOf(byUrl[a] || {})] || 0) - (areaMailable[_areaOf(byUrl[b] || {})] || 0); });
     if (rmUrls.length) {
       try {
         var map = await apifyFetchMovingDetails(rmUrls, Math.min(rmUrls.length, cap));
@@ -31436,7 +31448,10 @@ function runDeliveryTestReport() {
         // re-deliver the SAME leads. Keeping them means no repeat leads, ever, for test
         // and real customers alike. The per-run report still works because each run tags
         // its leads with a unique run_id + delivered_at timestamp.
-        db.leads = (db.leads || []).filter(function(l) { return !(l.customer_id && _testIds[l.customer_id] && !l.delivered); });
+        // TRUE CLEAN SLATE for test accounts: remove BOTH delivered and pending test
+        // rows so each run is independent and can never accumulate duplicate rows
+        // across runs (the old "keep delivered" left the same URL delivered repeatedly).
+        db.leads = (db.leads || []).filter(function(l) { return !(l.customer_id && _testIds[l.customer_id]); });
         testCusts.forEach(function(c) { if (/^test\./.test(String(c.email || ''))) c.last_email_date = ''; });
         saveDb();
         var runId = 'test-' + date + '-' + Date.now().toString(36);
