@@ -112,15 +112,35 @@ function buildIndex(dataDir, opts) {
   return { ok: true, rows, kept, postcodes: INDEX_META.postcodes, file: outFile };
 }
 
+// Load the index. Supports BOTH:
+//   - epc-index.json  { index: { PC: [addr,...] } }   (small subset — preferred on Render)
+//   - epc-index.tsv   "PC<TAB>addr1|addr2|..."         (full UK — big; only if it fits)
 function loadIndex(dataDir) {
   try {
-    const f = path.join(dataDir, 'epc-index.json');
-    if (!fs.existsSync(f)) { INDEX = null; return { ok: false, error: 'no index' }; }
-    const j = JSON.parse(fs.readFileSync(f, 'utf-8'));
-    INDEX = j.index || {};
-    INDEX_META = { built_at: j.built_at, rows: j.rows, kept: j.kept, postcodes: Object.keys(INDEX).length };
-    console.log('[EPC] index loaded: ' + INDEX_META.postcodes + ' postcodes');
-    return { ok: true, postcodes: INDEX_META.postcodes };
+    INDEX = {};
+    const jf = path.join(dataDir, 'epc-index.json');
+    const tf = path.join(dataDir, 'epc-index.tsv');
+    if (fs.existsSync(jf)) {
+      const j = JSON.parse(fs.readFileSync(jf, 'utf-8'));
+      INDEX = j.index || {};
+      INDEX_META = { source: 'json', built_at: j.built_at, rows: j.rows, kept: j.kept, postcodes: Object.keys(INDEX).length };
+    } else if (fs.existsSync(tf)) {
+      const lines = fs.readFileSync(tf, 'utf-8').split('\n');
+      for (const line of lines) {
+        if (!line) continue;
+        const t = line.indexOf('\t');
+        if (t < 0) continue;
+        const pc = line.slice(0, t).trim();
+        const addrs = line.slice(t + 1).split('|').filter(Boolean);
+        if (pc && addrs.length) INDEX[pc] = addrs;
+      }
+      INDEX_META = { source: 'tsv', postcodes: Object.keys(INDEX).length };
+    } else {
+      INDEX = null;
+      return { ok: false, error: 'no index file' };
+    }
+    console.log('[EPC] index loaded: ' + INDEX_META.postcodes + ' postcodes (' + INDEX_META.source + ')');
+    return { ok: true, postcodes: INDEX_META.postcodes, source: INDEX_META.source };
   } catch (e) { INDEX = null; return { ok: false, error: e.message }; }
 }
 

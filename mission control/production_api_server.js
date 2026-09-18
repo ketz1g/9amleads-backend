@@ -10976,6 +10976,21 @@ app.post('/api/admin/preverify', adminAuth, async (req, res) => {
 
 // POST /api/admin/enrich-pool — fill full addresses for incomplete moving pool leads
 // (free OTM first, bounded Apify Rightmove). Body: { max } optional.
+// GET /api/admin/pool-postcodes?product=moving — distinct postcodes in the pool file
+// (used to build a SMALL EPC index subset that fits Render's disk/memory).
+app.get('/api/admin/pool-postcodes', adminAuth, (req, res) => {
+  try {
+    var prod = String(req.query.product || 'moving');
+    var f = PRODUCT_LEAD_FILES[prod] ? PRODUCT_LEAD_FILES[prod].file : 'moving-leads.json';
+    var raw = JSON.parse(fs.readFileSync(path.join(DATA_DIR, f), 'utf-8'));
+    var arr = Array.isArray(raw) ? raw : (function () { var o = []; Object.keys(raw).forEach(function (k) { if (k.indexOf('_') !== 0 && Array.isArray(raw[k])) o = o.concat(raw[k]); }); return o; })();
+    var set = {};
+    arr.forEach(function (l) { var pc = String(l.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); if (pc) set[pc] = 1; });
+    var pcs = Object.keys(set);
+    res.json({ success: true, product: prod, total: pcs.length, postcodes: pcs });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/build-epc-index — (re)build the EPC address index from the CSVs in
 // data/epc/ (see epc_address_index.js). Run once after dropping the EPC files in.
 app.post('/api/admin/build-epc-index', adminAuth, async (req, res) => {
