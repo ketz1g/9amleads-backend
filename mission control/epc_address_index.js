@@ -121,7 +121,13 @@ function loadIndex(dataDir) {
     const jf = path.join(dataDir, 'epc-index.json');
     const tf = path.join(dataDir, 'epc-index.tsv');
     const gf = path.join(dataDir, 'epc-index.tsv.gz');
-    if (fs.existsSync(gf) || fs.existsSync(tf)) {
+    // PREFER the small JSON subset (loads in memory). The full TSV/TSV.gz is >V8's string
+    // limit + RAM, so it's only used if no JSON subset exists.
+    if (fs.existsSync(jf)) {
+      const j = JSON.parse(fs.readFileSync(jf, 'utf-8'));
+      INDEX = j.index || {};
+      INDEX_META = { source: 'json', built_at: j.built_at, postcodes: Object.keys(INDEX).length };
+    } else if (fs.existsSync(gf) || fs.existsSync(tf)) {
       // Gzipped TSV (89MB -> 638MB) is the full index; plain TSV also supported.
       let text;
       if (fs.existsSync(gf)) text = require('zlib').gunzipSync(fs.readFileSync(gf)).toString('utf-8');
