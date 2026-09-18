@@ -16167,11 +16167,15 @@ cron.schedule('30 5 * * 1-5', async () => {
 // POOL-WIDE MOVING ENRICHMENT (05:10 + 07:15 UK Mon-Fri): right after each scrape,
 // fill the FULL address for the pool's incomplete moving leads (free OTM first, bounded
 // Apify), so the pool actually CONTAINS mailable leads before the pre-verify/top-up.
-cron.schedule('10 5 * * 1-5', async () => {
-  try { await enrichMovingPoolAddresses(Number(process.env.MOVING_POOL_ENRICH_MAX || 80)); } catch(e) { console.log('[POOL-ENRICH] 05:10 error: ' + e.message); }
-}, { timezone: 'Europe/London' });
-cron.schedule('15 7 * * 1-5', async () => {
-  try { await enrichMovingPoolAddresses(Number(process.env.MOVING_POOL_ENRICH_MAX || 80)); } catch(e) { console.log('[POOL-ENRICH] 07:15 error: ' + e.message); }
+// GENTLE DRIP (every 10 min, 05:00-08:50 UK Mon-Fri): enrich a SMALL chunk each run so
+// memory stays flat and the box never restarts (the old single big burst spiked memory
+// and crashed the server). ~20 leads/run across ~24 runs still covers the pool, and it
+// finishes before 9am.
+cron.schedule('*/10 5-8 * * 1-5', async () => {
+  if (global.__poolEnrichRunning) return;
+  global.__poolEnrichRunning = true;
+  try { var _er = await enrichMovingPoolAddresses(Number(process.env.MOVING_POOL_ENRICH_MAX || 20)); console.log('[POOL-ENRICH] drip ' + JSON.stringify(_er)); } catch(e) { console.log('[POOL-ENRICH] drip error: ' + e.message); }
+  global.__poolEnrichRunning = false;
 }, { timezone: 'Europe/London' });
 cron.schedule('15 5 * * 1-5', async () => {
   try { await preVerifyMovingLeads(); } catch(e) { console.log('[PREVERIFY] 05:15 error: ' + e.message); }
