@@ -11689,7 +11689,7 @@ async function enrichMovingPoolAddresses(maxPerRun) {
     var otm = require('./onthemarket_scraper');
     var otmTried = 0;
     var otmList = otmUrls.slice(0, cap);
-    var OTM_CONC = 6;
+    var OTM_CONC = 3; // gentle concurrency — high parallelism spiked memory and restarted the box
     for (var ob = 0; ob < otmList.length; ob += OTM_CONC) {
       var obatch = otmList.slice(ob, ob + OTM_CONC);
       var ores = await Promise.all(obatch.map(function(u) { return otm.fetchOtmDetailAddress(u).catch(function() { return null; }); }));
