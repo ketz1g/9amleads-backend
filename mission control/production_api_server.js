@@ -22024,6 +22024,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       // they can never be starved by real customers taking the same leads. This makes
       // the monitoring/test suite a reliable pass/fail for the pipeline itself.
       var _isTestCust = /^test\./.test(String(cust.email || '').toLowerCase());
+      var _poolSkip = 0; // count of pool-fallback skips (logged once, not per lead)
       // EVENT-LOOP YIELD: let the health check (and other requests) respond between
       // customers, so a long run can never block the loop and trip Render's 5s check.
       await new Promise(function(r) { setImmediate(r); });
@@ -22867,9 +22868,11 @@ _deliverDiag[cust.email].products = products;
                       var finPc = poolLeadData.postcode || '';
                       var finNum = hasPremiseNumber(finAddr, finPc);
                       var finFullPc = /[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(finPc).trim());
-                      if (!finNum || !finFullPc || !hasStreetName(finAddr) || hasBadUnitCode(finAddr)) { console.log('[DELIVERY] Pool fallback SKIP incomplete moving lead: pc=' + finPc + ' addr=' + (finAddr||'').substring(0,40)); continue; }
+                      // NOTE: no per-lead console.log here — thousands of synchronous
+                      // stdout writes blocked the event loop and tripped the health check.
+                      if (!finNum || !finFullPc || !hasStreetName(finAddr) || hasBadUnitCode(finAddr)) { _poolSkip = (_poolSkip || 0) + 1; continue; }
                       // Listing link is required too.
-                      if (!rl.url && !poolLeadData.url) { console.log('[DELIVERY] Pool fallback SKIP moving lead without listing URL'); continue; }
+                      if (!rl.url && !poolLeadData.url) { _poolSkip = (_poolSkip || 0) + 1; continue; }
                     }
                     // NEVER create a duplicate of a property already assigned/delivered
                     // to this customer. Check by address/postcode/url, AND for
@@ -22886,7 +22889,7 @@ _deliverDiag[cust.email].products = products;
                       var edk = (ed.address || ed.name || ed.reference || ed.url || '') + '|' + (ed.postcode || '');
                       return edk && (edk === poolKey || (rl.address && edk.indexOf(rl.address + '|') === 0) || (rl.url && ed.url === rl.url));
                     });
-                    if (dupExisting) { console.log('[DELIVERY] Pool fallback SKIP dup: ' + (r2prod==='newbusiness'?'coNum='+candCoNum2:poolKey)); continue; }
+                    if (dupExisting) { _poolSkip = (_poolSkip || 0) + 1; continue; }
                     var newLead = { id: uuidv4(), customer_id: cust.id, product: r2prod, data: JSON.stringify(poolLeadData), status: 'new', delivered: 0, created_at: new Date().toISOString(), delivered_at: null, release_at: today + 'T09:00:00.000Z' };
                     db.leads.push(newLead);
                     existingKeys[poolKey] = 1;
@@ -22899,7 +22902,7 @@ _deliverDiag[cust.email].products = products;
                   } // end _fp freshness passes (24h -> 48h fallback)
                   if (createdFromPool.length > 0) {
                     r2pool = createdFromPool.filter(function(l) { return pickedIds.indexOf(l.id) === -1; });
-                    console.log('[DELIVERY] Pool-file fallback for ' + cust.email + ' ' + r2prod + ': created ' + createdFromPool.length + ' pool leads, r2pool=' + r2pool.length);
+                    console.log('[DELIVERY] Pool-file fallback for ' + cust.email + ' ' + r2prod + ': created ' + createdFromPool.length + ' pool leads, r2pool=' + r2pool.length + ', skipped ' + (_poolSkip || 0) + ' incomplete/dup');
                     _deliverDiag[cust.email].poolfile += createdFromPool.length;
                     _deliverDiag[cust.email].poolfile_total += 1;
                   } else {
