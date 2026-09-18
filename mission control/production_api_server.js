@@ -10976,6 +10976,15 @@ app.post('/api/admin/preverify', adminAuth, async (req, res) => {
 
 // POST /api/admin/enrich-pool — fill full addresses for incomplete moving pool leads
 // (free OTM first, bounded Apify Rightmove). Body: { max } optional.
+// POST /api/admin/build-epc-sqlite — build epc-index.db from epc-index.tsv.gz on the box
+app.post('/api/admin/build-epc-sqlite', adminAuth, async (req, res) => {
+  try {
+    var r = await EPC_INDEX.buildSqlite(path.join(__dirname, 'data'));
+    if (r && r.ok) EPC_INDEX.loadIndex(path.join(__dirname, 'data'));
+    res.json({ success: true, result: r, loaded: EPC_INDEX.isLoaded() });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/upload-epc-gz — write the gzipped EPC TSV straight onto the mounted
 // data disk (raw application/gzip body), then reload the index.
 app.post('/api/admin/upload-epc-gz', adminAuth, express.raw({ type: '*/*', limit: '200mb' }), (req, res) => {
