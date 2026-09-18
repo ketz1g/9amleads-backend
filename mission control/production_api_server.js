@@ -10976,6 +10976,19 @@ app.post('/api/admin/preverify', adminAuth, async (req, res) => {
 
 // POST /api/admin/enrich-pool — fill full addresses for incomplete moving pool leads
 // (free OTM first, bounded Apify Rightmove). Body: { max } optional.
+// POST /api/admin/upload-epc-index — write the EPC index JSON straight onto the mounted
+// data disk (committed files don't land there because it's a persistent mount).
+app.post('/api/admin/upload-epc-index', adminAuth, express.json({ limit: '80mb' }), (req, res) => {
+  try {
+    var payload = req.body;
+    if (typeof payload === 'string') payload = JSON.parse(payload);
+    if (!payload || !payload.index) return res.status(400).json({ error: 'expected { index: {...} }' });
+    fs.writeFileSync(path.join(__dirname, 'data', 'epc-index.json'), JSON.stringify(payload));
+    var r = EPC_INDEX.loadIndex(path.join(__dirname, 'data'));
+    res.json({ success: true, reloaded: r });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/admin/epc-status — is the EPC index loaded, and does a sample resolve?
 app.get('/api/admin/epc-status', adminAuth, (req, res) => {
   try {
