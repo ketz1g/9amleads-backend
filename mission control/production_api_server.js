@@ -16531,11 +16531,11 @@ function deliveryCompletionWatchdog(label) {
     return { label: label, short: short, triggered: true };
   } catch(e) { console.log('[COMPLETION-WATCHDOG] error:', e.message); return { label: label, short: [], triggered: false, error: e.message }; }
 }
-// SELF-HEALING LOOP (09:05-09:55, every 5 min): checks every customer's delivered count
-// and, if anyone is short, re-runs the delivery + auto-fill automatically — so a problem
-// is found AND fixed within ~5 minutes of 9am, not hours later. No-op when all fulfilled;
-// the founder alert is throttled to once per 30 min.
-cron.schedule('5-59/5 9 * * 1-5', function() { try { deliveryCompletionWatchdog('auto'); } catch(e) {} }, { timezone: 'Europe/London' });
+// SELF-HEALING LOOP (09:05, 09:20, 09:35, 09:50): checks every customer's delivered count
+// and, if anyone is short, re-runs the delivery + auto-fill automatically. Four checks
+// across the 9am hour — enough to catch and fix a shortfall quickly without over-running.
+// No-op when all fulfilled; the founder alert is throttled to once per 30 min.
+cron.schedule('5,20,35,50 9 * * 1-5', function() { try { deliveryCompletionWatchdog('auto'); } catch(e) {} }, { timezone: 'Europe/London' });
 
 // ===== DAILY DELIVERY SUMMARY (09:12 UK Mon-Fri) =====
 // Positive confirmation every weekday: "X/Y customers fulfilled". Sent even on a
