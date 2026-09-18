@@ -10976,6 +10976,18 @@ app.post('/api/admin/preverify', adminAuth, async (req, res) => {
 
 // POST /api/admin/enrich-pool — fill full addresses for incomplete moving pool leads
 // (free OTM first, bounded Apify Rightmove). Body: { max } optional.
+// POST /api/admin/upload-epc-gz — write the gzipped EPC TSV straight onto the mounted
+// data disk (raw application/gzip body), then reload the index.
+app.post('/api/admin/upload-epc-gz', adminAuth, express.raw({ type: '*/*', limit: '200mb' }), (req, res) => {
+  try {
+    var buf = req.body;
+    if (!buf || !buf.length) return res.status(400).json({ error: 'empty body' });
+    fs.writeFileSync(path.join(__dirname, 'data', 'epc-index.tsv.gz'), buf);
+    var r = EPC_INDEX.loadIndex(path.join(__dirname, 'data'));
+    res.json({ success: true, bytes: buf.length, reloaded: r });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/upload-epc-index — write the EPC index JSON straight onto the mounted
 // data disk (committed files don't land there because it's a persistent mount).
 app.post('/api/admin/upload-epc-index', adminAuth, express.json({ limit: '80mb' }), (req, res) => {
