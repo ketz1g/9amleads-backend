@@ -11784,7 +11784,12 @@ async function enrichMovingPoolAddresses(maxPerRun) {
           if (_eFull && hasUsablePremiseAddress(_eFull, _ePc)) { l.address = _eFull; l.fullAddress = _eFull; _epcFixed++; }
         }
       });
-      if (_epcFixed) console.log('[EPC] resolved ' + _epcFixed + ' house numbers from the local index');
+      if (_epcFixed) {
+        console.log('[EPC] resolved ' + _epcFixed + ' house numbers from the local index');
+        // PERSIST NOW — the free EPC step runs before the OTM bandwidth-cap early-return,
+        // so without this write its results would be discarded on a capped run.
+        try { fs.writeFileSync(poolFile, JSON.stringify(container || arr, null, 2)); } catch(e) {}
+      }
     }
     var otmUrls = [], rmUrls = [], byUrl = {};
     var _cands = arr.filter(function(l) {
