@@ -11675,6 +11675,21 @@ async function preVerifyMovingLeads() {
         enriched++;
         continue;
       }
+      // OTM (FREE): the Apify actor is Rightmove-only, but OnTheMarket exposes the full
+      // address on its detail page — fetch it directly (no Apify, no Postcoder).
+      if (/onthemarket\.com\/details\//i.test(urls[u])) {
+        try {
+          var _otm = await require('./onthemarket_scraper').fetchOtmDetailAddress(urls[u]);
+          if (_otm && _otm.address && hasUsablePremiseAddress(_otm.address, _otm.postcode || _lA.postcode || '')) {
+            _lA.address = _otm.address;
+            _lA.fullAddress = _otm.address;
+            if (_otm.postcode) _lA.postcode = _otm.postcode.toUpperCase();
+            _lA.paf_done = true; _lA.paf_failed = false;
+            enriched++;
+            continue;
+          }
+        } catch(e) {}
+      }
     }
     try {
       var b = require('./postcoder_budget');

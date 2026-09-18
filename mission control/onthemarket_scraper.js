@@ -122,6 +122,20 @@ function parseDetailPostcode(body) {
 //   "address":"299 Kennington Road\nKennington\nSE11 4QE"
 //   "address":"1 Charlton Road, London, Greater London, SE3 7EU"
 // Returns { postcode, address } — the address with town/county, newlines->commas.
+// Fetch ONE OTM listing's detail page and return its FULL printable address (number +
+// street + town + postcode). FREE (no Apify / no Postcoder). The list page only carries
+// a street-only address; the detail page embeds the full address. Bounded by the caller.
+async function fetchOtmDetailAddress(url) {
+  try {
+    var m = String(url || '').match(/onthemarket\.com\/details\/([0-9A-Za-z\-]+)/);
+    if (!m) return null;
+    var res = await httpGetRetry('www.onthemarket.com', '/details/' + m[1] + '/', { retries: 2, delayMs: 1500, timeoutMs: 20000 });
+    if (!res || res.status !== 200 || !res.body) return null;
+    var d = parseDetailAddress(res.body);
+    return (d && d.address) ? d : null;
+  } catch(e) { return null; }
+}
+
 function parseDetailAddress(body) {
   let pc = parseDetailPostcode(body);
   let addr = '';
@@ -346,4 +360,4 @@ async function collectOnTheMarketLeads(params) {
   return out;
 }
 
-module.exports = { collectOnTheMarketLeads, OTM_SLUGS, extractPostcodeArea, isDevelopmentListing, otmListedDate, extractBuildingNumber, extractStreetName, extractTownCounty, parseDetailAddress };
+module.exports = { collectOnTheMarketLeads, OTM_SLUGS, extractPostcodeArea, isDevelopmentListing, otmListedDate, extractBuildingNumber, extractStreetName, extractTownCounty, parseDetailAddress, fetchOtmDetailAddress };
