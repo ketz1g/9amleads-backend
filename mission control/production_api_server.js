@@ -11684,7 +11684,16 @@ async function enrichMovingPoolAddresses(maxPerRun) {
       if (/onthemarket\.com\/details\//i.test(url)) otmUrls.push(url);
       else if (/rightmove\.co\.uk\/properties\//i.test(url)) rmUrls.push(url);
     });
-    var cap = Math.min(Number(maxPerRun || 80), 200);
+    var cap = Math.min(Number(maxPerRun || 20), 200);
+    // DAILY BANDWIDTH CAP: every OTM detail fetch downloads a FULL page, so bound the
+    // TOTAL per day (not just per run) — this is what was eating Render bandwidth.
+    var dailyCap = Number(process.env.MOVING_ENRICH_DAILY_CAP || 150);
+    var dbE = getDb();
+    var _todayE = new Date().toISOString().split('T')[0];
+    if (!dbE.__poolEnrich || dbE.__poolEnrich.date !== _todayE) dbE.__poolEnrich = { date: _todayE, used: 0 };
+    var _remainingDaily = dailyCap - (dbE.__poolEnrich.used || 0);
+    if (_remainingDaily <= 0) return { ok: true, skipped: 'daily bandwidth cap reached', used: dbE.__poolEnrich.used, cap: dailyCap };
+    cap = Math.min(cap, _remainingDaily);
     var updated = 0;
     var otm = require('./onthemarket_scraper');
     var otmTried = 0;
@@ -11703,6 +11712,8 @@ async function enrichMovingPoolAddresses(maxPerRun) {
       }
       await new Promise(function(r) { setTimeout(r, 250); });
     }
+    // Record the daily OTM fetch count (bandwidth guard).
+    try { dbE.__poolEnrich.used = (dbE.__poolEnrich.used || 0) + otmTried; saveDb(); } catch(e) {}
     // AIM THE PAID APIFY BUDGET AT THIN AREAS: count mailable leads per postcode area
     // and put Rightmove candidates in areas with ZERO mailable leads first, so the small
     // Apify budget (25/day) is spent only where OTM couldn't help.
@@ -17748,10 +17759,16 @@ cron.schedule('*/5 * * * *', function() {
 });
 
 
-// Hourly DATABASE BACKUP — writes a local backup AND pushes it off-server to the
-// private GitHub backup repo, so the whole business survives any Render failure.
+// DATABASE BACKUP — writes a local snapshot every hour (disk, cheap) but pushes the
+// off-server copy to GitHub every 4 hours only (the push is the bandwidth cost; 4h is
+// still plenty of recovery granularity and keeps Render bandwidth in check).
 cron.schedule('15 * * * *', async () => {
-  try { await runFullBackup(); } catch(e) { console.log('[BACKUP] Cron error:', e.message); }
+  try {
+    var local = writeLocalBackup();
+    var hh = new Date().getUTCHours();
+    if (hh % 4 === 0) { await pushBackupToGitHub(); setTimeout(pruneRemoteBackups, 2000); }
+    return local;
+  } catch(e) { console.log('[BACKUP] Cron error:', e.message); }
 });
 
 // ===== HEALTH ALERTING =====
