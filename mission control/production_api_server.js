@@ -23685,9 +23685,15 @@ _deliverDiag[cust.email].products = products;
                 if (!ld || typeof ld !== 'object') ld = { postcode: l.postcode || '', address: l.address || l.fullAddress || '', fullAddress: l.fullAddress || l.address || '' };
                 var gAddr = ld.fullAddress || ld.address || ld.deceasedAddress || '';
                 var gPc = ld.postcode || '';
-                if (!gAddr || !gPc) return false;
-                if (!/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(gPc.trim())) return false;
-                return hasPremiseNumber(gAddr, gPc);
+                var _gWhy = '';
+                if (!gAddr || !gPc) _gWhy = 'no-addr-or-pc';
+                else if (!/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(gPc.trim())) _gWhy = 'bad-pc';
+                else if (!hasPremiseNumber(gAddr, gPc)) _gWhy = 'no-premise';
+                if (_gWhy) {
+                  if (_deliverDiag[cust.email]) { var _fg = _deliverDiag[cust.email]; _fg.fg = _fg.fg || {}; _fg.fg[_gWhy] = (_fg.fg[_gWhy] || 0) + 1; if (!_fg.fgSample) _fg.fgSample = _gWhy + ' :: ' + String(gAddr).slice(0, 70) + ' pc=' + gPc; }
+                  return false;
+                }
+                return true;
               });
               if (custLeads.length !== _gateLen) console.log('[FINAL-GATE] dropped ' + (_gateLen - custLeads.length) + ' doorless lead(s) for ' + cust.email + ' (now ' + custLeads.length + ')');
               if (custLeads.length > totalNeeded) {
@@ -23732,8 +23738,8 @@ _deliverDiag[cust.email].products = products;
             var ld = null; try { ld = JSON.parse(l.data || '{}'); } catch(e) { ld = null; }
             if (!ld || typeof ld !== 'object') ld = { postcode: l.postcode || '', address: l.address || l.fullAddress || '', fullAddress: l.fullAddress || l.address || '', deceasedAddress: l.deceasedAddress || '', url: l.url || '' };
             var prod = l.product || ld.product || cust.product;
-            if (!leadMailableAddress(ld, prod)) return false;
-            if (!candidateInArea(ld, custAreas, prod, _custUkwide)) return false;
+            if (!leadMailableAddress(ld, prod)) { if (_deliverDiag[cust.email]) { var _u1 = _deliverDiag[cust.email]; _u1.uni = _u1.uni || {}; _u1.uni['not-mailable'] = (_u1.uni['not-mailable'] || 0) + 1; if (!_u1.uniSample) _u1.uniSample = 'not-mailable :: ' + String(ld.address || '') + ' pc=' + String(ld.postcode || ''); } return false; }
+            if (!candidateInArea(ld, custAreas, prod, _custUkwide)) { if (_deliverDiag[cust.email]) { var _u2 = _deliverDiag[cust.email]; _u2.uni = _u2.uni || {}; _u2.uni['out-of-area'] = (_u2.uni['out-of-area'] || 0) + 1; if (!_u2.uniSample) _u2.uniSample = 'out-of-area :: ' + String(ld.address || '') + ' pc=' + String(ld.postcode || ''); } return false; }
             var _gu2 = String(ld.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
             var _k2 = _gu2 ? ('u:' + _gu2) : propertyIdentityKey(ld.fullAddress || ld.address || ld.deceasedAddress || '', ld.postcode || '');
             if (_k2 && _seenU[_k2]) return false;
