@@ -22035,6 +22035,10 @@ _deliverDiag[cust.email].products = products;
           if (_pid && _inRunSeen[_pa]) return false;
           return true;
         });
+        if (_deliverDiag[cust.email]) {
+          _deliverDiag[cust.email].primary = primaryLeads.length;
+          _deliverDiag[cust.email].pending = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered === 0 && l.product === cust.product; }).length;
+        }
         if (primaryLeads.length > 0) {
           // SEND EVERY VALID QUEUED LEAD, not just the first. The pre-9am top-up fills
           // the queue to the customer's exact promise; using only primaryLeads[0] meant
