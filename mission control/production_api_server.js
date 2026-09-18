@@ -16516,20 +16516,26 @@ function deliveryCompletionWatchdog(label) {
         autoFillDeliveryShortfalls(function() { console.log('[COMPLETION-WATCHDOG ' + label + '] auto-fill recovery finished'); });
       }
     } catch(te2) { console.log('[COMPLETION-WATCHDOG] auto-fill error:', te2.message); }
-    // Alert the founder (only-action).
+    // Alert the founder (only-action). THROTTLED to once per 30 min so the frequent
+    // self-healing loop can't spam — a single unresolved shortfall emails once.
     try {
-      sendAdminAlert('⚠ Delivery incomplete at ' + label + ' — auto-recovery triggered',
-        '<div style="font-family:Inter,Arial,sans-serif;font-size:13px;color:#e2e8f0;line-height:1.7">'
-        + '<b style="color:#f87171">' + short.length + ' customer(s) below their promised count</b> at ' + label + ':'
-        + '<ul style="padding-left:18px;margin:6px 0">' + short.map(function(s){ return '<li>' + s.email + ' — ' + s.have + '/' + s.promised + '</li>'; }).join('') + '</ul>'
-        + 'A recovery delivery has been triggered automatically. If it stays short, it is a supply issue for those areas.</div>');
+      if (!global.__lastWatchdogAlert || (Date.now() - global.__lastWatchdogAlert) > 30 * 60000) {
+        global.__lastWatchdogAlert = Date.now();
+        sendAdminAlert('⚠ Delivery incomplete at ' + label + ' — auto-recovery triggered',
+          '<div style="font-family:Inter,Arial,sans-serif;font-size:13px;color:#e2e8f0;line-height:1.7">'
+          + '<b style="color:#f87171">' + short.length + ' customer(s) below their promised count</b> at ' + label + ':'
+          + '<ul style="padding-left:18px;margin:6px 0">' + short.map(function(s){ return '<li>' + s.email + ' — ' + s.have + '/' + s.promised + '</li>'; }).join('') + '</ul>'
+          + 'A recovery delivery has been triggered automatically. If it stays short, it is a supply issue for those areas.</div>');
+      }
     } catch(al) {}
     return { label: label, short: short, triggered: true };
   } catch(e) { console.log('[COMPLETION-WATCHDOG] error:', e.message); return { label: label, short: [], triggered: false, error: e.message }; }
 }
-cron.schedule('8 9 * * 1-5', function() { try { deliveryCompletionWatchdog('09:08'); } catch(e) {} }, { timezone: 'Europe/London' });
-cron.schedule('15 9 * * 1-5', function() { try { deliveryCompletionWatchdog('09:15'); } catch(e) {} }, { timezone: 'Europe/London' });
-cron.schedule('25 9 * * 1-5', function() { try { deliveryCompletionWatchdog('09:25'); } catch(e) {} }, { timezone: 'Europe/London' });
+// SELF-HEALING LOOP (09:05-09:55, every 5 min): checks every customer's delivered count
+// and, if anyone is short, re-runs the delivery + auto-fill automatically — so a problem
+// is found AND fixed within ~5 minutes of 9am, not hours later. No-op when all fulfilled;
+// the founder alert is throttled to once per 30 min.
+cron.schedule('5-59/5 9 * * 1-5', function() { try { deliveryCompletionWatchdog('auto'); } catch(e) {} }, { timezone: 'Europe/London' });
 
 // ===== DAILY DELIVERY SUMMARY (09:12 UK Mon-Fri) =====
 // Positive confirmation every weekday: "X/Y customers fulfilled". Sent even on a
