@@ -105,7 +105,12 @@ function meta() { return INDEX_META; }
 function _matchFromList(list, street) {
   const s = norm(street);
   if (!s) return null;
-  const streetOnly = s.replace(/^\d+[a-z]?\s+/, '').trim();
+  // Use ONLY the street line (before the first comma) and strip any leading house
+  // number. The input is often "Wentloog Road, Cardiff" while the EPC address is
+  // "179, Wentloog Road, Rumney, CARDIFF" — matching the whole string would fail.
+  const firstSeg = String(street || '').split(',')[0];
+  let streetOnly = norm(firstSeg).replace(/^\d+[a-z]?\s+/, '').trim();
+  if (!streetOnly) streetOnly = s.replace(/^\d+[a-z]?\s+/, '').trim();
   let best = null;
   for (const a of list) {
     const na = norm(a);
@@ -115,6 +120,7 @@ function _matchFromList(list, street) {
     }
   }
   if (best) return best;
+  // Fallback: the full street string appears in an entry that starts with a number.
   for (const a of list) {
     const na = norm(a);
     if (s && na.indexOf(s) !== -1 && /^\d/.test(String(a).trim())) return a;
