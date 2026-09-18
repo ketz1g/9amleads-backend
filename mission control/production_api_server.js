@@ -11776,14 +11776,17 @@ async function enrichMovingPoolAddresses(maxPerRun) {
     // reliable path, zero bandwidth. No-op until the EPC index is built.
     var _epcFixed = 0;
     if (EPC_INDEX.isLoaded()) {
-      arr.forEach(function(l) {
-        var _eAddr = l.fullAddress || l.address || '';
-        var _ePc = String(l.postcode || '').trim();
+      // node:sqlite is SYNCHRONOUS — yield every 200 rows so the health check can answer.
+      for (var _ei = 0; _ei < arr.length; _ei++) {
+        if (_ei > 0 && _ei % 200 === 0) await new Promise(function(r) { setImmediate(r); });
+        var _el = arr[_ei];
+        var _eAddr = _el.fullAddress || _el.address || '';
+        var _ePc = String(_el.postcode || '').trim();
         if (/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(_ePc) && !hasUsablePremiseAddress(_eAddr, _ePc)) {
           var _eFull = EPC_INDEX.resolveFullAddress(_eAddr, _ePc);
-          if (_eFull && hasUsablePremiseAddress(_eFull, _ePc)) { l.address = _eFull; l.fullAddress = _eFull; _epcFixed++; }
+          if (_eFull && hasUsablePremiseAddress(_eFull, _ePc)) { _el.address = _eFull; _el.fullAddress = _eFull; _epcFixed++; }
         }
-      });
+      }
       if (_epcFixed) {
         console.log('[EPC] resolved ' + _epcFixed + ' house numbers from the local index');
         // PERSIST NOW — the free EPC step runs before the OTM bandwidth-cap early-return,
