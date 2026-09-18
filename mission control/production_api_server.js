@@ -1358,7 +1358,7 @@ function loadDb() {
     // backup — that was the bug that kept "losing" recent deliveries. Never restore
     // a healthy-looking DB (3+ customers) even if a backup has more.
     var _curCust = (_parsed && _parsed.customers) ? _parsed.customers.length : 0;
-    if (_curCust >= 3) return _parsed; // healthy — keep it
+    if (_curCust >= 3) return _rehydrateMaterialData(_parsed); // healthy — keep it
     var _cand = [];
     try { fs.mkdirSync(BACKUP_DIR, { recursive: true }); _cand = fs.readdirSync(BACKUP_DIR).filter(function(f) { return f.startsWith('database-') && f.endsWith('.json') && f.indexOf('CORRUPT') === -1; }).sort(); } catch(e) {}
     var _good = null;
@@ -1371,11 +1371,45 @@ function loadDb() {
     if (_good) {
       console.log('[DB] DB file near-empty (' + _curCust + ' customers) — restoring from good backup ' + _good);
       fs.copyFileSync(path.join(BACKUP_DIR, _good), DB_FILE);
-      return JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
+      return _rehydrateMaterialData(JSON.parse(fs.readFileSync(DB_FILE, 'utf-8')));
     }
-    return _parsed;
+    return _rehydrateMaterialData(_parsed);
   }
   catch { return { customers: [], leads: [], deliveries: [], scraper_logs: [], subscriptions: [], blog_posts: [], customer_business_profiles: [], direct_mail_templates: [], direct_mail_campaigns: [], direct_mail_materials: [], direct_mail_recipients: [], direct_mail_automation_settings: [], direct_mail_orders: [], direct_mail_provider_logs: [], direct_mail_status_history: [], direct_mail_test_logs: [], payments: [], pageviews: [] }; }
+}
+// MATERIAL FILE EXTRACTION: the DB held ~60MB of base64 artwork (file_data) in
+// direct_mail_materials, so EVERY saveDb() stringified + wrote 60MB synchronously —
+// blocking the event loop for seconds, tripping Render's 5s health check and causing
+// the crash loop. We now keep file_data in memory but write each payload to its own
+// file and save only a tiny reference in the DB, so the on-disk DB is ~1MB and saves
+// are instant. Payloads are re-hydrated on load.
+var MATERIALS_DIR = path.join(DATA_DIR, 'materials');
+function _stripMaterialData(db) {
+  try {
+    var out = Object.assign({}, db);
+    var t = 'direct_mail_materials';
+    if (!Array.isArray(db[t])) return out;
+    out[t] = db[t].map(function(m) {
+      if (!m || !m.file_data) return m;
+      try {
+        fs.mkdirSync(MATERIALS_DIR, { recursive: true });
+        var f = path.join(MATERIALS_DIR, String(m.id || m.material_id || 'material') + '.b64');
+        var need = true;
+        try { need = fs.statSync(f).size !== String(m.file_data).length; } catch(e) {}
+        if (need) fs.writeFileSync(f, String(m.file_data));
+        var c = Object.assign({}, m); delete c.file_data; c.__file_ref = f; return c;
+      } catch(e) { return m; }
+    });
+    return out;
+  } catch(e) { return db; }
+}
+function _rehydrateMaterialData(db) {
+  try {
+    var t = 'direct_mail_materials';
+    if (!db || !Array.isArray(db[t])) return db;
+    db[t].forEach(function(m) { if (m && m.__file_ref && !m.file_data) { try { m.file_data = fs.readFileSync(m.__file_ref, 'utf-8'); } catch(e) {} } });
+  } catch(e) {}
+  return db;
 }
 function saveDb() {
   try {
@@ -1384,10 +1418,9 @@ function saveDb() {
     // mid-write crash can NEVER leave a truncated/corrupt database.json. This is
     // the root-cause fix for the recurring "database shrank to a few KB" corruption.
     var tmp = DB_FILE + '.tmp';
-    // COMPACT (no pretty-print): halves the transient string size on every save. The
-    // 9am loops call saveDb() repeatedly, and the pretty-printed copy of a large DB
-    // was a major allocation spike (OOM contributor). Still valid JSON.
-    fs.writeFileSync(tmp, JSON.stringify(_dbData));
+    // COMPACT (no pretty-print) + STRIP the bulky base64 artwork (stored as files) so
+    // the synchronous stringify/write stays tiny and never blocks the health check.
+    fs.writeFileSync(tmp, JSON.stringify(_stripMaterialData(_dbData)));
     fs.renameSync(tmp, DB_FILE);
     // An explicit saveDb() is an immediate flush, so cancel any pending coalesced
     // flush (avoids writing the big file twice for one logical change).
@@ -1438,7 +1471,7 @@ function writeLocalBackup() {
     var file = path.join(BACKUP_DIR, 'database-' + stamp + '.json');
     // Atomic-ish: write to temp then rename, so a crash mid-write never corrupts the backup
     var tmp = file + '.tmp';
-    fs.writeFileSync(tmp, JSON.stringify(_dbData, null, 2));
+    fs.writeFileSync(tmp, JSON.stringify(_stripMaterialData(_dbData), null, 2));
     fs.renameSync(tmp, file);
     // Keep only the last 24 local backups (24h of hourly)
     var all = fs.readdirSync(BACKUP_DIR).filter(function(f) { return f.startsWith('database-') && f.endsWith('.json'); }).sort();
