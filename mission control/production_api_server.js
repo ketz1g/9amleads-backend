@@ -197,6 +197,8 @@ function extractPostcodeArea(postcode) {
 // a delivered moving/probate lead always carries a door number, flat number,
 // street number or house name — never a bare street/place name. See address_premise.js.
 var ADDR_PREMISE = require('./address_premise');
+var EPC_INDEX = require('./epc_address_index');
+try { EPC_INDEX.loadIndex(path.join(__dirname, 'data')); } catch(e) { console.log('[EPC] index load skipped: ' + (e && e.message)); }
 var CURATED_BLOG = require('./curated_blog_posts');
 var AFFILIATE_TOOLKIT = require('./affiliate_resources');
 function hasUsablePremiseAddress(addr, pc, opts) { return ADDR_PREMISE.hasUsablePremiseAddress(addr, pc, opts); }
@@ -10974,6 +10976,15 @@ app.post('/api/admin/preverify', adminAuth, async (req, res) => {
 
 // POST /api/admin/enrich-pool — fill full addresses for incomplete moving pool leads
 // (free OTM first, bounded Apify Rightmove). Body: { max } optional.
+// POST /api/admin/build-epc-index — (re)build the EPC address index from the CSVs in
+// data/epc/ (see epc_address_index.js). Run once after dropping the EPC files in.
+app.post('/api/admin/build-epc-index', adminAuth, async (req, res) => {
+  try {
+    var r = EPC_INDEX.buildIndex(path.join(__dirname, 'data'));
+    res.json({ success: true, result: r });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/admin/enrich-pool', adminAuth, (req, res) => {
   try {
     var max = Number((req.body && req.body.max) || 120);
@@ -11698,6 +11709,21 @@ async function enrichMovingPoolAddresses(maxPerRun) {
       });
     } catch(e) {}
     function _areaOf(l) { var m = String(l.postcode || l.address || '').toUpperCase().replace(/\s+/g, '').match(/^([A-Z]{1,2})/); return m ? m[1] : ''; }
+    // EPC FIRST (free, local, instant): resolve house numbers for street-only leads
+    // from the postcode index BEFORE any network fetch (OTM/Apify). Cheapest + most
+    // reliable path, zero bandwidth. No-op until the EPC index is built.
+    var _epcFixed = 0;
+    if (EPC_INDEX.isLoaded()) {
+      arr.forEach(function(l) {
+        var _eAddr = l.fullAddress || l.address || '';
+        var _ePc = String(l.postcode || '').trim();
+        if (/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(_ePc) && !hasUsablePremiseAddress(_eAddr, _ePc)) {
+          var _eFull = EPC_INDEX.resolveFullAddress(_eAddr, _ePc);
+          if (_eFull && hasUsablePremiseAddress(_eFull, _ePc)) { l.address = _eFull; l.fullAddress = _eFull; _epcFixed++; }
+        }
+      });
+      if (_epcFixed) console.log('[EPC] resolved ' + _epcFixed + ' house numbers from the local index');
+    }
     var otmUrls = [], rmUrls = [], byUrl = {};
     var _cands = arr.filter(function(l) {
       var addr = l.fullAddress || l.address || '';
