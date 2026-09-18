@@ -21834,6 +21834,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
     var _inRunSeen = {};
     for (var ci = 0; ci < customers.length; ci++) {
       var cust = customers[ci];
+      var _custT0 = Date.now();
       if (trialExpiredUnpaid(cust)) continue;
       // PAYMENT GATE: a customer whose subscription payment failed (leads_paused)
       // stops receiving leads until they recover payment (invoice.paid / re-subscribe).
@@ -23899,7 +23900,7 @@ _deliverDiag[cust.email].products = products;
           if (_deliverDiag[cust.email]) _deliverDiag[cust.email].final_cap = custLeads.length + '->' + totalDailyLimit;
           custLeads = custLeads.slice(0, totalDailyLimit);
         } else {
-          if (_deliverDiag[cust.email]) _deliverDiag[cust.email].final_len = custLeads.length + ' limit=' + totalDailyLimit;
+          if (_deliverDiag[cust.email]) { _deliverDiag[cust.email].final_len = custLeads.length + ' limit=' + totalDailyLimit; _deliverDiag[cust.email].ms = Date.now() - _custT0; }
         }
         // NO SPLIT EMAILS: if this customer already got their daily email, only
         // mark the top-up leads as delivered — don't send a second email.
