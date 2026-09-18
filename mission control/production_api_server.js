@@ -10939,6 +10939,15 @@ app.post('/api/admin/preverify', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/enrich-pool — fill full addresses for incomplete moving pool leads
+// (free OTM first, bounded Apify Rightmove). Body: { max } optional.
+app.post('/api/admin/enrich-pool', adminAuth, async (req, res) => {
+  try {
+    var r = await enrichMovingPoolAddresses(Number((req.body && req.body.max) || 80));
+    res.json({ success: true, result: r });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/quiet-areas — manually run the quiet-area check now (flags chosen
 // areas with no delivered leads for QUIET_AREA_DAYS and notifies the customer).
 app.post('/api/admin/quiet-areas', adminAuth, (req, res) => {
@@ -11624,6 +11633,63 @@ async function apifyFetchMovingDetails(urls, max) {
     }
     return out;
   } catch(e) { console.log('[APIFY-DETAIL] error: ' + e.message); return out; }
+}
+
+// POOL-WIDE MOVING ENRICHMENT: the delivery can only send leads with a FULL mailable
+// address, but most scraped moving leads are street-only (Rightmove hides the number,
+// so the pool fills with incomplete rows). This walks the moving pool's incomplete
+// leads and fills the full address from the FREE OTM detail page first, then the
+// bounded Apify Rightmove detail. Runs before the 9am pipeline so the pool actually
+// CONTAINS mailable leads. Bounded per run + by the Apify daily cap.
+async function enrichMovingPoolAddresses(maxPerRun) {
+  try {
+    var poolFile = path.join(DATA_DIR, PRODUCT_LEAD_FILES.moving ? PRODUCT_LEAD_FILES.moving.file : 'moving-leads.json');
+    if (!fs.existsSync(poolFile)) return { ok: false };
+    var raw = JSON.parse(fs.readFileSync(poolFile, 'utf-8'));
+    var arr = [];
+    var container = null;
+    if (Array.isArray(raw)) arr = raw;
+    else if (raw && typeof raw === 'object') { container = raw; Object.keys(raw).forEach(function(k) { if (k.indexOf('_') !== 0 && Array.isArray(raw[k])) raw[k].forEach(function(x) { arr.push(x); }); }); }
+    if (!arr.length) return { ok: false };
+    var otmUrls = [], rmUrls = [], byUrl = {};
+    arr.forEach(function(l) {
+      var addr = l.fullAddress || l.address || '';
+      var pc = String(l.postcode || '').trim();
+      var complete = /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(pc) && hasUsablePremiseAddress(addr, pc);
+      if (complete) return;
+      var url = String(l.url || '');
+      if (url) byUrl[url] = l;
+      if (/onthemarket\.com\/details\//i.test(url)) otmUrls.push(url);
+      else if (/rightmove\.co\.uk\/properties\//i.test(url)) rmUrls.push(url);
+    });
+    var cap = Math.min(Number(maxPerRun || 80), 200);
+    var updated = 0;
+    var otm = require('./onthemarket_scraper');
+    var otmTried = 0;
+    for (var i = 0; i < otmUrls.length && otmTried < cap; i++) {
+      var u = otmUrls[i]; otmTried++;
+      try {
+        var d = await otm.fetchOtmDetailAddress(u);
+        if (d && d.address && hasUsablePremiseAddress(d.address, d.postcode || '')) {
+          var l2 = byUrl[u];
+          if (l2) { l2.address = d.address; l2.fullAddress = d.address; if (d.postcode) l2.postcode = d.postcode.toUpperCase(); updated++; }
+        }
+      } catch(e) {}
+      await new Promise(function(r) { setTimeout(r, 400); });
+    }
+    if (rmUrls.length) {
+      try {
+        var map = await apifyFetchMovingDetails(rmUrls, Math.min(rmUrls.length, cap));
+        Object.keys(map).forEach(function(u2) {
+          var l3 = byUrl[u2];
+          if (l3 && map[u2] && map[u2].address) { l3.address = map[u2].address; l3.fullAddress = map[u2].address; if (map[u2].postcode) l3.postcode = map[u2].postcode.toUpperCase(); updated++; }
+        });
+      } catch(e) {}
+    }
+    if (updated) fs.writeFileSync(poolFile, JSON.stringify(container || arr, null, 2));
+    console.log('[POOL-ENRICH] moving pool: ' + updated + ' leads made mailable (OTM ' + otmTried + ' tried, RM ' + rmUrls.length + ' candidates)');
+    return { ok: true, updated: updated, otm_tried: otmTried, rm_candidates: rmUrls.length };
+  } catch(e) { console.log('[POOL-ENRICH] error: ' + e.message); return { ok: false, error: e.message }; }
 }
 
 async function preVerifyMovingLeads() {
@@ -16060,6 +16126,15 @@ cron.schedule('30 5 * * 1-5', async () => {
 // No extra mid-morning passes: they added load for no benefit because nothing changes
 // the pool between a scrape and its PAF pass. Already-numbered leads are skipped, so
 // each pass is cheap and idempotent.
+// POOL-WIDE MOVING ENRICHMENT (05:10 + 07:15 UK Mon-Fri): right after each scrape,
+// fill the FULL address for the pool's incomplete moving leads (free OTM first, bounded
+// Apify), so the pool actually CONTAINS mailable leads before the pre-verify/top-up.
+cron.schedule('10 5 * * 1-5', async () => {
+  try { await enrichMovingPoolAddresses(Number(process.env.MOVING_POOL_ENRICH_MAX || 80)); } catch(e) { console.log('[POOL-ENRICH] 05:10 error: ' + e.message); }
+}, { timezone: 'Europe/London' });
+cron.schedule('15 7 * * 1-5', async () => {
+  try { await enrichMovingPoolAddresses(Number(process.env.MOVING_POOL_ENRICH_MAX || 80)); } catch(e) { console.log('[POOL-ENRICH] 07:15 error: ' + e.message); }
+}, { timezone: 'Europe/London' });
 cron.schedule('15 5 * * 1-5', async () => {
   try { await preVerifyMovingLeads(); } catch(e) { console.log('[PREVERIFY] 05:15 error: ' + e.message); }
 }, { timezone: 'Europe/London' });
