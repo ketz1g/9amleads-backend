@@ -10982,7 +10982,10 @@ app.get('/api/admin/epc-status', adminAuth, (req, res) => {
     var loaded = EPC_INDEX.isLoaded();
     var sample = null;
     if (req.query.street && req.query.postcode) sample = EPC_INDEX.resolveFullAddress(req.query.street, req.query.postcode);
-    res.json({ success: true, loaded: loaded, meta: EPC_INDEX.meta(), sample: sample, file_exists: fs.existsSync(path.join(__dirname, 'data', 'epc-index.json')) });
+    var _dir = path.join(__dirname, 'data');
+    var _listing = [];
+    try { _listing = fs.readdirSync(_dir).filter(function (f) { return /epc|index/i.test(f); }); } catch (e) {}
+    res.json({ success: true, loaded: loaded, meta: EPC_INDEX.meta(), sample: sample, dirname: __dirname, data_dir: _dir, epc_files: _listing, file_exists: fs.existsSync(path.join(_dir, 'epc-index.json')) });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
