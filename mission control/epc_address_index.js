@@ -121,11 +121,7 @@ function loadIndex(dataDir) {
     const jf = path.join(dataDir, 'epc-index.json');
     const tf = path.join(dataDir, 'epc-index.tsv');
     const gf = path.join(dataDir, 'epc-index.tsv.gz');
-    if (fs.existsSync(jf)) {
-      const j = JSON.parse(fs.readFileSync(jf, 'utf-8'));
-      INDEX = j.index || {};
-      INDEX_META = { source: 'json', built_at: j.built_at, rows: j.rows, kept: j.kept, postcodes: Object.keys(INDEX).length };
-    } else if (fs.existsSync(gf) || fs.existsSync(tf)) {
+    if (fs.existsSync(gf) || fs.existsSync(tf)) {
       // Gzipped TSV (89MB -> 638MB) is the full index; plain TSV also supported.
       let text;
       if (fs.existsSync(gf)) text = require('zlib').gunzipSync(fs.readFileSync(gf)).toString('utf-8');
@@ -140,6 +136,10 @@ function loadIndex(dataDir) {
         if (pc && addrs.length) INDEX[pc] = addrs;
       }
       INDEX_META = { source: fs.existsSync(gf) ? 'tsv.gz' : 'tsv', postcodes: Object.keys(INDEX).length };
+    } else if (fs.existsSync(jf)) {
+      const j = JSON.parse(fs.readFileSync(jf, 'utf-8'));
+      INDEX = j.index || {};
+      INDEX_META = { source: 'json', built_at: j.built_at, postcodes: Object.keys(INDEX).length };
     } else {
       INDEX = null;
       return { ok: false, error: 'no index file' };
