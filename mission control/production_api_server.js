@@ -22024,6 +22024,9 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       // they can never be starved by real customers taking the same leads. This makes
       // the monitoring/test suite a reliable pass/fail for the pipeline itself.
       var _isTestCust = /^test\./.test(String(cust.email || '').toLowerCase());
+      // EVENT-LOOP YIELD: let the health check (and other requests) respond between
+      // customers, so a long run can never block the loop and trip Render's 5s check.
+      await new Promise(function(r) { setImmediate(r); });
       if (trialExpiredUnpaid(cust)) continue;
       // PAYMENT GATE: a customer whose subscription payment failed (leads_paused)
       // stops receiving leads until they recover payment (invoice.paid / re-subscribe).
