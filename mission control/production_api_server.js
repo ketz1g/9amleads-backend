@@ -11027,6 +11027,31 @@ app.post('/api/admin/enrich-pool-epc', adminAuth, async (req, res) => {
   catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/admin/lead-debug?email=X — show a customer's leads and EXACTLY why each
+// passes/fails the mailable-address gate (diagnoses "0 delivered" reports).
+app.get('/api/admin/lead-debug', adminAuth, (req, res) => {
+  try {
+    var email = String(req.query.email || '').toLowerCase();
+    var c = (getDb().customers || []).find(function (x) { return String(x.email || '').toLowerCase() === email; });
+    if (!c) return res.status(404).json({ error: 'no customer', email: email });
+    var out = (getDb().leads || []).filter(function (l) { return l.customer_id === c.id; }).map(function (l) {
+      var d = {}; try { d = JSON.parse(l.data || '{}'); } catch (e) {}
+      var addr = String(d.fullAddress || d.address || d.deceasedAddress || '');
+      var pc = String(d.postcode || '');
+      var prod = l.product;
+      var fullpc = /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(pc);
+      var street = hasStreetName(addr);
+      var premise = hasUsablePremiseAddress(addr, pc, prod === 'probate' ? { relaxMultiUnit: true } : undefined);
+      var mailable;
+      if (prod === 'tenders') mailable = true;
+      else if (prod === 'moving') mailable = isCompleteMovingAddress(addr, pc);
+      else mailable = fullpc && street && premise;
+      return { product: prod, delivered: l.delivered, addr: addr.slice(0, 90), pc: pc, fullpc: fullpc, street: street, premise: premise, mailable: mailable, source: d.source || '', publishedDate: d.publishedDate || '', grantDate: d.grantDate || '' };
+    });
+    res.json({ success: true, email: email, product: c.product, plan: c.plan, areas: c.target_areas, count: out.length, leads: out });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/admin/address-audit — report print & post (Stannp) address completeness per pool.
 // Every non-tender lead must carry door/premise + street + full postcode + town to be mailable.
 app.get('/api/admin/address-audit', adminAuth, (req, res) => {
