@@ -48,13 +48,28 @@ const PUBLIC_URL = process.env.PUBLIC_URL || 'https://www.9amleads.com';
       fs.writeFileSync(crashFile, JSON.stringify(arr, null, 2));
     } catch(e) {}
   }
+  // EMAIL ALERT ON CRASH: a crash/OOM/DB error must never be silent — email the
+  // founder, throttled to at most once per 15 minutes so a crash loop can't spam.
+  var _lastCrashAlert = 0;
+  function alertCrash(kind, err) {
+    try {
+      if (Date.now() - _lastCrashAlert < 15 * 60000) return;
+      _lastCrashAlert = Date.now();
+      var detail = String((err && err.stack) || (err && err.message) || err || '').substring(0, 1500).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      if (typeof sendAdminAlert === 'function') {
+        sendAdminAlert('9amLeads CRASH: ' + kind, '<div style="font-size:13px;color:#e2e8f0;line-height:1.6">A <b>' + kind + '</b> occurred on the backend (throttled alerts, max 1/15min).</div><pre style="white-space:pre-wrap;font-size:11px;color:#fca5a5;background:#1e293b;padding:10px;border-radius:8px">' + detail + '</pre>');
+      }
+    } catch (e) {}
+  }
   process.on('uncaughtException', function(err) {
     recordCrash('uncaughtException', err);
     console.error('[CRASH] uncaughtException:', err && err.stack || err);
+    alertCrash('uncaughtException', err);
   });
   process.on('unhandledRejection', function(reason) {
     recordCrash('unhandledRejection', reason && reason.message ? reason : (reason || 'unknown rejection'));
     console.error('[CRASH] unhandledRejection:', reason && reason.stack || reason);
+    alertCrash('unhandledRejection', reason);
   });
 })();
 
