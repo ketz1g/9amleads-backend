@@ -22253,6 +22253,10 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
     var isForcedTest = !!(req.body && req.body.test_only);
     if ((dayOfWeekN === 0 || dayOfWeekN === 6) && !isForcedTest) {
       console.log('[DELIVERY] Weekend (' + dayOfWeekN + ') — skipping delivery (Mon-Fri only)');
+      // RELEASE THE LOCK before returning: this early exit sits AFTER the lock is set,
+      // so without this the lock stayed held and skipped every later run until the
+      // 6-minute stale-release kicked in (which is why test/single runs skipped).
+      _deliveryLock = false; _deliveryLockAt = 0; global.__DELIVERY_DEADLINE__ = 0;
       return res.json({ success: true, skipped: 'weekend', message: 'Leads are delivered Monday-Friday only. No leads were sent.' });
     }
     // PURGE ORPHAN LEADS: leads whose customer_id no longer exists (deleted
