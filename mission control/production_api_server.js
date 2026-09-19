@@ -31855,7 +31855,7 @@ function runDeliveryTestReport() {
           var realLink = leads.filter(function(l) { var u = String(l.url || ''); return u && /^https?:\/\//.test(u) && u.indexOf('thegazette.co.uk/id/postcode') === -1; }).length;
           var _inAreaLead = function(l) {
             var la = String(l.area || '').match(/^([A-Z]{1,2})[0-9]/i); la = la ? la[1].toUpperCase() : String(l.area || '').toUpperCase();
-            return areas.some(function(a) {
+            var _match = areas.some(function(a) {
               // Same logic as the REAL delivery: city/county targets resolve through
               // COUNTY_POSTCODE_MAP (birmingham->[B], greater-london->[E,EC,...]);
               // postcode-prefix targets match directly. This stops FALSE "out-of-area"
@@ -31870,6 +31870,11 @@ function runDeliveryTestReport() {
               var firstWord = aNorm.match(/^[A-Z]+/); firstWord = firstWord ? firstWord[0] : '';
               return laFull.indexOf(aNorm) !== -1 || (firstWord.length >= 4 && laFull.indexOf(firstWord) !== -1);
             });
+            if (_match) return true;
+            // Mirror the REAL delivery: moving leads within the nearby-fallback radius
+            // (MOVING_MAX_FALLBACK_KM, default 40km) are intentionally accepted, so they
+            // must not be flagged as out-of-area by the test report.
+            return (c.product === 'moving' && isFallbackLeadAcceptable(l.postcode, areas));
           };
           var inArea = leads.filter(_inAreaLead).length;
           var _ooaSample = leads.filter(function(l) { return !_inAreaLead(l); }).map(function(l) { return String(l.postcode || '') + '/' + String(l.area || ''); }).slice(0, 4).join(' ');
