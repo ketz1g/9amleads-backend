@@ -17472,6 +17472,15 @@ cron.schedule('0 9 * * 1-5', async () => {
   // EXACT 9AM DELIVERY: fire at 09:00:00 UK so leads land in the inbox AT 9am (the
   // promise). The run processes all customers; each email goes out in order.
   console.log('[09:00 UK] Running delivery...');
+  // 9AM LOCK GUARANTEE: ALWAYS clear any held delivery lock before the 9am run, so a
+  // hung/stale run from earlier in the morning can never cause the 9am delivery to be
+  // skipped. The promise (leads at 9am) always wins.
+  try {
+    if (typeof _deliveryLock !== 'undefined' && _deliveryLock) {
+      console.log('[09:00 UK] Clearing held delivery lock (age ' + Math.round((Date.now() - (_deliveryLockAt || 0)) / 1000) + 's) before the 9am run');
+      _deliveryLock = false; _deliveryLockAt = 0;
+    }
+  } catch (eLk) {}
   try {
     // DELIVERY FIRST: fire the 9am emails immediately so leads land at 09:00:00.
     // (Partner/affiliate/cap jobs run AFTER delivery below so they never delay the
@@ -22284,6 +22293,17 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
   }
   _deliveryLock = true;
   _deliveryLockAt = Date.now();
+  // HARD AUTO-RELEASE: never let a hung/overrunning run hold the lock for more than
+  // 4 minutes. This guarantees the 9am run (and every watchdog) can always proceed.
+  (function (_stamp) {
+    var t = setTimeout(function () {
+      if (_deliveryLock && _deliveryLockAt === _stamp) {
+        _deliveryLock = false; _deliveryLockAt = 0;
+        console.log('[DELIVERY] lock auto-released after 4min (run overran)');
+      }
+    }, 4 * 60 * 1000);
+    if (t.unref) t.unref();
+  })(_deliveryLockAt);
   // DELIVERY TIME BUDGET: bound the run so a slow/hanging PAF/Propalt lookup can
   // never stall the 9am promise. The per-lead enrichment (rightmove_scraper_v2
   // enrichMovingLeadsPostcoder) checks this deadline and stops enriching once it
