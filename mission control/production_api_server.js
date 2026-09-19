@@ -10989,6 +10989,13 @@ app.post('/api/admin/upload-epc-db', adminAuth, express.raw({ type: '*/*', limit
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/enrich-pool-epc — bulk-resolve every incomplete non-tender pool lead
+// from the local EPC index so all leads are Stannp-mailable.
+app.post('/api/admin/enrich-pool-epc', adminAuth, async (req, res) => {
+  try { var r = await enrichAllPoolsWithEpc(); res.json({ success: true, result: r }); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/admin/address-audit — report print & post (Stannp) address completeness per pool.
 // Every non-tender lead must carry door/premise + street + full postcode + town to be mailable.
 app.get('/api/admin/address-audit', adminAuth, (req, res) => {
@@ -11884,6 +11891,41 @@ async function apifyFetchMovingDetails(urls, max) {
 // leads and fills the full address from the FREE OTM detail page first, then the
 // bounded Apify Rightmove detail. Runs before the 9am pipeline so the pool actually
 // CONTAINS mailable leads. Bounded per run + by the Apify daily cap.
+// EPC BULK ENRICH (free, local): resolve house numbers for EVERY incomplete lead in
+// every non-tender pool from the local EPC index, so all leads become Stannp-mailable
+// (door/premise + street + town + full postcode). Synchronous node:sqlite -> yields.
+async function enrichAllPoolsWithEpc() {
+  var out = {};
+  if (!EPC_INDEX.isLoaded()) return { ok: false, reason: 'epc index not loaded' };
+  var prods = ['moving', 'probate', 'newbusiness', 'planning'];
+  for (var pi = 0; pi < prods.length; pi++) {
+    var pk = prods[pi];
+    var pf = path.join(DATA_DIR, PRODUCT_LEAD_FILES[pk] ? PRODUCT_LEAD_FILES[pk].file : (pk + '-leads.json'));
+    if (!fs.existsSync(pf)) { out[pk] = { fixed: 0, total: 0 }; continue; }
+    var raw; try { raw = JSON.parse(fs.readFileSync(pf, 'utf-8')); } catch (e) { out[pk] = { error: e.message }; continue; }
+    var container = null, arr = [];
+    if (Array.isArray(raw)) arr = raw;
+    else if (raw && typeof raw === 'object') { container = raw; Object.keys(raw).forEach(function (k) { if (k.indexOf('_') !== 0 && Array.isArray(raw[k])) raw[k].forEach(function (x) { arr.push(x); }); }); }
+    var fixed = 0, scanned = 0;
+    for (var i = 0; i < arr.length; i++) {
+      if (i > 0 && i % 200 === 0) await new Promise(function (r) { setImmediate(r); });
+      var l = arr[i]; if (!l || typeof l !== 'object') continue;
+      var pc = String(l.postcode || '').trim();
+      if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(pc)) continue;
+      var addr = String(l.fullAddress || l.address || l.deceasedAddress || '');
+      if (hasStreetName(addr) && hasUsablePremiseAddress(addr, pc)) continue;
+      scanned++;
+      var full = EPC_INDEX.resolveFullAddress(addr, pc);
+      if (full && hasStreetName(full) && hasUsablePremiseAddress(full, pc)) { l.address = full; l.fullAddress = full; fixed++; }
+    }
+    if (fixed) { try { fs.writeFileSync(pf, JSON.stringify(container || arr, null, 2)); } catch (e) {} }
+    out[pk] = { fixed: fixed, scanned: scanned, total: arr.length };
+    console.log('[EPC-BULK] ' + pk + ': fixed ' + fixed + '/' + scanned + ' (pool ' + arr.length + ')');
+    await new Promise(function (r) { setImmediate(r); });
+  }
+  return { ok: true, products: out };
+}
+
 async function enrichMovingPoolAddresses(maxPerRun) {
   try {
     var poolFile = path.join(DATA_DIR, PRODUCT_LEAD_FILES.moving ? PRODUCT_LEAD_FILES.moving.file : 'moving-leads.json');
