@@ -7803,6 +7803,23 @@ app.post('/api/admin/backfill-towns', adminAuth, async (req, res) => {
 
 // POST /api/admin/clear-customer-leads — remove ALL of a customer's current leads
 // from their dashboard (no replacement). Used to strip bad/duplicate leads.
+// POST /api/admin/delivery-hold { hold: true|false } — GLOBAL delivery hold. When on,
+// ONLY test.* accounts receive leads; every real customer is blocked from inbox +
+// dashboard (forced runs included). Persisted in the DB so it survives restarts.
+app.post('/api/admin/delivery-hold', adminAuth, (req, res) => {
+  try {
+    var dbH = getDb();
+    var on = !!(req.body && (req.body.hold === true || req.body.hold === 1 || req.body.hold === 'true' || req.body.hold === '1'));
+    dbH.delivery_hold = on;
+    saveDb();
+    res.json({ success: true, delivery_hold: on, note: on ? 'ON — only test.* accounts receive leads. Real customers blocked from inbox + dashboard.' : 'OFF — normal delivery resumed.' });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.get('/api/admin/delivery-hold', adminAuth, (req, res) => {
+  try { res.json({ success: true, delivery_hold: !!getDb().delivery_hold }); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/admin/clear-customer-leads', adminAuth, (req, res) => {
   try {
     var email = String((req.body && req.body.email) || '').toLowerCase().trim();
@@ -22288,9 +22305,14 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       // customer (the 15-min test cron is disabled). test_only mode still limits to
       // test accounts for manual testing.
       if (testOnly && !_isTest) return false;
+      // GLOBAL DELIVERY HOLD (weekend testing): when db.delivery_hold is set, ONLY
+      // test.* accounts may receive leads — every real customer is blocked from BOTH
+      // inbox and dashboard, on forced/manual runs too (not just the Mon-Fri cron).
+      // Toggle with POST /api/admin/delivery-hold { hold: true|false }. Persisted.
+      if (getDb().delivery_hold && !_isTest) return false;
       return true;
     });
-    console.log('[DELIVERY] Running for ' + customers.length + ' customer(s)' + (onlyEmail ? ' (filtered to ' + onlyEmail + ')' : ''));
+    console.log('[DELIVERY] Running for ' + customers.length + ' customer(s)' + (onlyEmail ? ' (filtered to ' + onlyEmail + ')' : '') + (getDb().delivery_hold ? ' [DELIVERY HOLD: test accounts only]' : ''));
     // GLOBAL EXCLUSIVITY: a lead delivered to ANY customer is never delivered to a
     // different customer. Build one set of delivered keys (URL + address+postcode +
     // reference) from ALL customers' delivered leads, and one shared in-run set, so
