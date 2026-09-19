@@ -14378,7 +14378,11 @@ app.get('/api/admin/stats', adminAuth, (req, res) => {
   var dbS = getDb();
   var now = new Date().toISOString();
   var weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
-  var expiredTrials = (dbS.customers || []).filter(function(c) { return c.plan === 'free_trial' && c.trial_ends && new Date(c.trial_ends) < now; }).length;
+  // NOTE: compare timestamps, not Date-vs-string — `new Date(x) < now` where `now` is
+  // an ISO string coerces the Date to its toString and is ALWAYS false, which is why
+  // this stat read 0 forever.
+  var _nowMs = Date.now();
+  var expiredTrials = (dbS.customers || []).filter(function(c) { var t = c.trial_ends ? new Date(c.trial_ends).getTime() : NaN; return c.plan === 'free_trial' && !isNaN(t) && t < _nowMs; }).length;
   var weekSignups = (dbS.customers || []).filter(function(c) { return c.created_at && c.created_at >= weekAgo; }).length;
   var crmConnected = (dbS.customers || []).filter(function(c) { return c.crm_webhook_url; }).length;
 
