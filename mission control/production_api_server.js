@@ -14227,6 +14227,45 @@ app.post('/api/admin/scrape-newbusiness', adminAuth, async (req, res) => {
   try { res.json(await runNewBusinessRestScrape()); } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// SHORTFALL-TARGETED MOVING TOP-UP: work out which moving postcode areas are short
+// for the customers we actually have (available in-area pool leads < their promised
+// count) and deep-scrape ONLY those areas via OnTheMarket. This spends scrape budget
+// and bandwidth only where it's needed, so it scales without wasting credits.
+async function scrapeShortfallAreas() {
+  try {
+    var dbS = getDb();
+    var pool = getDeliveryPool('moving') || [];
+    var byArea = {};
+    pool.forEach(function (l) { var a = extractPostcodeArea(l.postcode || l.address || ''); if (a) byArea[a] = (byArea[a] || 0) + 1; });
+    var shortAreas = [];
+    (dbS.customers || []).forEach(function (c) {
+      if (c.product !== 'moving') return;
+      if (!isEntitledForDelivery(c)) return;
+      var areas = []; try { areas = JSON.parse(c.target_areas || '[]'); } catch (e) {}
+      var want = c.leads_per_day || (typeof getPlanLimit === 'function' ? getPlanLimit(c.product, c.plan, c.coverage) : 0) || 5;
+      var avail = 0;
+      areas.forEach(function (a) { var u = String(a).toUpperCase().replace(/[^A-Z].*$/, ''); if (/^[A-Z]{1,2}$/.test(u)) avail += (byArea[u] || 0); });
+      if (avail < want) areas.forEach(function (a) { var u = String(a).toUpperCase().replace(/[^A-Z].*$/, ''); if (/^[A-Z]{1,2}$/.test(u) && shortAreas.indexOf(u) === -1) shortAreas.push(u); });
+    });
+    if (!shortAreas.length) { console.log('[SHORTFALL-SCRAPE] no short areas'); return { ok: true, shortAreas: [] }; }
+    console.log('[SHORTFALL-SCRAPE] short areas: ' + shortAreas.join(','));
+    var otm = require('./onthemarket_scraper');
+    var leads = await moduleWithTimeout(otm.collectOnTheMarketLeads({ areas: shortAreas, maxPerArea: 200, maxDays: 3, detailCap: 800 }), 6 * 60000, 'shortfall scrape');
+    var fn = path.join(DATA_DIR, PRODUCT_LEAD_FILES.moving.file);
+    var prev = []; try { prev = JSON.parse(fs.readFileSync(fn, 'utf-8')); } catch (e) { prev = []; }
+    if (!Array.isArray(prev)) prev = [];
+    var seen = {}; prev.forEach(function (l) { if (l.id) seen[l.id] = 1; });
+    var added = 0;
+    (leads || []).forEach(function (l) { if (!l.id || seen[l.id]) return; seen[l.id] = 1; prev.push(l); added++; });
+    if (added) fs.writeFileSync(fn, JSON.stringify(prev, null, 2));
+    console.log('[SHORTFALL-SCRAPE] areas=' + shortAreas.join(',') + ' scraped=' + (leads || []).length + ' added=' + added);
+    return { ok: true, shortAreas: shortAreas, scraped: (leads || []).length, added: added };
+  } catch (e) { console.log('[SHORTFALL-SCRAPE] error: ' + e.message); return { ok: false, error: e.message }; }
+}
+app.post('/api/admin/scrape-shortfall', adminAuth, async (req, res) => {
+  try { res.json(await scrapeShortfallAreas()); } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/lead/un-deliver — revert an over-delivered lead back to
 // undelivered (cleanup for exact-count compliance). Body: { lead_id, email? }.
 app.post('/api/admin/lead/un-deliver', adminAuth, (req, res) => {
@@ -16551,6 +16590,11 @@ cron.schedule('0 13 * * *', async () => {
 // the REST API so the newbusiness pool is same-day fresh before the 9am delivery.
 cron.schedule('20 5 * * 1-5', async () => {
   try { await runNewBusinessRestScrape(); } catch(e) { console.log('[NB-REST-CRON] ' + e.message); }
+}, { timezone: 'Europe/London' });
+// SHORTFALL TOP-UP (07:30 UK weekdays): if any moving area is short for a real
+// customer, deep-scrape ONLY those areas before the 9am delivery.
+cron.schedule('30 7 * * 1-5', async () => {
+  try { await scrapeShortfallAreas(); } catch(e) { console.log('[SHORTFALL-CRON] ' + e.message); }
 }, { timezone: 'Europe/London' });
 // POST-SCRAPE PAF: enrich the moving pool with door numbers right after the 6am
 // scrape (07:15) and again after the 7:30 watchdog re-trigger (08:00), so the pool
