@@ -160,7 +160,12 @@ function resolveFullAddress(street, postcode) {
     list = INDEX[pc];
   }
   if (!list || !list.length) return null;
-  return _matchFromList(list, street);
+  var out = _matchFromList(list, street);
+  // EPC stores the premise as its own comma segment ("16, Manor Road, CHESTER").
+  // The UK premise checker expects "16 Manor Road", so join the leading number to
+  // the street or the resolved address would be rejected as having no door number.
+  if (out) out = String(out).replace(/^(\d{1,5}[A-Za-z]?),\s*/, '$1 ');
+  return out;
 }
 
 module.exports = { buildIndex: null, buildSqlite, loadIndex, resolveFullAddress, isLoaded, meta, pcKey, norm };
