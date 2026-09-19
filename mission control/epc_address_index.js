@@ -21,7 +21,8 @@ const zlib = require('zlib');
 let DatabaseSync = null;
 try { DatabaseSync = require('node:sqlite').DatabaseSync; } catch (e) {}
 
-let DB = null;         // open sqlite db
+let DB = null;         // England & Wales sqlite db
+let DB2 = null;        // Scotland sqlite db (separate file)
 let INDEX = null;      // small in-memory subset (fallback)
 let INDEX_META = null;
 
@@ -51,6 +52,7 @@ function buildSqlite(dataDir, onDone) {
       function flush() { if (!batch.length) return; db.exec('BEGIN'); try { for (const p of batch) { ins.run(p[0], p[1]); rows++; } db.exec('COMMIT'); } catch (e) { db.exec('ROLLBACK'); throw e; } batch = []; }
       const input = fs.existsSync(gz) ? fs.createReadStream(gz).pipe(zlib.createGunzip()) : fs.createReadStream(tsv);
       const rl = readline.createInterface({ input: input, crlfDelay: Infinity });
+      let queue = Promise.resolve();
       rl.on('line', function (line) {
         if (!line) return;
         const t = line.indexOf('\t');
@@ -58,15 +60,22 @@ function buildSqlite(dataDir, onDone) {
         const pc = line.slice(0, t).trim();
         const addrs = line.slice(t + 1).split('|').filter(Boolean);
         for (const a of addrs) batch.push([pc, a]);
-        if (batch.length >= 20000) flush();
+        if (batch.length >= 20000) {
+          // YIELD between batches — a long synchronous insert run blocked the loop and
+          // crashed the box on the full 20m-row index.
+          flush();
+          queue = queue.then(function () { return new Promise(function (r) { setImmediate(r); }); });
+        }
       });
       rl.on('close', function () {
-        try { flush(); db.exec('CREATE INDEX idx_pc ON addresses(pc)'); db.close(); } catch (e) {}
-        try { if (DB) DB.close(); } catch (e) {}
-        try { DB = new DatabaseSync(dbf); } catch (e) { DB = null; }
-        const mb = (fs.statSync(dbf).size / 1048576).toFixed(1);
-        console.log('[EPC] sqlite built: ' + rows + ' addresses (' + mb + ' MB)');
-        resolve({ ok: true, rows: rows, mb: mb });
+        queue.then(function () {
+          try { flush(); db.exec('CREATE INDEX idx_pc ON addresses(pc)'); db.close(); } catch (e) {}
+          try { if (DB) DB.close(); } catch (e) {}
+          try { DB = new DatabaseSync(dbf, { readOnly: true }); } catch (e) { DB = null; }
+          const mb = (fs.statSync(dbf).size / 1048576).toFixed(1);
+          console.log('[EPC] sqlite built: ' + rows + ' addresses (' + mb + ' MB)');
+          resolve({ ok: true, rows: rows, mb: mb });
+        });
       });
       rl.on('error', function (e) { resolve({ ok: false, error: e.message }); });
     } catch (e) { resolve({ ok: false, error: e.message }); }
@@ -75,15 +84,19 @@ function buildSqlite(dataDir, onDone) {
 
 function loadIndex(dataDir) {
   try {
-    // 1. SQLite (full index) — preferred.
+    // 1. SQLite (full index) — preferred. England&Wales + Scotland are separate files.
     const dbf = path.join(dataDir, 'epc-index.db');
-    if (DatabaseSync && fs.existsSync(dbf)) {
+    const dbf2 = path.join(dataDir, 'scot-epc.db');
+    if (DatabaseSync && (fs.existsSync(dbf) || fs.existsSync(dbf2))) {
       try { if (DB) DB.close(); } catch (e) {}
-      DB = new DatabaseSync(dbf, { readOnly: true });
+      try { if (DB2) DB2.close(); } catch (e) {}
+      DB = null; DB2 = null;
+      if (fs.existsSync(dbf)) { try { DB = new DatabaseSync(dbf, { readOnly: true }); } catch (e) {} }
+      if (fs.existsSync(dbf2)) { try { DB2 = new DatabaseSync(dbf2, { readOnly: true }); } catch (e) {} }
       INDEX = null;
-      INDEX_META = { source: 'sqlite' };
-      console.log('[EPC] sqlite index loaded');
-      return { ok: true, source: 'sqlite' };
+      INDEX_META = { source: 'sqlite', england_wales: !!DB, scotland: !!DB2 };
+      console.log('[EPC] sqlite index loaded (E&W=' + !!DB + ', Scotland=' + !!DB2 + ')');
+      return { ok: true, source: 'sqlite', scotland: !!DB2 };
     }
     // 2. Small JSON subset.
     const jf = path.join(dataDir, 'epc-index.json');
@@ -99,7 +112,7 @@ function loadIndex(dataDir) {
   } catch (e) { INDEX = null; DB = null; return { ok: false, error: e.message }; }
 }
 
-function isLoaded() { return !!DB || (!!INDEX && Object.keys(INDEX).length > 0); }
+function isLoaded() { return !!DB || !!DB2 || (!!INDEX && Object.keys(INDEX).length > 0); }
 function meta() { return INDEX_META; }
 
 function _matchFromList(list, street) {
@@ -136,9 +149,14 @@ function resolveFullAddress(street, postcode) {
   if (!pc) return null;
   let list = null;
   if (DB) {
-    try { list = DB.prepare('SELECT addr FROM addresses WHERE pc = ?').all(pc).map(function (r) { return r.addr; }); }
-    catch (e) { list = null; }
-  } else if (INDEX && INDEX[pc]) {
+    try { var r1 = DB.prepare('SELECT addr FROM addresses WHERE pc = ?').all(pc); if (r1 && r1.length) list = r1.map(function (r) { return r.addr; }); }
+    catch (e) {}
+  }
+  if ((!list || !list.length) && DB2) {
+    try { var r2 = DB2.prepare('SELECT addr FROM addresses WHERE pc = ?').all(pc); if (r2 && r2.length) list = r2.map(function (r) { return r.addr; }); }
+    catch (e) {}
+  }
+  if ((!list || !list.length) && INDEX && INDEX[pc]) {
     list = INDEX[pc];
   }
   if (!list || !list.length) return null;

@@ -10976,6 +10976,20 @@ app.post('/api/admin/preverify', adminAuth, async (req, res) => {
 
 // POST /api/admin/enrich-pool — fill full addresses for incomplete moving pool leads
 // (free OTM first, bounded Apify Rightmove). Body: { max } optional.
+// POST /api/admin/upload-scot-db — write the gzipped Scotland SQLite index (raw body),
+// then reload. Scotland is kept as a separate small DB (scot-epc.db) so the big E&W
+// index never has to be rebuilt.
+app.post('/api/admin/upload-scot-db', adminAuth, express.raw({ type: '*/*', limit: '300mb' }), (req, res) => {
+  try {
+    var buf = req.body;
+    if (!buf || !buf.length) return res.status(400).json({ error: 'empty body' });
+    var db = require('zlib').gunzipSync(buf);
+    fs.writeFileSync(path.join(__dirname, 'data', 'scot-epc.db'), db);
+    var r = EPC_INDEX.loadIndex(path.join(__dirname, 'data'));
+    res.json({ success: true, bytes: db.length, reloaded: r });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/build-epc-sqlite — build epc-index.db from epc-index.tsv.gz on the box
 app.post('/api/admin/build-epc-sqlite', adminAuth, async (req, res) => {
   try {
