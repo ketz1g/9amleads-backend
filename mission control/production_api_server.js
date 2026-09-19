@@ -10989,6 +10989,35 @@ app.post('/api/admin/upload-epc-db', adminAuth, express.raw({ type: '*/*', limit
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/restore-epc-db — download the England & Wales SQLite index from the
+// private GitHub backup release and write it to the data disk (no huge HTTP POST).
+// Body optional: { assetId } (defaults to the current release asset).
+app.post('/api/admin/restore-epc-db', adminAuth, async (req, res) => {
+  try {
+    var tok = process.env.GITHUB_TOKEN || '';
+    if (!tok) return res.status(500).json({ error: 'no GITHUB_TOKEN' });
+    var assetId = String((req.body && req.body.assetId) || '574639028');
+    var https = require('https');
+    var buf = await new Promise(function (resolve) {
+      var req2 = https.get({ hostname: 'api.github.com', path: '/repos/ketz1g/9amleads-backup/releases/assets/' + assetId, headers: { Authorization: 'Bearer ' + tok, Accept: 'application/octet-stream', 'User-Agent': '9amLeads' } }, function (r) {
+        if (r.statusCode >= 300 && r.statusCode < 400 && r.headers.location) {
+          // follow redirect
+          https.get(r.headers.location, function (r2) { var c = []; r2.on('data', function (x) { c.push(x); }); r2.on('end', function () { resolve(Buffer.concat(c)); }); }).on('error', function () { resolve(null); });
+          return;
+        }
+        var chunks = []; r.on('data', function (c2) { chunks.push(c2); }); r.on('end', function () { resolve(Buffer.concat(chunks)); });
+      });
+      req2.on('error', function () { resolve(null); });
+      req2.setTimeout(600000, function () { try { req2.destroy(); } catch(e){} resolve(null); });
+    });
+    if (!buf || !buf.length) return res.status(500).json({ error: 'download failed' });
+    var db = require('zlib').gunzipSync(buf);
+    fs.writeFileSync(path.join(__dirname, 'data', 'epc-index.db'), db);
+    var r = EPC_INDEX.loadIndex(path.join(__dirname, 'data'));
+    res.json({ success: true, gz_bytes: buf.length, db_bytes: db.length, reloaded: r });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/upload-epc-db-chunk — chunked restore of epc-index.db.
 // Body: { offset, final, data } where data is base64 of the raw .db bytes.
 app.post('/api/admin/upload-epc-db-chunk', adminAuth, express.json({ limit: '40mb' }), (req, res) => {
