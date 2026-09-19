@@ -297,7 +297,13 @@ function normaliseMovingAddress(addr) {
   //    Crescent/Row/Park/Square/Green/View/Gate/End/Field/Path/...).
   var numStreet = a.match(/(?:^|,\s*)((?:\bFlat\s*[0-9A-Za-z]+\b\s*,?\s*)?\d{1,5}[A-Za-z]?(?:[-\u2013]\d{1,5}[A-Za-z]?)?\s+[A-Z][A-Za-z'-]*(?:\s+[A-Z][A-Za-z'-]*){0,2}\s+(?:Road|Street|Avenue|Lane|Drive|Close|Court|Crescent|Gardens|Grove|Terrace|Way|Walk|Hill|Place|Mews|Rise|Row|Park|Square|Green|Broadway|Path|View|Gate|End|Field|Fields|High\s?Street|St|Rd|Ave|Ln|Dr|Ct|Tce|Gdns|Gv|Cl|Cres|Mws|Rse|Pk|Sq|Bdwy))\b/i);
   // Prefer a numbered street that is NOT just "Court"/"Close" without a number.
-  if (numStreet) return numStreet[1].replace(/\s*,\s*/g, ', ').trim();
+  // Keep EVERYTHING from the numbered street to the end (town/county/postcode) —
+  // returning only the matched street dropped the town, so "28 Ty Fry Gardens,
+  // Rumney, CARDIFF" became "28 Ty Fry Gardens" and failed the town/area gate.
+  if (numStreet) {
+    var _tail = a.slice(numStreet.index).replace(/^[,\s]+/, '');
+    return _tail.replace(/\s*,\s*/g, ', ').trim();
+  }
   // 2) Flat/apartment numbered prefix (no street found): keep flat part + rest.
   if (/^(?:Flat|Apartment|Unit|Maisonette|Penthouse|Room)\s*[0-9A-Za-z]+/i.test(a)) return a;
   // 3) No numbered street — return the address unchanged.
