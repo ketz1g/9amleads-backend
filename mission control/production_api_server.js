@@ -14176,6 +14176,57 @@ async function runOtmDailyScrape() {
   } catch(e) { console.log('[OTM-DAILY] error: ' + e.message); }
 }
 
+// NEW BUSINESS SUPPLY via the Companies House REST API (advanced search).
+// The Streaming API needs a SEPARATE key (the REST key 401s on it), but the REST
+// advanced-search already returns newly incorporated companies WITH registered
+// addresses + postcodes using the key we already hold — so we don't need streaming
+// at all. Runs before the 9am delivery so the newbusiness pool is same-day fresh.
+async function runNewBusinessRestScrape() {
+  try {
+    var chKey = process.env.CH_STREAM_API_KEY || process.env.COMPANIES_HOUSE_API_KEY || '';
+    if (!chKey || chKey === 'NULL') { console.log('[NB-REST] no Companies House API key'); return { ok: false, reason: 'no key' }; }
+    var https = require('https');
+    var auth = 'Basic ' + Buffer.from(chKey + ':').toString('base64');
+    var since = new Date(Date.now() - 48 * 3600000).toISOString().slice(0, 10);
+    function get(path) {
+      return new Promise(function (resolve) {
+        https.get({ hostname: 'api.company-information.service.gov.uk', path: path, headers: { Authorization: auth } }, function (r) {
+          var d = ''; r.on('data', function (c) { d += c; }); r.on('end', function () { try { resolve(JSON.parse(d)); } catch (e) { resolve(null); } });
+        }).on('error', function () { resolve(null); });
+      });
+    }
+    var leads = [];
+    for (var start = 0; start < 400; start += 100) {
+      var res = await get('/advanced-search/companies?incorporated_from=' + since + '&size=100&start_index=' + start);
+      if (!res || !res.items || !res.items.length) break;
+      res.items.forEach(function (it) {
+        var a = it.registered_office_address || {};
+        var pc = String(a.postal_code || '').trim();
+        var line = [a.address_line_1, a.address_line_2, a.locality, a.region, a.postal_code].filter(Boolean).join(', ');
+        if (!pc || !line) return;
+        leads.push({ id: 'ch_' + it.company_number, companyNumber: it.company_number, companyName: it.company_name, name: it.company_name, address: line, fullAddress: line, postcode: pc, incorporationDate: it.date_of_creation, source: 'Companies House API', url: 'https://find-and-update.company-information.service.gov.uk/company/' + it.company_number, sic_code: (it.sic_codes || []).join(', ') });
+      });
+      if (res.items.length < 100) break;
+      await new Promise(function (r) { setTimeout(r, 500); });
+    }
+    var f = path.join(DATA_DIR, PRODUCT_LEAD_FILES.newbusiness ? PRODUCT_LEAD_FILES.newbusiness.file : 'newbusiness-leads.json');
+    var pool = [];
+    try {
+      var raw = JSON.parse(fs.readFileSync(f, 'utf-8'));
+      if (Array.isArray(raw)) pool = raw;
+      else if (raw && typeof raw === 'object') Object.keys(raw).forEach(function (k) { if (k.indexOf('_') !== 0 && Array.isArray(raw[k])) pool = pool.concat(raw[k]); });
+    } catch (e) { pool = []; }
+    var seen = {}; pool.forEach(function (l) { var n = l.companyNumber || l.company_number || ''; if (n) seen[n] = 1; });
+    var added = 0; leads.forEach(function (l) { if (seen[l.companyNumber]) return; seen[l.companyNumber] = 1; pool.push(l); added++; });
+    if (added) fs.writeFileSync(f, JSON.stringify(pool, null, 2));
+    console.log('[NB-REST] incorporated_from=' + since + ' fetched=' + leads.length + ' added=' + added + ' pool=' + pool.length);
+    return { ok: true, fetched: leads.length, added: added, pool: pool.length };
+  } catch (e) { console.log('[NB-REST] error: ' + e.message); return { ok: false, error: e.message }; }
+}
+app.post('/api/admin/scrape-newbusiness', adminAuth, async (req, res) => {
+  try { res.json(await runNewBusinessRestScrape()); } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/lead/un-deliver — revert an over-delivered lead back to
 // undelivered (cleanup for exact-count compliance). Body: { lead_id, email? }.
 app.post('/api/admin/lead/un-deliver', adminAuth, (req, res) => {
@@ -16495,6 +16546,11 @@ cron.schedule('45 5 * * *', async () => {
 // (no Apify credits needed).
 cron.schedule('0 13 * * *', async () => {
   try { await runOtmDailyScrape(); } catch(e) { console.log('[OTM-13-CRON] ' + e.message); }
+}, { timezone: 'Europe/London' });
+// NEW BUSINESS daily (05:20 UK weekdays): fresh Companies House incorporations via
+// the REST API so the newbusiness pool is same-day fresh before the 9am delivery.
+cron.schedule('20 5 * * 1-5', async () => {
+  try { await runNewBusinessRestScrape(); } catch(e) { console.log('[NB-REST-CRON] ' + e.message); }
 }, { timezone: 'Europe/London' });
 // POST-SCRAPE PAF: enrich the moving pool with door numbers right after the 6am
 // scrape (07:15) and again after the 7:30 watchdog re-trigger (08:00), so the pool
