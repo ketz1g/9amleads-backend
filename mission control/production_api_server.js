@@ -20158,10 +20158,20 @@ app.post('/api/account/delete', authMiddleware, async (req, res) => {
 });
 
 
-cron.schedule('0 10 * * *', async () => {
-  console.log('[CAMPAIGN] Starting campaign email check...');
+// TRIAL LIFECYCLE EMAIL CAMPAIGN (the re-join process). Active trials get day 1/3/5/7;
+// the moment a trial EXPIRES the customer moves onto the re-join series (day 9 at
+// expiry, then 12/16/21/30/91, then weekly to week 26). Paid customers get the paid
+// series instead and never receive trial follow-ups. Run daily at 10:00 UK; also
+// callable manually (with dry:true to preview) via POST /api/admin/run-campaigns.
+async function runCampaignEmails(dry) {
+  console.log('[CAMPAIGN] Starting campaign email check...' + (dry ? ' (DRY RUN)' : ''));
   var customers = (getDb().customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3) && c.marketing_consent === 1; });
   var sent = 0;
+  var log = [];
+  var sendIt = async function (cust, template, subject, html) {
+    if (dry) { log.push({ email: cust.email, template: template, subject: subject }); return; }
+    await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, subject, html);
+  };
   for (var ci = 0; ci < customers.length; ci++) {
     var cust = customers[ci];
     try {
@@ -20185,7 +20195,7 @@ cron.schedule('0 10 * * *', async () => {
             var e = CAMPAIGN_EMAILS[ei];
             if (e.day <= 6 && accountAge >= e.day && !campaignSent.includes(e.template)) {
               campaignSent.push(e.template);
-              await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, getEditedCampaignSubject(e.template, e.subject), getCampaignEmailHTMLWithEdits(cust, e.template));
+              await sendIt(cust, e.template, getEditedCampaignSubject(e.template, e.subject), getCampaignEmailHTMLWithEdits(cust, e.template));
               sent++;
               break;
             }
@@ -20197,7 +20207,7 @@ cron.schedule('0 10 * * *', async () => {
           var daysToTrialEnd = msToTrialEnd / 86400000;
           if (daysToTrialEnd > 0 && daysToTrialEnd <= 2 && !campaignSent.includes('trial_day7')) {
             campaignSent.push('trial_day7');
-            await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, getEditedCampaignSubject('trial_day7', 'Your free trial ends tomorrow'), getCampaignEmailHTMLWithEdits(cust, 'trial_day7'));
+            await sendIt(cust, 'trial_day7', getEditedCampaignSubject('trial_day7', 'Your free trial ends tomorrow'), getCampaignEmailHTMLWithEdits(cust, 'trial_day7'));
             sent++;
           }
         } else if (daysSinceTrialEnd >= 0) {
@@ -20217,7 +20227,7 @@ cron.schedule('0 10 * * *', async () => {
             var _thr = (e.template === 'trial_day9') ? 0 : (e.day - 7);
             if (daysSinceTrialEnd >= _thr && !campaignSent.includes(e.template)) {
               campaignSent.push(e.template);
-              await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, getEditedCampaignSubject(e.template, e.subject), getCampaignEmailHTMLWithEdits(cust, e.template));
+              await sendIt(cust, e.template, getEditedCampaignSubject(e.template, e.subject), getCampaignEmailHTMLWithEdits(cust, e.template));
               sent++;
               break;
             }
@@ -20230,7 +20240,7 @@ cron.schedule('0 10 * * *', async () => {
           var p = PAID_EMAIL_SERIES[pi];
           if (subAgeWeeks >= p.week && !campaignSent.includes(p.template)) {
             campaignSent.push(p.template);
-            await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, getEditedCampaignSubject(p.template, p.subject), getCampaignEmailHTMLWithEdits(cust, p.template));
+            await sendIt(cust, p.template, getEditedCampaignSubject(p.template, p.subject), getCampaignEmailHTMLWithEdits(cust, p.template));
             sent++;
             break;
           }
@@ -20242,8 +20252,16 @@ cron.schedule('0 10 * * *', async () => {
       }
     } catch(e) { console.log('[CAMPAIGN] Error for', cust.email, e.message); }
   }
-  console.log('[CAMPAIGN] Sent ' + sent + ' campaign emails');
+  console.log('[CAMPAIGN] ' + (dry ? ('DRY RUN: would send ' + log.length + ' email(s)') : ('Sent ' + sent + ' campaign emails')));
+  return { success: true, sent: sent, dry: !!dry, would_send: log.length, log: log };
+}
+cron.schedule('0 10 * * *', async () => {
+  try { await runCampaignEmails(false); } catch (e) { console.log('[CAMPAIGN] cron error: ' + e.message); }
 }, { timezone: 'Europe/London' });
+app.post('/api/admin/run-campaigns', adminAuth, async (req, res) => {
+  try { res.json(await runCampaignEmails(!!(req.body && req.body.dry))); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
 
 // ===== WEEKLY MONDAY DIGEST =====
 // Every Monday 08:30 UK, send active customers a weekly performance summary of
