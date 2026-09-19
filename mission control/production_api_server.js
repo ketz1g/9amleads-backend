@@ -8675,7 +8675,7 @@ app.get('/api/notifications', authMiddleware, (req, res) => {
 
     // Unread low supply
     const todayLeads = (db.leads || []).filter(l => l.customer_id === req.user.id && l.created_at && l.created_at.startsWith(new Date().toISOString().split('T')[0]));
-    if (todayLeads.length === 0 && customer.plan !== 'cancelled') {
+    if (todayLeads.length === 0 && customer.plan !== 'cancelled' && !trialExpiredUnpaid(customer)) {
       notifications.push({ type: 'low_supply', priority: 'low', title: 'Today\'s opportunities are being prepared', message: 'New opportunities will appear once the daily pipeline completes.', created_at: new Date().toISOString() });
     }
 
@@ -17892,7 +17892,7 @@ cron.schedule('20 9 * * 1-5', async () => {
     var todayC = new Date().toISOString().split('T')[0];
     var cNotified = {};
     try { if (cDb.notify_status && cDb.notify_status[todayC]) cNotified = cDb.notify_status[todayC]; } catch(e) {}
-    var cCusts = (cDb.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && !isLeadsPaused(c); });
+    var cCusts = (cDb.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && !isLeadsPaused(c) && !trialExpiredUnpaid(c); });
     for (var cci = 0; cci < cCusts.length; cci++) {
       var cc = cCusts[cci];
       var cKey = cc.id || cc.email;
@@ -18194,7 +18194,10 @@ cron.schedule('1 9 * * 1-5', async () => {
       var wDb = getDb();
       var wNotified = {};
       if (wDb.watchdog_notified) wNotified = wDb.watchdog_notified;
-      var wCustomers = (wDb.customers || []).filter(function(c){ return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3); });
+      // EXCLUDE expired trials: they are not owed leads, so a "your leads are on
+      // the way" delay notice must never reach them (that belongs to the re-join
+      // campaign, not delivery ops). Paused/cancelled/bounced also excluded.
+      var wCustomers = (wDb.customers || []).filter(function(c){ return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3) && !isLeadsPaused(c) && !trialExpiredUnpaid(c); });
       var wSubject = '🦥 Your leads had a lie-in — but they\'re on the way!';
       var wBody = '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:16px">'
         + '<h2 style="color:#fbbf24;margin:0 0 8px">Oops, the 9am alarm was a bit sleepy today 😴</h2>'
@@ -18400,7 +18403,7 @@ function sendDailyDeliveryPreview(when) {
   return new Promise(function(resolve) {
     try {
       var dbD2 = getDb();
-      var customers = (dbD2.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && !isLeadsPaused(c) && !/test\.|@9amleads\.com|\.1788\d*@/i.test(String(c.email || '')); });
+      var customers = (dbD2.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && !isLeadsPaused(c) && !trialExpiredUnpaid(c) && !/test\.|@9amleads\.com|\.1788\d*@/i.test(String(c.email || '')); });
       var rows = [];
       var _seen = {};
       var processIdx = 0;
@@ -19263,7 +19266,7 @@ async function runAutoSend() {
   var dbJSON = getDb();
   var db = db_shim;
   var today = new Date().toISOString().split('T')[0];
-  var customers = (dbJSON.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3); });
+  var customers = (dbJSON.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3) && !isLeadsPaused(c) && !trialExpiredUnpaid(c); });
   var results = { checked: 0, enabled: 0, skipped: 0, sent: 0, failed: 0, total_spend: 0 };
 
   // SELF-HEAL: if the Stannp balance is too low to mail, auto-pause Auto-Send for
