@@ -7822,20 +7822,33 @@ app.post('/api/admin/alert', adminAuth, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/delivery-hold { hold: true|false } — GLOBAL delivery hold. When on,
-// ONLY test.* accounts receive leads; every real customer is blocked from inbox +
-// dashboard (forced runs included). Persisted in the DB so it survives restarts.
+// Delivery hold is active only while ON and (if an expiry is set) before that time.
+// The auto-expiry guarantees a forgotten weekend hold can never block Monday 9am.
+function isDeliveryHoldActive() {
+  try {
+    var dbH = getDb();
+    if (!dbH.delivery_hold) return false;
+    var until = dbH.delivery_hold_until;
+    if (until) { var t = new Date(until); if (!isNaN(t.getTime()) && new Date() >= t) return false; }
+    return true;
+  } catch (e) { return false; }
+}
+// POST /api/admin/delivery-hold { hold: true|false, until?: ISO } — GLOBAL delivery hold.
+// When on, ONLY test.* accounts receive leads; every real customer is blocked from
+// inbox + dashboard (forced runs included). Persisted so it survives restarts, and
+// auto-expires at `until` if given.
 app.post('/api/admin/delivery-hold', adminAuth, (req, res) => {
   try {
     var dbH = getDb();
     var on = !!(req.body && (req.body.hold === true || req.body.hold === 1 || req.body.hold === 'true' || req.body.hold === '1'));
     dbH.delivery_hold = on;
+    dbH.delivery_hold_until = (on && req.body && req.body.until) ? String(req.body.until) : null;
     saveDb();
-    res.json({ success: true, delivery_hold: on, note: on ? 'ON — only test.* accounts receive leads. Real customers blocked from inbox + dashboard.' : 'OFF — normal delivery resumed.' });
+    res.json({ success: true, delivery_hold: on, delivery_hold_until: dbH.delivery_hold_until, active: isDeliveryHoldActive(), note: on ? 'ON — only test.* accounts receive leads. Real customers blocked.' : 'OFF — normal delivery resumed.' });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 app.get('/api/admin/delivery-hold', adminAuth, (req, res) => {
-  try { res.json({ success: true, delivery_hold: !!getDb().delivery_hold }); }
+  try { res.json({ success: true, delivery_hold: !!getDb().delivery_hold, delivery_hold_until: getDb().delivery_hold_until || null, active: isDeliveryHoldActive() }); }
   catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -22468,8 +22481,9 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       // GLOBAL DELIVERY HOLD (weekend testing): when db.delivery_hold is set, ONLY
       // test.* accounts may receive leads — every real customer is blocked from BOTH
       // inbox and dashboard, on forced/manual runs too (not just the Mon-Fri cron).
-      // Toggle with POST /api/admin/delivery-hold { hold: true|false }. Persisted.
-      if (getDb().delivery_hold && !_isTest) return false;
+      // AUTO-EXPIRES at db.delivery_hold_until so a forgotten weekend hold can NEVER
+      // block a Monday 9am delivery. Toggle with POST /api/admin/delivery-hold.
+      if (isDeliveryHoldActive() && !_isTest) return false;
       return true;
     });
     console.log('[DELIVERY] Running for ' + customers.length + ' customer(s)' + (onlyEmail ? ' (filtered to ' + onlyEmail + ')' : '') + (getDb().delivery_hold ? ' [DELIVERY HOLD: test accounts only]' : ''));
