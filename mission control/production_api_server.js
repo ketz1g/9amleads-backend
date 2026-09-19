@@ -10998,23 +10998,31 @@ app.post('/api/admin/restore-epc-db', adminAuth, async (req, res) => {
     if (!tok) return res.status(500).json({ error: 'no GITHUB_TOKEN' });
     var assetId = String((req.body && req.body.assetId) || '574639028');
     var https = require('https');
-    var buf = await new Promise(function (resolve) {
-      var req2 = https.get({ hostname: 'api.github.com', path: '/repos/ketz1g/9amleads-backup/releases/assets/' + assetId, headers: { Authorization: 'Bearer ' + tok, Accept: 'application/octet-stream', 'User-Agent': '9amLeads' } }, function (r) {
-        if (r.statusCode >= 300 && r.statusCode < 400 && r.headers.location) {
-          // follow redirect
-          https.get(r.headers.location, function (r2) { var c = []; r2.on('data', function (x) { c.push(x); }); r2.on('end', function () { resolve(Buffer.concat(c)); }); }).on('error', function () { resolve(null); });
-          return;
-        }
-        var chunks = []; r.on('data', function (c2) { chunks.push(c2); }); r.on('end', function () { resolve(Buffer.concat(chunks)); });
-      });
-      req2.on('error', function () { resolve(null); });
-      req2.setTimeout(600000, function () { try { req2.destroy(); } catch(e){} resolve(null); });
+    var zlib = require('zlib');
+    var dest = path.join(__dirname, 'data', 'epc-index.db');
+    var tmp = dest + '.tmp';
+    try { if (fs.existsSync(tmp)) fs.unlinkSync(tmp); } catch (e) {}
+    // Stream download -> gunzip -> disk so we never hold the 1.2GB DB in RAM.
+    var done = await new Promise(function (resolve) {
+      function fetch(url, redirects) {
+        https.get(url, { headers: { Authorization: 'Bearer ' + tok, Accept: 'application/octet-stream', 'User-Agent': '9amLeads' } }, function (r) {
+          if (r.statusCode >= 300 && r.statusCode < 400 && r.headers.location && redirects > 0) return fetch(r.headers.location, redirects - 1);
+          if (r.statusCode !== 200) { resolve({ ok: false, code: r.statusCode }); return; }
+          var ws = fs.createWriteStream(tmp);
+          var gz = zlib.createGunzip();
+          r.on('error', function (e) { resolve({ ok: false, err: e.message }); });
+          gz.on('error', function (e) { resolve({ ok: false, err: e.message }); });
+          ws.on('error', function (e) { resolve({ ok: false, err: e.message }); });
+          ws.on('finish', function () { resolve({ ok: true }); });
+          r.pipe(gz).pipe(ws);
+        }).on('error', function (e) { resolve({ ok: false, err: e.message }); });
+      }
+      fetch('https://api.github.com/repos/ketz1g/9amleads-backup/releases/assets/' + assetId, 5);
     });
-    if (!buf || !buf.length) return res.status(500).json({ error: 'download failed' });
-    var db = require('zlib').gunzipSync(buf);
-    fs.writeFileSync(path.join(__dirname, 'data', 'epc-index.db'), db);
+    if (!done.ok) return res.status(500).json({ error: 'download failed', detail: done });
+    fs.renameSync(tmp, dest);
     var r = EPC_INDEX.loadIndex(path.join(__dirname, 'data'));
-    res.json({ success: true, gz_bytes: buf.length, db_bytes: db.length, reloaded: r });
+    res.json({ success: true, db_bytes: fs.statSync(dest).size, reloaded: r });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
