@@ -10989,6 +10989,30 @@ app.post('/api/admin/upload-epc-db', adminAuth, express.raw({ type: '*/*', limit
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/admin/address-audit — report print & post (Stannp) address completeness per pool.
+// Every non-tender lead must carry door/premise + street + full postcode + town to be mailable.
+app.get('/api/admin/address-audit', adminAuth, (req, res) => {
+  try {
+    var out = {};
+    var FULLPC = /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i;
+    ['moving', 'probate', 'newbusiness', 'planning', 'tenders'].forEach(function (pk) {
+      var arr = [];
+      try { arr = readPoolFile(pk) || []; } catch (e) { arr = []; }
+      var total = arr.length, mailable = 0, samples = [];
+      arr.forEach(function (l) {
+        var d = l || {};
+        var addr = String(d.fullAddress || d.address || d.deceasedAddress || '');
+        var pc = String(d.postcode || '');
+        var ok = (pk === 'tenders') ? true : (addr && pc && FULLPC.test(pc) && hasStreetName(addr) && hasUsablePremiseAddress(addr, pc));
+        if (ok) mailable++;
+        else if (samples.length < 6) samples.push({ address: addr, postcode: pc, town: d.town || d.city || '' });
+      });
+      out[pk] = { total: total, mailable: mailable, pct: total ? Math.round(mailable / total * 100) : 0, samples: samples };
+    });
+    res.json({ success: true, products: out });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/admin/epc-disk[?cleanup=1] — report (and optionally purge) large EPC temp files.
 app.get('/api/admin/epc-disk', adminAuth, (req, res) => {
   try {
