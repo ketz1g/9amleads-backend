@@ -31853,7 +31853,7 @@ function runDeliveryTestReport() {
           var door = leads.filter(function(l) { return l.has_door_or_flat_number; }).length;
           var fullPc = leads.filter(function(l) { return l.full_postcode; }).length;
           var realLink = leads.filter(function(l) { var u = String(l.url || ''); return u && /^https?:\/\//.test(u) && u.indexOf('thegazette.co.uk/id/postcode') === -1; }).length;
-          var inArea = leads.filter(function(l) {
+          var _inAreaLead = function(l) {
             var la = String(l.area || '').match(/^([A-Z]{1,2})[0-9]/i); la = la ? la[1].toUpperCase() : String(l.area || '').toUpperCase();
             return areas.some(function(a) {
               // Same logic as the REAL delivery: city/county targets resolve through
@@ -31870,7 +31870,9 @@ function runDeliveryTestReport() {
               var firstWord = aNorm.match(/^[A-Z]+/); firstWord = firstWord ? firstWord[0] : '';
               return laFull.indexOf(aNorm) !== -1 || (firstWord.length >= 4 && laFull.indexOf(firstWord) !== -1);
             });
-          }).length;
+          };
+          var inArea = leads.filter(_inAreaLead).length;
+          var _ooaSample = leads.filter(function(l) { return !_inAreaLead(l); }).map(function(l) { return String(l.postcode || '') + '/' + String(l.area || ''); }).slice(0, 4).join(' ');
           var fresh24 = leads.filter(function(l) { var t = new Date(l.first_visible).getTime(); return t && (now - t) < 24*3600000; }).length;
           var fresh48 = leads.filter(function(l) { var t = new Date(l.first_visible).getTime(); return t && (now - t) >= 24*3600000 && (now - t) < 48*3600000; }).length;
           var needsDoor = (c.product === 'moving' || c.product === 'probate');
@@ -31889,7 +31891,7 @@ function runDeliveryTestReport() {
           if (needsDoor && door < leads.length) flags.push((leads.length - door) + ' doorless');
           if (needsPC && fullPc < leads.length) flags.push((leads.length - fullPc) + ' no-PC');
           if (needsLink && realLink < leads.length) flags.push((leads.length - realLink) + ' no-link');
-          if (needsArea && inArea < leads.length) flags.push((leads.length - inArea) + ' out-of-area');
+          if (needsArea && inArea < leads.length) flags.push((leads.length - inArea) + ' out-of-area' + (_ooaSample ? ' [' + _ooaSample + ']' : ''));
           if (leads.length === 0) flags.push('NO-LEADS');
           lines.push(c.email + ' [' + c.product + '] delivered ' + leads.length + '/' + promised + ' (door ' + door + ', PC ' + fullPc + ', link ' + realLink + ', in ' + inArea + ', 24h ' + fresh24 + ', 48h ' + fresh48 + ') ' + (flags.length ? '!! ' + flags.join(' ') : 'OK'));
           if (flags.length) issues.push(c.email + ': ' + flags.join(' '));
