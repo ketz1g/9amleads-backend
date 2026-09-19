@@ -7809,6 +7809,19 @@ app.post('/api/admin/backfill-towns', adminAuth, async (req, res) => {
 
 // POST /api/admin/clear-customer-leads — remove ALL of a customer's current leads
 // from their dashboard (no replacement). Used to strip bad/duplicate leads.
+// POST /api/admin/alert { subject, message } — email the founder an operational alert.
+// Used by the GitHub Actions scrape workflows' failure step so a failed scrape/import
+// (e.g. a 401 on import) is reported immediately instead of failing silently for days.
+app.post('/api/admin/alert', adminAuth, async (req, res) => {
+  try {
+    var subject = String((req.body && req.body.subject) || '9amLeads alert');
+    var message = String((req.body && req.body.message) || '');
+    var esc = message.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+    await sendAdminAlert(subject, '<div style="font-size:13px;color:#e2e8f0;line-height:1.7">' + esc + '</div>');
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/delivery-hold { hold: true|false } — GLOBAL delivery hold. When on,
 // ONLY test.* accounts receive leads; every real customer is blocked from inbox +
 // dashboard (forced runs included). Persisted in the DB so it survives restarts.
@@ -20070,7 +20083,14 @@ cron.schedule('0 10 * * *', async () => {
             var e = CAMPAIGN_EMAILS[ei];
             // Don't offer the month-3 reactivation once the free-reset cap is used.
             if (e.template === 'trial_month3' && parseInt(cust.trial_resets || '0', 10) >= parseInt(process.env.MAX_TRIAL_RESETS || '2', 10)) continue;
-            if (e.day > 7 && daysSinceTrialEnd >= (e.day - 7) && !campaignSent.includes(e.template)) {
+            // NEVER send a free-trial (day 1-7) template once the trial has expired —
+            // those belong to the active-trial phase only.
+            if (e.day <= 7) continue;
+            // The trial-expired email (trial_day9 = "Your daily leads have paused") fires
+            // AS SOON AS the trial ends (threshold 0), so expired users get the email we
+            // set for trial expiry — not two days later.
+            var _thr = (e.template === 'trial_day9') ? 0 : (e.day - 7);
+            if (daysSinceTrialEnd >= _thr && !campaignSent.includes(e.template)) {
               campaignSent.push(e.template);
               await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, getEditedCampaignSubject(e.template, e.subject), getCampaignEmailHTMLWithEdits(cust, e.template));
               sent++;
@@ -34672,7 +34692,11 @@ app.post('/api/admin/test-daily', adminAuth, async (req, res) => {
 app.post('/api/admin/send-welcome', adminAuth, async (req, res) => {
   try {
     var force = req.body && req.body.force;
-    var customers = (getDb().customers || []).filter(function(c) { return c.plan === 'free_trial'; });
+    // ONLY ACTIVE free trials: an EXPIRED trial (trial_ends in the past, still on
+    // free_trial plan) must never receive the free-trial welcome email — that is the
+    // post-trial series' job. Excluding expired here stops "Your Free Trial Is Active"
+    // landing in the inbox of someone whose trial already ended.
+    var customers = (getDb().customers || []).filter(function(c) { return c.plan === 'free_trial' && !trialExpiredUnpaid(c); });
     var sent = 0;
     for (var ci = 0; ci < customers.length; ci++) {
       var cust = customers[ci];
@@ -34701,6 +34725,9 @@ app.post('/api/admin/send-reminder', adminAuth, async (req, res) => {
     var cust = db.prepare('SELECT * FROM customers WHERE id = ?').get(customerId);
     if (!cust) return res.status(404).json({ error: 'Customer not found' });
     if (!cust.email) return res.status(400).json({ error: 'Customer has no email' });
+    // "Your free trial ends tomorrow" only makes sense for an ACTIVE trial. Refuse to
+    // send it once the trial has expired (use the post-trial series instead).
+    if (trialExpiredUnpaid(cust)) return res.status(400).json({ error: 'Trial already expired — use the trial-expired series, not the "ends tomorrow" reminder.' });
     var subject = getEditedCampaignSubject('trial_day7', 'Your Free Trial Ends Tomorrow');
     var html = getCampaignEmailHTMLWithEdits(cust, 'trial_day7');
     await sendBrevoEmail({ email: cust.email, name: cust.company || cust.contact_name || 'Customer' }, subject, html);

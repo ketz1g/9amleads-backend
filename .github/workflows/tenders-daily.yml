@@ -25,3 +25,11 @@ jobs:
         run: node tenders_daily_run.js
         working-directory: 'mission control'
         timeout-minutes: 15
+      - name: Alert founder on failure
+        if: failure()
+        env:
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: |
+          curl -sS -X POST "https://nineamleads-backend.onrender.com/api/admin/alert" \
+            -H "Authorization: Bearer $ADMIN_PASSWORD" -H "Content-Type: application/json" \
+            -d "{\"subject\":\"Scrape workflow FAILED: ${{ github.workflow }}\",\"message\":\"${{ github.workflow }} failed (run ${{ github.run_id }}). Check https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}" || true
