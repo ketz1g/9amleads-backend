@@ -10989,6 +10989,24 @@ app.post('/api/admin/upload-epc-db', adminAuth, express.raw({ type: '*/*', limit
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/admin/epc-disk[?cleanup=1] — report (and optionally purge) large EPC temp files.
+app.get('/api/admin/epc-disk', adminAuth, (req, res) => {
+  try {
+    var dir = path.join(__dirname, 'data');
+    var files = fs.readdirSync(dir).map(function (f) {
+      var p = path.join(dir, f); var s; try { s = fs.statSync(p); } catch (e) { return null; }
+      return s.isFile() ? { name: f, mb: Math.round(s.size / 1048576) } : null;
+    }).filter(Boolean).sort(function (a, b) { return b.mb - a.mb; });
+    var removed = [];
+    if (req.query.cleanup) {
+      ['epc-index.db.upload', 'epc-index.tsv', 'epc-index.tsv.gz', 'epc-index.db.gz', 'scot-epc.db.gz', 'epc-index.db.tmp'].forEach(function (f) {
+        var p = path.join(dir, f); try { if (fs.existsSync(p)) { fs.unlinkSync(p); removed.push(f); } } catch (e) {}
+      });
+    }
+    res.json({ removed: removed, files: files });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/restore-epc-db — download the England & Wales SQLite index from the
 // private GitHub backup release and write it to the data disk (no huge HTTP POST).
 // Body optional: { assetId } (defaults to the current release asset).
@@ -11001,6 +11019,10 @@ app.post('/api/admin/restore-epc-db', adminAuth, async (req, res) => {
     var zlib = require('zlib');
     var dest = path.join(__dirname, 'data', 'epc-index.db');
     var tmp = dest + '.tmp';
+    // Free disk first: drop leftover upload/temp files and the broken DB (E&W is already down).
+    ['epc-index.db.upload', 'epc-index.tsv', 'epc-index.tsv.gz', 'epc-index.db.gz', 'epc-index.db.tmp', 'epc-index.db'].forEach(function (f) {
+      var p = path.join(__dirname, 'data', f); try { if (fs.existsSync(p)) fs.unlinkSync(p); } catch (e) {}
+    });
     try { if (fs.existsSync(tmp)) fs.unlinkSync(tmp); } catch (e) {}
     // Stream download -> gunzip -> disk so we never hold the 1.2GB DB in RAM.
     var done = await new Promise(function (resolve) {
