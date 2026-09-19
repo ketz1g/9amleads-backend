@@ -11003,7 +11003,12 @@ app.get('/api/admin/epc-disk', adminAuth, (req, res) => {
         var p = path.join(dir, f); try { if (fs.existsSync(p)) { fs.unlinkSync(p); removed.push(f); } } catch (e) {}
       });
     }
-    res.json({ removed: removed, files: files });
+    var disk = null;
+    try {
+      var st = fs.statfsSync(dir);
+      disk = { total_gb: Math.round(st.blocks * st.bsize / 1073741824 * 10) / 10, free_gb: Math.round(st.bavail * st.bsize / 1073741824 * 10) / 10 };
+    } catch (e) {}
+    res.json({ removed: removed, disk: disk, files: files });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
