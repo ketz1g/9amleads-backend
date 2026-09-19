@@ -22170,7 +22170,16 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
     function leadMailableAddress(ld, prod) {
       if (prod === 'tenders') return true;
       if (!ld) return false;
-      var addr = String(ld.fullAddress || ld.address || ld.deceasedAddress || '').trim();
+      // PROBATE: the pool lead's `address` field can hold the DECEASED PERSON'S NAME
+      // (the real street address lives in `deceasedAddress`). Pick whichever field
+      // actually looks like a street address, else fall back to the first non-empty.
+      var addr = '';
+      ['fullAddress', 'address', 'deceasedAddress', 'registered_address'].some(function (k) {
+        var v = String(ld[k] || '').trim();
+        if (v && hasStreetName(v)) { addr = v; return true; }
+        return false;
+      });
+      if (!addr) addr = String(ld.fullAddress || ld.address || ld.deceasedAddress || ld.registered_address || '').trim();
       var pc = String(ld.postcode || '').trim();
       if (!addr || !pc) return false;
       // MOVING: number + street + town + full postcode (founder requirement).
@@ -23152,7 +23161,7 @@ _deliverDiag[cust.email].products = products;
                     // lead. Only the base fields below are normalised over it.
                     var poolLeadData = Object.assign({}, rl, {
                       id: rl.id || ('LD_' + r2prod + '_' + pf),
-                      address: rl.fullAddress || rl.address || rl.name || rl.company || '',
+                      address: rl.fullAddress || rl.deceasedAddress || rl.address || rl.name || rl.company || '',
                       postcode: rl.postcode || rl.location || '',
                       price: rl.price || rl.priceLabel || rl.estateValueLabel || '',
                       bedrooms: rl.bedrooms || 0,
@@ -23425,7 +23434,7 @@ _deliverDiag[cust.email].products = products;
               if (fgExisting[fgKey]) continue;
               var fgData = Object.assign({}, fgLead, {
                 id: fgLead.id || ('LD_' + fgProd + '_' + fgi),
-                address: fgLead.address || fgLead.name || fgLead.company || '',
+                address: fgLead.fullAddress || fgLead.deceasedAddress || fgLead.address || fgLead.name || fgLead.company || '',
                 postcode: fgLead.postcode || fgLead.location || '',
                 price: fgLead.price || fgLead.priceLabel || fgLead.estateValueLabel || '',
                 bedrooms: fgLead.bedrooms || 0,
@@ -23616,7 +23625,7 @@ _deliverDiag[cust.email].products = products;
               var alreadyAssignedOther = (db.leads || []).some(function(l2) { return l2.product === tpProd && !l2.delivered && l2.customer_id !== cust.id && l2.data && l2.data.indexOf(tlKey) !== -1; });
               if (alreadyAssignedOther) continue;
               var tlData = Object.assign({}, tl, {
-                id: tl.id || ('TP_' + tpProd + '_' + tpi), address: tl.address || tl.name || tl.company || '',
+                id: tl.id || ('TP_' + tpProd + '_' + tpi), address: tl.fullAddress || tl.deceasedAddress || tl.address || tl.name || tl.company || '',
                 postcode: tl.postcode || tl.location || '', price: tl.price || tl.priceLabel || tl.estateValueLabel || '',
                 bedrooms: tl.bedrooms || 0, propertyType: tl.propertyType || tl.type || '', status: tl.status || tl.listingStatus || 'new',
                 agent: tl.agent || tl.agentName || '', url: tl.url || '', source: tl.source || tpProd, city: tl.city || '',
