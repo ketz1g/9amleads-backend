@@ -10989,6 +10989,25 @@ app.post('/api/admin/upload-epc-db', adminAuth, express.raw({ type: '*/*', limit
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/upload-epc-db-chunk — chunked restore of epc-index.db.
+// Body: { offset, final, data } where data is base64 of the raw .db bytes.
+app.post('/api/admin/upload-epc-db-chunk', adminAuth, express.json({ limit: '40mb' }), (req, res) => {
+  try {
+    var b = req.body || {};
+    var tmp = path.join(__dirname, 'data', 'epc-index.db.upload');
+    var buf = Buffer.from(String(b.data || ''), 'base64');
+    if (Number(b.offset) === 0) { try { fs.unlinkSync(tmp); } catch(e) {} }
+    if (buf.length) fs.appendFileSync(tmp, buf);
+    var size = fs.existsSync(tmp) ? fs.statSync(tmp).size : 0;
+    if (b.final) {
+      fs.renameSync(tmp, path.join(__dirname, 'data', 'epc-index.db'));
+      var r = EPC_INDEX.loadIndex(path.join(__dirname, 'data'));
+      return res.json({ success: true, final: true, size: size, reloaded: r });
+    }
+    res.json({ success: true, size: size });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/upload-scot-db — write the gzipped Scotland SQLite index (raw body),
 // then reload. Scotland is kept as a separate small DB (scot-epc.db) so the big E&W
 // index never has to be rebuilt.
