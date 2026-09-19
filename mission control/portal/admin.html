@@ -1244,6 +1244,21 @@ if (getAdminAuth()) {
   }
 }
 
+// LIVE REFRESH: reload the dashboard every 60s (only while the tab is visible and
+// authenticated) so NEW SIGNUPS, deliveries and health appear automatically without
+// a manual page reload. Previously the admin loaded once and looked "stuck".
+setInterval(function () {
+  try {
+    if (document.hidden || !getAdminAuth()) return;
+    var ap = document.getElementById('adminPage');
+    if (!ap || ap.style.display === 'none') return;
+    loadData();
+  } catch (e) {}
+}, 60000);
+document.addEventListener('visibilitychange', function () {
+  try { if (!document.hidden && getAdminAuth()) loadData(); } catch (e) {}
+});
+
 function badgeClass(product) {
   const map = { moving: 'prod-moving', probate: 'prod-probate', newbusiness: 'prod-newbusiness', planning: 'prod-planning', tenders: 'prod-tenders' };
   return map[product] || '';
