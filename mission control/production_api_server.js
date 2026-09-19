@@ -528,6 +528,20 @@ function isCompleteMovingAddress(addr, pc) {
   var tc = parseTownCountyFromAddress(a, pc);
   return !!(tc.town || tc.city || tc.county);
 }
+// GLOBAL Stannp print & post gate (all products except tenders): a lead is mailable
+// only if it carries a usable premise (door/flat number) + street name + full postcode.
+// Moving additionally requires a town/area. Used by the bulk print flow so Stannp is
+// never handed an incomplete address.
+function isMailableLead(ld, prod) {
+  if (!ld) return false;
+  if (prod === 'tenders') return true;
+  var addr = String(ld.fullAddress || ld.address || ld.deceasedAddress || '').trim();
+  var pc = String(ld.postcode || '').trim();
+  if (!addr || !pc) return false;
+  if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(pc)) return false;
+  if (prod === 'moving') return isCompleteMovingAddress(addr, pc);
+  return hasStreetName(addr) && hasUsablePremiseAddress(addr, pc);
+}
 // A delivered row the customer has REJECTED must never count towards their delivered
 // total (it is queued for replacement). Counting it inflated the internal delivered
 // count, suppressed top-ups and made the guarantee audit report "ok" while the
@@ -28646,6 +28660,9 @@ app.get('/api/direct-mail/my-bulk-leads', authMiddleware, (req, res) => {
                        ((l.bulk_reserved === 1 || l.bulk_reserved === '1' || l.bulk_reserved === true) && l.bulk_reserved_by === c.id) ||
                        ((l.boost_reserved === 1 || l.boost_reserved === '1' || l.boost_reserved === true) && l.boost_reserved_by === c.id);
         if (!mineFlag) return;
+        // PRINT & POST GATE: only mailable leads (door + street + full postcode + town,
+        // except tenders) may be posted — never hand Stannp an incomplete address.
+        if (!isMailableLead(l, pk)) return;
         mine.push({ id: l.id || l.company_number || '', name: l.name || l.company || l.companyName || l.company_name || 'Lead', company: l.company || l.companyName || l.company_name || '', address: l.fullAddress || l.address || '', postcode: l.postcode || '', reserved_at: l.bulk_reserved_at || l.boost_reserved_at || l.createdAt || '', product: pk });
       });
     });
