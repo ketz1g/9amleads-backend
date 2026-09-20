@@ -939,9 +939,12 @@ function loadLeads(){
       // If the fallback address is street-only but town/county exist, build the full line.
       if(!fa && addr && (city||county) && !/,\s*[A-Za-z]/.test(addr)) addr=addr+(city?', '+city:'')+(county?', '+county:'');
       var label=nm?(nm+' · '+(addr||'Lead')):(addr||'Lead');
-      var sub=[pc,county,city].filter(Boolean).join(', ');
-      // Don't repeat the postcode when the address line already shows it.
-      if(pc && label.toUpperCase().indexOf(String(pc).toUpperCase())!==-1) sub=[county,city].filter(Boolean).join(', ');
+      // If the address line already IS the full address, don't add a second line.
+      var sub='';
+      if(!(fa && fa===addr)){
+        sub=[pc,county,city].filter(Boolean).join(', ');
+        if(pc && label.toUpperCase().indexOf(String(pc).toUpperCase())!==-1) sub=[county,city].filter(Boolean).join(', ');
+      }
       var isSel=selectedLeads.has(l.id);
       html+='<div class="recipient" data-lead-id="'+l.id+'" style="cursor:pointer;'+(isSel?'border-color:var(--accent);background:#f0f7ff':'')+'" onclick="toggleLead(\''+l.id+'\',this)">'+
         '<div><div class="addr">'+label.substring(0,60)+'</div><div class="meta">'+(sub||'')+'</div></div>'+
