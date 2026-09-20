@@ -18845,7 +18845,7 @@ function __renderLibraryEmail(id) {
   var subj = '';
   // Daily lead sheets
   var dm = id.match(/^daily_(moving|probate|newbusiness|planning|tenders)$/);
-  if (dm) { subj = 'Your Daily Opportunities'; return { subject: subj, html: generateLeadEmailHTML(__emailDemoCustomer(dm[1]), __emailSampleLeads(dm[1])) }; }
+  if (dm) { subj = 'Your Daily Opportunities'; var _demoHtml = generateLeadEmailHTML(__emailDemoCustomer(dm[1]), __emailSampleLeads(dm[1])); _demoHtml = _demoHtml.replace(/View on Dashboard/g, 'Start your free week'); return { subject: subj, html: _demoHtml }; }
   if (id === 'verification') return { subject: 'Verify your email address', html: __emailVerificationHtml() };
   if (id === 'weekly_digest') return { subject: 'Your 9amLeads weekly summary', html: __emailWeeklyDigestHtml() };
   if (id === 'status_delay') return { subject: 'Your leads are on their way', html: __emailStatusHtml('delay') };
@@ -28198,6 +28198,14 @@ function generateLeadEmailHTML(customer, leads) {  const brand = getProductBrand
   try { _magicToken = jwt.sign({ id: customer.id, email: customer.email, product: customer.product }, JWT_SECRET, { expiresIn: '24h' }); } catch(te) {}
   var _magicLeadsUrl = 'https://www.9amleads.com/portal/leads.html?token=' + encodeURIComponent(_magicToken) + '&email=' + encodeURIComponent(customer.email || '');
   var _magicDashUrl = 'https://www.9amleads.com/portal/dashboard.html?token=' + encodeURIComponent(_magicToken) + '&email=' + encodeURIComponent(customer.email || '');
+  // DEMO/SAMPLE emails: the magic-link buttons would otherwise open a demo account's
+  // dashboard. Point them at the free-trial signup instead so nothing is broken.
+  var _isDemo = (String(customer.id) === 'demo') || customer.demo === true;
+  if (_isDemo) {
+    var _signupUrl = 'https://www.9amleads.com/portal/?product=' + encodeURIComponent(customer.product || 'moving') + '#signup';
+    _magicLeadsUrl = _signupUrl;
+    _magicDashUrl = _signupUrl;
+  }
   let body = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"><style>@media only screen and (max-width:480px){.card{padding:12px!important}.inner{padding:12px 14px!important}.chips span{font-size:10px!important;white-space:normal!important;word-break:break-word!important}.lead-card{margin-bottom:16px!important}.btn-group{display:block!important}.btn-group a{display:block!important;margin-bottom:6px!important}.resp-flex{display:block!important}.resp-flex a{display:block!important;margin-bottom:6px!important}}</style></head><body style="margin:0;padding:0;background-color:#f1f5f9;font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;color:#1e293b">';
   body += '<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f1f5f9"><tr><td align="center" style="padding:24px 16px">';
   body += '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">';
@@ -28284,6 +28292,10 @@ function generateLeadEmailHTML(customer, leads) {  const brand = getProductBrand
       // CO59AU, Essex, CO5 9AU"). Clean it so the title reads like a real address
       // and never forces the email layout wide / overlapping.
       title = cleanPlanningAddress(address || d.address || '') || (d.proposal ? d.proposal.substring(0, 40) : 'Planning Application');
+      // Planning title must show the FULL address incl. postcode (the site address
+      // is what the customer needs to act on). Skip if it's already present.
+      var _planPc = d.postcode || l.postcode || '';
+      if (_planPc && title.toLowerCase().indexOf(String(_planPc).toLowerCase()) === -1) title += (/,/.test(title) || /\d/.test(title) ? ', ' : ' ') + _planPc;
       var appType = d.applicationType || 'Planning Application';
       subtitle = (d.council ? d.council + ' · ' : '') + appType + (d.status ? ' · ' + d.status : '');
     } else {
@@ -28419,7 +28431,7 @@ function generateLeadEmailHTML(customer, leads) {  const brand = getProductBrand
       if (d.companyNumber && !d.generated) actionLinks.push({ url: 'https://find-and-update.company-information.service.gov.uk/company/' + d.companyNumber, label: 'View on Companies House' });
       if (d.name) actionLinks.push({ url: 'https://www.google.com/search?q=' + encodeURIComponent(d.name + ' contact email phone'), label: 'Find Contact Details' });
     } else if (leadProduct === 'probate') {
-      if (d.noticeUrl) actionLinks.push({ url: d.noticeUrl, label: 'View on UK Gazette' }); else actionLinks.push({ url: 'https://www.gov.uk/government/publications/how-to-search-for-probate-records', label: 'Search Probate Records' });
+      if (d.noticeUrl) actionLinks.push({ url: d.noticeUrl, label: 'View on UK Gazette' });       else actionLinks.push({ url: 'https://www.gov.uk/search-will-probate', label: 'Search Probate Records' });
       actionLinks.push({ url: _magicDashUrl, label: 'View on Dashboard' });
     } else if (leadProduct === 'tenders') {
       // Tenders are applied for ONLINE — the Apply Online button is the primary action
