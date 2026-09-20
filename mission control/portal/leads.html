@@ -1054,8 +1054,10 @@ var _token = '';
     try {
       var _db = document.createElement('div');
       _db.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:99999;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;text-align:center;padding:10px 14px;font-size:13px;font-weight:700;font-family:Inter,Arial,sans-serif';
-      _db.innerHTML = '\uD83D\uDC40 You are viewing a read-only demo of the 9amLeads dashboard. <a href="/portal/?product=moving#signup" style="color:#fff;text-decoration:underline">Start your free week &rarr;</a>';
+      var _dopts = [['moving', 'Moving'], ['probate', 'Probate'], ['planning', 'Planning'], ['newbusiness', 'New Business'], ['tenders', 'Tenders']].map(function(x){ return '<option value="' + x[0] + '"' + ((sess.product === x[0]) ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('');
+      _db.innerHTML = '\uD83D\uDC40 Read-only demo \u00b7 Lead type: <select id="demoProductSwitch" style="margin:0 6px;padding:4px 8px;border-radius:8px;border:0;font-weight:700;font-size:13px">' + _dopts + '</select> <a href="/portal/?product=' + (sess.product || 'moving') + '#signup" style="color:#fff;text-decoration:underline">Start your free week &rarr;</a>';
       document.body.appendChild(_db);
+      try { var _ps = document.getElementById('demoProductSwitch'); if (_ps) { _ps.onchange = function(){ window.location.href = '/portal/demo.html?product=' + encodeURIComponent(this.value); }; } } catch(e) {}
     } catch(e) {}
     try {
       window.__demoToast = function(){ try { var t=document.createElement('div'); t.textContent='This is a read-only demo \u2014 start your free trial to use this feature.'; t.style.cssText='position:fixed;left:50%;top:20px;transform:translateX(-50%);z-index:100000;background:#0f172a;color:#fff;border:1px solid #334155;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:600;font-family:Inter,Arial,sans-serif;box-shadow:0 8px 30px rgba(0,0,0,.5)'; document.body.appendChild(t); setTimeout(function(){ try{t.remove()}catch(e){} }, 2600); } catch(e){} };

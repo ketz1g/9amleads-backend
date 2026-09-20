@@ -38200,64 +38200,89 @@ process.on('uncaughtException', (err) => {
   } catch(me) {}
 });
 
-// ===== READ-ONLY PUBLIC DEMO ACCOUNT =====
-// A single fixed account used by the public "View our dashboard" demo. It is
-// READ-ONLY: the auth middleware rejects every non-GET request for a demo token,
-// so a visitor can explore the dashboard/leads pages but cannot change anything.
-// Excluded from delivery (email @9amleads.com) and carries leads_per_day=0 so it
-// never affects capacity/committed-demand maths.
-var DEMO_CUSTOMER_ID = 'demo0000-0000-4000-8000-000000000001';
-var DEMO_EMAIL = 'demo@9amleads.com';
+// ===== READ-ONLY PUBLIC DEMO ACCOUNTS (one per lead type) =====
+// Public "View our dashboard" demo. READ-ONLY: the auth middleware rejects every
+// non-GET request for a demo token, so a visitor can explore the dashboard/leads
+// pages but cannot change anything. Excluded from delivery (email @9amleads.com)
+// and leads_per_day=0 so they never affect capacity/committed-demand maths.
+var DEMO_ACCOUNTS = {
+  moving:      { id: 'demo0000-0000-4000-8000-000000000001', email: 'demo-moving@9amleads.com',      company: 'Demo Removal Co',  lead_type: 'Moving Leads',         business_type: 'Removal Company' },
+  probate:     { id: 'demo0000-0000-4000-8000-000000000002', email: 'demo-probate@9amleads.com',     company: 'Demo Solicitors',  lead_type: 'Probate Leads',        business_type: 'Solicitor & Estate Agent' },
+  planning:    { id: 'demo0000-0000-4000-8000-000000000003', email: 'demo-planning@9amleads.com',    company: 'Demo Architects',  lead_type: 'Planning Permissions', business_type: 'Architect & Builder' },
+  newbusiness: { id: 'demo0000-0000-4000-8000-000000000004', email: 'demo-newbusiness@9amleads.com', company: 'Demo Accountants', lead_type: 'New Business Alerts',  business_type: 'Accountant & B2B Service' },
+  tenders:     { id: 'demo0000-0000-4000-8000-000000000005', email: 'demo-tenders@9amleads.com',     company: 'Demo Contractors', lead_type: 'Public Tenders',       business_type: 'IT, Construction & More' }
+};
+var DEMO_PRODUCTS = Object.keys(DEMO_ACCOUNTS);
+function __demoLeadData(product, i) {
+  var base = new Date(); base.setHours(9, 0, 0, 0);
+  if (product === 'moving') {
+    var a = [['SW1A 1AA', 'Westminster', 'London'], ['SE15 4AA', 'Peckham', 'London'], ['KT2 6AA', 'Kingston', 'Surrey'], ['TW9 3AB', 'Richmond', 'Surrey'], ['SM1 3AN', 'Sutton', 'Surrey'], ['SW18 2AA', 'Wandsworth', 'London'], ['SE22 8AA', 'East Dulwich', 'London'], ['KT1 1AA', 'Kingston', 'Surrey']][i];
+    var streets = ['Oakwood Avenue', 'Lime Grove', 'Devon Street', 'Church Road', 'Park Lane', 'Manor Road', 'Cedar Close', 'Victoria Road'];
+    var prices = [475000, 712000, 389000, 540000, 860000, 455000, 625000, 499000];
+    return { address: (12 + i * 7) + ' ' + streets[i] + ', ' + a[1], town: a[1], city: a[2], postcode: a[0], bedrooms: 2 + (i % 3), price: prices[i], propertyType: (i % 2 ? 'Semi-Detached' : 'Detached'), status: (i % 3 === 0 ? 'Under Offer' : 'Available'), agent: 'Demo Estate Agents', url: 'https://www.rightmove.co.uk/properties/' + (1000000 + i), firstVisibleDate: new Date(base.getTime() - (i < 5 ? 0 : i - 4) * 86400000).toISOString().split('T')[0] };
+  }
+  if (product === 'probate') {
+    var names = ['Margaret Collins', 'John Thompson', 'Helen Wood', 'Richard Khan', 'Patricia Taylor', 'Joseph Brown', 'Dorothy Walker', 'David Thompson'];
+    var addrs = [['7 The Paddock', 'Sunbury', 'TW16 5EX'], ['46 Station Road', 'Woking', 'GU21 1AA'], ['89 Park Lane', 'Tunbridge Wells', 'TN1 1AA'], ['128 Church Road', 'Camden', 'NW1 1AA'], ['112 London Road', 'Caterham', 'CR3 1AA'], ['117 Green Lane', 'Folkestone', 'CT19 1AA'], ['105 Manor Road', 'Westminster', 'SW1A 1AA'], ['36 King Street', 'Woking', 'GU22 1AA']][i];
+    return { deceasedName: names[i], deceasedAddress: addrs[0], locality: addrs[1], postcode: addrs[2], grantDate: new Date(base.getTime() - (i < 5 ? 0 : i - 4) * 86400000).toISOString(), estateValue: [284242, 271141, 273395, 498323, 221122, 442489, 677911, 164246][i], solicitor: 'Demo Legal Services', probateRegistry: 'Newcastle', occupation: 'Retired' };
+  }
+  if (product === 'planning') {
+    var pa = [['33 Church Road', 'Chorley', 'PR7 4HT'], ['12 High Street', 'Leeds', 'LS1 6EZ'], ['88 Mill Lane', 'Bristol', 'BS1 5TR'], ['5 The Green', 'Birmingham', 'B1 1AA'], ['21 Station Approach', 'Manchester', 'M1 2AB'], ['47 Victoria Road', 'Cardiff', 'CF10 1AA'], ['9 Oak Avenue', 'Glasgow', 'G1 1AA'], ['64 Park Road', 'Nottingham', 'NG1 1AA']][i];
+    var councils = ['Chorley Council', 'Leeds City Council', 'Bristol City Council', 'Birmingham City Council', 'Manchester City Council', 'Cardiff Council', 'Glasgow City Council', 'Nottingham City Council'];
+    var props = ['Single storey rear extension', 'Two storey side extension', 'Loft conversion with dormer', 'Change of use to HMO', 'New detached dwelling', 'Rear conservatory', 'Garage conversion', 'Front porch and driveway'];
+    return { address: pa[0], postcode: pa[2], council: councils[i], applicationType: 'Householder Application', status: (i % 3 === 0 ? 'Approved' : 'Pending'), proposal: props[i], description: props[i], reference: 'DEMO/2026/' + (100 + i), receivedDate: new Date(base.getTime() - (i < 5 ? 0 : i - 4) * 86400000).toISOString(), applicant: 'Demo Applicant' };
+  }
+  if (product === 'newbusiness') {
+    var co = ['Brightleaf Marketing Ltd', 'Northgate Plumbing Ltd', 'Verdant Landscapes Ltd', 'Apex IT Solutions Ltd', 'Harbour View Lettings Ltd', 'Copperfield Consulting Ltd', 'Bluebell Care Ltd', 'Ridgeline Construction Ltd'][i];
+    var nba = [['21 Market Street', 'Leeds', 'LS1 6EZ'], ['5 Bridge Road', 'Manchester', 'M1 2AB'], ['14 The Parade', 'Bristol', 'BS1 5TR'], ['78 High Street', 'Birmingham', 'B1 1AA'], ['3 Quay Side', 'Newcastle', 'NE1 1AA'], ['52 Queen Street', 'Cardiff', 'CF10 1AA'], ['9 Kingsway', 'London', 'WC2B 6AA'], ['31 Portland Road', 'Glasgow', 'G1 1AA']][i];
+    return { companyName: co[i], name: co[i], address: nba[0], town: nba[1], city: nba[1], postcode: nba[2], sicCode: ['70229 - Management consultancy', '43220 - Plumbing, heat and air-conditioning', '81300 - Landscape service activities', '62020 - IT consultancy', '68320 - Management of real estate', '69201 - Accounting and auditing', '88100 - Social work without accommodation', '41201 - Construction of commercial buildings'][i], incorporationDate: new Date(base.getTime() - (i < 5 ? 0 : i - 4) * 86400000).toISOString(), companyNumber: (16000000 + i).toString(), enrichment: 'Directors found' };
+  }
+  var tt = ['School catering services - 3 year contract', 'IT support and managed services', 'Grounds maintenance for council estates', 'Building cleaning services', 'Highways resurfacing programme', 'Temporary staff agency services', 'Waste collection and recycling', 'Security services for public buildings'][i];
+  var buyers = ['Local Authority', 'NHS Trust', 'County Council', 'City Council', 'Highways England', 'Public Sector Body', 'District Council', 'Police Authority'];
+  return { tenderTitle: tt, title: tt, description: tt, buyer: buyers[i], contractValueLabel: '\u00a3' + [450000, 1200000, 300000, 750000, 2500000, 600000, 900000, 400000][i], closingDate: new Date(base.getTime() + (7 + i * 2) * 86400000).toISOString(), publishedDate: new Date(base.getTime() - (i < 5 ? 0 : i - 4) * 86400000).toISOString(), tenderNoticeId: 'DEMO' + (2026000 + i), url: 'https://www.contractsfinder.service.gov.uk/notice/DEMO' + (2026000 + i) };
+}
 function seedDemoAccount() {
   try {
-    var existing = db.prepare('SELECT id FROM customers WHERE id = ?').get(DEMO_CUSTOMER_ID);
-    if (!existing) {
-      var nowIso = new Date().toISOString();
-      var trialEnds = new Date(Date.now() + 3650 * 86400000).toISOString();
-      db.prepare(`INSERT INTO customers (id, email, company, contact_name, phone, password_hash, product, lead_type, business_type, target_areas, coverage, source, plan, trial_ends, marketing_consent, created_at, campaign_sent, extra_postcodes)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
-        DEMO_CUSTOMER_ID, DEMO_EMAIL, 'Demo Removal Co', 'Demo Owner', '', 'x',
-        'moving', 'Moving Leads', 'Removal Company', JSON.stringify(['SW', 'SE', 'KT', 'TW', 'SM']),
-        'postcode', 'demo', 'free_trial', trialEnds, 0, nowIso, '[]', '0');
-      console.log('[DEMO] demo account created');
-    }
-    try { db.prepare('UPDATE customers SET leads_per_day = 0, email_verified = 1, plan = ? WHERE id = ?').run('free_trial', DEMO_CUSTOMER_ID); } catch(e) {}
-    var cnt = db.prepare('SELECT COUNT(*) AS c FROM leads WHERE customer_id = ?').get(DEMO_CUSTOMER_ID);
-    var newest = db.prepare('SELECT MAX(delivered_at) AS m FROM leads WHERE customer_id = ?').get(DEMO_CUSTOMER_ID);
+    var nowIso = new Date().toISOString();
+    var trialEnds = new Date(Date.now() + 3650 * 86400000).toISOString();
     var _todayStr = new Date().toISOString().split('T')[0];
-    var stale = !newest || !newest.m || String(newest.m).split('T')[0] !== _todayStr;
-    if (!cnt || !cnt.c || stale) {
-      try { db.prepare('DELETE FROM leads WHERE customer_id = ?').run(DEMO_CUSTOMER_ID); } catch(e) {}
-      var areas = [['SW1A 1AA', 'Westminster', 'London'], ['SE15 4AA', 'Peckham', 'London'], ['KT2 6AA', 'Kingston', 'Surrey'], ['TW9 3AB', 'Richmond', 'Surrey'], ['SM1 3AN', 'Sutton', 'Surrey'], ['SW18 2AA', 'Wandsworth', 'London'], ['SE22 8AA', 'East Dulwich', 'London'], ['KT1 1AA', 'Kingston', 'Surrey']];
-      var streets = ['Oakwood Avenue', 'Lime Grove', 'Devon Street', 'Church Road', 'Park Lane', 'Manor Road', 'Cedar Close', 'Victoria Road'];
-      var prices = [475000, 712000, 389000, 540000, 860000, 455000, 625000, 499000];
-      var base = new Date(); base.setHours(9, 0, 0, 0);
-      for (var i = 0; i < 8; i++) {
-        var a = areas[i];
-        var d = {
-          address: (12 + i * 7) + ' ' + streets[i] + ', ' + a[1],
-          town: a[1], city: a[2], postcode: a[0],
-          bedrooms: 2 + (i % 3), price: prices[i],
-          propertyType: (i % 2 ? 'Semi-Detached' : 'Detached'),
-          status: (i % 3 === 0 ? 'Under Offer' : 'Available'),
-          agent: 'Demo Estate Agents', url: 'https://www.rightmove.co.uk/properties/' + (1000000 + i),
-          firstVisibleDate: new Date(base.getTime() - (i < 5 ? 0 : i - 4) * 86400000).toISOString().split('T')[0]
-        };
-        // First 5 leads delivered TODAY (a full day's batch), the rest over prior days.
-        var created = (i < 5 ? new Date(base.getTime() + i * 60000) : new Date(base.getTime() - (i - 4) * 86400000)).toISOString();
-        db.prepare('INSERT INTO leads (id, customer_id, product, data, status, delivered, created_at, delivered_at, release_at) VALUES (?,?,?,?,?,?,?,?,?)').run(
-          'demo-lead-' + i, DEMO_CUSTOMER_ID, 'moving', JSON.stringify(d), 'delivered', 1, created, created, created);
+    var base = new Date(); base.setHours(9, 0, 0, 0);
+    DEMO_PRODUCTS.forEach(function(product) {
+      var acct = DEMO_ACCOUNTS[product];
+      var existing = db.prepare('SELECT id FROM customers WHERE id = ?').get(acct.id);
+      if (!existing) {
+        db.prepare(`INSERT INTO customers (id, email, company, contact_name, phone, password_hash, product, lead_type, business_type, target_areas, coverage, source, plan, trial_ends, marketing_consent, created_at, campaign_sent, extra_postcodes)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+          acct.id, acct.email, acct.company, 'Demo Owner', '', 'x',
+          product, acct.lead_type, acct.business_type, JSON.stringify(['SW', 'SE', 'KT', 'TW', 'SM']),
+          'postcode', 'demo', 'free_trial', trialEnds, 0, nowIso, '[]', '0');
+        console.log('[DEMO] account created: ' + product);
       }
-      console.log('[DEMO] seeded/refreshed sample leads');
-    }
+      try { db.prepare('UPDATE customers SET leads_per_day = 0, email_verified = 1, plan = ? WHERE id = ?').run('free_trial', acct.id); } catch(e) {}
+      var cnt = db.prepare('SELECT COUNT(*) AS c FROM leads WHERE customer_id = ?').get(acct.id);
+      var newest = db.prepare('SELECT MAX(delivered_at) AS m FROM leads WHERE customer_id = ?').get(acct.id);
+      var stale = !newest || !newest.m || String(newest.m).split('T')[0] !== _todayStr;
+      if (!cnt || !cnt.c || stale) {
+        try { db.prepare('DELETE FROM leads WHERE customer_id = ?').run(acct.id); } catch(e) {}
+        for (var i = 0; i < 8; i++) {
+          var d = __demoLeadData(product, i);
+          var created = (i < 5 ? new Date(base.getTime() + i * 60000) : new Date(base.getTime() - (i - 4) * 86400000)).toISOString();
+          db.prepare('INSERT INTO leads (id, customer_id, product, data, status, delivered, created_at, delivered_at, release_at) VALUES (?,?,?,?,?,?,?,?,?)').run(
+            'demo-' + product + '-lead-' + i, acct.id, product, JSON.stringify(d), 'delivered', 1, created, created, created);
+        }
+        console.log('[DEMO] seeded/refreshed sample leads: ' + product);
+      }
+    });
     saveDb();
   } catch(e) { console.log('[DEMO] seed error: ' + (e && e.message)); }
 }
-// GET /api/demo/login — mint a short-lived READ-ONLY token for the demo account.
+// GET /api/demo/login?product=moving — mint a short-lived READ-ONLY token.
 app.get('/api/demo/login', (req, res) => {
   try {
-    var token = jwt.sign({ id: DEMO_CUSTOMER_ID, email: DEMO_EMAIL, demo: true }, JWT_SECRET, { expiresIn: '2h' });
-    res.json({ token: token, demo: true, email: DEMO_EMAIL });
+    var product = String(req.query.product || 'moving').toLowerCase();
+    var acct = DEMO_ACCOUNTS[product] || DEMO_ACCOUNTS.moving;
+    var token = jwt.sign({ id: acct.id, email: acct.email, product: product, demo: true }, JWT_SECRET, { expiresIn: '2h' });
+    res.json({ token: token, demo: true, email: acct.email, product: DEMO_ACCOUNTS[product] ? product : 'moving' });
   } catch(e) { res.status(500).json({ error: 'demo unavailable' }); }
 });
 // Keep the demo looking current: refresh the demo account's sample leads each morning.

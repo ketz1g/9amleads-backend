@@ -10,10 +10,12 @@
 <script>
 (async function(){
   try {
-    var r = await fetch('/api/demo/login');
+    var _prod = new URLSearchParams(window.location.search).get('product') || 'moving';
+    var r = await fetch('/api/demo/login?product=' + encodeURIComponent(_prod));
     var d = await r.json();
     if (!d || !d.token) throw new Error('no token');
-    var sess = { token: d.token, clientId: 'demo', email: d.email || 'demo@9amleads.com', name: 'Demo Account', plan: 'free_trial', product: 'moving', products: ['moving'], demo: true };
+    var prod = d.product || _prod;
+    var sess = { token: d.token, clientId: 'demo', email: d.email || 'demo@9amleads.com', name: 'Demo Account', plan: 'free_trial', product: prod, products: [prod], demo: true };
     localStorage.setItem('mld_portal_session', JSON.stringify(sess));
     window.location.href = '/portal/dashboard.html';
   } catch(e) {
