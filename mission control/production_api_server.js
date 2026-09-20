@@ -16258,8 +16258,9 @@ console.log('  Outbound campaigns: ' + Object.keys(OUTBOUND_CAMPAIGNS).length + 
   '<tr><td bgcolor="#ffffff" class="mob" style="background:#ffffff;padding:20px 30px 26px">' + (  templates[template] || templates.trial_day1) + '</td></tr>' +
   (template === 'trial_day1' ? '' : buildTrialPersonalBlock(customer, template)) +
   // Welcome (trial_day1) stays short and professional: summary + single CTA only.
-  // The shared value / why / how / insight blocks are for the nurture emails.
-  (template === 'trial_day1' ? '' : (
+  // The shared value / why / how / insight blocks are for the nurture emails. Skip
+  // them on the emails that already carry their own Print & Post message (day 1, 3, 4, 7).
+  (['trial_day1', 'trial_day3', 'trial_day4', 'trial_day7'].indexOf(template) !== -1 ? '' : (
   // Print & Post / Auto Send / postal-marketing value block (shared, all campaign emails)
   buildPrintPostValueBlock(allProds[0] || 'moving', accent) +
   // Why 9amLeads is the best leads service (shared, all campaign emails)
