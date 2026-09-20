@@ -32741,10 +32741,25 @@ async function topUpBlogQueue() {
   var categories = Object.keys(BLOG_CATEGORIES);
   var now = Date.now();
   var created = 0;
+  // Append new posts AFTER the last already-queued slot so the cadence stays even
+  // (previously every run scheduled from "now", so repeated runs clustered).
+  var _lastTs = 0;
+  dbData.blog_posts.forEach(function(p) { if (p.published === false && p.publish_at) { var t = new Date(p.publish_at).getTime(); if (t > _lastTs) _lastTs = t; } });
+  var _base = Math.max(now, _lastTs);
+  // Coarse topic key (drops the subtitle + generic words) so we don't queue several
+  // near-identical articles about the same subject.
+  function _blogTopicKey(t) {
+    return String(t || '').toLowerCase().replace(/[:|].*$/, '').replace(/[^a-z0-9 ]/g, ' ').split(/\s+/)
+      .filter(function(w) { return w && ['a', 'an', 'the', 'for', 'your', 'uk', 'business', 'businesses', 'owners', 'unlocking', 'maximising', 'maximise', 'maximizing', 'maximize', 'opportunities', 'opportunity', 'strategies', 'strategy', 'how', 'to', 'of', 'and', 'with', 'from', 'guide', 'comprehensive', 'practical', 'potential', 'growth', 'leads', 'lead'].indexOf(w) === -1; })
+      .slice(0, 4).join('-');
+  }
   for (var i = 0; i < BLOG_QUEUE_TOPUP; i++) {
     try {
       var cat = categories[Math.floor(Math.random() * categories.length)];
       var gen = await generateAutoBlogPost(cat);
+      // Skip near-duplicate topics already queued/published.
+      var _tk = _blogTopicKey(gen.title);
+      if (_tk && dbData.blog_posts.some(function(p) { return _blogTopicKey(p.title) === _tk; })) { continue; }
       var slug = String(gen.title).toLowerCase().replace(/[':]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 80) || ('blog-' + Date.now());
       var uniq = slug, n = 2;
       while (dbData.blog_posts.some(function(p) { return p.slug === uniq; })) { uniq = slug + '-' + n; n++; }
@@ -32763,7 +32778,7 @@ async function topUpBlogQueue() {
         category: cat, product_name: PRODCAT[cat] || 'Business Leads', keywords: gen.keywords,
         html: html, word_count: wordCount, reading_time: '7 min read',
         created_at: new Date().toISOString(), published: false,
-        publish_at: new Date(now + (created + 1) * BLOG_PUBLISH_GAP_MS).toISOString(),
+        publish_at: new Date(_base + (created + 1) * BLOG_PUBLISH_GAP_MS).toISOString(),
         curated: true, generated_by: 'openai'
       });
       created++;
