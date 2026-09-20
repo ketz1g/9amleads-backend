@@ -28043,11 +28043,16 @@ app.get('/api/health', (req, res) => {
   if (!req.query || req.query.full !== '1') {
     return res.json({ status: 'running', domain: 'www.9amleads.com', ts: Date.now() });
   }
-  const customerCount = db.prepare('SELECT COUNT(*) as count FROM customers').get();
-  const leadCount = db.prepare('SELECT COUNT(*) as count FROM leads').get();
-  const activeTrials = db.prepare('SELECT COUNT(*) as count FROM customers WHERE plan = \'free_trial\' AND trial_ends > datetime(\'now\')').get();
-  const expiredTrials = db.prepare('SELECT COUNT(*) as count FROM customers WHERE plan = \'free_trial\' AND trial_ends <= datetime(\'now\')').get();
-  const paidCustomers = db.prepare('SELECT COUNT(*) as count FROM customers WHERE plan != \'free_trial\'').get();
+  // Compute counts in JS (the JSON DB shim does not evaluate datetime('now')), and
+  // exclude internal/test/demo accounts so health matches the admin stats.
+  function _isIntHealth(c) { var e = String((c && c.email) || '').toLowerCase(); return e.indexOf('@9amleads.com') !== -1 || e === 'ketzman1g@gmail.com' || /^test\./.test(e) || /^demo/.test(e); }
+  var _hcust = (getDb().customers || []).filter(function(c) { return !_isIntHealth(c); });
+  var _nowMsH = Date.now();
+  var customerCount = { count: _hcust.length };
+  var leadCount = { count: (getDb().leads || []).length };
+  var activeTrials = { count: _hcust.filter(function(c) { if (c.plan !== 'free_trial') return false; var t = c.trial_ends ? new Date(c.trial_ends).getTime() : NaN; return !isNaN(t) && t > _nowMsH; }).length };
+  var expiredTrials = { count: _hcust.filter(function(c) { if (c.plan !== 'free_trial') return false; var t = c.trial_ends ? new Date(c.trial_ends).getTime() : NaN; return !isNaN(t) && t <= _nowMsH; }).length };
+  var paidCustomers = { count: _hcust.filter(function(c) { return c.plan && c.plan !== 'free_trial'; }).length };
   
   res.json({
     status: 'running',
