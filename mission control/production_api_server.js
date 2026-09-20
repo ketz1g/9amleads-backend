@@ -18909,7 +18909,7 @@ app.get('/api/admin/email-library', adminAuth, (req, res) => {
     for (var dp in prodMeta) {
       try {
         var dc = demoCustomer(dp);
-        daily.push({ id:'daily_'+dp, name:'Daily 9am lead sheet - '+prodMeta[dp][0], product:dp, when:'Every weekday 09:00 UK', html: generateLeadEmailHTML(dc, sampleLeads(dp)) });
+        daily.push({ id:'daily_'+dp, name:'Daily 9am lead sheet - '+prodMeta[dp][0], product:dp, when:'Every weekday 09:00 UK', html: generateLeadEmailHTML(dc, sampleLeads(dp)).replace(/View on Dashboard/g, 'Start your free week') });
       } catch(de) { daily.push({ id:'daily_'+dp, name:'Daily 9am lead sheet - '+prodMeta[dp][0], product:dp, when:'Every weekday 09:00 UK', html:'', error:String(de.message||de) }); }
     }
     groups.push({ key:'daily', label:'Daily lead delivery', icon:'\uD83D\uDCE8', sends:'Every weekday at 09:00 UK (Mon-Fri)', emails: daily });
