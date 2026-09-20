@@ -38244,7 +38244,7 @@ function __demoLeadData(product, i) {
 function seedDemoAccount() {
   try {
     var nowIso = new Date().toISOString();
-    var trialEnds = new Date(Date.now() + 3650 * 86400000).toISOString();
+    var trialEnds = new Date(Date.now() + 7 * 86400000).toISOString();
     var _todayStr = new Date().toISOString().split('T')[0];
     var base = new Date(); base.setHours(9, 0, 0, 0);
     DEMO_PRODUCTS.forEach(function(product) {
@@ -38258,7 +38258,8 @@ function seedDemoAccount() {
           'postcode', 'demo', 'free_trial', trialEnds, 0, nowIso, '[]', '0');
         console.log('[DEMO] account created: ' + product);
       }
-      try { db.prepare('UPDATE customers SET leads_per_day = 0, email_verified = 1, plan = ? WHERE id = ?').run('free_trial', acct.id); } catch(e) {}
+      // Keep the demo trial card looking right: reset it to "Day 1 of 7" each run.
+      try { db.prepare('UPDATE customers SET leads_per_day = 0, email_verified = 1, plan = ?, trial_ends = ? WHERE id = ?').run('free_trial', trialEnds, acct.id); } catch(e) {}
       var cnt = db.prepare('SELECT COUNT(*) AS c FROM leads WHERE customer_id = ?').get(acct.id);
       var newest = db.prepare('SELECT MAX(delivered_at) AS m FROM leads WHERE customer_id = ?').get(acct.id);
       var stale = !newest || !newest.m || String(newest.m).split('T')[0] !== _todayStr;
