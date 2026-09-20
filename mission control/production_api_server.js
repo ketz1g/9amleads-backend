@@ -20475,12 +20475,14 @@ async function runCampaignEmails(dry) {
       if (!isPaidNow && cust.plan === 'free_trial' && trialEnds) {
         if (new Date() <= trialEnds) {
           // Active trial: send onboarding emails at days 1, 3, 5 (after signup)
+          var _sentThisCust = false;
           for (var ei = 0; ei < CAMPAIGN_EMAILS.length; ei++) {
             var e = CAMPAIGN_EMAILS[ei];
             if (e.day <= 6 && accountAge >= e.day && !campaignSent.includes(e.template)) {
               campaignSent.push(e.template);
               await sendIt(cust, e.template, getEditedCampaignSubject(e.template, e.subject), getCampaignEmailHTMLWithEdits(cust, e.template));
               sent++;
+              _sentThisCust = true;
               break;
             }
           }
@@ -20493,10 +20495,12 @@ async function runCampaignEmails(dry) {
             campaignSent.push('trial_day7');
             await sendIt(cust, 'trial_day7', getEditedCampaignSubject('trial_day7', 'Your free trial ends tomorrow'), getCampaignEmailHTMLWithEdits(cust, 'trial_day7'));
             sent++;
+            _sentThisCust = true;
           }
-          // FIRST-WIN NUDGE: received >= 3 leads but contacted none (sent once).
+          // FIRST-WIN NUDGE: received >= 3 leads but contacted none (sent once, and not
+          // on the same run as another email).
           try {
-            if (!campaignSent.includes('trial_firstwin') && accountAge >= 3) {
+            if (!campaignSent.includes('trial_firstwin') && accountAge >= 3 && !_sentThisCust) {
               var _fwM = getTrialMetrics(cust);
               if ((_fwM.received || 0) >= 3 && (_fwM.contacted || 0) === 0) {
                 var _fwProd = cust.product || 'moving';
