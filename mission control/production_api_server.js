@@ -35692,14 +35692,16 @@ app.post('/api/exit-intent', async (req, res) => {
       }
     } catch(e) {}
     trackAnalytics('exit_intent_submitted', { product: prod, _uid: uid });
-    var label = ({ moving: 'Moving', probate: 'Probate', newbusiness: 'New Business', planning: 'Planning', tenders: 'Public Sector Tenders' })[prod] || 'Lead';
-    var html = '<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:26px;background:#0f172a;color:#e2e8f0;border-radius:14px">'
-      + '<h2 style="color:#38bdf8;margin:0 0 10px;font-size:20px">Here is a sample ' + escHtml(label) + ' lead</h2>'
-      + '<p style="font-size:14px;line-height:1.7;color:#cbd5e1">This is the kind of opportunity you get every morning at 9am &mdash; with its <b style="color:#fff">original source</b>, an opportunity score, full contact details and suggested outreach.</p>'
-      + '<p style="font-size:14px;line-height:1.7;color:#cbd5e1">See it for yourself, then start your <b style="color:#22c55e">free week</b> &mdash; no card required, cancel anytime.</p>'
-      + '<p style="margin:20px 0"><a href="https://www.9amleads.com/portal/?product=' + encodeURIComponent(prod) + '#signup" style="display:inline-block;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;font-weight:800;padding:13px 22px;border-radius:50px;text-decoration:none;font-size:14px">Start my free week</a></p>'
-      + '<p style="font-size:12px;color:#64748b">9am Leads Ltd &middot; Company No. 17402522 &middot; hello@9amleads.com</p></div>';
-    try { await sendBrevoEmail({ email: em, name: 'there' }, 'Your sample ' + label + ' lead from 9amLeads', html); } catch(e) {}
+    // Send the REAL daily lead-sheet email (same renderer as the 9am delivery) so
+    // the visitor sees an actual lead card with its source, score and details.
+    var _prodKey = ['moving', 'probate', 'newbusiness', 'planning', 'tenders'].indexOf(prod) !== -1 ? prod : 'moving';
+    var _label = ({ moving: 'Moving', probate: 'Probate', newbusiness: 'New Business', planning: 'Planning', tenders: 'Public Sector Tenders' })[_prodKey] || 'Lead';
+    try {
+      var _r = __renderLibraryEmail('daily_' + _prodKey);
+      await sendBrevoEmail({ email: em, name: 'there' }, 'Sample ' + _label + ' leads from 9amLeads', _r.html);
+    } catch(e) {
+      try { await sendBrevoEmail({ email: em, name: 'there' }, 'Your sample ' + _label + ' lead from 9amLeads', '<p>Here is a sample ' + _label + ' lead. Start your free week at https://www.9amleads.com/portal/?product=' + encodeURIComponent(_prodKey) + '#signup</p>'); } catch(e2) {}
+    }
     res.json({ ok: true });
   } catch(e) { res.json({ ok: true }); }
 });
