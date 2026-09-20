@@ -18804,9 +18804,17 @@ app.post('/api/admin/send-lead-sheet-samples', adminAuth, async (req, res) => {
 
 // Shared demo/sample builders for email previews & single sends.
 function __emailDemoCustomer(product) {
-  return { id: 'demo', email: 'ketzman1g@gmail.com', product: product || 'moving', plan: 'free_trial',
-    company: 'Demo Removal Co', contact_name: 'Demo Owner', business_type: 'Removal Company',
-    lead_type: 'Moving Leads', target_areas: JSON.stringify(['HA','EN','N']), coverage: 'postcode',
+  var _p = product || 'moving';
+  var _meta = {
+    moving: { company: 'Demo Removal Co', business_type: 'Removal Company', lead_type: 'Moving Leads' },
+    probate: { company: 'Demo Solicitors', business_type: 'Solicitor & Estate Agent', lead_type: 'Probate Leads' },
+    newbusiness: { company: 'Demo Accountants', business_type: 'Accountant & B2B Service', lead_type: 'New Business Alerts' },
+    planning: { company: 'Demo Architects', business_type: 'Architect & Builder', lead_type: 'Planning Permissions' },
+    tenders: { company: 'Demo Contractors', business_type: 'IT, Construction & More', lead_type: 'Public Tenders' }
+  }[_p] || { company: 'Demo Co', business_type: 'Business', lead_type: 'Leads' };
+  return { id: 'demo', email: 'ketzman1g@gmail.com', product: _p, plan: 'free_trial',
+    company: _meta.company, contact_name: 'Demo Owner', business_type: _meta.business_type,
+    lead_type: _meta.lead_type, target_areas: JSON.stringify(['HA','EN','N']), coverage: 'postcode',
     trial_ends: new Date(Date.now() + 7 * 86400000).toISOString(), created_at: new Date().toISOString(), marketing_consent: 1 };
 }
 function __emailSampleLeads(product) {
