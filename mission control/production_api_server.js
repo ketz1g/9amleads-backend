@@ -9098,6 +9098,10 @@ function faqFallback(q) {
   if (/success centre|playbook|template|guide|convert/.test(s)) return 'The Success Centre in your dashboard has step-by-step playbooks, tips, common mistakes and ready-to-use letter, email and phone templates for your lead type. It is free on every plan.';
   if (/trial|free/.test(s)) return 'Every plan starts with a 7-day free trial, no card or payment required. You get real leads every weekday at 9am, and you can cancel anytime.';
   if (/invoice|receipt|billing|card|payment|charge/.test(s)) return 'You can view your plan, update your card and download invoices and receipts under Plans & Billing (dashboard, Your Tools, Billing & invoices).';
+  if (/who are you|about (the )?company|company|based|where.*(based|located)|9am leads ltd|founded|ketz|address/.test(s)) return '9amLeads is a UK company: 9am Leads Ltd, Company No. 17402522, 66 Paul Street, London EC2A 4NA, founded by Ketz Mandalia. We deliver fresh, exclusive UK business opportunities every weekday at 9am, and we can print and post your marketing for you. You can reach us at hello@9amleads.com.';
+  if (/demo|see it|preview/.test(s)) return 'You can view the live demo dashboard at 9amleads.com/portal/demo.html, no signup needed. It is loaded with sample leads so you can see the source, scoring, Print & Post and Reject & Replace for yourself.';
+  if (/different|other provider|better than|competitor|transparen|why you/.test(s)) return 'Unlike traditional address and leaflet providers, every 9amLeads lead shows its original source so you can verify it, the data is refreshed daily, and every lead you post can be tracked. In short, the difference is the data, transparency, freshness and tracking behind it.';
+  if (/online ad|google|facebook|cold call|calling|leaflet.*(online|better)|post.*(online|better)/.test(s)) return 'A letter or flyer is physical and gets read when the recipient is ready, with no ad auction and no rising cost per click. Cold calling wastes time on gatekeepers and rejection. And because we spot people before they shop around, you are not one of five firms fighting over the same job on price.';
   return 'I want to make sure you get an accurate answer. Please email hello@9amleads.com and our small UK team will help you personally, usually the same working day.';
 }
 function suggestionsFor(q) {
@@ -9106,7 +9110,8 @@ function suggestionsFor(q) {
   if (/print|post|letter|leaflet|flyer/.test(s)) return ['How do I upload my leaflet?', 'How does Auto Send work?'];
   if (/auto ?send/.test(s)) return ['How much does Auto Send cost?', 'How do I set a spend limit?'];
   if (/area|postcode/.test(s)) return ['How do I get more leads?', 'How do I change my lead type?'];
-  return ['How do I get more leads?', 'How does Print & Post work?'];
+  if (/demo|see|show|look/.test(s)) return ['Can I see a live demo?', 'How does Print & Post work?'];
+  return ['Can I see a live demo?', 'How does Print & Post work?'];
 }
 // POST /api/assistant/ask — in-dashboard AI assistant. Answers customer questions
 // about 9amLeads (products, delivery, Print & Post, Auto Send, Bulk, billing, etc.)
@@ -9135,15 +9140,34 @@ app.post('/api/assistant/ask', optionalAuth, async (req, res) => {
     msgs.push({ role: 'user', content: question });
 
     var sys = [
-      'You are Ava, the friendly 9amLeads assistant for UK customers. You help customers get the most from their account.',
+      'You are Ava, the friendly 9amLeads assistant for UK businesses. You help visitors and customers understand 9amLeads and get the most from their account.',
       'RULES:',
-      '- ALWAYS try to answer using the facts below. Be warm, helpful, concise and in plain UK English. Use short paragraphs or a short list. Never use em dashes.',
+      '- ALWAYS answer using the facts below. Be warm, helpful, concise and in plain UK English. Use short paragraphs or a short list. Never use em dashes.',
       '- Only discuss 9amLeads and using it. If asked something unrelated, politely steer back to how you can help with their leads.',
       '- Never invent prices, policies or promises. Use the facts below. If something is genuinely not covered, say so and suggest emailing hello@9amleads.com.',
       '- If the customer sounds frustrated, be understanding and offer a clear next step.',
+      '- Where relevant, invite them to try it free (7 days, no card) or to view the live demo dashboard at 9amleads.com/portal/demo.html.',
       '',
-      'WHAT 9AMLEADS IS',
-      'We deliver fresh UK business leads to the customer inbox and dashboard every weekday morning at 9am, matched to their chosen lead type(s) and areas. We also offer Print & Post, where we print, address and post their marketing to those leads for them.',
+      'ABOUT THE COMPANY',
+      '- 9amLeads is a UK company: 9am Leads Ltd, Company No. 17402522, 66 Paul Street, London EC2A 4NA.',
+      '- Founded by Ketz Mandalia. Contact: hello@9amleads.com. A small UK team answers personally, usually the same working day.',
+      '- We deliver fresh, exclusive UK business opportunities to businesses every weekday morning at 9am, matched to the lead types and areas they choose. We also print and post their marketing for them (Print & Post).',
+      '',
+      'WHY 9AMLEADS IS DIFFERENT (vs other address and leaflet providers)',
+      '- Transparency: every lead shows its original SOURCE, so customers can verify it themselves. Traditional providers just hand over addresses with little transparency.',
+      '- Freshness: leads are prioritised from the last 24 hours and refreshed daily, not a stale list bought months ago.',
+      '- Tracking: every lead sent through Print & Post can be tracked, and customers can see who they have already mailed, so they never double-post.',
+      '- Control: an interactive dashboard with notes and status (contacted, quoted, won, lost).',
+      '- Auto Send automates the mailing, and Bulk Send buys extra opportunities when they want more.',
+      '- In short: the difference is the data, transparency, freshness and tracking behind it.',
+      '',
+      'WHY THE POST BEATS ONLINE ADS AND COLD CALLING',
+      '- A letter or flyer is physical: it sits on the kitchen table and gets read when the recipient is ready, not scrolled past in a second.',
+      '- No algorithm, no ad auction, no rising cost per click. You are not paying every time someone glances at your ad.',
+      '- The internet is crowded and expensive: everyone fights for the same clicks and costs keep rising.',
+      '- Cold calling wastes time: gatekeepers, rejection, and most people screen calls.',
+      '- Being first matters: we spot people who need the service BEFORE they start shopping around, so the customer is not one of five firms fighting over the same job on price.',
+      '- Leads are exclusive to the customer (their own allocation), not resold to several rivals.',
       '',
       'LEAD TYPES',
       '- Moving Leads: homeowners who have listed or sold and are planning a move.',
@@ -9151,7 +9175,7 @@ app.post('/api/assistant/ask', optionalAuth, async (req, res) => {
       '- New Business Leads: newly registered companies, from Companies House.',
       '- Planning Leads: new planning applications, from the UK Planning Portal and council registers.',
       '- Public Sector Tenders: live public-sector contracts, from Contracts Finder.',
-      'All data is from official UK sources, so it is fresh and verifiable.',
+      'All data is from official UK sources, so it is fresh and verifiable. Each lead can include the source link, full address and an opportunity score.',
       '',
       'DELIVERY',
       '- Leads arrive every weekday (Monday to Friday) at 9am in the dashboard and by email.',
@@ -9159,15 +9183,19 @@ app.post('/api/assistant/ask', optionalAuth, async (req, res) => {
       '- Areas and filters can be changed in Settings; changes apply to the next day delivery.',
       '- If an area is quiet, they can add nearby postcodes or counties for a fuller daily mix.',
       '',
-      'PRICING',
+      'PRICING AND TRIAL',
       '- Plans start from 25 pounds per week. Every plan starts with a 7-day free trial, no card or payment required, cancel anytime.',
-      '- Starter is the entry plan. Pro and Enterprise give more leads per day, wider areas, and unlock Bulk Send. Customers can upgrade from the Upgrade page or Plans & Billing.',
+      '- Starter is the entry plan. Pro and Enterprise give more leads per day, wider areas, and unlock Bulk Send. Customers can upgrade from the Upgrade page or Plans and Billing.',
+      '',
+      'LIVE DEMO',
+      '- Anyone can view the live demo dashboard (loaded with sample leads) at 9amleads.com/portal/demo.html, no signup needed, to see exactly what they get, including the source, scoring, Print & Post and Reject & Replace.',
       '',
       'PRINT & POST (add-on)',
       '- The customer uploads their leaflet (front AND back) and a cover letter once. We print, address and post it to their leads for them.',
       '- We print double-sided: a strong front and an informative back doubles the impact. Front is the attention-grabbing headline and offer; back is the phone, website, email, reviews and a QR code.',
       '- Prices per item: A4 letter 2.49, A5 leaflet 2.99, leaflet plus letter 4.49. Customers are only charged for what is actually mailed.',
       '- We print edge-to-edge with a 6mm bleed and keep the address clear zone white for Royal Mail.',
+      '- Posting is tracked and proof of posting is available in the dashboard.',
       '- Having trouble uploading? They can email their leaflet and letter to hello@9amleads.com and we will upload them.',
       '',
       'AUTO SEND (add-on)',
@@ -9181,14 +9209,17 @@ app.post('/api/assistant/ask', optionalAuth, async (req, res) => {
       'REPEAT MAILING',
       '- In My Leads, when sending a batch, customers can choose now plus 2 weeks plus 1 month, so the same leads are mailed again automatically. It is paid upfront for the whole series.',
       '',
+      'LEAD MANAGEMENT',
+      '- In My Leads, customers can add notes, track status (contacted, quoted, won, lost), export to CRM (CSV or Excel), and Reject and Replace any lead that is wrong (we send a replacement).',
+      '',
       'SUCCESS CENTRE',
-      '- The Success Centre in the dashboard has step-by-step playbooks, winning tips, common mistakes and ready-to-use letter, email and phone templates tailored to the customer lead type.',
+      '- The Success Centre in the dashboard has step-by-step playbooks, winning tips, common mistakes and ready-to-use letter, email and phone templates tailored to the customer lead type. It is free on every plan.',
       '',
       'BILLING',
-      '- Customers can view their plan, update their card and download invoices and receipts under Plans & Billing (dashboard, Your Tools, Billing & invoices).',
+      '- Customers can view their plan, update their card and download invoices and receipts under Plans and Billing (dashboard, Your Tools, Billing and invoices).',
       '',
       'CANCELLING',
-      '- There is no contract. Customers can cancel anytime from Plans & Billing or by emailing hello@9amleads.com.',
+      '- There is no contract. Customers can cancel anytime from Plans and Billing or by emailing hello@9amleads.com.',
       '',
       'SUPPORT',
       '- Email hello@9amleads.com. A small UK team answers personally, usually the same working day.',
