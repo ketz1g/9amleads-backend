@@ -1055,7 +1055,7 @@ var _token = '';
       var _db = document.createElement('div');
       _db.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:99999;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;text-align:center;padding:10px 14px;font-size:13px;font-weight:700;font-family:Inter,Arial,sans-serif';
       var _dopts = [['moving', 'Moving'], ['probate', 'Probate'], ['planning', 'Planning'], ['newbusiness', 'New Business'], ['tenders', 'Tenders']].map(function(x){ return '<option value="' + x[0] + '"' + ((sess.product === x[0]) ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('');
-      _db.innerHTML = '\uD83D\uDC40 Read-only demo \u00b7 Lead type: <select id="demoProductSwitch" style="margin:0 6px;padding:4px 8px;border-radius:8px;border:0;font-weight:700;font-size:13px">' + _dopts + '</select> <a href="/portal/?product=' + (sess.product || 'moving') + '#signup" style="color:#fff;text-decoration:underline">Start your free week &mdash; no card required &rarr;</a>';
+      _db.innerHTML = '\uD83D\uDC40 Read-only demo \u00b7 Lead type: <select id="demoProductSwitch" style="margin:0 6px;padding:4px 8px;border-radius:8px;border:0;font-weight:700;font-size:13px">' + _dopts + '</select> <a href="/portal/?product=' + (sess.product || 'moving') + '#signup" style="color:#fff;text-decoration:underline">Try your free week &mdash; no card required &rarr;</a>';
       document.body.appendChild(_db);
       try { var _ps = document.getElementById('demoProductSwitch'); if (_ps) { _ps.onchange = function(){ window.location.href = '/portal/demo.html?product=' + encodeURIComponent(this.value); }; } } catch(e) {}
     } catch(e) {}
@@ -1064,7 +1064,7 @@ var _token = '';
       var _signup = '/portal/?product=' + encodeURIComponent(sess.product || 'moving') + '#signup';
       var _fab = document.createElement('a');
       _fab.href = _signup;
-      _fab.textContent = '\uD83C\uDF81 Start free \u2014 no card required';
+      _fab.textContent = '\uD83C\uDF81 Try it free \u2014 no card required';
       _fab.style.cssText = 'position:fixed;right:18px;bottom:74px;z-index:99999;background:#16a34a;color:#fff;font-weight:800;font-size:14px;padding:12px 20px;border-radius:50px;text-decoration:none;box-shadow:0 8px 24px rgba(22,163,74,.45);font-family:Inter,Arial,sans-serif';
       document.body.appendChild(_fab);
       // Extra in-content sign-up CTAs (top banner + hero button).
@@ -1073,15 +1073,15 @@ var _token = '';
         if (_cont) {
           var _bn = document.createElement('div');
           _bn.style.cssText = 'background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;border-radius:14px;padding:16px 18px;margin:0 0 16px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;font-family:Inter,Arial,sans-serif';
-          _bn.innerHTML = '<div style="font-size:14px;font-weight:700;line-height:1.5">You are viewing the live demo. Start your <strong>free week</strong> &mdash; no card required.</div>'
-            + '<a href="' + _signup + '" style="background:#fff;color:#1d4ed8;font-weight:800;font-size:14px;padding:11px 22px;border-radius:50px;text-decoration:none;white-space:nowrap">Start your free week &mdash; no card required &rarr;</a>';
+          _bn.innerHTML = '<div style="font-size:14px;font-weight:700;line-height:1.5">You are viewing the live demo. Try your <strong>free week</strong> &mdash; no card required.</div>'
+            + '<a href="' + _signup + '" style="background:#fff;color:#1d4ed8;font-weight:800;font-size:14px;padding:11px 22px;border-radius:50px;text-decoration:none;white-space:nowrap">Try your free week &mdash; no card required &rarr;</a>';
           _cont.insertBefore(_bn, _cont.firstChild);
         }
         var _ha = document.querySelector('.hero-actions');
         if (_ha) {
           var _hb = document.createElement('a');
           _hb.href = _signup;
-          _hb.innerHTML = '\uD83C\uDF81 Start free \u2014 no card required';
+          _hb.innerHTML = '\uD83C\uDF81 Try it free \u2014 no card required';
           _hb.style.cssText = 'background:#16a34a;color:#fff;font-weight:800;font-size:13px;padding:10px 18px;border-radius:8px;text-decoration:none;display:inline-flex;align-items:center;gap:6px';
           _ha.appendChild(_hb);
         }
@@ -1093,8 +1093,8 @@ var _token = '';
         ov.innerHTML = '<div style="max-width:420px;background:#fff;border-radius:16px;padding:26px;text-align:center;font-family:Inter,Arial,sans-serif;box-shadow:0 20px 60px rgba(0,0,0,.4)">'
           + '<div style="font-size:34px">\uD83C\uDF89</div>'
           + '<h3 style="margin:8px 0 6px;font-size:21px;font-weight:800;color:#0f172a">Like what you see?</h3>'
-          + '<p style="margin:0 0 16px;font-size:14px;color:#64748b;line-height:1.6">Start your <strong>free week</strong> and get fresh leads in your area at 9am - no card required, cancel anytime.</p>'
-          + '<a href="' + _signup + '" style="display:block;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;font-weight:800;font-size:15px;padding:14px;border-radius:50px;text-decoration:none">Start my free week &mdash; no card required &rarr;</a>'
+          + '<p style="margin:0 0 16px;font-size:14px;color:#64748b;line-height:1.6">Try your <strong>free week</strong> and get fresh leads in your area at 9am - no card required, cancel anytime.</p>'
+          + '<a href="' + _signup + '" style="display:block;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;font-weight:800;font-size:15px;padding:14px;border-radius:50px;text-decoration:none">Try it free &mdash; no card required &rarr;</a>'
           + '<button id="demoPopupClose" style="margin-top:10px;background:none;border:none;color:#94a3b8;font-size:13px;cursor:pointer">Keep exploring the demo</button>'
           + '</div>';
         document.body.appendChild(ov);
