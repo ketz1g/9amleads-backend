@@ -187,20 +187,30 @@ function whyBetter(accent) {
   return '<tr><td style="padding:6px 34px 0">'
     + '<p style="margin:0 0 10px;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:' + accent + '">Why this is different</p>'
     + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0">'
+    + block('A letter in the hand beats a click every time', [
+      'A leaflet or letter is <strong style="color:' + INK + '">physical</strong> - it sits on the kitchen table and gets read when they are ready, not scrolled past in a second',
+      'No algorithm, no ad auction, no rising cost per click',
+      'You are not paying every time someone glances at your ad'
+    ])
+    + block('The internet is crowded and expensive', [
+      'Everyone is fighting for the same clicks on Google and social media',
+      'Cost per click keeps rising while the results fall',
+      'You are up against every rival who can simply outbid you'
+    ])
+    + block('Cold calling wastes your day', [
+      'Hours of dialling, gatekeepers and rejection',
+      'Most people screen calls and never pick up',
+      'You only ever reach the few who happen to answer'
+    ])
+    + block('Let them come to you - first', [
+      'We spot people who need your service <strong style="color:' + INK + '">before</strong> they start shopping around',
+      'So you are not one of five firms fighting over the same job on price',
+      'Your own allocation, not resold to three rivals at once'
+    ])
     + block('Better than a bought address list', [
-      'Every lead shows its <strong style="color:' + INK + '">source</strong>, so you can verify it yourself',
+      'Every lead shows its source, so you can verify it yourself',
       'Fresh opportunities every day, not a stale list bought months ago',
       'Track every lead you send, and see who you have already mailed'
-    ])
-    + block('Why the post beats online advertising', [
-      'A letter or flyer lands in their hand and stays in their home',
-      'No auction, no rising cost per click, no being scrolled past',
-      'It is there when they are ready, not for a split second'
-    ])
-    + block('Why this approach wins', [
-      'You reach people <strong style="color:' + INK + '">before</strong> they start shopping around',
-      'Your own allocation, not resold to three rivals at once',
-      'You are first to the opportunity, every morning at 9am'
     ])
     + '</table></td></tr>\n';
 }
@@ -224,6 +234,10 @@ function email1(st, prod, accent, id) {
     + listItem('Print &amp; Post a letter or flyer in one click, with live tracking')
     + listItem('Reject &amp; Replace any lead that is wrong - we send a fresh one')
     + listItem('Add notes and track each lead: contacted, quoted, won or lost')
+    + listItem('See who you have already mailed, so you never double-post')
+    + listItem('Auto Send - we print and post to every new lead each morning')
+    + listItem('Bulk buy extra leads whenever you need more volume')
+    + listItem('Export to your CRM (CSV or Excel) in one click')
     + '</table>'
     + '</td></tr>\n'
     + whyBetter(accent)
