@@ -1067,6 +1067,25 @@ var _token = '';
       _fab.textContent = '\uD83C\uDF81 Start your free week';
       _fab.style.cssText = 'position:fixed;right:18px;bottom:74px;z-index:99999;background:#16a34a;color:#fff;font-weight:800;font-size:14px;padding:12px 20px;border-radius:50px;text-decoration:none;box-shadow:0 8px 24px rgba(22,163,74,.45);font-family:Inter,Arial,sans-serif';
       document.body.appendChild(_fab);
+      // Extra in-content sign-up CTAs (top banner + hero button).
+      try {
+        var _cont = document.querySelector('.container');
+        if (_cont) {
+          var _bn = document.createElement('div');
+          _bn.style.cssText = 'background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;border-radius:14px;padding:16px 18px;margin:0 0 16px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;font-family:Inter,Arial,sans-serif';
+          _bn.innerHTML = '<div style="font-size:14px;font-weight:700;line-height:1.5">You are viewing the live demo. Start your <strong>free week</strong> &mdash; no card required.</div>'
+            + '<a href="' + _signup + '" style="background:#fff;color:#1d4ed8;font-weight:800;font-size:14px;padding:11px 22px;border-radius:50px;text-decoration:none;white-space:nowrap">Start your free week &rarr;</a>';
+          _cont.insertBefore(_bn, _cont.firstChild);
+        }
+        var _ha = document.querySelector('.hero-actions');
+        if (_ha) {
+          var _hb = document.createElement('a');
+          _hb.href = _signup;
+          _hb.innerHTML = '\uD83C\uDF81 Start your free week';
+          _hb.style.cssText = 'background:#16a34a;color:#fff;font-weight:800;font-size:13px;padding:10px 18px;border-radius:8px;text-decoration:none;display:inline-flex;align-items:center;gap:6px';
+          _ha.appendChild(_hb);
+        }
+      } catch(e) {}
       setTimeout(function(){
         try { if (sessionStorage.getItem('demo_popup_shown')) return; sessionStorage.setItem('demo_popup_shown','1'); } catch(e) {}
         var ov = document.createElement('div');
