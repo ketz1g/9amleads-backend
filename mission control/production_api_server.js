@@ -18936,6 +18936,76 @@ app.post('/api/admin/send-library-email', adminAuth, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ===== WIN-BACK EMAILS (expired trials) =====
+// 3 steps per product: why the post wins -> Print & Post -> closer. Rendered here so
+// the Admin Email Library can preview them (and so a future cron can send them).
+function buildWinbackEmailHTML(product, step) {
+  var WB = {
+    moving: { accent: '#0ea5e9', plural: 'moving leads' },
+    probate: { accent: '#a855f7', plural: 'probate leads' },
+    newbusiness: { accent: '#06b6d4', plural: 'new business leads' },
+    planning: { accent: '#10b981', plural: 'planning leads' },
+    tenders: { accent: '#6366f1', plural: 'public tenders' }
+  };
+  var p = WB[product] || WB.moving;
+  var INK = '#1f2937', MUTED = '#6b7280', LINE = '#e5e7eb', PAGE = '#f4f5f7';
+  var HOWITWORKS = 'https://www.9amleads.com/how-it-works/';
+  var PRICING = 'https://www.9amleads.com/pricing/';
+  function shell(subject, pre, inner) {
+    return '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + subject + '</title></head>'
+      + '<body style="margin:0;padding:0;background-color:' + PAGE + ';">'
+      + '<div style="display:none;max-height:0;overflow:hidden;opacity:0">' + pre + '</div>'
+      + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="' + PAGE + '" style="background-color:' + PAGE + '"><tr><td align="center" style="padding:24px 12px">'
+      + '<table role="presentation" width="600" cellpadding="0" cellspacing="0" bgcolor="#ffffff" style="width:600px;max-width:600px;background-color:#ffffff;border:1px solid ' + LINE + ';border-radius:8px">'
+      + '<tr><td style="height:4px;background-color:' + p.accent + ';font-size:0;line-height:0">&nbsp;</td></tr>' + inner + '</table></td></tr></table></body></html>';
+  }
+  var logo = '<tr><td style="padding:26px 34px 0"><p style="margin:0;font-size:18px;font-weight:800;color:' + INK + '"><a href="https://www.9amleads.com" style="color:' + INK + ';text-decoration:none">9am<span style="color:' + p.accent + '">Leads</span></a></p></td></tr>';
+  var footer = '<tr><td style="padding:18px 34px 26px"><p style="margin:0 0 12px;color:' + INK + ';font-size:14px;line-height:1.6">Any questions, just reply and I will answer personally.</p>'
+    + '<table role="presentation" cellpadding="0" cellspacing="0"><tr><td width="84" valign="middle" style="padding-right:12px"><img src="https://9amleads.com/assets/ketan-photo.jpeg" width="72" height="72" alt="Ketz Mandalia" style="display:block;width:72px;height:72px;border-radius:50%;border:0"></td>'
+    + '<td valign="middle" style="color:' + INK + ';font-size:14px;line-height:1.5">All the best,<br><strong>Ketz Mandalia</strong><br><span style="color:' + MUTED + ';font-size:13px">Founder, 9amLeads<br>hello@9amleads.com</span></td></tr></table></td></tr>'
+    + '<tr><td style="padding:0 34px 26px"><p style="margin:0 0 10px;color:#9ca3af;font-size:11px;line-height:1.7">9am Leads Ltd, Company No. 17402522, 66 Paul Street, London EC2A 4NA.</p><a href="{{ unsubscribe }}" style="color:' + MUTED + ';font-size:12px;text-decoration:underline">Unsubscribe</a></td></tr>';
+  function block(title, lines) {
+    return '<tr><td style="padding:0 0 14px"><p style="margin:0 0 6px;font-size:14px;font-weight:800;color:' + INK + '">' + title + '</p>'
+      + lines.map(function (l) { return '<p style="margin:0 0 4px;font-size:13px;color:' + MUTED + ';line-height:1.55"><span style="color:#16a34a;font-weight:800">&#10003;</span>&nbsp; ' + l + '</p>'; }).join('') + '</td></tr>';
+  }
+  function bullets(items) {
+    return '<tr><td style="padding:6px 34px 4px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">'
+      + items.map(function (t) { return '<tr><td style="padding:0 0 7px;color:' + INK + ';font-size:14px;line-height:1.55"><span style="color:#16a34a;font-weight:800">&#10003;</span>&nbsp; ' + t + '</td></tr>'; }).join('') + '</table></td></tr>';
+  }
+  function cta(url, text, sub) {
+    return '<tr><td align="center" style="padding:10px 34px 6px"><a href="' + url + '" style="display:inline-block;background-color:' + p.accent + ';color:#ffffff;text-decoration:none;padding:15px 38px;border-radius:6px;font-size:16px;font-weight:800">' + text + '</a>'
+      + (sub ? '<p style="margin:10px 0 0;color:' + MUTED + ';font-size:12px">' + sub + '</p>' : '') + '</td></tr>';
+  }
+  function head(kick, title) {
+    return '<tr><td style="padding:14px 34px 6px"><p style="margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:' + p.accent + '">' + kick + '</p>'
+      + '<h1 style="margin:0 0 14px;font-size:23px;line-height:1.3;font-weight:800;color:' + INK + '">' + title + '</h1>';
+  }
+  var subject = step === 1 ? 'Why a letter beats an ad (and a cold call)' : step === 2 ? 'We print and post it for you' : 'Let us get you back in front of them';
+  var inner;
+  if (step === 1) {
+    inner = logo + head('The honest truth', 'Why a letter beats an ad (and a cold call)')
+      + '<p style="margin:0 0 14px;color:' + INK + ';font-size:15px;line-height:1.65">Hi,<br><br>If you are tired of paying for clicks that go nowhere, or losing hours to the phone, this is worth two minutes. Here is why the post still wins, and why it is worth another look.</p></td></tr>'
+      + '<tr><td style="padding:0 34px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">'
+      + block('Social media: you are renting attention', ['You bid against every rival for the same clicks', 'Costs climb while the results fall', 'The moment you stop paying, you disappear'])
+      + block('Cold calling: the hardest way to win work', ['Gatekeepers, rejection and endless dialling', 'Most people screen calls and never pick up', 'You only ever reach the few who happen to answer'])
+      + block('A letter in the hand works differently', ['It is physical - it sits on the kitchen table and is read when they are ready', 'No algorithm, no auction, no cost per click', 'You reach the door first, before they start shopping around'])
+      + '</table></td></tr>' + cta(HOWITWORKS, 'See how it works', '') + footer;
+    return shell(subject, 'Clicks that go nowhere, calls that never connect. Here is why the post wins.', inner);
+  }
+  if (step === 2) {
+    inner = logo + head('Zero effort, real results', 'We print and post it for you')
+      + '<p style="margin:0 0 14px;color:' + INK + ';font-size:15px;line-height:1.65">Hi,<br><br>No printer, no envelopes, no trip to the post box. Upload your leaflet and cover letter once, and we do the rest - printed, addressed and posted to your ' + p.plural + '.</p></td></tr>'
+      + bullets(['Double-sided print: a bold front and an informative back, proven to lift response', 'Printed edge-to-edge and posted first class by Royal Mail', 'Every mailpiece tracked, with proof of posting in your dashboard', 'Auto Send posts to every new lead each morning, without you lifting a finger', 'You only pay for what is mailed: A5 leaflet &pound;2.99, letter &pound;2.49, or both &pound;4.49'])
+      + cta(PRICING, 'See plans and pricing', 'Plans from &pound;25 per week &middot; cancel anytime') + footer;
+    return shell(subject, 'Upload your leaflet once - we print, address and post it to your leads for you.', inner);
+  }
+  inner = logo + head('One more go', 'Let us get you back in front of them')
+    + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">Hi,<br><br>You have seen why the post wins and how Print &amp; Post does the work for you. All that is left is to get your own ' + p.plural + ' flowing again.</p>'
+    + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">Pick a plan and I will personally make sure your areas are set up to give you a full daily batch, with your Print &amp; Post ready to go. Want a deal on your first month? Just reply and I will sort it for you.</p></td></tr>'
+    + cta(PRICING, 'Get started', 'Plans from &pound;25 per week &middot; cancel anytime') + footer;
+  return shell(subject, 'Pick a plan and I will set up your areas personally.', inner);
+}
+
 // GET /api/admin/email-library — every email a customer can receive, grouped by
 // WHEN it is sent (not by template type), each with fully-rendered HTML so it can
 // be previewed inline at desktop and mobile width. Used by the Admin Email Library.
@@ -18997,6 +19067,16 @@ app.get('/api/admin/email-library', adminAuth, (req, res) => {
       { id:'status_delay', name:'Leads on their way (delay)', when:'If delivery is running late (09:10 UK)', html: statusHtml('delay') },
       { id:'status_sorted', name:'All sorted (resolved)', when:'Once the issue is fixed', html: statusHtml('sorted') }
     ]});
+    // 8) WIN-BACK (expired trials)
+    var winback = [];
+    var _wbLabels = { moving: 'Moving Leads', probate: 'Probate Leads', newbusiness: 'New Business Alerts', planning: 'Planning Permissions', tenders: 'Public Tenders' };
+    var _wbNames = { 1: 'Why the post wins', 2: 'We print and post it for you', 3: 'The closer' };
+    ['moving', 'probate', 'newbusiness', 'planning', 'tenders'].forEach(function(wp) {
+      [1, 2, 3].forEach(function(ws) {
+        try { winback.push({ id: 'winback_' + wp + '_' + ws, name: 'Win-back - ' + _wbLabels[wp] + ' - step ' + ws + ' (' + _wbNames[ws] + ')', when: 'Expired trials: day ' + [0, 3, 7][ws - 1] + ' after the trial ends', html: buildWinbackEmailHTML(wp, ws) }); } catch(we) {}
+      });
+    });
+    groups.push({ key: 'winback', label: 'Win-back (expired trials)', icon: '\u267B\uFE0F', sends: 'To expired trials - day 0, 3 and 7 after the trial ends', emails: winback });
     res.json({ success: true, groups: groups });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
