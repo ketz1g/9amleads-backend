@@ -14520,7 +14520,7 @@ app.get('/api/admin/customers', adminAuth, (req, res) => {
       if (ta !== tb) return ta - tb;
       return String(b.created_at || '').localeCompare(String(a.created_at || ''));
     });
-  const total = db.prepare('SELECT COUNT(*) as count FROM customers').get();
+  const total = { count: allCustomers.length };
   const customers = allCustomers.slice((page - 1) * limit, page * limit);
   const totalExpiredTrials = (getDb().customers || []).filter(customerTrialExpired).length;
 
