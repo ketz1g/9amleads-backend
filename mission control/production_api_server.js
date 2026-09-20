@@ -5573,16 +5573,23 @@ app.get('/api/auth/signup-overlap', (req, res) => {
 // POST /api/auth/signup
 app.post('/api/auth/signup', async (req, res) => {
   try {
-    const { company, name, email, phone, password, product, products, plan, targetAreas, leadFilters, bizField2, bizField3, source, marketingConsent, crmWebhookUrl, movingType, acceptTerms, strictFilters } = req.body;
+    let { company, name, email, phone, password, product, products, plan, targetAreas, leadFilters, bizField2, bizField3, source, marketingConsent, crmWebhookUrl, movingType, acceptTerms, strictFilters } = req.body;
+    // Funnel instrumentation: count every signup attempt (all sources) so the
+    // admin funnel stays consistent (signup_started >= signup_completed).
+    try { trackAnalytics('signup_started', { product: req.body.product || 'moving', source: req.body.source || 'web', _uid: String(req.body.analytics_id || req.body.uid || '').substring(0, 80) }); } catch(e) {}
     // Default coverage EARLY so the postcode-area validation below ALWAYS runs.
     // (Previously the validation was gated on `coverage === 'postcode'` BEFORE this
     // default existed, so a signup that omitted `coverage` skipped the "exactly 5
     // postcode areas for moving" rule entirely.)
     var coverage = req.body.coverage || 'postcode';
 
-    if (!company || !email || !phone || !password) {
-      return res.status(400).json({ error: 'Company, phone, email and password are required' });
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
     }
+    // Company name and phone are OPTIONAL at signup (lower friction -> more trials).
+    // Fall back to the contact name / a neutral placeholder; collected later in the dashboard.
+    company = (company && String(company).trim()) || (name && String(name).trim()) || 'Your business';
+    phone = (phone && String(phone).trim()) || '';
     if (source === 'web' && !acceptTerms) {
       return res.status(400).json({ error: 'Please accept the Terms & Conditions to create an account' });
     }
@@ -35664,6 +35671,35 @@ app.post('/api/analytics/event', async (req, res) => {
     });
     if (uid) clean._uid = uid;
     trackAnalytics(ev, clean);
+    res.json({ ok: true });
+  } catch(e) { res.json({ ok: true }); }
+});
+// POST /api/exit-intent — capture an abandoning visitor's email and send them a
+// sample lead email so they can see the source/score/details for themselves.
+app.post('/api/exit-intent', async (req, res) => {
+  try {
+    var em = String(req.body.email || '').trim().toLowerCase();
+    if (!em || !validateEmail(em)) return res.status(400).json({ error: 'Please enter a valid email' });
+    var prod = String(req.body.product || 'moving').substring(0, 30);
+    var uid = String(req.body.uid || '').substring(0, 80);
+    try {
+      var db2 = getDb();
+      if (!db2.exit_intents) db2.exit_intents = [];
+      if (!db2.exit_intents.some(function(x){ return x.email === em; })) {
+        db2.exit_intents.push({ email: em, product: prod, uid: uid, created_at: new Date().toISOString() });
+        if (db2.exit_intents.length > 10000) db2.exit_intents = db2.exit_intents.slice(-10000);
+        saveDb();
+      }
+    } catch(e) {}
+    trackAnalytics('exit_intent_submitted', { product: prod, _uid: uid });
+    var label = ({ moving: 'Moving', probate: 'Probate', newbusiness: 'New Business', planning: 'Planning', tenders: 'Public Sector Tenders' })[prod] || 'Lead';
+    var html = '<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:26px;background:#0f172a;color:#e2e8f0;border-radius:14px">'
+      + '<h2 style="color:#38bdf8;margin:0 0 10px;font-size:20px">Here is a sample ' + escHtml(label) + ' lead</h2>'
+      + '<p style="font-size:14px;line-height:1.7;color:#cbd5e1">This is the kind of opportunity you get every morning at 9am &mdash; with its <b style="color:#fff">original source</b>, an opportunity score, full contact details and suggested outreach.</p>'
+      + '<p style="font-size:14px;line-height:1.7;color:#cbd5e1">See it for yourself, then start your <b style="color:#22c55e">free week</b> &mdash; no card required, cancel anytime.</p>'
+      + '<p style="margin:20px 0"><a href="https://www.9amleads.com/portal/?product=' + encodeURIComponent(prod) + '#signup" style="display:inline-block;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;font-weight:800;padding:13px 22px;border-radius:50px;text-decoration:none;font-size:14px">Start my free week</a></p>'
+      + '<p style="font-size:12px;color:#64748b">9am Leads Ltd &middot; Company No. 17402522 &middot; hello@9amleads.com</p></div>';
+    try { await sendBrevoEmail({ email: em, name: 'there' }, 'Your sample ' + label + ' lead from 9amLeads', html); } catch(e) {}
     res.json({ ok: true });
   } catch(e) { res.json({ ok: true }); }
 });
