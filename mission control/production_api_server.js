@@ -16700,6 +16700,19 @@ cron.schedule('*/10 5-8 * * 1-5', async () => {
   try { var _er = await enrichMovingPoolAddresses(Number(process.env.MOVING_POOL_ENRICH_MAX || 20)); console.log('[POOL-ENRICH] drip ' + JSON.stringify(_er)); } catch(e) { console.log('[POOL-ENRICH] drip error: ' + e.message); }
   global.__poolEnrichRunning = false;
 }, { timezone: 'Europe/London' });
+function runEpcBulkEnrichAllPools(label) {
+  if (global.__epcBulkRunning) return;
+  global.__epcBulkRunning = true;
+  enrichAllPoolsWithEpc().then(function(r) {
+    console.log('[EPC-BULK ' + label + '] ' + JSON.stringify(r));
+    global.__epcBulkRunning = false;
+  }).catch(function(e) {
+    console.log('[EPC-BULK ' + label + '] error: ' + (e && e.message || e));
+    global.__epcBulkRunning = false;
+  });
+}
+cron.schedule('40 5 * * 1-5', function() { try { runEpcBulkEnrichAllPools('05:40'); } catch(e) {} }, { timezone: 'Europe/London' });
+cron.schedule('20 8 * * 1-5', function() { try { runEpcBulkEnrichAllPools('08:20'); } catch(e) {} }, { timezone: 'Europe/London' });
 cron.schedule('15 5 * * 1-5', async () => {
   try { await preVerifyMovingLeads(); } catch(e) { console.log('[PREVERIFY] 05:15 error: ' + e.message); }
 }, { timezone: 'Europe/London' });
