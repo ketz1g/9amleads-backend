@@ -17032,7 +17032,7 @@ function autoRefillLowPools() {
       }
     });
     if (Object.keys(dbc.auto_heal_triggers).length) saveDb();
-    if (triggered.length) recordError('auto-heal', 'Auto-triggered scrapers for low pools: ' + triggered.join(','));
+    if (triggered.length) console.log('[AUTO-HEAL] Auto-triggered scrapers for low pools: ' + triggered.join(','));
     return triggered;
   } catch(e) { return []; }
 }
