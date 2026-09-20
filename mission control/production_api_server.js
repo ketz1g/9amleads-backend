@@ -35987,6 +35987,40 @@ app.post('/api/admin/delete-customer', adminAuth, (req, res) => {
     res.json({ success: true, message: 'Customer deleted: ' + email });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+// POST /api/admin/purge-test-data — permanently remove ALL test.* accounts and their
+// residual data (leads, fulfilment ledger, activity, email log, analytics). Keeps the
+// public demo* accounts. One-time cleanup now the test accounts are no longer needed.
+app.post('/api/admin/purge-test-data', adminAuth, function(req, res) {
+  try {
+    var d = getDb();
+    var removed = {};
+    function isTestEmail(e) { return /^test\./i.test(String(e || '')); }
+    var testIds = {};
+    (d.customers || []).forEach(function(c) { if (isTestEmail(c.email)) testIds[c.id] = 1; });
+    var cb = (d.customers || []).length;
+    d.customers = (d.customers || []).filter(function(c) { return !isTestEmail(c.email); });
+    removed.customers = cb - d.customers.length;
+    var lb = (d.leads || []).length;
+    d.leads = (d.leads || []).filter(function(l) { return !testIds[l.customer_id] && !isTestEmail(l.email); });
+    removed.leads = lb - d.leads.length;
+    var fb = (d.fulfilment_ledger || []).length;
+    d.fulfilment_ledger = (d.fulfilment_ledger || []).filter(function(e) { return !isTestEmail(e.email); });
+    removed.fulfilment_ledger = fb - d.fulfilment_ledger.length;
+    var ab = (d.customer_activity || []).length;
+    d.customer_activity = (d.customer_activity || []).filter(function(e) { return !isTestEmail(e.email); });
+    removed.customer_activity = ab - d.customer_activity.length;
+    var eb = (d.email_log || []).length;
+    d.email_log = (d.email_log || []).filter(function(e) { return !isTestEmail(e.email); });
+    removed.email_log = eb - d.email_log.length;
+    var anb = (d.analytics || []).length;
+    d.analytics = (d.analytics || []).filter(function(e) { var p = e.props || {}; return !(isTestEmail(p.email)); });
+    removed.analytics = anb - d.analytics.length;
+    try { Object.keys(testIds).forEach(function(id) { db.prepare('DELETE FROM leads WHERE customer_id = ?').run(id); db.prepare('DELETE FROM customers WHERE id = ?').run(id); }); } catch(e) {}
+    saveDb();
+    console.log('[ADMIN] purge-test-data removed ' + JSON.stringify(removed));
+    res.json({ success: true, removed: removed });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 
 // GET /api/admin/backups — list local database backups (hourly snapshots) so a
 // mistakenly deleted customer can be recovered from a pre-deletion backup.
