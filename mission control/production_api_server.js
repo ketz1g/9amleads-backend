@@ -16701,14 +16701,14 @@ cron.schedule('*/10 5-8 * * 1-5', async () => {
   global.__poolEnrichRunning = false;
 }, { timezone: 'Europe/London' });
 function runEpcBulkEnrichAllPools(label) {
-  if (global.__epcBulkRunning) return;
-  global.__epcBulkRunning = true;
+  if (global.__poolEnrichRunning) return;
+  global.__poolEnrichRunning = true;
   enrichAllPoolsWithEpc().then(function(r) {
     console.log('[EPC-BULK ' + label + '] ' + JSON.stringify(r));
-    global.__epcBulkRunning = false;
+    global.__poolEnrichRunning = false;
   }).catch(function(e) {
     console.log('[EPC-BULK ' + label + '] error: ' + (e && e.message || e));
-    global.__epcBulkRunning = false;
+    global.__poolEnrichRunning = false;
   });
 }
 cron.schedule('40 5 * * 1-5', function() { try { runEpcBulkEnrichAllPools('05:40'); } catch(e) {} }, { timezone: 'Europe/London' });
