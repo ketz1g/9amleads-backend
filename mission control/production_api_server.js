@@ -14453,9 +14453,12 @@ app.get('/api/admin/stats', adminAuth, (req, res) => {
   var expiredTrials = allCusts.filter(function(c) { var t = c.trial_ends ? new Date(c.trial_ends).getTime() : NaN; return c.plan === 'free_trial' && !isNaN(t) && t < _nowMs; }).length;
   var weekSignups = allCusts.filter(function(c) { return c.created_at && c.created_at >= weekAgo; }).length;
   var crmConnected = allCusts.filter(function(c) { return c.crm_webhook_url; }).length;
+  // Active = has leads owing today: not cancelled, not paused, trial not expired (unless paying).
+  var activeCustomers = allCusts.filter(function(c) { return c.plan !== 'cancelled' && !isLeadsPaused(c) && !trialExpiredUnpaid(c); }).length;
 
   res.json({
     total_customers: totalCustomers.count,
+    active_customers: activeCustomers,
     free_trials: freeTrials.count,
     paid_customers: paidCustomers,
     expired_trials: expiredTrials,
