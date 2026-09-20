@@ -38223,10 +38223,14 @@ function seedDemoAccount() {
     }
     try { db.prepare('UPDATE customers SET leads_per_day = 0, email_verified = 1, plan = ? WHERE id = ?').run('free_trial', DEMO_CUSTOMER_ID); } catch(e) {}
     var cnt = db.prepare('SELECT COUNT(*) AS c FROM leads WHERE customer_id = ?').get(DEMO_CUSTOMER_ID);
-    if (!cnt || !cnt.c) {
+    var newest = db.prepare('SELECT MAX(delivered_at) AS m FROM leads WHERE customer_id = ?').get(DEMO_CUSTOMER_ID);
+    var stale = !newest || !newest.m || (Date.now() - new Date(newest.m).getTime() > 2 * 86400000);
+    if (!cnt || !cnt.c || stale) {
+      try { db.prepare('DELETE FROM leads WHERE customer_id = ?').run(DEMO_CUSTOMER_ID); } catch(e) {}
       var areas = [['SW1A 1AA', 'Westminster', 'London'], ['SE15 4AA', 'Peckham', 'London'], ['KT2 6AA', 'Kingston', 'Surrey'], ['TW9 3AB', 'Richmond', 'Surrey'], ['SM1 3AN', 'Sutton', 'Surrey'], ['SW18 2AA', 'Wandsworth', 'London'], ['SE22 8AA', 'East Dulwich', 'London'], ['KT1 1AA', 'Kingston', 'Surrey']];
       var streets = ['Oakwood Avenue', 'Lime Grove', 'Devon Street', 'Church Road', 'Park Lane', 'Manor Road', 'Cedar Close', 'Victoria Road'];
       var prices = [475000, 712000, 389000, 540000, 860000, 455000, 625000, 499000];
+      var base = new Date(); base.setHours(9, 0, 0, 0);
       for (var i = 0; i < 8; i++) {
         var a = areas[i];
         var d = {
@@ -38236,13 +38240,14 @@ function seedDemoAccount() {
           propertyType: (i % 2 ? 'Semi-Detached' : 'Detached'),
           status: (i % 3 === 0 ? 'Under Offer' : 'Available'),
           agent: 'Demo Estate Agents', url: 'https://www.rightmove.co.uk/',
-          firstVisibleDate: new Date(Date.now() - i * 86400000).toISOString().split('T')[0]
+          firstVisibleDate: new Date(base.getTime() - (i < 5 ? 0 : i - 4) * 86400000).toISOString().split('T')[0]
         };
-        var created = new Date(Date.now() - i * 86400000 + 9 * 3600000).toISOString();
+        // First 5 leads delivered TODAY (a full day's batch), the rest over prior days.
+        var created = (i < 5 ? new Date(base.getTime() + i * 60000) : new Date(base.getTime() - (i - 4) * 86400000)).toISOString();
         db.prepare('INSERT INTO leads (id, customer_id, product, data, status, delivered, created_at, delivered_at, release_at) VALUES (?,?,?,?,?,?,?,?,?)').run(
           'demo-lead-' + i, DEMO_CUSTOMER_ID, 'moving', JSON.stringify(d), 'delivered', 1, created, created, created);
       }
-      console.log('[DEMO] seeded sample leads');
+      console.log('[DEMO] seeded/refreshed sample leads');
     }
     saveDb();
   } catch(e) { console.log('[DEMO] seed error: ' + (e && e.message)); }
