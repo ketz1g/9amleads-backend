@@ -35080,7 +35080,14 @@ app.get('/api/admin/delivery-audit', adminAuth, (req, res) => {
 app.get('/api/admin/fulfilment-report', adminAuth, (req, res) => {
   try {
     var dbF = getDb();
-    var rows = (dbF.fulfilment_ledger || []).filter(function(e) { return e.date === (req.query.date || new Date().toISOString().split('T')[0]); });
+    var _frDate = req.query.date || new Date().toISOString().split('T')[0];
+    var rows = (dbF.fulfilment_ledger || []).filter(function(e) {
+      if (e.date !== _frDate) return false;
+      // Exclude internal/test/demo accounts so the report reflects REAL customers only.
+      var em = String(e.email || '').toLowerCase();
+      if (/^test\./.test(em) || /@9amleads\.com$/.test(em) || /^demo/.test(em)) return false;
+      return true;
+    });
     if (req.query.underonly) rows = rows.filter(function(e) { return e.status === 'UNDER_FULFILLED'; });
     var summary = { total: rows.length, fulfilled: rows.filter(function(e) { return e.status === 'FULFILLED'; }).length, under: rows.filter(function(e) { return e.status === 'UNDER_FULFILLED'; }).length, over: rows.filter(function(e) { return e.status === 'OVER_DELIVERED'; }).length };
     res.json({ success: true, date: (req.query.date || new Date().toISOString().split('T')[0]), summary: summary, rows: rows });
