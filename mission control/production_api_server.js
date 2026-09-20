@@ -9554,6 +9554,8 @@ app.get('/api/admin/rejected-leads', adminAuth, (req, res) => {
     var leads = db.prepare("SELECT * FROM leads WHERE status = 'rejected' ORDER BY updated_at DESC LIMIT 200").all();
     var custs = db.prepare('SELECT id, email, company FROM customers').all();
     var cmap = {}; custs.forEach(function(c){ cmap[c.id] = c; });
+    var _isIntRl = function(e){ e = String(e||'').toLowerCase(); return e.indexOf('@9amleads.com') !== -1 || e === 'ketzman1g@gmail.com' || /^test\./.test(e) || /^demo/.test(e); };
+    leads = leads.filter(function(l){ var c = cmap[l.customer_id]; return !(c && _isIntRl(c.email)); });
     res.json({ success: true, count: leads.length, leads: leads.map(function(l){
       var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
       var c = cmap[l.customer_id] || {};
@@ -10747,7 +10749,10 @@ app.get('/api/admin/leads-overview', adminAuth, (req, res) => {
     var weekStart = new Date(now); weekStart.setDate(weekStart.getDate() - weekStart.getDay());
     var weekStartStr = weekStart.toISOString().split('T')[0];
 
-    var rows = (dbL.customers || []).map(function(c) {
+    var rows = (dbL.customers || []).filter(function(c) {
+      var e = String(c.email || '').toLowerCase();
+      return !(e.indexOf('@9amleads.com') !== -1 || e === 'ketzman1g@gmail.com' || /^test\./.test(e) || /^demo/.test(e));
+    }).map(function(c) {
       var custLeads = (dbL.leads || []).filter(function(l) { return l.customer_id === c.id; });
       var delivered = custLeads.filter(function(l) { return l.delivered || l.delivered_at; });
       var todayC = delivered.filter(function(l) { var d = (l.delivered_at || l.created_at || '').split('T')[0]; return d === todayStr; }).length;
@@ -14503,7 +14508,9 @@ app.get('/api/admin/customers', adminAuth, (req, res) => {
   // Sort REAL customers first (non test.*, non *.1788* checkout tests), then test
   // accounts. Without this, 50 recent test accounts fill page 1 and real customers
   // (oathxxx, AFS Removals, Essex bros, etc.) are hidden on later pages.
+  const _includeInternal = req.query.include_internal === '1' || req.query.include_internal === 'true';
   const allCustomers = db.prepare('SELECT * FROM customers').all()
+    .filter(function(c) { if (_includeInternal) return true; var e = String(c.email || '').toLowerCase(); return !(e.indexOf('@9amleads.com') !== -1 || e === 'ketzman1g@gmail.com' || /^test\./.test(e) || /^demo/.test(e)); })
     .sort(function(a, b) {
       function isTest(x) {
         var e = String(x.email || '').toLowerCase();
@@ -14970,7 +14977,10 @@ app.get('/api/admin/activity', adminAuth, (req, res) => {
   try {
     var d = getDb();
     var limit = Math.min(parseInt(req.query.limit, 10) || 150, 500);
-    var items = (d.customer_activity || []).slice(-limit).reverse();
+    var items = (d.customer_activity || []).filter(function(a) {
+      var em = String((a && a.email) || '').toLowerCase();
+      return !(em.indexOf('@9amleads.com') !== -1 || em === 'ketzman1g@gmail.com' || /^test\./.test(em) || /^demo/.test(em));
+    }).slice(-limit).reverse();
     res.json({ success: true, count: items.length, activity: items });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -35854,7 +35864,7 @@ app.get('/api/admin/analytics', adminAuth, (req, res) => {
 
     // Trial performance from the customers table
     var customers = [];
-    try { customers = db.prepare('SELECT * FROM customers').all() || []; } catch(c2) { customers = []; }
+    try { customers = (db.prepare('SELECT * FROM customers').all() || []).filter(function(c){ var e = String(c.email || '').toLowerCase(); return !(e.indexOf('@9amleads.com') !== -1 || e === 'ketzman1g@gmail.com' || /^test\./.test(e) || /^demo/.test(e)); }); } catch(c2) { customers = []; }
     var now = Date.now();
     var prodNames = { moving: 'Moving', probate: 'Probate', newbusiness: 'New Business', planning: 'Planning', tenders: 'Tenders' };
     var paidPlans = ['starter', 'pro', 'enterprise'];
