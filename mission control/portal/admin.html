@@ -622,6 +622,7 @@ function loadEmailLibrary() {
             '<div style="font-size:11px;color:#0ea5e9;font-weight:600;margin-top:2px">' + eEsc(em.when || '') + '</div></div>' +
             '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">' +
             (hasHtml ? '<button class="btn btn-primary btn-sm" onclick="openEmailPreview(\'' + eEsc(em.id) + '\')"><i class="fas fa-eye"></i> Preview</button>' : '<button class="btn btn-outline btn-sm" disabled title="Preview generated at send time from live data">Preview on send</button>') +
+            '<button class="btn btn-outline btn-sm" onclick="openEmailEdit(\'' + eEsc(em.id) + '\')"><i class="fas fa-pen"></i> Edit</button>' +
             '<button class="btn btn-outline btn-sm" onclick="sendOneSampleEmail(\'' + eEsc(em.id) + '\')"><i class="fas fa-paper-plane"></i> Send me</button>' +
             '</div></div>';
         });
@@ -2067,6 +2068,50 @@ async function loadFulfilment() {
     });
     tb.innerHTML = h;
   } catch (e) { tb.innerHTML = '<tr><td colspan="7" class="empty" style="color:#ef4444">Error: ' + e.message + '</td></tr>'; }
+}
+</script>
+<!-- Email edit modal -->
+<div class="modal" id="emailEditModal" style="display:none">
+  <div style="position:fixed;inset:0;background:rgba(15,23,42,.7);z-index:9992" onclick="closeEmailEdit()"></div>
+  <div style="position:fixed;top:5vh;left:50%;transform:translateX(-50%);width:94%;max-width:900px;max-height:90vh;background:#0f172a;border-radius:16px;z-index:9993;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5)">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid #1e293b">
+      <div id="emailEditTitle" style="font-size:14px;font-weight:800;color:#f1f5f9">Edit email</div>
+      <button class="btn btn-outline btn-sm" style="color:#f87171" onclick="closeEmailEdit()"><i class="fas fa-times"></i></button>
+    </div>
+    <div style="padding:14px 18px;overflow:auto">
+      <label style="display:block;font-size:11px;color:#94a3b8;font-weight:700;margin-bottom:4px">Subject</label>
+      <input id="emailEditSubject" class="input" style="width:100%;margin-bottom:12px;background:#0b1220;color:#e2e8f0;border:1px solid #334155;padding:8px;border-radius:8px">
+      <label style="display:block;font-size:11px;color:#94a3b8;font-weight:700;margin-bottom:4px">HTML (edit freely, then Save)</label>
+      <textarea id="emailEditHtml" style="width:100%;height:46vh;background:#0b1220;color:#e2e8f0;border:1px solid #334155;border-radius:8px;padding:10px;font-family:monospace;font-size:12px"></textarea>
+      <div style="display:flex;gap:8px;margin-top:12px;align-items:center">
+        <button class="btn btn-primary btn-sm" onclick="saveEmailEdit()"><i class="fas fa-save"></i> Save</button>
+        <button class="btn btn-outline btn-sm" onclick="closeEmailEdit()">Cancel</button>
+        <span id="emailEditMsg" style="font-size:12px;color:#22c55e"></span>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+var __editEmailId = null;
+function openEmailEdit(id) {
+  var em = findEmailById(id);
+  if (!em) return;
+  __editEmailId = id;
+  document.getElementById('emailEditTitle').textContent = em.name || id;
+  document.getElementById('emailEditSubject').value = em.subject || '';
+  document.getElementById('emailEditHtml').value = em.html || '';
+  document.getElementById('emailEditMsg').textContent = '';
+  document.getElementById('emailEditModal').style.display = 'block';
+}
+function closeEmailEdit() { document.getElementById('emailEditModal').style.display = 'none'; }
+async function saveEmailEdit() {
+  if (!__editEmailId) return;
+  var msg = document.getElementById('emailEditMsg');
+  try {
+    var r = await fetch(API + '/api/admin/email-templates/' + encodeURIComponent(__editEmailId), { method: 'PUT', headers: adminHeaders(), body: JSON.stringify({ subject: document.getElementById('emailEditSubject').value, html: document.getElementById('emailEditHtml').value }) });
+    var d = await r.json();
+    if (r.ok && d.success) { msg.style.color = '#22c55e'; msg.textContent = 'Saved'; loadEmailLibrary(); } else { msg.style.color = '#f87171'; msg.textContent = (d && d.error) || 'Save failed'; }
+  } catch (e) { msg.style.color = '#f87171'; msg.textContent = e.message; }
 }
 </script>
 </body></html>

@@ -16027,6 +16027,7 @@ app.put('/api/admin/email-templates/:id', adminAuth, (req, res) => {
   var update = {};
   if (req.body.subject) update.subject = req.body.subject;
   if (req.body.body) update.body = req.body.body;
+  if (req.body.html) update.html = req.body.html;
   if (req.body.subjectB) update.subjectB = req.body.subjectB;
   if (req.body.preview) update.preview = req.body.preview;
   if (req.body.cta) update.cta = req.body.cta;
@@ -18940,6 +18941,8 @@ app.post('/api/admin/send-library-email', adminAuth, async (req, res) => {
 // 3 steps per product: why the post wins -> Print & Post -> closer. Rendered here so
 // the Admin Email Library can preview them (and so a future cron can send them).
 function buildWinbackEmailHTML(product, step) {
+  // Apply an admin edit (full HTML override) if one has been saved.
+  try { var _we = loadEmailEdits()['winback_' + product + '_' + step]; if (_we && _we.html) return _we.html; } catch(e) {}
   var WB = {
     moving: { accent: '#0ea5e9', plural: 'moving leads' },
     probate: { accent: '#a855f7', plural: 'probate leads' },
@@ -19073,7 +19076,11 @@ app.get('/api/admin/email-library', adminAuth, (req, res) => {
     var _wbNames = { 1: 'Why the post wins', 2: 'We print and post it for you', 3: 'The closer' };
     ['moving', 'probate', 'newbusiness', 'planning', 'tenders'].forEach(function(wp) {
       [1, 2, 3].forEach(function(ws) {
-        try { winback.push({ id: 'winback_' + wp + '_' + ws, name: 'Win-back - ' + _wbLabels[wp] + ' - step ' + ws + ' (' + _wbNames[ws] + ')', when: 'Expired trials: day ' + [0, 3, 7][ws - 1] + ' after the trial ends', html: buildWinbackEmailHTML(wp, ws) }); } catch(we) {}
+        try {
+          var _wbsubj = { 1: 'Why a letter beats an ad (and a cold call)', 2: 'We print and post it for you', 3: 'Let us get you back in front of them' }[ws];
+          try { var _wbe = loadEmailEdits()['winback_' + wp + '_' + ws]; if (_wbe && _wbe.subject) _wbsubj = _wbe.subject; } catch(x) {}
+          winback.push({ id: 'winback_' + wp + '_' + ws, name: 'Win-back - ' + _wbLabels[wp] + ' - step ' + ws + ' (' + _wbNames[ws] + ')', subject: _wbsubj, when: 'Expired trials: day ' + [0, 3, 7][ws - 1] + ' after the trial ends', html: buildWinbackEmailHTML(wp, ws) });
+        } catch(we) {}
       });
     });
     groups.push({ key: 'winback', label: 'Win-back (expired trials)', icon: '\u267B\uFE0F', sends: 'To expired trials - day 0, 3 and 7 after the trial ends', emails: winback });
