@@ -622,7 +622,7 @@ function loadEmailLibrary() {
             '<div style="font-size:11px;color:#0ea5e9;font-weight:600;margin-top:2px">' + eEsc(em.when || '') + '</div></div>' +
             '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">' +
             (hasHtml ? '<button class="btn btn-primary btn-sm" onclick="openEmailPreview(\'' + eEsc(em.id) + '\')"><i class="fas fa-eye"></i> Preview</button>' : '<button class="btn btn-outline btn-sm" disabled title="Preview generated at send time from live data">Preview on send</button>') +
-            '<button class="btn btn-outline btn-sm" onclick="openEmailEdit(\'' + eEsc(em.id) + '\')"><i class="fas fa-pen"></i> Edit</button>' +
+            (String(em.id).indexOf('winback_') === 0 ? '<button class="btn btn-outline btn-sm" onclick="openEmailEdit(\'' + eEsc(em.id) + '\')"><i class="fas fa-pen"></i> Edit</button>' : '') +
             '<button class="btn btn-outline btn-sm" onclick="sendOneSampleEmail(\'' + eEsc(em.id) + '\')"><i class="fas fa-paper-plane"></i> Send me</button>' +
             '</div></div>';
         });
