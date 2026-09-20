@@ -3475,7 +3475,7 @@ function revertExpiredCapOverrides() {
   try {
     var now = new Date();
     var reverted = 0;
-    (getDb().customers || []).forEach(function(c) {
+    allCusts.forEach(function(c) {
       if (!c.cap_override_expires) return;
       var exp = new Date(c.cap_override_expires);
       if (now < exp) return;
@@ -3496,7 +3496,7 @@ function revertExpiredCapOverrides() {
 function processAffiliatePayouts() {  try {
     var now = new Date();
     var changed = 0;
-    (getDb().customers || []).forEach(function(c) {
+    allCusts.forEach(function(c) {
       if (!c.affiliate_id) return;
       if (c.affiliate_payout_status !== 'pending' && c.affiliate_payout_status !== 'due') return;
       var due = c.affiliate_payout_due ? new Date(c.affiliate_payout_due) : null;
@@ -6320,7 +6320,7 @@ function ensureSignupAlerts(aff) {
     aff.alerts.forEach(function(a) { if (a.customer_id) known[a.customer_id] = true; });
     var cutoff = Date.now() - 21 * 86400000;
     var added = 0;
-    (getDb().customers || []).forEach(function(c) {
+    allCusts.forEach(function(c) {
       if (c.affiliate_id !== aff.id && String(c.affiliate_code || '').toLowerCase() !== String(aff.code || '').toLowerCase()) return;
       if (known[c.id]) return;
       var t = new Date(c.created_at).getTime();
@@ -7529,7 +7529,7 @@ app.post('/api/admin/affiliates/pay', adminAuth, (req, res) => {
     var nowIso = new Date().toISOString();
     var paidRefs = [];
     var amount = 0;
-    (getDb().customers || []).forEach(function(c) {
+    allCusts.forEach(function(c) {
       if (c.affiliate_id !== aff.id && String(c.affiliate_code || '').toLowerCase() !== String(aff.code || '').toLowerCase()) return;
       if (c.affiliate_payout_status !== 'due') return;
       // DOUBLE-PAY GUARD: if the commission engine has already cleared this referral
@@ -7594,7 +7594,7 @@ app.post('/api/admin/affiliates/delete', adminAuth, (req, res) => {
     if (idx === -1) return res.status(404).json({ error: 'Affiliate not found' });
     var removed = affs.splice(idx, 1)[0];
     // Detach referrals (keep customers, drop the affiliate credit)
-    (getDb().customers || []).forEach(function(c) {
+    allCusts.forEach(function(c) {
       if (c.affiliate_id === removed.id || String(c.affiliate_code || '').toLowerCase() === String(removed.code || '').toLowerCase()) {
         c.affiliate_id = null; c.affiliate_code = null; c.affiliate_payout_status = null; c.affiliate_payout_due = null;
       }
@@ -12086,7 +12086,7 @@ async function enrichMovingPoolAddresses(maxPerRun) {
     // customers are short (CF/NP etc.), not on areas nobody ordered.
     var activeAreas = {};
     try {
-      (getDb().customers || []).forEach(function(c) {
+      allCusts.forEach(function(c) {
         if (!c.plan || c.plan === 'cancelled' || isLeadsPaused(c) || trialExpiredUnpaid(c)) return;
         try { (JSON.parse(c.target_areas || '[]') || []).forEach(function(a) { activeAreas[String(a).toUpperCase().replace(/[^A-Z0-9]/g, '')] = 1; }); } catch(e) {}
       });
@@ -14397,11 +14397,17 @@ function adminAuth(req, res, next) {
 
 // GET /api/admin/stats — overall system stats
 app.get('/api/admin/stats', adminAuth, (req, res) => {
-  const totalCustomers = db.prepare('SELECT COUNT(*) as count FROM customers').get();
-  const freeTrials = db.prepare('SELECT COUNT(*) as count FROM customers WHERE plan = \'free_trial\'').get();
+  // Exclude internal/test/demo accounts so the admin stats reflect REAL customers.
+  function _isInternalStat(c) {
+    try { if (typeof isInternalAccount === 'function' && isInternalAccount(c)) return true; } catch(e) {}
+    var em = String((c && c.email) || '').toLowerCase();
+    return /^test\./.test(em) || /@9amleads\.com$/.test(em) || /^demo/.test(em);
+  }
+  var allCusts = (getDb().customers || []).filter(function(c) { return !_isInternalStat(c); });
+  const totalCustomers = { count: allCusts.length };
+  const freeTrials = { count: allCusts.filter(function(c) { return c.plan === 'free_trial'; }).length };
   // A customer is "paid" if their plan is not a free trial, OR they have an active
   // Stripe subscription / non-trial selected plan (trial_ends passed and paid).
-  var allCusts = getDb().customers || [];
   var paidCustomers = allCusts.filter(function(c) {
     if (c.plan && c.plan !== 'free_trial') return true;
     if (c.stripe_subscription_id || (c.selected_plan && c.selected_plan !== 'free_trial' && c.selected_plan !== 'starter')) return true;
@@ -14417,17 +14423,17 @@ app.get('/api/admin/stats', adminAuth, (req, res) => {
 
   const byProduct = (function() {
     var counts = {};
-    (getDb().customers || []).forEach(function(c) { var p = c.product || 'unknown'; counts[p] = (counts[p] || 0) + 1; });
+    allCusts.forEach(function(c) { var p = c.product || 'unknown'; counts[p] = (counts[p] || 0) + 1; });
     return Object.keys(counts).map(function(p) { return { product: p, count: counts[p] }; });
   })();
   const bySource = (function() {
     var counts = {};
-    (getDb().customers || []).forEach(function(c) { var s = c.source || 'unknown'; counts[s] = (counts[s] || 0) + 1; });
+    allCusts.forEach(function(c) { var s = c.source || 'unknown'; counts[s] = (counts[s] || 0) + 1; });
     return Object.keys(counts).map(function(s) { return { source: s, count: counts[s] }; });
   })();
   const recentSignups = (function() {
     var counts = {};
-    (getDb().customers || []).forEach(function(c) { var d = String(c.created_at || '').split('T')[0]; if (d) counts[d] = (counts[d] || 0) + 1; });
+    allCusts.forEach(function(c) { var d = String(c.created_at || '').split('T')[0]; if (d) counts[d] = (counts[d] || 0) + 1; });
     return Object.keys(counts).sort().reverse().slice(0, 7).map(function(d) { return { day: d, count: counts[d] }; });
   })();
 
@@ -14439,9 +14445,9 @@ app.get('/api/admin/stats', adminAuth, (req, res) => {
   // an ISO string coerces the Date to its toString and is ALWAYS false, which is why
   // this stat read 0 forever.
   var _nowMs = Date.now();
-  var expiredTrials = (dbS.customers || []).filter(function(c) { var t = c.trial_ends ? new Date(c.trial_ends).getTime() : NaN; return c.plan === 'free_trial' && !isNaN(t) && t < _nowMs; }).length;
-  var weekSignups = (dbS.customers || []).filter(function(c) { return c.created_at && c.created_at >= weekAgo; }).length;
-  var crmConnected = (dbS.customers || []).filter(function(c) { return c.crm_webhook_url; }).length;
+  var expiredTrials = allCusts.filter(function(c) { var t = c.trial_ends ? new Date(c.trial_ends).getTime() : NaN; return c.plan === 'free_trial' && !isNaN(t) && t < _nowMs; }).length;
+  var weekSignups = allCusts.filter(function(c) { return c.created_at && c.created_at >= weekAgo; }).length;
+  var crmConnected = allCusts.filter(function(c) { return c.crm_webhook_url; }).length;
 
   res.json({
     total_customers: totalCustomers.count,
