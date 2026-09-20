@@ -32757,9 +32757,10 @@ async function topUpBlogQueue() {
     try {
       var cat = categories[Math.floor(Math.random() * categories.length)];
       var gen = await generateAutoBlogPost(cat);
-      // Skip near-duplicate topics already queued/published.
+      // Skip near-duplicate topics already QUEUED (published posts don't block, so
+      // topics can rotate again once they go live).
       var _tk = _blogTopicKey(gen.title);
-      if (_tk && dbData.blog_posts.some(function(p) { return _blogTopicKey(p.title) === _tk; })) { continue; }
+      if (_tk && dbData.blog_posts.some(function(p) { return p.published === false && p.publish_at && _blogTopicKey(p.title) === _tk; })) { continue; }
       var slug = String(gen.title).toLowerCase().replace(/[':]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 80) || ('blog-' + Date.now());
       var uniq = slug, n = 2;
       while (dbData.blog_posts.some(function(p) { return p.slug === uniq; })) { uniq = slug + '-' + n; n++; }
