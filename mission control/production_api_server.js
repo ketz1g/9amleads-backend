@@ -20483,6 +20483,9 @@ async function runCampaignEmails(dry) {
             if (_wbHandled) continue;
             if (e.day <= 7) continue;
             if (['trial_day9', 'trial_day12', 'trial_day16', 'trial_day21', 'trial_day30'].indexOf(e.template) !== -1) continue;
+            // The new win-back is the ONLY post-trial sequence now: skip the old
+            // weekly drip and the month-3 free-trial offer for expired trials.
+            if (e.template.indexOf('trial_wk') === 0 || e.template === 'trial_month3') continue;
             // The trial-expired email (trial_day9 = "Your daily leads have paused") fires
             // AS SOON AS the trial ends (threshold 0), so expired users get the email we
             // set for trial expiry — not two days later.
