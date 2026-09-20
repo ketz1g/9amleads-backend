@@ -19078,7 +19078,7 @@ app.get('/api/admin/email-library', adminAuth, (req, res) => {
     ['moving', 'probate', 'newbusiness', 'planning', 'tenders'].forEach(function(wp) {
       [1, 2, 3].forEach(function(ws) {
         try {
-          var _wbsubj = { 1: 'Why a letter beats an ad (and a cold call)', 2: 'We print and post it for you', 3: 'Let us get you back in front of them' }[ws];
+          var _wbsubj = { 1: 'Let us get your flyer through their door', 2: 'Upload your flyer - we do the rest', 3: 'The 3-week test' }[ws];
           try { var _wbe = loadEmailEdits()['winback_' + wp + '_' + ws]; if (_wbe && _wbe.subject) _wbsubj = _wbe.subject; } catch(x) {}
           winback.push({ id: 'winback_' + wp + '_' + ws, name: 'Win-back - ' + _wbLabels[wp] + ' - step ' + ws + ' (' + _wbNames[ws] + ')', subject: _wbsubj, when: 'Expired trials: day ' + [0, 3, 7][ws - 1] + ' after the trial ends', html: buildWinbackEmailHTML(wp, ws) });
         } catch(we) {}
