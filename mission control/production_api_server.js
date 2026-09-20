@@ -32811,6 +32811,32 @@ app.post('/api/admin/blog/delete', adminAuth, function(req, res) {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/blog/respace — Re-space the QUEUED (unpublished) posts to an even
+// cadence (BLOG_POSTS_PER_DAY/day) starting from the next future slot, and drop
+// queued near-duplicate titles (keeping the earliest of each cluster).
+app.post('/api/admin/blog/respace', adminAuth, function(req, res) {
+  try {
+    var dbData = getDb();
+    var posts = dbData.blog_posts || [];
+    var queued = posts.filter(function(p) { return p.published === false && p.publish_at; });
+    var seen = {}, removed = [];
+    queued.forEach(function(p) {
+      var k = (typeof normBlogTitleKey === 'function') ? normBlogTitleKey(p.title || p.slug) : String(p.title || p.slug || '').toLowerCase();
+      if (!k) return;
+      if (seen[k]) removed.push(p.slug); else seen[k] = p;
+    });
+    if (removed.length) dbData.blog_posts = posts.filter(function(p) { return removed.indexOf(p.slug) === -1; });
+    var keep = (dbData.blog_posts || []).filter(function(p) { return p.published === false && p.publish_at; });
+    keep.sort(function(a, b) { return String(a.publish_at).localeCompare(String(b.publish_at)); });
+    var gap = Math.floor(24 * 60 * 60 * 1000 / BLOG_POSTS_PER_DAY);
+    var now = Date.now();
+    var start = now - (now % gap) + gap;
+    keep.forEach(function(p, i) { p.publish_at = new Date(start + i * gap).toISOString(); });
+    saveDb();
+    res.json({ success: true, requeued: keep.length, removed_duplicates: removed, first: keep[0] ? keep[0].publish_at : null, last: keep.length ? keep[keep.length - 1].publish_at : null });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/blog/reset-variations — Delete ALL auto-generated variation posts
 // (keeps base templates + hand-written posts) so the daily cron can release 6-8/day fresh.
 app.post('/api/admin/blog/reset-variations', adminAuth, function(req, res) {
