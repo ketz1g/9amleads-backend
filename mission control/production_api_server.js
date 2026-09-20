@@ -15573,6 +15573,7 @@ function applyPlan(cust, plan, product) {
 const CAMPAIGN_EMAILS = [
   { day: 1, subject: 'Your opportunities start tomorrow at 9am \u2705', template: 'trial_day1' },
   { day: 3, subject: 'How are your first opportunities looking?', template: 'trial_day3' },
+  { day: 4, subject: 'Start your Print & Post this week', template: 'trial_day4' },
   { day: 5, subject: '3 tips to convert more leads into revenue', template: 'trial_day5' },
   { day: 7, subject: 'Your free trial ends tomorrow', template: 'trial_day7' },
   { day: 9, subject: 'Your daily leads have paused. Come back whenever you are ready', template: 'trial_day9' },
@@ -15746,8 +15747,26 @@ const PAID_EMAIL_SERIES = [
 // blocks are skipped for this template (see getCampaignEmailHTML).
 function buildWelcomeEmail(customer, productName, accent, prod) {
   return '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">From tomorrow, your fresh <strong>' + productName + '</strong> will arrive in your inbox every weekday at 9am.</p>'
-    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">To get set up, log in, upload your flyer and cover letter in Print &amp; Post (or pick a ready-made template), choose more areas if you\u2019d like to widen your coverage, and turn on Auto Send. We handle the delivery and the post \u2014 you just answer the phone.</p>'
+    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">To get set up, log in, upload your flyer and cover letter in Print &amp; Post (or pick a ready-made template), choose more areas if you\u2019d like to widen your coverage, and turn on Auto Send. If uploading is a hassle, just email your flyer and letter to hello@9amleads.com and we will upload them for you. We handle the delivery and the post \u2014 you just answer the phone.</p>'
+    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">One honest tip: direct mail is not overnight. Give it a few weeks of consistent posting and you will notice more phone enquiries. To see it working, ask every caller where they found you \u2014 when they say the flyer through the door, you know.</p>'
     + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">Any questions, just reply and I\u2019ll answer personally.</p>'
+    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0">All the best,<br><strong>Ketz Mandalia</strong><br><span style="color:#64748b">Founder, 9amLeads</span></p>';
+}
+// Day 4 (trial): get them to actually START Print & Post. Reminds them to upload their
+// materials (or email them to us), sets the "give it a few weeks" expectation, and
+// gives the "ask every caller where they found you" proof.
+function buildTrialPrintPostEmail(customer, productName, accent, prod) {
+  var uploadUrl = PUBLIC_URL + '/portal/direct-mail.html';
+  return '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#0f172a;margin:0 0 6px;text-align:center">Start your Print &amp; Post this week</h2>'
+    + '<p style="color:#64748b;font-size:13px;text-align:center;margin:0 0 20px">Your ' + productName + ' are landing every morning. Now let\'s get them working for you.</p>'
+    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 16px">Hi,<br><br>A lead only pays off when you get in front of them - and the fastest way is your flyer or letter through their door. We do the posting for you, so there is no printing, no stamps and no trip to the post box.</p>'
+    + '<div style="background:rgba(14,165,233,0.05);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px">'
+    + '<p style="color:#0f172a;font-size:14px;font-weight:800;margin:0 0 6px">Get started in minutes</p>'
+    + '<p style="color:#1e293b;font-size:13px;line-height:1.8;margin:0">1. Upload your flyer (front and back) and a cover letter in Print &amp; Post<br>2. Or just email them to <strong>hello@9amleads.com</strong> and we will upload them for you<br>3. Turn on Auto Send and every new lead gets your marketing in the post automatically</p></div>'
+    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:' + accent + '">Be patient - it works over a few weeks.</strong> Direct mail is not overnight. Post consistently for three weeks or more and you will notice more phone enquiries. The way to know it is working: <strong>ask every caller where they found you</strong>. When they say the flyer through the door, you know.</p>'
+    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 16px">Unlike social media or cold calling, your customers come to you - minimal effort and spend, and you reach them before your competitors even know they are looking.</p>'
+    + '<p style="text-align:center;margin:0 0 18px"><a href="' + uploadUrl + '" style="display:inline-block;padding:14px 32px;background-color:#0ea5e9;color:#ffffff;text-decoration:none;border-radius:50px;font-weight:800;font-size:15px">Upload your materials</a></p>'
+    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">Any questions, just reply and I will answer personally.</p>'
     + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0">All the best,<br><strong>Ketz Mandalia</strong><br><span style="color:#64748b">Founder, 9amLeads</span></p>';
 }
 // Full dark, premium welcome email (trial_day1). Standalone: navy header + footer
@@ -15840,6 +15859,7 @@ for (var _wt = 5; _wt <= 26; _wt++) {
 templates['trial_month3'] = buildMonth3OfferTemplate(customer, productName, accent, allProds[0]);
   // Redesigned welcome email (cleaner, no repetition) overrides the legacy trial_day1.
   templates['trial_day1'] = buildWelcomeEmail(customer, productName, accent, allProds[0]);
+  templates['trial_day4'] = buildTrialPrintPostEmail(customer, productName, accent, allProds[0]);
 
 // ===== BREVO OUTBOUND CAMPAIGN UPLOAD INFRASTRUCTURE =====
 // Master HTML template matching existing 9am Leads email design
