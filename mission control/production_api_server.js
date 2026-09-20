@@ -14874,7 +14874,7 @@ function logCustomerEmail(to, subject, htmlContent) {
       at: new Date().toISOString()
     });
     // Bound the log (full HTML is heavy) — keep the most recent 400 entries.
-    if (dbL.email_log.length > 400) dbL.email_log.splice(0, dbL.email_log.length - 400);
+    if (dbL.email_log.length > 5000) dbL.email_log.splice(0, dbL.email_log.length - 5000);
     saveDb();
   } catch(e) { console.log('[EMAIL-LOG] log error:', e.message); }
 }
@@ -15796,6 +15796,24 @@ function buildTrialDay7Email(customer, productName, accent, prod) {
     + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:' + accent + '">Do not judge it on a handful of days.</strong> It takes a few weeks of consistent posting to see the full effect. Ask every caller where they found you - when they say the flyer through the door, you know it is working. Your customers come to you, with minimal effort and spend, before your competitors.</p>'
     + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 16px">Keep your leads flowing and your Print &amp; Post running by picking a package. No lock-in, cancel anytime.</p>'
     + '<p style="text-align:center;margin:0 0 18px"><a href="' + pricingUrl + '" style="display:inline-block;padding:14px 32px;background-color:#0ea5e9;color:#ffffff;text-decoration:none;border-radius:50px;font-weight:800;font-size:15px">Pick a package and keep going</a></p>'
+    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">Any questions, just reply and I will answer personally.</p>'
+    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0">All the best,<br><strong>Ketz Mandalia</strong><br><span style="color:#64748b">Founder, 9amLeads</span></p>';
+}
+// FIRST-WIN NUDGE (trial): sent to a trial that has RECEIVED leads but contacted none.
+// The single highest-intent moment to push them into action (and Print & Post).
+function buildFirstWinEmail(customer, productName, accent, prod) {
+  var leadsUrl = PUBLIC_URL + '/portal/leads.html';
+  var metrics = {};
+  try { metrics = getTrialMetrics(customer); } catch(e) {}
+  var received = metrics.received || 0;
+  return '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#0f172a;margin:0 0 6px;text-align:center">You have ' + received + ' ' + productName + ' waiting</h2>'
+    + '<p style="color:#64748b;font-size:13px;text-align:center;margin:0 0 20px">A lead only pays off when you get in front of them.</p>'
+    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 16px">Hi,<br><br>You have had <strong>' + received + '</strong> fresh ' + productName + ' so far, but it does not look like you have contacted any yet. That is the bit that wins the work - and it takes minutes.</p>'
+    + '<div style="background:rgba(14,165,233,0.05);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px">'
+    + '<p style="color:#0f172a;font-size:14px;font-weight:800;margin:0 0 6px">Turn one into a job today</p>'
+    + '<p style="color:#1e293b;font-size:13px;line-height:1.8;margin:0">1. Open your leads and pick one<br>2. Send your flyer or letter with Print &amp; Post - we print and post it for you<br>3. Ask every caller where they found you. When they say the flyer through the door, you know it is working</p></div>'
+    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 16px">Give it a few weeks of consistent posting and you will notice more phone enquiries. Your customers come to you, with minimal effort and spend, before your competitors.</p>'
+    + '<p style="text-align:center;margin:0 0 18px"><a href="' + leadsUrl + '" style="display:inline-block;padding:14px 32px;background-color:#0ea5e9;color:#ffffff;text-decoration:none;border-radius:50px;font-weight:800;font-size:15px">View my leads</a></p>'
     + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">Any questions, just reply and I will answer personally.</p>'
     + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0">All the best,<br><strong>Ketz Mandalia</strong><br><span style="color:#64748b">Founder, 9amLeads</span></p>';
 }
@@ -20400,6 +20418,29 @@ app.post('/api/account/delete', authMiddleware, async (req, res) => {
 });
 
 
+// A/B SUBJECT TESTING: for the templates below, half the customers (deterministic by
+// id/email hash) get variant B. The subject actually sent is recorded in the email log,
+// so opens/clicks can be compared per variant.
+var AB_SUBJECTS = {
+  trial_day5: ['3 tips to convert more leads into revenue', 'The 3 fastest ways to win the job'],
+  trial_day7: ['Your free trial ends tomorrow', 'Tomorrow your leads pause - here is how to keep them'],
+  trial_firstwin: ['You have leads waiting - here is how to turn one into a job', 'Your leads are going cold - here is the quick fix'],
+  winback_moving_1: ['Let us get your flyer through their door', 'Your flyer could be landing on doorsteps this week'],
+  winback_probate_1: ['Let us get your flyer through their door', 'Your flyer could be landing on doorsteps this week'],
+  winback_newbusiness_1: ['Let us get your flyer through their door', 'Your flyer could be landing on doorsteps this week'],
+  winback_planning_1: ['Let us get your flyer through their door', 'Your flyer could be landing on doorsteps this week'],
+  winback_tenders_1: ['Let us get your flyer through their door', 'Your flyer could be landing on doorsteps this week']
+};
+function abPickSubject(template, customer, baseSubject) {
+  try {
+    var v = AB_SUBJECTS[template];
+    if (!v || v.length < 2) return baseSubject;
+    var s = String((customer && (customer.id || customer.email)) || '');
+    var h = 0;
+    for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+    return (h % 2 === 0) ? v[0] : v[1];
+  } catch(e) { return baseSubject; }
+}
 // TRIAL LIFECYCLE EMAIL CAMPAIGN (the re-join process). Active trials get day 1/3/5/7;
 // the moment a trial EXPIRES the customer moves onto the re-join series (day 9 at
 // expiry, then 12/16/21/30/91, then weekly to week 26). Paid customers get the paid
@@ -20411,6 +20452,7 @@ async function runCampaignEmails(dry) {
   var sent = 0;
   var log = [];
   var sendIt = async function (cust, template, subject, html) {
+    subject = abPickSubject(template, cust, subject);
     if (dry) { log.push({ email: cust.email, template: template, subject: subject }); return; }
     await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, subject, html);
   };
@@ -20452,6 +20494,20 @@ async function runCampaignEmails(dry) {
             await sendIt(cust, 'trial_day7', getEditedCampaignSubject('trial_day7', 'Your free trial ends tomorrow'), getCampaignEmailHTMLWithEdits(cust, 'trial_day7'));
             sent++;
           }
+          // FIRST-WIN NUDGE: received >= 3 leads but contacted none (sent once).
+          try {
+            if (!campaignSent.includes('trial_firstwin') && accountAge >= 3) {
+              var _fwM = getTrialMetrics(cust);
+              if ((_fwM.received || 0) >= 3 && (_fwM.contacted || 0) === 0) {
+                var _fwProd = cust.product || 'moving';
+                var _fwName = { moving: 'Moving Leads', probate: 'Probate Leads', newbusiness: 'New Business Alerts', planning: 'Planning Permissions', tenders: 'Public Tenders' }[_fwProd] || 'Leads';
+                var _fwAccent = { moving: '#0ea5e9', probate: '#a855f7', newbusiness: '#06b6d4', planning: '#10b981', tenders: '#6366f1' }[_fwProd] || '#0ea5e9';
+                campaignSent.push('trial_firstwin');
+                await sendIt(cust, 'trial_firstwin', 'You have ' + (_fwM.received || 0) + ' leads waiting - here is how to turn one into a job', buildFirstWinEmail(cust, _fwName, _fwAccent, _fwProd));
+                sent++;
+              }
+            }
+          } catch(fwErr) {}
         } else if (daysSinceTrialEnd >= 0) {
           // WIN-BACK sequence for expired trials: day 0, 3 and 7 after the trial ends.
           // Replaces the old day 9/12/16/21/30 posts; after day 7 the long-term drip

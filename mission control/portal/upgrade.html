@@ -215,7 +215,8 @@ function upgrade(plan) {
   try {
     var s = localStorage.getItem('mld_portal_session'); if (!s) return;
     var sess = JSON.parse(s); if (!sess || !sess.demo) return;
-    var signup = '/portal/?product=' + encodeURIComponent(sess.product || 'moving') + '#signup';
+    var signup = '/portal/?product=' + encodeURIComponent(sess.product || 'moving') + '&utm_source=demo&utm_medium=dashboard&utm_campaign=demo_cta#signup';
+      try { document.addEventListener('click', function(ev){ var a = ev.target && ev.target.closest ? ev.target.closest('a[href*="utm_source=demo"]') : null; if (a) { try { fetch('/api/analytics/event', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ event: 'demo_signup_click', uid: 'demo', props: { product: sess.product || 'moving' } }) }); } catch(e) {} } }, true); } catch(e) {}
     function inject(){
       if (document.getElementById('demoTopBanner')) return;
       var bn = document.createElement('div'); bn.id = 'demoTopBanner';

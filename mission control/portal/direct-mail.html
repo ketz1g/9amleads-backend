@@ -1578,7 +1578,8 @@ function saveFlyerEditor(){
   var DEMO_MODE = !!(sess && sess.demo);
   if (DEMO_MODE) {
     try {
-      var _signup = '/portal/?product=' + encodeURIComponent(sess.product || 'moving') + '#signup';
+      var _signup = '/portal/?product=' + encodeURIComponent(sess.product || 'moving') + '&utm_source=demo&utm_medium=dashboard&utm_campaign=demo_cta#signup';
+      try { document.addEventListener('click', function(ev){ var a = ev.target && ev.target.closest ? ev.target.closest('a[href*="utm_source=demo"]') : null; if (a) { try { fetch('/api/analytics/event', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ event: 'demo_signup_click', uid: 'demo', props: { product: sess.product || 'moving' } }) }); } catch(e) {} } }, true); } catch(e) {}
       var _bn = document.createElement('div');
       _bn.style.cssText = 'background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;border-radius:14px;padding:14px 18px;margin:12px auto;max-width:1100px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;font-family:Inter,Arial,sans-serif';
       _bn.innerHTML = '<div style="font-size:14px;font-weight:700;line-height:1.5">You are viewing the live demo. Try your <strong>free week</strong> &mdash; no card required.</div><a href="' + _signup + '" style="background:#fff;color:#1d4ed8;font-weight:800;font-size:14px;padding:11px 22px;border-radius:50px;text-decoration:none;white-space:nowrap">Try your free week &mdash; no card required &rarr;</a>';
