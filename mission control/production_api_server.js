@@ -20508,7 +20508,7 @@ async function runCampaignEmails(dry) {
           }
         }
       }
-      if (campaignSent.length > 0) {
+      if (campaignSent.length > 0 && !dry) {
         cust.campaign_sent = JSON.stringify(campaignSent);
         saveDb();
       }
@@ -20523,6 +20523,23 @@ cron.schedule('0 10 * * *', async () => {
 app.post('/api/admin/run-campaigns', adminAuth, async (req, res) => {
   try { res.json(await runCampaignEmails(!!(req.body && req.body.dry))); }
   catch (e) { res.status(500).json({ error: e.message }); }
+});
+// POST /api/admin/reset-winback — remove win-back marks from campaign_sent so the
+// sequence can (re)send. Used after a dry run, or to re-run the win-back.
+app.post('/api/admin/reset-winback', adminAuth, (req, res) => {
+  try {
+    var dbR = getDb();
+    var n = 0;
+    (dbR.customers || []).forEach(function(c) {
+      try {
+        var arr = JSON.parse(c.campaign_sent || '[]');
+        var kept = arr.filter(function(t) { return String(t).indexOf('winback_') !== 0; });
+        if (kept.length !== arr.length) { c.campaign_sent = JSON.stringify(kept); n++; }
+      } catch(e) {}
+    });
+    saveDb();
+    res.json({ success: true, reset: n });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // ===== WEEKLY MONDAY DIGEST =====
