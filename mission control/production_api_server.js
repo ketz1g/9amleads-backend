@@ -16259,8 +16259,8 @@ console.log('  Outbound campaigns: ' + Object.keys(OUTBOUND_CAMPAIGNS).length + 
   (template === 'trial_day1' ? '' : buildTrialPersonalBlock(customer, template)) +
   // Welcome (trial_day1) stays short and professional: summary + single CTA only.
   // The shared value / why / how / insight blocks are skipped across the WHOLE trial
-  // nurture series (trial_*), since those emails carry their own message.
-  (template.indexOf('trial_') === 0 ? '' : (
+  // and paid nurture series, since those emails carry their own message.
+  (template.indexOf('trial_') === 0 || template.indexOf('paid_') === 0 ? '' : (
   // Print & Post / Auto Send / postal-marketing value block (shared, all campaign emails)
   buildPrintPostValueBlock(allProds[0] || 'moving', accent) +
   // Why 9amLeads is the best leads service (shared, all campaign emails)
