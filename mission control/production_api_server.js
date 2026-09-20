@@ -20453,29 +20453,42 @@ async function runCampaignEmails(dry) {
             sent++;
           }
         } else if (daysSinceTrialEnd >= 0) {
-          // Trial ended: send post-trial emails at days 9, 12, 16, 21, 30, 60.
-          // day 7 is handled above (while active) so we skip it here to avoid a
-          // misleading "ends tomorrow" after the trial has already ended.
-          for (var ei = 0; ei < CAMPAIGN_EMAILS.length; ei++) {
-            var e = CAMPAIGN_EMAILS[ei];
-            // Don't offer the month-3 reactivation once the free-reset cap is used.
-            if (e.template === 'trial_month3' && parseInt(cust.trial_resets || '0', 10) >= parseInt(process.env.MAX_TRIAL_RESETS || '2', 10)) continue;
-            // NEVER send a free-trial (day 1-7) template once the trial has expired —
-            // those belong to the active-trial phase only.
-            if (e.day <= 7) continue;
-            // The trial-expired email (trial_day9 = "Your daily leads have paused") fires
-            // AS SOON AS the trial ends (threshold 0), so expired users get the email we
-            // set for trial expiry — not two days later.
-            var _thr = (e.template === 'trial_day9') ? 0 : (e.day - 7);
-            if (daysSinceTrialEnd >= _thr && !campaignSent.includes(e.template)) {
-              campaignSent.push(e.template);
-              await sendIt(cust, e.template, getEditedCampaignSubject(e.template, e.subject), getCampaignEmailHTMLWithEdits(cust, e.template));
+          // WIN-BACK sequence for expired trials: day 0, 3 and 7 after the trial ends.
+          // This REPLACES the old day 9/12/16/21/30 posts. After day 7 the long-term
+          // drip (weekly week 5+, month-3 reactivation) takes over.
+          var _wbProduct = cust.product || 'moving';
+          var _wbSubjects = { 1: 'Let us get your flyer through their door', 2: 'Upload your flyer - we do the rest', 3: 'The 3-week test' };
+          var _WINBACK = [{ d: 0, s: 1 }, { d: 3, s: 2 }, { d: 7, s: 3 }];
+          var _wbHandled = false;
+          for (var wi = 0; wi < _WINBACK.length; wi++) {
+            var _w = _WINBACK[wi];
+            var _wTmpl = 'winback_' + _wbProduct + '_' + _w.s;
+            if (daysSinceTrialEnd >= _w.d && !campaignSent.includes(_wTmpl)) {
+              campaignSent.push(_wTmpl);
+              await sendIt(cust, _wTmpl, getEditedCampaignSubject(_wTmpl, _wbSubjects[_w.s]), buildWinbackEmailHTML(_wbProduct, _w.s));
               sent++;
+              _wbHandled = true;
               break;
             }
           }
-        }
-      } else if (isPaidNow) {
+          if (!_wbHandled) {
+            // Long-term drip: weekly follow-ups (week 5+) + month-3 reactivation.
+            for (var ei = 0; ei < CAMPAIGN_EMAILS.length; ei++) {
+              var e = CAMPAIGN_EMAILS[ei];
+              if (e.day <= 7) continue;
+              // Replaced by the win-back sequence above.
+              if (['trial_day9', 'trial_day12', 'trial_day16', 'trial_day21', 'trial_day30'].indexOf(e.template) !== -1) continue;
+              if (e.template === 'trial_month3' && parseInt(cust.trial_resets || '0', 10) >= parseInt(process.env.MAX_TRIAL_RESETS || '2', 10)) continue;
+              var _thr = e.day - 7;
+              if (daysSinceTrialEnd >= _thr && !campaignSent.includes(e.template)) {
+                campaignSent.push(e.template);
+                await sendIt(cust, e.template, getEditedCampaignSubject(e.template, e.subject), getCampaignEmailHTMLWithEdits(cust, e.template));
+                sent++;
+                break;
+              }
+            }
+          }
+        } else if (isPaidNow) {
         // Paid customer: send paid email series weekly
         var subAgeWeeks = Math.floor(accountAge / 7);
         for (var pi = 0; pi < PAID_EMAIL_SERIES.length; pi++) {
