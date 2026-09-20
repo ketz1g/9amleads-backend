@@ -1,24 +1,23 @@
 // build_winback_emails.js - 3-email WIN-BACK sequence for EXPIRED TRIALS.
-// Focused on WHY the post + Print & Post beats social media and cold calling,
-// with the offer as the closer (no free week). Personalised per product. No em dashes.
-//   1) Why a letter beats an ad (and a cold call)
-//   2) We print and post it for you
-//   3) Let us get you back in front of them
-// Output: Desktop/9amleads-winback-emails/
+// Goal: get them to PAY for a package and START using Print & Post (upload their
+// flyer/letter), with the "give it a few weeks, ask callers where they found you"
+// proof. No em dashes. Output: Desktop/9amleads-winback-emails/
+//   1) Let us get your flyer through their door
+//   2) Upload your flyer - we do the rest
+//   3) The 3-week test
 const fs = require('fs');
 const path = require('path');
 
 const OUT = 'C:/Users/ketzm/Desktop/9amleads-winback-emails';
 const INK = '#1f2937', MUTED = '#6b7280', LINE = '#e5e7eb', PAGE = '#f4f5f7';
-const HOWITWORKS = 'https://www.9amleads.com/how-it-works/';
 const PRICING = 'https://www.9amleads.com/pricing/';
 
 const PRODUCTS = {
-  moving: { accent: '#0ea5e9', label: 'Moving Leads', plural: 'moving leads', noun: 'moving lead' },
-  probate: { accent: '#a855f7', label: 'Probate Leads', plural: 'probate leads', noun: 'probate grant' },
-  newbusiness: { accent: '#06b6d4', label: 'New Business Alerts', plural: 'new business leads', noun: 'new company' },
-  planning: { accent: '#10b981', label: 'Planning Permissions', plural: 'planning leads', noun: 'planning application' },
-  tenders: { accent: '#6366f1', label: 'Public Tenders', plural: 'public tenders', noun: 'public tender' }
+  moving: { accent: '#0ea5e9', plural: 'moving leads' },
+  probate: { accent: '#a855f7', plural: 'probate leads' },
+  newbusiness: { accent: '#06b6d4', plural: 'new business leads' },
+  planning: { accent: '#10b981', plural: 'planning leads' },
+  tenders: { accent: '#6366f1', plural: 'public tenders' }
 };
 
 function shell(accent, subject, preheader, inner) {
@@ -63,84 +62,84 @@ function cta(accent, url, text, sub) {
     + (sub ? '<p style="margin:10px 0 0;color:' + MUTED + ';font-size:12px">' + sub + '</p>' : '')
     + '</td></tr>\n';
 }
+function head(accent, kick, title) {
+  return '<tr><td style="padding:14px 34px 6px"><p style="margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:' + accent + '">' + kick + '</p>'
+    + '<h1 style="margin:0 0 14px;font-size:23px;line-height:1.3;font-weight:800;color:' + INK + '">' + title + '</h1>';
+}
 
-// Email 1 - why the post beats social media and cold calling
+// Email 1 - get your flyer through their door
 function email1(p) {
-  const subject = 'Why a letter beats an ad (and a cold call)';
+  const subject = 'Let us get your flyer through their door';
   const inner = logo(p.accent)
-    + '<tr><td style="padding:14px 34px 6px">'
-    + '<p style="margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:' + p.accent + '">The honest truth</p>'
-    + '<h1 style="margin:0 0 14px;font-size:23px;line-height:1.3;font-weight:800;color:' + INK + '">Why a letter beats an ad (and a cold call)</h1>'
-    + '<p style="margin:0 0 14px;color:' + INK + ';font-size:15px;line-height:1.65">Hi,<br><br>If you are tired of paying for clicks that go nowhere, or losing hours to the phone, this is worth two minutes. Here is why the post still wins, and why it is worth another look.</p>'
+    + head(p.accent, 'Time to put it to work', 'Let us get your flyer through their door')
+    + '<p style="margin:0 0 14px;color:' + INK + ';font-size:15px;line-height:1.65">Hi,<br><br>You have seen how the dashboard works, so let us get you actually using Print &amp; Post. Upload your flyer or letter (or just email it to hello@9amleads.com and we will do it for you) and we print, address and post it to your ' + p.plural + '.</p>'
     + '</td></tr>\n'
     + '<tr><td style="padding:0 34px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">'
-    + block('Social media: you are renting attention', [
-      'You bid against every rival for the same clicks',
-      'Costs climb while the results fall',
-      'The moment you stop paying, you disappear'
+    + block('Be honest with yourself - it is not overnight', [
+      'Give it a few weeks of consistent posting',
+      'Then you will notice more phone enquiries',
+      'This is how you know it is working: ask every caller where they found you',
+      'When they say the flyer through the door, you know'
     ])
-    + block('Cold calling: the hardest way to win work', [
-      'Gatekeepers, rejection and endless dialling',
-      'Most people screen calls and never pick up',
-      'You only ever reach the few who happen to answer'
-    ])
-    + block('A letter in the hand works differently', [
-      'It is physical - it sits on the kitchen table and is read when they are ready',
-      'No algorithm, no auction, no cost per click',
-      'You reach the door first, before they start shopping around'
+    + block('Why it beats chasing work', [
+      'Your customers come to you - minimal effort and spend',
+      'You reach them before competitors who wait for them to search',
+      'One win covers the cost many times over'
     ])
     + '</table></td></tr>\n'
-    + cta(p.accent, HOWITWORKS, 'See how it works', '')
+    + cta(p.accent, PRICING, 'Start your Print & Post', 'Pick a package &middot; cancel anytime')
     + footer(p.accent);
-  return shell(p.accent, subject, 'Clicks that go nowhere, calls that never connect. Here is why the post wins.', inner);
+  return shell(p.accent, subject, 'Upload your flyer, give it a few weeks, and ask every caller where they found you.', inner);
 }
 
-// Email 2 - Print & Post does it for you
+// Email 2 - upload your flyer, we do the rest
 function email2(p) {
-  const subject = 'We print and post it for you';
+  const subject = 'Upload your flyer - we do the rest';
   const inner = logo(p.accent)
-    + '<tr><td style="padding:14px 34px 6px">'
-    + '<p style="margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:' + p.accent + '">Zero effort, real results</p>'
-    + '<h1 style="margin:0 0 14px;font-size:23px;line-height:1.3;font-weight:800;color:' + INK + '">We print and post it for you</h1>'
-    + '<p style="margin:0 0 14px;color:' + INK + ';font-size:15px;line-height:1.65">Hi,<br><br>No printer, no envelopes, no trip to the post box. Upload your leaflet and cover letter once, and we do the rest - printed, addressed and posted to your ' + p.plural + '.</p>'
+    + head(p.accent, 'One upload, done', 'Upload your flyer, we do the rest')
+    + '<p style="margin:0 0 14px;color:' + INK + ';font-size:15px;line-height:1.65">Hi,<br><br>Get your Print &amp; Post running in minutes. Upload your flyer (front and back) and a cover letter, or email them to hello@9amleads.com and we will upload them for you.</p>'
     + '</td></tr>\n'
     + bullets([
-      'Double-sided print: a bold front and an informative back, proven to lift response',
-      'Printed edge-to-edge and posted first class by Royal Mail',
-      'Every mailpiece tracked, with proof of posting in your dashboard',
+      'We print double-sided and post to your ' + p.plural,
+      'Track every mailpiece, with proof of posting in your dashboard',
       'Auto Send posts to every new lead each morning, without you lifting a finger',
-      'You only pay for what is mailed: A5 leaflet &pound;2.99, letter &pound;2.49, or both &pound;4.49'
+      'Quiet spell? Bulk Send lets you buy extra leads and mail a bigger batch',
+      'You only pay for what is actually mailed'
     ])
-    + cta(p.accent, PRICING, 'See plans and pricing', 'Plans from &pound;25 per week &middot; cancel anytime')
+    + cta(p.accent, PRICING, 'Pick a package and upload your flyer', 'From &pound;25 per week &middot; cancel anytime')
     + footer(p.accent);
-  return shell(p.accent, subject, 'Upload your leaflet once - we print, address and post it to your leads for you.', inner);
+  return shell(p.accent, subject, 'Upload your flyer once - we print, address and post it for you.', inner);
 }
 
-// Email 3 - the closer
+// Email 3 - the 3-week test
 function email3(p) {
-  const subject = 'Let us get you back in front of them';
+  const subject = 'The 3-week test';
   const inner = logo(p.accent)
-    + '<tr><td style="padding:14px 34px 6px">'
-    + '<p style="margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:' + p.accent + '">One more go</p>'
-    + '<h1 style="margin:0 0 14px;font-size:23px;line-height:1.3;font-weight:800;color:' + INK + '">Let us get you back in front of them</h1>'
-    + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">Hi,<br><br>You have seen why the post wins and how Print &amp; Post does the work for you. All that is left is to get your own ' + p.plural + ' flowing again.</p>'
-    + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">Pick a plan and I will personally make sure your areas are set up to give you a full daily batch, with your Print &amp; Post ready to go. Want a deal on your first month? Just reply and I will sort it for you.</p>'
+    + head(p.accent, 'Give it 3 weeks', 'The 3-week test')
+    + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">Hi,<br><br>Here is the honest truth: Print &amp; Post is not overnight. Give it three weeks of consistent posting and the phone starts ringing more. The simplest way to prove it is working: ask every caller where they found you. When they say the flyer through the door, you know it is working.</p>'
     + '</td></tr>\n'
-    + cta(p.accent, PRICING, 'Get started', 'Plans from &pound;25 per week &middot; cancel anytime')
+    + '<tr><td style="padding:0 34px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">'
+    + block('Why this wins for you', [
+      'Customers come to you, so you spend less effort and less chasing',
+      'You reach them before competitors who wait for them to search',
+      'Bulk Send keeps it going through quiet periods'
+    ])
+    + '</table></td></tr>\n'
+    + cta(p.accent, PRICING, 'Get started - pick your package', 'From &pound;25 per week &middot; cancel anytime')
     + footer(p.accent);
-  return shell(p.accent, subject, 'Pick a plan and I will set up your areas personally.', inner);
+  return shell(p.accent, subject, 'Give it three weeks. Ask every caller where they found you. That is how you know.', inner);
 }
 
-const SUBJECTS = { 1: email1, 2: email2, 3: email3 };
-function buildWinback(p, step) { return SUBJECTS[step](p); }
+const STEPS = { 1: email1, 2: email2, 3: email3 };
+function buildWinback(p, step) { return STEPS[step](p); }
 
 for (const key of Object.keys(PRODUCTS)) {
   const p = PRODUCTS[key];
   const dir = path.join(OUT, key);
   fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, '1-why-post-wins.html'), buildWinback(p, 1));
-  fs.writeFileSync(path.join(dir, '2-print-and-post.html'), buildWinback(p, 2));
-  fs.writeFileSync(path.join(dir, '3-closer.html'), buildWinback(p, 3));
+  fs.writeFileSync(path.join(dir, '1-flyer-through-door.html'), buildWinback(p, 1));
+  fs.writeFileSync(path.join(dir, '2-upload-flyer.html'), buildWinback(p, 2));
+  fs.writeFileSync(path.join(dir, '3-three-week-test.html'), buildWinback(p, 3));
   console.log('Wrote ' + key);
 }
 console.log('Output: ' + OUT);

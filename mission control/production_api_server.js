@@ -18983,30 +18983,31 @@ function buildWinbackEmailHTML(product, step) {
     return '<tr><td style="padding:14px 34px 6px"><p style="margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:' + p.accent + '">' + kick + '</p>'
       + '<h1 style="margin:0 0 14px;font-size:23px;line-height:1.3;font-weight:800;color:' + INK + '">' + title + '</h1>';
   }
-  var subject = step === 1 ? 'Why a letter beats an ad (and a cold call)' : step === 2 ? 'We print and post it for you' : 'Let us get you back in front of them';
+  var subject = step === 1 ? 'Let us get your flyer through their door' : step === 2 ? 'Upload your flyer - we do the rest' : 'The 3-week test';
   var inner;
   if (step === 1) {
-    inner = logo + head('The honest truth', 'Why a letter beats an ad (and a cold call)')
-      + '<p style="margin:0 0 14px;color:' + INK + ';font-size:15px;line-height:1.65">Hi,<br><br>If you are tired of paying for clicks that go nowhere, or losing hours to the phone, this is worth two minutes. Here is why the post still wins, and why it is worth another look.</p></td></tr>'
+    inner = logo + head('Time to put it to work', 'Let us get your flyer through their door')
+      + '<p style="margin:0 0 14px;color:' + INK + ';font-size:15px;line-height:1.65">Hi,<br><br>You have seen how the dashboard works, so let us get you actually using Print &amp; Post. Upload your flyer or letter (or just email it to hello@9amleads.com and we will do it for you) and we print, address and post it to your ' + p.plural + '.</p></td></tr>'
       + '<tr><td style="padding:0 34px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">'
-      + block('Social media: you are renting attention', ['You bid against every rival for the same clicks', 'Costs climb while the results fall', 'The moment you stop paying, you disappear'])
-      + block('Cold calling: the hardest way to win work', ['Gatekeepers, rejection and endless dialling', 'Most people screen calls and never pick up', 'You only ever reach the few who happen to answer'])
-      + block('A letter in the hand works differently', ['It is physical - it sits on the kitchen table and is read when they are ready', 'No algorithm, no auction, no cost per click', 'You reach the door first, before they start shopping around'])
-      + '</table></td></tr>' + cta(HOWITWORKS, 'See how it works', '') + footer;
-    return shell(subject, 'Clicks that go nowhere, calls that never connect. Here is why the post wins.', inner);
+      + block('Be honest with yourself - it is not overnight', ['Give it a few weeks of consistent posting', 'Then you will notice more phone enquiries', 'This is how you know it is working: ask every caller where they found you', 'When they say the flyer through the door, you know'])
+      + block('Why it beats chasing work', ['Your customers come to you - minimal effort and spend', 'You reach them before competitors who wait for them to search', 'One win covers the cost many times over'])
+      + '</table></td></tr>' + cta(PRICING, 'Start your Print & Post', 'Pick a package &middot; cancel anytime') + footer;
+    return shell(subject, 'Upload your flyer, give it a few weeks, and ask every caller where they found you.', inner);
   }
   if (step === 2) {
-    inner = logo + head('Zero effort, real results', 'We print and post it for you')
-      + '<p style="margin:0 0 14px;color:' + INK + ';font-size:15px;line-height:1.65">Hi,<br><br>No printer, no envelopes, no trip to the post box. Upload your leaflet and cover letter once, and we do the rest - printed, addressed and posted to your ' + p.plural + '.</p></td></tr>'
-      + bullets(['Double-sided print: a bold front and an informative back, proven to lift response', 'Printed edge-to-edge and posted first class by Royal Mail', 'Every mailpiece tracked, with proof of posting in your dashboard', 'Auto Send posts to every new lead each morning, without you lifting a finger', 'You only pay for what is mailed: A5 leaflet &pound;2.99, letter &pound;2.49, or both &pound;4.49'])
-      + cta(PRICING, 'See plans and pricing', 'Plans from &pound;25 per week &middot; cancel anytime') + footer;
-    return shell(subject, 'Upload your leaflet once - we print, address and post it to your leads for you.', inner);
+    inner = logo + head('One upload, done', 'Upload your flyer, we do the rest')
+      + '<p style="margin:0 0 14px;color:' + INK + ';font-size:15px;line-height:1.65">Hi,<br><br>Get your Print &amp; Post running in minutes. Upload your flyer (front and back) and a cover letter, or email them to hello@9amleads.com and we will upload them for you.</p></td></tr>'
+      + bullets(['We print double-sided and post to your ' + p.plural, 'Track every mailpiece, with proof of posting in your dashboard', 'Auto Send posts to every new lead each morning, without you lifting a finger', 'Quiet spell? Bulk Send lets you buy extra leads and mail a bigger batch', 'You only pay for what is actually mailed'])
+      + cta(PRICING, 'Pick a package and upload your flyer', 'From &pound;25 per week &middot; cancel anytime') + footer;
+    return shell(subject, 'Upload your flyer once - we print, address and post it for you.', inner);
   }
-  inner = logo + head('One more go', 'Let us get you back in front of them')
-    + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">Hi,<br><br>You have seen why the post wins and how Print &amp; Post does the work for you. All that is left is to get your own ' + p.plural + ' flowing again.</p>'
-    + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">Pick a plan and I will personally make sure your areas are set up to give you a full daily batch, with your Print &amp; Post ready to go. Want a deal on your first month? Just reply and I will sort it for you.</p></td></tr>'
-    + cta(PRICING, 'Get started', 'Plans from &pound;25 per week &middot; cancel anytime') + footer;
-  return shell(subject, 'Pick a plan and I will set up your areas personally.', inner);
+  inner = logo + head('Give it 3 weeks', 'The 3-week test')
+    + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">Hi,<br><br>Here is the honest truth: Print &amp; Post is not overnight. Give it three weeks of consistent posting and the phone starts ringing more. The simplest way to prove it is working: ask every caller where they found you. When they say the flyer through the door, you know it is working.</p></td></tr>'
+    + '<tr><td style="padding:0 34px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">'
+    + block('Why this wins for you', ['Customers come to you, so you spend less effort and less chasing', 'You reach them before competitors who wait for them to search', 'Bulk Send keeps it going through quiet periods'])
+    + '</table></td></tr>'
+    + cta(PRICING, 'Get started - pick your package', 'From &pound;25 per week &middot; cancel anytime') + footer;
+  return shell(subject, 'Give it three weeks. Ask every caller where they found you. That is how you know.', inner);
 }
 
 // GET /api/admin/email-library — every email a customer can receive, grouped by
