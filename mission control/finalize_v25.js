@@ -1,6 +1,7 @@
-// update_v25_campaigns.js - pushes the latest v25 email HTML into the existing
-// Brevo DRAFT campaigns (matched by name), so we don't recreate them.
-// Usage: node update_v25_campaigns.js
+// finalize_v25.js - brings Brevo in line with the "2 emails per lead type" decision:
+//   * DELETES the "Demo 3 - Free week" drafts
+//   * UPDATES the "Demo 1 - Real lead" drafts with the latest HTML
+// Waits out Brevo's rate limit automatically. Run: node finalize_v25.js
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
@@ -28,10 +29,6 @@ for (const k of Object.keys(PLURAL)) pluralToSub[PLURAL[k].toLowerCase()] = k;
 function leadNoun(st) {
   return { moving: 'moving lead', probate: 'probate grant', newbusiness: 'new company registration', planning: 'planning application', tenders: 'public tender' }[st.product] || 'lead';
 }
-const STEPS = [
-  { n: '1', tag: 'Real lead', subject: st => 'A real ' + leadNoun(st) + ' - see where it came from' },
-  { n: '2', tag: 'Dashboard tour', subject: st => 'Your leads dashboard in 60 seconds' }
-];
 
 function req(method, urlPath, body) {
   return new Promise(r => {
@@ -44,45 +41,48 @@ function req(method, urlPath, body) {
   });
 }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function withRetry(fn, label, log) {
+  for (let a = 0; a < 80; a++) {
+    const r = await fn();
+    if (r.s >= 200 && r.s < 300) return r;
+    if (r.s === 429 || r.s === 0) { log('  [rate-limit] ' + label + ' waiting 60s...'); await sleep(60000); continue; }
+    return r;
+  }
+  return { s: 0, b: 'gave up' };
+}
 
 (async () => {
-  if (!KEY) { console.log('No BREVO_API_KEY'); return; }
+  const log = (m) => { console.log(new Date().toISOString().slice(11, 19) + ' ' + m); };
+  if (!KEY) { log('No BREVO_API_KEY'); return; }
   let all = [];
   for (const off of [0, 100, 200]) {
-    let r = { s: 0, b: '' };
-    for (let a = 0; a < 40; a++) {
-      r = await req('GET', '/v3/emailCampaigns?limit=100&offset=' + off);
-      if (r.s === 200) break;
-      await sleep(60000);
-    }
-    try { all = all.concat((JSON.parse(r.b).campaigns || [])); }
-    catch (e) { console.log('list fetch offset ' + off + ' failed: ' + r.s + ' ' + String(r.b).slice(0, 80)); }
+    const r = await withRetry(() => req('GET', '/v3/emailCampaigns?limit=100&offset=' + off), 'list ' + off, log);
+    try { all = all.concat((JSON.parse(r.b).campaigns || [])); } catch (e) { log('list ' + off + ' failed: ' + r.s); }
   }
-  const results = [];
-  const onlyStep = process.argv[2] || '';
-  for (const c of all) {
-    const m = c.name.match(/^(.*?) Buyers - Demo (\d) - /);
-    if (!m) continue;
-    if (onlyStep && m[2] !== onlyStep) continue;
-    const subtype = pluralToSub[m[1].toLowerCase()];
-    if (!subtype || !SUBTYPES[subtype]) { results.push(c.name + ' -> NO SUBTYPE'); continue; }
-    const st = SUBTYPES[subtype];
-    const step = STEPS.find(s => s.n === m[2]);
-    const file = path.join(OUT, st.product, subtype + '-' + m[2] + '.html');
-    if (!fs.existsSync(file)) { results.push(c.name + ' -> NO HTML'); continue; }
-    const subject = step.subject(st);
+  log('campaigns loaded: ' + all.length);
+
+  const deletes = all.filter(c => / Buyers - Demo 3 - /.test(c.name));
+  const updates = all.filter(c => / Buyers - Demo 1 - /.test(c.name));
+  log('to delete (Demo 3): ' + deletes.length + ' | to update (Demo 1): ' + updates.length);
+
+  for (const c of deletes) {
+    const r = await withRetry(() => req('DELETE', '/v3/emailCampaigns/' + c.id), c.name, log);
+    log((r.s >= 200 && r.s < 300 ? 'DELETED ' : 'DELETE FAILED ' + r.s + ' ') + c.name);
+    await sleep(800);
+  }
+  for (const c of updates) {
+    const m = c.name.match(/^(.*?) Buyers - Demo 1 - /);
+    const subtype = m && pluralToSub[m[1].toLowerCase()];
+    const st = subtype && SUBTYPES[subtype];
+    if (!st) { log('NO SUBTYPE for ' + c.name); continue; }
+    const file = path.join(OUT, st.product, subtype + '-1.html');
+    if (!fs.existsSync(file)) { log('NO HTML for ' + c.name); continue; }
+    const subject = 'A real ' + leadNoun(st) + ' - see where it came from';
     let html = fs.readFileSync(file, 'utf8');
     html = html.replace(/<title>[\s\S]*?<\/title>/i, '<title>' + subject.replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</title>');
-    let done = false, lastErr = '';
-    for (let a = 0; a < 60 && !done; a++) {
-      const r = await req('PUT', '/v3/emailCampaigns/' + c.id, { subject, htmlContent: html });
-      if (r.s === 200 || r.s === 204) { done = true; results.push(c.name + ' -> updated'); }
-      else if (r.s === 429 || r.s === 0) { await sleep(60000); }
-      else { lastErr = r.s + ' ' + String(r.b).slice(0, 160); break; }
-    }
-    if (!done) results.push(c.name + ' -> FAILED ' + lastErr);
-    await sleep(1200);
+    const r = await withRetry(() => req('PUT', '/v3/emailCampaigns/' + c.id, { subject, htmlContent: html }), c.name, log);
+    log((r.s >= 200 && r.s < 300 ? 'UPDATED ' : 'UPDATE FAILED ' + r.s + ' ') + c.name);
+    await sleep(800);
   }
-  console.log(results.join('\n'));
-  console.log('\nUpdated: ' + results.filter(x => /updated$/.test(x)).length + ' | failed/other: ' + results.filter(x => !/updated$/.test(x)).length);
+  log('DONE');
 })();

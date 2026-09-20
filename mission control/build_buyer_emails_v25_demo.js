@@ -67,6 +67,43 @@ const SAMPLE = {
     source: 'Contracts Finder', sourceUrl: 'https://www.find-tender.service.gov.uk/', why: 'Public contracts are published daily, and the first credible bid often wins.'
   }
 };
+// Per-business-type sample lead so the preview matches the recipient's trade.
+const SAMPLE_BY_SUBTYPE = {
+  // MOVING
+  'moving-removal': { title: '12 Oakwood Avenue, Westminster, SW1A 1AA', subtitle: '3 bed house move &middot; \u00a3475,000', chips: ['Added today', 'Detached', 'Available'] },
+  'moving-manvan': { title: '14 Lime Grove, Peckham, SE15 4AA', subtitle: '1 bed flat move &middot; \u00a3310,000', chips: ['Added today', 'Flat', 'Available'] },
+  'moving-storage': { title: '26 Devon Street, Kingston, KT2 6AA', subtitle: '3 bed &middot; storage required', chips: ['Added today', 'Semi-Detached'] },
+  'moving-clearance': { title: '40 Park Lane, Sutton, SM1 3AN', subtitle: 'Full house clearance', chips: ['Added today', 'Detached'] },
+  'moving-packers': { title: '33 Church Road, Richmond, TW9 3AB', subtitle: '4 bed &middot; packing and relocation', chips: ['Added today', 'Detached'] },
+  'moving-skipwaste': { title: '19 Lime Grove, Peckham, SE15 4AA', subtitle: 'Skip hire and waste removal', chips: ['Added today', 'Flat'] },
+  // PROBATE
+  'probate-solicitor': { title: 'Margaret Collins', subtitle: '7 The Paddock, Sunbury, TW16 5EX', chips: ['Grant date: 3 days ago', '\u00a3284,242 estate'] },
+  'probate-estateagent': { title: 'Margaret Collins', subtitle: '7 The Paddock, Sunbury, TW16 5EX', chips: ['Grant date: 3 days ago', 'Property to sell'] },
+  'probate-funeraldirector': { title: 'John Thompson', subtitle: '46 Station Road, Woking, GU21 1AA', chips: ['Grant date: 3 days ago', '\u00a3271,141 estate'] },
+  'probate-financial': { title: 'Helen Wood', subtitle: '89 Park Lane, Tunbridge Wells, TN1 1AA', chips: ['Grant date: 3 days ago', '\u00a3273,395 estate'] },
+  'probate-willwriter': { title: 'Richard Khan', subtitle: '128 Church Road, Camden, NW1 1AA', chips: ['Grant date: 3 days ago', 'No will on record'] },
+  // NEW BUSINESS
+  'nb-accountant': { title: 'Brightleaf Marketing Ltd', subtitle: '21 Market Street, Leeds, LS1 6EZ', chips: ['Incorporated 2 days ago', 'SIC 70229 Management consultancy'] },
+  'nb-webdesign': { title: 'Northgate Plumbing Ltd', subtitle: '5 Bridge Road, Manchester, M1 2AB', chips: ['Incorporated 2 days ago', 'No website found'] },
+  'nb-marketing': { title: 'Verdant Landscapes Ltd', subtitle: '14 The Parade, Bristol, BS1 5TR', chips: ['Incorporated 2 days ago', 'SIC 81300 Landscape services'] },
+  'nb-it': { title: 'Apex IT Solutions Ltd', subtitle: '78 High Street, Birmingham, B1 1AA', chips: ['Incorporated 2 days ago', 'SIC 62020 IT consultancy'] },
+  'nb-insurance': { title: 'Ridgeline Construction Ltd', subtitle: '31 Portland Road, Glasgow, G1 1AA', chips: ['Incorporated 2 days ago', 'SIC 41201 Construction'] },
+  'nb-recruitment': { title: 'Bluebell Care Ltd', subtitle: '9 Kingsway, London, WC2B 6AA', chips: ['Incorporated 2 days ago', 'SIC 88100 Social care'] },
+  'nb-businesssupport': { title: 'Copperfield Consulting Ltd', subtitle: '52 Queen Street, Cardiff, CF10 1AA', chips: ['Incorporated 2 days ago', 'SIC 70229 Consultancy'] },
+  // PLANNING
+  'plan-builder': { title: '33 Church Road, Chorley, PR7 4HT', subtitle: 'Chorley Council &middot; Householder Application &middot; Approved', chips: ['New detached dwelling'] },
+  'plan-roofing': { title: '12 High Street, Leeds, LS1 6EZ', subtitle: 'Leeds City Council &middot; Householder Application &middot; Approved', chips: ['Roof replacement and re-roof'] },
+  'plan-architect': { title: '88 Mill Lane, Bristol, BS1 5TR', subtitle: 'Bristol City Council &middot; Full Application &middot; Pending', chips: ['Two storey side and rear extension'] },
+  'plan-landscaper': { title: '5 The Green, Birmingham, B1 1AA', subtitle: 'Birmingham City Council &middot; Householder Application &middot; Pending', chips: ['Landscaping and new driveway'] },
+  // TENDERS
+  'tend-construction': { title: 'Highways resurfacing programme', subtitle: 'County Council', chips: ['\u00a32,500,000', 'Closes in 14 days'] },
+  'tend-cleaning': { title: 'Building cleaning services', subtitle: 'City Council', chips: ['\u00a3750,000', 'Closes in 14 days'] },
+  'tend-security': { title: 'Security services for public buildings', subtitle: 'Police Authority', chips: ['\u00a3400,000', 'Closes in 14 days'] },
+  'tend-it': { title: 'IT support and managed services', subtitle: 'NHS Trust', chips: ['\u00a31,200,000', 'Closes in 14 days'] },
+  'tend-facilities': { title: 'Facilities management for council estates', subtitle: 'District Council', chips: ['\u00a3900,000', 'Closes in 14 days'] },
+  'tend-logistics': { title: 'Transport and logistics services', subtitle: 'Public Sector Body', chips: ['\u00a3600,000', 'Closes in 14 days'] },
+  'tend-healthcare': { title: 'Healthcare and social care services', subtitle: 'NHS Trust', chips: ['\u00a31,500,000', 'Closes in 14 days'] }
+};
 
 function shell(accent, subject, preheader, inner) {
   return '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
@@ -106,7 +143,7 @@ function sampleCard(accent, s) {
     + '<p style="margin:10px 0 3px;font-size:16px;font-weight:800;color:' + INK + ';line-height:1.35">' + s.title + '</p>'
     + '<p style="margin:0 0 8px;font-size:13px;color:' + INK + '">' + s.subtitle + '</p>'
     + (chips ? '<p style="margin:0 0 10px">' + chips + '</p>' : '')
-    + '<p style="margin:0;font-size:12px;color:' + MUTED + '">Source: <a href="' + s.sourceUrl + '" style="color:' + accent + ';text-decoration:none;font-weight:700">' + s.source + '</a> &middot; ' + s.why + '</p>'
+    + '<p style="margin:0;font-size:12px;color:' + MUTED + '">Source: <strong style="color:' + INK + '">' + s.source + '</strong> &middot; ' + s.why + '</p>'
     + '</td></tr></table>';
 }
 function dashboardMock(accent) {
@@ -130,7 +167,7 @@ function dashboardMock(accent) {
 function ctaButton(accent, url, text) {
   return '<tr><td align="center" style="padding:8px 34px 6px">'
     + '<a href="' + url + '" style="display:inline-block;background-color:' + accent + ';color:#ffffff;text-decoration:none;padding:15px 36px;border-radius:6px;font-size:16px;font-weight:700">' + text + '</a>'
-    + '<p style="margin:10px 0 0;color:' + MUTED + ';font-size:12px">No signup needed &middot; nothing to install</p>'
+    + '<p style="margin:10px 0 0;color:' + MUTED + ';font-size:12px">Look around, then start your free week &middot; no card required</p>'
     + '</td></tr>\n';
 }
 // Three persuasion blocks: vs other address providers, post vs online ads, why this approach.
@@ -166,9 +203,9 @@ function trialLink(accent, prod) {
 }
 
 // ---- Email 1: real lead ----
-function email1(st, prod, accent) {
+function email1(st, prod, accent, id) {
   const subject = 'A real ' + leadNoun(st) + ' - see where it came from';
-  const s = SAMPLE[st.product];
+  const s = Object.assign({}, SAMPLE[st.product], SAMPLE_BY_SUBTYPE[id] || {});
   const inner = logo(accent)
     + '<tr><td style="padding:14px 34px 6px">'
     + '<p style="margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:' + accent + '">Proof, not promises</p>'
@@ -178,10 +215,10 @@ function email1(st, prod, accent) {
     + '<p style="margin:16px 0 6px;color:' + INK + ';font-size:15px;line-height:1.65">This is what lands in your inbox at 9am every weekday - with the <strong>source</strong> so you can check it yourself, the full address, and a score. You are not just handed a list of addresses and asked to trust it.</p>'
     + '</td></tr>\n'
     + whyBetter(accent)
-    + ctaButton(accent, demoUrl(st.product), 'See the live dashboard - no signup')
+    + ctaButton(accent, demoUrl(st.product), 'See the live dashboard')
     + trialLink(accent, prod)
     + footer(accent, prod);
-  return shell(accent, subject, 'A real ' + leadNoun(st) + ' with its source - see it in the live dashboard, no signup.', inner);
+  return shell(accent, subject, 'A real ' + leadNoun(st) + ' with its source - see it in the live dashboard.', inner);
 }
 
 // ---- Email 2: dashboard in 60 seconds ----
@@ -193,12 +230,12 @@ function email2(st, prod, accent) {
     + '<h1 style="margin:0 0 14px;font-size:23px;line-height:1.3;font-weight:800;color:' + INK + '">The dashboard your leads land in</h1>'
     + '<p style="margin:0 0 16px;color:' + INK + ';font-size:15px;line-height:1.65">Hi,<br><br>Quick one. This is the dashboard our customers open every morning - fresh ' + leadNounPlural(st) + ', the source of each one, and Print &amp; Post in a click:</p>'
     + dashboardMock(accent)
-    + '<p style="margin:16px 0 6px;color:' + INK + ';font-size:15px;line-height:1.65">You can open the <strong>live demo</strong> yourself - it is the real dashboard, loaded with sample ' + leadNounPlural(st) + '. Nothing to install, no signup. Click around and see the transparency, freshness and tracking for yourself.</p>'
+    + '<p style="margin:16px 0 6px;color:' + INK + ';font-size:15px;line-height:1.65">You can open the <strong>live demo</strong> yourself - it is the real dashboard, loaded with sample ' + leadNounPlural(st) + '. Nothing to install. Click around and see the transparency, freshness and tracking for yourself.</p>'
     + '</td></tr>\n'
     + ctaButton(accent, demoUrl(st.product), 'Open the live demo dashboard')
     + trialLink(accent, prod)
     + footer(accent, prod);
-  return shell(accent, subject, 'Open the live demo dashboard - the real thing, no signup.', inner);
+  return shell(accent, subject, 'Open the live demo dashboard - the real thing.', inner);
 }
 
 // ---- Email 3: free week ----
@@ -229,8 +266,8 @@ ids.forEach(function (id) {
   const st = SUBTYPES[id], prod = P[st.product], accent = D[st.product];
   const dir = path.join(OUT, st.product);
   fs.mkdirSync(dir, { recursive: true });
-  [['1', email1], ['2', email2], ['3', email3]].forEach(function (pair) {
-    const html = pair[1](st, prod, accent);
+  [['1', email1], ['2', email2]].forEach(function (pair) {
+    const html = pair[1](st, prod, accent, id);
     if (/\u2014|\u2013|&mdash;|&ndash;/.test(html)) console.log('WARN dash in ' + id + '-' + pair[0]);
     fs.writeFileSync(path.join(dir, id + '-' + pair[0] + '.html'), html);
   });

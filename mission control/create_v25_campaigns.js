@@ -33,8 +33,7 @@ function leadNoun(st) {
 }
 const STEPS = [
   { n: '1', tag: 'Real lead', subject: st => 'A real ' + leadNoun(st) + ' - see where it came from' },
-  { n: '2', tag: 'Dashboard tour', subject: st => 'Your leads dashboard in 60 seconds' },
-  { n: '3', tag: 'Free week', subject: st => 'Your free week is still waiting' }
+  { n: '2', tag: 'Dashboard tour', subject: st => 'Your leads dashboard in 60 seconds' }
 ];
 
 function req(method, urlPath, body) {
