@@ -38,25 +38,32 @@ function leadNounPlural(st) {
     default: return 'leads';
   }
 }
+// Sample lead rendered EXACTLY like the real 9am delivery email / dashboard card:
+// badge, full address (number + street + area + postcode), details, source link.
 const SAMPLE = {
   moving: {
-    fields: [['Address', '14 Oakwood Avenue, Enfield'], ['Postcode', 'EN1 3HJ'], ['Bedrooms', '3'], ['Guide price', '\u00a3475,000']],
+    badge: 'MOVING', title: '12 Oakwood Avenue, Westminster, SW1A 1AA', subtitle: '2 bed &middot; \u00a3475,000',
+    chips: ['Added today', 'Detached', 'Available'],
     source: 'Rightmove', sourceUrl: 'https://www.rightmove.co.uk/', why: 'Someone who has just listed their home is looking for removal quotes right now.'
   },
   probate: {
-    fields: [['Estate', 'Margaret Collins'], ['Address', '7 The Paddock, Sunbury'], ['Postcode', 'TW16 5EX'], ['Grant date', '3 days ago'], ['Estate value', '\u00a3284,242']],
+    badge: 'PROBATE', title: 'Margaret Collins', subtitle: '7 The Paddock, Sunbury, TW16 5EX',
+    chips: ['Grant date: 3 days ago', '\u00a3284,242 estate'],
     source: 'HMCTS / UK Gazette', sourceUrl: 'https://www.gov.uk/search-will-probate', why: 'A probate grant is the moment the executor starts instructing professionals.'
   },
   newbusiness: {
-    fields: [['Company', 'Brightleaf Marketing Ltd'], ['Address', '21 Market Street, Leeds'], ['Postcode', 'LS1 6EZ'], ['Incorporated', '2 days ago'], ['SIC code', '70229 Management consultancy']],
+    badge: 'NEW BIZ', title: 'Brightleaf Marketing Ltd', subtitle: '21 Market Street, Leeds, LS1 6EZ',
+    chips: ['Incorporated 2 days ago', 'SIC 70229 Management consultancy'],
     source: 'Companies House', sourceUrl: 'https://find-and-update.company-information.service.gov.uk/', why: 'A brand new company needs an accountant, website, insurance and IT from day one.'
   },
   planning: {
-    fields: [['Address', '33 Church Road, Chorley'], ['Postcode', 'PR7 4HT'], ['Application', 'Single storey rear extension'], ['Status', 'Pending'], ['Council', 'Chorley Council']],
+    badge: 'PLANNING', title: '33 Church Road, Chorley, PR7 4HT', subtitle: 'Chorley Council &middot; Householder Application &middot; Pending',
+    chips: ['Single storey rear extension'],
     source: 'Planning Portal', sourceUrl: 'https://www.planningportal.co.uk/', why: 'An approved or pending application means work is about to be priced and booked.'
   },
   tenders: {
-    fields: [['Contract', 'School catering services - 3 year contract'], ['Buyer', 'Local Authority'], ['Value', '\u00a3450,000'], ['Closes', 'in 14 days']],
+    badge: 'TENDER', title: 'School catering services - 3 year contract', subtitle: 'Local Authority',
+    chips: ['\u00a3450,000', 'Closes in 14 days'],
     source: 'Contracts Finder', sourceUrl: 'https://www.find-tender.service.gov.uk/', why: 'Public contracts are published daily, and the first credible bid often wins.'
   }
 };
@@ -89,14 +96,17 @@ function footer(accent, prod) {
     + '</td></tr>\n';
 }
 function sampleCard(accent, s) {
-  var rows = s.fields.map(function (f) {
-    return '<tr><td style="padding:7px 0;border-bottom:1px solid ' + LINE + ';font-size:12.5px;color:' + MUTED + ';width:120px">' + f[0] + '</td>'
-      + '<td style="padding:7px 0;border-bottom:1px solid ' + LINE + ';font-size:14px;color:' + INK + ';font-weight:700">' + f[1] + '</td></tr>';
+  var chips = (s.chips || []).map(function (c) {
+    return '<span style="display:inline-block;padding:3px 9px;margin:0 5px 5px 0;border:1px solid ' + LINE + ';border-radius:6px;font-size:11.5px;color:' + INK + '">' + c + '</span>';
   }).join('');
-  return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border:1px solid ' + LINE + ';border-left:4px solid ' + accent + ';border-radius:10px"><tr><td style="padding:18px 20px">'
-    + '<p style="margin:0 0 10px;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:' + accent + '">Live example</p>'
-    + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0">' + rows + '</table>'
-    + '<p style="margin:12px 0 0;font-size:12.5px;color:' + MUTED + '">Source: <a href="' + s.sourceUrl + '" style="color:' + accent + ';text-decoration:none;font-weight:700">' + s.source + '</a> &middot; ' + s.why + '</p>'
+  return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;border:1px solid ' + LINE + ';border-radius:12px;overflow:hidden">'
+    + '<tr><td style="height:3px;background:' + accent + ';font-size:0;line-height:0">&nbsp;</td></tr>'
+    + '<tr><td style="padding:16px 18px">'
+    + '<span style="display:inline-block;padding:3px 10px;border-radius:5px;background:' + accent + ';color:#fff;font-size:10px;font-weight:800;letter-spacing:0.8px">' + s.badge + '</span>'
+    + '<p style="margin:10px 0 3px;font-size:16px;font-weight:800;color:' + INK + ';line-height:1.35">' + s.title + '</p>'
+    + '<p style="margin:0 0 8px;font-size:13px;color:' + INK + '">' + s.subtitle + '</p>'
+    + (chips ? '<p style="margin:0 0 10px">' + chips + '</p>' : '')
+    + '<p style="margin:0;font-size:12px;color:' + MUTED + '">Source: <a href="' + s.sourceUrl + '" style="color:' + accent + ';text-decoration:none;font-weight:700">' + s.source + '</a> &middot; ' + s.why + '</p>'
     + '</td></tr></table>';
 }
 function dashboardMock(accent) {
