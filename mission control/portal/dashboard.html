@@ -1998,6 +1998,25 @@ document.querySelectorAll('.modal').forEach(function(m){
   var sess = JSON.parse(sd);
   _token = sess ? sess.token : null;
   if (!_token) { window.location.href = '/portal/'; return; }
+  // READ-ONLY DEMO MODE: show a banner and block every write request client-side
+  // (the server also rejects non-GET for demo tokens).
+  var DEMO_MODE = !!(sess && sess.demo);
+  if (DEMO_MODE) {
+    try {
+      var _db = document.createElement('div');
+      _db.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:99999;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;text-align:center;padding:10px 14px;font-size:13px;font-weight:700;font-family:Inter,Arial,sans-serif';
+      _db.innerHTML = '\uD83D\uDC40 You are viewing a read-only demo of the 9amLeads dashboard. <a href="/portal/?product=moving#signup" style="color:#fff;text-decoration:underline">Start your free week &rarr;</a>';
+      document.body.appendChild(_db);
+    } catch(e) {}
+    try {
+      window.__demoToast = function(){ try { var t=document.createElement('div'); t.textContent='This is a read-only demo \u2014 start your free trial to use this feature.'; t.style.cssText='position:fixed;left:50%;top:20px;transform:translateX(-50%);z-index:100000;background:#0f172a;color:#fff;border:1px solid #334155;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:600;font-family:Inter,Arial,sans-serif;box-shadow:0 8px 30px rgba(0,0,0,.5)'; document.body.appendChild(t); setTimeout(function(){ try{t.remove()}catch(e){} }, 2600); } catch(e){} };
+      var _of = window.fetch;
+      window.fetch = function(u, o){ var m = ((o && o.method) || 'GET').toUpperCase(); if (m !== 'GET') { window.__demoToast(); return Promise.resolve(new Response('{"error":"read-only demo","demo":true}', { status: 403, headers: { 'Content-Type': 'application/json' } })); } return _of.apply(this, arguments); };
+      var _xo = XMLHttpRequest.prototype.open, _xs = XMLHttpRequest.prototype.send;
+      XMLHttpRequest.prototype.open = function(m){ if (String(m).toUpperCase() !== 'GET') { this.__demoBlocked = true; } return _xo.apply(this, arguments); };
+      XMLHttpRequest.prototype.send = function(){ if (this.__demoBlocked) { try { window.__demoToast(); } catch(e){} try { this.abort(); } catch(e){} return; } return _xs.apply(this, arguments); };
+    } catch(e) {}
+  }
   
   var greet = document.getElementById('greeting');
   if (sess.name) greet.textContent = 'Good morning, ' + sess.name;

@@ -3276,6 +3276,10 @@ function authMiddleware(req, res, next) {
   }
   try {
     req.user = jwt.verify(auth.split(' ')[1], JWT_SECRET);
+    // READ-ONLY DEMO: a demo token may read but must never mutate anything.
+    if (req.user && req.user.demo && ['POST', 'PUT', 'PATCH', 'DELETE'].indexOf(req.method) !== -1) {
+      return res.status(403).json({ error: 'This is a read-only demo account.', demo: true });
+    }
     // Cancelled accounts lose ALL dashboard/API access immediately — even with a
     // still-valid token they are locked out. (Admin routes use adminAuth, so this
     // only affects the customer dashboard.)
@@ -38196,7 +38200,63 @@ process.on('uncaughtException', (err) => {
   } catch(me) {}
 });
 
+// ===== READ-ONLY PUBLIC DEMO ACCOUNT =====
+// A single fixed account used by the public "View our dashboard" demo. It is
+// READ-ONLY: the auth middleware rejects every non-GET request for a demo token,
+// so a visitor can explore the dashboard/leads pages but cannot change anything.
+// Excluded from delivery (email @9amleads.com) and carries leads_per_day=0 so it
+// never affects capacity/committed-demand maths.
+var DEMO_CUSTOMER_ID = 'demo0000-0000-4000-8000-000000000001';
+var DEMO_EMAIL = 'demo@9amleads.com';
+function seedDemoAccount() {
+  try {
+    var existing = db.prepare('SELECT id FROM customers WHERE id = ?').get(DEMO_CUSTOMER_ID);
+    if (!existing) {
+      var nowIso = new Date().toISOString();
+      var trialEnds = new Date(Date.now() + 3650 * 86400000).toISOString();
+      db.prepare(`INSERT INTO customers (id, email, company, contact_name, phone, password_hash, product, lead_type, business_type, target_areas, coverage, source, plan, trial_ends, marketing_consent, created_at, campaign_sent, extra_postcodes)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+        DEMO_CUSTOMER_ID, DEMO_EMAIL, 'Demo Removal Co', 'Demo Owner', '', 'x',
+        'moving', 'Moving Leads', 'Removal Company', JSON.stringify(['SW', 'SE', 'KT', 'TW', 'SM']),
+        'postcode', 'demo', 'free_trial', trialEnds, 0, nowIso, '[]', '0');
+      console.log('[DEMO] demo account created');
+    }
+    try { db.prepare('UPDATE customers SET leads_per_day = 0, email_verified = 1, plan = ? WHERE id = ?').run('free_trial', DEMO_CUSTOMER_ID); } catch(e) {}
+    var cnt = db.prepare('SELECT COUNT(*) AS c FROM leads WHERE customer_id = ?').get(DEMO_CUSTOMER_ID);
+    if (!cnt || !cnt.c) {
+      var areas = [['SW1A 1AA', 'Westminster', 'London'], ['SE15 4AA', 'Peckham', 'London'], ['KT2 6AA', 'Kingston', 'Surrey'], ['TW9 3AB', 'Richmond', 'Surrey'], ['SM1 3AN', 'Sutton', 'Surrey'], ['SW18 2AA', 'Wandsworth', 'London'], ['SE22 8AA', 'East Dulwich', 'London'], ['KT1 1AA', 'Kingston', 'Surrey']];
+      var streets = ['Oakwood Avenue', 'Lime Grove', 'Devon Street', 'Church Road', 'Park Lane', 'Manor Road', 'Cedar Close', 'Victoria Road'];
+      var prices = [475000, 712000, 389000, 540000, 860000, 455000, 625000, 499000];
+      for (var i = 0; i < 8; i++) {
+        var a = areas[i];
+        var d = {
+          address: (12 + i * 7) + ' ' + streets[i] + ', ' + a[1],
+          town: a[1], city: a[2], postcode: a[0],
+          bedrooms: 2 + (i % 3), price: prices[i],
+          propertyType: (i % 2 ? 'Semi-Detached' : 'Detached'),
+          status: (i % 3 === 0 ? 'Under Offer' : 'Available'),
+          agent: 'Demo Estate Agents', url: 'https://www.rightmove.co.uk/',
+          firstVisibleDate: new Date(Date.now() - i * 86400000).toISOString().split('T')[0]
+        };
+        var created = new Date(Date.now() - i * 86400000 + 9 * 3600000).toISOString();
+        db.prepare('INSERT INTO leads (id, customer_id, product, data, status, delivered, created_at, delivered_at, release_at) VALUES (?,?,?,?,?,?,?,?,?)').run(
+          'demo-lead-' + i, DEMO_CUSTOMER_ID, 'moving', JSON.stringify(d), 'delivered', 1, created, created, created);
+      }
+      console.log('[DEMO] seeded sample leads');
+    }
+    saveDb();
+  } catch(e) { console.log('[DEMO] seed error: ' + (e && e.message)); }
+}
+// GET /api/demo/login — mint a short-lived READ-ONLY token for the demo account.
+app.get('/api/demo/login', (req, res) => {
+  try {
+    var token = jwt.sign({ id: DEMO_CUSTOMER_ID, email: DEMO_EMAIL, demo: true }, JWT_SECRET, { expiresIn: '2h' });
+    res.json({ token: token, demo: true, email: DEMO_EMAIL });
+  } catch(e) { res.status(500).json({ error: 'demo unavailable' }); }
+});
+
 app.listen(PORT, () => {
+  try { seedDemoAccount(); } catch(e) { console.log('[DEMO] boot seed error: ' + (e && e.message)); }
   seedDefaultCampaignPacks();
   seedMarketplaceTemplates();
   seedSeasonalCampaigns();
