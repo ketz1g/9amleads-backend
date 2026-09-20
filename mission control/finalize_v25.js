@@ -77,7 +77,7 @@ async function withRetry(fn, label, log) {
     if (!st) { log('NO SUBTYPE for ' + c.name); continue; }
     const file = path.join(OUT, st.product, subtype + '-1.html');
     if (!fs.existsSync(file)) { log('NO HTML for ' + c.name); continue; }
-    const subject = 'A real ' + leadNoun(st) + ' - see where it came from';
+    const subject = 'See a real ' + leadNoun(st) + ' in the live dashboard';
     let html = fs.readFileSync(file, 'utf8');
     html = html.replace(/<title>[\s\S]*?<\/title>/i, '<title>' + subject.replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</title>');
     const r = await withRetry(() => req('PUT', '/v3/emailCampaigns/' + c.id, { subject, htmlContent: html }), c.name, log);

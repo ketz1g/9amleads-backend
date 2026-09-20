@@ -38,33 +38,39 @@ function leadNounPlural(st) {
     default: return 'leads';
   }
 }
-// Sample lead rendered EXACTLY like the real 9am delivery email / dashboard card:
-// badge, full address (number + street + area + postcode), details, source link.
+// Sample lead rendered EXACTLY like the dashboard lead card: checkbox, badge,
+// score, full address, meta line, price/status, Print & Post + Reject & Replace,
+// and the Outcome row. (Source text is NOT a clickable link.)
 const SAMPLE = {
   moving: {
-    badge: 'MOVING', title: '12 Oakwood Avenue, Westminster, SW1A 1AA', subtitle: '2 bed &middot; \u00a3475,000',
-    chips: ['Added today', 'Detached', 'Available'],
-    source: 'Rightmove', sourceUrl: 'https://www.rightmove.co.uk/', why: 'Someone who has just listed their home is looking for removal quotes right now.'
+    badge: 'MOVING', badgeColor: '#0ea5e9', score: '85/100',
+    title: '12 Oakwood Avenue, Westminster, SW1A 1AA',
+    meta: '3 bed &middot; Detached &middot; Demo Estate Agents &middot; View on Rightmove',
+    price: '\u00a3475,000', status: 'Available', kind: 'post'
   },
   probate: {
-    badge: 'PROBATE', title: 'Margaret Collins', subtitle: '7 The Paddock, Sunbury, TW16 5EX',
-    chips: ['Grant date: 3 days ago', '\u00a3284,242 estate'],
-    source: 'HMCTS / UK Gazette', sourceUrl: 'https://www.gov.uk/search-will-probate', why: 'A probate grant is the moment the executor starts instructing professionals.'
+    badge: 'PROBATE', badgeColor: '#a855f7',
+    title: 'Margaret Collins',
+    meta: '7 The Paddock, Sunbury, TW16 5EX &middot; Published 17 Sep 2026 &middot; Solicitor: Demo Legal Services &middot; View notice',
+    kind: 'post'
   },
   newbusiness: {
-    badge: 'NEW BIZ', title: 'Brightleaf Marketing Ltd', subtitle: '21 Market Street, Leeds, LS1 6EZ',
-    chips: ['Incorporated 2 days ago', 'SIC 70229 Management consultancy'],
-    source: 'Companies House', sourceUrl: 'https://find-and-update.company-information.service.gov.uk/', why: 'A brand new company needs an accountant, website, insurance and IT from day one.'
+    badge: 'NEW BIZ', badgeColor: '#22c55e',
+    title: 'Brightleaf Marketing Ltd',
+    meta: '21 Market Street, Leeds, LS1 6EZ &middot; Incorporated 18 Sep 2026 &middot; SIC: 70229 Management consultancy &middot; View on Companies House',
+    kind: 'post'
   },
   planning: {
-    badge: 'PLANNING', title: '33 Church Road, Chorley, PR7 4HT', subtitle: 'Chorley Council &middot; Householder Application &middot; Pending',
-    chips: ['Single storey rear extension'],
-    source: 'Planning Portal', sourceUrl: 'https://www.planningportal.co.uk/', why: 'An approved or pending application means work is about to be priced and booked.'
+    badge: 'PLANNING', badgeColor: '#f59e0b',
+    title: '33 Church Road, Chorley, PR7 4HT',
+    meta: 'Householder Application &middot; Approved &middot; Planning application date: 15 Sep 2026 &middot; Chorley Council &middot; Ref: DEMO/2026/100',
+    desc: 'Single storey rear extension', kind: 'post'
   },
   tenders: {
-    badge: 'TENDER', title: 'School catering services - 3 year contract', subtitle: 'Local Authority',
-    chips: ['\u00a3450,000', 'Closes in 14 days'],
-    source: 'Contracts Finder', sourceUrl: 'https://www.find-tender.service.gov.uk/', why: 'Public contracts are published daily, and the first credible bid often wins.'
+    badge: 'TENDER', badgeColor: '#6366f1',
+    title: 'School catering services - 3 year contract',
+    meta: 'Local Authority &middot; \u00a3450,000 &middot; Deadline 4 Oct 2026 &middot; View tender',
+    kind: 'apply'
   }
 };
 // Per-business-type sample lead so the preview matches the recipient's trade.
@@ -203,22 +209,28 @@ function trialLink(accent, prod) {
 }
 
 // ---- Email 1: real lead ----
+function listItem(t) {
+  return '<tr><td style="padding:0 0 7px;color:' + INK + ';font-size:14px;line-height:1.55"><span style="color:#16a34a;font-weight:800">&#10003;</span>&nbsp; ' + t + '</td></tr>';
+}
 function email1(st, prod, accent, id) {
-  const subject = 'A real ' + leadNoun(st) + ' - see where it came from';
-  const s = Object.assign({}, SAMPLE[st.product], SAMPLE_BY_SUBTYPE[id] || {});
+  const subject = 'See a real ' + leadNoun(st) + ' in the live dashboard';
   const inner = logo(accent)
     + '<tr><td style="padding:14px 34px 6px">'
     + '<p style="margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:' + accent + '">Proof, not promises</p>'
-    + '<h1 style="margin:0 0 14px;font-size:23px;line-height:1.3;font-weight:800;color:' + INK + '">Here is a real ' + leadNoun(st) + '</h1>'
-    + '<p style="margin:0 0 14px;color:' + INK + ';font-size:15px;line-height:1.65">Hi,<br><br>I am Ketz, founder of 9amLeads. Rather than tell you how it works, here is a genuine ' + leadNoun(st) + ' from this morning:</p>'
-    + sampleCard(accent, s)
-    + '<p style="margin:16px 0 6px;color:' + INK + ';font-size:15px;line-height:1.65">This is what lands in your inbox at 9am every weekday - with the <strong>source</strong> so you can check it yourself, the full address, and a score. You are not just handed a list of addresses and asked to trust it.</p>'
+    + '<h1 style="margin:0 0 14px;font-size:23px;line-height:1.3;font-weight:800;color:' + INK + '">See exactly what you get</h1>'
+    + '<p style="margin:0 0 14px;color:' + INK + ';font-size:15px;line-height:1.65">Hi,<br><br>I am Ketz, founder of 9amLeads. The quickest way to see what we do is the <strong>live dashboard</strong> - loaded with real ' + leadNounPlural(st) + '. You will see each lead\'s source, its score, and everything you can do in a click:</p>'
+    + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 4px">'
+    + listItem('The source of every lead, so you can verify it yourself')
+    + listItem('Print &amp; Post a letter or flyer in one click, with live tracking')
+    + listItem('Reject &amp; Replace any lead that is wrong - we send a fresh one')
+    + listItem('Add notes and track each lead: contacted, quoted, won or lost')
+    + '</table>'
     + '</td></tr>\n'
     + whyBetter(accent)
-    + ctaButton(accent, demoUrl(st.product), 'See the live dashboard')
+    + ctaButton(accent, demoUrl(st.product), 'Open the live dashboard')
     + trialLink(accent, prod)
     + footer(accent, prod);
-  return shell(accent, subject, 'A real ' + leadNoun(st) + ' with its source - see it in the live dashboard.', inner);
+  return shell(accent, subject, 'See a real ' + leadNoun(st) + ' - source, score, Print & Post and Replace - in the live dashboard.', inner);
 }
 
 // ---- Email 2: dashboard in 60 seconds ----

@@ -29,7 +29,7 @@ function leadNoun(st) {
   return { moving: 'moving lead', probate: 'probate grant', newbusiness: 'new company registration', planning: 'planning application', tenders: 'public tender' }[st.product] || 'lead';
 }
 const STEPS = [
-  { n: '1', tag: 'Real lead', subject: st => 'A real ' + leadNoun(st) + ' - see where it came from' },
+  { n: '1', tag: 'Real lead', subject: st => 'See a real ' + leadNoun(st) + ' in the live dashboard' },
   { n: '2', tag: 'Dashboard tour', subject: st => 'Your leads dashboard in 60 seconds' }
 ];
 
