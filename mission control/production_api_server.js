@@ -20453,6 +20453,24 @@ async function runCampaignEmails(dry) {
             sent++;
           }
         } else if (daysSinceTrialEnd >= 0) {
+          // WIN-BACK sequence for expired trials: day 0, 3 and 7 after the trial ends.
+          // Replaces the old day 9/12/16/21/30 posts; after day 7 the long-term drip
+          // (weekly week 5+, month-3 reactivation) takes over.
+          var _wbProduct = cust.product || 'moving';
+          var _wbSubjects = { 1: 'Let us get your flyer through their door', 2: 'Upload your flyer - we do the rest', 3: 'The 3-week test' };
+          var _WINBACK = [{ d: 0, s: 1 }, { d: 3, s: 2 }, { d: 7, s: 3 }];
+          var _wbHandled = false;
+          for (var wi = 0; wi < _WINBACK.length; wi++) {
+            var _w = _WINBACK[wi];
+            var _wTmpl = 'winback_' + _wbProduct + '_' + _w.s;
+            if (daysSinceTrialEnd >= _w.d && !campaignSent.includes(_wTmpl)) {
+              campaignSent.push(_wTmpl);
+              await sendIt(cust, _wTmpl, getEditedCampaignSubject(_wTmpl, _wbSubjects[_w.s]), buildWinbackEmailHTML(_wbProduct, _w.s));
+              sent++;
+              _wbHandled = true;
+              break;
+            }
+          }
           // Trial ended: send post-trial emails at days 9, 12, 16, 21, 30, 60.
           // day 7 is handled above (while active) so we skip it here to avoid a
           // misleading "ends tomorrow" after the trial has already ended.
@@ -20462,7 +20480,9 @@ async function runCampaignEmails(dry) {
             if (e.template === 'trial_month3' && parseInt(cust.trial_resets || '0', 10) >= parseInt(process.env.MAX_TRIAL_RESETS || '2', 10)) continue;
             // NEVER send a free-trial (day 1-7) template once the trial has expired —
             // those belong to the active-trial phase only.
+            if (_wbHandled) continue;
             if (e.day <= 7) continue;
+            if (['trial_day9', 'trial_day12', 'trial_day16', 'trial_day21', 'trial_day30'].indexOf(e.template) !== -1) continue;
             // The trial-expired email (trial_day9 = "Your daily leads have paused") fires
             // AS SOON AS the trial ends (threshold 0), so expired users get the email we
             // set for trial expiry — not two days later.
