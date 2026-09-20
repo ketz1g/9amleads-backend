@@ -38224,7 +38224,8 @@ function seedDemoAccount() {
     try { db.prepare('UPDATE customers SET leads_per_day = 0, email_verified = 1, plan = ? WHERE id = ?').run('free_trial', DEMO_CUSTOMER_ID); } catch(e) {}
     var cnt = db.prepare('SELECT COUNT(*) AS c FROM leads WHERE customer_id = ?').get(DEMO_CUSTOMER_ID);
     var newest = db.prepare('SELECT MAX(delivered_at) AS m FROM leads WHERE customer_id = ?').get(DEMO_CUSTOMER_ID);
-    var stale = !newest || !newest.m || (Date.now() - new Date(newest.m).getTime() > 2 * 86400000);
+    var _todayStr = new Date().toISOString().split('T')[0];
+    var stale = !newest || !newest.m || String(newest.m).split('T')[0] !== _todayStr;
     if (!cnt || !cnt.c || stale) {
       try { db.prepare('DELETE FROM leads WHERE customer_id = ?').run(DEMO_CUSTOMER_ID); } catch(e) {}
       var areas = [['SW1A 1AA', 'Westminster', 'London'], ['SE15 4AA', 'Peckham', 'London'], ['KT2 6AA', 'Kingston', 'Surrey'], ['TW9 3AB', 'Richmond', 'Surrey'], ['SM1 3AN', 'Sutton', 'Surrey'], ['SW18 2AA', 'Wandsworth', 'London'], ['SE22 8AA', 'East Dulwich', 'London'], ['KT1 1AA', 'Kingston', 'Surrey']];
@@ -38239,7 +38240,7 @@ function seedDemoAccount() {
           bedrooms: 2 + (i % 3), price: prices[i],
           propertyType: (i % 2 ? 'Semi-Detached' : 'Detached'),
           status: (i % 3 === 0 ? 'Under Offer' : 'Available'),
-          agent: 'Demo Estate Agents', url: 'https://www.rightmove.co.uk/',
+          agent: 'Demo Estate Agents', url: 'https://www.rightmove.co.uk/properties/' + (1000000 + i),
           firstVisibleDate: new Date(base.getTime() - (i < 5 ? 0 : i - 4) * 86400000).toISOString().split('T')[0]
         };
         // First 5 leads delivered TODAY (a full day's batch), the rest over prior days.
@@ -38259,6 +38260,8 @@ app.get('/api/demo/login', (req, res) => {
     res.json({ token: token, demo: true, email: DEMO_EMAIL });
   } catch(e) { res.status(500).json({ error: 'demo unavailable' }); }
 });
+// Keep the demo looking current: refresh the demo account's sample leads each morning.
+cron.schedule('0 6 * * *', function() { try { seedDemoAccount(); } catch(e) {} }, { timezone: 'Europe/London' });
 
 app.listen(PORT, () => {
   try { seedDemoAccount(); } catch(e) { console.log('[DEMO] boot seed error: ' + (e && e.message)); }
