@@ -123,6 +123,34 @@ function ctaButton(accent, url, text) {
     + '<p style="margin:10px 0 0;color:' + MUTED + ';font-size:12px">No signup needed &middot; nothing to install</p>'
     + '</td></tr>\n';
 }
+// Three persuasion blocks: vs other address providers, post vs online ads, why this approach.
+function whyBetter(accent) {
+  function block(title, lines) {
+    return '<tr><td style="padding:0 0 14px">'
+      + '<p style="margin:0 0 6px;font-size:14px;font-weight:800;color:' + INK + '">' + title + '</p>'
+      + lines.map(function (l) { return '<p style="margin:0 0 4px;font-size:13px;color:' + MUTED + ';line-height:1.55"><span style="color:#16a34a;font-weight:800">&#10003;</span>&nbsp; ' + l + '</p>'; }).join('')
+      + '</td></tr>';
+  }
+  return '<tr><td style="padding:6px 34px 0">'
+    + '<p style="margin:0 0 10px;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:' + accent + '">Why this is different</p>'
+    + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0">'
+    + block('Better than a bought address list', [
+      'Every lead shows its <strong style="color:' + INK + '">source</strong>, so you can verify it yourself',
+      'Fresh opportunities every day, not a stale list bought months ago',
+      'Track every lead you send, and see who you have already mailed'
+    ])
+    + block('Why the post beats online advertising', [
+      'A letter or flyer lands in their hand and stays in their home',
+      'No auction, no rising cost per click, no being scrolled past',
+      'It is there when they are ready, not for a split second'
+    ])
+    + block('Why this approach wins', [
+      'You reach people <strong style="color:' + INK + '">before</strong> they start shopping around',
+      'Your own allocation, not resold to three rivals at once',
+      'You are first to the opportunity, every morning at 9am'
+    ])
+    + '</table></td></tr>\n';
+}
 function trialLink(accent, prod) {
   return '<tr><td align="center" style="padding:4px 34px 10px"><p style="margin:0;font-size:13px;color:' + MUTED + '">Or <a href="' + prod.url + '?' + UTM + '" style="color:' + accent + ';text-decoration:none;font-weight:700">start your free week</a> - no card required.</p></td></tr>\n';
 }
@@ -139,6 +167,7 @@ function email1(st, prod, accent) {
     + sampleCard(accent, s)
     + '<p style="margin:16px 0 6px;color:' + INK + ';font-size:15px;line-height:1.65">This is what lands in your inbox at 9am every weekday - with the <strong>source</strong> so you can check it yourself, the full address, and a score. You are not just handed a list of addresses and asked to trust it.</p>'
     + '</td></tr>\n'
+    + whyBetter(accent)
     + ctaButton(accent, demoUrl(st.product), 'See the live dashboard - no signup')
     + trialLink(accent, prod)
     + footer(accent, prod);
@@ -173,6 +202,7 @@ function email3(st, prod, accent) {
     + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65"><strong>No card. No payment. Cancel anytime.</strong> One win from these leads can cover the cost many times over - that is why we let you see it free first.</p>'
     + '<p style="margin:0 0 14px;color:' + MUTED + ';font-size:14px;line-height:1.65">' + clean(st.hook) + '</p>'
     + '</td></tr>\n'
+    + whyBetter(accent)
     + '<tr><td align="center" style="padding:8px 34px 6px">'
     + '<a href="' + prod.url + '?' + UTM + '" style="display:inline-block;background-color:' + accent + ';color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:6px;font-size:16px;font-weight:800">Start my free week - no payment required</a>'
     + '<p style="margin:10px 0 0;color:' + MUTED + ';font-size:12px">7 days free &middot; no card &middot; cancel anytime</p>'
