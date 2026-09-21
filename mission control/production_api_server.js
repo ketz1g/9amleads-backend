@@ -10294,22 +10294,38 @@ app.post('/api/admin/crm-selftest', adminAuth, async (req, res) => {
     });
     var port = await new Promise(function(resolve) { server.listen(0, '127.0.0.1', function() { resolve(server.address().port); }); });
     var dbS = getDb();
-    var realLead = (dbS.leads || []).filter(function(l) { return l.delivered; }).slice(-1)[0];
-    var row = realLead || { id: 'test_lead_1', product: 'moving', delivered_at: new Date().toISOString(), created_at: new Date().toISOString(), data: JSON.stringify({ address: '6 Tiverton Close, Preston, PR2 9FH', fullAddress: '6 Tiverton Close, Preston, PR2 9FH', postcode: 'PR2 9FH', city: 'Preston', bedrooms: 3, propertyType: 'Detached', price: '\u00a3325,000', status: 'new', agent: 'Demo Estates', url: 'https://example.com/lead/1', source: 'OnTheMarket' }) };
+    var _custById = {};
+    (dbS.customers || []).forEach(function(c) { _custById[c.id] = c; });
+    // Prefer a REAL customer's delivered lead (exclude internal/demo accounts and demo
+    // lead ids), and prefer a moving lead (full address + postcode) so the test is
+    // representative. Falls back to a synthetic lead if there are none.
+    var _realLeads = (dbS.leads || []).filter(function(l) {
+      if (!l.delivered) return false;
+      if (String(l.id || '').indexOf('demo-') === 0) return false;
+      var c = _custById[l.customer_id];
+      if (c && typeof isInternalAccount === 'function' && isInternalAccount(c)) return false;
+      return true;
+    });
+    var row = _realLeads.filter(function(l) { return l.product === 'moving'; }).slice(-1)[0] || _realLeads.slice(-1)[0];
+    if (!row) row = { id: 'test_lead_1', product: 'moving', delivered_at: new Date().toISOString(), created_at: new Date().toISOString(), data: JSON.stringify({ address: '6 Tiverton Close, Preston, PR2 9FH', fullAddress: '6 Tiverton Close, Preston, PR2 9FH', postcode: 'PR2 9FH', city: 'Preston', bedrooms: 3, propertyType: 'Detached', price: '\u00a3325,000', status: 'new', agent: 'Demo Estates', url: 'https://example.com/lead/1', source: 'OnTheMarket' }) };
     var leadSent = leadRowToCrmPayload(row);
     var payload = { customer: { name: 'CRM Self Test', email: 'selftest@9amleads.com', product: row.product || 'moving' }, leads: [leadSent], source: '9amLeads', timestamp: new Date().toISOString() };
     var outS = await pushToCrm({ crm_webhook_url: 'http://127.0.0.1:' + port + '/hook', email: 'selftest@9amleads.com' }, payload, 'self-test');
     try { server.close(); } catch(e) {}
     var got = null; try { got = JSON.parse(received && received.body); } catch(e) {}
     var gotLead = got && got.leads && got.leads[0];
-    var required = ['lead_id', 'address', 'postcode', 'source'];
+    // Required fields are product-aware: tenders/newbusiness have no postal address.
+    var _reqByProduct = { moving: ['lead_id', 'address', 'postcode'], probate: ['lead_id', 'deceased_name'], newbusiness: ['lead_id', 'company_name'], planning: ['lead_id', 'address'], tenders: ['lead_id', 'title'] };
+    var required = _reqByProduct[row.product] || ['lead_id'];
     var missing = required.filter(function(k) { return !gotLead || !gotLead[k]; });
     var pass = !!(outS.ok && received && gotLead && missing.length === 0);
     res.json({
       success: pass,
+      product_tested: row.product || 'moving',
       transport: { status: outS.status || 0, ok: !!outS.ok, method: received && received.method, content_type: received && received.contentType },
       received_by_receiver: !!received,
       lead_sent: leadSent,
+      required_fields: required,
       missing_required_fields: missing,
       note: pass ? 'PASS - the CRM pipeline works end to end: a real lead was built with its fields, POSTed, and received intact.' : 'FAIL - see transport / missing_required_fields.'
     });
@@ -16736,8 +16752,9 @@ function formatLeadForCRM(lead) {
   if (lead.product) base.product = lead.product;
   if (lead.url) base.url = lead.url;
   base.full_address = lead.fullAddress || lead.address || '';
-  // Any extra fields
-  if (lead.name && !lead.address) base.name = lead.name;
+  // Name fields: the COMPANY name (new business), deceased name (probate), etc.
+  if (lead.companyName || lead.company) base.company_name = lead.companyName || lead.company;
+  if (lead.name) base.name = lead.name;
   return base;
 }
 // Build a CRM-ready payload from a DB lead row. The stored lead fields live inside
