@@ -19197,7 +19197,7 @@ function buildWinbackEmailHTML(product, step) {
     return '<tr><td style="padding:14px 34px 6px"><p style="margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:' + p.accent + '">' + kick + '</p>'
       + '<h1 style="margin:0 0 14px;font-size:23px;line-height:1.3;font-weight:800;color:' + INK + '">' + title + '</h1>';
   }
-  var subject = step === 1 ? 'Let us get your flyer through their door' : step === 2 ? 'Upload your flyer - we do the rest' : 'The 3-week test';
+  var subject = step === 1 ? 'Let us get your flyer through their door' : step === 2 ? 'Upload your flyer - we do the rest' : step === 4 ? 'Last chance - get your flyer out there' : 'The 3-week test';
   var inner;
   if (step === 1) {
     inner = logo + head('Time to put it to work', 'Let us get your flyer through their door')
@@ -19214,6 +19214,14 @@ function buildWinbackEmailHTML(product, step) {
       + bullets(['We print double-sided and post to your ' + p.plural, 'Track every mailpiece, with proof of posting in your dashboard', 'Auto Send posts to every new lead each morning, without you lifting a finger', 'Quiet spell? Bulk Send lets you buy extra leads and mail a bigger batch', 'You only pay for what is actually mailed'])
       + cta(PRICING, 'Pick a package and upload your flyer', 'From &pound;25 per week &middot; cancel anytime') + footer;
     return shell(subject, 'Upload your flyer once - we print, address and post it for you.', inner);
+  }
+  if (step === 4) {
+    inner = logo + head('Last chance', 'Last chance to get your flyer out there')
+      + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">Hi,<br><br>This is the last email I will send about this. If you want work to come to you instead of chasing it, now is the time.</p>'
+      + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">Pick a package, upload your flyer, and we will print, address and post it to every ' + p.plural + ' for you. Your customers come to you, with minimal effort and spend, before your competitors.</p>'
+      + '</td></tr>'
+      + cta(PRICING, 'Get started - pick your package', 'From &pound;25 per week &middot; cancel anytime') + footer;
+    return shell(subject, 'Last chance - get your flyer out there and let the work come to you.', inner);
   }
   inner = logo + head('Give it 3 weeks', 'The 3-week test')
     + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">Hi,<br><br>Here is the honest truth: Print &amp; Post is not overnight. Give it three weeks of consistent posting and the phone starts ringing more. The simplest way to prove it is working: ask every caller where they found you. When they say the flyer through the door, you know it is working.</p></td></tr>'
@@ -19283,13 +19291,13 @@ app.get('/api/admin/email-library', adminAuth, (req, res) => {
     // 8) WIN-BACK (expired trials)
     var winback = [];
     var _wbLabels = { moving: 'Moving Leads', probate: 'Probate Leads', newbusiness: 'New Business Alerts', planning: 'Planning Permissions', tenders: 'Public Tenders' };
-    var _wbNames = { 1: 'Why the post wins', 2: 'We print and post it for you', 3: 'The closer' };
+    var _wbNames = { 1: 'Why the post wins', 2: 'We print and post it for you', 3: 'The closer', 4: 'Last chance' };
     ['moving', 'probate', 'newbusiness', 'planning', 'tenders'].forEach(function(wp) {
-      [1, 2, 3].forEach(function(ws) {
+      [1, 2, 3, 4].forEach(function(ws) {
         try {
-          var _wbsubj = { 1: 'Let us get your flyer through their door', 2: 'Upload your flyer - we do the rest', 3: 'The 3-week test' }[ws];
+          var _wbsubj = { 1: 'Let us get your flyer through their door', 2: 'Upload your flyer - we do the rest', 3: 'The 3-week test', 4: 'Last chance - get your flyer out there' }[ws];
           try { var _wbe = loadEmailEdits()['winback_' + wp + '_' + ws]; if (_wbe && _wbe.subject) _wbsubj = _wbe.subject; } catch(x) {}
-          winback.push({ id: 'winback_' + wp + '_' + ws, name: 'Win-back - ' + _wbLabels[wp] + ' - step ' + ws + ' (' + _wbNames[ws] + ')', subject: _wbsubj, when: 'Expired trials: day ' + [0, 3, 7][ws - 1] + ' after the trial ends', html: buildWinbackEmailHTML(wp, ws) });
+          winback.push({ id: 'winback_' + wp + '_' + ws, name: 'Win-back - ' + _wbLabels[wp] + ' - step ' + ws + ' (' + _wbNames[ws] + ')', subject: _wbsubj, when: 'Expired trials: day ' + [0, 3, 7, 14][ws - 1] + ' after the trial ends', html: buildWinbackEmailHTML(wp, ws) });
         } catch(we) {}
       });
     });
@@ -20655,8 +20663,8 @@ async function runCampaignEmails(dry) {
           // Replaces the old day 9/12/16/21/30 posts; after day 7 the long-term drip
           // (weekly week 5+, month-3 reactivation) takes over.
           var _wbProduct = cust.product || 'moving';
-          var _wbSubjects = { 1: 'Let us get your flyer through their door', 2: 'Upload your flyer - we do the rest', 3: 'The 3-week test' };
-          var _WINBACK = [{ d: 0, s: 1 }, { d: 3, s: 2 }, { d: 7, s: 3 }];
+          var _wbSubjects = { 1: 'Let us get your flyer through their door', 2: 'Upload your flyer - we do the rest', 3: 'The 3-week test', 4: 'Last chance - get your flyer out there' };
+          var _WINBACK = [{ d: 0, s: 1 }, { d: 3, s: 2 }, { d: 7, s: 3 }, { d: 14, s: 4 }];
           var _wbHandled = false;
           for (var wi = 0; wi < _WINBACK.length; wi++) {
             var _w = _WINBACK[wi];
