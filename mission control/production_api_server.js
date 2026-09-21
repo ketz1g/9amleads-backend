@@ -4208,6 +4208,7 @@ function processAffiliateNurture() {
           try {
             sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' }, '9amLeads Affiliate - ' + (day === 3 ? 'your kit is ready' : day === 7 ? 'keep your referrals converting' : '2 weeks in, keep the momentum'), affiliateNurtureEmail(aff, day));
             sentArr.push('d' + day);
+            sent++;
           } catch(e) {}
         }
       });
