@@ -595,8 +595,8 @@ function loadCrm() {
         }
         var urlCell = r.crm_webhook_url ? '<span style="font-size:11px;color:#0ea5e9;word-break:break-all">' + esc(r.crm_webhook_url) + '</span>' : '<span style="color:#94a3b8">Not connected</span>';
         var actions = r.crm_webhook_url
-          ? '<button class="btn btn-outline btn-sm" onclick="crmTest(\'' + esc(r.email) + '\')"><i class="fas fa-plug"></i> Test</button> <button class="btn btn-outline btn-sm" onclick="crmPush(\'' + esc(r.email) + '\')"><i class="fas fa-paper-plane"></i> Push</button>'
-          : '<span style="font-size:11px;color:#94a3b8">-</span>';
+          ? '<button class="btn btn-outline btn-sm" onclick="crmTest(\'' + esc(r.email) + '\')"><i class="fas fa-plug"></i> Test</button> <button class="btn btn-outline btn-sm" onclick="crmPush(\'' + esc(r.email) + '\')"><i class="fas fa-paper-plane"></i> Push</button> <button class="btn btn-outline btn-sm" onclick="crmRemind(\'' + esc(r.email) + '\')"><i class="fas fa-envelope"></i> Remind</button>'
+          : '<button class="btn btn-outline btn-sm" onclick="crmRemind(\'' + esc(r.email) + '\')"><i class="fas fa-envelope"></i> Send setup instructions</button>';
         h += '<tr><td><b>' + esc(r.email) + '</b><div style="font-size:11px;color:#64748b">' + esc(r.company || '') + ' &middot; ' + esc(r.plan || '') + '</div></td>' +
           '<td>' + esc(r.product || '') + '</td><td>' + urlCell + '</td><td>' + lpCell + '</td><td>' + actions + '</td></tr>';
       });
@@ -616,6 +616,13 @@ function crmPush(email) {
     .then(function(r){ return r.json(); })
     .then(function(d){ alert('CRM push for ' + email + '\n\nResult: ' + (d.success ? 'SUCCESS' : 'FAILED') + ' (HTTP ' + (d.status || 0) + ')\nLeads pushed: ' + (d.leads_pushed || 0) + '\n\n' + (d.response || d.error || '')); loadCrm(); })
     .catch(function(e){ alert('Push error: ' + e.message); });
+}
+function crmRemind(email) {
+  if (!confirm('Email CRM setup instructions to ' + email + '?')) return;
+  fetch(API + '/api/admin/crm-remind', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ email: email }) })
+    .then(function(r){ return r.json(); })
+    .then(function(d){ alert(d.success ? ('Sent to ' + email + '\n\nSubject: ' + d.subject) : ('Failed: ' + (d.error || 'unknown'))); })
+    .catch(function(e){ alert('Error: ' + e.message); });
 }
 function crmSelfTest() {
   var box = document.getElementById('crmSelfTestResult');

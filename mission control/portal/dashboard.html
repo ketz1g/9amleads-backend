@@ -508,17 +508,7 @@ document.addEventListener('DOMContentLoaded', function(){
 </div>
 </div>
 
-<!-- CRM Integration (settings; hidden on main dashboard) -->
-<div class="card" style="display:none">
-<div class="sect-title"><i class="fas fa-plug"></i> CRM Integration</div>
-<p style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px">Connect your CRM via webhook. Leads will be pushed automatically at 9am delivery. Works with Zapier, HubSpot, Salesforce, and any system that accepts webhooks.</p>
-<div class="crm-row">
-<input type="text" class="input" id="crm-url" placeholder="https://hooks.zapier.com/hooks/catch/...">
-<button class="btn btn-primary btn-sm" onclick="saveCrm()">Save</button>
-<button class="btn btn-outline btn-sm" onclick="testCrm()">Test</button>
-</div>
-<div id="crm-status" style="font-size:11px;color:var(--text2);margin-top:6px"></div>
-</div>
+<!-- CRM settings now live in the Settings modal > CRM tab -->
 
 <!-- Your Activity -->
 <div class="card" id="activity-card">
@@ -605,6 +595,7 @@ document.addEventListener('DOMContentLoaded', function(){
 <button class="tab-btn" data-tab="notifications" onclick="switchTab('notifications')">Notifications</button>
 <button class="tab-btn" data-tab="subscription" onclick="switchTab('subscription')">Subscription</button>
 <button class="tab-btn" data-tab="referrals" onclick="switchTab('referrals')">Referrals</button>
+<button class="tab-btn" data-tab="crm" onclick="switchTab('crm')">CRM</button>
 </div>
 
 <div id="tab-profile">
@@ -642,6 +633,62 @@ document.addEventListener('DOMContentLoaded', function(){
 <div id="tab-notifications" style="display:none">
 <div style="margin-bottom:14px"><label class="label">Email Notifications</label><div style="display:flex;align-items:center;gap:8px;margin-top:4px"><input type="checkbox" id="settings-emails" checked style="accent-color:var(--accent);width:16px;height:16px"><label for="settings-emails" style="font-size:13px;color:var(--text2)">Receive daily lead emails at 9am</label></div></div>
 <div style="margin-bottom:14px"><label class="label">Marketing Consent</label><div style="display:flex;align-items:center;gap:8px;margin-top:4px"><input type="checkbox" id="settings-marketing" style="accent-color:var(--accent);width:16px;height:16px"><label for="settings-marketing" style="font-size:13px;color:var(--text2)">Receive occasional product updates and tips</label></div></div>
+</div>
+
+<div id="tab-crm" style="display:none">
+<p style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px">Send every lead straight into your CRM automatically at 9am. You need an <strong>inbound webhook URL</strong> that accepts a POST containing JSON.</p>
+
+<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px">
+<div style="font-size:12px;font-weight:700;margin-bottom:6px"><i class="fas fa-bolt" style="color:#f59e0b"></i> Easiest - Zapier (about 2 minutes)</div>
+<ol style="margin:0 0 0 18px;padding:0;font-size:12px;color:var(--text2);line-height:1.7">
+<li>In Zapier create a Zap and choose <strong>Webhooks by Zapier</strong> as the trigger.</li>
+<li>Event: <strong>Catch Hook</strong>. Zapier shows a URL like <code>https://hooks.zapier.com/hooks/catch/123456/abcdef/</code>.</li>
+<li>Copy it, paste it below, click <strong>Save</strong>, then <strong>Test</strong>.</li>
+<li>Back in Zapier click <strong>Test trigger</strong> (our test arrives), then add your CRM as the action and map the fields.</li>
+</ol>
+</div>
+
+<details style="margin-bottom:12px;font-size:12px;color:var(--text2)">
+<summary style="cursor:pointer;font-weight:700">Using Make, HubSpot, Salesforce, TNL or another CRM?</summary>
+<div style="line-height:1.7;padding-top:8px">
+Create an <strong>inbound webhook</strong> (sometimes called a "custom webhook" or "incoming hook") in your CRM, then paste its URL below. It must:<br>
+&bull; accept a <strong>POST</strong> with <strong>Content-Type: application/json</strong><br>
+&bull; be a complete <strong>https://</strong> URL<br>
+&bull; be publicly reachable and not require a login
+</div>
+</details>
+
+<label class="label">Your CRM webhook URL</label>
+<div class="crm-row">
+<input type="text" class="input" id="crm-url" placeholder="https://hooks.zapier.com/hooks/catch/...">
+<button class="btn btn-primary btn-sm" onclick="saveCrm()">Save</button>
+<button class="btn btn-outline btn-sm" onclick="testCrm()">Test</button>
+</div>
+<div id="crm-status" style="font-size:11px;color:var(--text2);margin-top:6px"></div>
+
+<details style="margin-top:12px;font-size:12px;color:var(--text2)">
+<summary style="cursor:pointer;font-weight:700">What exactly gets sent to my CRM?</summary>
+<p style="line-height:1.7;padding-top:8px">One POST per delivery, containing your details and the lead(s) in this shape (fields vary by product):</p>
+<pre style="background:#0f172a;color:#e2e8f0;padding:10px;border-radius:8px;font-size:11px;overflow:auto;white-space:pre-wrap">{
+  "customer": { "name": "Your Company", "email": "you@example.com", "product": "moving" },
+  "leads": [{
+    "lead_id": "lead_123", "address": "135 Marlborough Road, Swindon, SN3 1NJ",
+    "postcode": "SN3 1NJ", "city": "Swindon", "bedrooms": 3,
+    "property_type": "Semi-Detached", "price": 530000, "status": "New",
+    "agent": "MILES BYRON", "source": "Rightmove",
+    "url": "https://www.rightmove.co.uk/properties/93360387",
+    "product": "moving", "full_address": "135 Marlborough Road, Swindon, SN3 1NJ"
+  }],
+  "source": "9amLeads", "delivered_at": "2026-09-21T08:06:09Z"
+}</pre>
+</details>
+
+<div style="margin-top:12px;font-size:11px;color:var(--muted);line-height:1.7">
+<strong>Test not working?</strong><br>
+&bull; <strong>404 "No route found"</strong> - the URL is wrong or has expired. Copy a fresh one from your CRM (in Zapier, open the Catch Hook step again).<br>
+&bull; <strong>Timeout / connection error</strong> - the URL must accept POST JSON and be publicly reachable (no login).<br>
+&bull; Save first, then Test - the Test button sends using the URL in the box above.
+</div>
 </div>
 
 <div id="tab-subscription" style="display:none">
@@ -1079,7 +1126,7 @@ function deleteAccount() {
 function switchTab(tab) {
   document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
   document.querySelector('.tab-btn[data-tab="'+tab+'"]').classList.add('active');
-  ['profile','areas','notifications','subscription','referrals'].forEach(function(t){
+  ['profile','areas','notifications','subscription','referrals','crm'].forEach(function(t){
     document.getElementById('tab-'+t).style.display = t === tab ? 'block' : 'none';
   });
 }
@@ -1367,9 +1414,18 @@ function testCrm() {
   var url = document.getElementById('crm-url').value.trim();
   var status = document.getElementById('crm-status');
   if (!url) { status.textContent = 'Enter a URL first'; status.style.color = '#dc2626'; return; }
+  status.textContent = 'Testing...'; status.style.color = 'var(--text2)';
   apiCall('POST', '/api/crm/test', { url: url }, function(err, d) {
-    if (err || !d.success) { status.textContent = 'Test failed: ' + (d?.error || 'Network error'); status.style.color = '#dc2626'; return; }
-    status.textContent = 'Test sent! Check your CRM for a test payload.';
+    if (err || !d || !d.success) {
+      var code = (d && d.status) ? (' (HTTP ' + d.status + ')') : '';
+      var hint = (d && d.status === 404)
+        ? ' - that URL is wrong or has expired. Copy a fresh webhook URL from your CRM.'
+        : ' - the URL must accept a POST with JSON and be publicly reachable (no login).';
+      status.textContent = 'Test failed' + code + hint;
+      status.style.color = '#dc2626';
+      return;
+    }
+    status.textContent = 'Test sent successfully (HTTP ' + (d.status || 200) + '). Check your CRM for the test payload.';
     status.style.color = 'var(--success)';
   });
 }

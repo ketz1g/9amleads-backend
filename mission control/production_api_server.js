@@ -10332,6 +10332,21 @@ app.post('/api/admin/crm-selftest', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/crm-remind { email } - email a customer clear, step-by-step CRM setup
+// instructions (issue = 'failed' when their webhook is erroring, else 'not_connected').
+app.post('/api/admin/crm-remind', adminAuth, async (req, res) => {
+  try {
+    var email = String((req.body && req.body.email) || '').toLowerCase().trim();
+    var dbR = getDb();
+    var custR = (dbR.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
+    if (!custR) return res.status(404).json({ error: 'Customer not found' });
+    var issue = custR.crm_webhook_url ? 'failed' : 'not_connected';
+    var subject = issue === 'failed' ? 'Your 9amLeads CRM connection needs a quick fix' : 'Get your 9amLeads leads into your CRM in 2 minutes';
+    await sendBrevoEmail({ email: custR.email, name: custR.contact_name || custR.company || '' }, subject, crmSetupReminderEmail(custR, issue));
+    res.json({ success: true, email: custR.email, issue: issue, subject: subject });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== AI IMAGE GENERATION =====
 
 // POST /api/ai/generate-image — Generate image via DALL-E 3
@@ -19659,6 +19674,44 @@ function buildCancelledWinbackEmail(product, step) {
     + blocksTable(leadTypeBlock() + whyUsBlock())
     + cta('mailto:hello@9amleads.com?subject=Why%20I%20cancelled', 'Reply with your reason', 'One line is all it takes - I read every reply') + footer;
   return shell(subject, 'Sorry to see you go - and one quick question, if you have a moment.', inner);
+}
+
+// CRM SETUP REMINDER - sent when a customer has no CRM connected, or their webhook is
+// failing. Gives plain, step-by-step instructions so they can get leads flowing.
+function crmSetupReminderEmail(cust, issue) {
+  var INK = '#1f2937', MUTED = '#6b7280', LINE = '#e5e7eb', PAGE = '#f4f5f7', ACC = '#0ea5e9';
+  var name = escHtml(String(cust.contact_name || cust.company || 'there').trim());
+  var lp = cust.crm_last_push || null;
+  var issueBlock = (issue === 'failed')
+    ? '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">When we tested your CRM webhook it returned an error' + (lp && lp.status ? ' (<strong>HTTP ' + escHtml(String(lp.status)) + '</strong>)' : '') + ', so your leads are not reaching your CRM yet. It is usually a quick fix.</p>'
+    : '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">You have not connected a CRM yet, so your leads currently only go to your email and dashboard. Connecting one takes about two minutes.</p>';
+  function step(n, t) { return '<tr><td style="padding:0 0 8px;color:' + INK + ';font-size:14px;line-height:1.6"><strong>' + n + '.</strong> ' + t + '</td></tr>'; }
+  var inner = '<tr><td style="padding:26px 34px 0"><p style="margin:0;font-size:18px;font-weight:800;color:' + INK + '">9am<span style="color:' + ACC + '">Leads</span></p></td></tr>'
+    + '<tr><td style="padding:14px 34px 6px">'
+    + '<p style="margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:' + ACC + '">Get your leads into your CRM</p>'
+    + '<h1 style="margin:0 0 14px;font-size:23px;line-height:1.3;font-weight:800;color:' + INK + '">Two minutes to connect your CRM</h1>'
+    + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">Hi ' + name + ',</p>'
+    + issueBlock
+    + '<p style="margin:0 0 10px;color:' + INK + ';font-size:15px;line-height:1.65"><strong>The easiest way (Zapier):</strong></p>'
+    + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0">'
+    + step(1, 'In Zapier, create a Zap and pick <strong>Webhooks by Zapier</strong> as the trigger.')
+    + step(2, 'Choose the event <strong>Catch Hook</strong>. Zapier shows a URL like <code>https://hooks.zapier.com/hooks/catch/123456/abcdef/</code>.')
+    + step(3, 'Log in to 9amLeads &rarr; <strong>Settings &rarr; CRM</strong>, paste that URL and click <strong>Save</strong>, then <strong>Test</strong>.')
+    + step(4, 'Back in Zapier click <strong>Test trigger</strong> (our test arrives), then add your CRM as the action and map the fields.')
+    + '</table>'
+    + '<p style="margin:10px 0 12px;color:' + MUTED + ';font-size:13px;line-height:1.65"><strong>Using Make, HubSpot, Salesforce, TNL or another CRM?</strong> Create an inbound webhook there and paste its URL in the same place. It must accept a <strong>POST</strong> with JSON and be a public <strong>https://</strong> address.</p>'
+    + '<p style="margin:0 0 12px;color:' + MUTED + ';font-size:13px;line-height:1.65"><strong>If the test fails:</strong> a <strong>404</strong> means the URL is wrong or has expired - copy a fresh one from your CRM. A timeout means it must accept POST JSON and be publicly reachable.</p>'
+    + '</td></tr>'
+    + '<tr><td align="center" style="padding:8px 34px 6px"><a href="https://9amleads.com/portal/dashboard.html" style="display:inline-block;background-color:' + ACC + ';color:#ffffff;text-decoration:none;padding:15px 36px;border-radius:6px;font-size:16px;font-weight:700">Open Settings &rarr; CRM</a></td></tr>'
+    + '<tr><td style="padding:18px 34px 26px"><p style="margin:0 0 12px;color:' + INK + ';font-size:14px;line-height:1.6">Stuck? Just reply and I will walk you through it personally.</p>'
+    + '<table role="presentation" cellpadding="0" cellspacing="0"><tr><td width="84" valign="middle" style="padding-right:12px"><img src="https://9amleads.com/assets/ketan-photo.jpeg" width="72" height="72" alt="Ketz Mandalia" style="display:block;width:72px;height:72px;border-radius:50%;border:0"></td>'
+    + '<td valign="middle" style="color:' + INK + ';font-size:14px;line-height:1.5">All the best,<br><strong>Ketz Mandalia</strong><br><span style="color:' + MUTED + ';font-size:13px">Founder, 9amLeads<br>hello@9amleads.com</span></td></tr></table></td></tr>'
+    + '<tr><td style="padding:0 34px 26px"><p style="margin:0 0 10px;color:#9ca3af;font-size:11px;line-height:1.7">9am Leads Ltd, Company No. 17402522, 66 Paul Street, London EC2A 4NA.</p><a href="{{ unsubscribe }}" style="color:' + MUTED + ';font-size:12px;text-decoration:underline">Unsubscribe</a></td></tr>';
+  return '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Connect your CRM</title></head>'
+    + '<body style="margin:0;padding:0;background-color:' + PAGE + ';">'
+    + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="' + PAGE + '" style="background-color:' + PAGE + '"><tr><td align="center" style="padding:24px 12px">'
+    + '<table role="presentation" width="600" cellpadding="0" cellspacing="0" bgcolor="#ffffff" style="width:600px;max-width:600px;background-color:#ffffff;border:1px solid ' + LINE + ';border-radius:8px">'
+    + '<tr><td style="height:4px;background-color:' + ACC + ';font-size:0;line-height:0">&nbsp;</td></tr>' + inner + '</table></td></tr></table></body></html>';
 }
 
 // GET /api/admin/email-library — every email a customer can receive, grouped by
