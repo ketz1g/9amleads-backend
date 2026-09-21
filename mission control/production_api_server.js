@@ -40352,8 +40352,19 @@ cron.schedule('0 3 * * *', () => {
 
 // ===== EMAIL TEMPLATE MANAGEMENT (Admin) =====
 function loadEmailEdits() {
-  try { return JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'email-edits.json'), 'utf-8')); }
+  var o;
+  try { o = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'email-edits.json'), 'utf-8')); }
   catch(e) { return {}; }
+  // Sanitize em/en dashes in any SAVED edits (they were written before the house style
+  // changed) so a dash can never reach a customer's email or the admin preview.
+  try {
+    Object.keys(o || {}).forEach(function(k) {
+      var e = o[k]; if (!e || typeof e !== 'object') return;
+      if (typeof e.html === 'string') e.html = e.html.replace(/\u2014/g, '-').replace(/\u2013/g, '-');
+      if (typeof e.subject === 'string') e.subject = e.subject.replace(/\u2014/g, '-').replace(/\u2013/g, '-');
+    });
+  } catch(e2) {}
+  return o;
 }
 function saveEmailEdits(edits) {
   fs.writeFileSync(path.join(DATA_DIR, 'email-edits.json'), JSON.stringify(edits, null, 2), 'utf-8');
