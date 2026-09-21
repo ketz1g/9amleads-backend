@@ -28811,14 +28811,14 @@ function backfillMailpieceIds() {
       var ids = String(c.provider_campaign_id).split(',').map(function(s) { return s.trim(); }).filter(Boolean);
       var used = rcpts.map(function(r) { return String(r.provider_mailpiece_id || ''); });
       var assignable = ids.filter(function(id) { return used.indexOf(id) === -1; });
-      if (assignable.length >= needIds.length) {
-        for (var bi = 0; bi < needIds.length; bi++) {
-          needIds[bi].provider_mailpiece_id = assignable[bi];
-          needIds[bi].provider_status = 'processing';
-          needIds[bi].provider_status_label = 'Accepted';
-          needIds[bi].tracking_step = 1;
-          changed = true;
-        }
+      // Assign as many ids as we have (was: only if there were enough for ALL missing
+      // recipients, which left whole campaigns untracked when the counts differed).
+      for (var bi = 0; bi < needIds.length && bi < assignable.length; bi++) {
+        needIds[bi].provider_mailpiece_id = assignable[bi];
+        needIds[bi].provider_status = needIds[bi].provider_status || 'processing';
+        needIds[bi].provider_status_label = needIds[bi].provider_status_label || 'Accepted';
+        needIds[bi].tracking_step = needIds[bi].tracking_step || 1;
+        changed = true;
       }
     });
     if (changed) saveDb();
@@ -28866,6 +28866,39 @@ app.get('/api/admin/tracking-overview', adminAuth, (req, res) => {
       };
     });
     res.json({ success: true, count: rows.length, campaigns: rows });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/tracking/test-stannp { mailpiece_id } - verify the LIVE Stannp
+// tracking loop with a REAL mailpiece id: queries Stannp, returns the raw response and
+// the status our mapping produces. Proves the API path + status mapping end to end
+// without sending any new mail. Omit mailpiece_id to auto-pick the newest real one.
+app.post('/api/admin/tracking/test-stannp', adminAuth, async (req, res) => {
+  try {
+    var provider = getDirectMailProvider();
+    var out = { provider: provider.name, configured: provider.name === 'stannp' };
+    var id = String((req.body && req.body.mailpiece_id) || '').trim();
+    if (!id) {
+      var dbX = getDb();
+      var rc = (dbX.direct_mail_recipients || []).filter(function(r) { return /^\d+$/.test(String(r.provider_mailpiece_id || '')) && String(r.provider_mailpiece_id).length >= 4; }).slice(-1)[0];
+      if (rc) { id = String(rc.provider_mailpiece_id); }
+      else {
+        var camps = (dbX.direct_mail_campaigns || []).filter(function(c) { return /^\d/.test(String(c.provider_campaign_id || '')); });
+        if (camps.length) { id = String(String(camps[camps.length - 1].provider_campaign_id).split(',')[0]).trim(); }
+      }
+    }
+    out.mailpiece_id = id || '';
+    if (!id) { out.success = false; out.note = 'No real mailpiece id available to test with.'; return res.json(out); }
+    var st = await provider.getCampaignStatus(id);
+    out.stannp_success = !!(st && st.success);
+    out.stannp_status = (st && st.status) || '';
+    out.stannp_error = (st && st.error) || '';
+    try { out.stannp_raw = JSON.stringify((st && st.raw && (st.raw.data || st.raw)) || '').substring(0, 400); } catch(e) { out.stannp_raw = ''; }
+    var mapped = mapStannpStatus(st && st.status);
+    out.mapped = { status: mapped.status, label: mapped.label, step: mapped.step };
+    out.success = !!(st && st.success && mapped.status && mapped.status !== 'unknown');
+    out.note = out.success ? 'PASS - Stannp returned a real status and it maps correctly.' : 'CHECK - see stannp_error / mapped.status.';
+    res.json(out);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
