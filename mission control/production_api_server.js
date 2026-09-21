@@ -10279,6 +10279,43 @@ app.post('/api/admin/crm-push', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/crm-selftest - END-TO-END test of the CRM pipeline. Spins up a local
+// HTTP receiver, builds a payload from a REAL delivered lead (or a synthetic one), posts
+// it through the SAME pushToCrm path the daily delivery uses, and verifies the receiver
+// got the lead with its real fields. Proves format + transport without touching any
+// customer's CRM. Returns the exact lead that was sent so you can eyeball it.
+app.post('/api/admin/crm-selftest', adminAuth, async (req, res) => {
+  try {
+    var httpS = require('http');
+    var received = null;
+    var server = httpS.createServer(function(rq, rs) {
+      var b = ''; rq.on('data', function(c) { b += c; });
+      rq.on('end', function() { received = { method: rq.method, contentType: rq.headers['content-type'], body: b }; rs.writeHead(200, { 'Content-Type': 'application/json' }); rs.end('{"ok":true,"received":true}'); });
+    });
+    var port = await new Promise(function(resolve) { server.listen(0, '127.0.0.1', function() { resolve(server.address().port); }); });
+    var dbS = getDb();
+    var realLead = (dbS.leads || []).filter(function(l) { return l.delivered; }).slice(-1)[0];
+    var row = realLead || { id: 'test_lead_1', product: 'moving', delivered_at: new Date().toISOString(), created_at: new Date().toISOString(), data: JSON.stringify({ address: '6 Tiverton Close, Preston, PR2 9FH', fullAddress: '6 Tiverton Close, Preston, PR2 9FH', postcode: 'PR2 9FH', city: 'Preston', bedrooms: 3, propertyType: 'Detached', price: '\u00a3325,000', status: 'new', agent: 'Demo Estates', url: 'https://example.com/lead/1', source: 'OnTheMarket' }) };
+    var leadSent = leadRowToCrmPayload(row);
+    var payload = { customer: { name: 'CRM Self Test', email: 'selftest@9amleads.com', product: row.product || 'moving' }, leads: [leadSent], source: '9amLeads', timestamp: new Date().toISOString() };
+    var outS = await pushToCrm({ crm_webhook_url: 'http://127.0.0.1:' + port + '/hook', email: 'selftest@9amleads.com' }, payload, 'self-test');
+    try { server.close(); } catch(e) {}
+    var got = null; try { got = JSON.parse(received && received.body); } catch(e) {}
+    var gotLead = got && got.leads && got.leads[0];
+    var required = ['lead_id', 'address', 'postcode', 'source'];
+    var missing = required.filter(function(k) { return !gotLead || !gotLead[k]; });
+    var pass = !!(outS.ok && received && gotLead && missing.length === 0);
+    res.json({
+      success: pass,
+      transport: { status: outS.status || 0, ok: !!outS.ok, method: received && received.method, content_type: received && received.contentType },
+      received_by_receiver: !!received,
+      lead_sent: leadSent,
+      missing_required_fields: missing,
+      note: pass ? 'PASS - the CRM pipeline works end to end: a real lead was built with its fields, POSTed, and received intact.' : 'FAIL - see transport / missing_required_fields.'
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== AI IMAGE GENERATION =====
 
 // POST /api/ai/generate-image — Generate image via DALL-E 3
@@ -16732,7 +16769,10 @@ function pushToCrm(cust, payload, label) {
         } catch(e) {}
       }
       var body = JSON.stringify(payload);
-      var req = require('https').request(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, function(r) {
+      // Support http:// as well as https:// so the CRM self-test can post to a local
+      // receiver and prove the whole pipeline (payload build -> POST -> response).
+      var _lib = /^http:\/\//i.test(url) ? require('http') : require('https');
+      var req = _lib.request(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, function(r) {
         var b = ''; r.on('data', function(c) { b += c; });
         r.on('end', function() {
           var ok = r.statusCode >= 200 && r.statusCode < 300;

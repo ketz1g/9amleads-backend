@@ -125,7 +125,8 @@ tbody tr:hover td{background:#f8fafc}
 <!-- ============ CRM ============ -->
 <div class="tab-panel" id="tab-crm">
 <div class="hero"><div class="hero-text"><h1>🔌 CRM Connections</h1><p>Every customer's CRM webhook, the result of their last push, and a one-click test. Leads are sent as flat JSON (address, postcode, city, bedrooms, property type, price, status, agent, source, url) plus the product-specific fields for probate / new business / planning / tenders.</p></div>
-<div class="hero-actions"><button class="btn btn-outline" onclick="loadCrm()"><i class="fas fa-rotate"></i> Refresh</button></div></div>
+<div class="hero-actions"><button class="btn btn-primary" onclick="crmSelfTest()"><i class="fas fa-vial"></i> Run self-test</button> <button class="btn btn-outline" onclick="loadCrm()"><i class="fas fa-rotate"></i> Refresh</button></div></div>
+<div id="crmSelfTestResult"></div>
 <div id="crmSummary" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px"></div>
 <div id="crmBody"><div class="loading">Loading CRM connections...</div></div>
 </div>
@@ -615,6 +616,25 @@ function crmPush(email) {
     .then(function(r){ return r.json(); })
     .then(function(d){ alert('CRM push for ' + email + '\n\nResult: ' + (d.success ? 'SUCCESS' : 'FAILED') + ' (HTTP ' + (d.status || 0) + ')\nLeads pushed: ' + (d.leads_pushed || 0) + '\n\n' + (d.response || d.error || '')); loadCrm(); })
     .catch(function(e){ alert('Push error: ' + e.message); });
+}
+function crmSelfTest() {
+  var box = document.getElementById('crmSelfTestResult');
+  if (box) box.innerHTML = '<div class="loading">Running end-to-end CRM self-test...</div>';
+  fetch(API + '/api/admin/crm-selftest', { method: 'POST', headers: adminHeaders(), body: '{}' })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (!box) return;
+      var col = d.success ? '#16a34a' : '#ef4444';
+      var bg = d.success ? '#f0fdf4' : '#fef2f2';
+      box.innerHTML = '<div style="background:' + bg + ';border:1px solid ' + col + ';border-radius:10px;padding:14px 16px;margin-bottom:12px">' +
+        '<div style="font-weight:800;color:' + col + ';margin-bottom:6px">' + (d.success ? 'PASS' : 'FAIL') + ' - ' + esc(d.note || '') + '</div>' +
+        '<div style="font-size:12px;color:#475569">Transport: HTTP ' + ((d.transport && d.transport.status) || 0) + ' &middot; received: ' + (d.received_by_receiver ? 'yes' : 'no') + ' &middot; method: ' + esc((d.transport && d.transport.method) || '-') + ' &middot; content-type: ' + esc((d.transport && d.transport.content_type) || '-') + '</div>' +
+        (d.missing_required_fields && d.missing_required_fields.length ? '<div style="font-size:12px;color:#ef4444">Missing fields: ' + esc(d.missing_required_fields.join(', ')) + '</div>' : '') +
+        '<div style="font-size:11px;color:#64748b;margin-top:8px">Lead sent (exactly what a CRM receives):</div>' +
+        '<pre style="background:#0f172a;color:#e2e8f0;padding:10px;border-radius:8px;font-size:11px;overflow:auto;margin:6px 0 0">' + esc(JSON.stringify(d.lead_sent, null, 2)) + '</pre>' +
+        '</div>';
+    })
+    .catch(function(e){ if (box) box.innerHTML = '<div class="loading">Self-test error: ' + esc(e.message) + '</div>'; });
 }
 
 // ===== ACTIVITY FEED =====
