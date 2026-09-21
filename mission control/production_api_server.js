@@ -17506,6 +17506,48 @@ cron.schedule('30 7 * * *', async () => {
     } catch(sw3) { console.log('[SCRAPE-WATCHDOG] alert error:', sw3.message); }
   } catch(e) { console.log('[SCRAPE-WATCHDOG] error:', e.message); }
 }, { timezone: 'Europe/London' });
+// 09:02 START CHECK: if the 09:00 tick was SKIPPED (e.g. the process was restarting at
+// exactly 09:00, so node-cron never fired), trigger the delivery NOW instead of waiting
+// for the 09:05 backstop. Cheap, and it closes the "missed tick" gap entirely.
+cron.schedule('2 9 * * 1-5', async () => {
+  try {
+    var todayS2 = new Date().toISOString().split('T')[0];
+    if (__lastDeliveryDate === todayS2) return;      // already COMPLETED
+    if (__deliveryStartedDate === todayS2) return;   // already RUNNING
+    console.log('[09:02 CHECK] delivery has NOT started - triggering now');
+    var _h2 = require('http');
+    var _b2 = JSON.stringify({});
+    var _r2 = _h2.request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (ADMIN_PASSWORD), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(_b2) } }, function(s) { s.resume(); });
+    _r2.on('error', function(e) { console.log('[09:02 CHECK] trigger error:', e.message); });
+    _r2.write(_b2); _r2.end();
+  } catch(e) { console.log('[09:02 CHECK] error:', e.message); }
+}, { timezone: 'Europe/London' });
+// 09:10 CONFIRMATION: a short POSITIVE summary so the founder knows the delivery went out
+// (and sees anyone who is short) without having to check the dashboard - so "I had to
+// find out it didn't send" can never happen again.
+cron.schedule('10 9 * * 1-5', async () => {
+  try {
+    var dbC = getDb();
+    var todayC = new Date().toISOString().split('T')[0];
+    var custsC = (dbC.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && !isInternalAccount(c) && isEntitledForDelivery(c); });
+    var rowsC = [], totC = 0, okC = 0;
+    custsC.forEach(function(c) {
+      var prom = parseInt(c.leads_per_day, 10) > 0 ? parseInt(c.leads_per_day, 10) : (getPlanLimit(c.product, c.plan, c.coverage) || 5);
+      var del = (dbC.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && l.delivered_at.startsWith(todayC); }).length;
+      var em = (c.last_email_date === todayC);
+      totC++; if (del >= prom && em) okC++;
+      rowsC.push({ email: c.email, promised: prom, delivered: del, emailed: em });
+    });
+    var shortC = rowsC.filter(function(r) { return r.delivered < r.promised || !r.emailed; });
+    var bodyC = '<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px">'
+      + '<h2 style="color:' + (shortC.length ? '#fbbf24' : '#34d399') + ';margin:0 0 10px;font-size:18px">' + (shortC.length ? '&#9888;' : '&#9989;') + ' 9am delivery ' + (shortC.length ? 'finished with ' + shortC.length + ' to check' : 'complete - all ' + totC + ' customers') + '</h2>'
+      + '<p style="font-size:13.5px;color:#cbd5e1;line-height:1.7">' + okC + '/' + totC + ' customers got their full count AND their email.</p>'
+      + (shortC.length ? '<table cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;font-size:13px"><tr><td style="padding:6px 10px;border:1px solid #1e2030"><b>Customer</b></td><td style="padding:6px 10px;border:1px solid #1e2030"><b>Leads</b></td><td style="padding:6px 10px;border:1px solid #1e2030"><b>Email</b></td></tr>' + shortC.map(function(r) { return '<tr><td style="padding:6px 10px;border:1px solid #1e2030">' + escHtml(r.email) + '</td><td style="padding:6px 10px;border:1px solid #1e2030">' + r.delivered + '/' + r.promised + '</td><td style="padding:6px 10px;border:1px solid #1e2030">' + (r.emailed ? 'sent' : 'NOT sent') + '</td></tr>'; }).join('') + '</table>' : '')
+      + '<p style="color:#94a3b8;font-size:12px;margin:14px 0 0">Sent automatically at 09:10.</p></div>';
+    await sendBrevoEmail({ email: process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com', name: '9amLeads Delivery' }, (shortC.length ? '9amLeads delivery - ' + shortC.length + ' to check' : '9amLeads delivery complete - all ' + totC + ' customers'), bodyC);
+    console.log('[09:10 CONFIRM] ' + okC + '/' + totC + ' ok, ' + shortC.length + ' to check');
+  } catch(e) { console.log('[09:10 CONFIRM] error:', e.message); }
+}, { timezone: 'Europe/London' });
 // DELIVERY BACKSTOP (09:05 UK Mon-Fri) — if the 08:58 cron AND 09:01 watchdog both
 // missed (deploy/restart/race), run the delivery so customers never miss a day.
 cron.schedule('5 9 * * 1-5', async () => {
@@ -18120,6 +18162,32 @@ function deliveryPreflightAlert(label, r) {
 // Alerts ONLY when a check actually fails (no news is good news). Complements the 07:30
 // (send) and 08:40 pre-flights, which are closer to the deadline.
 cron.schedule('0 6 * * 1-5', async function() { try { deliveryPreflightAlert('06:00 self-test', await runDeliveryPreflight({ send: true })); } catch(e) {} }, { timezone: 'Europe/London' });
+// 07:45 EMAIL-BUILD DRY RUN (weekdays): build every entitled customer's daily email IN
+// MEMORY (nothing is sent) so a broken template/layout is caught hours before 9am
+// instead of at send time. Uses their queued leads, or a synthetic sample if none are
+// queued yet. Alerts only on failure.
+cron.schedule('45 7 * * 1-5', async function() {
+  try {
+    var dbE = getDb();
+    var todayE = new Date().toISOString().split('T')[0];
+    var custsE = (dbE.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && !isInternalAccount(c) && isEntitledForDelivery(c) && !isLeadsPaused(c); });
+    var badE = [], checkedE = 0;
+    for (var ei = 0; ei < custsE.length; ei++) {
+      var cE = custsE[ei];
+      try {
+        var leadsE = (dbE.leads || []).filter(function(l) { return l.customer_id === cE.id && !l.delivered; }).slice(0, 5);
+        if (!leadsE.length) {
+          try { var _s = __demoLeadData(String(cE.product || 'moving'), 0); leadsE = [{ id: 'dryrun', product: cE.product || 'moving', data: JSON.stringify(_s) }]; } catch(eS) { continue; }
+        }
+        checkedE++;
+        var htmlE = generateLeadEmailHTML(cE, leadsE);
+        if (!htmlE || String(htmlE).length < 500) badE.push(cE.email + ' (email built too short)');
+      } catch(ee) { badE.push(cE.email + ': ' + ee.message); }
+    }
+    if (badE.length) sendAdminAlert('Email build check FAILED before 9am', '<div style="font-family:Inter,sans-serif;color:#e2e8f0"><b style="color:#f87171">These customers\' daily emails would not build - fix before 9am:</b><ul>' + badE.map(function(x) { return '<li>' + escHtml(x) + '</li>'; }).join('') + '</ul></div>');
+    else console.log('[07:45 EMAIL-CHECK] OK (' + checkedE + ' built)');
+  } catch(e) { console.log('[07:45 EMAIL-CHECK] error:', e.message); }
+}, { timezone: 'Europe/London' });
 cron.schedule('30 7 * * 1-5', async function() { try { deliveryPreflightAlert('07:30', await runDeliveryPreflight({ send: true })); } catch(e) {} }, { timezone: 'Europe/London' });
 cron.schedule('40 8 * * 1-5', async function() { try { deliveryPreflightAlert('08:40', await runDeliveryPreflight({ send: false })); } catch(e) {} }, { timezone: 'Europe/London' });
 
