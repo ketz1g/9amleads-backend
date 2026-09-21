@@ -28759,8 +28759,13 @@ function generateLeadEmailHTML(customer, leads) {  const brand = getProductBrand
     // Action buttons — website / portal links
     var actionLinks = [];
     if (leadProduct === 'planning') {
-      var searchQ = (d.council || d.city || '') + ' planning application ' + (d.applicationRef || d.address || '');
-      actionLinks.push({ url: 'https://www.google.com/search?q=' + encodeURIComponent(searchQ), label: 'Search Planning Portal' });
+      var planUrl = d.url || d.applicationUrl || d.detailsUrl || d.detailUrl || d.councilUrl || '';
+      if (planUrl) {
+        actionLinks.push({ url: planUrl, label: 'View application' });
+      } else {
+        var searchQ = (d.council || d.city || '') + ' planning application ' + (d.applicationRef || d.reference || d.address || '');
+        actionLinks.push({ url: 'https://www.google.com/search?q=' + encodeURIComponent(searchQ), label: 'Search planning application' });
+      }
       if (d.estimatedValue) actionLinks.push({ url: _magicDashUrl, label: 'View on Dashboard' });
     } else if (leadProduct === 'moving') {
       if (d.url) actionLinks.push({ url: d.url, label: 'Check Out This Property' });
@@ -38648,7 +38653,7 @@ function __demoLeadData(product, i) {
     var pa = [['33 Church Road', 'Chorley', 'PR7 4HT'], ['12 High Street', 'Leeds', 'LS1 6EZ'], ['88 Mill Lane', 'Bristol', 'BS1 5TR'], ['5 The Green', 'Birmingham', 'B1 1AA'], ['21 Station Approach', 'Manchester', 'M1 2AB'], ['47 Victoria Road', 'Cardiff', 'CF10 1AA'], ['9 Oak Avenue', 'Glasgow', 'G1 1AA'], ['64 Park Road', 'Nottingham', 'NG1 1AA']][i];
     var councils = ['Chorley Council', 'Leeds City Council', 'Bristol City Council', 'Birmingham City Council', 'Manchester City Council', 'Cardiff Council', 'Glasgow City Council', 'Nottingham City Council'];
     var props = ['Single storey rear extension', 'Two storey side extension', 'Loft conversion with dormer', 'Change of use to HMO', 'New detached dwelling', 'Rear conservatory', 'Garage conversion', 'Front porch and driveway'];
-    return { address: pa[0] + ', ' + pa[1], town: pa[1], city: pa[1], postcode: pa[2], fullAddress: pa[0] + ', ' + pa[1] + ', ' + pa[2], council: councils[i], applicationType: 'Householder Application', status: (i % 3 === 0 ? 'Approved' : 'Pending'), proposal: props[i], description: props[i], reference: 'DEMO/2026/' + (100 + i), receivedDate: new Date(base.getTime() - (i < 5 ? 0 : i - 4) * 86400000).toISOString(), applicant: 'Demo Applicant' };
+    return { address: pa[0] + ', ' + pa[1], town: pa[1], city: pa[1], postcode: pa[2], fullAddress: pa[0] + ', ' + pa[1] + ', ' + pa[2], council: councils[i], applicationType: 'Householder Application', status: (i % 3 === 0 ? 'Approved' : 'Pending'), proposal: props[i], description: props[i], reference: 'DEMO/2026/' + (100 + i), receivedDate: new Date(base.getTime() - (i < 5 ? 0 : i - 4) * 86400000).toISOString(), applicant: 'Demo Applicant', url: 'https://www.google.com/search?q=' + encodeURIComponent(councils[i] + ' planning application ' + props[i]) };
   }
   if (product === 'newbusiness') {
     var co = ['Brightleaf Marketing Ltd', 'Northgate Plumbing Ltd', 'Verdant Landscapes Ltd', 'Apex IT Solutions Ltd', 'Harbour View Lettings Ltd', 'Copperfield Consulting Ltd', 'Bluebell Care Ltd', 'Ridgeline Construction Ltd'];
@@ -38679,7 +38684,7 @@ function seedDemoAccount() {
       // Keep the demo trial card looking right: reset it to "Day 1 of 7" each run.
       try { db.prepare('UPDATE customers SET leads_per_day = 0, email_verified = 1, plan = ?, trial_ends = ? WHERE id = ?').run('free_trial', trialEnds, acct.id); } catch(e) {}
       var _verRow = db.prepare('SELECT biz_field2 FROM customers WHERE id = ?').get(acct.id);
-      var _needsVer = !_verRow || _verRow.biz_field2 !== 'demo-v5';
+      var _needsVer = !_verRow || _verRow.biz_field2 !== 'demo-v6';
       var cnt = db.prepare('SELECT COUNT(*) AS c FROM leads WHERE customer_id = ?').get(acct.id);
       var newest = db.prepare('SELECT MAX(delivered_at) AS m FROM leads WHERE customer_id = ?').get(acct.id);
       var stale = !newest || !newest.m || String(newest.m).split('T')[0] !== _todayStr;
@@ -38691,7 +38696,7 @@ function seedDemoAccount() {
           db.prepare('INSERT INTO leads (id, customer_id, product, data, status, delivered, created_at, delivered_at, release_at) VALUES (?,?,?,?,?,?,?,?,?)').run(
             'demo-' + product + '-lead-' + i, acct.id, product, JSON.stringify(d), 'delivered', 1, created, created, created);
         }
-        try { db.prepare('UPDATE customers SET biz_field2 = ? WHERE id = ?').run('demo-v5', acct.id); } catch(e) {}
+        try { db.prepare('UPDATE customers SET biz_field2 = ? WHERE id = ?').run('demo-v6', acct.id); } catch(e) {}
         console.log('[DEMO] seeded/refreshed sample leads: ' + product);
       }
     });

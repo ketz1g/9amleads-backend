@@ -397,11 +397,14 @@ function renderLeadList(dayLeads, noGroup) {
       var planDate = d.dateSubmitted || d.receivedDate || d.date_received || l.created_at || '';
       var planDateStr = planDate ? new Date(planDate).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '';
       var planMeta = [d.applicationType, d.status, planDateStr ? 'Planning application date: ' + planDateStr : '', d.council, d.reference ? 'Ref: ' + d.reference : ''].filter(Boolean);
-      var planDesc = (d.proposal || d.description) ? '<div class="meta" style="margin-top:2px">' + (d.proposal || d.description).substring(0,150) + '</div>' : '';
+      var planDesc = (d.proposal || d.description) ? '<div class="meta" style="margin-top:2px"><strong style="color:var(--text)">For:</strong> ' + (d.proposal || d.description).substring(0,150) + '</div>' : '';
       var planApplicant = d.applicant ? '<div class="meta" style="margin-top:2px">Applicant: ' + d.applicant + '</div>' : '';
+      var planLink = d.url
+        ? '<a href="' + d.url + '" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;font-size:11px">View application</a>'
+        : ((d.council || d.address) ? '<a href="https://www.google.com/search?q=' + encodeURIComponent((d.council || '') + ' planning application ' + (d.reference || d.address || '')) + '" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;font-size:11px">Search application</a>' : '');
       html += '<div class="lead' + selClass + '">' + chk + '<div style="flex:1"><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' + replacedBadge +
         '<div class="addr">' + planTitle + '</div>' +
-        '<div class="meta">' + planMeta.join(' \u00b7 ') + '</div>' + planDesc + planApplicant + '</div>' +
+        '<div class="meta">' + planMeta.join(' \u00b7 ') + (planLink ? ' \u00b7 ' + planLink : '') + '</div>' + planDesc + planApplicant + '</div>' +
         '<div class="right"><span class="badge">' + status + '</span>' + sentOnHtml + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:4px">' + mailBtn(l.id) + rejectBtn(l.id, null) + '</div>' + '</div></div>';
     } else if (product === 'tenders') {
       // Tenders are applied for ONLINE (portal/email), not via post, so show the
