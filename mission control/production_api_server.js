@@ -18115,6 +18115,11 @@ function deliveryPreflightAlert(label, r) {
     sendAdminAlert('Pre-flight FAILED before 9am (' + label + ') - fix now', '<div style="font-family:Inter,sans-serif;color:#e2e8f0"><b style="color:#f87171">These will break the 9am delivery:</b><ul>' + bad.map(function(c) { return '<li><b>' + c.check + '</b>: ' + c.detail + '</li>'; }).join('') + '</ul></div>');
   } catch(e) {}
 }
+// 06:00 EARLY SELF-TEST (weekdays): run the FULL delivery pre-flight - including a real
+// test email - three hours before the 9am run, so anything wrong can be fixed in time.
+// Alerts ONLY when a check actually fails (no news is good news). Complements the 07:30
+// (send) and 08:40 pre-flights, which are closer to the deadline.
+cron.schedule('0 6 * * 1-5', async function() { try { deliveryPreflightAlert('06:00 self-test', await runDeliveryPreflight({ send: true })); } catch(e) {} }, { timezone: 'Europe/London' });
 cron.schedule('30 7 * * 1-5', async function() { try { deliveryPreflightAlert('07:30', await runDeliveryPreflight({ send: true })); } catch(e) {} }, { timezone: 'Europe/London' });
 cron.schedule('40 8 * * 1-5', async function() { try { deliveryPreflightAlert('08:40', await runDeliveryPreflight({ send: false })); } catch(e) {} }, { timezone: 'Europe/London' });
 
