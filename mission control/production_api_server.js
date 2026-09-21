@@ -19158,11 +19158,11 @@ function buildWinbackEmailHTML(product, step) {
   // Apply an admin edit (full HTML override) if one has been saved.
   try { var _we = loadEmailEdits()['winback_' + product + '_' + step]; if (_we && _we.html) return _we.html; } catch(e) {}
   var WB = {
-    moving: { accent: '#0ea5e9', plural: 'moving leads' },
-    probate: { accent: '#a855f7', plural: 'probate leads' },
-    newbusiness: { accent: '#06b6d4', plural: 'new business leads' },
-    planning: { accent: '#10b981', plural: 'planning leads' },
-    tenders: { accent: '#6366f1', plural: 'public tenders' }
+    moving: { accent: '#0ea5e9', plural: 'moving leads', what: 'Home-movers who have just listed or sold their property', why: 'They are looking for removal quotes right now - before they start shopping around' },
+    probate: { accent: '#a855f7', plural: 'probate leads', what: 'Newly granted probate from the official UK register', why: 'The executor is instructing professionals now, so you get in first' },
+    newbusiness: { accent: '#06b6d4', plural: 'new business leads', what: 'Brand new companies from Companies House', why: 'They need an accountant, website, insurance and IT from day one' },
+    planning: { accent: '#10b981', plural: 'planning leads', what: 'New planning applications from the Planning Portal', why: 'The work is about to be priced and booked - reach the applicant first' },
+    tenders: { accent: '#6366f1', plural: 'public tenders', what: 'Live public-sector contracts from Contracts Finder', why: 'Published daily - the first credible bid often wins' }
   };
   var p = WB[product] || WB.moving;
   var INK = '#1f2937', MUTED = '#6b7280', LINE = '#e5e7eb', PAGE = '#f4f5f7';
@@ -19197,6 +19197,21 @@ function buildWinbackEmailHTML(product, step) {
     return '<tr><td style="padding:14px 34px 6px"><p style="margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:' + p.accent + '">' + kick + '</p>'
       + '<h1 style="margin:0 0 14px;font-size:23px;line-height:1.3;font-weight:800;color:' + INK + '">' + title + '</h1>';
   }
+  function leadTypeBlock() {
+    return block('Your ' + p.plural, [p.what, p.why]);
+  }
+  function whyUsBlock() {
+    return block('Why 9amLeads is the better lead provider', [
+      'Every lead shows its source, so you can verify it yourself',
+      'Fresh from official UK sources, delivered at 9am every weekday',
+      'Yours alone - not sold to five rivals at once',
+      'The exact number promised, no more, no less',
+      'Track every lead you post, and see who you have already mailed'
+    ]);
+  }
+  function blocksTable(inner) {
+    return '<tr><td style="padding:0 34px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">' + inner + '</table></td></tr>';
+  }
   var _wbSubjMap = { 1: 'Why a leaflet beats an ad (and a shared lead)', 2: 'Upload your flyer - we do the rest', 3: 'The 3-week test', 4: 'Stop chasing leads - let them come to you', 5: 'Quiet week? Bulk Send a bigger batch', 6: 'One month on - still want work to come to you?' };
   var subject = _wbSubjMap[step] || 'The 3-week test';
   var inner;
@@ -19207,6 +19222,7 @@ function buildWinbackEmailHTML(product, step) {
       + block('Online ads are rented attention', ['You are bidding against every rival for the same clicks', 'Cost per click keeps rising while the results fall', 'The moment you stop paying, you disappear'])
       + block('Bought leads are shared leads', ['The same lead is sold to several firms at once', 'You are competing on price before you have even spoken', 'You chase and quote and often lose - while the seller profits'])
       + block('A leaflet is yours alone', ['It is physical - it sits on the kitchen table and is read when they are ready', 'No auction, no cost per click, no rivals competing for the same job', 'You reach the door first, before they start shopping around'])
+      + leadTypeBlock() + whyUsBlock()
       + '</table></td></tr>' + cta(PRICING, 'Start your Print & Post', 'Pick a package &middot; cancel anytime') + footer;
     return shell(subject, 'Ads are rented, bought leads are shared. A leaflet through the door is yours alone.', inner);
   }
@@ -19214,6 +19230,7 @@ function buildWinbackEmailHTML(product, step) {
     inner = logo + head('One upload, done', 'Upload your flyer, we do the rest')
       + '<p style="margin:0 0 14px;color:' + INK + ';font-size:15px;line-height:1.65">Hi,<br><br>Get your Print &amp; Post running in minutes. Upload your flyer (front and back) and a cover letter, or email them to hello@9amleads.com and we will upload them for you.</p></td></tr>'
       + bullets(['We print double-sided and post to your ' + p.plural, 'Track every mailpiece, with proof of posting in your dashboard', 'Auto Send posts to every new lead each morning, without you lifting a finger', 'Quiet spell? Bulk Send lets you buy extra leads and mail a bigger batch', 'You only pay for what is actually mailed'])
+      + blocksTable(leadTypeBlock() + whyUsBlock())
       + cta(PRICING, 'Pick a package and upload your flyer', 'From &pound;25 per week &middot; cancel anytime') + footer;
     return shell(subject, 'Upload your flyer once - we print, address and post it for you.', inner);
   }
@@ -19223,6 +19240,7 @@ function buildWinbackEmailHTML(product, step) {
       + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">One quick thing to get right: make sure your website, landing pages, social media and reviews are up to date. When those callers check you out, it should look good and give them no reason not to get a quote.</p>'
       + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">Do that and you save on marketing, win better customers, and skip the hassle of chasing and competing on price.</p>'
       + '</td></tr>'
+      + blocksTable(leadTypeBlock() + whyUsBlock())
       + cta(PRICING, 'Get started - pick your package', 'From &pound;25 per week &middot; cancel anytime') + footer;
     return shell(subject, 'Stop chasing leads and ads. Get your phone ringing with people already interested.', inner);
   }
@@ -19231,6 +19249,7 @@ function buildWinbackEmailHTML(product, step) {
       + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">Hi,<br><br>Every business has quiet weeks. When work slows, Bulk Send lets you buy a bigger batch of never-sent archive leads and mail them in one go - so the pipeline keeps filling even when the phone is quiet.</p>'
       + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">And you can track every mailpiece in your dashboard, with proof of posting, so you always know exactly what has gone out.</p>'
       + '</td></tr>'
+      + blocksTable(leadTypeBlock() + whyUsBlock())
       + cta(PRICING, 'Get started - pick your package', 'From &pound;25 per week &middot; cancel anytime') + footer;
     return shell(subject, 'Quiet week? Bulk Send a bigger batch - and track every mailpiece.', inner);
   }
@@ -19239,6 +19258,7 @@ function buildWinbackEmailHTML(product, step) {
       + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">Hi,<br><br>It has been a month. If you want customers to come to you instead of chasing them, now is a good time to start.</p>'
       + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">Pick a package, upload your flyer, and we will get it through their door. Give it a few weeks and you will notice more phone enquiries. Ask every caller where they found you.</p>'
       + '</td></tr>'
+      + blocksTable(leadTypeBlock() + whyUsBlock())
       + cta(PRICING, 'Get started - pick your package', 'From &pound;25 per week &middot; cancel anytime') + footer;
     return shell(subject, 'One month on - still want work to come to you? Start your Print & Post.', inner);
   }
@@ -19247,6 +19267,7 @@ function buildWinbackEmailHTML(product, step) {
     + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">Instead of chasing leads and wasting money on advertising, people who are already interested call you. That is a far easier sale. To see it is working: ask every caller where they found you. When they say the flyer through the door, you know.</p></td></tr>'
     + '<tr><td style="padding:0 34px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">'
     + block('Why this wins for you', ['Your customers come to you - no chasing, no competing on price', 'You reach them before competitors who wait for them to search', 'It saves on marketing and brings better customers'])
+    + leadTypeBlock() + whyUsBlock()
     + '</table></td></tr>'
     + cta(PRICING, 'Get started - pick your package', 'From &pound;25 per week &middot; cancel anytime') + footer;
   return shell(subject, 'Give it a few weeks. Then the phone starts ringing - with people already interested.', inner);
