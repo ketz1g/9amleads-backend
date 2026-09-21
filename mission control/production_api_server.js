@@ -3471,11 +3471,12 @@ function affiliateAuth(req, res, next) {
 // Revert daily lead caps that were temporarily raised (e.g. "5 free leads today")
 // once they expire, so the customer returns to their normal plan limit. Runs
 // daily from the 09:00 cron BEFORE delivery so the promise count is correct.
-function revertExpiredCapOverrides() {
+  function revertExpiredCapOverrides() {
   try {
-    var now = new Date();
-    var reverted = 0;
-    allCusts.forEach(function(c) {
+  var now = new Date();
+  var reverted = 0;
+  var allCusts = getDb().customers || [];
+  allCusts.forEach(function(c) {
       if (!c.cap_override_expires) return;
       var exp = new Date(c.cap_override_expires);
       if (now < exp) return;
@@ -6318,9 +6319,10 @@ function ensureSignupAlerts(aff) {
     aff.alerts = aff.alerts || [];
     var known = {};
     aff.alerts.forEach(function(a) { if (a.customer_id) known[a.customer_id] = true; });
-    var cutoff = Date.now() - 21 * 86400000;
-    var added = 0;
-    allCusts.forEach(function(c) {
+  var cutoff = Date.now() - 21 * 86400000;
+  var added = 0;
+  var allCusts = getDb().customers || [];
+  allCusts.forEach(function(c) {
       if (c.affiliate_id !== aff.id && String(c.affiliate_code || '').toLowerCase() !== String(aff.code || '').toLowerCase()) return;
       if (known[c.id]) return;
       var t = new Date(c.created_at).getTime();
@@ -7527,9 +7529,10 @@ app.post('/api/admin/affiliates/pay', adminAuth, (req, res) => {
     }
     var rate = aff.payout_rate || AFFILIATE_PAYOUT_RATE;
     var nowIso = new Date().toISOString();
-    var paidRefs = [];
-    var amount = 0;
-    allCusts.forEach(function(c) {
+  var paidRefs = [];
+  var amount = 0;
+  var allCusts = getDb().customers || [];
+  allCusts.forEach(function(c) {
       if (c.affiliate_id !== aff.id && String(c.affiliate_code || '').toLowerCase() !== String(aff.code || '').toLowerCase()) return;
       if (c.affiliate_payout_status !== 'due') return;
       // DOUBLE-PAY GUARD: if the commission engine has already cleared this referral
@@ -7592,9 +7595,10 @@ app.post('/api/admin/affiliates/delete', adminAuth, (req, res) => {
     var affs = getDb().affiliates || [];
     var idx = affs.findIndex(function(a) { return a.id === q || String(a.email || '').toLowerCase() === String(q || '').toLowerCase(); });
     if (idx === -1) return res.status(404).json({ error: 'Affiliate not found' });
-    var removed = affs.splice(idx, 1)[0];
-    // Detach referrals (keep customers, drop the affiliate credit)
-    allCusts.forEach(function(c) {
+  var removed = affs.splice(idx, 1)[0];
+  // Detach referrals (keep customers, drop the affiliate credit)
+  var allCusts = getDb().customers || [];
+  allCusts.forEach(function(c) {
       if (c.affiliate_id === removed.id || String(c.affiliate_code || '').toLowerCase() === String(removed.code || '').toLowerCase()) {
         c.affiliate_id = null; c.affiliate_code = null; c.affiliate_payout_status = null; c.affiliate_payout_due = null;
       }
@@ -12089,10 +12093,11 @@ async function enrichMovingPoolAddresses(maxPerRun) {
     // AREA TARGETING: only enrich leads whose postcode AREA an active customer actually
     // wants, and put the THIN areas first — so the free OTM budget is spent exactly where
     // customers are short (CF/NP etc.), not on areas nobody ordered.
-    var activeAreas = {};
-    try {
-      allCusts.forEach(function(c) {
-        if (!c.plan || c.plan === 'cancelled' || isLeadsPaused(c) || trialExpiredUnpaid(c)) return;
+  var activeAreas = {};
+  var allCusts = getDb().customers || [];
+  try {
+  allCusts.forEach(function(c) {
+  if (!c.plan || c.plan === 'cancelled' || isLeadsPaused(c) || trialExpiredUnpaid(c)) return;
         try { (JSON.parse(c.target_areas || '[]') || []).forEach(function(a) { activeAreas[String(a).toUpperCase().replace(/[^A-Z0-9]/g, '')] = 1; }); } catch(e) {}
       });
     } catch(e) {}
@@ -17271,6 +17276,13 @@ function isEntitledForDelivery(c) {
 }
 function autoFillDeliveryShortfalls(cbDone) {
   try {
+    // NEVER run while a delivery is in progress: both would top up from the same
+    // stale count and over-deliver.
+    if (typeof _deliveryLock !== 'undefined' && _deliveryLock && (Date.now() - (_deliveryLockAt || 0)) < 6 * 60 * 1000) {
+      console.log('[AUTOFILL] skipped - delivery in progress');
+      if (typeof cbDone === 'function') { try { cbDone(); } catch(e) {} }
+      return;
+    }
     var dbA = getDb();
     var today = new Date().toISOString().split('T')[0];
     var http = require('http');
@@ -17376,20 +17388,25 @@ function deliveryCompletionWatchdog(label) {
     //  2) autoFillDeliveryShortfalls — tops up customers ALREADY emailed today via
     //     top-up-today + emails each added lead (the main run DISCARDS candidates for
     //     already-emailed customers, so it cannot recover them on its own).
+    // SEQUENTIAL recovery: run the delivery re-run FIRST and wait for it to finish,
+    // THEN auto-fill anyone still short. Running both at once made each top up from
+    // the same stale count and over-deliver (root cause of the 21 Sep double-up).
+    function _watchdogAutoFill() {
+      try {
+        if (typeof autoFillDeliveryShortfalls === 'function') {
+          autoFillDeliveryShortfalls(function() { console.log('[COMPLETION-WATCHDOG ' + label + '] auto-fill recovery finished'); });
+        }
+      } catch(te2) { console.log('[COMPLETION-WATCHDOG] auto-fill error:', te2.message); }
+    }
     try {
       var httpW = require('http');
       var bodyW = JSON.stringify({});
       var wreq = httpW.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (ADMIN_PASSWORD || ''), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyW) } }, function(wres) {
-        var wb = ''; wres.on('data', function(c) { wb += c; }); wres.on('end', function() { console.log('[COMPLETION-WATCHDOG ' + label + '] re-run: ' + wb.substring(0, 160)); });
+        var wb = ''; wres.on('data', function(c) { wb += c; }); wres.on('end', function() { console.log('[COMPLETION-WATCHDOG ' + label + '] re-run: ' + wb.substring(0, 160)); _watchdogAutoFill(); });
       });
-      wreq.on('error', function(e) { console.log('[COMPLETION-WATCHDOG] re-run error:', e.message); });
+      wreq.on('error', function(e) { console.log('[COMPLETION-WATCHDOG] re-run error:', e.message); _watchdogAutoFill(); });
       wreq.write(bodyW); wreq.end();
-    } catch(te) { console.log('[COMPLETION-WATCHDOG] trigger error:', te.message); }
-    try {
-      if (typeof autoFillDeliveryShortfalls === 'function') {
-        autoFillDeliveryShortfalls(function() { console.log('[COMPLETION-WATCHDOG ' + label + '] auto-fill recovery finished'); });
-      }
-    } catch(te2) { console.log('[COMPLETION-WATCHDOG] auto-fill error:', te2.message); }
+    } catch(te) { console.log('[COMPLETION-WATCHDOG] trigger error:', te.message); _watchdogAutoFill(); }
     // Alert the founder (only-action). THROTTLED to once per 30 min so the frequent
     // self-healing loop can't spam — a single unresolved shortfall emails once.
     try {
