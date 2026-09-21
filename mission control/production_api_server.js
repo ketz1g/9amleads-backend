@@ -20604,6 +20604,34 @@ app.post('/api/admin/reset-winback', adminAuth, (req, res) => {
     res.json({ success: true, reset: n });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+// POST /api/admin/trim-overdelivered — remove any leads delivered TODAY beyond a
+// customer's daily target (fixes accidental over-delivery). Newest excess first.
+app.post('/api/admin/trim-overdelivered', adminAuth, (req, res) => {
+  try {
+    var d = getDb();
+    var today = new Date().toISOString().split('T')[0];
+    var trimmed = [];
+    (d.customers || []).forEach(function(c) {
+      if (!c.plan || c.plan === 'cancelled') return;
+      var e = String(c.email || '').toLowerCase();
+      if (e.indexOf('@9amleads.com') !== -1 || e === 'ketzman1g@gmail.com' || /^test\./.test(e) || /^demo/.test(e)) return;
+      var target = 0; try { target = getPlanLimit(c.product, c.plan, c.coverage || 'postcode'); } catch(x) { target = 0; }
+      if (!target) target = c.leads_per_day || 5;
+      var todayLeads = (d.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && String(l.delivered_at).split('T')[0] === today; });
+      if (todayLeads.length <= target) return;
+      todayLeads.sort(function(a, b) { return String(b.delivered_at).localeCompare(String(a.delivered_at)); });
+      var excess = todayLeads.slice(0, todayLeads.length - target);
+      var excessIds = {};
+      excess.forEach(function(l) { excessIds[l.id] = 1; });
+      d.leads = (d.leads || []).filter(function(l) { return !excessIds[l.id]; });
+      try { excess.forEach(function(l) { db.prepare('DELETE FROM leads WHERE id = ?').run(l.id); }); } catch(x) {}
+      trimmed.push({ email: c.email, had: todayLeads.length, target: target, removed: excess.length });
+    });
+    saveDb();
+    console.log('[ADMIN] trim-overdelivered: ' + JSON.stringify(trimmed));
+    res.json({ success: true, trimmed: trimmed });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 
 // ===== WEEKLY MONDAY DIGEST =====
 // Every Monday 08:30 UK, send active customers a weekly performance summary of
@@ -22876,6 +22904,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
     // overlapping-area customers never receive the same property/listing.
     var globalDeliveredUrls = {};
     var globalDeliveredKeys = {};
+    var globalDeliveredNoPcKeys = {};
     // Internal/test-account deliveries (test.*, @9amleads.com monitor) must NEVER
     // block a real customer: they are not real leads. Without this, any test/monitor
     // delivery would be excluded from the real 9am batch and starve paying customers.
@@ -22899,6 +22928,8 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
         if (gPc) globalDeliveredKeys['gg:' + propertyIdentityKey(gdd.fullAddress || gdd.deceasedAddress || gdd.address || '', gdd.postcode || '')] = true;
         if (gAddr && gPc) globalDeliveredKeys[gAddr + '|' + gPc] = true;
         else if (gRef) globalDeliveredKeys[gRef] = true;
+        var _gnp = propertyIdentityKey(gdd.fullAddress || gdd.deceasedAddress || gdd.address || '', '');
+        if (_gnp && _gnp !== '||') globalDeliveredNoPcKeys['np:' + _gnp] = true;
       } catch(e) {}
     });
     // SHARED IN-RUN SET: once any customer is assigned a lead this run, later
@@ -23258,6 +23289,10 @@ _deliverDiag[cust.email].products = products;
       // set of URLs already delivered to them and exclude those from every pool.
       var deliveredUrls = {};
       var deliveredKeys = {};
+      // POSTCODE-LESS property identity (street + number only). Catches the same
+      // property delivered twice when one copy has no postcode (e.g. "42 South Park
+      // Crescent, LONDON" vs "42 South Park Crescent, Catford, SE6 1JW").
+      var deliveredNoPcKeys = {};
       (db.leads || []).forEach(function(l) {
         if (l.customer_id === cust.id && l.delivered) {
           try {
@@ -23272,6 +23307,8 @@ _deliverDiag[cust.email].products = products;
             var pcKey = String(ldd.postcode || '').toUpperCase().replace(/\s+/g, ' ').trim();
             if (addrKey && pcKey) deliveredKeys[addrKey + '|' + pcKey] = true;
             else if (refKey) deliveredKeys[refKey] = true;
+            var _npk = propertyIdentityKey(ldd.fullAddress || ldd.deceasedAddress || ldd.address || '', '');
+            if (_npk && _npk !== '||') deliveredNoPcKeys['np:' + _npk] = true;
           } catch(e) {}
         }
       });
@@ -23308,6 +23345,8 @@ _deliverDiag[cust.email].products = products;
           var pKeyId = 'gg:' + propertyIdentityKey(dd.fullAddress || dd.deceasedAddress || dd.address || '', dd.postcode || '');
           if (aKey && pKey && (deliveredKeys[aKey + '|' + pKey] || (!_isTestCust && globalDeliveredKeys[aKey + '|' + pKey]))) return false;
           if (pKeyId && (deliveredKeys[pKeyId] || (!_isTestCust && globalDeliveredKeys[pKeyId]))) return false;
+          var _npKey = 'np:' + propertyIdentityKey(dd.fullAddress || dd.deceasedAddress || dd.address || '', '');
+          if (_npKey && _npKey !== 'np:||' && (deliveredNoPcKeys[_npKey] || (!_isTestCust && typeof globalDeliveredNoPcKeys !== 'undefined' && globalDeliveredNoPcKeys[_npKey]))) return false;
           if (rKey && (deliveredKeys[rKey] || (!_isTestCust && globalDeliveredKeys[rKey]))) return false;
           return true;
         } catch(e) { return true; }
