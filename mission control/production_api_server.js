@@ -38612,7 +38612,7 @@ function __demoLeadData(product, i) {
     return { address: pa[0] + ', ' + pa[1], town: pa[1], city: pa[1], postcode: pa[2], fullAddress: pa[0] + ', ' + pa[1] + ', ' + pa[2], council: councils[i], applicationType: 'Householder Application', status: (i % 3 === 0 ? 'Approved' : 'Pending'), proposal: props[i], description: props[i], reference: 'DEMO/2026/' + (100 + i), receivedDate: new Date(base.getTime() - (i < 5 ? 0 : i - 4) * 86400000).toISOString(), applicant: 'Demo Applicant' };
   }
   if (product === 'newbusiness') {
-    var co = ['Brightleaf Marketing Ltd', 'Northgate Plumbing Ltd', 'Verdant Landscapes Ltd', 'Apex IT Solutions Ltd', 'Harbour View Lettings Ltd', 'Copperfield Consulting Ltd', 'Bluebell Care Ltd', 'Ridgeline Construction Ltd'][i];
+    var co = ['Brightleaf Marketing Ltd', 'Northgate Plumbing Ltd', 'Verdant Landscapes Ltd', 'Apex IT Solutions Ltd', 'Harbour View Lettings Ltd', 'Copperfield Consulting Ltd', 'Bluebell Care Ltd', 'Ridgeline Construction Ltd'];
     var nba = [['21 Market Street', 'Leeds', 'LS1 6EZ'], ['5 Bridge Road', 'Manchester', 'M1 2AB'], ['14 The Parade', 'Bristol', 'BS1 5TR'], ['78 High Street', 'Birmingham', 'B1 1AA'], ['3 Quay Side', 'Newcastle', 'NE1 1AA'], ['52 Queen Street', 'Cardiff', 'CF10 1AA'], ['9 Kingsway', 'London', 'WC2B 6AA'], ['31 Portland Road', 'Glasgow', 'G1 1AA']][i];
     return { companyName: co[i], name: co[i], address: nba[0] + ', ' + nba[1], town: nba[1], city: nba[1], postcode: nba[2], fullAddress: nba[0] + ', ' + nba[1] + ', ' + nba[2], sicCode: ['70229 - Management consultancy', '43220 - Plumbing, heat and air-conditioning', '81300 - Landscape service activities', '62020 - IT consultancy', '68320 - Management of real estate', '69201 - Accounting and auditing', '88100 - Social work without accommodation', '41201 - Construction of commercial buildings'][i], incorporationDate: new Date(base.getTime() - (i < 5 ? 0 : i - 4) * 86400000).toISOString(), companyNumber: (16000000 + i).toString(), enrichment: 'Directors found' };
   }
@@ -38640,7 +38640,7 @@ function seedDemoAccount() {
       // Keep the demo trial card looking right: reset it to "Day 1 of 7" each run.
       try { db.prepare('UPDATE customers SET leads_per_day = 0, email_verified = 1, plan = ?, trial_ends = ? WHERE id = ?').run('free_trial', trialEnds, acct.id); } catch(e) {}
       var _verRow = db.prepare('SELECT biz_field2 FROM customers WHERE id = ?').get(acct.id);
-      var _needsVer = !_verRow || _verRow.biz_field2 !== 'demo-v3';
+      var _needsVer = !_verRow || _verRow.biz_field2 !== 'demo-v4';
       var cnt = db.prepare('SELECT COUNT(*) AS c FROM leads WHERE customer_id = ?').get(acct.id);
       var newest = db.prepare('SELECT MAX(delivered_at) AS m FROM leads WHERE customer_id = ?').get(acct.id);
       var stale = !newest || !newest.m || String(newest.m).split('T')[0] !== _todayStr;
@@ -38652,7 +38652,7 @@ function seedDemoAccount() {
           db.prepare('INSERT INTO leads (id, customer_id, product, data, status, delivered, created_at, delivered_at, release_at) VALUES (?,?,?,?,?,?,?,?,?)').run(
             'demo-' + product + '-lead-' + i, acct.id, product, JSON.stringify(d), 'delivered', 1, created, created, created);
         }
-        try { db.prepare('UPDATE customers SET biz_field2 = ? WHERE id = ?').run('demo-v3', acct.id); } catch(e) {}
+        try { db.prepare('UPDATE customers SET biz_field2 = ? WHERE id = ?').run('demo-v4', acct.id); } catch(e) {}
         console.log('[DEMO] seeded/refreshed sample leads: ' + product);
       }
     });
