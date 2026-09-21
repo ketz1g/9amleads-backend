@@ -13481,7 +13481,10 @@ app.post('/api/admin/cleanup-unmailable-leads', adminAuth, (req, res) => {
         var best = bestMailableAddress(nd); if (best) { nd.fullAddress = best; nd.address = best; }
         nd.replacement_for = d.url || d.address || '';
         nd.scrapedAt = nd.scrapedAt || new Date().toISOString();
-        dbU.leads.push({ id: uuidv4(), customer_id: l.customer_id, product: prod, data: JSON.stringify(nd), status: 'delivered', delivered: 1, created_at: new Date().toISOString(), delivered_at: new Date().toISOString(), release_at: new Date().toISOString() });
+        // Date the replacement with the ORIGINAL lead's date (NOT today), so it does not
+        // read as extra delivery for today's quota or get removed by trim-overdelivered.
+        var _rd = l.delivered_at || l.created_at || new Date().toISOString();
+        dbU.leads.push({ id: uuidv4(), customer_id: l.customer_id, product: prod, data: JSON.stringify(nd), status: 'delivered', delivered: 1, created_at: l.created_at || _rd, delivered_at: _rd, release_at: _rd });
         replaced++;
         got = true;
         break;
