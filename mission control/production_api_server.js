@@ -31664,8 +31664,44 @@ app.delete('/api/direct-mail/suppression/:id', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// Admin global suppression
-app.post('/api/admin/direct-mail/suppression', adminAuth, (req, res) => {
+  // POST /api/admin/direct-mail/test-letter { name, address1, city, postcode, address2?, company? }
+  // Sends ONE real A4 letter through the LIVE print partner and stores it as a tracked
+  // campaign + recipient, so the full chain (order -> print -> post -> delivery) and the
+  // live tracking loop can be watched end to end. COSTS REAL POSTAGE - run deliberately.
+  app.post('/api/admin/direct-mail/test-letter', adminAuth, async (req, res) => {
+    try {
+      var provider = getDirectMailProvider();
+      if (provider.name !== 'stannp') return res.status(400).json({ error: 'Print partner is not Stannp (currently: ' + provider.name + ')' });
+      var b = req.body || {};
+      var rcpt = {
+        name: String(b.name || 'Test Recipient').substring(0, 60),
+        company: String(b.company || '').substring(0, 60),
+        address_line1: String(b.address1 || b.address_line1 || '').substring(0, 80),
+        address_line2: String(b.address2 || b.address_line2 || '').substring(0, 80),
+        city: String(b.city || '').substring(0, 50),
+        postcode: String(b.postcode || '').trim().toUpperCase().substring(0, 10),
+        pages: '<h2>9amLeads - live Print &amp; Post test</h2><p>This is a test letter sent to verify the print, post and live tracking chain end to end.</p><p>If you are reading this on paper, the whole chain works: order, print, post and delivery.</p><p>Reference: TEST-' + Date.now() + '</p>'
+      };
+      if (!rcpt.address_line1 || !rcpt.postcode) return res.status(400).json({ error: 'address1 and postcode are required' });
+      var send = await provider.sendMailpiece('letter', rcpt, [], '');
+      if (!send || !send.success) return res.status(400).json({ error: (send && send.error) || 'Send failed', raw: send });
+      var ids = (send.provider_mailpiece_ids && send.provider_mailpiece_ids.length) ? send.provider_mailpiece_ids : [send.provider_campaign_id];
+      var mid = String(ids[0] || '');
+      var dbT = getDb();
+      if (!Array.isArray(dbT.direct_mail_campaigns)) dbT.direct_mail_campaigns = [];
+      if (!Array.isArray(dbT.direct_mail_recipients)) dbT.direct_mail_recipients = [];
+      var now = new Date().toISOString();
+      var campId = 'test_letter_' + uuidv4();
+      var rcptId = 'test_letter_rcpt_' + uuidv4();
+      dbT.direct_mail_campaigns.push({ id: campId, customer_id: 'test_letter_customer', name: 'TEST LETTER ' + now.split('T')[0], description: 'Live print & post proof', status: 'sent', template_id: '', material_id: '', target_count: 1, sent_count: 1, delivery_date: now.split('T')[0], budget: 0, notes: 'TEST_LETTER', provider: 'stannp', provider_campaign_id: mid, provider_status: 'queued', provider_status_label: 'Accepted', created_at: now, updated_at: now });
+      dbT.direct_mail_recipients.push({ id: rcptId, customer_id: 'test_letter_customer', campaign_id: campId, name: rcpt.name, company: rcpt.company, address_line1: rcpt.address_line1, address_line2: rcpt.address_line2, city: rcpt.city, postcode: rcpt.postcode, country: 'United Kingdom', lead_id: '', status: 'sent', provider_mailpiece_id: mid, mailpiece_type: 'letter', provider_status: 'queued', provider_status_label: 'Accepted', tracking_step: 1, created_at: now, updated_at: now });
+      saveDb();
+      res.json({ success: true, mailpiece_id: mid, campaign_id: campId, recipient_id: rcptId, sent_to: rcpt.address_line1 + ', ' + rcpt.city + ', ' + rcpt.postcode, note: 'Real letter submitted. Track it with POST /api/admin/tracking/e2e-test?mailpiece_id=' + mid });
+    } catch(e) { res.status(500).json({ error: e.message }); }
+  });
+
+  // Admin global suppression
+  app.post('/api/admin/direct-mail/suppression', adminAuth, (req, res) => {
   try {
     if (!req.body.postcode && !req.body.address_line1) return res.status(400).json({ error: 'Postcode or address required' });
     var db2 = getDb();
