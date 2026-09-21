@@ -26427,6 +26427,23 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
     var event = req.body;
     var evType = event.type || '';
 
+    // IDEMPOTENCY: Stripe retries webhooks (and can deliver to more than one endpoint).
+    // Ignore an event we have already handled so activations, lead credits and emails
+    // can never double-apply. Cheap, and makes rotating the webhook endpoint safe.
+    try {
+      var evId = event && event.id;
+      if (evId) {
+        var dbW = getDb();
+        if (!Array.isArray(dbW.processed_webhook_events)) dbW.processed_webhook_events = [];
+        if (dbW.processed_webhook_events.indexOf(evId) !== -1) {
+          return res.json({ received: true, duplicate: true });
+        }
+        dbW.processed_webhook_events.push(evId);
+        if (dbW.processed_webhook_events.length > 500) dbW.processed_webhook_events = dbW.processed_webhook_events.slice(-500);
+        saveDb();
+      }
+    } catch(e) {}
+
     if (evType === 'checkout.session.completed') {
       var session = event.data.object;
       var customerEmail = session.customer_email || (session.customer_details && session.customer_details.email);
