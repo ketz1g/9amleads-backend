@@ -653,6 +653,7 @@ var COUNTY_POSTCODE_MAP = {
   'worcestershire':['WR'],'warwickshire':['CV','B'],'staffordshire':['ST','WS','WV'],'herefordshire':['HR'],
   'shropshire':['SY'],'northumberland':['NE'],'cumbria':['CA','LA'],'devon-cornwall':['EX','PL','TQ','TR'],
   'glasgow':['G'],'belfast':['BT'],'cheshire':['CH','WA'],'lancashire':['BB','BL','FY','LA','PR'],
+  'merseyside':['L','CH','WA','PR','WN'],'wales':['CF','LL','NP','SA','LD','SY'],
   'north-east':['DH','DL','NE','SR','TS'],'north-west':['BB','BL','CH','CW','FY','L','LA','M','OL','PR','SK','WA','WN'],
   'yorkshire':['BD','HD','HG','HU','HX','LS','S','WF','YO'],'yorkshire-and-the-humber':['BD','HD','HG','HU','HX','LS','S','WF','YO'],
   'east-midlands':['DE','DN','LE','LN','NG','NN','PE'],'west-midlands-region':['B','CV','DY','HR','ST','SY','TF','WR','WS','WV'],
