@@ -32281,6 +32281,46 @@ app.post('/api/direct-mail/send-bulk', authMiddleware, async (req, res) => {
         country: 'United Kingdom'
       });
     }
+    // AUTO-REPLACE AT CHECKOUT: for every selected lead we cannot mail, swap in a
+    // mailable, in-area, never-sent lead from the pool so the batch keeps its count and
+    // price and nothing is silently dropped. Only genuinely un-fillable ones are reported.
+    if (skippedNoAddress.length) {
+      try {
+        var _subCust = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+        var _subProd = (_subCust && _subCust.product) || 'moving';
+        var _subAreas = []; try { _subAreas = JSON.parse((_subCust && _subCust.target_areas) || '[]'); } catch(e) {}
+        var _subUkwide = /all.?uk|uk.?wide|nationwide|whole.?uk/i.test((_subAreas || []).join(' '));
+        var _subUsed = {};
+        recipients.forEach(function(r) { _subUsed[String((r.postcode || '') + '|' + (r.address_line1 || '')).toLowerCase()] = 1; });
+        (db.leads || []).forEach(function(el) { try { var ed = JSON.parse(el.data || '{}'); if (ed.url) _subUsed['u:' + String(ed.url).split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase()] = 1; } catch(e) {} });
+        var _subPool = []; try { _subPool = interleavePoolByAreas(loadProductPool(_subProd), _subAreas); } catch(e) { _subPool = []; }
+        var _subs = 0;
+        for (var _si = 0; _si < _subPool.length && _subs < skippedNoAddress.length; _si++) {
+          var _sl = _subPool[_si];
+          if (!isLeadMailableForSend(_sl, _subProd)) continue;
+          var _spc = String(_sl.postcode || '').trim();
+          var _sArea = extractPostcodeArea(_spc).toUpperCase();
+          var _sIn = _subUkwide || _subAreas.indexOf(_sArea) !== -1;
+          if (!_sIn && _subProd === 'moving') { try { _sIn = isFallbackLeadAcceptable(_spc, _subAreas); } catch(e) {} }
+          if (!_sIn) continue;
+          var _su = String(_sl.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase();
+          if (_su && _subUsed['u:' + _su]) continue;
+          var _sBest = bestMailableAddress(_sl);
+          var _src = buildStannpRecipientFromLead(Object.assign({}, _sl, { fullAddress: _sBest, address: _sBest }));
+          if (!_src || !_src.mailable) continue;
+          var _sk = String((_src.postcode || '') + '|' + (_src.address_line1 || '')).toLowerCase();
+          if (_subUsed[_sk]) continue;
+          _subUsed[_sk] = 1;
+          if (_su) _subUsed['u:' + _su] = 1;
+          recipients.push({ lead_id: '', name: _src.name, company: _src.company || '', address_line1: _src.address_line1, address_line2: '', city: _src.city, postcode: _src.postcode, country: 'United Kingdom', substituted: true });
+          _subs++;
+        }
+        if (_subs > 0) {
+          console.log('[DM-SEND-BULK] substituted ' + _subs + ' of ' + skippedNoAddress.length + ' unmailable selected lead(s)');
+          skippedNoAddress = skippedNoAddress.slice(_subs);
+        }
+      } catch(subErr) { console.log('[DM-SEND-BULK] substitution error:', subErr.message); }
+    }
     if (recipients.length === 0) {
       return res.status(400).json({ error: 'None of the selected leads have a complete postal address (or they were already sent in the last 7 days).' });
     }
@@ -32450,6 +32490,45 @@ app.post('/api/direct-mail/send-bulk-repeat', authMiddleware, async (req, res) =
         postcode: postcode,
         country: 'United Kingdom'
       });
+    }
+    // AUTO-REPLACE AT CHECKOUT (repeat): swap every unmailable selected lead for a
+    // mailable in-area pool lead so the batch keeps its count and price.
+    if (skippedNoAddress.length) {
+      try {
+        var _rSubCust = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
+        var _rSubProd = (_rSubCust && _rSubCust.product) || 'moving';
+        var _rSubAreas = []; try { _rSubAreas = JSON.parse((_rSubCust && _rSubCust.target_areas) || '[]'); } catch(e) {}
+        var _rSubUkwide = /all.?uk|uk.?wide|nationwide|whole.?uk/i.test((_rSubAreas || []).join(' '));
+        var _rSubUsed = {};
+        recipients.forEach(function(r) { _rSubUsed[String((r.postcode || '') + '|' + (r.address_line1 || '')).toLowerCase()] = 1; });
+        (db.leads || []).forEach(function(el) { try { var ed = JSON.parse(el.data || '{}'); if (ed.url) _rSubUsed['u:' + String(ed.url).split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase()] = 1; } catch(e) {} });
+        var _rSubPool = []; try { _rSubPool = interleavePoolByAreas(loadProductPool(_rSubProd), _rSubAreas); } catch(e) { _rSubPool = []; }
+        var _rSubs = 0;
+        for (var _ri = 0; _ri < _rSubPool.length && _rSubs < skippedNoAddress.length; _ri++) {
+          var _rl2 = _rSubPool[_ri];
+          if (!isLeadMailableForSend(_rl2, _rSubProd)) continue;
+          var _rpc = String(_rl2.postcode || '').trim();
+          var _rArea = extractPostcodeArea(_rpc).toUpperCase();
+          var _rIn = _rSubUkwide || _rSubAreas.indexOf(_rArea) !== -1;
+          if (!_rIn && _rSubProd === 'moving') { try { _rIn = isFallbackLeadAcceptable(_rpc, _rSubAreas); } catch(e) {} }
+          if (!_rIn) continue;
+          var _ru = String(_rl2.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase();
+          if (_ru && _rSubUsed['u:' + _ru]) continue;
+          var _rBest = bestMailableAddress(_rl2);
+          var _rSrc = buildStannpRecipientFromLead(Object.assign({}, _rl2, { fullAddress: _rBest, address: _rBest }));
+          if (!_rSrc || !_rSrc.mailable) continue;
+          var _rk = String((_rSrc.postcode || '') + '|' + (_rSrc.address_line1 || '')).toLowerCase();
+          if (_rSubUsed[_rk]) continue;
+          _rSubUsed[_rk] = 1;
+          if (_ru) _rSubUsed['u:' + _ru] = 1;
+          recipients.push({ lead_id: '', name: _rSrc.name, company: _rSrc.company || '', address_line1: _rSrc.address_line1, address_line2: '', city: _rSrc.city, postcode: _rSrc.postcode, country: 'United Kingdom', substituted: true });
+          _rSubs++;
+        }
+        if (_rSubs > 0) {
+          console.log('[DM-SEND-BULK-REPEAT] substituted ' + _rSubs + ' of ' + skippedNoAddress.length + ' unmailable selected lead(s)');
+          skippedNoAddress = skippedNoAddress.slice(_rSubs);
+        }
+      } catch(rSubErr) { console.log('[DM-SEND-BULK-REPEAT] substitution error:', rSubErr.message); }
     }
     if (recipients.length === 0) {
       return res.status(400).json({ error: 'None of the selected leads have a complete postal address (or they were already sent in the last 7 days).' });

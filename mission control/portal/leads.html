@@ -363,9 +363,9 @@ function renderLeadList(dayLeads, noGroup) {
     var isSel = selectedLeads.indexOf(l.id) !== -1;
     var selClass = isSel ? ' sel' : '';
     var mailable = leadIsMailable(d, product);
-    var chk = mailable
-      ? '<input type="checkbox" class="lead-check" ' + (isSel?'checked':'') + ' onclick="toggleLeadSel(\''+l.id+'\',this.checked)" title="Select for Print &amp; Post">'
-      : '<input type="checkbox" class="lead-check" disabled title="No full postal address (door/flat number + full postcode) - cannot be printed &amp; posted" style="opacity:.3;cursor:not-allowed">';
+    // Selection is NEVER blocked: if a lead has no mailable address we swap it for a
+    // similar lead in the same area at checkout, so the batch still completes in full.
+    var chk = '<input type="checkbox" class="lead-check" ' + (isSel?'checked':'') + ' onclick="toggleLeadSel(\''+l.id+'\',this.checked)" title="' + (mailable ? 'Select for Print &amp; Post' : 'No full postal address - we will swap this for a similar lead in your area') + '">';
 
     if (product === 'newbusiness') {
       // Match email: business name first, then address, SIC, companies house link
@@ -593,16 +593,12 @@ function bulkSelectVisible() {
     if (!inRange(l, currentRange)) return false;
     return true;
   });
-  // Only select leads that are actually mailable (full postcode + door number +
-  // street). Non-mailable leads can't be printed & posted, so they're skipped here.
-  var _sel = 0, _skip = 0;
+  // Select every lead currently shown. Non-mailable ones are fine to include - the
+  // server swaps them for a similar in-area lead at checkout, so nothing is blocked.
+  var _sel = 0;
   visible.forEach(function(l){
-    var d = typeof l.data === 'string' ? JSON.parse(l.data||'{}') : (l.data||{});
-    var product = l.product || d.product || 'moving';
-    if (!leadIsMailable(d, product)) { _skip++; return; }
     if (selectedLeads.indexOf(l.id) === -1) { selectedLeads.push(l.id); _sel++; }
   });
-  if (_skip) alert(_sel + ' mailable lead' + (_sel!==1?'s':'') + ' selected. ' + _skip + ' lead' + (_skip!==1?'s':'') + ' skipped because they have no full postal address (door/flat number + full postcode) and cannot be printed & posted.');
   updateBulkBar();
   renderLeads(currentFiltered());
 }
