@@ -327,6 +327,18 @@ function renderLeads(leads) {
   });
   container.innerHTML = html;
 }
+// Is this lead actually mailable (Print & Post)? Mirrors the server gate: a full UK
+// postcode + a door/flat number + a street name. Tenders are opportunities, not mail.
+function leadIsMailable(d, product) {
+  if (product === 'tenders') return false;
+  var pc = String(d.postcode || '').toUpperCase().replace(/\s+/g, '');
+  if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?[0-9][A-Z]{2}$/.test(pc)) return false;
+  var addr = String(d.fullAddress || d.address || d.deceasedAddress || '').trim();
+  if (!addr) return false;
+  var hasNum = /^\s*\d{1,5}[A-Za-z]?(?:[\/\-]\s*\d{1,4})?\b/.test(addr) || /^\s*(flat|unit|apt|apartment|maisonette|suite)\b/i.test(addr);
+  var hasStreet = /[A-Za-z]{3,}/.test(addr.replace(/[0-9]/g, ''));
+  return hasNum && hasStreet;
+}
 function renderLeadList(dayLeads, noGroup) {
   var html = '';
   for (var i = 0; i < dayLeads.length; i++) {
@@ -350,7 +362,10 @@ function renderLeadList(dayLeads, noGroup) {
     var badgeColor = product === 'moving' ? '#0ea5e9' : product === 'probate' ? '#a855f7' : product === 'newbusiness' ? '#22c55e' : product === 'planning' ? '#f59e0b' : '#6366f1';
     var isSel = selectedLeads.indexOf(l.id) !== -1;
     var selClass = isSel ? ' sel' : '';
-    var chk = '<input type="checkbox" class="lead-check" ' + (isSel?'checked':'') + ' onclick="toggleLeadSel(\''+l.id+'\',this.checked)" title="Select for Print &amp; Post">';
+    var mailable = leadIsMailable(d, product);
+    var chk = mailable
+      ? '<input type="checkbox" class="lead-check" ' + (isSel?'checked':'') + ' onclick="toggleLeadSel(\''+l.id+'\',this.checked)" title="Select for Print &amp; Post">'
+      : '<input type="checkbox" class="lead-check" disabled title="No full postal address (door/flat number + full postcode) - cannot be printed &amp; posted" style="opacity:.3;cursor:not-allowed">';
 
     if (product === 'newbusiness') {
       // Match email: business name first, then address, SIC, companies house link
@@ -578,7 +593,16 @@ function bulkSelectVisible() {
     if (!inRange(l, currentRange)) return false;
     return true;
   });
-  visible.forEach(function(l){ if (selectedLeads.indexOf(l.id) === -1) selectedLeads.push(l.id); });
+  // Only select leads that are actually mailable (full postcode + door number +
+  // street). Non-mailable leads can't be printed & posted, so they're skipped here.
+  var _sel = 0, _skip = 0;
+  visible.forEach(function(l){
+    var d = typeof l.data === 'string' ? JSON.parse(l.data||'{}') : (l.data||{});
+    var product = l.product || d.product || 'moving';
+    if (!leadIsMailable(d, product)) { _skip++; return; }
+    if (selectedLeads.indexOf(l.id) === -1) { selectedLeads.push(l.id); _sel++; }
+  });
+  if (_skip) alert(_sel + ' mailable lead' + (_sel!==1?'s':'') + ' selected. ' + _skip + ' lead' + (_skip!==1?'s':'') + ' skipped because they have no full postal address (door/flat number + full postcode) and cannot be printed & posted.');
   updateBulkBar();
   renderLeads(currentFiltered());
 }
