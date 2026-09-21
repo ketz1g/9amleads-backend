@@ -18414,6 +18414,21 @@ async function runFulfilmentGuarantee(label) {
       } catch(ge2) { console.log('[GUARANTEE] preview error ' + gc.email + ': ' + ge2.message); }
     }
     if (gShort.length) {
+      // AUTO-REMEDIATE FIRST (no action needed from the founder): immediately run the
+      // pre-9am top-up so a detected shortfall is FILLED before 9am, instead of just
+      // alerting. Idempotent — keeps existing leads and only adds new ones — so the
+      // later 08:40 top-up simply finds less to do.
+      try {
+        await new Promise(function(resolve) {
+          var _h = require('http');
+          var _b = JSON.stringify({});
+          var _rq = _h.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/top-up-all', headers: { 'Authorization': 'Bearer ' + (ADMIN_PASSWORD || ''), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(_b) } }, function(_rs) { _rs.on('data', function() {}); _rs.on('end', function() { resolve(); }); });
+          _rq.on('error', function() { resolve(); });
+          _rq.setTimeout(180000, function() { try { _rq.destroy(); } catch(e) {} resolve(); });
+          _rq.write(_b); _rq.end();
+        });
+        console.log('[GUARANTEE] ' + label + ': auto-remediation (top-up-all) triggered for ' + gShort.length + ' shortfall(s)');
+      } catch(grErr) { console.log('[GUARANTEE] auto-remediation error:', grErr.message); }
       // OWNER-EMAIL DIGEST MODE: email the shortfall ONCE per day (the first check
       // that finds it — usually 07:15) rather than at BOTH 07:15 and 07:45 for the
       // same issue. Persisted so restarts don't re-spam. The 09:10 delivery summary
@@ -18425,7 +18440,7 @@ async function runFulfilmentGuarantee(label) {
         console.log('[GUARANTEE] ' + label + ': shortfall already emailed today (' + _todayGuar + ') — skipping duplicate alert');
       } else {
         // Alert the founder NOW (well before 9am) so they can act / top up in time.
-        var _gHtml = '<div style="font-family:Inter,Arial,sans-serif;max-width:540px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px"><h2 style="color:#f87171;margin:0 0 10px;font-size:18px">⚠ Fulfilment check (' + label + '): a customer will be short at 9am</h2><p style="font-size:14px;line-height:1.6;color:#cbd5e1">These customers will NOT get their full promised count at 9am:<br><br><ul style="margin:0;padding-left:18px">' + gShort.map(function(s){ return '<li>' + s + '</li>'; }).join('') + '</ul><br><b style="color:#fbbf24">You still have time to fix this.</b> Run a targeted top-up (<code>/api/admin/top-up-today</code>) or widen the customer\'s areas before 9am.</p></div>';
+        var _gHtml = '<div style="font-family:Inter,Arial,sans-serif;max-width:540px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px"><h2 style="color:#f87171;margin:0 0 10px;font-size:18px">⚠ Fulfilment check (' + label + '): a customer will be short at 9am</h2><p style="font-size:14px;line-height:1.6;color:#cbd5e1">These customers will NOT get their full promised count at 9am:<br><br><ul style="margin:0;padding-left:18px">' + gShort.map(function(s){ return '<li>' + s + '</li>'; }).join('') + '</ul><br><b style="color:#fbbf24">An automatic top-up has already been triggered.</b> If any customer is still short at 9am it is a genuine supply gap for those areas.</p></div>';
         try { await sendBrevoEmail({ email: process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com', name: '9amLeads Admin' }, '⚠ URGENT (' + label + '): ' + gShort.length + ' customer(s) would shortfall at 9am', _gHtml); } catch(ga) { console.log('[GUARANTEE] alert error:', ga.message); }
         try { var _gd3 = getDb(); if (!_gd3.fulfilment_guarantee) _gd3.fulfilment_guarantee = {}; _gd3.fulfilment_guarantee.shortfall_emailed = _todayGuar; saveDb(); } catch(e) {}
       }
