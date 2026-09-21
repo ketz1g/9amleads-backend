@@ -6297,10 +6297,18 @@ app.get('/api/auth/me', authMiddleware, (req, res) => {
 // (or name) is what customers type at signup to get the 14-day trial.
 app.post('/api/affiliate/register', async (req, res) => {
   try {
-    var { name, email, password, code } = req.body;
-    if (!name || !email || !password) return res.status(400).json({ error: 'Name, email and password are required' });
-    if (!validateEmail(email)) return res.status(400).json({ error: 'Invalid email format' });
-    if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
+  var { name, email, password, code } = req.body;
+  if (!name || !email || !password) return res.status(400).json({ error: 'Name, email and password are required' });
+  if (!validateEmail(email)) return res.status(400).json({ error: 'Invalid email format' });
+  if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
+  // VALID PHONE NUMBER IS MANDATORY: we may need to contact the affiliate directly about
+  // their account or payouts, so a reachable number is required. Accepts UK + international
+  // formats; rejects anything with letters or too few/many digits.
+  var phone = String(req.body.phone || '').trim();
+  if (!phone) return res.status(400).json({ error: 'A phone number is required so we can contact you about your affiliate account.' });
+  if (!/^[0-9+\s().-]+$/.test(phone)) return res.status(400).json({ error: 'Please enter a valid phone number (digits, spaces, +, - and brackets only).' });
+  var phoneDigits = phone.replace(/[^0-9]/g, '');
+  if (phoneDigits.length < 10 || phoneDigits.length > 15) return res.status(400).json({ error: 'Please enter a valid phone number (between 10 and 15 digits).' });
     // Terms & Conditions MUST be accepted to apply (they see + link to
     // /affiliate-terms.html on the signup form). Records the tick for the admin.
     var termsAccepted = !!req.body.terms_accepted;
@@ -6316,8 +6324,9 @@ app.post('/api/affiliate/register', async (req, res) => {
     var survey = {};
     try { survey = req.body.survey || {}; } catch(e) {}
     var voiceAudio = String(req.body.voice_audio || '');
-    var application = {
-      submitted_at: new Date().toISOString(),
+  var application = {
+    submitted_at: new Date().toISOString(),
+    phone: phone,
       survey: survey,
       voice: voiceAudio ? { recorded_at: new Date().toISOString(), audio: voiceAudio } : null,
       consent_voice: consent,
@@ -6328,7 +6337,7 @@ app.post('/api/affiliate/register', async (req, res) => {
       review_status: 'pending'
     };
     var _autoActivate = process.env.AFFILIATE_AUTO_ACTIVATE === 'true';
-    var aff = { id: uuidv4(), name: String(name).trim(), email: em, code: code2, password_hash: passwordHash, payout_rate: AFFILIATE_PAYOUT_RATE, status: _autoActivate ? 'active' : 'pending', created_at: new Date().toISOString(), payouts: [], association: String(req.body.association || '').trim().substring(0, 60) || '', recruited_by: String(req.body.recruited_by || req.body.recruiter_code || '').toUpperCase().substring(0, 40) || '', application: application, kyc: { status: 'not_submitted', tc_accepted: termsAccepted, tc_accepted_at: termsAccepted ? new Date().toISOString() : null } };
+    var aff = { id: uuidv4(), name: String(name).trim(), email: em, phone: phone, code: code2, password_hash: passwordHash, payout_rate: AFFILIATE_PAYOUT_RATE, status: _autoActivate ? 'active' : 'pending', created_at: new Date().toISOString(), payouts: [], association: String(req.body.association || '').trim().substring(0, 60) || '', recruited_by: String(req.body.recruited_by || req.body.recruiter_code || '').toUpperCase().substring(0, 40) || '', application: application, kyc: { status: 'not_submitted', tc_accepted: termsAccepted, tc_accepted_at: termsAccepted ? new Date().toISOString() : null } };
     affs.push(aff);
     saveDb();
     // Confirmation email to the affiliate (so they know their application arrived).

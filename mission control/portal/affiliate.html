@@ -312,6 +312,7 @@ tr:last-child td{border-bottom:none}
 <p style="font-size:12px;font-weight:700;color:#0ea5e9;margin:0 0 12px">Step 1 of 3 · Your details</p>
 <div class="fg"><label>Full name</label><input type="text" id="r-name" placeholder="Your name"></div>
 <div class="fg"><label>Email</label><input type="email" id="r-email" placeholder="you@partner.com"></div>
+<div class="fg"><label>Phone number <span class="muted">(required - we may need to contact you)</span></label><input type="tel" id="r-phone" placeholder="e.g. 07700 900123"></div>
 <div class="fg"><label>Password</label><div style="position:relative"><input type="password" id="r-pass" placeholder="Min 8 characters" style="padding-right:34px"><span onclick="var p=document.getElementById('r-pass');p.type=p.type==='password'?'text':'password';this.textContent=p.type==='password'?'\uD83D\uDC41':'Hide'" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:11px;color:#8890a8;cursor:pointer;user-select:none;font-weight:600">&#128065;</span></div></div>
 <div class="fg"><label>Your referral code <span class="muted">(optional. We'll make one for you)</span></label><input type="text" id="r-code" placeholder="e.g. JAMES24"></div>
 <button class="btn" onclick="appStep(2)">Continue</button>
@@ -1024,12 +1025,16 @@ function resetRec(){
 }
 function submitApplication(){
   var name=document.getElementById('r-name').value.trim(),email=document.getElementById('r-email').value.trim(),pass=document.getElementById('r-pass').value,code=document.getElementById('r-code').value.trim();
+  var phone=((document.getElementById('r-phone')||{}).value||'').trim();
   var q1=document.getElementById('q1').value,q2=document.getElementById('q2').value,q3=document.getElementById('q3').value,q4=document.getElementById('q4').value,q5=document.getElementById('q5').value.trim(),q6=document.getElementById('q6').value,q7=document.getElementById('q7').value,q8=document.getElementById('q8').value.trim(),q9=document.getElementById('q9').value.trim(),q10=document.getElementById('q10').value,q11=document.getElementById('q11').value.trim(),q12=document.getElementById('q12').value,q13=document.getElementById('q13').value.trim();
   var consent=document.getElementById('r-consent').checked;
   var tc=document.getElementById('r-tc').checked;
   var errEl=document.getElementById('register-err'); errEl.style.color='#f87171'; errEl.style.display='none';
   if(!name||!email||!pass){ errEl.textContent='Please fill in your name, email and password'; errEl.style.display='block'; return; }
   if(pass.length<8){ errEl.textContent='Password must be at least 8 characters'; errEl.style.display='block'; return; }
+  var _pd=phone.replace(/[^0-9]/g,'');
+  if(!phone){ errEl.textContent='Please enter your phone number - we may need to contact you about your account.'; errEl.style.display='block'; return; }
+  if(!/^[0-9+\s().-]+$/.test(phone) || _pd.length<10 || _pd.length>15){ errEl.textContent='Please enter a valid phone number (between 10 and 15 digits).'; errEl.style.display='block'; return; }
   if(!q1||!q2||!q3||!q4||!q6||!q7||!q10||!q12){ errEl.textContent='Please answer all the multiple-choice questions'; errEl.style.display='block'; return; }
   if(!tc){ errEl.textContent='Please read and tick the Terms & Conditions box to submit your application'; errEl.style.display='block'; return; }
   if(!consent){ errEl.textContent='Please tick the consent box to submit your application'; errEl.style.display='block'; return; }
@@ -1039,7 +1044,7 @@ function submitApplication(){
   var fr=new FileReader();
   fr.onload=function(){
     var audioB64=String(fr.result||'').split(',')[1]||'';
-    var payload={name:name,email:email,password:pass,code:code,terms_accepted:tc,consent_voice:consent,voice_audio:audioB64,survey:{q1:q1,q2:q2,q3:q3,q4:q4,q5:q5,q6:q6,q7:q7,q8:q8,q9:q9,q10:q10,q11:q11,q12:q12,q13:q13}};
+    var payload={name:name,email:email,phone:phone,password:pass,code:code,terms_accepted:tc,consent_voice:consent,voice_audio:audioB64,survey:{q1:q1,q2:q2,q3:q3,q4:q4,q5:q5,q6:q6,q7:q7,q8:q8,q9:q9,q10:q10,q11:q11,q12:q12,q13:q13}};
     fetch(API+'/api/affiliate/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
     .then(function(r){return r.json();}).then(function(d){
       if(btn){btn.disabled=false;btn.textContent='Submit application';}
