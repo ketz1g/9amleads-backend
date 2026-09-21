@@ -19286,6 +19286,92 @@ function buildWinbackEmailHTML(product, step) {
   return shell(subject, 'Give it a few weeks. Then the phone starts ringing - with people already interested.', inner);
 }
 
+// ===== CANCELLED-CUSTOMER WIN-BACK =====
+// Sent to customers who have CANCELLED their paid subscription (plan === 'cancelled').
+// Three steps: day 0 (thank you + one question), day 4 (price/leads/timing), day 14
+// (your leads are still here). Product-aware, deduped via cust.cancel_wb_sent.
+function buildCancelledWinbackEmail(product, step) {
+  try { var _ce = loadEmailEdits()['cancelwb_' + product + '_' + step]; if (_ce && _ce.html) return _ce.html; } catch(e) {}
+  var WB = {
+    moving: { accent: '#0ea5e9', plural: 'moving leads', what: 'Home-movers who have just listed or sold their property', why: 'They are looking for removal quotes right now - before they start shopping around' },
+    probate: { accent: '#a855f7', plural: 'probate leads', what: 'Newly granted probate from the official UK register', why: 'The executor is instructing professionals now, so you get in first' },
+    newbusiness: { accent: '#06b6d4', plural: 'new business leads', what: 'Brand new companies from Companies House', why: 'They need an accountant, website, insurance and IT from day one' },
+    planning: { accent: '#10b981', plural: 'planning leads', what: 'New planning applications from the Planning Portal', why: 'The work is about to be priced and booked - reach the applicant first' },
+    tenders: { accent: '#6366f1', plural: 'public tenders', what: 'Live public-sector contracts from Contracts Finder', why: 'Published daily - the first credible bid often wins' }
+  };
+  var p = WB[product] || WB.moving;
+  var INK = '#1f2937', MUTED = '#6b7280', LINE = '#e5e7eb', PAGE = '#f4f5f7';
+  var PRICING = 'https://www.9amleads.com/pricing/';
+  function shell(subject, pre, inner) {
+    return '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + subject + '</title></head>'
+      + '<body style="margin:0;padding:0;background-color:' + PAGE + ';">'
+      + '<div style="display:none;max-height:0;overflow:hidden;opacity:0">' + pre + '</div>'
+      + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="' + PAGE + '" style="background-color:' + PAGE + '"><tr><td align="center" style="padding:24px 12px">'
+      + '<table role="presentation" width="600" cellpadding="0" cellspacing="0" bgcolor="#ffffff" style="width:600px;max-width:600px;background-color:#ffffff;border:1px solid ' + LINE + ';border-radius:8px">'
+      + '<tr><td style="height:4px;background-color:' + p.accent + ';font-size:0;line-height:0">&nbsp;</td></tr>' + inner + '</table></td></tr></table></body></html>';
+  }
+  var logo = '<tr><td style="padding:26px 34px 0"><p style="margin:0;font-size:18px;font-weight:800;color:' + INK + '"><a href="https://www.9amleads.com" style="color:' + INK + ';text-decoration:none">9am<span style="color:' + p.accent + '">Leads</span></a></p></td></tr>';
+  var footer = '<tr><td style="padding:18px 34px 26px"><p style="margin:0 0 12px;color:' + INK + ';font-size:14px;line-height:1.6">Any questions, just reply and I will answer personally.</p>'
+    + '<table role="presentation" cellpadding="0" cellspacing="0"><tr><td width="84" valign="middle" style="padding-right:12px"><img src="https://9amleads.com/assets/ketan-photo.jpeg" width="72" height="72" alt="Ketz Mandalia" style="display:block;width:72px;height:72px;border-radius:50%;border:0"></td>'
+    + '<td valign="middle" style="color:' + INK + ';font-size:14px;line-height:1.5">All the best,<br><strong>Ketz Mandalia</strong><br><span style="color:' + MUTED + ';font-size:13px">Founder, 9amLeads<br>hello@9amleads.com</span></td></tr></table></td></tr>'
+    + '<tr><td style="padding:0 34px 26px"><p style="margin:0 0 10px;color:#9ca3af;font-size:11px;line-height:1.7">9am Leads Ltd, Company No. 17402522, 66 Paul Street, London EC2A 4NA.</p><a href="{{ unsubscribe }}" style="color:' + MUTED + ';font-size:12px;text-decoration:underline">Unsubscribe</a></td></tr>';
+  function block(title, lines) {
+    return '<tr><td style="padding:0 0 14px"><p style="margin:0 0 6px;font-size:14px;font-weight:800;color:' + INK + '">' + title + '</p>'
+      + lines.map(function (l) { return '<p style="margin:0 0 4px;font-size:13px;color:' + MUTED + ';line-height:1.55"><span style="color:#16a34a;font-weight:800">&#10003;</span>&nbsp; ' + l + '</p>'; }).join('') + '</td></tr>';
+  }
+  function cta(url, text, sub) {
+    return '<tr><td align="center" style="padding:10px 34px 6px"><a href="' + url + '" style="display:inline-block;background-color:' + p.accent + ';color:#ffffff;text-decoration:none;padding:15px 38px;border-radius:6px;font-size:16px;font-weight:800">' + text + '</a>'
+      + (sub ? '<p style="margin:10px 0 0;color:' + MUTED + ';font-size:12px">' + sub + '</p>' : '') + '</td></tr>';
+  }
+  function head(kick, title) {
+    return '<tr><td style="padding:14px 34px 6px"><p style="margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:' + p.accent + '">' + kick + '</p>'
+      + '<h1 style="margin:0 0 14px;font-size:23px;line-height:1.3;font-weight:800;color:' + INK + '">' + title + '</h1>';
+  }
+  function leadTypeBlock() { return block('Your ' + p.plural, [p.what, p.why]); }
+  function whyUsBlock() {
+    return block('Why 9amLeads is the better lead provider', [
+      'Every lead shows its source, so you can verify it yourself',
+      'Fresh from official UK sources, delivered at 9am every weekday',
+      'Yours alone - not sold to five rivals at once',
+      'The exact number promised, no more, no less',
+      'Track every lead you post, and see who you have already mailed'
+    ]);
+  }
+  function blocksTable(inner) {
+    return '<tr><td style="padding:0 34px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">' + inner + '</table></td></tr>';
+  }
+  var _cwSubjMap = { 1: 'Sorry to see you go - can I ask one quick question?', 2: 'Was it the price, the leads, or the timing?', 3: 'Your leads are still there if you want them back' };
+  var subject = _cwSubjMap[step] || _cwSubjMap[1];
+  var inner;
+  if (step === 2) {
+    inner = logo + head('Quick question', 'Was it the price, the leads, or the timing?')
+      + '<p style="margin:0 0 14px;color:' + INK + ';font-size:15px;line-height:1.65">Hi,<br><br>Most people who leave us do so for one of three reasons. If any of these sound like you, we can usually fix it.</p></td></tr>'
+      + '<tr><td style="padding:0 34px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">'
+      + block('It was the price', ['Pause instead of cancelling - keep your account and pay nothing until you are ready', 'Drop to a smaller package, or use Bulk Send only in your quiet weeks', 'No lock-in - start and stop whenever you need'])
+      + block('Not enough work came from it', ['Direct mail is not overnight - most people hear the phone start ringing around week 3', 'Make sure your website, reviews and phone are ready before the flyers land', 'Send us your flyer and letter and we will help you sharpen them'])
+      + block('The timing was wrong', ['Your leads are still waiting - restart whenever work slows down', 'Your account, print credits and settings are all kept for you', 'Nothing to set up again - just switch it back on'])
+      + '</table></td></tr>'
+      + cta(PRICING, 'See the packages again', 'From &pound;25 per week &middot; cancel anytime') + footer;
+    return shell(subject, 'Price, leads, or timing? Whatever it was, there is usually a simple fix.', inner);
+  }
+  if (step === 3) {
+    inner = logo + head('Still here', 'Your leads are still there if you want them back')
+      + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">Hi,<br><br>A couple of weeks on, and your ' + p.plural + ' are still arriving fresh every weekday. If you want work to come to you again, restarting takes about a minute - everything is exactly where you left it.</p>'
+      + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">There is no pressure and no hard sell. If now is not the right time, that is completely fine - just ignore this and we will leave you be.</p>'
+      + '</td></tr>'
+      + blocksTable(leadTypeBlock() + whyUsBlock())
+      + cta(PRICING, 'Restart my leads', 'Pick a package &middot; cancel anytime') + footer;
+    return shell(subject, 'A couple of weeks on - your leads are still there whenever you are ready.', inner);
+  }
+  inner = logo + head('No hard feelings', 'Sorry to see you go - can I ask one quick question?')
+    + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">Hi,<br><br>I noticed your 9amLeads account has closed, and I wanted to say thank you for giving us a try. No hard sell here - your account is closed and there will be no further charges.</p>'
+    + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">One quick question, and it genuinely helps us: <strong>what was the main reason?</strong> Was it the price, the leads, or simply the timing? Just hit reply and tell me in one line - I read every answer myself.</p>'
+    + '</td></tr>'
+    + blocksTable(leadTypeBlock() + whyUsBlock())
+    + cta('mailto:hello@9amleads.com?subject=Why%20I%20cancelled', 'Reply with your reason', 'One line is all it takes - I read every reply') + footer;
+  return shell(subject, 'Sorry to see you go - and one quick question, if you have a moment.', inner);
+}
+
 // GET /api/admin/email-library — every email a customer can receive, grouped by
 // WHEN it is sent (not by template type), each with fully-rendered HTML so it can
 // be previewed inline at desktop and mobile width. Used by the Admin Email Library.
@@ -19367,6 +19453,18 @@ app.get('/api/admin/email-library', adminAuth, (req, res) => {
     try { affiliateEmails.push({ id: 'aff_inactive_warning', name: 'Inactive warning - account about to close', subject: '9amLeads Affiliate - action needed to keep your account', when: 'Day 30 with no referrals (7-day deadline)', html: affiliateInactiveWarningEmail(affSample) }); } catch(e) {}
     try { affiliateEmails.push({ id: 'aff_closed', name: 'Account closed (no referrals)', subject: 'Your 9amLeads affiliate account has been closed', when: 'Day 37 - still no referrals after the warning', html: affiliateClosedEmail(affSample) }); } catch(e) {}
     groups.push({ key: 'affiliate', label: 'Affiliate programme (affiliates only)', icon: '\uD83E\uDD1D', sends: 'Only to affiliates - from application through to inactivity', emails: affiliateEmails });
+    // 10) CANCELLED CUSTOMERS (win-back)
+    var cancelledEmails = [];
+    var _cwLabels = { moving: 'Moving Leads', probate: 'Probate Leads', newbusiness: 'New Business Alerts', planning: 'Planning Permissions', tenders: 'Public Tenders' };
+    ['moving', 'probate', 'newbusiness', 'planning', 'tenders'].forEach(function(cp) {
+      [1, 2, 3].forEach(function(cs) {
+        try {
+          var _cwSubj = { 1: 'Sorry to see you go - can I ask one quick question?', 2: 'Was it the price, the leads, or the timing?', 3: 'Your leads are still there if you want them back' }[cs];
+          cancelledEmails.push({ id: 'cancelwb_' + cp + '_' + cs, name: 'Cancelled win-back - ' + _cwLabels[cp] + ' - step ' + cs, subject: _cwSubj, when: 'Cancelled customers: day ' + [0, 4, 14][cs - 1] + ' after cancelling', html: buildCancelledWinbackEmail(cp, cs) });
+        } catch(cwe) {}
+      });
+    });
+    groups.push({ key: 'cancelled', label: 'Cancelled customers (win-back)', icon: '\uD83D\uDD04', sends: 'To customers who cancel - day 0, 4 and 14 after cancelling', emails: cancelledEmails });
     res.json({ success: true, groups: groups });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -20659,7 +20757,9 @@ function abPickSubject(template, customer, baseSubject) {
 // callable manually (with dry:true to preview) via POST /api/admin/run-campaigns.
 async function runCampaignEmails(dry) {
   console.log('[CAMPAIGN] Starting campaign email check...' + (dry ? ' (DRY RUN)' : ''));
-  var customers = (getDb().customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3) && c.marketing_consent === 1; });
+  // Cancelled customers ARE included so they can receive the cancelled-customer
+  // win-back (handled separately below) - but they never get trial or paid emails.
+  var customers = (getDb().customers || []).filter(function(c) { return c.plan && (!c.bounced || c.bounced < 3) && c.marketing_consent === 1; });
   var sent = 0;
   var log = [];
   var sendIt = async function (cust, template, subject, html) {
@@ -20683,7 +20783,31 @@ async function runCampaignEmails(dry) {
       // paid welcome/tips series instead — never more trial follow-ups.
       var isPaidNow = cust.plan !== 'free_trial' || !!cust.stripe_subscription_id;
 
-      if (!isPaidNow && cust.plan === 'free_trial' && trialEnds) {
+      var isCancelledNow = String(cust.plan || '') === 'cancelled';
+      if (isCancelledNow) {
+        // CANCELLED CUSTOMER WIN-BACK: 3 steps at day 0, 4 and 14 after cancelling.
+        // Deduped separately (cancel_wb_sent) so a re-subscriber who cancels again
+        // starts the sequence afresh.
+        var _cwDays = cust.cancelled_at ? Math.floor((new Date() - new Date(cust.cancelled_at)) / 86400000) : 0;
+        if (!isNaN(_cwDays) && _cwDays >= 0) {
+          var _cwProduct = cust.product || 'moving';
+          var _cwSent = [];
+          try { _cwSent = JSON.parse(cust.cancel_wb_sent || '[]'); } catch(e2) {}
+          var _CW = [{ d: 0, s: 1 }, { d: 4, s: 2 }, { d: 14, s: 3 }];
+          for (var _cwi = 0; _cwi < _CW.length; _cwi++) {
+            var _cw = _CW[_cwi];
+            var _cwTmpl = 'cancelwb_' + _cwProduct + '_' + _cw.s;
+            if (_cwDays >= _cw.d && !_cwSent.includes(_cwTmpl)) {
+              _cwSent.push(_cwTmpl);
+              var _cwSubject = { 1: 'Sorry to see you go - can I ask one quick question?', 2: 'Was it the price, the leads, or the timing?', 3: 'Your leads are still there if you want them back' }[_cw.s];
+              await sendIt(cust, _cwTmpl, getEditedCampaignSubject(_cwTmpl, _cwSubject), buildCancelledWinbackEmail(_cwProduct, _cw.s));
+              sent++;
+              break;
+            }
+          }
+          if (!dry) { cust.cancel_wb_sent = JSON.stringify(_cwSent); try { saveDb(); } catch(e) {} }
+        }
+      } else if (!isPaidNow && cust.plan === 'free_trial' && trialEnds) {
         if (new Date() <= trialEnds) {
           // Active trial: send onboarding emails at days 1, 3, 5 (after signup)
           var _sentThisCust = false;
@@ -26102,7 +26226,7 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
       // never missed when the stored stripe_customer_id doesn't line up.
       if (!subCustomer && sub.customer_email) subCustomer = db.prepare('SELECT * FROM customers WHERE email = ?').get(sub.customer_email);
       if (subCustomer) {
-        db.prepare('UPDATE customers SET plan = ?, leads_per_day = 0, auto_send_paused = 1, leads_paused = 1 WHERE id = ?').run('cancelled', subCustomer.id);
+        db.prepare('UPDATE customers SET plan = ?, leads_per_day = 0, auto_send_paused = 1, leads_paused = 1, cancelled_at = ?, cancel_wb_sent = ? WHERE id = ?').run('cancelled', new Date().toISOString(), '[]', subCustomer.id);
         saveDb();
         console.log('[STRIPE] Subscription cancelled for ' + (subCustomer.email || subCustomer.id));
         // Tell the owning partner so they know the customer cancelled (commission stops).
@@ -26709,7 +26833,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
           db.prepare('UPDATE customers SET plan = ? WHERE id = ?')
             .run(sub.cancel_at_period_end ? existingSub.plan : 'cancelled', existingSub.customer_id);
           if (!sub.cancel_at_period_end) {
-            db.prepare('UPDATE customers SET leads_per_day = 0 WHERE id = ?').run(existingSub.customer_id);
+            db.prepare('UPDATE customers SET leads_per_day = 0, cancelled_at = ?, cancel_wb_sent = ? WHERE id = ?').run(new Date().toISOString(), '[]', existingSub.customer_id);
           }
         }
         console.log('[WEBHOOK] Subscription updated:', subId, '→', status);
@@ -26723,7 +26847,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
       const existingSub = db.prepare('SELECT * FROM subscriptions WHERE stripe_id = ?').get(delSubId);
       if (existingSub) {
         db.prepare('UPDATE subscriptions SET status = \'canceled\', canceled_at = datetime(\'now\'), updated_at = datetime(\'now\') WHERE stripe_id = ?').run(delSubId);
-        db.prepare('UPDATE customers SET plan = \'cancelled\', leads_per_day = 0 WHERE id = ?').run(existingSub.customer_id);
+        db.prepare('UPDATE customers SET plan = \'cancelled\', leads_per_day = 0, cancelled_at = ?, cancel_wb_sent = ? WHERE id = ?').run(new Date().toISOString(), '[]', existingSub.customer_id);
         console.log('[WEBHOOK] Subscription cancelled for customer', existingSub.customer_id);
       }
     }
@@ -26740,8 +26864,8 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
           // Reset fail_count on successful payment
           db.prepare('UPDATE subscriptions SET current_period_end = ?, status = \'active\', fail_count = 0, updated_at = datetime(\'now\') WHERE stripe_id = ?').run(periodEnd, invSubId);
           // Reactivate customer if they were in cancelled state
-          db.prepare('UPDATE customers SET plan = ?, leads_per_day = ? WHERE id = ? AND plan = \'cancelled\'')
-            .run(invSub.plan, getPlanLimit(invSub.product || 'moving', invSub.plan), invSub.customer_id);
+          db.prepare('UPDATE customers SET plan = ?, leads_per_day = ?, cancelled_at = ?, cancel_wb_sent = ? WHERE id = ? AND plan = \'cancelled\'')
+            .run(invSub.plan, getPlanLimit(invSub.product || 'moving', invSub.plan), '', '[]', invSub.customer_id);
           console.log('[WEBHOOK] Payment succeeded:', invSub.customer_id, '-', invSub.plan, '-', amount);
           // Persist an "invoice paid" receipt + email the customer a receipt.
           try {
