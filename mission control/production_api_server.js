@@ -14307,6 +14307,9 @@ async function runOtmDailyScrape() {
     if (!areas.length) { console.log('[OTM-DAILY] No moving customer areas to scrape'); return; }
     var otmScraper2 = require('./onthemarket_scraper');
     var     leads = await moduleWithTimeout(otmScraper2.collectOnTheMarketLeads({ areas: areas, maxPerArea: parseInt(process.env.OTM_MAX_PER_AREA || '100', 10), maxDays: FRESHNESS.isMondayUK() ? 3 : 2, detailCap: parseInt(process.env.OTM_DETAIL_CAP || '600', 10) }), 8 * 60000, 'OTM daily scrape');
+    // YIELD before the heavy synchronous pool read/write so any pending /api/health
+    // check (Render times out at 5s) is served first and the instance is not restarted.
+    await new Promise(function(r) { setImmediate(r); });
     var fn2 = path.join(DATA_DIR, PRODUCT_LEAD_FILES.moving.file);
     var prev = []; try { prev = JSON.parse(fs.readFileSync(fn2, 'utf-8')); } catch(e) { prev = []; }
     if (!Array.isArray(prev)) prev = [];
@@ -14318,7 +14321,9 @@ async function runOtmDailyScrape() {
       if (!pcArea || areas.indexOf(pcArea) === -1) return;
       seen[l.id] = 1; prev.push(l); added++;
     });
-    fs.writeFileSync(fn2, JSON.stringify(prev, null, 2));
+    // Compact (not pretty-printed) write: ~3x smaller and far faster to stringify and
+    // write, keeping the event-loop block well under Render's 5s health-check timeout.
+    fs.writeFileSync(fn2, JSON.stringify(prev));
     console.log('[OTM-DAILY] areas=' + areas.join(',') + ' scraped=' + leads.length + ' added=' + added + ' pool=' + prev.length);
   } catch(e) { console.log('[OTM-DAILY] error: ' + e.message); }
 }
