@@ -38618,7 +38618,7 @@ function __demoLeadData(product, i) {
   }
   var tt = ['School catering services - 3 year contract', 'IT support and managed services', 'Grounds maintenance for council estates', 'Building cleaning services', 'Highways resurfacing programme', 'Temporary staff agency services', 'Waste collection and recycling', 'Security services for public buildings'][i];
   var buyers = ['Local Authority', 'NHS Trust', 'County Council', 'City Council', 'Highways England', 'Public Sector Body', 'District Council', 'Police Authority'];
-  return { tenderTitle: tt, title: tt, description: tt, buyer: buyers[i], contractValueLabel: '\u00a3' + [450000, 1200000, 300000, 750000, 2500000, 600000, 900000, 400000][i], closingDate: new Date(base.getTime() + (7 + i * 2) * 86400000).toISOString(), publishedDate: new Date(base.getTime() - (i < 5 ? 0 : i - 4) * 86400000).toISOString(), tenderNoticeId: 'DEMO' + (2026000 + i), url: 'https://www.contractsfinder.service.gov.uk/notice/DEMO' + (2026000 + i) };
+  return { tenderTitle: tt, title: tt, description: tt, buyer: buyers[i], contractValueLabel: '\u00a3' + [450000, 1200000, 300000, 750000, 2500000, 600000, 900000, 400000][i].toLocaleString(), closingDate: new Date(base.getTime() + (7 + i * 2) * 86400000).toISOString(), publishedDate: new Date(base.getTime() - (i < 5 ? 0 : i - 4) * 86400000).toISOString(), tenderNoticeId: 'DEMO' + (2026000 + i), url: 'https://www.contractsfinder.service.gov.uk/Search?keywords=' + encodeURIComponent(tt) };
 }
 function seedDemoAccount() {
   try {
@@ -38640,7 +38640,7 @@ function seedDemoAccount() {
       // Keep the demo trial card looking right: reset it to "Day 1 of 7" each run.
       try { db.prepare('UPDATE customers SET leads_per_day = 0, email_verified = 1, plan = ?, trial_ends = ? WHERE id = ?').run('free_trial', trialEnds, acct.id); } catch(e) {}
       var _verRow = db.prepare('SELECT biz_field2 FROM customers WHERE id = ?').get(acct.id);
-      var _needsVer = !_verRow || _verRow.biz_field2 !== 'demo-v4';
+      var _needsVer = !_verRow || _verRow.biz_field2 !== 'demo-v5';
       var cnt = db.prepare('SELECT COUNT(*) AS c FROM leads WHERE customer_id = ?').get(acct.id);
       var newest = db.prepare('SELECT MAX(delivered_at) AS m FROM leads WHERE customer_id = ?').get(acct.id);
       var stale = !newest || !newest.m || String(newest.m).split('T')[0] !== _todayStr;
@@ -38652,7 +38652,7 @@ function seedDemoAccount() {
           db.prepare('INSERT INTO leads (id, customer_id, product, data, status, delivered, created_at, delivered_at, release_at) VALUES (?,?,?,?,?,?,?,?,?)').run(
             'demo-' + product + '-lead-' + i, acct.id, product, JSON.stringify(d), 'delivered', 1, created, created, created);
         }
-        try { db.prepare('UPDATE customers SET biz_field2 = ? WHERE id = ?').run('demo-v4', acct.id); } catch(e) {}
+        try { db.prepare('UPDATE customers SET biz_field2 = ? WHERE id = ?').run('demo-v5', acct.id); } catch(e) {}
         console.log('[DEMO] seeded/refreshed sample leads: ' + product);
       }
     });
