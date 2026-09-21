@@ -17529,6 +17529,7 @@ cron.schedule('45 8 * * 1-5', function() { try { preDeliveryReadinessCheck(); } 
 // catch problems BEFORE the promise is broken, not on the day.
 async function runDeliveryPreflight(opts) {
   opts = opts || {};
+  var https = require('https');
   var checks = [];
   function add(name, ok, detail) { checks.push({ check: name, ok: !!ok, detail: detail || '' }); }
   // 1) EMAIL provider: account reachable, and (if asked) a REAL test send.
@@ -17559,7 +17560,9 @@ async function runDeliveryPreflight(opts) {
   add('Postcoder budget', pcRem > 0, pcRem + ' credits left');
   // 5) Disk + memory.
   try { var fsd = require('fs'); var st = fsd.statfsSync(DATA_DIR); var freePct = Math.round((st.bfree / st.blocks) * 100); add('Disk free', freePct > 10, freePct + '% free'); } catch(e) { add('Disk free', true, 'n/a'); }
-  var peak = Math.max.apply(null, (global.__memHistory || []).map(function(h) { return h.rssMB || 0; })) || 0;
+  var peak = 0;
+  try { peak = Math.max.apply(null, (global.__memHistory || []).map(function(h) { return h.rssMB || 0; })); } catch(e) {}
+  if (!isFinite(peak) || peak <= 0) { try { peak = Math.round(process.memoryUsage().rss / 1048576); } catch(e) {} }
   add('Memory', peak < 1300, Math.round(peak) + 'MB peak');
   // 6) No errors in the last hour.
   var errs = (global.__lastErrors || []).filter(function(e) { return e && e.at && (Date.now() - new Date(e.at).getTime()) < 3600000; });
