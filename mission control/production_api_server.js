@@ -16776,6 +16776,13 @@ app.post('/api/admin/test-campaign', adminAuth, async (req, res) => {
       var p = PAID_EMAIL_SERIES[pi];
       await sendIfMatch(p.template, p.subject, demoPaid);
     }
+    // Cancelled-customer win-back (day 0/4/14) - product-aware.
+    var _cwSubjects = { 1: 'Sorry to see you go - can I ask one quick question?', 2: 'Was it the price, the leads, or the timing?', 3: 'Your leads are still there if you want them back' };
+    for (var csi = 1; csi <= 3; csi++) {
+      var _cwT = 'cancelwb_' + testProduct + '_' + csi;
+      if (templateFilter && templateFilter !== _cwT) continue;
+      try { await sendBrevoEmail({ email: email, name: 'Test Customer' }, '[REVIEW] ' + _cwSubjects[csi], buildCancelledWinbackEmail(testProduct, csi)); results.push({ template: _cwT, subject: _cwSubjects[csi], status: 'sent' }); } catch(cs_err) { results.push({ template: _cwT, subject: _cwSubjects[csi], status: 'error: ' + cs_err.message }); }
+    }
     res.json({ success: true, total: results.length, results: results });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -20913,7 +20920,7 @@ async function runCampaignEmails(dry) {
     } catch(e) { console.log('[CAMPAIGN] Error for', cust.email, e.message); }
   }
   console.log('[CAMPAIGN] ' + (dry ? ('DRY RUN: would send ' + log.length + ' email(s)') : ('Sent ' + sent + ' campaign emails')));
-  return { success: true, sent: sent, dry: !!dry, would_send: log.length, log: log };
+  return { success: true, sent: dry ? 0 : sent, dry: !!dry, would_send: log.length, log: log };
 }
 cron.schedule('0 10 * * *', async () => {
   try { await runCampaignEmails(false); } catch (e) { console.log('[CAMPAIGN] cron error: ' + e.message); }
