@@ -40361,6 +40361,7 @@ function loadEmailEdits() {
     Object.keys(o || {}).forEach(function(k) {
       var e = o[k]; if (!e || typeof e !== 'object') return;
       if (typeof e.html === 'string') e.html = e.html.replace(/\u2014/g, '-').replace(/\u2013/g, '-');
+      if (typeof e.body === 'string') e.body = e.body.replace(/\u2014/g, '-').replace(/\u2013/g, '-');
       if (typeof e.subject === 'string') e.subject = e.subject.replace(/\u2014/g, '-').replace(/\u2013/g, '-');
     });
   } catch(e2) {}
