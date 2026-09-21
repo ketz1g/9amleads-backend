@@ -31717,7 +31717,7 @@ app.post('/api/direct-mail/send-lead', authMiddleware, async (req, res) => {
     var city = rcptFields.city;
     var postcode = rcptFields.postcode;
     var name = rcptFields.name;
-    if (!addrLine1 || !postcode) return res.status(400).json({ error: 'This lead does not have a complete postal address yet.' });
+    if (!addrLine1 || !postcode || !rcptFields.mailable) return res.status(400).json({ error: 'This lead does not have a complete, mailable postal address yet (we need a door or flat number, street and full postcode). Please choose another lead.' });
 
     // Check if this lead was already mailed recently
     var already = db.prepare('SELECT * FROM direct_mail_recipients WHERE customer_id = ? AND lead_id = ? AND created_at > datetime(\'now\', \'-7 days\')').get(req.user.id, lead.id);
@@ -31945,7 +31945,7 @@ app.post('/api/direct-mail/send-repeat', authMiddleware, async (req, res) => {
     var city = rcptFields.city;
     var postcode = rcptFields.postcode;
     var name = rcptFields.name;
-    if (!addrLine1 || !postcode) return res.status(400).json({ error: 'This lead does not have a complete postal address yet.' });
+    if (!addrLine1 || !postcode || !rcptFields.mailable) return res.status(400).json({ error: 'This lead does not have a complete, mailable postal address yet (we need a door or flat number, street and full postcode). Please choose another lead.' });
 
     // Auto-select template (same as single send)
     var useTemplateId = req.body.template_id || '';
@@ -32141,7 +32141,10 @@ app.post('/api/direct-mail/send-bulk', authMiddleware, async (req, res) => {
       var addrLine1 = rcptFields.address_line1;
       var city = rcptFields.city;
       var postcode = rcptFields.postcode;
-      if (!addrLine1 || !postcode) { skippedNoAddress.push(parsed.name || parsed.address || 'One lead'); continue; }
+      // MAILABILITY GATE: require a FULL postcode + door/flat number + street name, not
+      // just a present address_line1/postcode. Otherwise a customer could be CHARGED for
+      // a lead Stannp cannot print (missing door number / partial postcode).
+      if (!addrLine1 || !postcode || !rcptFields.mailable) { skippedNoAddress.push(parsed.name || parsed.address || 'One lead'); continue; }
       var already = db.prepare('SELECT * FROM direct_mail_recipients WHERE customer_id = ? AND lead_id = ? AND created_at > datetime(\'now\', \'-7 days\')').get(req.user.id, lead.id);
       if (already) { skippedAlready.push(parsed.name || parsed.address || 'One lead'); continue; }
       recipients.push({
@@ -32308,7 +32311,10 @@ app.post('/api/direct-mail/send-bulk-repeat', authMiddleware, async (req, res) =
       var addrLine1 = rcptFields.address_line1;
       var city = rcptFields.city;
       var postcode = rcptFields.postcode;
-      if (!addrLine1 || !postcode) { skippedNoAddress.push(parsed.name || parsed.address || 'One lead'); continue; }
+      // MAILABILITY GATE: require a FULL postcode + door/flat number + street name, not
+      // just a present address_line1/postcode. Otherwise a customer could be CHARGED for
+      // a lead Stannp cannot print (missing door number / partial postcode).
+      if (!addrLine1 || !postcode || !rcptFields.mailable) { skippedNoAddress.push(parsed.name || parsed.address || 'One lead'); continue; }
       var already = db.prepare('SELECT * FROM direct_mail_recipients WHERE customer_id = ? AND lead_id = ? AND created_at > datetime(\'now\', \'-7 days\')').get(req.user.id, lead.id);
       if (already) { skippedAlready.push(parsed.name || parsed.address || 'One lead'); continue; }
       recipients.push({
