@@ -36920,6 +36920,28 @@ app.post('/api/admin/test-planning', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/backfill-planning-urls - fill the missing source link on planning
+// pool leads. The planning.data.gov.uk source previously stored url:'' but the official
+// record is derivable from the lead id (PLAN_<entity>). Fixes future deliveries.
+app.post('/api/admin/backfill-planning-urls', adminAuth, (req, res) => {
+  try {
+    var pf = path.join(DATA_DIR, 'planning-leads.json');
+    var pool = [];
+    try { pool = JSON.parse(fs.readFileSync(pf, 'utf-8')); } catch(e) { pool = []; }
+    if (!Array.isArray(pool)) pool = [];
+    var fixed = 0, skipped = 0;
+    pool.forEach(function(l) {
+      if (l.url) return;
+      var m = /^PLAN_(\d{3,})$/.exec(String(l.id || ''));
+      if (!m) { skipped++; return; }
+      l.url = 'https://www.planning.data.gov.uk/entity/' + m[1];
+      fixed++;
+    });
+    if (fixed) fs.writeFileSync(pf, JSON.stringify(pool, null, 2));
+    res.json({ success: true, pool: pool.length, fixed: fixed, skipped: skipped });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/admin/plota-health — verify the PLOTA_API_KEY is valid and returning
 // data (council list + a quick application query). Use this right after upgrading
 // Plota to confirm the new key works before trusting the next delivery.
@@ -39742,7 +39764,7 @@ function __demoLeadData(product, i) {
   if (product === 'probate') {
     var names = ['Margaret Collins', 'John Thompson', 'Helen Wood', 'Richard Khan', 'Patricia Taylor', 'Joseph Brown', 'Dorothy Walker', 'David Thompson'];
     var addrs = [['7 The Paddock', 'Sunbury', 'TW16 5EX'], ['46 Station Road', 'Woking', 'GU21 1AA'], ['89 Park Lane', 'Tunbridge Wells', 'TN1 1AA'], ['128 Church Road', 'Camden', 'NW1 1AA'], ['112 London Road', 'Caterham', 'CR3 1AA'], ['117 Green Lane', 'Folkestone', 'CT19 1AA'], ['105 Manor Road', 'Westminster', 'SW1A 1AA'], ['36 King Street', 'Woking', 'GU22 1AA']][i];
-    return { deceasedName: names[i], deceasedAddress: addrs[0], locality: addrs[1], postcode: addrs[2], address: addrs[0] + ', ' + addrs[1], town: addrs[1], fullAddress: addrs[0] + ', ' + addrs[1] + ', ' + addrs[2], grantDate: new Date(base.getTime() - (i < 5 ? 0 : i - 4) * 86400000).toISOString(), estateValue: [284242, 271141, 273395, 498323, 221122, 442489, 677911, 164246][i], solicitor: 'Demo Legal Services', probateRegistry: 'Newcastle', occupation: 'Retired' };
+    return { deceasedName: names[i], deceasedAddress: addrs[0], locality: addrs[1], postcode: addrs[2], address: addrs[0] + ', ' + addrs[1], town: addrs[1], fullAddress: addrs[0] + ', ' + addrs[1] + ', ' + addrs[2], grantDate: new Date(base.getTime() - (i < 5 ? 0 : i - 4) * 86400000).toISOString(), estateValue: [284242, 271141, 273395, 498323, 221122, 442489, 677911, 164246][i], solicitor: 'Demo Legal Services', probateRegistry: 'Newcastle', occupation: 'Retired', url: 'https://www.thegazette.co.uk/all-notices/notice?text=' + encodeURIComponent(names[i]) };
   }
   if (product === 'planning') {
     var pa = [['33 Church Road', 'Chorley', 'PR7 4HT'], ['12 High Street', 'Leeds', 'LS1 6EZ'], ['88 Mill Lane', 'Bristol', 'BS1 5TR'], ['5 The Green', 'Birmingham', 'B1 1AA'], ['21 Station Approach', 'Manchester', 'M1 2AB'], ['47 Victoria Road', 'Cardiff', 'CF10 1AA'], ['9 Oak Avenue', 'Glasgow', 'G1 1AA'], ['64 Park Road', 'Nottingham', 'NG1 1AA']][i];
@@ -39753,7 +39775,7 @@ function __demoLeadData(product, i) {
   if (product === 'newbusiness') {
     var co = ['Brightleaf Marketing Ltd', 'Northgate Plumbing Ltd', 'Verdant Landscapes Ltd', 'Apex IT Solutions Ltd', 'Harbour View Lettings Ltd', 'Copperfield Consulting Ltd', 'Bluebell Care Ltd', 'Ridgeline Construction Ltd'];
     var nba = [['21 Market Street', 'Leeds', 'LS1 6EZ'], ['5 Bridge Road', 'Manchester', 'M1 2AB'], ['14 The Parade', 'Bristol', 'BS1 5TR'], ['78 High Street', 'Birmingham', 'B1 1AA'], ['3 Quay Side', 'Newcastle', 'NE1 1AA'], ['52 Queen Street', 'Cardiff', 'CF10 1AA'], ['9 Kingsway', 'London', 'WC2B 6AA'], ['31 Portland Road', 'Glasgow', 'G1 1AA']][i];
-    return { companyName: co[i], name: co[i], address: nba[0] + ', ' + nba[1], town: nba[1], city: nba[1], postcode: nba[2], fullAddress: nba[0] + ', ' + nba[1] + ', ' + nba[2], sicCode: ['70229 - Management consultancy', '43220 - Plumbing, heat and air-conditioning', '81300 - Landscape service activities', '62020 - IT consultancy', '68320 - Management of real estate', '69201 - Accounting and auditing', '88100 - Social work without accommodation', '41201 - Construction of commercial buildings'][i], incorporationDate: new Date(base.getTime() - (i < 5 ? 0 : i - 4) * 86400000).toISOString(), companyNumber: (16000000 + i).toString(), enrichment: 'Directors found' };
+    return { companyName: co[i], name: co[i], address: nba[0] + ', ' + nba[1], town: nba[1], city: nba[1], postcode: nba[2], fullAddress: nba[0] + ', ' + nba[1] + ', ' + nba[2], sicCode: ['70229 - Management consultancy', '43220 - Plumbing, heat and air-conditioning', '81300 - Landscape service activities', '62020 - IT consultancy', '68320 - Management of real estate', '69201 - Accounting and auditing', '88100 - Social work without accommodation', '41201 - Construction of commercial buildings'][i], incorporationDate: new Date(base.getTime() - (i < 5 ? 0 : i - 4) * 86400000).toISOString(), companyNumber: (16000000 + i).toString(), enrichment: 'Directors found', url: 'https://find-and-update.company-information.service.gov.uk/search?q=' + encodeURIComponent(co[i]) };
   }
   var tt = ['School catering services - 3 year contract', 'IT support and managed services', 'Grounds maintenance for council estates', 'Building cleaning services', 'Highways resurfacing programme', 'Temporary staff agency services', 'Waste collection and recycling', 'Security services for public buildings'][i];
   var buyers = ['Local Authority', 'NHS Trust', 'County Council', 'City Council', 'Highways England', 'Public Sector Body', 'District Council', 'Police Authority'];

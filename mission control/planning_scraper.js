@@ -216,7 +216,7 @@ function fetchFreePlanningData(maxItems) {
             reference: p.reference || '',
             estimatedValue: 0,
             valueLabel: '',
-            url: '',
+            url: p.entity ? ('https://www.planning.data.gov.uk/entity/' + p.entity) : '',
             dateSubmitted: p['planning-permission-date'] || p['entry-date'] || '',
             locationPoint: p.point || '',
             source: 'planning.data.gov.uk (OGL v3)',
