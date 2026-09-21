@@ -934,12 +934,37 @@ function loadAffiliates() {
           '<td>£' + a.earnings_paid + ' (' + a.counts.paid + ')</td>' +
           '<td>' + (a.counts.due ? '<button class="btn btn-outline btn-sm" onclick="payAffiliate(\'' + a.id + '\',\'' + esc(a.name) + '\')"><i class="fas fa-pound-sign"></i> Pay £' + a.earnings_due + '</button>' : '<span style="font-size:11px;color:#94a3b8">-</span>') + ' ' +
           (a.status === 'pending' ? '<button class="btn btn-sm" style="background:#16a34a;color:#fff" onclick="instantApprove(\'' + a.id + '\',\'' + esc(a.name) + '\')" title="Approve without opening the review">✓ Approve</button> ' : '') +
+          '<button class="btn btn-outline btn-sm" onclick="viewAffiliateEmails(\'' + a.id + '\',\'' + esc(a.name) + '\',\'' + esc(a.email) + '\')" title="See every email this affiliate has been sent"><i class="fas fa-envelope"></i> Emails</button> ' +
           '<button class="btn btn-outline btn-sm" onclick="viewAffiliateDashboard(\'' + a.id + '\')" title="View this affiliate\'s dashboard"><i class="fas fa-eye"></i> View</button> ' +
           '<button class="btn btn-outline btn-sm" style="background:rgba(239,68,68,0.1)!important;color:#ef4444!important;border-color:rgba(239,68,68,0.25)!important" onclick="deleteAffiliateAdmin(\'' + a.id + '\',\'' + esc(a.name) + '\')" title="Permanently delete this affiliate">Delete</button></td></tr>';
       });
       h += '</tbody></table>'; wrap.innerHTML = h;
     })
     .catch(function(e) { wrap.innerHTML = '<div class="empty">Error: ' + e.message + '</div>'; });
+}
+function viewAffiliateEmails(id, name, email) {
+  showModal('Emails sent to ' + name, '<div class="loading">Loading emails...</div>', '820px');
+  fetch(API + '/api/admin/customer-emails?email=' + encodeURIComponent(email) + '&t=' + Date.now(), { headers: adminHeaders() })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var emails = (d && d.emails) || [];
+      var h = '<p style="font-size:13px;color:#475569;margin:0 0 12px">Every email <b>' + esc(name) + '</b> (' + esc(email) + ') has been sent, newest first. Affiliate emails are flagged below.</p>';
+      if (!emails.length) { h += '<div class="empty">No emails sent to this affiliate yet.</div>'; }
+      else {
+        h += '<table style="width:100%;border-collapse:collapse"><tr style="background:#f8fafc"><th style="padding:7px;font-size:11px;text-align:left;color:#64748b;border-bottom:1px solid #e2e8f0">Sent (UK)</th><th style="padding:7px;font-size:11px;text-align:left;color:#64748b;border-bottom:1px solid #e2e8f0">Subject</th><th style="padding:7px;font-size:11px;text-align:left;color:#64748b;border-bottom:1px solid #e2e8f0">Type</th></tr>';
+        emails.forEach(function(e) {
+          var uk = '-';
+          try { uk = new Date(e.at).toLocaleString('en-GB', { timeZone: 'Europe/London', day: '2-digit', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit' }); } catch(x) {}
+          var isAff = String(e.subject || '').indexOf('Affiliate') !== -1;
+          h += '<tr><td style="padding:7px;font-size:12px;white-space:nowrap;border-bottom:1px solid #f1f5f9">' + uk + '</td>' +
+               '<td style="padding:7px;font-size:12px;border-bottom:1px solid #f1f5f9">' + esc(e.subject || '-') + '</td>' +
+               '<td style="padding:7px;font-size:11px;border-bottom:1px solid #f1f5f9">' + (isAff ? '<span style="color:#0ea5e9;font-weight:600">Affiliate</span>' : esc(e.type || '-')) + '</td></tr>';
+        });
+        h += '</table>';
+      }
+      showModal('Emails sent to ' + name, h, '820px');
+    })
+    .catch(function(e) { showModal('Emails sent to ' + name, '<div class="empty">Error: ' + e.message + '</div>', '820px'); });
 }
 function createAffiliateForm() {
   var content = '<div style="display:grid;gap:10px">' +
