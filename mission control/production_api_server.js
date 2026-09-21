@@ -18580,7 +18580,7 @@ cron.schedule('*/10 * * * *', async () => {
 });
 
 // MEMORY WATCHDOG: if RSS climbs dangerously high, gracefully restart at a SAFE time
-// (NEVER during the 08:40-09:35 delivery window) so the box never OOM-crashes mid-run.
+// (NEVER during the 08:30-09:45 delivery window) so the box never OOM-crashes mid-run.
 // Marked as a clean exit (so the crash-loop detector ignores it); Render restarts it
 // automatically and the DB is flushed first.
 cron.schedule('*/5 * * * *', function() {
@@ -18590,7 +18590,7 @@ cron.schedule('*/5 * * * *', function() {
     var p = new Date().toLocaleString('en-GB', { timeZone: 'Europe/London', hour12: false });
     var mm = /(\d{2}):(\d{2})/.exec(p.split(', ')[1] || p);
     var mins = mm ? (+mm[1] * 60 + +mm[2]) : 0;
-    if (mins >= 8 * 60 + 40 && mins <= 9 * 60 + 35) { console.log('[MEM-WATCHDOG] RSS ' + Math.round(rssMB) + 'MB high but inside the 9am window — holding'); return; }
+    if (mins >= 8 * 60 + 30 && mins <= 9 * 60 + 45) { console.log('[MEM-WATCHDOG] RSS ' + Math.round(rssMB) + 'MB high but inside the 9am window — holding'); return; }
     console.log('[MEM-WATCHDOG] RSS ' + Math.round(rssMB) + 'MB too high — graceful restart (' + p + ')');
     try { _markCleanExit(); } catch(e) {}
     process.exit(0);
