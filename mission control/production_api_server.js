@@ -36941,7 +36941,24 @@ app.post('/api/admin/backfill-planning-urls', adminAuth, (req, res) => {
       else skipped++;
     });
     if (fixed) fs.writeFileSync(pf, JSON.stringify(pool, null, 2));
-    res.json({ success: true, pool: pool.length, fixed: fixed, skipped: skipped });
+    // ALSO repair already-assigned / delivered planning leads in the database - they
+    // were created before the pool backfill, so they still carry no source link.
+    var dbFix = 0;
+    try {
+      var dbP = getDb();
+      (dbP.leads || []).forEach(function(l) {
+        if (l.product !== 'planning') return;
+        var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) { return; }
+        if (d.url) return;
+        var q = String(d.reference || d.address || d.fullAddress || '').trim();
+        if (!q) return;
+        d.url = 'https://www.planningportal.co.uk/search?q=' + encodeURIComponent(q.substring(0, 90));
+        l.data = JSON.stringify(d);
+        dbFix++;
+      });
+      if (dbFix) saveDb();
+    } catch(e) {}
+    res.json({ success: true, pool: pool.length, fixed: fixed, skipped: skipped, db_fixed: dbFix });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
