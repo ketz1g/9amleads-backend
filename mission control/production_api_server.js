@@ -28877,7 +28877,8 @@ app.post('/api/admin/tracking/test-stannp', adminAuth, async (req, res) => {
   try {
     var provider = getDirectMailProvider();
     var out = { provider: provider.name, configured: provider.name === 'stannp' };
-    var id = String((req.body && req.body.mailpiece_id) || '').trim();
+    var id = '';
+    try { id = String((req.query && req.query.mailpiece_id) || (req.body && req.body.mailpiece_id) || '').trim(); } catch(e) { id = ''; }
     if (!id) {
       var dbX = getDb();
       var rc = (dbX.direct_mail_recipients || []).filter(function(r) { return /^\d+$/.test(String(r.provider_mailpiece_id || '')) && String(r.provider_mailpiece_id).length >= 4; }).slice(-1)[0];
