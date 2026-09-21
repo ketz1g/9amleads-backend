@@ -48,7 +48,7 @@ const PUBLIC_URL = process.env.PUBLIC_URL || 'https://www.9amleads.com';
       fs.writeFileSync(crashFile, JSON.stringify(arr, null, 2));
     } catch(e) {}
   }
-  // EMAIL ALERT ON CRASH: a crash/OOM/DB error must never be silent — email the
+  // EMAIL ALERT ON CRASH: a crash/OOM/DB error must never be silent - email the
   // founder, throttled to at most once per 15 minutes so a crash loop can't spam.
   var _lastCrashAlert = 0;
   function alertCrash(kind, err) {
@@ -83,7 +83,7 @@ const PUBLIC_URL = process.env.PUBLIC_URL || 'https://www.9amleads.com';
 })();
 
 // ===== GLOBAL INTERNAL-HTTP TIMEOUT SAFETY NET =====
-// Every internal call (127.0.0.1 / localhost — crons, watchdogs, auto-fill, self-pings)
+// Every internal call (127.0.0.1 / localhost - crons, watchdogs, auto-fill, self-pings)
 // gets a default socket timeout so a stuck internal request can NEVER hang a cron or a
 // watchdog forever. External calls (Brevo/Apify/OpenAI/Stripe) set their own timeouts.
 (function() {
@@ -128,7 +128,7 @@ const POSTCODE_DISTRICTS_FILE = path.join(DATA_DIR, 'uk-postcode-districts.json'
 const POSTCODE_AREAS_FILE = path.join(DATA_DIR, 'uk-postcode-areas.json');
 const POSTCODE_ASSIGNMENTS_FILE = path.join(DATA_DIR, 'postcode-assignments.json');
 
-// Postcode district limits per plan — unlimited for all (any customer can add any postcode)
+// Postcode district limits per plan - unlimited for all (any customer can add any postcode)
 const POSTCODE_LIMITS = {
   free_trial: 5,
   essential: 5,
@@ -235,7 +235,7 @@ function extractPostcodeArea(postcode) {
 
 // Shared premise-identifier logic (delivery gate + dashboard filter): guarantees
 // a delivered moving/probate lead always carries a door number, flat number,
-// street number or house name — never a bare street/place name. See address_premise.js.
+// street number or house name - never a bare street/place name. See address_premise.js.
 var ADDR_PREMISE = require('./address_premise');
 var EPC_INDEX = require('./epc_address_index');
 try { EPC_INDEX.loadIndex(path.join(__dirname, 'data')); } catch(e) { console.log('[EPC] index load skipped: ' + (e && e.message)); }
@@ -288,7 +288,7 @@ function hasBadUnitCode(addr) {
 // never receive a fake lead (e.g. a leftover seed file with "Tender 0"/"Buyer"/
 // "Works" rows, or an address-less stub). Applied at pool-load time, so EVERY
 // delivery pass (round 1/2, pool-file fallback, final-guarantee, top-ups) only
-// ever sees real data. Conservative on purpose — a real lead with a URL and a
+// ever sees real data. Conservative on purpose - a real lead with a URL and a
 // title/name/address/reference always passes.
 function isPlaceholderLead(l) {
   if (!l || typeof l !== 'object') return true;
@@ -303,7 +303,7 @@ function isPlaceholderLead(l) {
   if (/^tender\s?\d+$/.test(title)) return true;
   if (title === 'buyer' || title === 'works' || title === 'tender') return !url;
   // A lead with NO url, NO title, NO address, NO reference and NO company is not
-  // real data — it has nothing to show or verify.
+  // real data - it has nothing to show or verify.
   if (!url) {
     var reference = String(l.reference || l.proposal || l.applicationRef || l.tenderNoticeId || l.deceasedName || l.companyNumber || '').trim();
     if (!title && !reference && !l.address && !l.fullAddress && !l.deceasedAddress && !l.company && !l.name) return true;
@@ -337,7 +337,7 @@ function normaliseMovingAddress(addr) {
   //    Crescent/Row/Park/Square/Green/View/Gate/End/Field/Path/...).
   var numStreet = a.match(/(?:^|,\s*)((?:\bFlat\s*[0-9A-Za-z]+\b\s*,?\s*)?\d{1,5}[A-Za-z]?(?:[-\u2013]\d{1,5}[A-Za-z]?)?\s+[A-Z][A-Za-z'-]*(?:\s+[A-Z][A-Za-z'-]*){0,2}\s+(?:Road|Street|Avenue|Lane|Drive|Close|Court|Crescent|Gardens|Grove|Terrace|Way|Walk|Hill|Place|Mews|Rise|Row|Park|Square|Green|Broadway|Path|View|Gate|End|Field|Fields|High\s?Street|St|Rd|Ave|Ln|Dr|Ct|Tce|Gdns|Gv|Cl|Cres|Mws|Rse|Pk|Sq|Bdwy))\b/i);
   // Prefer a numbered street that is NOT just "Court"/"Close" without a number.
-  // Keep EVERYTHING from the numbered street to the end (town/county/postcode) —
+  // Keep EVERYTHING from the numbered street to the end (town/county/postcode) -
   // returning only the matched street dropped the town, so "28 Ty Fry Gardens,
   // Rumney, CARDIFF" became "28 Ty Fry Gardens" and failed the town/area gate.
   if (numStreet) {
@@ -346,7 +346,7 @@ function normaliseMovingAddress(addr) {
   }
   // 2) Flat/apartment numbered prefix (no street found): keep flat part + rest.
   if (/^(?:Flat|Apartment|Unit|Maisonette|Penthouse|Room)\s*[0-9A-Za-z]+/i.test(a)) return a;
-  // 3) No numbered street — return the address unchanged.
+  // 3) No numbered street - return the address unchanged.
   return a;
 }
 
@@ -375,7 +375,7 @@ function parseTownCountyFromAddress(addr, postcode) {
   // Drop trailing postcode / partial postcode segments ("SW17 9AH", "AL1 4TT")
   while (parts.length && /^[A-Z]{1,2}\d/i.test(parts[parts.length - 1])) parts.pop();
   if (!parts.length) return { town: '', city: '', county: '' };
-  // Street-only address has NO town info — leave empty (postcode enrichment fills it).
+  // Street-only address has NO town info - leave empty (postcode enrichment fills it).
   if (parts.length === 1) return { town: '', city: '', county: '' };
   // "299 Kennington Road, Kennington"               -> town = Kennington
   // "39 Shirley Avenue, Croydon, Surrey"            -> town = Croydon, county = Surrey
@@ -424,7 +424,7 @@ function countyFromPostcode(pc) {
 
 // Remove duplicate comma-separated segments from an address (case-insensitive).
 // Older enrichment passes could leave "19 Long Ley, Harlow, Essex, CM20 3NH,
-// Harlow, Essex, CM20 3NH" — dedupe to a clean single pass.
+// Harlow, Essex, CM20 3NH" - dedupe to a clean single pass.
 function dedupeAddressSegments(s) {
   var parts = String(s || '').split(',').map(function(x){ return String(x).trim(); }).filter(Boolean);
   var seen = {}, out = [];
@@ -441,7 +441,7 @@ function ensureFullLeadAddress(l) {
   try {
     if (!l || typeof l !== 'object') return l;
     var a = l.address || l.fullAddress || l.deceasedAddress || '';
-    // town / city / county — layered sources: (1) address text, (2) Rightmove's
+    // town / city / county - layered sources: (1) address text, (2) Rightmove's
     // title field which embeds "Street, Town, County, PostcodeArea", (3) postcode
     // area -> county fallback so EVERY lead ends up with a usable location.
     if (!l.town && !l.city) {
@@ -454,14 +454,14 @@ function ensureFullLeadAddress(l) {
       var _cnty = countyFromPostcode(l.postcode || '');
       if (_cnty) l.county = _cnty;
     }
-    // door number (moving only) — parse from address text if missing
+    // door number (moving only) - parse from address text if missing
     if ((l.product === 'moving' || !l.product) && !l.building_number && !l.number) {
       var bn = extractMovingDoorNumber(a);
       if (bn) l.building_number = bn;
     }
-    // street — parse from address text if missing
+    // street - parse from address text if missing
     if (!l.street) l.street = extractMovingStreet(a);
-    // POSTCODE — many probate (and some other) leads carry a real UK postcode
+    // POSTCODE - many probate (and some other) leads carry a real UK postcode
     // embedded in the address text but leave the postcode FIELD empty OR with a
     // garbage value (e.g. a name or "ROAD" from funeral-notice data), which breaks
     // area matching. If the field is missing or invalid, extract a real UK
@@ -511,7 +511,7 @@ function validateMovingLead(ld) {
   var streetOk = hasStreetName(a);
   if (!streetOk) return 'no-street-name';
   // PAF-RELAXED (PAF_RELAXED_PICK=true): a street-only lead with a full postcode is
-  // a PAF candidate — the delivery PAF pass adds a door number to the EXACT leads
+  // a PAF candidate - the delivery PAF pass adds a door number to the EXACT leads
   // being sent. So accept it here (the final PAF pass still drops it if PAF can't
   // confirm a complete address).
   if (!hasPremise && !(pafRelaxed && streetOk)) return 'no-premise-number';
@@ -562,7 +562,7 @@ function hasFullAddress(addr, pc) {
   if (!hasStreetName(a)) return false;
   return /[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(pc || '').trim());
 }
-// STRICT moving-address gate — the founder's requirement: a moving lead must have
+// STRICT moving-address gate - the founder's requirement: a moving lead must have
 // NUMBER + STREET NAME + TOWN/AREA + FULL POSTCODE. Rejects malformed pool addresses
 // like "19, West Yorkshire, LS26 8FZ" (no street) or "2, RG45AY, berkshire" that only
 // carry a number. Use this for EVERY path that queues/delivers a moving lead.
@@ -703,7 +703,7 @@ var COUNTY_POSTCODE_MAP = {
 
 // Approximate UK postcode-AREA centroids (lat, lng). Used ONLY to rank the delivery
 // fallback so it pulls leads from the postcode areas CLOSEST to a customer's chosen
-// areas when their exact areas are short — never to drop or reject a lead.
+// areas when their exact areas are short - never to drop or reject a lead.
 var POSTCODE_AREA_GEO = {
   'AB':[57.15,-2.1],'AL':[51.78,0.28],'B':[52.6,0.0],'BA':[51.3,-2.5],'BB':[53.7,-2.3],'BD':[53.8,-1.78],
   'BH':[50.72,-1.9],'BL':[53.6,-2.4],'BN':[50.85,-0.15],'BR':[51.41,0.0],'BS':[51.45,-2.59],'BT':[54.6,-5.8],
@@ -734,7 +734,7 @@ function postcodeAreaLetters(code) {
 // MAX OUT-OF-AREA FALLBACK DISTANCE (km): when a customer's chosen areas run short
 // (e.g. a London removals customer in SW/SE/E/NW/AL), the delivery pulls fallback
 // leads from OUTSIDE their areas to meet the promised count. Those fallback leads
-// must be GENUINELY NEARBY — the immediately-adjacent postcode areas, nothing more.
+// must be GENUINELY NEARBY - the immediately-adjacent postcode areas, nothing more.
 // A 25km radius covers true neighbours (a Croydon customer gets Sutton/Twickenham/
 // Bromley/Kent, ~6-20km) but blocks anything cross-country (Reading 45km, Glasgow
 // 500km, Birmingham 160km). A removals company in Croydon does not move a family
@@ -783,7 +783,7 @@ function leadClosestKm(leadPc, custAreas) {
 }
 
 // Interleave a scrape pool round-robin across the customer's chosen areas, so a
-// customer with e.g. [SW, E, N] gets a MIX of all three areas — never a cluster
+// customer with e.g. [SW, E, N] gets a MIX of all three areas - never a cluster
 // of leads from whichever area happens to come first in pool order. County-based
 // products (planning/probate/tenders) interleave across the chosen counties.
 // Returns a NEW array; the shared cached pool is never mutated.
@@ -936,7 +936,7 @@ function loadProductPool(prod) {
           }
           if (l.fullAddress) {
             var _c2 = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(l.fullAddress)));
-            // IMPORTANT: do NOT run normaliseMovingAddress on fullAddress — that
+            // IMPORTANT: do NOT run normaliseMovingAddress on fullAddress - that
             // returns only the numbered street and DROPS the town/county/postcode,
             // breaking the full-address guarantee (delivery requires door + street +
             // town + county + postcode). The street-only normalise stays on the
@@ -1041,7 +1041,7 @@ function toIsoDate(v) {
       if (!isNaN(d.getTime())) return d.toISOString();
     }
   }
-  // US numeric: "5/31/2023" (month/day/year) — Contracts Finder / gov.uk exports
+  // US numeric: "5/31/2023" (month/day/year) - Contracts Finder / gov.uk exports
   // use US month-first. Ambiguous UK-style day/month ("9/3/2026") is disambiguated
   // as DAY/MONTH (UK data), so a fresh "9/3/2026" = 9 March, not 3 September.
   var us = v.match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})/);
@@ -1124,7 +1124,7 @@ function getMatchingArea(code, areas) {
 // supply. We then fill from NEARBY areas in the same UK region so the customer
 // still receives their full promised daily count. Exact areas are always
 // preferred first; neighbours only fill the gap. This guarantees the daily
-// lead count ("no competition" promise kept — each lead is unique to the
+// lead count ("no competition" promise kept - each lead is unique to the
 // customer). Customers are told about this on signup, dashboard, FAQ and terms.
 var REGION_NEIGHBOUR_AREAS = {
   // London & Home Counties
@@ -1323,7 +1323,7 @@ function validatePostcodes(postcodes, customerPlan, customerProduct, customerId,
   }
 
   // MINIMUM 3 AREAS: every customer must choose at least 3 areas/postcodes so we can
-  // deliver a steady daily supply. They can choose as many as they like — no upper
+  // deliver a steady daily supply. They can choose as many as they like - no upper
   // limit beyond their plan.
   if (postcodes.length < 3) {
     errors.push('Please choose at least 3 areas or postcodes so we can deliver a steady daily supply of leads. You can select as many as you like.');
@@ -1446,10 +1446,10 @@ function loadDb() {
     // NEAR-EMPTY (0-2 customers) while a backup clearly has real customers. This
     // catches a deploy/reset that wiped the DB, but does NOT revert a legitimately
     // smaller live DB (e.g. after account cleanup / trial expiry) back to an old
-    // backup — that was the bug that kept "losing" recent deliveries. Never restore
+    // backup - that was the bug that kept "losing" recent deliveries. Never restore
     // a healthy-looking DB (3+ customers) even if a backup has more.
     var _curCust = (_parsed && _parsed.customers) ? _parsed.customers.length : 0;
-    if (_curCust >= 3) return _rehydrateMaterialData(_parsed); // healthy — keep it
+    if (_curCust >= 3) return _rehydrateMaterialData(_parsed); // healthy - keep it
     var _cand = [];
     try { fs.mkdirSync(BACKUP_DIR, { recursive: true }); _cand = fs.readdirSync(BACKUP_DIR).filter(function(f) { return f.startsWith('database-') && f.endsWith('.json') && f.indexOf('CORRUPT') === -1; }).sort(); } catch(e) {}
     var _good = null;
@@ -1460,7 +1460,7 @@ function loadDb() {
       } catch(e) {}
     }
     if (_good) {
-      console.log('[DB] DB file near-empty (' + _curCust + ' customers) — restoring from good backup ' + _good);
+      console.log('[DB] DB file near-empty (' + _curCust + ' customers) - restoring from good backup ' + _good);
       fs.copyFileSync(path.join(BACKUP_DIR, _good), DB_FILE);
       return _rehydrateMaterialData(JSON.parse(fs.readFileSync(DB_FILE, 'utf-8')));
     }
@@ -1469,7 +1469,7 @@ function loadDb() {
   catch { return { customers: [], leads: [], deliveries: [], scraper_logs: [], subscriptions: [], blog_posts: [], customer_business_profiles: [], direct_mail_templates: [], direct_mail_campaigns: [], direct_mail_materials: [], direct_mail_recipients: [], direct_mail_automation_settings: [], direct_mail_orders: [], direct_mail_provider_logs: [], direct_mail_status_history: [], direct_mail_test_logs: [], payments: [], pageviews: [] }; }
 }
 // MATERIAL FILE EXTRACTION: the DB held ~60MB of base64 artwork (file_data) in
-// direct_mail_materials, so EVERY saveDb() stringified + wrote 60MB synchronously —
+// direct_mail_materials, so EVERY saveDb() stringified + wrote 60MB synchronously -
 // blocking the event loop for seconds, tripping Render's 5s health check and causing
 // the crash loop. We now keep file_data in memory but write each payload to its own
 // file and save only a tiny reference in the DB, so the on-disk DB is ~1MB and saves
@@ -1578,7 +1578,7 @@ function pushBackupToGitHub() {
       if (!BACKUP_TOKEN) { global.__lastGithubPush = { at: new Date().toISOString(), ok: false, reason: 'no token' }; resolve(false); return; }
       var content = JSON.stringify(_dbData, null, 2);
       var stamp = new Date().toISOString().replace(/[:T]/g, '-').substring(0, 19);
-      // STRIP bulky binary (base64 artwork file_data) from the pushed copy — the
+      // STRIP bulky binary (base64 artwork file_data) from the pushed copy - the
       // materials are large (60MB DB is mostly file_data) and regenerable from the
       // source uploads. The GitHub copy keeps every business record (customers,
       // leads, subscriptions, settings) but not the image payloads, so it fits the
@@ -1636,7 +1636,7 @@ async function runFullBackup() {
     setTimeout(pruneRemoteBackups, 2000);
     // PRUNE LOCAL BACKUPS: keep only the newest N so the 1GB Render disk never
     // fills up (each hourly snapshot is ~60MB; without pruning the disk fills in
-    // ~17 hours and ENOSPC blocks every write — pool files AND the database). The
+    // ~17 hours and ENOSPC blocks every write - pool files AND the database). The
     // authoritative copy lives on GitHub, so keeping a few local copies is enough.
     try {
       var _keep = parseInt(process.env.BACKUP_LOCAL_KEEP || '6', 10);
@@ -1650,7 +1650,7 @@ async function runFullBackup() {
 }
 
 // AUTO-RESTORE: if database.json is missing, corrupt, OR valid-but-stale (0 customers
-// while backups have customers — a deploy reset the ephemeral disk), restore from the
+// while backups have customers - a deploy reset the ephemeral disk), restore from the
 // NEWEST backup that actually CONTAINS customers. Picking the newest file blindly is
 // dangerous: a corrupt/small backup (0 customers) would be restored over good data.
 function restoreDbFromBackup() {
@@ -1668,7 +1668,7 @@ function restoreDbFromBackup() {
       needsRestore = true;
     }
     if (!needsRestore) return false;
-    console.log('[BACKUP] database.json missing/corrupt/empty (customers=' + curCust + ') — restoring from newest good backup...');
+    console.log('[BACKUP] database.json missing/corrupt/empty (customers=' + curCust + ') - restoring from newest good backup...');
     var candidates = [];
     try { fs.mkdirSync(BACKUP_DIR, { recursive: true }); candidates = fs.readdirSync(BACKUP_DIR).filter(function(f) { return f.startsWith('database-') && f.endsWith('.json') && f.indexOf('CORRUPT') === -1; }).sort(); } catch(e) {}
     var _good = null;
@@ -1679,7 +1679,7 @@ function restoreDbFromBackup() {
       } catch(e) {}
     }
     if (!_good && curCust === 0) {
-      // No backup beats an empty DB — take any non-empty backup.
+      // No backup beats an empty DB - take any non-empty backup.
       for (var _ci2 = candidates.length - 1; _ci2 >= 0; _ci2--) {
         try { var _b2 = JSON.parse(fs.readFileSync(path.join(BACKUP_DIR, candidates[_ci2]), 'utf-8')); if (_b2 && _b2.customers && _b2.customers.length > 0) { _good = candidates[_ci2]; break; } } catch(e) {}
       }
@@ -1691,8 +1691,8 @@ function restoreDbFromBackup() {
       console.log('[BACKUP] Restored from good backup: ' + _good);
       return true;
     }
-    if (curCust >= 0) return false; // DB is valid, just small — keep it
-    console.log('[BACKUP] No local backup found — data may be lost.');
+    if (curCust >= 0) return false; // DB is valid, just small - keep it
+    console.log('[BACKUP] No local backup found - data may be lost.');
     return false;
   } catch(e) { console.log('[BACKUP] Restore error:', e.message); return false; }
 }
@@ -1869,7 +1869,7 @@ function _filterWhere(rows, sql, params) {
       }
       continue;
     }
-    // LIKE / NOT LIKE — compare a field against a %-pattern. Real SQL semantics:
+    // LIKE / NOT LIKE - compare a field against a %-pattern. Real SQL semantics:
     // '%' wildcard, '_' single char. Kept simple & safe (no ESCAPE support needed
     // for the queries we run). Consumers a bound param just like '='.
     const likeMatch = cond.match(/^(\S+)\s+(NOT\s+LIKE|LIKE)\s+(.+)$/i);
@@ -1988,7 +1988,7 @@ class DirectMailProvider {
 
       var meta = await sharp(inputBuf).metadata();
 
-      if (!meta || !meta.width || !meta.height) { out.errors.push('Could not read image dimensions — is this a valid image or PDF?'); return out; }
+      if (!meta || !meta.width || !meta.height) { out.errors.push('Could not read image dimensions - is this a valid image or PDF?'); return out; }
 
       out.width = meta.width; out.height = meta.height;
 
@@ -1998,7 +1998,7 @@ class DirectMailProvider {
 
       var isPdf = fmt === 'pdf';
 
-      // PDFs are vector and scale perfectly — accept them, no DPI/aspect concerns.
+      // PDFs are vector and scale perfectly - accept them, no DPI/aspect concerns.
 
       if (isPdf) { out.ok = true; return out; }
 
@@ -2051,7 +2051,7 @@ class DirectMailProvider {
   }
 
   // ARTWORK PREP with MEMO: a bulk pack sends the SAME flyer front/back to every
-  // recipient, so prepare each artwork file ONCE and reuse it — otherwise a 100-1000
+  // recipient, so prepare each artwork file ONCE and reuse it - otherwise a 100-1000
   // lead pack re-runs hundreds of identical heavy image ops and overloads the server.
   async prepareA5Artwork(file, targetW, targetH, isBack) {
     try {
@@ -2085,7 +2085,7 @@ class DirectMailProvider {
 
       var meta = await sharp(inputBuf).metadata();
 
-      // PDFs are vector — Stannp handles at full quality; pass through unchanged.
+      // PDFs are vector - Stannp handles at full quality; pass through unchanged.
 
       var fmt = (meta.format || '');
 
@@ -2099,7 +2099,7 @@ class DirectMailProvider {
 
       var A5_W = targetW || 1819, A5_H = targetH || 2551; // default A5-PORT
       // AUTO-ORIENT: if the stored image is portrait but the target format is
-      // landscape (or vice-versa) — a near-90° aspect mismatch — the customer
+      // landscape (or vice-versa) - a near-90° aspect mismatch - the customer
       // almost certainly designed it for the other orientation (e.g. uploaded a
       // landscape flyer that got saved portrait). Rotate 90° so it matches the
       // target BEFORE aspect validation, so it previews/prints the way they
@@ -2118,7 +2118,7 @@ class DirectMailProvider {
           }
         }
       } catch(rotErr) { console.log('[STANNP] auto-orient skipped:', rotErr.message); }
-      // Validate aspect ratio BEFORE resizing — if it doesn't match, warn loudly
+      // Validate aspect ratio BEFORE resizing - if it doesn't match, warn loudly
       // and return an error so we never send a cropped/broken print. If we
       // auto-rotated, validate the ROTATED buffer (its dimensions now match the
       // target orientation).
@@ -2142,7 +2142,7 @@ class DirectMailProvider {
 
       // address zone baked into its top (the in-app "Edit / Position" editor saves
 
-      // backs that way — it whites out the top 28%). If it does, the design is
+      // backs that way - it whites out the top 28%). If it does, the design is
 
       // already laid out below the zone and must be passed through full-bleed
 
@@ -2177,7 +2177,7 @@ class DirectMailProvider {
       // The recipient address zone occupies the TOP 28% of the BACK (Stannp's
       // native clearzone). If we sent the back design full-bleed (filling the
       // whole A5), the design would effectively get covered at the top and its
-      // bottom would run past the printable area — customers received flyers with
+      // bottom would run past the printable area - customers received flyers with
       // the bottom content cut off. Fix: for the BACK, scale the design to fit
       // INSIDE the printable area BELOW the address zone (bottom ~68%), keeping
       // a safe white bottom margin so nothing is ever cut. The FRONT stays
@@ -2186,7 +2186,7 @@ class DirectMailProvider {
       // FRONT WHITE-MARGIN TRIM: designs are often built on a template that
       // leaves a pure-white footer/header band. Stannp expects edge-to-edge
       // full-bleed, so we trim pure-white margins from FRONT artwork before the
-      // cover resize. (Backs keep their top white zone — it IS the address area.)
+      // cover resize. (Backs keep their top white zone - it IS the address area.)
       var inputForResize = inputBuf;
       var trimNote = '';
       if (!isBack) {
@@ -2267,8 +2267,8 @@ class DirectMailProvider {
           outBuf = await sharp(baseBuf).composite([{ input: whiteRect, left: addrX0, top: addrY0 }]).jpeg({ quality: 82 }).toBuffer();
           console.log('[STANNP] Prepared BACK (editor-positioned, full-bleed) for ' + (file.name || 'flyer') + ' (' + meta.width + 'x' + meta.height + ' -> ' + A5_W + 'x' + A5_H + ' + white address zone at ' + addrX0 + ',' + addrY0 + ' ' + addrW + 'x' + addrH + ')');
         } else {
-          // FRESH back upload: fit the design into the USABLE area — the whole
-          // page MINUS the white address zone — so the address area is visibly
+          // FRESH back upload: fit the design into the USABLE area - the whole
+          // page MINUS the white address zone - so the address area is visibly
           // whited out immediately on upload (no design hidden behind it), exactly
           // like the in-app editor's auto-fit. Landscape: design fills the left
           // ~68% (zone on the right). Portrait: design fills the area below the
@@ -2296,7 +2296,7 @@ class DirectMailProvider {
       } else {
         // FRONT: full-bleed, edge-to-edge. Fronts are pre-trimmed of white
         // margins (see above), then STRETCHED (fit 'fill') to exactly fill the
-        // A5 canvas — zero white bands, zero cropped content, matching what the
+        // A5 canvas - zero white bands, zero cropped content, matching what the
         // in-app editor shows.
         outBuf = await sharp(inputForResize)
           .rotate()
@@ -2387,7 +2387,7 @@ class DirectMailProvider {
 
         if (hasBaked) {
 
-          // Editor-saved back already has the zone baked in — show full-bleed.
+          // Editor-saved back already has the zone baked in - show full-bleed.
 
           outBuf = await sharp(inputBuf).rotate().png().toBuffer();
 
@@ -2557,7 +2557,7 @@ var STANNP_WEBHOOK_SECRET = process.env.STANNP_WEBHOOK_SECRET || '';
 // all use the SAME colour scheme per lead type. Dark, high-contrast shades so
 // white text is always readable on the product colour. Each product also has a
 // LIGHT accent for use on DARK backgrounds (e.g. footer/header) so the "Leads"
-// wordmark stays visible — dark-on-dark is never used.
+// wordmark stays visible - dark-on-dark is never used.
 var PRODUCT_BRAND = {
   moving:      { color: '#bf360c', color2: '#8f2700', light: '#fb923c', bg: '#fff7f2', name: 'Moving Leads',     short: 'MOVING',  page: 'https://9amleads.com/movingleadsdaily/',   logo: '9' },
   probate:     { color: '#5b21b6', color2: '#3b1364', light: '#a78bfa', bg: '#f8f5ff', name: 'Probate Leads',     short: 'PROBATE', page: 'https://9amleads.com/probateleads/',      logo: '9' },
@@ -2773,7 +2773,7 @@ class StannpProvider extends DirectMailProvider {
   }
 
   // Render a clean A4 letter PDF using Playwright (chromium, already installed).
-  // Used as a fallback when pdfkit isn't available — guarantees Stannp always
+  // Used as a fallback when pdfkit isn't available - guarantees Stannp always
   // receives a proper PDF FILE (its own recipient window is overlaid), never the
   // HTML `pages` path that injected "00000 / 0000" placeholders and duplicated the
   // recipient name.
@@ -2792,11 +2792,11 @@ class StannpProvider extends DirectMailProvider {
 
   // Send a SINGLE mailpiece directly to Stannp (new API).
   // mailType: 'letter' | 'flyer' | 'flyer_plus_letter'
-  // files: [{ name, file_data }] — artwork (flyer front/back / letter PDF)
+  // files: [{ name, file_data }] - artwork (flyer front/back / letter PDF)
   // recipient: { name, company, address_line1, city, postcode, country, pages }
   //   pages = HTML letter body OR plain text (used when no letter PDF uploaded)
   // format: optional format id (e.g. 'flyer_a5_portrait') or Stannp size string
-  //   ('A5-PORT','A5','A6','DL','A5-ENV') — defaults to A5-PORT for flyers.
+  //   ('A5-PORT','A5','A6','DL','A5-ENV') - defaults to A5-PORT for flyers.
     // Stannp's legacy API expects RAW base64 (no data:...;base64, prefix).
   stripDataPrefix(data) {
     var s = String(data || '');
@@ -2842,7 +2842,7 @@ async sendMailpiece(mailType, recipient, files, format) {
     var pageBody = recipient.pages || '<p>Dear ' + (recipient.name || 'Homeowner') + ',</p><p>Thank you for your time. We would love to help you.</p><p>[Your Company]</p>';
 
     // 'flyer_plus_letter' sends BOTH an A4 letter AND a leaflet. Send the letter
-    // first, then the flyer — return success only if the letter was created.
+    // first, then the flyer - return success only if the letter was created.
     var letterResult = null;
     if (isLetter || isBoth) {
       var letterParams = Object.assign({}, rcpt, { tags: rcpt.tags || '9amleads' });
@@ -2858,7 +2858,7 @@ async sendMailpiece(mailType, recipient, files, format) {
           var letterPdfBuf = await this.buildA4LetterPdf(pageBody, recipient);
           letterParams.file = letterPdfBuf.toString('base64');
         } catch(pdfErr) {
-          // pdfkit unavailable — use Playwright (chromium) to render the letter PDF
+          // pdfkit unavailable - use Playwright (chromium) to render the letter PDF
           // so Stannp still gets a clean FILE. Only fall back to HTML pages as a
           // last resort (Stannp mangles HTML pages with its own window overlay).
           try {
@@ -2883,12 +2883,12 @@ async sendMailpiece(mailType, recipient, files, format) {
       }
     }
 
-    // LETTER-ONLY: return the letter result here — previously this fell through to
+    // LETTER-ONLY: return the letter result here - previously this fell through to
     // "Unknown mail type: letter" and failed every plain-letter order.
     if (isLetter && !isBoth && letterResult) return letterResult;
 
     // Leaflet / postcard (A5 is the correct Stannp size for an A5 leaflet).
-    // NOTE: Stannp requires a 'front' image or a 'template' for postcards —
+    // NOTE: Stannp requires a 'front' image or a 'template' for postcards -
     // it cannot print a leaflet from text alone.
       if (isFlyer || isBoth) {
         var front = (files || []).find(function(f) { return /flyer_front|front/i.test(f.name || ''); });
@@ -2918,7 +2918,7 @@ async sendMailpiece(mailType, recipient, files, format) {
           }
         } catch(artErr) { console.log('[STANNP] A5 prep error:', artErr.message); prepErr = prepErr || artErr.message; }
         if (prepErr) {
-          console.log('[STANNP] Blocking send — artwork failed validation: ' + prepErr);
+          console.log('[STANNP] Blocking send - artwork failed validation: ' + prepErr);
           return { success: false, error: prepErr, blocked_by_spec: true };
         }
         // Send the customer's EXACT design at the chosen Stannp size. The artwork
@@ -2944,7 +2944,7 @@ async sendMailpiece(mailType, recipient, files, format) {
           }
           return { success: true, provider_campaign_id: String(res2.data.id), provider_mailpiece_ids: [String(res2.data.id)], mailpiece_types: ['flyer'], cost: res2.data.cost, status: res2.data.status || 'processing', message: 'Leaflet sent to Stannp (' + flyerSize + ')', raw: res2 };
         }
-        // Flyer failed — if it's a leaflet+letter combo, still report the letter
+        // Flyer failed - if it's a leaflet+letter combo, still report the letter
         if (isBoth && letterResult) {
           return { success: true, provider_campaign_id: letterResult.provider_campaign_id, cost: letterResult.cost, status: letterResult.status || 'processing', message: 'Letter sent to Stannp (leaflet failed: ' + (res2.error || 'unknown') + ')', raw: res2 };
         }
@@ -3137,7 +3137,7 @@ function buildEmailFooter(opts) {
 
 function dmEmailHTML(title, body, ctaText, ctaUrl) {
   var accent = '#0ea5e9';
-  // Email-safe layout: tables (no flexbox — flex misaligns in Outlook/Gmail).
+  // Email-safe layout: tables (no flexbox - flex misaligns in Outlook/Gmail).
   // Logo: "9" box centered via line-height + text-align, not flex.
   return '<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark"><style>:root{color-scheme:dark}@media only screen and (max-width:480px){.mob{padding-left:16px!important;padding-right:16px!important}.mobv{padding:18px 16px!important}}</style></head><body style="margin:0;padding:0"><div style="background:#07090f;padding:32px 20px;font-family:Inter,Helvetica,Arial,sans-serif">' +
     '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto"><tr><td bgcolor="#0c0f1a" style="background:#0c0f1a;border-radius:16px;border:1px solid #151929;overflow:hidden">' +
@@ -3176,7 +3176,7 @@ async function sendDMNotification(customerId, type, subject, title, body, ctaTex
     if (!cust || !cust.email) return;
     opts = opts || {};
     // Dedup: same type per customer per day. Payment receipts MUST NEVER be
-    // deduped — every payment deserves its own confirmation email (test sends
+    // deduped - every payment deserves its own confirmation email (test sends
     // earlier in the day were blocking real receipts).
     var skipDedup = opts.skipDedup === true || type === 'dm_payment_receipt' || type === 'dm_refund';
     var dedupKey = customerId + '_email_' + type + '_' + new Date().toISOString().split('T')[0];
@@ -3229,7 +3229,7 @@ function storePaymentReceipt(opts) {
 }
 
 // Send a nicely formatted receipt email. Reuses the plain-text/dashboard
-// notification too. NEVER deduped — every payment gets its own email.
+// notification too. NEVER deduped - every payment gets its own email.
 async function sendPaymentReceiptEmail(rec, opts) {
   try {
     var amountStr = (rec.currency === 'usd' ? '$' : '£') + Number(rec.amount || 0).toFixed(2);
@@ -3334,7 +3334,7 @@ function authMiddleware(req, res, next) {
     if (req.user && req.user.demo && ['POST', 'PUT', 'PATCH', 'DELETE'].indexOf(req.method) !== -1) {
       return res.status(403).json({ error: 'This is a read-only demo account.', demo: true });
     }
-    // Cancelled accounts lose ALL dashboard/API access immediately — even with a
+    // Cancelled accounts lose ALL dashboard/API access immediately - even with a
     // still-valid token they are locked out. (Admin routes use adminAuth, so this
     // only affects the customer dashboard.)
     try {
@@ -3645,7 +3645,7 @@ function recordMailpieceTracking(customerId, campaignId, recipientId, mailpieceI
 }
 
 // REAL-DATA RECONCILE: refresh recipient tracking from Stannp's reporting API.
-// This is the authoritative source — it only ever reflects what Stannp reports,
+// This is the authoritative source - it only ever reflects what Stannp reports,
 // never mock/guessed values. Called by the poller as a fallback and manually.
 async function reconcileTrackingFromStannp(daysBack) {
   try {
@@ -3675,13 +3675,13 @@ async function reconcileTrackingFromStannp(daysBack) {
   } catch(e) { return { success: false, error: e.message }; }
 }
 
-// POST /api/webhooks/stannp — Stannp real-time mailpiece_status webhook.
+// POST /api/webhooks/stannp - Stannp real-time mailpiece_status webhook.
 // Payload: { webhook_id, event: "mailpiece_status" | "test_url", created, retries, mailpieces: [...] }
 app.post('/api/webhooks/stannp', express.raw({ type: 'application/json' }), (req, res) => {
   var rawBody = req.rawBody || req.body.toString('utf-8');
   var body = {};
   try { body = JSON.parse(rawBody || '{}'); } catch(e) { body = req.body || {}; }
-  // Signature verification (optional but recommended) — X-Stannp-Signature = HMAC-SHA256(secret, rawBody)
+  // Signature verification (optional but recommended) - X-Stannp-Signature = HMAC-SHA256(secret, rawBody)
   if (STANNP_WEBHOOK_SECRET) {
     try {
       var sig = req.headers['x-stannp-signature'] || '';
@@ -3696,7 +3696,7 @@ app.post('/api/webhooks/stannp', express.raw({ type: 'application/json' }), (req
       if (!ok) { console.log('[DM-WEBHOOK] Stannp signature mismatch'); return res.status(401).json({ success: false, error: 'Invalid signature' }); }
     } catch(sigErr) { console.log('[DM-WEBHOOK] signature check error:', sigErr.message); }
   }
-  // Test URL validation — Stannp sends this when the webhook is first created.
+  // Test URL validation - Stannp sends this when the webhook is first created.
   if (body.event === 'test_url') { return res.status(200).json({ success: true }); }
   if (body.event === 'mailpiece_status' || (body.mailpieces && body.mailpieces.length)) {
     var mailpieces = Array.isArray(body.mailpieces) ? body.mailpieces : [];
@@ -3718,7 +3718,7 @@ app.post('/api/webhooks/stannp', express.raw({ type: 'application/json' }), (req
   res.status(200).json({ success: true, received: true, event: body.event || 'unknown' });
 });
 
-// GET /api/direct-mail/tracking — customer dashboard: live post tracking for their campaigns.
+// GET /api/direct-mail/tracking - customer dashboard: live post tracking for their campaigns.
 app.get('/api/direct-mail/tracking', authMiddleware, async (req, res) => {
   try {
     backfillMailpieceIds();
@@ -3743,7 +3743,7 @@ app.get('/api/direct-mail/tracking', authMiddleware, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/direct-mail/tracking/sync — force a live refresh of campaign statuses from Stannp.
+// POST /api/direct-mail/tracking/sync - force a live refresh of campaign statuses from Stannp.
 app.post('/api/direct-mail/tracking/sync', authMiddleware, async (req, res) => {
   try {
     var dbS = getDb();
@@ -3772,13 +3772,13 @@ app.post('/api/direct-mail/tracking/sync', authMiddleware, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/direct-mail/tracking/bulk-delete — bulk delete tracking records.
+// POST /api/direct-mail/tracking/bulk-delete - bulk delete tracking records.
 // Body: { campaign_ids?: string[], delete_older_than?: '7d'|'30d'|'90d'|'180d' }
 // Removes the campaigns, their recipients and status history. Demo campaigns are
 // always excluded unless explicitly in campaign_ids.
 
 
-// GET /api/direct-mail/tracking/calendar — group tracking by date for calendar/week views.
+// GET /api/direct-mail/tracking/calendar - group tracking by date for calendar/week views.
 
 app.use(cors({ origin: ['https://www.9amleads.com', 'https://9amleads.com', 'http://localhost:8012'], credentials: true }));
 // NEVER cache any /api response. Admin dashboards (customers/leads/stats) are live
@@ -3793,7 +3793,7 @@ app.use(express.json({
   verify: function(req, res, buf) { req.rawBody = buf.toString('utf-8'); }
 }));
 
-// Rate limiting — signup gets a much higher ceiling than login so a launch burst
+// Rate limiting - signup gets a much higher ceiling than login so a launch burst
 // isn't blocked (the 60/min global API limiter still protects the server).
 const apiLimiter = rateLimit({ windowMs: 60 * 1000, max: 60, message: { error: 'Too many requests. Please slow down.' } });
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message:
@@ -4030,7 +4030,7 @@ function processPartnerCommissions() {
           // Affiliate £25 is earned when the referred customer pays their SECOND
           // subscription invoice (set by the invoice.paid webhook). Require that
           // marker here too so the daily engine never creates the commission early.
-          // NOTE: 'paid' is deliberately NOT allowed — once the legacy admin path has
+          // NOTE: 'paid' is deliberately NOT allowed - once the legacy admin path has
           // paid this referral, the commission engine must never re-create it (double-pay).
           var _payGate = String(c.affiliate_payout_status || '');
           if (!affMonthly && _payGate !== 'pending' && _payGate !== 'due') return;
@@ -4541,7 +4541,7 @@ function affiliateWheelClawback(dbc, aff) {
       if (h && h.status !== 'reversed') {
         h.status = 'reversed';
         h.reversed_at = new Date().toISOString();
-        // If the win was only 'ready' (never transferred), VOID that payout — no money
+        // If the win was only 'ready' (never transferred), VOID that payout - no money
         // moved, so no negative adjustment needed. If it was already paid out, push a
         // negative reversal entry so the founder recovers the amount.
         aff.payouts = aff.payouts || [];
@@ -4620,7 +4620,7 @@ function runAffiliateWheelUnlockEmails() {
         if (unlockedAt && (Date.now() - unlockedAt.getTime()) > 3 * 86400000 && !remindedArr.includes(String(aff.wheel_spins || 0))) {
           try {
             sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' },
-              'Your wheel spin is waiting — don\'t leave money behind',
+              'Your wheel spin is waiting - don\'t leave money behind',
               '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto">' +
               '<h1 style="font-family:Outfit,sans-serif;color:#f59e0b;margin:0 0 10px">Your spin is waiting</h1>' +
               '<p style="color:#ccc;line-height:1.7">Hi ' + escHtml(aff.name || 'there') + ',</p>' +
@@ -4917,7 +4917,7 @@ app.post('/api/admin/affiliate/run-auto-payout', adminAuth, (req, res) => {
   catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/affiliate/payouts — every affiliate payout awaiting the founder's
+// GET /api/admin/affiliate/payouts - every affiliate payout awaiting the founder's
 // bank transfer (status 'ready'), plus recent history, so admin can see who to pay.
 app.get('/api/admin/affiliate/payouts', adminAuth, (req, res) => {
   try {
@@ -4941,7 +4941,7 @@ app.get('/api/admin/affiliate/payouts', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/affiliate/payouts/confirm — mark a ready payout as SENT after the
+// POST /api/admin/affiliate/payouts/confirm - mark a ready payout as SENT after the
 // founder has transferred the money. Flips the payout to 'paid', marks its
 // commissions paid, and emails the affiliate "your £25 has been sent".
 app.post('/api/admin/affiliate/payouts/confirm', adminAuth, (req, res) => {
@@ -5103,7 +5103,7 @@ app.get('/api/admin/partner/attribution', adminAuth, (req, res) => {
 // POST /api/admin/partner/cleanup-test - mark TEST/demo partner commissions as
 // "released" so they can never be paid. The bulk-test signup tool seeded ~160
 // commissions for bulk-test customers (cbc/payc/test.affh accounts, signup_ip
-// 'bulk-test') and deleted demo partners — none are real referrals. Real
+// 'bulk-test') and deleted demo partners - none are real referrals. Real
 // attribution still works and new REAL commissions are untouched.
 app.post('/api/admin/partner/cleanup-test', adminAuth, (req, res) => {
   try {
@@ -5119,7 +5119,7 @@ app.post('/api/admin/partner/cleanup-test', adminAuth, (req, res) => {
       var partner = partnersC.find(function(x){ return x.id === cm.partner_id; });
       // Release: bulk-test customer, a test-style email, a paused/deleted partner,
       // OR a commission whose customer no longer exists (cannot be a real current
-      // referral — demo runs reference customers that were later removed).
+      // referral - demo runs reference customers that were later removed).
       var isTest = !cust || (cust && (String(cust.signup_ip || '') === 'bulk-test' || /test|\.1788\d*@|@9amleads\.com/i.test(String(cust.email || '')))) || !partner || String(partner.status || '') === 'paused';
       if (isTest) { cm.status = 'released'; cm.released_at = new Date().toISOString(); cm.release_reason = 'test/demo commission cleanup'; released++; }
       else kept++;
@@ -5396,7 +5396,7 @@ app.use('/css', express.static(path.join(ROOT_DIR, 'css')));
 app.use(express.static(FRONTEND_DIR, { index: 'index.html', setHeaders: function(res, path) {
   if (/\.html?$/.test(path)) res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   // Long browser cache for static media (video/images) so repeat visitors DON'T
-  // re-download them from Render every visit — the homepage hero video (7.9MB) was
+  // re-download them from Render every visit - the homepage hero video (7.9MB) was
   // being fetched each page load, burning the 25GB/month bandwidth cap. One month
   // cache = one download per visitor, then served from their browser.
   if (/\.(mp4|webm|png|jpg|jpeg|webp|gif|svg|css|js|woff2?|ttf)$/i.test(path)) res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
@@ -5435,7 +5435,7 @@ app.get('/sitemap.xml', (req, res) => {
 });
 
 // ===== PUBLIC BLOG ROUTES ===== (must be before the SPA fallback below)
-// GET /blog — list all published posts (due scheduled posts count as live)
+// GET /blog - list all published posts (due scheduled posts count as live)
 // Normalised title key used to detect near-duplicate blog posts (British/American
 // spelling, "-2" suffixes, generic wording). Posts that collide are consolidated: the
 // best one is kept, the rest 301-redirect to it and are dropped from the index and
@@ -5471,7 +5471,7 @@ app.get('/blog', (req, res) => {
   } catch(e) { res.status(500).send('Error loading blog'); }
 });
 
-// GET /blog/:slug — serve a generated post (public, no auth)
+// GET /blog/:slug - serve a generated post (public, no auth)
 app.get('/blog/:slug', (req, res) => {
   try {
     promoteDueScheduledPosts();
@@ -5530,7 +5530,7 @@ app.get('/admin/direct-mail', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'publish', 'admin', 'direct-mail.html'));
 });
 
-// POST /api/admin/enrich-planning-pool — one-off backfill of county/postcode onto
+// POST /api/admin/enrich-planning-pool - one-off backfill of county/postcode onto
 // already-stored planning/tenders leads (new scrapes are enriched automatically).
 app.post('/api/admin/enrich-planning-pool', adminAuth, (req, res) => {
   try {
@@ -5562,7 +5562,7 @@ app.post('/api/admin/enrich-planning-pool', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/signup/filter-supply — approximate current supply for a product + areas,
+// GET /api/signup/filter-supply - approximate current supply for a product + areas,
 // with per-option counts for planning/tenders, so signup can show how narrow a
 // selection is before the customer commits.
 app.get('/api/signup/filter-supply', (req, res) => {
@@ -5600,14 +5600,14 @@ app.get(/^\/(?!api\/|admin\/).*$/, (req, res) => {
   ];
   for (const p of paths) {
     if (fs.existsSync(p)) {
-      // Never sendFile a directory (e.g. ROOT_DIR for '/') — fall through to the
+      // Never sendFile a directory (e.g. ROOT_DIR for '/') - fall through to the
       // index.html candidate instead.
       try { if (fs.statSync(p).isDirectory()) continue; } catch(e) { continue; }
       // Block serving sensitive files
       const ext = path.extname(p).toLowerCase();
       if (ext === '.json' || ext === '.md' || ext === '.env' || ext === '.py' || path.basename(p) === 'node_modules') continue;
       // Long browser cache for static media (video/images/css/js) served via the SPA
-      // fallback — repeat visitors don't re-download the 7.9MB hero video every visit.
+      // fallback - repeat visitors don't re-download the 7.9MB hero video every visit.
       if (/\.(mp4|webm|png|jpg|jpeg|webp|gif|svg|css|js|woff2?|ttf)$/i.test(p)) res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
       res.sendFile(p); return;
     }
@@ -5618,7 +5618,7 @@ app.get(/^\/(?!api\/|admin\/).*$/, (req, res) => {
   }
   // Homepage fallback. FRONTEND_DIR ('9amleads') was retired (commit dfd5c8a moved it
   // to _storage); the live homepage is now ROOT_DIR/index.html. Never sendFile a
-  // path that doesn't exist — that threw ENOENT and tripped the health alert.
+  // path that doesn't exist - that threw ENOENT and tripped the health alert.
   var _spaHome = path.join(ROOT_DIR, 'index.html');
   if (fs.existsSync(_spaHome)) return res.sendFile(_spaHome);
   return res.status(404).send('Not found');
@@ -5726,7 +5726,7 @@ app.post('/api/auth/signup', async (req, res) => {
     // attributed to the partner. Only ACTIVE partners qualify.
     var affRef = null;
     // Explicit code (typed) or ?ref= link ALWAYS wins. If neither was sent, fall back
-    // to the 30-day 9am_aff cookie set by the /r/:code short link — this credits the
+    // to the 30-day 9am_aff cookie set by the /r/:code short link - this credits the
     // affiliate for late sign-ups WITHOUT the client ever showing a partner message.
     var _affCode = req.body.affiliateCode || req.body.referralCode || req.body.ref;
     if (!_affCode) {
@@ -5766,7 +5766,7 @@ app.post('/api/auth/signup', async (req, res) => {
         return res.status(400).json({ error: 'Please choose at least ' + minAreas + (product === 'probate' || product === 'tenders' ? ' counties/areas' : ' areas or postcodes') + ' so we can deliver a steady daily supply of leads. You can select as many as you like (or choose All of UK).' });
       }
     }
-    // PROBATE USES AREAS (counties/regions), NOT postcodes — probate supply is
+    // PROBATE USES AREAS (counties/regions), NOT postcodes - probate supply is
     // national and sparse, so a single postcode area starves the customer. Enforce
     // county/region selection at sign-up (min 2, as many as they like).
     if (product === 'probate' && !(ukAreas || coverage === 'ukwide')) {
@@ -5796,7 +5796,7 @@ app.post('/api/auth/signup', async (req, res) => {
     // count stays deliverable. Sources: moving ~3,000, newbusiness ~1,500,
     // probate ~27 (UK Gazette), planning ~2,000 (Plota), tenders ~300 fresh/day.
     // REALISTIC supply ceilings (fresh/day the scrapers actually collect today),
-    // NOT optimistic market estimates — so sales can never over-commit beyond what
+    // NOT optimistic market estimates - so sales can never over-commit beyond what
     // the pool can deliver. moving/planning/tenders reflect current measured yield
     // (they scale as more areas/accounts + scrapers grow); newbusiness/probate are
     // comfortably above current committed demand. Planning raised after the PLOTA
@@ -5815,7 +5815,7 @@ app.post('/api/auth/signup', async (req, res) => {
       });
     }
 
-    // Validate postcode areas — shared territories (non-exclusive)
+    // Validate postcode areas - shared territories (non-exclusive)
     if (areas.length > 0 && coverage === 'postcode') {
       // Enforce postcode-area selection rules by PLAN:
       //  free_trial / starter -> exactly up to 5 specific areas (no "all of UK").
@@ -5825,7 +5825,7 @@ app.post('/api/auth/signup', async (req, res) => {
       var maxAreas = parseInt(process.env.MAX_POSTCODE_AREAS_PER_PLAN || '5', 10);
       var allUk = ukAreas;
       // MOVING: customers choose at least 3 postcode areas (up to their plan max)
-      // so delivery has enough supply — they can pick as many as they want up to the
+      // so delivery has enough supply - they can pick as many as they want up to the
       // plan limit. (Changed from "exactly 5" so 3-5 areas all work.)
       var signupProduct = String(product || '').toLowerCase();
       if (!isPaidUnlimited && signupProduct === 'moving' && areas.length < 3 && !allUk) {
@@ -5838,7 +5838,7 @@ app.post('/api/auth/signup', async (req, res) => {
 
     // OTHER lead types (probate/planning/newbusiness/tenders), ANY coverage
     // (postcode or county): must choose a minimum number of areas/counties so
-    // delivery has enough supply — unless they're all-uk or on an unlimited plan.
+    // delivery has enough supply - unless they're all-uk or on an unlimited plan.
     // Probate & tenders are shared, county-wide products where TWO counties already
     // cover a wide area (minimum 2); planning/newbusiness need 3.
     var signupProdOther = String(product || '').toLowerCase();
@@ -5970,7 +5970,7 @@ app.post('/api/auth/signup', async (req, res) => {
     // Email verification (re-enabled). The account starts unverified (email_verified=0)
     // so the verification email has a purpose and gates login until the user clicks
     // the link. To avoid the past spam problem, we skip sending the verification
-    // email (and auto-verify) for known test/internal/placeholder addresses — real
+    // email (and auto-verify) for known test/internal/placeholder addresses - real
     // customers always get it.
     var _email = String(customer.email || '').toLowerCase();
     var _testPatterns = /@(9amleads\.com|example\.com|test\.|yopmail|mailinator|tempmail|fake)/;
@@ -6068,7 +6068,7 @@ app.post('/api/auth/signup', async (req, res) => {
       }
     });
 
-    // Send the welcome email immediately (trial_day1) after signup — don't wait
+    // Send the welcome email immediately (trial_day1) after signup - don't wait
     // for the 10:00 campaign cron. Tailored to the customer's product type.
     try {
       if (customer.plan === 'free_trial') {
@@ -6096,7 +6096,7 @@ app.post('/api/auth/signup', async (req, res) => {
   }
 });
 
-// GET /api/auth/verify-email — Verify email address
+// GET /api/auth/verify-email - Verify email address
 app.get('/api/auth/verify-email', async (req, res) => {
   try {
     const { token } = req.query;
@@ -6108,7 +6108,7 @@ app.get('/api/auth/verify-email', async (req, res) => {
     db.prepare('UPDATE customers SET email_verified = 1, verification_token = NULL WHERE id = ?').run(customer.id);
     saveDb();
 
-    // Redirect to portal with success — user can now log in
+    // Redirect to portal with success - user can now log in
     res.redirect(PUBLIC_URL + '/portal/?verified=true');
   } catch (e) {
     console.error('Verification error:', e);
@@ -6116,7 +6116,7 @@ app.get('/api/auth/verify-email', async (req, res) => {
   }
 });
 
-// POST /api/auth/resend-verification — re-send the "Verify your account" email (new token)
+// POST /api/auth/resend-verification - re-send the "Verify your account" email (new token)
 // so a customer who missed or lost the first one can activate and sign in.
 app.post('/api/auth/resend-verification', async (req, res) => {
   try {
@@ -6196,7 +6196,7 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(403).json({ error: 'Please verify your email first. Check your inbox for the verification link.', needsVerification: true, email: customer.email });
     }
 
-    // Cancelled accounts lose dashboard access. They cannot log in again —
+    // Cancelled accounts lose dashboard access. They cannot log in again -
     // if they want back, they sign up fresh (or we can re-activate them manually).
     if (customer.plan === 'cancelled') {
       return res.status(403).json({ error: 'Your account has been cancelled and you no longer have access to the dashboard. If you\'d like to restart, please sign up again or contact support.', cancelled: true });
@@ -6292,7 +6292,7 @@ app.get('/api/auth/me', authMiddleware, (req, res) => {
 });
 
 // ===== AFFILIATE PROGRAM ENDPOINTS =====
-// POST /api/affiliate/register — an affiliate applies (name, code, email, password).
+// POST /api/affiliate/register - an affiliate applies (name, code, email, password).
 // New affiliates are created as "pending" until admin activates them. Their code
 // (or name) is what customers type at signup to get the 14-day trial.
 app.post('/api/affiliate/register', async (req, res) => {
@@ -6364,7 +6364,7 @@ app.post('/api/affiliate/register', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/affiliate/login — affiliate signs in to their earnings dashboard.
+// POST /api/affiliate/login - affiliate signs in to their earnings dashboard.
 app.post('/api/affiliate/login', async (req, res) => {
   try {
     var { email, password } = req.body;
@@ -6382,7 +6382,7 @@ app.post('/api/affiliate/login', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/affiliate/forgot-password — send a reset link to the affiliate (mirrors
+// POST /api/affiliate/forgot-password - send a reset link to the affiliate (mirrors
 // the customer forgot-password flow). The affiliate account is found by email, a
 // reset token is stored on the affiliate record, and a reset link is emailed.
 app.post('/api/affiliate/forgot-password', async (req, res) => {
@@ -6415,7 +6415,7 @@ app.post('/api/affiliate/forgot-password', async (req, res) => {
   }
 });
 
-// POST /api/affiliate/reset-password — reset the affiliate's password with the token
+// POST /api/affiliate/reset-password - reset the affiliate's password with the token
 app.post('/api/affiliate/reset-password', async (req, res) => {
   try {
     var { token, password } = req.body;
@@ -6440,7 +6440,7 @@ app.post('/api/affiliate/reset-password', async (req, res) => {
 // Backfill & repair sign-up alerts: any referral who signed up within the last 21
 // days but has no alert entry yet gets one (read:false). Idempotent by customer_id.
 // Covers signups that happened before the dashboard banner existed, and re-queues
-// alerts if the signup-time store ever failed — so a fresh sign-up is never missed.
+// alerts if the signup-time store ever failed - so a fresh sign-up is never missed.
 function ensureSignupAlerts(aff) {
   try {
     aff.alerts = aff.alerts || [];
@@ -6521,9 +6521,9 @@ function referralJourney(dbc, c, custComms) {
   };
 }
 
-// GET /api/affiliate/dashboard — the affiliate's earnings dashboard: referrals by
+// GET /api/affiliate/dashboard - the affiliate's earnings dashboard: referrals by
 // lead type, earnings split (pending / due / paid), and payout history. Works for
-// every lead type — moving, probate, planning, new business, tenders.
+// every lead type - moving, probate, planning, new business, tenders.
 app.get('/api/affiliate/dashboard', affiliateAuth, (req, res) => {
   try {
     var aff = req.affiliate;
@@ -6636,7 +6636,7 @@ app.get('/api/affiliate/dashboard', affiliateAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/affiliate/alerts/read — mark sign-up alerts as read (dismissed).
+// POST /api/affiliate/alerts/read - mark sign-up alerts as read (dismissed).
 // Body: { ids: [...] } marks specific alerts; an empty/missing body marks ALL.
 app.post('/api/affiliate/alerts/read', affiliateAuth, (req, res) => {
   try {
@@ -6792,7 +6792,7 @@ function sendAffiliateFollowupDigests() {
 }
 cron.schedule('15 8 * * 1-5', function() { sendAffiliateFollowupDigests(); }, { timezone: 'Europe/London' });
 
-// #2: Recruitment email funnel — capture a prospect from the affiliates page and
+// #2: Recruitment email funnel - capture a prospect from the affiliates page and
 // send a welcome email + follow-up sequence (day 3 and day 7). Stores prospects in
 // db.affiliate_prospects. No login needed.
 app.post('/api/affiliate-prospect/capture', (req, res) => {
@@ -6815,11 +6815,11 @@ app.post('/api/affiliate-prospect/capture', (req, res) => {
         '<p style="color:#ccc;line-height:1.7">Hi there,</p>' +
         '<p style="color:#ccc;line-height:1.7">Thanks for your interest in the 9amLeads affiliate programme. Here is everything you need to know:</p>' +
         '<ul style="color:#ccc;line-height:1.8">' +
-        '<li><b>£25 per sign-up</b> — paid when a business you referred pays their second invoice (around a month after they join).</li>' +
+        '<li><b>£25 per sign-up</b> - paid when a business you referred pays their second invoice (around a month after they join).</li>' +
         '<li><b>14-day free trial</b> for everyone you refer (double the standard 7, no card).</li>' +
-        '<li><b>Wheel of Fortune</b> — spin for up to £1,000 every 50 sign-ups.</li>' +
-        '<li><b>Free to join</b> — 2 minutes, no card, no minimums, cancel anytime.</li>' +
-        '<li><b>Everything provided</b> — scripts, emails, SMS, social posts, a live dashboard.</li>' +
+        '<li><b>Wheel of Fortune</b> - spin for up to £1,000 every 50 sign-ups.</li>' +
+        '<li><b>Free to join</b> - 2 minutes, no card, no minimums, cancel anytime.</li>' +
+        '<li><b>Everything provided</b> - scripts, emails, SMS, social posts, a live dashboard.</li>' +
         '</ul>' +
         '<p style="color:#ccc;line-height:1.7">Your referral plan: pick 5 businesses you know (removal firm, solicitor, builder, accountant, letting agent). Share your code. Follow up during their trial. That is it.</p>' +
         '<p style="color:#ccc;line-height:1.7"><a href="https://9amleads.com/affiliates" style="color:#0ea5e9">Apply free here</a> and get your code in 2 minutes.</p>' +
@@ -6855,7 +6855,7 @@ function runAffiliateProspectSequence() {
   } catch(e) { return { prospect_emails_sent: 0, error: e.message }; }
 }
 
-// #15: Right-to-erasure — an affiliate can delete their own account + personal data.
+// #15: Right-to-erasure - an affiliate can delete their own account + personal data.
 app.post('/api/affiliate/delete-account', affiliateAuth, async (req, res) => {
   try {
     var dbc = getDb();
@@ -7065,12 +7065,12 @@ app.get('/api/admin/demo-debug', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/affiliate/kyc — current KYC / compliance status.
+// GET /api/affiliate/kyc - current KYC / compliance status.
 app.get('/api/affiliate/kyc', affiliateAuth, (req, res) => {
   try { res.json({ success: true, kyc: kycStatus(req.affiliate) }); }
   catch(e) { res.status(500).json({ error: e.message }); }
 });
-// POST /api/affiliate/kyc — submit ID + bank details + accept the affiliate agreement.
+// POST /api/affiliate/kyc - submit ID + bank details + accept the affiliate agreement.
 // legal_name MUST match the bank account holder (anti-fraud).
 app.post('/api/affiliate/kyc', affiliateAuth, (req, res) => {
   try {
@@ -7123,7 +7123,7 @@ app.post('/api/affiliate/kyc', affiliateAuth, (req, res) => {
     res.json({ success: true, kyc: kycStatus(aff) });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
-// POST /api/admin/affiliates/:id/kyc-review — admin approves or rejects an ID.
+// POST /api/admin/affiliates/:id/kyc-review - admin approves or rejects an ID.
 app.post('/api/admin/affiliates/:id/kyc-review', adminAuth, (req, res) => {
   try {
     var dbc = getDb();
@@ -7160,7 +7160,7 @@ var h = '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/affiliate/payouts — the affiliate's payout history (commission payouts
+// GET /api/affiliate/payouts - the affiliate's payout history (commission payouts
 // and reward-wheel wins), newest first.
 app.get('/api/affiliate/payouts', affiliateAuth, (req, res) => {
   try {
@@ -7208,9 +7208,9 @@ app.get('/api/affiliate/payouts', affiliateAuth, (req, res) => {
     res.json({ success: true, payouts: rows, totals: totals });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
-// POST /api/affiliate/wheel/spin — (kept here for clarity; defined with the wheel routes).
+// POST /api/affiliate/wheel/spin - (kept here for clarity; defined with the wheel routes).
 
-// GET /api/affiliate/wheel — the affiliate reward wheel state + spin history.
+// GET /api/affiliate/wheel - the affiliate reward wheel state + spin history.
 app.get('/api/affiliate/wheel', affiliateAuth, (req, res) => {
   try {
     var dbc = getDb();
@@ -7218,7 +7218,7 @@ app.get('/api/affiliate/wheel', affiliateAuth, (req, res) => {
     res.json({ success: true, wheel: st, history: (req.affiliate.wheel_history || []).slice().reverse() });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
-// POST /api/affiliate/wheel/spin — spin the wheel (fair odds), credit the prize.
+// POST /api/affiliate/wheel/spin - spin the wheel (fair odds), credit the prize.
 app.post('/api/affiliate/wheel/spin', affiliateAuth, (req, res) => {
   try {
     var dbc = getDb();
@@ -7228,7 +7228,7 @@ app.post('/api/affiliate/wheel/spin', affiliateAuth, (req, res) => {
     res.json({ success: true, result: result, wheel: wheelState(dbc, req.affiliate) });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
-// POST /api/admin/affiliate/run-wheel-unlocks — send unlock emails now (admin test/trigger).
+// POST /api/admin/affiliate/run-wheel-unlocks - send unlock emails now (admin test/trigger).
 app.post('/api/admin/auto-heal', adminAuth, (req, res) => {
   try {
     var r = runAutoHeal();
@@ -7317,7 +7317,7 @@ app.post('/api/admin/affiliate/run-wheel-unlocks', adminAuth, (req, res) => {
 });
 
 // ===== AFFILIATE REWARD WHEEL ROUTES =====
-// GET /api/affiliate/wheel — the affiliate reward wheel state + spin history.
+// GET /api/affiliate/wheel - the affiliate reward wheel state + spin history.
 app.get('/api/affiliate/wheel', affiliateAuth, (req, res) => {
   try {
     var dbc = getDb();
@@ -7325,7 +7325,7 @@ app.get('/api/affiliate/wheel', affiliateAuth, (req, res) => {
     res.json({ success: true, wheel: st, history: (req.affiliate.wheel_history || []).slice().reverse() });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
-// POST /api/affiliate/wheel/spin — spin the wheel (fair odds), credit the prize.
+// POST /api/affiliate/wheel/spin - spin the wheel (fair odds), credit the prize.
 app.post('/api/affiliate/wheel/spin', affiliateAuth, (req, res) => {
   try {
     var dbc = getDb();
@@ -7335,7 +7335,7 @@ app.post('/api/affiliate/wheel/spin', affiliateAuth, (req, res) => {
     res.json({ success: true, result: result, wheel: wheelState(dbc, req.affiliate) });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
-// POST /api/admin/affiliate/run-wheel-unlocks — send unlock emails now (admin test/trigger).
+// POST /api/admin/affiliate/run-wheel-unlocks - send unlock emails now (admin test/trigger).
 app.post('/api/admin/auto-heal', adminAuth, (req, res) => {
   try {
     var r = runAutoHeal();
@@ -7423,7 +7423,7 @@ app.post('/api/admin/affiliate/run-wheel-unlocks', adminAuth, (req, res) => {
   catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/affiliate/resources — the affiliate sales toolkit (phone scripts, emails,
+// GET /api/affiliate/resources - the affiliate sales toolkit (phone scripts, emails,
 // SMS, social posts and follow-up sequences) for every lead type.
 app.get('/api/affiliate/resources', affiliateAuth, (req, res) => {
   try {
@@ -7431,7 +7431,7 @@ app.get('/api/affiliate/resources', affiliateAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/affiliate/leads — the affiliate's CRM inbox: every customer who signed
+// GET /api/affiliate/leads - the affiliate's CRM inbox: every customer who signed
 // up with their code, PLUS any leads they added manually, with comments & reminders.
 app.get('/api/affiliate/leads', affiliateAuth, (req, res) => {
   try {
@@ -7489,7 +7489,7 @@ function ensureAffiliateLead(aff, dbc, id) {
   return rec;
 }
 
-// POST /api/affiliate/leads — add a lead manually (their own prospect).
+// POST /api/affiliate/leads - add a lead manually (their own prospect).
 app.post('/api/affiliate/leads', affiliateAuth, (req, res) => {
   try {
     var aff = req.affiliate, dbc = getDb();
@@ -7505,7 +7505,7 @@ app.post('/api/affiliate/leads', affiliateAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// PUT /api/affiliate/leads/:id — update lead details (company, email, phone, type, status, notes).
+// PUT /api/affiliate/leads/:id - update lead details (company, email, phone, type, status, notes).
 app.put('/api/affiliate/leads/:id', affiliateAuth, (req, res) => {
   try {
     var aff = req.affiliate, dbc = getDb();
@@ -7518,7 +7518,7 @@ app.put('/api/affiliate/leads/:id', affiliateAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/affiliate/leads/:id/comments — add a comment to a lead.
+// POST /api/affiliate/leads/:id/comments - add a comment to a lead.
 app.post('/api/affiliate/leads/:id/comments', affiliateAuth, (req, res) => {
   try {
     var aff = req.affiliate, dbc = getDb();
@@ -7532,7 +7532,7 @@ app.post('/api/affiliate/leads/:id/comments', affiliateAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/affiliate/leads/:id/reminders — set a follow-up reminder on a lead.
+// POST /api/affiliate/leads/:id/reminders - set a follow-up reminder on a lead.
 app.post('/api/affiliate/leads/:id/reminders', affiliateAuth, (req, res) => {
   try {
     var aff = req.affiliate, dbc = getDb();
@@ -7547,7 +7547,7 @@ app.post('/api/affiliate/leads/:id/reminders', affiliateAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/affiliate/leads/:id/reminders/:rid/done — mark a reminder complete.
+// POST /api/affiliate/leads/:id/reminders/:rid/done - mark a reminder complete.
 app.post('/api/affiliate/leads/:id/reminders/:rid/done', affiliateAuth, (req, res) => {
   try {
     var aff = req.affiliate, dbc = getDb();
@@ -7559,7 +7559,7 @@ app.post('/api/affiliate/leads/:id/reminders/:rid/done', affiliateAuth, (req, re
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// DELETE /api/affiliate/leads/:id — delete a manual lead.
+// DELETE /api/affiliate/leads/:id - delete a manual lead.
 app.delete('/api/affiliate/leads/:id', affiliateAuth, (req, res) => {
   try {
     var aff = req.affiliate, dbc = getDb();
@@ -7571,8 +7571,8 @@ app.delete('/api/affiliate/leads/:id', affiliateAuth, (req, res) => {
 });
 
 // ===== ADMIN AFFILIATE MANAGEMENT =====
-// GET /api/admin/affiliates — list every affiliate with referral + payout totals.
-// GET /api/admin/affiliates/:id/kyc — full KYC detail for the review screen: the actual
+// GET /api/admin/affiliates - list every affiliate with referral + payout totals.
+// GET /api/admin/affiliates/:id/kyc - full KYC detail for the review screen: the actual
 // ID image (base64) plus the bank details needed to pay this affiliate.
 app.get('/api/admin/affiliates/:id/kyc', adminAuth, (req, res) => {
   try {
@@ -7614,7 +7614,7 @@ app.get('/api/admin/affiliates', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/affiliates — create (or update) an affiliate. Body: {name, code, email, password?, status}.
+// POST /api/admin/affiliates - create (or update) an affiliate. Body: {name, code, email, password?, status}.
 app.post('/api/admin/affiliates', adminAuth, async (req, res) => {
   try {
     var { name, code, email, password, status, payout_rate } = req.body;
@@ -7640,7 +7640,7 @@ app.post('/api/admin/affiliates', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/affiliates/pay — pay an affiliate's DUE referrals. Body: { affiliate_id }
+// POST /api/admin/affiliates/pay - pay an affiliate's DUE referrals. Body: { affiliate_id }
 // (or affiliate_email). Marks each due referral 'paid', records a payout line on the
 // affiliate, and returns the amount paid.
 app.post('/api/admin/affiliates/pay', adminAuth, (req, res) => {
@@ -7665,12 +7665,12 @@ app.post('/api/admin/affiliates/pay', adminAuth, (req, res) => {
       // DOUBLE-PAY GUARD: if the commission engine has already cleared this referral
       // (commission approved/paid, or queued 'ready' for a bank transfer), the legacy
       // 30-day button must NOT pay it a second time. The affiliate's real earnings now
-      // live in the commission ledger — pay those via Admin -> Affiliate payouts.
+      // live in the commission ledger - pay those via Admin -> Affiliate payouts.
       try {
         var _covered = (getDb().partner_commissions || []).some(function(cm) {
           return cm.partner_id === aff.id && cm.customer_id === c.id && cm.commission_type === 'one_off' && (cm.status === 'approved' || cm.status === 'paid' || cm.payout_id);
         });
-        // Already paid (or queued) through the commission ledger — clear the legacy
+        // Already paid (or queued) through the commission ledger - clear the legacy
         // 'due' flag so it stops showing as ready-to-pay, but NEVER pay it twice.
         if (_covered) { c.affiliate_payout_status = 'paid'; return; }
       } catch(e) {}
@@ -7688,7 +7688,7 @@ app.post('/api/admin/affiliates/pay', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/affiliates/card-saved — admin marks a referred customer's card as
+// POST /api/admin/affiliates/card-saved - admin marks a referred customer's card as
 // saved (e.g. if the Stripe webhook missed it). Moves the referral to "pending"
 // (earning, waiting out the month). Optional payout_due overrides the date (support).
 app.post('/api/admin/affiliates/card-saved', adminAuth, (req, res) => {
@@ -7706,7 +7706,7 @@ app.post('/api/admin/affiliates/card-saved', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/affiliates/process — run the payout transition now (referrals past
+// POST /api/admin/affiliates/process - run the payout transition now (referrals past
 // their month + still active become "due"). Normally runs daily at 09:00.
 app.post('/api/admin/affiliates/process', adminAuth, (req, res) => {
   try {
@@ -7715,7 +7715,7 @@ app.post('/api/admin/affiliates/process', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/affiliates/delete — remove an affiliate by id or email.
+// POST /api/admin/affiliates/delete - remove an affiliate by id or email.
 app.post('/api/admin/affiliates/delete', adminAuth, (req, res) => {
   try {
     var q = (req.body && (req.body.affiliate_id || req.body.email)) || '';
@@ -7735,7 +7735,7 @@ app.post('/api/admin/affiliates/delete', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/affiliate-impersonate — generate a token to view an affiliate's
+// POST /api/admin/affiliate-impersonate - generate a token to view an affiliate's
 // dashboard (admin access, like customer impersonation).
 app.post('/api/admin/affiliate-impersonate', adminAuth, (req, res) => {
   try {
@@ -7752,7 +7752,7 @@ app.post('/api/admin/affiliate-impersonate', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/set-daily-cap — set a customer's daily lead cap directly
+// POST /api/admin/set-daily-cap - set a customer's daily lead cap directly
 // (used for goodwill top-ups, e.g. "5 free leads today"). Resets to their plan's
 // normal limit after the specified day if an expiry date is given.
 app.post('/api/admin/set-daily-cap', adminAuth, (req, res) => {
@@ -7773,7 +7773,7 @@ app.post('/api/admin/set-daily-cap', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/top-up-all — incremental backfill: every active moving customer
+// POST /api/admin/top-up-all - incremental backfill: every active moving customer
 // under their daily cap gets more valid numbered in-area leads added from the pool
 // (existing leads are KEPT, only new ones are added). Used to auto-top-up a
 // customer as fresh numbered supply arrives. The customer's daily cap can be
@@ -7799,7 +7799,7 @@ app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
       else if ((cust.biz_field3 || '').indexOf('moving') !== -1) prod = 'moving';
       if (!prod) return;
       if (cust.plan === 'cancelled') return;
-      // Never queue leads for a paused account — they won't be delivered, and the
+      // Never queue leads for a paused account - they won't be delivered, and the
       // queued leads would be held out of the pool (global exclusivity), starving
       // real customers of supply.
       if (isLeadsPaused(cust)) return;
@@ -7832,7 +7832,7 @@ app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
       var pool = loadProductPool(prod);
       var poolForCust = interleavePoolByAreas(pool, areas);
       var used = {};
-      // already-assigned to this customer (avoid re-adding) — key on URL AND
+      // already-assigned to this customer (avoid re-adding) - key on URL AND
       // normalized address+postcode (URLs can vary between scrape passes).
       (dbT.leads || []).forEach(function(l) { if (l.customer_id === cust.id) { try { var ld = JSON.parse(l.data || '{}'); var u = ld.url || ''; if (u) used['u:' + String(u).split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase()] = 1; var a = String(ld.fullAddress || ld.address || ld.deceasedAddress || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 24); var pc = String(ld.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); if (a && pc) used['a:' + a + '|' + pc] = 1; } catch(e) {} } });
       var assigned = 0;
@@ -7935,7 +7935,7 @@ var __topUpInterval = setInterval(function() {
 }, 15 * 60000); // every 15 min (was 120): keep customer queues topped up tightly before 9am
 setTimeout(function() { __topUpInterval.unref(); }, 1000);
 
-// POST /api/admin/backfill-towns — append a town/area to moving leads that have
+// POST /api/admin/backfill-towns - append a town/area to moving leads that have
 // door number + street + full postcode but no town (cached Postcoder). With no
 // email, runs across ALL moving customers (bulk catch-up for dashboards).
 app.post('/api/admin/backfill-towns', adminAuth, async (req, res) => {
@@ -7967,9 +7967,9 @@ app.post('/api/admin/backfill-towns', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/clear-customer-leads — remove ALL of a customer's current leads
+// POST /api/admin/clear-customer-leads - remove ALL of a customer's current leads
 // from their dashboard (no replacement). Used to strip bad/duplicate leads.
-// POST /api/admin/alert { subject, message } — email the founder an operational alert.
+// POST /api/admin/alert { subject, message } - email the founder an operational alert.
 // Used by the GitHub Actions scrape workflows' failure step so a failed scrape/import
 // (e.g. a 401 on import) is reported immediately instead of failing silently for days.
 app.post('/api/admin/alert', adminAuth, async (req, res) => {
@@ -7993,7 +7993,7 @@ function isDeliveryHoldActive() {
     return true;
   } catch (e) { return false; }
 }
-// POST /api/admin/delivery-hold { hold: true|false, until?: ISO } — GLOBAL delivery hold.
+// POST /api/admin/delivery-hold { hold: true|false, until?: ISO } - GLOBAL delivery hold.
 // When on, ONLY test.* accounts receive leads; every real customer is blocked from
 // inbox + dashboard (forced runs included). Persisted so it survives restarts, and
 // auto-expires at `until` if given.
@@ -8004,7 +8004,7 @@ app.post('/api/admin/delivery-hold', adminAuth, (req, res) => {
     dbH.delivery_hold = on;
     dbH.delivery_hold_until = (on && req.body && req.body.until) ? String(req.body.until) : null;
     saveDb();
-    res.json({ success: true, delivery_hold: on, delivery_hold_until: dbH.delivery_hold_until, active: isDeliveryHoldActive(), note: on ? 'ON — only test.* accounts receive leads. Real customers blocked.' : 'OFF — normal delivery resumed.' });
+    res.json({ success: true, delivery_hold: on, delivery_hold_until: dbH.delivery_hold_until, active: isDeliveryHoldActive(), note: on ? 'ON - only test.* accounts receive leads. Real customers blocked.' : 'OFF - normal delivery resumed.' });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 app.get('/api/admin/delivery-hold', adminAuth, (req, res) => {
@@ -8029,7 +8029,7 @@ app.post('/api/admin/clear-customer-leads', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/remove-incomplete-leads — remove a customer's moving leads that
+// POST /api/admin/remove-incomplete-leads - remove a customer's moving leads that
 // DON'T have a full mailing address (door number + street + town/area + full
 // postcode). Keeps only complete, deliverable addresses.
 app.post('/api/admin/remove-incomplete-leads', adminAuth, (req, res) => {
@@ -8054,7 +8054,7 @@ app.post('/api/admin/remove-incomplete-leads', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/add-test-lead — create a lead for a customer so they can test
+// POST /api/admin/add-test-lead - create a lead for a customer so they can test
 // Print & Post against their own address. Body: { email, name, full_address, postcode, city, street, building_number }
 app.post('/api/admin/add-test-lead', adminAuth, (req, res) => {
   try {
@@ -8090,7 +8090,7 @@ app.post('/api/admin/add-test-lead', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/dm-logs — read direct-mail provider logs (debug failed sends).
+// GET /api/admin/dm-logs - read direct-mail provider logs (debug failed sends).
 app.get('/api/admin/dm-logs', adminAuth, (req, res) => {
   try {
     var dbD2 = getDb();
@@ -8103,7 +8103,7 @@ app.get('/api/admin/dm-logs', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/remove-out-of-area — remove a customer's leads whose postcode
+// POST /api/admin/remove-out-of-area - remove a customer's leads whose postcode
 // area doesn't match their chosen areas (postcode areas OR counties via the map).
 app.post('/api/admin/remove-out-of-area', adminAuth, (req, res) => {
   try {
@@ -8139,7 +8139,7 @@ app.post('/api/admin/remove-out-of-area', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/warmup — run the Brevo sender warm-up (small growing daily
+// POST /api/admin/warmup - run the Brevo sender warm-up (small growing daily
 // batches of the campaign instead of one cold blast). { force:true } runs even if
 // already done today.
 app.post('/api/admin/warmup', adminAuth, async (req, res) => {
@@ -8150,7 +8150,7 @@ app.post('/api/admin/warmup', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// Sender warm-up daily cron (09:30 UTC = 10:30 UK) — sends the next growing batch.
+// Sender warm-up daily cron (09:30 UTC = 10:30 UK) - sends the next growing batch.
 cron.schedule('30 9 * * *', async () => {
   try {
     var warmupC = require('./warmup');
@@ -8159,7 +8159,7 @@ cron.schedule('30 9 * * *', async () => {
   } catch(wce) { console.log('[WARMUP] cron error:', wce.message); }
 }, { timezone: 'Europe/London' });
 
-// GET /api/admin/trade-state — read the trade-email scraper's last run state.
+// GET /api/admin/trade-state - read the trade-email scraper's last run state.
 app.get('/api/admin/trade-state', adminAuth, (req, res) => {
   try {
     var tf = path.join(DATA_DIR, 'trade_emails_state.json');
@@ -8168,7 +8168,7 @@ app.get('/api/admin/trade-state', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/trade-scrape — starts the trade-email scrape in the BACKGROUND
+// POST /api/admin/trade-scrape - starts the trade-email scrape in the BACKGROUND
 // (returns immediately; the daily cron also runs it). Free sources only.
 app.post('/api/admin/trade-scrape', adminAuth, async (req, res) => {
   var max = parseInt((req.body && req.body.max) || '100', 10);
@@ -8183,7 +8183,7 @@ app.post('/api/admin/trade-scrape', adminAuth, async (req, res) => {
   });
 });
 
-// Daily trade-email scrape (11:00 UK) — top up the Brevo trade lists with the
+// Daily trade-email scrape (11:00 UK) - top up the Brevo trade lists with the
 // newest companies' contact emails.
 cron.schedule('0 11 * * *', async () => {
   try {
@@ -8193,7 +8193,7 @@ cron.schedule('0 11 * * *', async () => {
   } catch(tce) { console.log('[TRADE-EMAIL] cron error:', tce.message); }
 }, { timezone: 'Europe/London' });
 
-// POST /api/admin/trial-expire — backdate a customer's trial_ends to yesterday so
+// POST /api/admin/trial-expire - backdate a customer's trial_ends to yesterday so
 // the trial-gate engages (support/testing). The real expiry happens naturally.
 app.post('/api/admin/trial-expire', adminAuth, (req, res) => {
   try {
@@ -8228,7 +8228,7 @@ app.post('/api/admin/pause-test-accounts', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/set-plan — apply a paid plan (calls applyPlan: sets plan +
+// POST /api/admin/set-plan - apply a paid plan (calls applyPlan: sets plan +
 // leads_per_day + clears trial_ends). Mirrors the post-payment webhook.
 // Optional body { product } changes the customer's lead product too (e.g. so an owner
 // can flip a test account to a different lead type to preview its storefront).
@@ -8258,7 +8258,7 @@ app.post('/api/admin/set-plan', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/clean-trial-ends — one-off: replace the literal string "NULL"
+// POST /api/admin/clean-trial-ends - one-off: replace the literal string "NULL"
 // (and any invalid date) stored in trial_ends with a real SQL NULL for paid plans,
 // and repair free-trial rows that lost a valid date. Safe to re-run.
 app.post('/api/admin/clean-trial-ends', adminAuth, (req, res) => {
@@ -8283,7 +8283,7 @@ app.post('/api/admin/clean-trial-ends', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/delete-lead — permanently delete ONE lead row by id (admin tool).
+// POST /api/admin/delete-lead - permanently delete ONE lead row by id (admin tool).
 app.post('/api/admin/delete-lead', adminAuth, (req, res) => {
   try {
     var idD = String((req.body && (req.body.id || req.body.lead_id)) || '');
@@ -8297,7 +8297,7 @@ app.post('/api/admin/delete-lead', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/remove-leads-created-on — remove a customer's leads created on a
+// POST /api/admin/remove-leads-created-on - remove a customer's leads created on a
 // specific date (admin cleanup of test-delivery artifacts). Body: { email, date: 'YYYY-MM-DD' }
 app.post('/api/admin/remove-leads-created-on', adminAuth, (req, res) => {
   try {
@@ -8318,7 +8318,7 @@ app.post('/api/admin/remove-leads-created-on', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/block-pool-lead — permanently block a moving-pool lead by URL so
+// POST /api/admin/block-pool-lead - permanently block a moving-pool lead by URL so
 // it is NEVER delivered to any customer again (commercial / wrong-address /
 // out-of-area leads the founder flagged). Marks the pool entry rejected + removes
 // any already-delivered instance from customers. Body: { url, reason? }
@@ -8361,7 +8361,7 @@ app.post('/api/admin/block-pool-lead', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/reject-lead — admin rejects a lead (wrong address etc.) + sends a
+// POST /api/admin/reject-lead - admin rejects a lead (wrong address etc.) + sends a
 // replacement, same as the customer's reject. Body: { lead_id, reason? }
 app.post('/api/admin/reject-lead', adminAuth, (req, res) => {
   try {
@@ -8382,7 +8382,7 @@ app.post('/api/admin/reject-lead', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/rejected-leads — all rejected leads across customers (with the
+// GET /api/admin/rejected-leads - all rejected leads across customers (with the
 // customer + address + reason) so admin can review before replacing.
 app.get('/api/admin/rejected-leads', adminAuth, (req, res) => {
   try {
@@ -8399,7 +8399,7 @@ app.get('/api/admin/rejected-leads', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/auth/update-areas — customer updates their postcode areas from the
+// POST /api/auth/update-areas - customer updates their postcode areas from the
 // dashboard. Enforces the same rules as signup: max 5 areas, no "all of UK".
 // These areas are what delivery uses to send leads, so keeping them correct here
 // is what guarantees the customer only receives leads from their chosen areas.
@@ -8413,7 +8413,7 @@ app.post('/api/auth/update-areas', authMiddleware, (req, res) => {
     var maxAreas = parseInt(process.env.MAX_POSTCODE_AREAS_PER_PLAN || '5', 10);
     var allUk = areas.some(function(a){ return /all.?uk|uk.?wide|nationwide|whole.?uk/i.test(String(a)); });
     if (allUk) {
-      // "All of UK" is available to EVERY customer now — no specific postcode
+      // "All of UK" is available to EVERY customer now - no specific postcode
       // areas needed. Coverage becomes ukwide so the delivery skips area matching.
       db.prepare('UPDATE customers SET coverage = ?, target_areas = ? WHERE id = ?').run('ukwide', JSON.stringify(['All UK']), req.user.id);
       try {
@@ -8430,7 +8430,7 @@ app.post('/api/auth/update-areas', authMiddleware, (req, res) => {
     if (!isPaidUnlimited && areas.length > maxAreas) return res.status(400).json({ error: 'Please choose at most ' + maxAreas + ' postcode areas.', too_many_areas: true, max_areas: maxAreas });
     var clean = areas.map(function(a){ return String(a).toUpperCase().trim(); }).filter(Boolean);
     // PER-PRODUCT MINIMUMS (same rules as signup): moving must keep exactly the
-    // full 5 postcode areas; other products must keep at least 3 areas/counties —
+    // full 5 postcode areas; other products must keep at least 3 areas/counties -
     // otherwise delivery under-supplies and the customer's daily promise breaks.
     var prodKey = String((me && me.product) || '').toLowerCase();
     if (!isPaidUnlimited && prodKey === 'moving' && clean.length < maxAreas) {
@@ -8442,7 +8442,7 @@ app.post('/api/auth/update-areas', authMiddleware, (req, res) => {
     // Coverage: infer from the chosen areas. Postcode-area codes (1-2 letters)
     // => 'postcode'; anything else (county/region names) => 'county'. This also
     // resets a stale 'ukwide' coverage when a customer switches back from All of
-    // UK to specific areas — otherwise the dashboard keeps showing All of UK.
+    // UK to specific areas - otherwise the dashboard keeps showing All of UK.
     var newCov = clean.every(function(a){ return /^[A-Z]{1,3}$/i.test(a); }) ? 'postcode' : (me.coverage === 'region' ? 'region' : 'county');
     db.prepare('UPDATE customers SET target_areas = ?, coverage = ? WHERE id = ?').run(JSON.stringify(clean), newCov, req.user.id);
     // Keep product_config in sync so the delivery + dashboard read the SAME areas.
@@ -8459,7 +8459,7 @@ app.post('/api/auth/update-areas', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/auth/reactivate-trial — claim the "fresh 1-week free trial" offered
+// POST /api/auth/reactivate-trial - claim the "fresh 1-week free trial" offered
 // after ~3 months. Resets trial_ends (+7 days), restarts the campaign sequence
 // (so they get the full trial journey again) and resumes delivery. Capped by
 // MAX_TRIAL_RESETS (default 2) so the funnel converts, not freeloads.
@@ -8485,7 +8485,7 @@ app.post('/api/auth/reactivate-trial', authMiddleware, (req, res) => {
 
 // ===== PASSWORD RESET =====
 
-// POST /api/auth/forgot-password — send reset link
+// POST /api/auth/forgot-password - send reset link
 app.post('/api/auth/forgot-password', async (req, res) => {
   try {
     const { email } = req.body;
@@ -8520,7 +8520,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
   }
 });
 
-// POST /api/auth/reset-password — reset password with token
+// POST /api/auth/reset-password - reset password with token
 app.post('/api/auth/reset-password', async (req, res) => {
   try {
     const { token, password } = req.body;
@@ -8545,7 +8545,7 @@ app.post('/api/auth/reset-password', async (req, res) => {
 });
 
 // ===== ONBOARDING API =====
-// GET /api/onboarding — customer onboarding checklist and progress
+// GET /api/onboarding - customer onboarding checklist and progress
 app.get('/api/onboarding', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -8599,7 +8599,7 @@ app.get('/api/onboarding', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/delivery/pause — pause or resume daily lead delivery + Auto Send
+// POST /api/delivery/pause - pause or resume daily lead delivery + Auto Send
 // (e.g. for a holiday). An optional resume_date auto-resumes on that day.
 app.post('/api/delivery/pause', authMiddleware, (req, res) => {
   try {
@@ -8619,7 +8619,7 @@ app.post('/api/delivery/pause', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/health-score — customer health score
+// GET /api/health-score - customer health score
 app.get('/api/health-score', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -8650,7 +8650,7 @@ app.get('/api/health-score', authMiddleware, (req, res) => {
 });
 
 
-// GET /api/admin/founder-dashboard — founder analytics (admin only)
+// GET /api/admin/founder-dashboard - founder analytics (admin only)
 app.get('/api/admin/founder-dashboard', adminAuth, (req, res) => {
   try {
     const db = getDb();
@@ -8712,7 +8712,7 @@ app.get('/api/admin/founder-dashboard', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/public-stats — public trust metrics (cached, safe for website)
+// GET /api/public-stats - public trust metrics (cached, safe for website)
 var publicStatsCache = { data: null, expires: 0 };
 app.get('/api/public-stats', async (req, res) => {
   try {
@@ -8750,7 +8750,7 @@ app.get('/api/public-stats', async (req, res) => {
 });
 
 // ===== LEAD SOURCE TRACKER (Section 5) =====
-// GET /api/admin/lead-sources — manage lead sources
+// GET /api/admin/lead-sources - manage lead sources
 app.get('/api/admin/lead-sources', adminAuth, (req, res) => {
   try {
     const db = getDb();
@@ -8765,7 +8765,7 @@ app.get('/api/admin/lead-sources', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/lead-sources/update — update source status
+// POST /api/admin/lead-sources/update - update source status
 app.post('/api/admin/lead-sources/update', adminAuth, (req, res) => {
   try {
     const db = getDb();
@@ -8779,7 +8779,7 @@ app.post('/api/admin/lead-sources/update', adminAuth, (req, res) => {
 });
 
 // ===== USAGE-BASED EXPANSION PROMPTS (Section 6) =====
-// GET /api/prompts — smart prompts based on customer data
+// GET /api/prompts - smart prompts based on customer data
 app.get('/api/prompts', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -8817,7 +8817,7 @@ app.get('/api/prompts', authMiddleware, (req, res) => {
 });
 
 // ===== NOTIFICATIONS (Section 8) =====
-// GET /api/notifications — customer notifications
+// GET /api/notifications - customer notifications
 app.get('/api/notifications', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -8876,7 +8876,7 @@ const BUILTIN_TEMPLATES = [
   { id:'tenders-intro', name:'Tender Introduction Email', industry:'tenders', lead_type:'tenders', method:'email', content:'Subject: Expression of Interest\n\nTo the procurement team,\n\n{{customer_business_name}} wishes to express interest in the tender opportunity.\n\nWe have experience delivering similar contracts and can provide full capability documentation.\n\nPlease contact {{customer_email}} for our credentials.\n\nYours faithfully,\n{{customer_business_name}}' }
 ];
 
-// GET /api/success-centre/templates — return all templates (full access for active accounts)
+// GET /api/success-centre/templates - return all templates (full access for active accounts)
 app.get('/api/success-centre/templates', authMiddleware, (req, res) => {
   if (!checkProAccess(req)) {
     return res.json({ restricted: true, templates: [], message: 'Your account has been cancelled. You no longer have access to Success Centre templates.' });
@@ -8892,13 +8892,13 @@ function checkProAccess(req) {
   return (plan === 'free_trial' || plan === 'starter' || plan === 'pro' || plan === 'enterprise');
 }
 
-// GET /api/success-centre/playbooks — return playbooks (Pro+ only)
+// GET /api/success-centre/playbooks - return playbooks (Pro+ only)
 app.get('/api/success-centre/playbooks', authMiddleware, (req, res) => {
   if (!checkProAccess(req)) return res.json({ restricted: true, playbooks: {} });
   res.json({ playbooks: PLAYBOOKS });
 });
 
-// POST /api/success-centre/save — save a template (Pro+ only)
+// POST /api/success-centre/save - save a template (Pro+ only)
 app.post('/api/success-centre/save', authMiddleware, (req, res) => {
   try {
     if (!checkProAccess(req)) return res.status(403).json({ error: 'Upgrade to Pro to save templates' });
@@ -8910,7 +8910,7 @@ app.post('/api/success-centre/save', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/success-centre/saved — get customer's saved templates
+// GET /api/success-centre/saved - get customer's saved templates
 app.get('/api/success-centre/saved', authMiddleware, (req, res) => {
   try {
     const db = getDb();
@@ -8919,7 +8919,7 @@ app.get('/api/success-centre/saved', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// DELETE /api/success-centre/saved/:id — delete a saved template
+// DELETE /api/success-centre/saved/:id - delete a saved template
 app.delete('/api/success-centre/saved/:id', authMiddleware, (req, res) => {
   try {
     const db = getDb();
@@ -8929,7 +8929,7 @@ app.delete('/api/success-centre/saved/:id', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/success-centre/generate — AI template generator (rule-based)
+// POST /api/success-centre/generate - AI template generator (rule-based)
 app.post('/api/success-centre/generate', authMiddleware, (req, res) => {
   try {
     const { industry, lead_type, contact_method, tone, lead_name, lead_address, business_name } = req.body;
@@ -8966,7 +8966,7 @@ app.post('/api/success-centre/generate', authMiddleware, (req, res) => {
 
 // ===== DASHBOARD API ENDPOINTS =====
 
-// GET /api/dashboard — KPI summary data
+// GET /api/dashboard - KPI summary data
 app.get('/api/dashboard', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -8975,7 +8975,7 @@ app.get('/api/dashboard', authMiddleware, (req, res) => {
     const thisWeek = (function(){ var d = new Date(); d.setDate(d.getDate() - (d.getDay() || 7) + 1); return d.toISOString().split('T')[0]; })();
     const thisMonth = today.substring(0, 7);
 
-    // Never count rejected leads (hidden in My Leads) in the KPIs — rejected leads
+    // Never count rejected leads (hidden in My Leads) in the KPIs - rejected leads
     // still carry delivered=1, so without this filter the Today/Week/Month counters
     // over-count after a reject/replace.
     function isLiveLead(l) {
@@ -9024,7 +9024,7 @@ app.get('/api/dashboard', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/pipeline — leads grouped by stage
+// GET /api/pipeline - leads grouped by stage
 app.get('/api/pipeline', authMiddleware, (req, res) => {
   try {
     const db = getDb();
@@ -9045,7 +9045,7 @@ app.get('/api/pipeline', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/roi — ROI metrics
+// GET /api/roi - ROI metrics
 app.get('/api/roi', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -9081,7 +9081,7 @@ app.get('/api/roi', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// PUT /api/leads/:id/status — update lead status
+// PUT /api/leads/:id/status - update lead status
 app.put('/api/leads/:id/status', authMiddleware, (req, res) => {
   try {
     const db = getDb();
@@ -9103,7 +9103,7 @@ app.put('/api/leads/:id/status', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// PUT /api/leads/:id/note — add note to lead
+// PUT /api/leads/:id/note - add note to lead
 app.put('/api/leads/:id/note', authMiddleware, (req, res) => {
   try {
     const db = getDb();
@@ -9116,7 +9116,7 @@ app.put('/api/leads/:id/note', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/leads/:id — lead detail
+// GET /api/leads/:id - lead detail
 app.get('/api/leads/today', authMiddleware, (req, res) => {
   const today = new Date().toISOString().split('T')[0];
   const leads = db.prepare(
@@ -9150,7 +9150,7 @@ app.get('/api/leads/:id', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/areas/performance — area-level performance
+// GET /api/areas/performance - area-level performance
 app.get('/api/areas/performance', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -9177,7 +9177,7 @@ app.get('/api/areas/performance', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/chat — chat widget messages (no auth needed)
+// POST /api/chat - chat widget messages (no auth needed)
 app.post('/api/chat', async (req, res) => {
   try {
     const db = getDb();
@@ -9192,7 +9192,7 @@ app.post('/api/chat', async (req, res) => {
   } catch(e) { res.json({ success: false, error: e.message }); }
 });
 
-// POST /api/support — submit support request / feedback
+// POST /api/support - submit support request / feedback
 app.post('/api/support', authMiddleware, async (req, res) => {
   try {
     const db = getDb();
@@ -9247,7 +9247,7 @@ function suggestionsFor(q) {
   if (/demo|see|show|look/.test(s)) return ['Can I see a live demo?', 'How does Print & Post work?'];
   return ['Can I see a live demo?', 'How does Print & Post work?'];
 }
-// POST /api/assistant/ask — in-dashboard AI assistant. Answers customer questions
+// POST /api/assistant/ask - in-dashboard AI assistant. Answers customer questions
 // about 9amLeads (products, delivery, Print & Post, Auto Send, Bulk, billing, etc.)
 app.post('/api/assistant/ask', optionalAuth, async (req, res) => {
   try {
@@ -9392,7 +9392,7 @@ app.get('/api/leads', authMiddleware, (req, res) => {
   // their previous + new leads show again. This stops a trial account that ended
   // from continuing to use the dashboard's lead history for free.
     var now = new Date();
-    // SAFEGUARD: never gate a customer who has a Stripe subscription — they are PAYING
+    // SAFEGUARD: never gate a customer who has a Stripe subscription - they are PAYING
     // even if the `plan` field lagged behind (a failed/late webhook). Hiding a paying
     // customer's leads would look like a broken dashboard and cost the account.
     var trialGated = customer && customer.plan === 'free_trial' && customer.trial_ends && new Date(customer.trial_ends) < now
@@ -9411,7 +9411,7 @@ app.get('/api/leads', authMiddleware, (req, res) => {
     if (d0.rejected) return false;
     // Hide REMOVED leads (reset by admin replace-leads / force-replace, or blocked).
     // A reset marks today's leads delivered=0 + status='removed' so a force re-delivery
-    // REPLACES them — the customer must only ever see their CURRENT, correct batch.
+    // REPLACES them - the customer must only ever see their CURRENT, correct batch.
     if (l.status === 'removed') return false;
     // ONLY DELIVERED leads are shown to the customer. Undelivered rows are INTERNAL
     // delivery candidates (the 9am run creates/fills them and discards the unused
@@ -9424,7 +9424,7 @@ app.get('/api/leads', authMiddleware, (req, res) => {
     res.json(visible
     // Only filter PENDING leads by address completeness. DELIVERED leads are the
     // customer's real history (they were emailed + confirmed) and must ALWAYS show
-    // on the dashboard — even older ones scraped before full postcodes were
+    // on the dashboard - even older ones scraped before full postcodes were
     // standardised ("36 Cambridge Road, Kingston Upon Thames, Surrey" with no
     // postcode still counts toward Today/Week/Month/All-Time). The address filter
     // exists to hide incomplete PENDING leads, never delivered history.
@@ -9432,7 +9432,7 @@ app.get('/api/leads', authMiddleware, (req, res) => {
     // DEDUPE by URL/address+postcode but ONLY WITHIN THE SAME DELIVERED DAY: catches
     // accidental double-rows from the same 9am run, while letting a genuinely re-listed
     // property (e.g. the same house advertised again a week later) count as the separate
-    // lead it is. Every emailed lead must show and count — Today/Week/Month/All-Time.
+    // lead it is. Every emailed lead must show and count - Today/Week/Month/All-Time.
     .filter(function(l, idx, arr) {
       function _leadKey(ld) {
         try { var d = JSON.parse(ld.data || '{}'); var u = String(d.url || '').split('#')[0].split('?')[0].replace(/\/+$/,'').toLowerCase().trim(); if (u) return 'u:' + u; var a = String(d.fullAddress || d.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 28); var pc = String(d.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); return 'a:' + a + '|' + pc; } catch(e) { return ''; }
@@ -9449,10 +9449,10 @@ app.get('/api/leads', authMiddleware, (req, res) => {
     })
     .map(l => {
     const parsed = JSON.parse(l.data || '{}');
-    // FULL-ADDRESS GUARANTEE (all postcode products — moving, probate,
+    // FULL-ADDRESS GUARANTEE (all postcode products - moving, probate,
     // newbusiness, planning): rebuild the displayed full address from the
     // structured parts (door + street + town/county + postcode) so every lead
-    // reads "2 Sussex Road, Greater London, E6 2PS" — never a bare street or a
+    // reads "2 Sussex Road, Greater London, E6 2PS" - never a bare street or a
     // region-stripped shell. (Previously stripRegionTags removed "Greater London"
     // here, hiding the county.) Tenders (no postcode) are left untouched.
     var _pc = parsed.postcode || '';
@@ -9526,7 +9526,7 @@ app.get('/api/admin/debug-customer-leads', adminAuth, (req, res) => {
 // GET /api/leads/today
 
 
-// POST /api/leads/reject — customer rejects a lead (incorrect/wrong address). With
+// POST /api/leads/reject - customer rejects a lead (incorrect/wrong address). With
 // INSTANT REPLACE + GUARDRAILS: marks the lead rejected, picks a valid in-area
 // replacement from the pool straight away (real full-address lead in their areas),
 // inserts it as their new lead, and emails hello@9amleads.com so the owner knows
@@ -9594,7 +9594,7 @@ app.post('/api/leads/reject', authMiddleware, async (req, res) => {
       var custName = customer.company || customer.name || customer.email || customer.id;
       var oldAddr = parsed.address || parsed.fullAddress || parsed.deceasedAddress || lead.address || '(no address)';
       var oldPc = parsed.postcode || lead.postcode || '';
-      var repInfo = replacement ? ('<tr><td style="padding:6px 10px;border:1px solid #1e2030">Replacement</td><td style="padding:6px 10px;border:1px solid #1e2030">' + escHtml(replacement.address) + ' · ' + escHtml(replacement.postcode) + (replacement.nearest ? '<br><span style="color:#fbbf24;font-size:11px">(nearest area — no exact-area lead was available)</span>' : '') + '</td></tr>') : '';
+      var repInfo = replacement ? ('<tr><td style="padding:6px 10px;border:1px solid #1e2030">Replacement</td><td style="padding:6px 10px;border:1px solid #1e2030">' + escHtml(replacement.address) + ' · ' + escHtml(replacement.postcode) + (replacement.nearest ? '<br><span style="color:#fbbf24;font-size:11px">(nearest area - no exact-area lead was available)</span>' : '') + '</td></tr>') : '';
       var rHtml = '<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px"><h2 style="color:#f87171;margin:0 0 10px;font-size:17px">\uD83D\uDEAB Lead rejected &amp; replaced</h2>' +
         '<table cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;font-size:13px">' +
         '<tr><td style="padding:6px 10px;border:1px solid #1e2030">Customer</td><td style="padding:6px 10px;border:1px solid #1e2030"><b>' + escHtml(custName) + '</b> (' + escHtml(customer.email || '') + ')</td></tr>' +
@@ -9603,15 +9603,15 @@ app.post('/api/leads/reject', authMiddleware, async (req, res) => {
         '<tr><td style="padding:6px 10px;border:1px solid #1e2030">Reason</td><td style="padding:6px 10px;border:1px solid #1e2030">' + escHtml(reason) + '</td></tr>' + repInfo +
         '</table>' +
         '<p style="color:#94a3b8;font-size:12px;margin:14px 0 0">Rejected at ' + escHtml(new Date().toISOString()) + '. View the queue: admin dashboard → Rejected Leads.</p></div>';
-      sendBrevoEmail({ email: 'hello@9amleads.com', name: '9amLeads Admin' }, 'Lead rejected & replaced — ' + escHtml(custName) + ' (' + escHtml(lead.product || '') + ')', rHtml).catch(function(){});
+      sendBrevoEmail({ email: 'hello@9amleads.com', name: '9amLeads Admin' }, 'Lead rejected & replaced - ' + escHtml(custName) + ' (' + escHtml(lead.product || '') + ')', rHtml).catch(function(){});
     } catch(e) { console.log('[LEADS-REJECT] owner email error:', e.message); }
 
     res.json({ success: true, message: msg, replacement: replacement ? { address: replacement.address, postcode: replacement.postcode } : null, limit_left: Math.max(0, 3 - (rejCount + 1)) });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/leads/cleanup — admin-only test-data cleanup on the SQLite leads
-// table. Body: { un_reject_lead_id, delete_lead_id, email? } — used to undo test
+// POST /api/admin/leads/cleanup - admin-only test-data cleanup on the SQLite leads
+// table. Body: { un_reject_lead_id, delete_lead_id, email? } - used to undo test
 // rejections/replacements so QA accounts stay clean.
 app.post('/api/admin/leads/cleanup', adminAuth, (req, res) => {
   try {
@@ -9641,7 +9641,7 @@ app.post('/api/admin/leads/cleanup', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/clear-bulk-pack — release a customer's pending bulk/boost pack and
+// POST /api/admin/clear-bulk-pack - release a customer's pending bulk/boost pack and
 // unreserve its reserved leads (used to undo test grants / refund scenarios). Body:
 // { email }
 app.post('/api/admin/clear-bulk-pack', adminAuth, (req, res) => {
@@ -9682,7 +9682,7 @@ app.post('/api/admin/clear-bulk-pack', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/rejected-leads — admin review queue of all customer-rejected leads.
+// GET /api/admin/rejected-leads - admin review queue of all customer-rejected leads.
 app.get('/api/admin/rejected-leads', adminAuth, (req, res) => {
   try {
     var leads = db.prepare("SELECT * FROM leads WHERE status = 'rejected' ORDER BY updated_at DESC LIMIT 200").all();
@@ -9698,7 +9698,7 @@ app.get('/api/admin/rejected-leads', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/rejected-leads/approve — admin approves a replacement for a rejected
+// POST /api/admin/rejected-leads/approve - admin approves a replacement for a rejected
 // lead: marks the old one replaced, and (optionally) adds a fresh lead to the customer
 // for their next delivery or sends it now.
 app.post('/api/admin/rejected-leads/approve', adminAuth, async (req, res) => {
@@ -9726,7 +9726,7 @@ app.post('/api/admin/rejected-leads/approve', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// Create a replacement lead for a customer from the moving pool — a fresh lead in
+// Create a replacement lead for a customer from the moving pool - a fresh lead in
 // their chosen postcode areas with a PROPER address (door number / flat / named
 // building). Added as undelivered so the next 9am delivery sends it. Returns the
 // lead or null if none available.
@@ -9755,7 +9755,7 @@ async function createReplacementLead(cust, product, deliveredNow, exclude) {
     var seen = {};
     // County-aware matching (mirrors the main delivery loop). Uses the GLOBAL
     // single-source-of-truth map (covers merseyside/north-east/yorkshire-and-the-
-    // humber/durham etc) so an in-area replacement is found for ANY customer —
+    // humber/durham etc) so an in-area replacement is found for ANY customer -
     // never a far-away national lead.
     var countyPostcodes = COUNTY_POSTCODE_MAP;
     var ukwide = /all.?uk|uk.?wide/i.test((areas||[]).join(' '));
@@ -9818,7 +9818,7 @@ async function createReplacementLead(cust, product, deliveredNow, exclude) {
       var fpc = String(fl.postcode || fl.location || '').toUpperCase().trim();
       if (isExcluded(fl, fpc.replace(/\s+/g,''))) continue;
       // Must have a PROPER address (door number / flat / named building), not a bare
-      // street — EXCEPT tenders, which are national opportunities with a title/buyer
+      // street - EXCEPT tenders, which are national opportunities with a title/buyer
       // and NO postal address (they'd never get a replacement otherwise).
       var fAddr = fl.fullAddress || fl.address || fl.deceasedAddress || '';
       if (product !== 'tenders') {
@@ -9870,7 +9870,7 @@ async function createReplacementLead(cust, product, deliveredNow, exclude) {
       var pickExact = exactCands[0];
       return insertReplacement(pickExact);
     }
-    // Otherwise the NEAREST area with a valid lead — but ONLY within the fallback
+    // Otherwise the NEAREST area with a valid lead - but ONLY within the fallback
     // radius. A replacement far outside the customer's area (e.g. Preston for a Leeds
     // customer) is worse than none, so cap it at MOVING_MAX_FALLBACK_KM.
     if (nearestCands.length) {
@@ -9935,7 +9935,7 @@ app.get('/api/stats', authMiddleware, (req, res) => {
 
 // ===== POSTCODE ENDPOINTS =====
 
-// GET /api/postcodes — List all UK postcode districts grouped by area with availability
+// GET /api/postcodes - List all UK postcode districts grouped by area with availability
 app.get('/api/postcodes', (req, res) => {
   const districts = loadPostcodeDistricts();
   const areas = loadPostcodeAreas();
@@ -9965,7 +9965,7 @@ app.get('/api/postcodes', (req, res) => {
   res.json({ areas: result, total_areas: result.length, regions });
 });
 
-// GET /api/postcodes/mine — Get current customer's assigned postcode areas with limits
+// GET /api/postcodes/mine - Get current customer's assigned postcode areas with limits
 app.get('/api/postcodes/mine', authMiddleware, (req, res) => {
   const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
   if (!customer) return res.status(404).json({ error: 'User not found' });
@@ -9998,7 +9998,7 @@ app.get('/api/postcodes/mine', authMiddleware, (req, res) => {
   });
 });
 
-// GET /api/postcodes/check — Check if a postcode area is valid
+// GET /api/postcodes/check - Check if a postcode area is valid
 app.get('/api/postcodes/check', async (req, res) => {
   try {
     var code = (req.query.code || '').toUpperCase().trim();
@@ -10009,7 +10009,7 @@ app.get('/api/postcodes/check', async (req, res) => {
   } catch(e) { res.json({ valid: false, error: 'Server error' }); }
 });
 
-// PUT /api/postcodes/update — Update the customer's selected postcode areas
+// PUT /api/postcodes/update - Update the customer's selected postcode areas
 app.put('/api/postcodes/update', authMiddleware, (req, res) => {
   const { postcodes } = req.body;
   const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
@@ -10030,13 +10030,13 @@ app.put('/api/postcodes/update', authMiddleware, (req, res) => {
   res.json({ success: true, areas: postcodes, count: postcodes.length, max_limit: getPostcodeLimit(customer.plan) });
 });
 
-// PUT /api/areas/update — Update the customer's coverage areas.
+// PUT /api/areas/update - Update the customer's coverage areas.
 // Used by tenders (and other county/region products) which select counties or
 // regions rather than postcode-area codes. Stores target_areas + coverage so the
 // distributor/delivery match on county/region names.
 const KNOWN_COUNTIES = ['bedfordshire','berkshire','bristol','buckinghamshire','cambridgeshire','cheshire','city-of-london','cornwall','cumbria','derbyshire','devon','dorset','durham','east-sussex','essex','gloucestershire','greater-london','greater-manchester','hampshire','herefordshire','hertfordshire','isle-of-wight','kent','lancashire','leicestershire','lincolnshire','merseyside','norfolk','north-yorkshire','northamptonshire','northumberland','nottinghamshire','oxfordshire','rutland','shropshire','somerset','south-yorkshire','staffordshire','suffolk','surrey','tyne-and-wear','warwickshire','west-midlands','west-sussex','west-yorkshire','wiltshire','worcestershire','east-midlands','east-of-england','london','north-east','north-west','south-east','south-west','west-midlands-region','yorkshire','yorkshire-and-the-humber','wales','scotland','all-uk','ukwide','all uk','south-england','west-england','north-england','northern-ireland'];
 // BROAD UK REGIONS -> postcode AREA codes. Lets a customer choose a whole region
-// (e.g. "South England") instead of specific counties — ideal for tenders (which
+// (e.g. "South England") instead of specific counties - ideal for tenders (which
 // are national opportunities) and gives much better coverage than town-level
 // counties. Used by area validation + delivery matching.
 const REGION_TO_POSTCODE_AREAS = {
@@ -10065,7 +10065,7 @@ app.put('/api/areas/update', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/areas — list the counties/regions a customer can pick for their product
+// GET /api/areas - list the counties/regions a customer can pick for their product
 app.get('/api/areas', authMiddleware, (req, res) => {
   var customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
   var counties = ['Bedfordshire','Berkshire','Bristol','Buckinghamshire','Cambridgeshire','Cheshire','Cornwall','Cumbria','Derbyshire','Devon','Dorset','Durham','East Sussex','Essex','Gloucestershire','Greater London','Greater Manchester','Hampshire','Herefordshire','Hertfordshire','Isle of Wight','Kent','Lancashire','Leicestershire','Lincolnshire','Merseyside','Norfolk','North Yorkshire','Northamptonshire','Northumberland','Nottinghamshire','Oxfordshire','Shropshire','Somerset','South Yorkshire','Staffordshire','Suffolk','Surrey','Tyne and Wear','Warwickshire','West Midlands','West Sussex','West Yorkshire','Wiltshire','Worcestershire'];
@@ -10073,7 +10073,7 @@ app.get('/api/areas', authMiddleware, (req, res) => {
   res.json({ success: true, counties: counties, regions: regions, current_areas: customer ? (customer.target_areas || '[]') : '[]', coverage: customer ? (customer.coverage || 'postcode') : 'postcode' });
 });
 
-// POST /api/postcodes/extra — purchase 1 extra postcode area (£50 one-time via Stripe)
+// POST /api/postcodes/extra - purchase 1 extra postcode area (£50 one-time via Stripe)
 app.post('/api/postcodes/extra', authMiddleware, async (req, res) => {
   try {
     if (!STRIPE_SECRET_KEY) {
@@ -10128,7 +10128,7 @@ app.put('/api/settings', authMiddleware, (req, res) => {
   if (phone) db.prepare('UPDATE customers SET phone = ? WHERE id = ?').run(phone, req.user.id);
   if (password && password.length >= 8) { var pwHash = require('bcryptjs').hashSync(password, 10); db.prepare('UPDATE customers SET password_hash = ? WHERE id = ?').run(pwHash, req.user.id); }
   // moving_type: residential | commercial | both (moving product filter).
-  // BUSINESS RULE: customers CANNOT switch to commercial/both on their own — a
+  // BUSINESS RULE: customers CANNOT switch to commercial/both on their own - a
   // commercial mix is only granted at signup or by us (admin). If a customer
   // sends commercial/both, force it back to residential so the choice is locked.
   if (moving_type && ['residential','commercial','both'].indexOf(moving_type) !== -1) {
@@ -10137,7 +10137,7 @@ app.put('/api/settings', authMiddleware, (req, res) => {
     }
     var mtCfg = {}; try { mtCfg = JSON.parse(customer.product_config || '{}'); } catch(e) {}
     if (!mtCfg.moving) mtCfg.moving = {};
-    // Commercial-only is NOT offered — every moving customer keeps a residential
+    // Commercial-only is NOT offered - every moving customer keeps a residential
     // base with commercial mixed in when available.
     mtCfg.moving.moving_type = (moving_type === 'commercial') ? 'both' : moving_type;
     db.prepare('UPDATE customers SET product_config = ? WHERE id = ?').run(JSON.stringify(mtCfg), req.user.id);
@@ -10150,7 +10150,7 @@ app.put('/api/settings', authMiddleware, (req, res) => {
       res.json({ success: true });
       return;
     }
-    // PROBATE USES AREAS (counties/regions), NOT postcodes — probate supply is
+    // PROBATE USES AREAS (counties/regions), NOT postcodes - probate supply is
     // national so a county/region gives a steady daily flow, whereas a single
     // postcode area starves the customer (probate is sparse). Enforce county/region
     // selection and a minimum of 2 areas here (and on sign-up).
@@ -10188,7 +10188,7 @@ app.put('/api/settings', authMiddleware, (req, res) => {
     // Reset a stale 'ukwide' coverage back to 'postcode' so a customer who
     // switches from All of UK to specific areas doesn't keep UK-wide state.
     db.prepare('UPDATE customers SET target_areas = ?, coverage = ? WHERE id = ?').run(JSON.stringify(target_areas), 'postcode', req.user.id);
-    // SYNC the per-product config too — the delivery reads product_config[<product>].target_areas
+    // SYNC the per-product config too - the delivery reads product_config[<product>].target_areas
     // FIRST (before the generic target_areas column), so a dashboard area change MUST update
     // it or the next 9am delivery keeps using the customer's OLD areas.
     try {
@@ -10216,7 +10216,7 @@ app.put('/api/settings', authMiddleware, (req, res) => {
   res.json({ success: true });
 });
 
-// PUT /api/settings/lead-filters — Update lead filters
+// PUT /api/settings/lead-filters - Update lead filters
 app.put('/api/settings/lead-filters', authMiddleware, (req, res) => {
   const { leadFilters } = req.body;
   const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
@@ -10248,7 +10248,7 @@ app.put('/api/settings/lead-filters', authMiddleware, (req, res) => {
   res.json({ success: true, biz_field2: leadFilters || '' });
 });
 
-// GET /api/settings/lead-filters — Return the customer's saved lead filters
+// GET /api/settings/lead-filters - Return the customer's saved lead filters
 app.get('/api/settings/lead-filters', authMiddleware, (req, res) => {
   const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
   if (!customer) return res.status(404).json({ error: 'User not found' });
@@ -10463,7 +10463,7 @@ app.post('/api/admin/crm-remind', adminAuth, async (req, res) => {
 
 // ===== AI IMAGE GENERATION =====
 
-// POST /api/ai/generate-image — Generate image via DALL-E 3
+// POST /api/ai/generate-image - Generate image via DALL-E 3
 app.post('/api/ai/generate-image', async (req, res) => {
   try {
     const { prompt, size, quality } = req.body;
@@ -10519,7 +10519,7 @@ app.post('/api/ai/generate-image', async (req, res) => {
   }
 });
 
-// POST /api/ai/generate-letter — Generate introduction letter via 9am Leads AI Marketing Builder
+// POST /api/ai/generate-letter - Generate introduction letter via 9am Leads AI Marketing Builder
 app.post('/api/ai/generate-letter', authMiddleware, async (req, res) => {
   try {
     const OPENAI_KEY = process.env.OPENAI_API_KEY;
@@ -10637,7 +10637,7 @@ app.post('/api/ai/generate-letter', authMiddleware, async (req, res) => {
   }
 });
 
-// POST /api/ai/generate-flyer — Generate flyer content via 9am Leads AI Marketing Builder
+// POST /api/ai/generate-flyer - Generate flyer content via 9am Leads AI Marketing Builder
 app.post('/api/ai/generate-flyer', authMiddleware, async (req, res) => {
   try {
     const OPENAI_KEY = process.env.OPENAI_API_KEY;
@@ -10728,7 +10728,7 @@ app.post('/api/ai/generate-flyer', authMiddleware, async (req, res) => {
   }
 });
 
-// POST /api/ai/generate-offers — Generate offer ideas
+// POST /api/ai/generate-offers - Generate offer ideas
 app.post('/api/ai/generate-offers', authMiddleware, async (req, res) => {
   try {
     var key = process.env.OPENAI_API_KEY;
@@ -10785,7 +10785,7 @@ app.post('/api/ai/generate-offers', authMiddleware, async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'AI Marketing Builder error. Please try again.' }); }
 });
 
-// POST /api/ai/review-content — AI Marketing Advisor: review flyer/letter content
+// POST /api/ai/review-content - AI Marketing Advisor: review flyer/letter content
 app.post('/api/ai/review-content', authMiddleware, async (req, res) => {
   try {
     var key = process.env.OPENAI_API_KEY;
@@ -10816,7 +10816,7 @@ app.post('/api/ai/review-content', authMiddleware, async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'Marketing Advisor error. Please try again.' }); }
 });
 
-// POST /api/ai/preview-personalisation — Preview personalised letter content
+// POST /api/ai/preview-personalisation - Preview personalised letter content
 app.post('/api/ai/preview-personalisation', authMiddleware, (req, res) => {
   try {
     var content = req.body.content || '';
@@ -10836,7 +10836,7 @@ app.post('/api/ai/preview-personalisation', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/ai/generate-flyer-pdf — Generate print-ready A5 flyer PDF
+// POST /api/ai/generate-flyer-pdf - Generate print-ready A5 flyer PDF
 app.post('/api/ai/generate-flyer-pdf', authMiddleware, async (req, res) => {
   try {
     const PDFDocument = require('pdfkit');
@@ -10970,7 +10970,7 @@ app.post('/api/ai/generate-flyer-pdf', authMiddleware, async (req, res) => {
             doc.fontSize(8).font('Helvetica').fillColor('#475569');
             doc.text((data.qr_text || 'Scan for more info') + '  |  ' + (data.email || ''), safeLeft, qrY, { width: pageW - safeLeft - safeRight, align: 'center' });
 
-            // Bottom bar (inside safe zone — was at the page edge, getting cut off)
+            // Bottom bar (inside safe zone - was at the page edge, getting cut off)
             doc.rect(0, pageH - safeBottom, pageW, 6).fill(c.primary);
           }
           doc.end();
@@ -11015,12 +11015,12 @@ app.post('/api/ai/generate-flyer-pdf', authMiddleware, async (req, res) => {
 // ===== ADMIN ENDPOINTS =====
 
 // HARDENED: never fall back to a known default. If ADMIN_PASSWORD is missing, a
-// random per-boot secret is used — internal cron/self-requests then fail closed
+// random per-boot secret is used - internal cron/self-requests then fail closed
 // (auth 401) rather than ever accepting a hardcoded password.
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || (function(){ try { return require('crypto').randomBytes(16).toString('hex'); } catch(e) { return 'x' + Date.now(); } })();
 if (!process.env.ADMIN_PASSWORD) console.warn('[WARN] ADMIN_PASSWORD not set. Using default. Set ADMIN_PASSWORD env var for security.');
 
-// GET /api/admin/leads-overview — per-customer lead delivery stats (today/week/month)
+// GET /api/admin/leads-overview - per-customer lead delivery stats (today/week/month)
 // so the admin can verify each customer receives their promised lead count.
 app.get('/api/admin/leads-overview', adminAuth, (req, res) => {
   try {
@@ -11057,7 +11057,7 @@ app.get('/api/admin/leads-overview', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/pool-quality?product=moving — show per-area pool supply and how
+// GET /api/admin/pool-quality?product=moving - show per-area pool supply and how
 // many leads actually pass the strict full-address gate (premise + full postcode),
 // so we can prove the promised daily count is deliverable in every customer area.
 app.get('/api/admin/pool-quality', adminAuth, (req, res) => {
@@ -11087,7 +11087,7 @@ app.get('/api/admin/pool-quality', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/delivered-leads?email=X&date=YYYY-MM-DD — list a customer's
+// GET /api/admin/delivered-leads?email=X&date=YYYY-MM-DD - list a customer's
 // DELIVERED leads for a date with the actual address data (so you can verify
 // moving/probate leads carry a door number + full postcode for Print & Post).
 app.get('/api/admin/delivered-leads', adminAuth, (req, res) => {
@@ -11114,7 +11114,7 @@ app.get('/api/admin/delivered-leads', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/customer-dashboard?email=X — view a customer's dashboard exactly
+// GET /api/admin/customer-dashboard?email=X - view a customer's dashboard exactly
 // as the delivery sees it (authoritative JSON store): every lead with address,
 // postcode, URL, door/flat-number and full-postcode flags, delivered/pending.
 app.get('/api/admin/customer-dashboard', adminAuth, (req, res) => {
@@ -11129,7 +11129,7 @@ app.get('/api/admin/customer-dashboard', adminAuth, (req, res) => {
       var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
       // Probate leads display the DECEASED's registered address (deceasedAddress),
       // never fullAddress/address which can hold the deceased's NAME for some
-      // sources — showing a person's name where an address belongs looked broken.
+      // sources - showing a person's name where an address belongs looked broken.
       var addr = (l.product === 'probate') ? (d.deceasedAddress || d.fullAddress || d.address || '') : (d.fullAddress || d.address || d.deceasedAddress || '');
       var pc = d.postcode || l.postcode || '';
       return { id: l.id, product: l.product, status: l.delivered ? 'delivered' : 'pending', delivered_at: l.delivered_at || '', created_at: l.created_at || '', rejected: !!(d.rejected), reject_reason: d.reject_reason || '', rejected_at: d.rejected_at || '', address: addr, postcode: pc, company: (d.company || d.companyName || d.name || ''), companyNumber: d.companyNumber || '', url: d.url || '', price: d.price || '', bedrooms: d.bedrooms || 0, property_type: d.propertyType || '', agent: d.agent || '', building_number: d.buildingNumber || '', street: d.street || '', udprn: d.udprn || '', paf_confirmed: !!(d.udprn), has_door_or_flat_number: hasUsablePremiseAddress(addr, pc), full_postcode: /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(pc || '').trim()) };
@@ -11138,7 +11138,7 @@ app.get('/api/admin/customer-dashboard', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/customer-leads?email=X — list a customer's undelivered leads with
+// GET /api/admin/customer-leads?email=X - list a customer's undelivered leads with
 // freshness dates so we can see exactly what delivery sees (diagnostic for shortfalls).
 app.get('/api/admin/customer-leads', adminAuth, (req, res) => {
   try {
@@ -11171,7 +11171,7 @@ app.get('/api/admin/customer-leads', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/moving-pool-diagnose — per-postcode-area counts in the moving pool
+// GET /api/admin/moving-pool-diagnose - per-postcode-area counts in the moving pool
 // (all leads, not just fresh) to debug missing customer areas.
 app.get('/api/admin/moving-pool-diagnose', adminAuth, (req, res) => {
   try {
@@ -11229,7 +11229,7 @@ app.get('/api/admin/delivery-preview', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/delivery-status — live delivery health for today (monitor/status page).
+// GET /api/admin/delivery-status - live delivery health for today (monitor/status page).
 app.get('/api/admin/delivery-status', adminAuth, (req, res) => {
   try {
     var dbS = getDb();
@@ -11266,7 +11266,7 @@ app.get('/api/admin/delivery-status', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/asset-check — diagnostic: where does /assets resolve on the live server?
+// GET /api/admin/asset-check - diagnostic: where does /assets resolve on the live server?
 app.get('/api/admin/asset-check', adminAuth, (req, res) => {
   try {
     var rel = 'assets/email-campaign/removal-companies.jpg';
@@ -11282,7 +11282,7 @@ app.get('/api/admin/asset-check', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/delivery-recover — manually run the completion watchdog now: detect
+// POST /api/admin/delivery-recover - manually run the completion watchdog now: detect
 // any customer below their promised count today and top them up (frees a stalled lock
 // first). Useful for the founder, and the basis of the recovery test.
 app.post('/api/admin/delivery-recover', adminAuth, async (req, res) => {
@@ -11292,7 +11292,7 @@ app.post('/api/admin/delivery-recover', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/paf-postscrape — manually run the post-scrape PAF enrichment on the
+// POST /api/admin/paf-postscrape - manually run the post-scrape PAF enrichment on the
 // moving pool now (adds door numbers + full addresses to door-less leads early, flags
 // paf_failed ones so delivery drops them). Run after any scrape to top up the pool.
 app.post('/api/admin/paf-postscrape', adminAuth, async (req, res) => {
@@ -11302,9 +11302,9 @@ app.post('/api/admin/paf-postscrape', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/enrich-moving — re-run the FREE Rightmove detail-page enrich on the
+// POST /api/admin/enrich-moving - re-run the FREE Rightmove detail-page enrich on the
 // door-less moving pool (captures numbered addresses at source, no PAF cost). This is
-// the main lever for moving supply — detail pages usually carry the house number.
+// the main lever for moving supply - detail pages usually carry the house number.
 app.post('/api/admin/enrich-moving', adminAuth, async (req, res) => {
   try {
     var file = path.join(DATA_DIR, PRODUCT_LEAD_FILES.moving ? PRODUCT_LEAD_FILES.moving.file : 'moving-leads.json');
@@ -11337,7 +11337,7 @@ app.post('/api/admin/enrich-moving', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/paf-probate — manually run the post-scrape PAF enrichment on the
+// POST /api/admin/paf-probate - manually run the post-scrape PAF enrichment on the
 // probate pool (adds door numbers to door-less probate leads so probate customers
 // get mailable addresses).
 app.post('/api/admin/probe-probate', adminAuth, async (req, res) => {
@@ -11362,7 +11362,7 @@ app.post('/api/admin/probe-probate', adminAuth, async (req, res) => {
     res.json({ success: true, run_at: new Date().toISOString(), ...out });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
-// POST /api/admin/paf-probate — manually run the post-scrape PAF enrichment on the
+// POST /api/admin/paf-probate - manually run the post-scrape PAF enrichment on the
 // probate pool (adds door numbers to door-less probate leads so probate customers
 // get mailable addresses).
 app.post('/api/admin/paf-probate', adminAuth, async (req, res) => {
@@ -11372,7 +11372,7 @@ app.post('/api/admin/paf-probate', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/preverify — manually run the pre-delivery verification now (enriches
+// POST /api/admin/preverify - manually run the pre-delivery verification now (enriches
 // the exact leads each moving customer is about to receive, before 9am).
 app.post('/api/admin/preverify', adminAuth, async (req, res) => {
   try {
@@ -11381,9 +11381,9 @@ app.post('/api/admin/preverify', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/enrich-pool — fill full addresses for incomplete moving pool leads
+// POST /api/admin/enrich-pool - fill full addresses for incomplete moving pool leads
 // (free OTM first, bounded Apify Rightmove). Body: { max } optional.
-// POST /api/admin/upload-epc-db — write the gzipped England & Wales SQLite index (raw
+// POST /api/admin/upload-epc-db - write the gzipped England & Wales SQLite index (raw
 // body), then reload. Used to restore/refresh epc-index.db without an on-box rebuild.
 app.post('/api/admin/upload-epc-db', adminAuth, express.raw({ type: '*/*', limit: '600mb' }), (req, res) => {
   try {
@@ -11396,14 +11396,14 @@ app.post('/api/admin/upload-epc-db', adminAuth, express.raw({ type: '*/*', limit
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/enrich-pool-epc — bulk-resolve every incomplete non-tender pool lead
+// POST /api/admin/enrich-pool-epc - bulk-resolve every incomplete non-tender pool lead
 // from the local EPC index so all leads are Stannp-mailable.
 app.post('/api/admin/enrich-pool-epc', adminAuth, async (req, res) => {
   try { var r = await enrichAllPoolsWithEpc(); res.json({ success: true, result: r }); }
   catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/lead-debug?email=X — show a customer's leads and EXACTLY why each
+// GET /api/admin/lead-debug?email=X - show a customer's leads and EXACTLY why each
 // passes/fails the mailable-address gate (diagnoses "0 delivered" reports).
 app.get('/api/admin/lead-debug', adminAuth, (req, res) => {
   try {
@@ -11428,7 +11428,7 @@ app.get('/api/admin/lead-debug', adminAuth, (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/address-audit — report print & post (Stannp) address completeness per pool.
+// GET /api/admin/address-audit - report print & post (Stannp) address completeness per pool.
 // Every non-tender lead must carry door/premise + street + full postcode + town to be mailable.
 app.get('/api/admin/address-audit', adminAuth, (req, res) => {
   try {
@@ -11452,7 +11452,7 @@ app.get('/api/admin/address-audit', adminAuth, (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/epc-disk[?cleanup=1] — report (and optionally purge) large EPC temp files.
+// GET /api/admin/epc-disk[?cleanup=1] - report (and optionally purge) large EPC temp files.
 app.get('/api/admin/epc-disk', adminAuth, (req, res) => {
   try {
     var dir = path.join(__dirname, 'data');
@@ -11475,7 +11475,7 @@ app.get('/api/admin/epc-disk', adminAuth, (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/restore-epc-db — download the England & Wales SQLite index from the
+// POST /api/admin/restore-epc-db - download the England & Wales SQLite index from the
 // private GitHub backup release and write it to the data disk (no huge HTTP POST).
 // Body optional: { assetId } (defaults to the current release asset).
 app.post('/api/admin/restore-epc-db', adminAuth, async (req, res) => {
@@ -11516,7 +11516,7 @@ app.post('/api/admin/restore-epc-db', adminAuth, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/upload-epc-db-chunk — chunked restore of epc-index.db.
+// POST /api/admin/upload-epc-db-chunk - chunked restore of epc-index.db.
 // Body: { offset, final, data } where data is base64 of the raw .db bytes.
 app.post('/api/admin/upload-epc-db-chunk', adminAuth, express.json({ limit: '40mb' }), (req, res) => {
   try {
@@ -11535,7 +11535,7 @@ app.post('/api/admin/upload-epc-db-chunk', adminAuth, express.json({ limit: '40m
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/upload-scot-db — write the gzipped Scotland SQLite index (raw body),
+// POST /api/admin/upload-scot-db - write the gzipped Scotland SQLite index (raw body),
 // then reload. Scotland is kept as a separate small DB (scot-epc.db) so the big E&W
 // index never has to be rebuilt.
 app.post('/api/admin/upload-scot-db', adminAuth, express.raw({ type: '*/*', limit: '300mb' }), (req, res) => {
@@ -11549,7 +11549,7 @@ app.post('/api/admin/upload-scot-db', adminAuth, express.raw({ type: '*/*', limi
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/build-epc-sqlite — build epc-index.db from epc-index.tsv.gz on the box
+// POST /api/admin/build-epc-sqlite - build epc-index.db from epc-index.tsv.gz on the box
 app.post('/api/admin/build-epc-sqlite', adminAuth, async (req, res) => {
   try {
     var r = await EPC_INDEX.buildSqlite(path.join(__dirname, 'data'));
@@ -11558,7 +11558,7 @@ app.post('/api/admin/build-epc-sqlite', adminAuth, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/upload-epc-gz — write the gzipped EPC TSV straight onto the mounted
+// POST /api/admin/upload-epc-gz - write the gzipped EPC TSV straight onto the mounted
 // data disk (raw application/gzip body), then reload the index.
 app.post('/api/admin/upload-epc-gz', adminAuth, express.raw({ type: '*/*', limit: '200mb' }), (req, res) => {
   try {
@@ -11570,7 +11570,7 @@ app.post('/api/admin/upload-epc-gz', adminAuth, express.raw({ type: '*/*', limit
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/upload-epc-index — write the EPC index JSON straight onto the mounted
+// POST /api/admin/upload-epc-index - write the EPC index JSON straight onto the mounted
 // data disk (committed files don't land there because it's a persistent mount).
 app.post('/api/admin/upload-epc-index', adminAuth, express.json({ limit: '80mb' }), (req, res) => {
   try {
@@ -11583,7 +11583,7 @@ app.post('/api/admin/upload-epc-index', adminAuth, express.json({ limit: '80mb' 
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/epc-status — is the EPC index loaded, and does a sample resolve?
+// GET /api/admin/epc-status - is the EPC index loaded, and does a sample resolve?
 app.get('/api/admin/epc-status', adminAuth, (req, res) => {
   try {
     var loaded = EPC_INDEX.isLoaded();
@@ -11596,7 +11596,7 @@ app.get('/api/admin/epc-status', adminAuth, (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/pool-postcodes?product=moving — distinct postcodes in the pool file
+// GET /api/admin/pool-postcodes?product=moving - distinct postcodes in the pool file
 // (used to build a SMALL EPC index subset that fits Render's disk/memory).
 app.get('/api/admin/pool-postcodes', adminAuth, (req, res) => {
   try {
@@ -11611,7 +11611,7 @@ app.get('/api/admin/pool-postcodes', adminAuth, (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/build-epc-index — (re)build the EPC address index from the CSVs in
+// POST /api/admin/build-epc-index - (re)build the EPC address index from the CSVs in
 // data/epc/ (see epc_address_index.js). Run once after dropping the EPC files in.
 app.post('/api/admin/build-epc-index', adminAuth, async (req, res) => {
   try {
@@ -11630,7 +11630,7 @@ app.post('/api/admin/enrich-pool', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/quiet-areas — manually run the quiet-area check now (flags chosen
+// POST /api/admin/quiet-areas - manually run the quiet-area check now (flags chosen
 // areas with no delivered leads for QUIET_AREA_DAYS and notifies the customer).
 app.post('/api/admin/quiet-areas', adminAuth, (req, res) => {
   try {
@@ -11639,7 +11639,7 @@ app.post('/api/admin/quiet-areas', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/quiet-areas-report — for each active customer, list their chosen
+// GET /api/admin/quiet-areas-report - for each active customer, list their chosen
 // postcode areas that have produced ZERO leads in the last QUIET_AREA_DAYS days,
 // with the last-alerted date. READ-ONLY (no emails sent).
 app.get('/api/admin/quiet-areas-report', adminAuth, (req, res) => {
@@ -11672,7 +11672,7 @@ app.get('/api/admin/quiet-areas-report', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// deliveryPreviewForCustomer(cust) — the per-customer pool preview used by both
+// deliveryPreviewForCustomer(cust) - the per-customer pool preview used by both
 // /api/admin/delivery-preview and /api/admin/readiness. Returns how many valid,
 // in-area, fresh leads the customer would receive at 9am with the current pool.
 async function deliveryPreviewForCustomer(cust, sharedSeen) {
@@ -11771,7 +11771,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
   var _sharedSeen = sharedSeen || {};
   var candidateErrors = (cust.email === 'info@afsremovals.com') ? [] : null;
   // A property lead is only deliverable (Print & Post) with a confirmed door number
-  // AND a full postcode — mirrors the delivery door-number gate exactly.
+  // AND a full postcode - mirrors the delivery door-number gate exactly.
     function mailOK(addr, pc) { return hasUsablePremiseAddress(addr, pc, cust.product === 'probate' ? { relaxMultiUnit: true } : undefined) && /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(pc || '').trim()); }
   // A moving lead without a door number is STILL deliverable when it has a full
   // postcode + a street name: the delivery's PAF pass resolves the exact door number
@@ -11797,7 +11797,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
     var l = interleaved[i];
     // Probate leads store the deceased's address in deceasedAddress (e.g. "Flat 3
     // Enfield Court, Garside Street, Hyde, SK14 5GU"). Pull the postcode from ANY
-    // address field so county/postcode matching works — without this, probate leads
+    // address field so county/postcode matching works - without this, probate leads
     // with the postcode only inside deceasedAddress were never county-matched.
     var pcArea = extractPostcodeArea(l.postcode || l.address || l.fullAddress || l.deceasedAddress || '');
     var matched = false;
@@ -11911,9 +11911,9 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
       var curLeadR = selected[rpi];
       var curAddrR = curLeadR.fullAddress || curLeadR.address || curLeadR.deceasedAddress || '';
       var curPcR = curLeadR.postcode || '';
-      if (mailOK(curAddrR, curPcR)) continue; // has a door + full postcode — fine
+      if (mailOK(curAddrR, curPcR)) continue; // has a door + full postcode - fine
       // PAF candidate (full postcode + street): the delivery's PAF pass adds the door
-      // number, so keep it — do NOT swap it out. (The old check read a `paf_candidate`
+      // number, so keep it - do NOT swap it out. (The old check read a `paf_candidate`
       // field that only exists on the OUTPUT object, so it was always undefined and
       // every door-less lead was needlessly replaced.)
       if (pafEligible(curLeadR, curAddrR, curPcR)) continue;
@@ -11953,7 +11953,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
     if (/all.?uk|uk.?wide|nationwide|whole.?uk/i.test((areas || []).join(' '))) {
       inArea = true;
     } else if (areas.some(function(a) { return !/^[A-Z]{1,3}$/i.test(a); })) {
-      // Customer chose county/region names (e.g. "bristol", "oxfordshire") — match the
+      // Customer chose county/region names (e.g. "bristol", "oxfordshire") - match the
       // lead's postcode area against the county map (mirrors the delivery fallback).
       for (var _ci = 0; _ci < areas.length; _ci++) {
         var _cLower = String(areas[_ci] || '').toLowerCase().replace(/[\s-]+/g, '-');
@@ -11983,10 +11983,10 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
   // reasonable radius of the customer's chosen areas. A Croydon removals firm should
   // never be offered a Glasgow/Edinburgh/Dundee property. Anything beyond the cap is
   // dropped entirely (the customer is shown fewer leads rather than useless far ones).
-  // FINAL VALIDATION (moving) — MIRRORS THE DELIVERY EXACTLY: the 9am delivery runs
+  // FINAL VALIDATION (moving) - MIRRORS THE DELIVERY EXACTLY: the 9am delivery runs
   // validateMovingLead + a doorless check (hasPremiseNumber) + property-identity dedup
   // on every lead and DROPS any that fail. The preview MUST apply the same checks so
-  // the previewed count EXACTLY matches what will actually be delivered — no over-reporting.
+  // the previewed count EXACTLY matches what will actually be delivered - no over-reporting.
   if (cust.product === 'moving') {
     var _prevSeen = {};
     out = out.filter(function(o) {
@@ -11997,9 +11997,9 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
       // PAF pass adds the door number before the mailable-address gate. Without this
       // the preview dropped every door-less-but-enrichable lead and under-reported.
       if (_vres !== '' && !(o.paf_candidate && _vres === 'no-premise-number')) return false;
-      // Doorless check — same allowance for PAF candidates.
+      // Doorless check - same allowance for PAF candidates.
       try { if (!hasUsablePremiseAddress(o.address || '', o.postcode || '') && !o.paf_candidate) return false; } catch(e) { return false; }
-      // Property-identity dedup — the delivery drops duplicate properties.
+      // Property-identity dedup - the delivery drops duplicate properties.
       try { var _k = propertyIdentityKey(o.address || '', o.postcode || ''); if (_k && _prevSeen[_k]) return false; if (_k) _prevSeen[_k] = 1; } catch(e) {}
       return true;
     });
@@ -12014,12 +12014,12 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
 // means door-less leads are fixed minutes before delivery. Instead, run PAF right
 // after the morning scrape so the moving pool already holds full, numbered
 // addresses. Because the delivery skips Postcoder for any lead that already has a
-// confirmed premise number, pre-enriching the pool is cost-neutral — each lead is
+// confirmed premise number, pre-enriching the pool is cost-neutral - each lead is
 // looked up at most once (at scrape time), never again at 9am. Leads PAF can't
 // resolve are flagged paf_failed so delivery drops/replaces them early.
 async function runMovingPafPostScrape() {
   if (!(process.env.POSTCODER_ENABLED === 'true' || process.env.POSTCODER_ENABLED === '1') || !process.env.POSTCODER_API_KEY) {
-    console.log('[PAF-POSTSCRAPE] Postcoder disabled — skipping');
+    console.log('[PAF-POSTSCRAPE] Postcoder disabled - skipping');
     return { enriched: 0, failed: 0 };
   }
   var file = path.join(DATA_DIR, PRODUCT_LEAD_FILES.moving ? PRODUCT_LEAD_FILES.moving.file : 'moving-leads.json');
@@ -12039,13 +12039,13 @@ async function runMovingPafPostScrape() {
   arr.forEach(function(e) {
     var l = e._item || e;
     // Skip leads already successfully numbered. RETRY paf_failed leads (up to 2
-    // attempts) — an earlier run may have marked them failed only because the daily
+    // attempts) - an earlier run may have marked them failed only because the daily
     // Postcoder budget was exhausted, so with fresh budget they may now resolve.
     if (l.paf_done && !l.paf_failed) return;
     if ((l.paf_attempts || 0) >= 2) return;
     var addr = l.fullAddress || l.address || '';
     var pc = String(l.postcode || '').toUpperCase().trim();
-    if (hasUsablePremiseAddress(addr, pc)) { l.paf_done = true; return; } // already numbered — no paid lookup
+    if (hasUsablePremiseAddress(addr, pc)) { l.paf_done = true; return; } // already numbered - no paid lookup
     if (!/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/.test(pc)) return;      // no full postcode → not resolvable
     if (!hasStreetName(addr)) return;                                       // no street → PAF can't match
     var d = pickFreshDate(l) || '';
@@ -12055,7 +12055,7 @@ async function runMovingPafPostScrape() {
   // PRIORITISE the paid early pass: leads in ACTIVE customer areas first (the ones
   // most likely to be delivered), then freshest first. Otherwise the cap is spent on
   // random pool entries and the leads customers will actually get stay door-less
-  // until 9am — exactly the uncertainty we're removing.
+  // until 9am - exactly the uncertainty we're removing.
   try {
     var _dbj = getDb();
     var _activeAreas = {};
@@ -12079,13 +12079,13 @@ async function runMovingPafPostScrape() {
   if (!need.length) return { enriched: 0, failed: 0 };
   var pcDeliver = require('./rightmove_scraper_v2');
   var enriched = 0, failed = 0;
-  // POSTCODER PAF ONLY — fast + cheap (~4.5p/lookup, ~250ms each). No Land
+  // POSTCODER PAF ONLY - fast + cheap (~4.5p/lookup, ~250ms each). No Land
   // Registry/Zoopla fallbacks here: those stay at delivery time. This pass just
   // adds the door number to fresh door-less leads so the pool is ready before 9am.
   for (var pi2 = 0; pi2 < need.length; pi2++) {
     var e = need[pi2]; var l = e._item || e;
     // BUDGET RESERVE: never spend the Postcoder budget the 9am delivery needs.
-    // If we're within `reserve` of the daily budget, stop — the delivery's
+    // If we're within `reserve` of the daily budget, stop - the delivery's
     // door-number gate + exact-count fill must always have budget to guarantee
     // every sent lead has a verified door number.
     try {
@@ -12093,7 +12093,7 @@ async function runMovingPafPostScrape() {
       var usedNow = pcBudget2.usage ? pcBudget2.usage() : 0;
       var budgetNow = pcBudget2.getDailyBudget ? pcBudget2.getDailyBudget() : 0;
       if (budgetNow > 0 && usedNow >= budgetNow - reserve) {
-        console.log('[PAF-POSTSCRAPE] Stopping early at ' + usedNow + '/' + budgetNow + ' — reserving ' + reserve + ' lookups for the 9am delivery');
+        console.log('[PAF-POSTSCRAPE] Stopping early at ' + usedNow + '/' + budgetNow + ' - reserving ' + reserve + ' lookups for the 9am delivery');
         break;
       }
     } catch(be) {}
@@ -12107,7 +12107,7 @@ async function runMovingPafPostScrape() {
         await new Promise(function(r) { setTimeout(r, 30000); });
         full = await pcDeliver.lookupPostcoderAddress(pc0, addr0, hint);
       }
-      // TRANSIENT/BUDGET (not a real failure): leave the lead for a later pass — do
+      // TRANSIENT/BUDGET (not a real failure): leave the lead for a later pass - do
       // NOT mark paf_failed, or a resolvable lead is permanently excluded.
       if (full && (full.rateLimited || full.budgetExhausted || full.transient)) { l.paf_done = false; continue; }
       var numOk = full && hasUsablePremiseAddress((full.fullAddress || full.address1 || addr0), full.postcode || pc0);
@@ -12161,7 +12161,7 @@ async function runProbatePafPostScrape() {
     return { enriched: 0, failed: 0 };
   }
   if (!(process.env.POSTCODER_ENABLED === 'true' || process.env.POSTCODER_ENABLED === '1') || !process.env.POSTCODER_API_KEY) {
-    console.log('[PAF-PROBATE] Postcoder disabled — skipping'); return { enriched: 0, failed: 0 };
+    console.log('[PAF-PROBATE] Postcoder disabled - skipping'); return { enriched: 0, failed: 0 };
   }
   var file = path.join(DATA_DIR, PRODUCT_LEAD_FILES.probate ? PRODUCT_LEAD_FILES.probate.file : 'probate-leads.json');
   var raw = null;
@@ -12182,7 +12182,7 @@ async function runProbatePafPostScrape() {
     if ((l.paf_attempts || 0) >= 2) return;
     // PRE-PROBATE / EARLY-ESTATE EXCLUSION: death/funeral notices are NOT confirmed
     // probate. They are "Early Estate Opportunity" leads for house-clearance /
-    // removals / auction / probate-buyers — never to be PAF-verified or delivered as
+    // removals / auction / probate-buyers - never to be PAF-verified or delivered as
     // confirmed probate. Skip them entirely (no Postcoder credits spent).
     var lSrc = String(l.source || '').toLowerCase();
     if (lSrc === 'early-estate' || lSrc === 'funeral-notices' || lSrc === 'funeral' || l.preProbate) { l.paf_done = true; l.paf_failed = true; return; }
@@ -12195,7 +12195,7 @@ async function runProbatePafPostScrape() {
     // FUNERAL-NOTICE JUNK GUARD: the funeral-notices source builds fake leads where
     // the "address" is just the deceased's NAME + county (e.g. "Raymond 'John' AINGER,
     // Bristol") with a synthetic postcode ("BS1 1AA"). These have no street, so PAF
-    // can never add a door number — and attempting them burns paid Postcoder credits.
+    // can never add a door number - and attempting them burns paid Postcoder credits.
     // Require a real street name (or a numbered premise) instead of the old
     // "3+ consecutive letters" fallback, which matched person names and let these
     // junk leads into the paid lookup queue.
@@ -12212,7 +12212,7 @@ async function runProbatePafPostScrape() {
     try {      var b = require('./postcoder_budget');
       var used = b.usage ? b.usage() : 0;
       var tot = b.getDailyBudget ? b.getDailyBudget() : 0;
-      if (tot > 0 && used >= tot - reserve) { console.log('[PAF-PROBATE] Budget reserve reached — stopping'); break; }
+      if (tot > 0 && used >= tot - reserve) { console.log('[PAF-PROBATE] Budget reserve reached - stopping'); break; }
     } catch(be) {}
     if (pi > 0) await new Promise(function(r) { setTimeout(r, 250); });
     var addr0 = l.fullAddress || l.deceasedAddress || l.address || '';
@@ -12265,11 +12265,11 @@ async function runProbatePafPostScrape() {
 // delivery then just sends already-numbered leads (its gate becomes a safety net).
 // APIFY MOVING DETAIL ENRICHMENT: fetch the FULL numbered address for the exact moving
 // leads a customer will receive, via the Apify Rightmove actor's DETAIL mode over a
-// residential proxy — the only reliable way past Rightmove's datacenter-IP block. This
+// residential proxy - the only reliable way past Rightmove's datacenter-IP block. This
 // is what turns a street-only pool lead ("Heron Way, Abbeydale") into a mailable one.
 // COST-CONTROLLED: opt-in (APIFY_DETAIL_ENABLED), hard daily cap (APIFY_DETAIL_MAX,
 // default 60), batched 10 URLs per actor run, and only ever run for leads that are
-// genuinely about to be delivered — never the whole pool. Returns { url: {address} }.
+// genuinely about to be delivered - never the whole pool. Returns { url: {address} }.
 async function apifyFetchMovingDetails(urls, max) {
   var out = {};
   try {
@@ -12281,7 +12281,7 @@ async function apifyFetchMovingDetails(urls, max) {
     if (!dbA.__apifyDetail || dbA.__apifyDetail.date !== today) dbA.__apifyDetail = { date: today, used: 0 };
     var dailyMax = Number(process.env.APIFY_DETAIL_MAX || 60);
     var remaining = dailyMax - (dbA.__apifyDetail.used || 0);
-    if (remaining <= 0) { console.log('[APIFY-DETAIL] daily cap reached (' + dailyMax + ') — skipping'); return out; }
+    if (remaining <= 0) { console.log('[APIFY-DETAIL] daily cap reached (' + dailyMax + ') - skipping'); return out; }
     var list = urls.filter(Boolean).slice(0, Math.min(max || remaining, remaining));
     if (!list.length) return out;
     var https = require('https');
@@ -12369,7 +12369,7 @@ async function enrichMovingPoolAddresses(maxPerRun) {
     else if (raw && typeof raw === 'object') { container = raw; Object.keys(raw).forEach(function(k) { if (k.indexOf('_') !== 0 && Array.isArray(raw[k])) raw[k].forEach(function(x) { arr.push(x); }); }); }
     if (!arr.length) return { ok: false };
     // AREA TARGETING: only enrich leads whose postcode AREA an active customer actually
-    // wants, and put the THIN areas first — so the free OTM budget is spent exactly where
+    // wants, and put the THIN areas first - so the free OTM budget is spent exactly where
     // customers are short (CF/NP etc.), not on areas nobody ordered.
   var activeAreas = {};
   var allCusts = getDb().customers || [];
@@ -12385,7 +12385,7 @@ async function enrichMovingPoolAddresses(maxPerRun) {
     // reliable path, zero bandwidth. No-op until the EPC index is built.
     var _epcFixed = 0;
     if (EPC_INDEX.isLoaded()) {
-      // node:sqlite is SYNCHRONOUS — yield every 200 rows so the health check can answer.
+      // node:sqlite is SYNCHRONOUS - yield every 200 rows so the health check can answer.
       for (var _ei = 0; _ei < arr.length; _ei++) {
         if (_ei > 0 && _ei % 200 === 0) await new Promise(function(r) { setImmediate(r); });
         var _el = arr[_ei];
@@ -12398,7 +12398,7 @@ async function enrichMovingPoolAddresses(maxPerRun) {
       }
       if (_epcFixed) {
         console.log('[EPC] resolved ' + _epcFixed + ' house numbers from the local index');
-        // PERSIST NOW — the free EPC step runs before the OTM bandwidth-cap early-return,
+        // PERSIST NOW - the free EPC step runs before the OTM bandwidth-cap early-return,
         // so without this write its results would be discarded on a capped run.
         try { fs.writeFileSync(poolFile, JSON.stringify(container || arr, null, 2)); } catch(e) {}
       }
@@ -12424,7 +12424,7 @@ async function enrichMovingPoolAddresses(maxPerRun) {
     });
     var cap = Math.min(Number(maxPerRun || 20), 200);
     // DAILY BANDWIDTH CAP: every OTM detail fetch downloads a FULL page, so bound the
-    // TOTAL per day (not just per run) — this is what was eating Render bandwidth.
+    // TOTAL per day (not just per run) - this is what was eating Render bandwidth.
     var dailyCap = Number(process.env.MOVING_ENRICH_DAILY_CAP || 150);
     var dbE = getDb();
     var _todayE = new Date().toISOString().split('T')[0];
@@ -12436,7 +12436,7 @@ async function enrichMovingPoolAddresses(maxPerRun) {
     var otm = require('./onthemarket_scraper');
     var otmTried = 0;
     var otmList = otmUrls.slice(0, cap);
-    var OTM_CONC = 3; // gentle concurrency — high parallelism spiked memory and restarted the box
+    var OTM_CONC = 3; // gentle concurrency - high parallelism spiked memory and restarted the box
     for (var ob = 0; ob < otmList.length; ob += OTM_CONC) {
       var obatch = otmList.slice(ob, ob + OTM_CONC);
       var ores = await Promise.all(obatch.map(function(u) { return otm.fetchOtmDetailAddress(u).catch(function() { return null; }); }));
@@ -12481,10 +12481,10 @@ async function enrichMovingPoolAddresses(maxPerRun) {
 
 async function preVerifyMovingLeads() {
   if (!(process.env.POSTCODER_ENABLED === 'true' || process.env.POSTCODER_ENABLED === '1') || !process.env.POSTCODER_API_KEY) {
-    console.log('[PREVERIFY] Postcoder disabled — skipping'); return { ok: false };
+    console.log('[PREVERIFY] Postcoder disabled - skipping'); return { ok: false };
   }
   // EARLY PAF: number the exact leads each moving customer will receive NOW, so the
-  // 9am delivery is a simple send with nothing left to resolve. Efficient — only the
+  // 9am delivery is a simple send with nothing left to resolve. Efficient - only the
   // selected leads are looked up, never the whole pool.
   global.__POSTCODER_EARLY_CTX__ = true;
   setTimeout(function() { try { global.__POSTCODER_EARLY_CTX__ = false; } catch(e) {} }, 15 * 60 * 1000);
@@ -12529,7 +12529,7 @@ async function preVerifyMovingLeads() {
         continue;
       }
       // OTM (FREE): the Apify actor is Rightmove-only, but OnTheMarket exposes the full
-      // address on its detail page — fetch it directly (no Apify, no Postcoder).
+      // address on its detail page - fetch it directly (no Apify, no Postcoder).
       if (/onthemarket\.com\/details\//i.test(urls[u])) {
         try {
           var _otm = await require('./onthemarket_scraper').fetchOtmDetailAddress(urls[u]);
@@ -12562,7 +12562,7 @@ async function preVerifyMovingLeads() {
       var b = require('./postcoder_budget');
       var used = b.usage ? b.usage() : 0;
       var tot = b.getDailyBudget ? b.getDailyBudget() : 0;
-      if (tot > 0 && used >= tot - reserve) { console.log('[PREVERIFY] Budget reserve reached (' + used + '/' + tot + ') — stopping'); break; }
+      if (tot > 0 && used >= tot - reserve) { console.log('[PREVERIFY] Budget reserve reached (' + used + '/' + tot + ') - stopping'); break; }
     } catch(be) {}
     var idx = -1;
     for (var fi2 = 0; fi2 < arr.length; fi2++) { if ((arr[fi2]._i || arr[fi2]).url === urls[u]) { idx = fi2; break; } }
@@ -12618,7 +12618,7 @@ function cleanUkPostcode(raw) {
   return outward + ' ' + inward;
 }
 // leads_paused can be stored as boolean true, number 1, or STRING "0"/"1". Treat
-// only true/1/'1' as paused — "0" is NOT paused (this bug silently skipped customers).
+// only true/1/'1' as paused - "0" is NOT paused (this bug silently skipped customers).
 function isLeadsPaused(c) {
   var v = c && c.leads_paused;
   return v === true || v === 1 || v === '1' || v === 'true' || v === 'TRUE' || v === 'yes';
@@ -12734,7 +12734,7 @@ var AREA_MATCH_KEYWORDS = {
 };
 // The LOCALITY text of an address: everything AFTER the first comma (town/county/
 // postcode), with the street line removed. Prevents a street name from being
-// mistaken for the customer's target area — e.g. "62 London Road, Lancashire" must
+// mistaken for the customer's target area - e.g. "62 London Road, Lancashire" must
 // NOT match a London target just because the street is called "London Road", and
 // "1143 Bristol Road South, West Midlands" must NOT match a Bristol target.
 function addressLocalityText(addr) {
@@ -12821,7 +12821,7 @@ function checkQuietAreas() {
       areas.forEach(function(a) {
         var code = extractPostcodeArea(a);
         // Only alert on real postcode-AREA targets (e.g. L, SW, CH2). Skip
-        // region/county names ("EAST", "ALL UK") — those aren't changeable to a
+        // region/county names ("EAST", "ALL UK") - those aren't changeable to a
         // "closer" postcode and would be misleading.
         if (!code || !isPostcodeAreaTarget(a)) return;
         var hasDigit = /\d/.test(String(a));
@@ -12844,7 +12844,7 @@ function checkQuietAreas() {
   } catch(e) { return []; }
 }
 
-// GET /api/admin/readiness — run the delivery preview for EVERY real customer and
+// GET /api/admin/readiness - run the delivery preview for EVERY real customer and
 // report which would be fulfilled at 9am. This is the pre-delivery safety check:
 // run it after the 6am scrape (or at 07:45 via the cron below) so any customer
 // whose areas would shortfall is flagged BEFORE the 9am delivery, giving time to
@@ -12911,7 +12911,7 @@ app.get('/api/admin/readiness', adminAuth, async (req, res) => {
 // EARLY READINESS REPORT (05:45 + 06:45 UK Mon-Fri): emails the founder a per-customer
 // ready / PAF-reliant / short snapshot as soon as the 05:00 scrape + 05:15 PAF have run,
 // so any problem is known ~3h15m (05:45) and ~2h15m (06:45) before 9am instead of at
-// 9am. Read-only — it never changes leads, only tells you where you stand.
+// 9am. Read-only - it never changes leads, only tells you where you stand.
 async function sendEarlyReadinessReport(label) {
   try {
     var dbE = getDb();
@@ -12946,14 +12946,14 @@ async function sendEarlyReadinessReport(label) {
     console.log('[EARLY-READINESS ' + label + '] ' + (rows.length - shorts.length) + '/' + rows.length + ' ready' + (shorts.length ? '; short: ' + shorts.map(function(s){ return s.email; }).join(', ') : ''));
   } catch(e) { console.log('[EARLY-READINESS] error:', e.message); }
 }
-// ONE consolidated pre-9am result email (07:45 UK Mon-Fri) — sent once, after the
+// ONE consolidated pre-9am result email (07:45 UK Mon-Fri) - sent once, after the
 // planning scrape + final PAF, so it shows the true end state ~1h15m before 9am.
 // This replaces the previous per-stage emails (no 05:25/06:30/06:45/07:45 clutter).
 cron.schedule('45 7 * * 1-5', function() { try { sendEarlyReadinessReport('07:45'); } catch(e) {} }, { timezone: 'Europe/London' });
 
-// POST /api/admin/deep-scrape — run the deep Rightmove (Apify) worker for SPECIFIC
+// POST /api/admin/deep-scrape - run the deep Rightmove (Apify) worker for SPECIFIC
 // postcode areas (e.g. areas=L,WA,CH,M,WN). Used when a customer's chosen areas have
-// no fresh supply (e.g. Liverpool/North West) — normal scrape skips areas with no supply.
+// no fresh supply (e.g. Liverpool/North West) - normal scrape skips areas with no supply.
 app.post('/api/admin/deep-scrape', adminAuth, (req, res) => {
   try {
     var areas = (req.body && req.body.areas) || '';
@@ -12961,7 +12961,7 @@ app.post('/api/admin/deep-scrape', adminAuth, (req, res) => {
     var maxProps = (req.body && req.body.max) || process.env.MOVING_MAX_PROPS || '50';
     // COST HARD-CAP: the Apify actor bills per property fetched. Never let an
     // on-demand deep-scrape exceed the daily cap (DEEP_SCRAPE_MAX_PROPS, default
-    // 50) — a runaway max burns credits fast. The scheduled 06:00 run is also
+    // 50) - a runaway max burns credits fast. The scheduled 06:00 run is also
     // bounded by MOVING_MAX_PROPS.
     var hardCap = parseInt(process.env.DEEP_SCRAPE_MAX_PROPS || '50', 10);
     var maxPropsNum = parseInt(maxProps, 10) || 50;
@@ -13041,7 +13041,7 @@ app.post('/api/admin/purge-bad-leads', adminAuth, (req, res) => {
       if (ds && !/added\s+(today|yesterday|\d+)/i.test(ds)) return true;           // "Added > 14 days", "Reduced"
       // NOTE: no firstVisibleDate-age purge here (see comment below).
       // Incomplete postcodes can never be delivered (need door number + street +
-      // full postcode) — remove them from the pool so they don't keep resurfacing.
+      // full postcode) - remove them from the pool so they don't keep resurfacing.
       var pcBad = String(l.postcode || '');
       if (pcBad && !/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(pcBad.trim())) return true;
       if (/\b(?:hotel|hostel|guesthouse|inn|catering|pub\b|care\s+home)\b/i.test(a)) return true;
@@ -13075,7 +13075,7 @@ app.post('/api/admin/purge-bad-leads', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/purge-probate-pool — remove ALL non-probate (Rightmove /
+// POST /api/admin/purge-probate-pool - remove ALL non-probate (Rightmove /
 // OnTheMarket / Zoopla property-listing) leads from the probate pool file. A
 // contaminated probate pool delivers house listings as "probate" leads (or none
 // at all, since they're filtered at delivery). Real probate leads come from the
@@ -13108,7 +13108,7 @@ app.post('/api/admin/purge-probate-pool', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/set-customer-lead-total — set a customer's TOTAL DELIVERED count
+// POST /api/admin/set-customer-lead-total - set a customer's TOTAL DELIVERED count
 // to exactly { target } (5/day × delivery days since signup). Used to fix dashboard
 // totals that drifted (over-delivered by churn, or under-delivered by supply gaps):
 //   - OVER target: marks the OLDEST delivered leads as removed (keeps today's batch)
@@ -13125,7 +13125,7 @@ app.post('/api/admin/set-customer-lead-total', adminAuth, async (req, res) => {
     if (!cust) return res.status(404).json({ error: 'Customer not found' });
     var today = new Date().toISOString().split('T')[0];
     // DELETE REJECTED/BLOCKED delivered rows: a rejected lead (out-of-area/wrong/
-    // commercial flagged by the founder) is NOT valid history — it was hidden from
+    // commercial flagged by the founder) is NOT valid history - it was hidden from
     // the customer's /api/leads, so it must not count toward the total either.
     // Otherwise the dashboard counts a "20" that includes 4 invisible rejects.
     var _rejRemoved = 0;
@@ -13154,11 +13154,11 @@ app.post('/api/admin/set-customer-lead-total', adminAuth, async (req, res) => {
     }
     // TODAY-CAP: the customer's "leads today" dashboard KPI must show EXACTLY the
     // daily cap (no more). Repeated runs/churn may have delivered MORE than cap
-    // distinct leads today — keep only the NEWEST cap leads, mark the rest removed.
+    // distinct leads today - keep only the NEWEST cap leads, mark the rest removed.
     var dailyLimit = getPlanLimit(cust.product, cust.plan, cust.coverage) || 5;
     // PER-DAY CAP (HISTORY TOO): each delivery day should hold at most the daily
     // limit. Churn/backfills may have over-delivered on PAST days (e.g. 10 leads on
-    // Aug 21 when the cap is 5) — cap every day so the dashboard progression reads
+    // Aug 21 when the cap is 5) - cap every day so the dashboard progression reads
     // cleanly (5 / 10 / 20 / 20) instead of (5 / 15 / 25 / 25).
     var _dayGroups = {};
     (dbS.leads || []).forEach(function(l) {
@@ -13234,7 +13234,7 @@ app.post('/api/admin/set-customer-lead-total', adminAuth, async (req, res) => {
       function _stNormUrl(u) { return String(u || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim(); }
       function _stNormAddr(addr, pc) { return String(addr || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30) + '|' + String(pc || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
       // Build the key set from EVERY delivered lead (any customer) so a backfill can
-      // never re-use a lead this customer — or anyone — has already received.
+      // never re-use a lead this customer - or anyone - has already received.
       (dbS.leads || []).forEach(function(l) { try { var dd = JSON.parse(l.data || '{}'); var du = _stNormUrl(dd.url || ''); if (du) usedKeys['u:' + du] = 1; var da = dd.fullAddress || dd.deceasedAddress || dd.address || ''; var dp = dd.postcode || ''; if (da && dp) usedKeys['a:' + _stNormAddr(da, dp)] = 1; } catch(e) {} });
       var nowIso = new Date().toISOString();
       var freshCutoff = getFreshCutoffIso();
@@ -13287,7 +13287,7 @@ app.post('/api/admin/set-customer-lead-total', adminAuth, async (req, res) => {
         if (!dS.city && pl.city) dS.city = pl.city;
         if (!dS.county && pl.county) dS.county = pl.county;
         // FULL-ADDRESS GUARANTEE: rebuild the full printable address from the parts
-        // so it always reads "1 High Street, London, Greater London, SW1A 1AA" — the
+        // so it always reads "1 High Street, London, Greater London, SW1A 1AA" - the
         // normalised pool address is street-only, which Print & Post can't post.
         try {
           var _addrParts = [];
@@ -13300,7 +13300,7 @@ app.post('/api/admin/set-customer-lead-total', adminAuth, async (req, res) => {
           if (_fullAddr) { dS.fullAddress = _fullAddr; if (!dS.address) dS.address = _fullAddr; }
         } catch(_fa) {}
         try { ensureFullLeadAddress(dS); } catch(_e) {}
-        // NEVER stamp backfill leads as TODAY — that inflates "Leads Today" past the
+        // NEVER stamp backfill leads as TODAY - that inflates "Leads Today" past the
         // cap. Use the oldest delivery day in the customer's history as fallback so
         // the total grows without touching today's exact-5 batch.
         var _slotDate;
@@ -13322,7 +13322,7 @@ app.post('/api/admin/set-customer-lead-total', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/top-up-today — if a customer's TODAY count is under their daily
+// POST /api/admin/top-up-today - if a customer's TODAY count is under their daily
 // promise (e.g. a delivery shortfall), deliver one fresh in-area lead stamped TODAY
 // so their dashboard shows the full promised count. Body: { email }
 app.post('/api/admin/top-up-today', adminAuth, (req, res) => {
@@ -13386,11 +13386,11 @@ app.post('/api/admin/top-up-today', adminAuth, (req, res) => {
       var fvT = pickFreshDate(pl); if (!fvT) continue;
       // Normal daily top-ups only take FRESH (within the 24/48h window) leads. With
       // allow_older (admin catch-up after a scrape came up empty in a customer's area),
-      // any never-sent IN-AREA lead qualifies — used to honour the daily promise when
+      // any never-sent IN-AREA lead qualifies - used to honour the daily promise when
       // fresh supply for that county is genuinely 0 that day.
       if (fvT < freshCutoff && !(req.body && req.body.allow_older)) continue;
       // Check BOTH the url key AND the address key: a pool lead may carry a different
-      // portal URL than the copy already delivered, but the SAME property address —
+      // portal URL than the copy already delivered, but the SAME property address -
       // the address key (postcode/region-normalised) catches that cross-source dup.
       if (pl.url && usedKeys['u:' + _tuNormUrl(pl.url)]) continue;
       var addrKeyT = 'a:' + _tuAddrKey(pl.fullAddress || pl.address || '', pl.postcode || '');
@@ -13594,7 +13594,7 @@ app.post('/api/admin/cleanup-unmailable-leads', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/affiliate-sample-emails — email the founder samples of every email
+// POST /api/admin/affiliate-sample-emails - email the founder samples of every email
 // an affiliate receives (welcome on approval, referral signed up, £25 earned on the
 // 2nd invoice, and the daily follow-up digest) so they can review the copy.
 app.post('/api/admin/affiliate-sample-emails', adminAuth, async (req, res) => {
@@ -13604,7 +13604,7 @@ app.post('/api/admin/affiliate-sample-emails', adminAuth, async (req, res) => {
     function wrap(title, inner) {
       return '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f1f5f9;font-family:Inter,Arial,sans-serif"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 12px"><table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%"><tr><td style="background:#0f172a;padding:20px 30px;text-align:center;border-bottom:3px solid #38bdf8"><div style="font-family:Outfit,Arial,sans-serif;font-size:22px;font-weight:900;color:#38bdf8">9am<span style="color:#38bdf8">Leads</span> Affiliates</div></td></tr><tr><td style="background:#ffffff;padding:26px 30px;border-left:1px solid #e2e8f0;border-right:1px solid #e2e8f0">' + inner + '</td></tr><tr><td style="background:#0f172a;padding:16px 30px;text-align:center;border-radius:0 0 14px 14px"><span style="color:#94a3b8;font-size:11px">9amLeads Affiliate Programme &middot; hello@9amleads.com</span></td></tr></table></td></tr></table></body></html>';
     }
-    // 1) Welcome (on approval) — VERBATIM production template from the review handler
+    // 1) Welcome (on approval) - VERBATIM production template from the review handler
     var welcomeHtml = '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:600px;margin:0 auto">' +
       '<div style="text-align:center;margin-bottom:18px"><span style="background:rgba(52,211,153,.15);color:#34d399;font-size:11px;font-weight:800;padding:5px 14px;border-radius:50px;letter-spacing:.5px">9amLeads AFFILIATE PROGRAMME</span></div>' +
       '<h1 style="font-family:Outfit,sans-serif;color:#34d399;margin:0 0 8px;font-size:26px">You have been approved! 🎉</h1>' +
@@ -13615,24 +13615,24 @@ app.post('/api/admin/affiliate-sample-emails', adminAuth, async (req, res) => {
       '<div style="text-align:center;margin:18px 0 6px"><a href="https://9amleads.com/portal/affiliate.html" style="display:inline-block;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;padding:12px 26px;border-radius:10px;font-weight:700;font-size:14px;text-decoration:none">Open your dashboard</a></div>' +
       '<p style="color:#888;font-size:13px;margin-top:20px;border-top:1px solid #1e2030;padding-top:12px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>';
     await sendBrevoEmail({ email: to, name: 'Sample Affiliate' }, 'Welcome to the 9amLeads Affiliate Programme', welcomeHtml);
-    // 2) Referral signed up — VERBATIM production hook HTML
+    // 2) Referral signed up - VERBATIM production hook HTML
     await sendBrevoEmail({ email: to, name: 'Sample Affiliate' }, '🙌 A referral just signed up - follow up to close it', '<div style="font-family:Inter,Arial,sans-serif;max-width:540px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px"><h2 style="color:#38bdf8;margin:0 0 10px;font-size:19px">🙌 Your referral just signed up!</h2><p style="font-size:14px;line-height:1.7;color:#cbd5e1"><b style="color:#fff">Acme Removals Ltd</b> started their free 14-day Moving trial using your code <b style="color:#38bdf8">' + code + '</b>.</p><p style="font-size:13px;line-height:1.6;color:#94a3b8">They may not upgrade right away, so follow up over the next few days. You earn £' + 25 + ' when they pay their second invoice. Add them to your follow-up list in the dashboard and set a reminder.</p><p><a href="https://www.9amleads.com/portal/affiliate.html" style="display:inline-block;background:#0ea5e9;color:#fff;font-weight:700;padding:11px 18px;border-radius:8px;text-decoration:none;font-size:13px">Open my dashboard</a></p></div>');
-    // 3) £25 earned (2nd invoice) — VERBATIM production hook HTML
+    // 3) £25 earned (2nd invoice) - VERBATIM production hook HTML
     await sendBrevoEmail({ email: to, name: 'Sample Affiliate' }, '🎉 You earned £25.00 - commission earned', '<div style="font-family:Inter,Arial,sans-serif;max-width:540px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px"><div style="font-size:34px;margin-bottom:6px">🎉</div><h2 style="color:#4ade80;margin:0 0 10px;font-size:19px">You earned £25.00!</h2><p style="font-size:14px;line-height:1.7;color:#cbd5e1">A customer you referred <b style="color:#fff">Acme Removals Ltd</b> has paid their second invoice, so your commission is now pending and will clear into your next payout.</p><p style="font-size:13px;color:#94a3b8;line-height:1.6">Track it anytime in your dashboard: <a href="https://www.9amleads.com/portal/affiliate.html" style="color:#38bdf8">affiliate dashboard →</a></p></div>');
-    // 4) Daily follow-up digest — VERBATIM production cron HTML
+    // 4) Daily follow-up digest - VERBATIM production cron HTML
     var rowsD = '<li><b>Acme Removals Ltd</b> (earning) - 07111 222 333</li>';
     await sendBrevoEmail({ email: to, name: 'Sample Affiliate' }, '⏰ 2 follow-up reminders today', '<div style="font-family:Inter,Arial,sans-serif;max-width:540px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px"><h2 style="color:#f59e0b;margin:0 0 8px;font-size:19px">⏰ Your follow-ups for today</h2><p style="font-size:13px;color:#f87171;font-weight:700;margin:8px 0 4px">Overdue (1)</p><ul style="margin:0 0 10px;padding-left:18px;color:#e2e8f0;font-size:13px;line-height:1.8"><li><b>Abbey Builders</b> (prospect) - 07700 900123</li></ul><p style="font-size:13px;color:#4ade80;font-weight:700;margin:8px 0 4px">Due today (1)</p><ul style="margin:0 0 10px;padding-left:18px;color:#e2e8f0;font-size:13px;line-height:1.8">' + rowsD + '</ul><p style="font-size:13px;color:#94a3b8;line-height:1.6;margin-top:10px">Call them, add a note, and set the next reminder. <a href="https://www.9amleads.com/portal/affiliate.html" style="color:#38bdf8">Open my follow-up list</a></p></div>');
     res.json({ success: true, emailed: to });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/test-probate-email — email a REAL probate lead (from the pool) to a
+// POST /api/admin/test-probate-email - email a REAL probate lead (from the pool) to a
 // given address in exactly the daily probate customer email format, so the founder can
 // see what a probate customer receives. Body: { email }
 app.post('/api/admin/test-probate-email', adminAuth, async (req, res) => {
   try {
     var toEmail = String((req.body && req.body.email) || '').toLowerCase().trim() || 'ketzman1g@gmail.com';
-    // Pull a fresh probate pool lead — prefer an executor-home one, else any usable.
+    // Pull a fresh probate pool lead - prefer an executor-home one, else any usable.
     var arr = readPoolFile('probate');
     var pick = arr.find(function(l) { return l && l.executorType === 'home'; }) || arr.find(function(l) { return l && (l.name || l.executorName); }) || (arr[0] || null);
     if (!pick) return res.status(404).json({ error: 'No probate leads in pool' });
@@ -13645,11 +13645,11 @@ app.post('/api/admin/test-probate-email', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/probate-backfill — MANUAL one-off backfill of the probate bulk pool.
+// POST /api/admin/probate-backfill - MANUAL one-off backfill of the probate bulk pool.
 // Walks the Gazette wills-&-probate search pages BACKWARDS (older notices) and appends
 // never-seen rows to probate-leads.json with their REAL publication date, so the aged
 // archive bands (this month / 1m / 2m) build up and bulk packs can unlock. This is
-// separate from the daily 09:00 probate scrape — the daily path is untouched, and
+// separate from the daily 09:00 probate scrape - the daily path is untouched, and
 // because appended rows carry an OLD publishedDate they can never enter the fresh
 // 24/48h daily delivery. Body: { days } (how far back to walk, default 60), { pages }
 // (max pages, default 12).
@@ -13701,7 +13701,7 @@ app.post('/api/admin/probate-backfill', adminAuth, async (req, res) => {
           }
           await new Promise(function(r){ setTimeout(r, 300); });
           // Stop ONLY when the Gazette returns no articles at all (end of results),
-          // never on pages that are all duplicates — recent days are already in the
+          // never on pages that are all duplicates - recent days are already in the
           // pool from the daily scrape, so all-dup pages are normal until we walk far
           // enough back to reach genuinely older, uncaptured notices.
           if (!keep && (!pageLeads || pageLeads.length === 0)) break;
@@ -13717,7 +13717,7 @@ app.post('/api/admin/probate-backfill', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/send-missed-lead-email — send a customer a short "we missed a lead,
+// POST /api/admin/send-missed-lead-email - send a customer a short "we missed a lead,
 // here it is" apology email (for when a delivery under-sent by a lead). Body:
 // { email, lead_id }  (lead_id = a today lead to feature as the missed one).
 app.post('/api/admin/send-missed-lead-email', adminAuth, async (req, res) => {
@@ -13763,7 +13763,7 @@ app.post('/api/admin/send-missed-lead-email', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/restore-delivered — silently restore N delivered rows for a customer
+// POST /api/admin/restore-delivered - silently restore N delivered rows for a customer
 // on a past date WITHOUT emailing (used when a legitimate batch was removed by mistake).
 // Rows are recreated from never-sent pool leads so future deliveries skip them (dedupe)
 // and the customer's dashboard/history matches what they should have received.
@@ -13815,7 +13815,7 @@ app.post('/api/admin/restore-delivered', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/reconcile-history — align a customer's DELIVERED history so every
+// POST /api/admin/reconcile-history - align a customer's DELIVERED history so every
 // Mon-Fri delivery day since their trial started shows EXACTLY their promised count.
 // Adds missing rows (dated that day, from never-sent pool leads, NO email) and removes
 // any over-delivered extras. This is the one-time historical pass; the daily post-run
@@ -13887,7 +13887,7 @@ app.post('/api/admin/reconcile-history', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/align-delivery-history — STRICT alignment of a customer's delivered
+// POST /api/admin/align-delivery-history - STRICT alignment of a customer's delivered
 // history to the promise: exactly `promised` DISTINCT leads on every Mon-Fri since their
 // trial start, and NO deliveries on weekends/off-schedule days (removed). Same-day
 // duplicate rows are dropped (they are never real deliveries), missing distinct leads are
@@ -13958,7 +13958,7 @@ app.post('/api/admin/align-delivery-history', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/purge-pending — remove ALL a customer's PENDING (not-yet-delivered)
+// POST /api/admin/purge-pending - remove ALL a customer's PENDING (not-yet-delivered)
 // leads so the dashboard shows only their real DELIVERED history + today's batch.
 // Pending rows accumulate as junk from force re-deliveries / failed gate passes /
 // out-of-area fallbacks and inflate the dashboard "total" count. Delivered leads
@@ -14010,7 +14010,7 @@ app.post('/api/admin/dedupe-leads', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/detail-enrich-test — one-time diagnostic: fetch ONE Rightmove
+// POST /api/admin/detail-enrich-test - one-time diagnostic: fetch ONE Rightmove
 // detail page from the Render IP and report whether the numbered full address is
 // reachable (list pages work; detail pages are sometimes bot-blocked from
 // datacenter IPs, which is why the pool stays street-only).
@@ -14024,7 +14024,7 @@ app.post('/api/admin/detail-enrich-test', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/enrich-pool-details — one-off, RELIABLE alternative to the
+// POST /api/admin/enrich-pool-details - one-off, RELIABLE alternative to the
 // flaky full direct scrape: fetch each door-less moving pool lead's Rightmove
 // DETAIL page (numbered full address, free, no Postcoder spend) so the pool
 // stops being street-only. Bounded concurrency + hard per-page timeouts so it
@@ -14227,7 +14227,7 @@ app.post('/api/admin/replace-pending-lead', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/replace-customer-leads — remove a customer's current (e.g.
+// POST /api/admin/replace-customer-leads - remove a customer's current (e.g.
 // wrong-area) leads and replace them with fresh in-area leads from the pool.
 // Used when leads were delivered from the wrong areas (area override, fallback).
 app.post('/api/admin/replace-customer-leads', adminAuth, async (req, res) => {
@@ -14374,7 +14374,7 @@ app.post('/api/admin/funeral-scrape', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/purge-funeral-probate — remove any funeral/obituary/cremation
+// POST /api/admin/purge-funeral-probate - remove any funeral/obituary/cremation
 // notices from the probate pool and from pending dashboard leads. Funeral notices
 // contain funeral-parlour details (NOT the deceased's home address) and must never
 // be delivered as probate leads. Keeps The Gazette / PNP confirmed leads only.
@@ -14385,7 +14385,7 @@ app.post('/api/admin/purge-funeral-probate', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/probate-sample-check — email the owner a sample of the current
+// POST /api/admin/probate-sample-check - email the owner a sample of the current
 // probate pool (post purge + PAF) so they can verify leads are the correct new
 // type: Gazette / PNP deceased-estates with the deceased's home address (never
 // funeral/parlour content). Also runs automatically after each morning's scrape.
@@ -14438,7 +14438,7 @@ async function sendProbateSampleEmail(forceLog) {
 //   try { await sendProbateSampleEmail(true); } catch(e) {}
 // }, { timezone: 'Europe/London' });
 
-// POST /api/admin/planning-sample-check — email the owner a sample of the current
+// POST /api/admin/planning-sample-check - email the owner a sample of the current
 // planning pool so they can see fresh supply levels for active planning customers.
 app.post('/api/admin/planning-sample-check', adminAuth, async (req, res) => {
   try { await sendPlanningSampleEmail(); res.json({ success: true, sent: true }); }
@@ -14516,7 +14516,7 @@ var FUNERAL_PAT = /funeral|cremator|cremation|funeralcare|funeral director|obitu
 
 // POST /api/admin/pnp-scrape - ingest Public Notice Portal "Probate and Trustee"
 // notices (from the custom PNP Apify actor). These are CONFIRMED probate leads
-// (local-newspaper Section 27-style notices) — merged into the probate pool as a
+// (local-newspaper Section 27-style notices) - merged into the probate pool as a
 // first-class source, deduplicated against Gazette records. This is the second
 // supply source (The Gazette + PNP). Accepts the actor's output array directly.
 app.post('/api/admin/pnp-scrape', adminAuth, async (req, res) => {
@@ -14663,7 +14663,7 @@ app.post('/api/admin/pool/import', adminAuth, (req, res) => {
       // FRESHNESS = the SOURCE's real first-listed date, NOT our scrape time.
       // Forcing firstVisibleDate/updateDate to "now" made every re-scraped (incl.
       // long-running, months-old) listing look fresh and get delivered to 24/48h
-      // subscribers — which CONFLICTS with the fresh-lead promise AND the Boost
+      // subscribers - which CONFLICTS with the fresh-lead promise AND the Boost
       // archive. So honour the portal's real date when provided; only fall back to
       // "now" for sources that don't give one. scrapedAt stays = our scrape time.
       if (l.firstVisibleDate && !l.sourceListedDate) l.sourceListedDate = l.firstVisibleDate;
@@ -14738,7 +14738,7 @@ async function runOtmDailyScrape() {
 // NEW BUSINESS SUPPLY via the Companies House REST API (advanced search).
 // The Streaming API needs a SEPARATE key (the REST key 401s on it), but the REST
 // advanced-search already returns newly incorporated companies WITH registered
-// addresses + postcodes using the key we already hold — so we don't need streaming
+// addresses + postcodes using the key we already hold - so we don't need streaming
 // at all. Runs before the 9am delivery so the newbusiness pool is same-day fresh.
 async function runNewBusinessRestScrape() {
   try {
@@ -14825,7 +14825,7 @@ app.post('/api/admin/scrape-shortfall', adminAuth, async (req, res) => {
   try { res.json(await scrapeShortfallAreas()); } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/lead/un-deliver — revert an over-delivered lead back to
+// POST /api/admin/lead/un-deliver - revert an over-delivered lead back to
 // undelivered (cleanup for exact-count compliance). Body: { lead_id, email? }.
 app.post('/api/admin/lead/un-deliver', adminAuth, (req, res) => {
   try {
@@ -14860,7 +14860,7 @@ app.post('/api/admin/lead/mark-delivered', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/verify — validate the admin password (used by the admin login form)
+// POST /api/admin/verify - validate the admin password (used by the admin login form)
 // Accept GET too: the browser's fetch() defaults to GET; a GET here previously
 // returned 404 which made the login show "Cannot reach server".
 app.get('/api/admin/verify', (req, res) => {
@@ -14884,7 +14884,7 @@ function adminAuth(req, res, next) {
   next();
 }
 
-// GET /api/admin/stats — overall system stats
+// GET /api/admin/stats - overall system stats
 app.get('/api/admin/stats', adminAuth, (req, res) => {
   // Exclude internal/test/demo accounts so the admin stats reflect REAL customers.
   function _isInternalStat(c) {
@@ -14930,7 +14930,7 @@ app.get('/api/admin/stats', adminAuth, (req, res) => {
   var dbS = getDb();
   var now = new Date().toISOString();
   var weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
-  // NOTE: compare timestamps, not Date-vs-string — `new Date(x) < now` where `now` is
+  // NOTE: compare timestamps, not Date-vs-string - `new Date(x) < now` where `now` is
   // an ISO string coerces the Date to its toString and is ALWAYS false, which is why
   // this stat read 0 forever.
   var _nowMs = Date.now();
@@ -14959,20 +14959,20 @@ app.get('/api/admin/stats', adminAuth, (req, res) => {
   });
 });
 
-// GET /api/admin/customers — list all customers (paginated)
+// GET /api/admin/customers - list all customers (paginated)
 // Customer email-series label map: which retention email each template is, so the
 // admin can see what an (expired-trial) customer has already been auto-sent.
 var EMAIL_SERIES_LABELS = {
-  trial_day1: 'Day 1 — welcome/how to win',
-  trial_day3: 'Day 3 — how are leads looking',
-  trial_day5: 'Day 5 — 3 tips to convert',
-  trial_day7: 'Day 7 — trial ends tomorrow',
-  trial_day9: 'Day 9 (trial over) — leads paused, come back',
-  trial_day12: 'Day 12 — still not sure? let us help',
-  trial_day16: 'Day 16 — success stories',
-  trial_day21: 'Day 21 — leads still waiting',
-  trial_day30: 'Day 30 — restart invite',
-  trial_month3: 'Month 3 — fresh free week offer'
+  trial_day1: 'Day 1 - welcome/how to win',
+  trial_day3: 'Day 3 - how are leads looking',
+  trial_day5: 'Day 5 - 3 tips to convert',
+  trial_day7: 'Day 7 - trial ends tomorrow',
+  trial_day9: 'Day 9 (trial over) - leads paused, come back',
+  trial_day12: 'Day 12 - still not sure? let us help',
+  trial_day16: 'Day 16 - success stories',
+  trial_day21: 'Day 21 - leads still waiting',
+  trial_day30: 'Day 30 - restart invite',
+  trial_month3: 'Month 3 - fresh free week offer'
 };
 function emailSeriesReceived(c) {
   var sent = [];
@@ -15033,7 +15033,7 @@ app.get('/api/admin/customers', adminAuth, (req, res) => {
   });
 });
 
-// GET /api/admin/expired-trials/export — download all expired-trial customers as a
+// GET /api/admin/expired-trials/export - download all expired-trial customers as a
 // CSV (email + company + product + areas + last email date + emails auto-sent), so
 // they can be re-imported into Brevo later for a retention/mass campaign.
 app.get('/api/admin/expired-trials/export', adminAuth, (req, res) => {
@@ -15058,7 +15058,7 @@ app.get('/api/admin/expired-trials/export', adminAuth, (req, res) => {
   }
 });
 
-// POST /api/admin/bulk-create-customers — create test customers directly in DB// (bypasses the signup rate limit for bulk testing). Admin auth only.
+// POST /api/admin/bulk-create-customers - create test customers directly in DB// (bypasses the signup rate limit for bulk testing). Admin auth only.
 app.post('/api/admin/bulk-create-customers', adminAuth, (req, res) => {
   try {
     const list = Array.isArray(req.body) ? req.body : (req.body && req.body.customers);
@@ -15262,7 +15262,7 @@ function sendBrevoEmail(to, subject, htmlContent) {
   // BULK SEND PITCH: Print & Post and Bulk Send go hand in hand, so any email that
   // already talks about Print & Post gets a short Bulk Send mention too (added once).
   if (/print\s*&amp;\s*post|print\s*&\s*post|print\s*and\s*post/i.test(htmlContent) && htmlContent.indexOf('Bulk Send') === -1) {
-    htmlContent += '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td><div style="margin-top:18px;padding:14px 18px;border:1px solid #99f6e4;border-radius:12px;background:linear-gradient(135deg,rgba(16,185,129,0.07),rgba(14,165,233,0.06))"><p style="color:#0f172a;font-size:13px;line-height:1.7;margin:0">📦 <b>Bulk Send</b> goes hand in hand with Print &amp; Post: boost your business in slow times with 50&ndash;1000 archive leads (aimed never-sent), printed &amp; posted for you from &pound;1.99 per lead. <a href="https://9amleads.com/bulk.html" style="color:#0ea5e9;font-weight:700">See Bulk Send &rarr;</a></p></div></td></tr></table>';
+    htmlContent += '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td><div style="margin-top:18px;padding:14px 18px;border:1px solid #99f6e4;border-radius:12px;background:linear-gradient(135deg,rgba(16,185,129,0.07),rgba(14,165,233,0.06))"><p style="color:#0f172a;font-size:13px;line-height:1.7;margin:0">📦 <b>Bulk Send</b> goes hand in hand with Print &amp; Post: boost your business in slow times with 50-1000 archive leads (aimed never-sent), printed &amp; posted for you from &pound;1.99 per lead. <a href="https://9amleads.com/bulk.html" style="color:#0ea5e9;font-weight:700">See Bulk Send &rarr;</a></p></div></td></tr></table>';
   }
   const data = JSON.stringify({
     sender: { name: senderName, email: senderFrom },
@@ -15357,14 +15357,14 @@ function logCustomerEmail(to, subject, htmlContent) {
       html: String(htmlContent || '').substring(0, 60000),
       at: new Date().toISOString()
     });
-    // Bound the log (full HTML is heavy) — keep the most recent 400 entries.
+    // Bound the log (full HTML is heavy) - keep the most recent 400 entries.
     if (dbL.email_log.length > 5000) dbL.email_log.splice(0, dbL.email_log.length - 5000);
     saveDb();
   } catch(e) { console.log('[EMAIL-LOG] log error:', e.message); }
 }
 
-// GET /api/admin/customer-emails?email=X — the customer's recent email history
-// (id + subject + type + time only — the body is fetched on demand by id so the
+// GET /api/admin/customer-emails?email=X - the customer's recent email history
+// (id + subject + type + time only - the body is fetched on demand by id so the
 // admin list stays light).
 app.get('/api/admin/customer-emails', adminAuth, (req, res) => {
   try {
@@ -15372,7 +15372,7 @@ app.get('/api/admin/customer-emails', adminAuth, (req, res) => {
     if (!em) return res.status(400).json({ error: 'email required' });
     var dbE = getDb();
     var log = (dbE.email_log || []).filter(function(e) { return String(e.email || '').toLowerCase() === em; });
-    // dedupe by (subject, at-minute) — resends/retries of the same email shouldn't flood
+    // dedupe by (subject, at-minute) - resends/retries of the same email shouldn't flood
     var seen = {}, out = [];
     log.slice().reverse().forEach(function(e) {
       var k = e.subject + '|' + String(e.at || '').substring(0, 16);
@@ -15384,7 +15384,7 @@ app.get('/api/admin/customer-emails', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/customer-email?id=X — fetch ONE email's full content for viewing
+// GET /api/admin/customer-email?id=X - fetch ONE email's full content for viewing
 app.get('/api/admin/customer-email', adminAuth, (req, res) => {
   try {
     var id = String((req.query && req.query.id) || '');
@@ -15458,7 +15458,7 @@ function logActivity(customerId, type, detail, opts) {
   } catch(e) { console.log('[ACTIVITY] log error:', e.message); }
 }
 
-// GET /api/admin/activity — recent customer activity feed (uploads, Auto Send,
+// GET /api/admin/activity - recent customer activity feed (uploads, Auto Send,
 // bulk buys, Print & Post orders).
 app.get('/api/admin/activity', adminAuth, (req, res) => {
   try {
@@ -15640,7 +15640,7 @@ const PRODUCT_LEAD_FILES = {
 
 // Lead type rules: per-product, per-plan, per-coverage-area daily limits
 // Coverage types: 'postcode', 'county', 'region', 'ukwide'
-// POST /api/check-availability — check if a lead type/package can be fulfilled
+// POST /api/check-availability - check if a lead type/package can be fulfilled
 app.post('/api/check-availability', async (req, res) => {
   try {
     const { product, plan, coverage, postcodes } = req.body;
@@ -15668,7 +15668,7 @@ app.post('/api/check-availability', async (req, res) => {
     const existingCustomers = (db.customers || []).filter(c => c.product === product && c.plan !== 'cancelled' && (!c.trial_ends || new Date(c.trial_ends) > new Date()));
     // Committed daily demand = sum of each customer's ACTUAL plan daily limit (from
     // LEAD_TYPE_RULES), not the raw leads_per_day field (which defaults to 5 and
-    // over-counts demand — e.g. probate is now 1/day but would count as 5, making
+    // over-counts demand - e.g. probate is now 1/day but would count as 5, making
     // the hard cap 5x more restrictive than it should be).
     const totalCommitted = existingCustomers.reduce((sum, c) => sum + getPlanLimit(product, c.plan || 'starter', c.coverage || 'default'), 0);
     var leadsToday = (db.leads || []).filter(function(l) { return l.product === product && l.delivered === 0; }).length;
@@ -15710,7 +15710,7 @@ app.post('/api/check-availability', async (req, res) => {
   }
 });
 
-// GET /api/signup/competition-areas — per-area competition counts for the signup
+// GET /api/signup/competition-areas - per-area competition counts for the signup
 // picker. For tenders (and county products) it returns, for EVERY county, how many
 // active businesses are already signed up there, so the picker can label each area
 // as "shared with N" and the customer agrees before committing.
@@ -15774,7 +15774,7 @@ app.get('/api/signup/competition-areas', (req, res) => {
   }
 });
 
-// GET /api/signup/competition — honest lead-sharing disclosure for the signup form.
+// GET /api/signup/competition - honest lead-sharing disclosure for the signup form.
 // Counts how many OTHER active businesses currently receive the same leads for the
 // chosen product + areas, so a customer knows up-front how much competition they
 // have. Tenders are shared UK-wide (every supplier sees the same notices); area
@@ -15828,7 +15828,7 @@ app.get('/api/signup/competition', (req, res) => {
   }
 });
 
-// POST /api/waiting-list — join waiting list for unavailable packages
+// POST /api/waiting-list - join waiting list for unavailable packages
 app.post('/api/waiting-list', async (req, res) => {
   try {
     const { name, email, phone, business_type, lead_type, area, package: pkg } = req.body;
@@ -15841,7 +15841,7 @@ app.post('/api/waiting-list', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/availability — admin overview of supply vs demand
+// GET /api/admin/availability - admin overview of supply vs demand
 app.get('/api/admin/availability', adminAuth, (req, res) => {
   try {
     const db = getDb();
@@ -15869,7 +15869,7 @@ app.get('/api/admin/availability', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/lead-types — return lead type rules for frontend
+// GET /api/lead-types - return lead type rules for frontend
 app.get('/api/lead-types', (req, res) => {
   const summary = {};
   for (const [key, rule] of Object.entries(LEAD_TYPE_RULES)) {
@@ -16070,7 +16070,7 @@ const CAMPAIGN_EMAILS = [
 // WEEKLY FOLLOW-UPS: after day 30, keep one email per week for up to 6 months
 // (weeks 5-26) so the account stays warm and they can restart whenever ready.
 // The post-trial cron loop sends each once (deduped by template) as the customer
-// ages past week N — giving an automatic weekly cadence with no extra cron.
+// ages past week N - giving an automatic weekly cadence with no extra cron.
 var WEEKLY_FOLLOWUP_SUBJECTS = {
   5: 'Your leads are still waiting. The best time to start was yesterday',
   6: 'Still on the fence? Your weekly leads are ready whenever you are',
@@ -16129,7 +16129,7 @@ function buildWeeklyTrialTemplate(customer, wk, productName, accent, product) {
     bodyHtml = '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 16px">We\u2019re not going to chase you forever. But your <strong>' + productName + '</strong> genuinely are still waiting. You can <strong>pause, restart or switch your package anytime</strong>; there\u2019s no lock-in and no obligation. When you\u2019re ready, your daily 9am leads are one click away:</p>' +
       '<div style="background:rgba(14,165,233,0.05);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#1e293b;font-size:13px;line-height:1.9;margin:0">' + tips[1] + '<br><br>' + tips[0] + '</p></div>';
   }
-  var bulkBox = '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top:16px"><tr><td><div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.22);border-radius:12px;padding:14px 18px"><p style="color:#0f172a;font-size:13px;line-height:1.7;margin:0">📦 <b style="color:#047857">Boost your business in slow times, instantly.</b> Prefer volume? Bulk Send lets you buy 50&ndash;1000 archive leads (aimed never-sent), and we print &amp; post your leaflet or letter to every single one, from &pound;1.99 per lead. <a href="' + PUBLIC_URL + '/bulk.html" style="color:#0ea5e9;font-weight:700">See Bulk Send &rarr;</a></p></div></td></tr></table>';
+  var bulkBox = '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top:16px"><tr><td><div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.22);border-radius:12px;padding:14px 18px"><p style="color:#0f172a;font-size:13px;line-height:1.7;margin:0">📦 <b style="color:#047857">Boost your business in slow times, instantly.</b> Prefer volume? Bulk Send lets you buy 50-1000 archive leads (aimed never-sent), and we print &amp; post your leaflet or letter to every single one, from &pound;1.99 per lead. <a href="' + PUBLIC_URL + '/bulk.html" style="color:#0ea5e9;font-weight:700">See Bulk Send &rarr;</a></p></div></td></tr></table>';
   return '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#0f172a;margin:0 0 6px;text-align:center">Your ' + productName + ' are still waiting for you</h2>' +
     '<p style="color:#64748b;font-size:13px;text-align:center;margin:0 0 20px">Week ' + wk + ' of keeping your account ready for you</p>' +
     bodyHtml +
@@ -16452,7 +16452,7 @@ function buildOutboundEmailHTML(email, campaignKey, recipientName) {
     '</td></tr></table></td></tr></table></body></html>';
 }
 
-// GET /api/admin/outbound-campaigns — list outbound prospecting campaigns
+// GET /api/admin/outbound-campaigns - list outbound prospecting campaigns
 app.get('/api/admin/test-outbound', adminAuth, (req, res) => {
   var summaries = {};
   for (var p in OUTBOUND_CAMPAIGNS) {
@@ -16462,7 +16462,7 @@ app.get('/api/admin/test-outbound', adminAuth, (req, res) => {
   res.json({ success: true, campaigns: summaries });
 });
 
-// GET /api/admin/outbound-campaigns/:product — get emails for a campaign
+// GET /api/admin/outbound-campaigns/:product - get emails for a campaign
 app.get('/api/admin/outbound-campaigns/:product', adminAuth, (req, res) => {
   var camp = OUTBOUND_CAMPAIGNS[req.params.product];
   if (!camp) return res.status(404).json({ error: 'Campaign not found' });
@@ -16470,7 +16470,7 @@ app.get('/api/admin/outbound-campaigns/:product', adminAuth, (req, res) => {
 });
 
 // ===== EMAIL TEMPLATE MANAGEMENT SYSTEM =====
-// Unified endpoint for all email templates — customer, paid, outbound
+// Unified endpoint for all email templates - customer, paid, outbound
 var EDIT_FILE = path.join(DATA_DIR, 'email-edits.json');
 function loadEdits() { try { return JSON.parse(fs.readFileSync(EDIT_FILE, 'utf-8')); } catch(e) { return {}; } }
 function saveEdits(d) { fs.mkdirSync(DATA_DIR, { recursive: true }); fs.writeFileSync(EDIT_FILE, JSON.stringify(d, null, 2)); }
@@ -16499,7 +16499,7 @@ function getCampaignDay(tpl) {
   return '-';
 }
 
-// GET /api/admin/email-templates — list all templates grouped by category
+// GET /api/admin/email-templates - list all templates grouped by category
 app.get('/api/admin/email-templates', adminAuth, (req, res) => {
   var edits = loadEdits();
   var categories = [];
@@ -16541,7 +16541,7 @@ app.get('/api/admin/email-templates', adminAuth, (req, res) => {
   res.json({ success: true, categories: categories });
 });
 
-// GET /api/admin/email-templates/:id — get single template full content
+// GET /api/admin/email-templates/:id - get single template full content
 app.get('/api/admin/email-templates/:id', adminAuth, (req, res) => {
   var id = req.params.id;
   var edits = loadEdits();
@@ -16574,7 +16574,7 @@ app.get('/api/admin/email-templates/:id', adminAuth, (req, res) => {
   res.status(404).json({ error: 'Template not found' });
 });
 
-// PUT /api/admin/email-templates/:id — update template content
+// PUT /api/admin/email-templates/:id - update template content
 app.put('/api/admin/email-templates/:id', adminAuth, (req, res) => {
   var id = req.params.id;
   var edits = loadEdits();
@@ -16591,7 +16591,7 @@ app.put('/api/admin/email-templates/:id', adminAuth, (req, res) => {
   res.json({ success: true, message: 'Template updated' });
 });
 
-// POST /api/admin/email-templates/sync-brevo — push all templates to Brevo
+// POST /api/admin/email-templates/sync-brevo - push all templates to Brevo
 app.post('/api/admin/email-templates/sync-brevo', adminAuth, async (req, res) => {
   try {
     var key = process.env.BREVO_API_KEY || '';
@@ -16667,7 +16667,7 @@ app.post('/api/admin/email-templates/sync-brevo', adminAuth, async (req, res) =>
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/brevo/upload — upload all 80 campaign templates to Brevo
+// GET /api/admin/brevo/upload - upload all 80 campaign templates to Brevo
 app.get('/api/admin/brevo/upload', adminAuth, async (req, res) => {
   try {
     var key = process.env.BREVO_API_KEY || '';
@@ -16728,7 +16728,7 @@ app.get('/api/admin/brevo/upload', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/brevo/create-seq — create Brevo sequences for each campaign
+// POST /api/admin/brevo/create-seq - create Brevo sequences for each campaign
 app.post('/api/admin/brevo/create-seq', adminAuth, async (req, res) => {
   try {
     var key = process.env.BREVO_API_KEY || '';
@@ -16769,7 +16769,7 @@ console.log('  Outbound campaigns: ' + Object.keys(OUTBOUND_CAMPAIGNS).length + 
   buildWhyBestBlock(allProds[0] || 'moving', accent) +
   // How it works (shared, all campaign emails)
   buildHowItWorksBlock(allProds[0] || 'moving', accent) +
-  // Product insight card (dark — bulletproof bgcolor so mobile always shows the white text on a dark card)
+  // Product insight card (dark - bulletproof bgcolor so mobile always shows the white text on a dark card)
   '<tr><td class="mob" bgcolor="#12141e" style="background-color:#12141e;padding:14px 30px 16px"><div style="border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:14px 16px">' +
   '<div style="font-size:11px;font-weight:700;color:#ffffff;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">' + productName + ' Insight</div>' +
   '<p style="font-size:13px;color:#ffffff;line-height:1.6;margin:0 0 6px">' + insight.tip + '</p>' +
@@ -16784,7 +16784,7 @@ console.log('  Outbound campaigns: ' + Object.keys(OUTBOUND_CAMPAIGNS).length + 
   buildEmailFooter() + '</td></tr></table></td></tr></table></body></html>';
 }
 
-// POST /api/admin/send-tip-sample — email a single paid/tip campaign template to
+// POST /api/admin/send-tip-sample - email a single paid/tip campaign template to
 // the owner so they can review the copy. Body: { template, email }.
 app.post('/api/admin/send-tip-sample', adminAuth, async (req, res) => {
   try {
@@ -16796,7 +16796,7 @@ app.post('/api/admin/send-tip-sample', adminAuth, async (req, res) => {
         var cust = __emailDemoCustomer('moving');
         var html = getCampaignEmailHTMLWithEdits(cust, tmpl);
         var subj = getEditedCampaignSubject(tmpl, 'Tip #3: Print &amp; Post Every Lead In Minutes');
-        await sendBrevoEmail({ email: to, name: '9amLeads Owner' }, 'TEST — ' + tmpl + ' — ' + String(subj || '').replace(/<[^>]+>/g, ''), html);
+        await sendBrevoEmail({ email: to, name: '9amLeads Owner' }, 'TEST - ' + tmpl + ' - ' + String(subj || '').replace(/<[^>]+>/g, ''), html);
         console.log('[TIP-SAMPLE] Sent ' + tmpl + ' to ' + to);
       } catch(_e) { console.log('[TIP-SAMPLE] error: ' + _e.message); }
     })();
@@ -17050,7 +17050,7 @@ function leadHasUsableAddress(l, product) {
     if (product === 'newbusiness' || product === 'planning') {
       return !!(addr || p.name || p.company) && pcOk;
     }
-    // TENDERS are national opportunities with no postcode — require a title/buyer
+    // TENDERS are national opportunities with no postcode - require a title/buyer
     // only, never a postcode (that's why they were disappearing from the dashboard).
     if (product === 'tenders') {
       return !!(p.title || p.name || p.company || p.description || p.buyer);
@@ -17257,7 +17257,7 @@ app.post('/api/admin/test-campaign', adminAuth, async (req, res) => {
 
 // ===== DAILY SCHEDULE: 05:00 UK scraper → distributor → 09:00 UK delivery =====
 // The scrape now runs 4 hours before the 09:00 delivery (was 3h) so the pool is
-// refreshed and every lead numbered with ~3.5h to spare — enough for the founder to
+// refreshed and every lead numbered with ~3.5h to spare - enough for the founder to
 // see and fix any shortfall well before 9am. Freshness is still excellent; listings
 // published later are caught by the 06:15 auto re-scrape + 07:10 planning re-scrape.
 cron.schedule('0 5 * * *', async () => {
@@ -17279,7 +17279,7 @@ cron.schedule('0 5 * * *', async () => {
         req.write(body); req.end();
       });
       if (ok) { console.log('[05:00 UK] Scraper started (attempt ' + (_scRetry + 1) + ')'); break; }
-      console.log('[05:00 UK] Scraper trigger failed (attempt ' + (_scRetry + 1) + ') — retrying');
+      console.log('[05:00 UK] Scraper trigger failed (attempt ' + (_scRetry + 1) + ') - retrying');
       await new Promise(function(r){ setTimeout(r, 120000); });
     } catch(e) {
       console.log('[05:00 UK] Scraper error:', e.message);
@@ -17339,7 +17339,7 @@ cron.schedule('30 5 * * 1-5', async () => {
       if (fresh < th2[prod]) low2.push(prod);
     });
     if (low2.length) {
-      console.log('[06:15 SUPPLY] Low supply before 9am: ' + low2.join(', ') + ' — auto re-scraping');
+      console.log('[06:15 SUPPLY] Low supply before 9am: ' + low2.join(', ') + ' - auto re-scraping');
       low2.forEach(function(prod) {
         try {
           var sb = JSON.stringify({ product: prod, force: true });
@@ -17358,7 +17358,7 @@ cron.schedule('30 5 * * 1-5', async () => {
 // PRE-DELIVERY VERIFICATION (08:30): before the 9am delivery, verify the EXACT
 // leads each moving customer is about to receive have door numbers + full addresses
 // in the pool, PAF-enriching any that don't. The 9am job then just sends them.
-// PRE-9AM PIPELINE — kept deliberately LEAN and event-driven. PAF only needs to run
+// PRE-9AM PIPELINE - kept deliberately LEAN and event-driven. PAF only needs to run
 // after something ADDS leads, so there are just two early passes, each tied to a
 // scrape, plus the final pass already built into the 08:40 top-up cron:
 //   05:00 scrape  ->  05:15 early PAF (number the exact selected leads)
@@ -17439,7 +17439,7 @@ cron.schedule('0 18 * * *', async () => {
 // collectors so planning applications published after the early scrape still land
 // in the pool. Timed just AFTER the 07:00 morning report + early top-up and BEFORE
 // the 07:15 fulfilment check, so the pool holds the latest planning supply and the
-// 07:15 check reports the TRUE final count ~1h45m before the 9am delivery — early
+// 07:15 check reports the TRUE final count ~1h45m before the 9am delivery - early
 // enough to act, tightly grouped (07:00 report -> 07:10 re-scrape -> 07:15 verify).
 cron.schedule('10 7 * * 1-5', async () => {
   try {
@@ -17480,7 +17480,7 @@ cron.schedule('20 6 * * *', async () => {
     req2.write(body2); req2.end();
   } catch(e) { console.log('[06:05 UK] Distributor error:', e.message); }
 }, { timezone: 'Europe/London' });
-// SCRAPE WATCHDOG (07:30 UK) — if ANY product pool (moving/probate/planning/
+// SCRAPE WATCHDOG (07:30 UK) - if ANY product pool (moving/probate/planning/
 // newbusiness/tenders) was not written today, auto re-trigger the full scrape so
 // the 09:00 delivery still has fresh supply. Previously only the MOVING pool was
 // checked, so a silent newbusiness (or other) scrape failure never got caught.
@@ -17497,10 +17497,10 @@ cron.schedule('30 7 * * *', async () => {
       if (!(mt > 0 && ukDateStr(mt) === ukDateStr(Date.now()))) stalePools.push(prod);
     });
     if (!stalePools.length) {
-      console.log('[SCRAPE-WATCHDOG] All pools written today — OK');
+      console.log('[SCRAPE-WATCHDOG] All pools written today - OK');
       return;
     }
-    console.log('[SCRAPE-WATCHDOG] Stale pools: ' + stalePools.join(', ') + ' — auto re-triggering scrape');
+    console.log('[SCRAPE-WATCHDOG] Stale pools: ' + stalePools.join(', ') + ' - auto re-triggering scrape');
     try {
       const http = require('http');
       // No product filter: the re-triggered scrape covers ALL lead types (moving,
@@ -17557,13 +17557,13 @@ cron.schedule('10 9 * * 1-5', async () => {
     console.log('[09:10 CONFIRM] ' + okC + '/' + totC + ' ok, ' + shortC.length + ' to check');
   } catch(e) { console.log('[09:10 CONFIRM] error:', e.message); }
 }, { timezone: 'Europe/London' });
-// DELIVERY BACKSTOP (09:05 UK Mon-Fri) — if the 08:58 cron AND 09:01 watchdog both
+// DELIVERY BACKSTOP (09:05 UK Mon-Fri) - if the 08:58 cron AND 09:01 watchdog both
 // missed (deploy/restart/race), run the delivery so customers never miss a day.
 cron.schedule('5 9 * * 1-5', async () => {
   try {
     var todayStr = new Date().toISOString().split('T')[0];
     if (__lastDeliveryDate === todayStr) return; // already COMPLETED today
-    console.log('[BACKSTOP] 09:05 delivery not complete — re-triggering now (safety)');
+    console.log('[BACKSTOP] 09:05 delivery not complete - re-triggering now (safety)');
     try {
       const http = require('http');
       var bsBody = JSON.stringify({});
@@ -17642,7 +17642,7 @@ function clearStuckPausedFlags() {
     var cleared = 0;
     var todayStr = new Date().toISOString().split('T')[0];
     (dbj.customers || []).forEach(function(c) {
-      // NEVER auto-unpause test/seed accounts — they stay paused so the real
+      // NEVER auto-unpause test/seed accounts - they stay paused so the real
       // customer pools aren't drained by the test fleet.
       if (/test\.|@9amleads\.com|\.1788\d*@/i.test(String(c.email || ''))) return;
       // Intentional holiday pause (customer set a resume date): resume only on/after
@@ -17821,22 +17821,22 @@ var __lastDeliveryDate = ''; // YYYY-MM-DD of the most recent delivery fire (dai
 // couple of minutes with PAF enrichment).
 var __deliveryStartedDate = '';
 
-// NO OVER / NO UNDER GUARANTEE — the customer promise is "exactly your daily count in
+// NO OVER / NO UNDER GUARANTEE - the customer promise is "exactly your daily count in
 // your inbox at 9am". Two failure modes were seen: (1) the 9am run sometimes delivered
 // FEWER than promised with no re-fill, and (2) junk PENDING rows accumulated across days
 // and inflated dashboard counts. These two jobs make both impossible:
-//   autoFillDeliveryShortfalls()  — right after the 9am run, top every customer up to
+//   autoFillDeliveryShortfalls()  - right after the 9am run, top every customer up to
 //                                   their exact promised count (fresh → older in-area,
 //                                   the disclosed nearest-area guarantee) and EMAIL the
 //                                   added leads immediately so inbox == dashboard == promise.
-//   purgeAllPendingRows()         — 09:12 UK daily: delete every undelivered row so stale
+//   purgeAllPendingRows()         - 09:12 UK daily: delete every undelivered row so stale
 //                                   pending junk can never inflate a dashboard again.
 function isInternalAccount(c) {
   var e = String((c && c.email) || '').toLowerCase();
   return e.indexOf('@9amleads.com') !== -1 || e === 'ketzman1g@gmail.com';
 }
 // An account is "trial-expired" (and therefore NOT owed leads) when its 7-day trial
-// has passed and it is not paying — i.e. no Stripe subscription. This applies to
+// has passed and it is not paying - i.e. no Stripe subscription. This applies to
 // EVERY plan, not just free_trial: a paid-plan signup that never pays is cut off the
 // same as a free trial. Internal/test accounts and active subscribers are exempt.
 function trialExpiredUnpaid(c) {
@@ -17898,7 +17898,7 @@ function autoFillDeliveryShortfalls(cbDone) {
     var idx = 0, addedTotal = 0, stillShort = [];
     function next() {
       if (idx >= tasks.length) {
-        if (stillShort.length) { try { sendAdminAlert('⚠ Delivery shortfall remains (could not fully top up)', '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="color:#f87171;margin:0 0 8px">Still short after auto top-up</h1><p style="color:#ccc;line-height:1.7">These customers are still below their promised count — no unused in-area lead could be found:</p><ul style="color:#ccc;line-height:1.8">' + stillShort.map(function(s){ return '<li>' + s + '</li>'; }).join('') + '</ul></div>'); } catch(al) {} }
+        if (stillShort.length) { try { sendAdminAlert('⚠ Delivery shortfall remains (could not fully top up)', '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="color:#f87171;margin:0 0 8px">Still short after auto top-up</h1><p style="color:#ccc;line-height:1.7">These customers are still below their promised count - no unused in-area lead could be found:</p><ul style="color:#ccc;line-height:1.8">' + stillShort.map(function(s){ return '<li>' + s + '</li>'; }).join('') + '</ul></div>'); } catch(al) {} }
         console.log('[AUTOFILL] complete: added ' + addedTotal + ' lead(s)' + (stillShort.length ? '; still short: ' + stillShort.join(', ') : ''));
         _done();
         return;
@@ -17937,7 +17937,7 @@ function autoFillDeliveryShortfalls(cbDone) {
 // ===== DELIVERY COMPLETION WATCHDOG =====
 // The 09:01/09:05 backstops only fire when the 9am run never STARTED. This is the
 // missing piece: it verifies, PER CUSTOMER, that everyone got their promised count
-// and — if not — frees a stalled lock, re-triggers the delivery, and alerts the
+// and - if not - frees a stalled lock, re-triggers the delivery, and alerts the
 // founder. Runs at 09:08, 09:15 and 09:25 so the 9am promise is kept even if the
 // first run stalls or under-delivers.
 function deliveryCompletionWatchdog(label) {
@@ -17968,8 +17968,8 @@ function deliveryCompletionWatchdog(label) {
       }
     } catch(le) {}
     // Recover. TWO paths, because they cover different cases:
-    //  1) /api/admin/deliver — handles customers NOT yet emailed (sends their daily email).
-    //  2) autoFillDeliveryShortfalls — tops up customers ALREADY emailed today via
+    //  1) /api/admin/deliver - handles customers NOT yet emailed (sends their daily email).
+    //  2) autoFillDeliveryShortfalls - tops up customers ALREADY emailed today via
     //     top-up-today + emails each added lead (the main run DISCARDS candidates for
     //     already-emailed customers, so it cannot recover them on its own).
     // SEQUENTIAL recovery: run the delivery re-run FIRST and wait for it to finish,
@@ -17992,14 +17992,14 @@ function deliveryCompletionWatchdog(label) {
       wreq.write(bodyW); wreq.end();
     } catch(te) { console.log('[COMPLETION-WATCHDOG] trigger error:', te.message); _watchdogAutoFill(); }
     // Alert the founder (only-action). THROTTLED to once per 30 min so the frequent
-    // self-healing loop can't spam — a single unresolved shortfall emails once.
+    // self-healing loop can't spam - a single unresolved shortfall emails once.
     try {
       if (!global.__lastWatchdogAlert || (Date.now() - global.__lastWatchdogAlert) > 30 * 60000) {
         global.__lastWatchdogAlert = Date.now();
-        sendAdminAlert('⚠ Delivery incomplete at ' + label + ' — auto-recovery triggered',
+        sendAdminAlert('⚠ Delivery incomplete at ' + label + ' - auto-recovery triggered',
           '<div style="font-family:Inter,Arial,sans-serif;font-size:13px;color:#e2e8f0;line-height:1.7">'
           + '<b style="color:#f87171">' + short.length + ' customer(s) below their promised count</b> at ' + label + ':'
-          + '<ul style="padding-left:18px;margin:6px 0">' + short.map(function(s){ return '<li>' + s.email + ' — ' + s.have + '/' + s.promised + '</li>'; }).join('') + '</ul>'
+          + '<ul style="padding-left:18px;margin:6px 0">' + short.map(function(s){ return '<li>' + s.email + ' - ' + s.have + '/' + s.promised + '</li>'; }).join('') + '</ul>'
           + 'A recovery delivery has been triggered automatically. If it stays short, it is a supply issue for those areas.</div>');
       }
     } catch(al) {}
@@ -18008,12 +18008,12 @@ function deliveryCompletionWatchdog(label) {
 }
 // SELF-HEALING LOOP (09:05, 09:20, 09:35, 09:50): checks every customer's delivered count
 // and, if anyone is short, re-runs the delivery + auto-fill automatically. Four checks
-// across the 9am hour — enough to catch and fix a shortfall quickly without over-running.
+// across the 9am hour - enough to catch and fix a shortfall quickly without over-running.
 // No-op when all fulfilled; the founder alert is throttled to once per 30 min.
 cron.schedule('5,20,35,50 9 * * 1-5', function() { try { deliveryCompletionWatchdog('auto'); } catch(e) {} }, { timezone: 'Europe/London' });
 // CONTINUOUS SELF-HEAL (10:00-11:30 UK): keep checking until the day's delivery is
 // complete, so a crash / restart / late recovery at ANY point in the morning still
-// ends with every customer fulfilled — fully hands-off. No-op when already complete.
+// ends with every customer fulfilled - fully hands-off. No-op when already complete.
 cron.schedule('0,30 10-11 * * 1-5', function() { try { deliveryCompletionWatchdog('auto-late'); } catch(e) {} }, { timezone: 'Europe/London' });
 
 // ===== DAILY DELIVERY SUMMARY (09:12 UK Mon-Fri) =====
@@ -18037,12 +18037,12 @@ function sendDailySummaryEmail() {
     var totalDelivered = rows.reduce(function(s, r) { return s + r.delivered; }, 0);
     var totalPromised = rows.reduce(function(s, r) { return s + r.promised; }, 0);
     var ok = (short.length === 0);
-    // Routine server restarts (deploys / sleep-wake) since the last 24h — batched here
+    // Routine server restarts (deploys / sleep-wake) since the last 24h - batched here
     // instead of emailed one-by-one on every boot.
     var boots24 = 0;
     try { boots24 = (db.__boots || []).filter(function(t) { return Date.now() - t < 24 * 3600000; }).length; } catch(e) {}
-    var subject = (ok ? '✅' : '⚠️') + ' 9am delivery report — ' + fulfilled + '/' + rows.length + ' customers fulfilled (' + today + ')';
-    var shortHtml = short.length ? ('<p style="color:#f87171"><b>Below promise:</b></p><ul style="color:#cbd5e1;padding-left:18px">' + short.map(function(r){ return '<li>' + r.email + ' — ' + r.delivered + '/' + r.promised + (r.emailed ? '' : ' (no email)') + '</li>'; }).join('') + '</ul>') : '<p style="color:#34d399"><b>Every customer received their full count and email.</b></p>';
+    var subject = (ok ? '✅' : '⚠️') + ' 9am delivery report - ' + fulfilled + '/' + rows.length + ' customers fulfilled (' + today + ')';
+    var shortHtml = short.length ? ('<p style="color:#f87171"><b>Below promise:</b></p><ul style="color:#cbd5e1;padding-left:18px">' + short.map(function(r){ return '<li>' + r.email + ' - ' + r.delivered + '/' + r.promised + (r.emailed ? '' : ' (no email)') + '</li>'; }).join('') + '</ul>') : '<p style="color:#34d399"><b>Every customer received their full count and email.</b></p>';
     var html = '<div style="font-family:Inter,Arial,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:28px;max-width:600px;margin:0 auto;border-radius:14px">'
       + '<h1 style="font-family:Outfit,Arial,sans-serif;color:' + (ok ? '#34d399' : '#f87171') + ';margin:0 0 6px;font-size:20px">' + (ok ? 'Delivery complete ✅' : 'Delivery needs attention ⚠️') + '</h1>'
       + '<p style="color:#94a3b8;margin:0 0 16px">' + new Date().toLocaleString('en-GB', { timeZone: 'Europe/London' }) + ' · ' + today + '</p>'
@@ -18070,27 +18070,27 @@ function sendDailySummaryEmail() {
 async function preDeliveryReadinessCheck() {
   var issues = [];
   try {
-    if (!BREVO_API_KEY) issues.push('Brevo API key is NOT configured — no emails can send.');
+    if (!BREVO_API_KEY) issues.push('Brevo API key is NOT configured - no emails can send.');
     else {
       await new Promise(function(resolve) {
         try {
-          var r = https.request({ hostname: 'api.brevo.com', path: '/v3/account', method: 'GET', headers: { 'api-key': BREVO_API_KEY, 'Accept': 'application/json' }, timeout: 12000 }, function(resp) { var b = ''; resp.on('data', function(c){ b+=c; }); resp.on('end', function(){ if (resp.statusCode === 401 || resp.statusCode === 403) issues.push('Brevo API key REJECTED (HTTP ' + resp.statusCode + ') — emails will fail.'); else if (resp.statusCode >= 500) issues.push('Brevo API error (HTTP ' + resp.statusCode + ').'); resolve(); }); });
-          r.on('error', function() { issues.push('Brevo UNREACHABLE — emails may fail.'); resolve(); });
-          r.on('timeout', function() { try { r.destroy(); } catch(e){} issues.push('Brevo timed out — emails may fail.'); resolve(); });
+          var r = https.request({ hostname: 'api.brevo.com', path: '/v3/account', method: 'GET', headers: { 'api-key': BREVO_API_KEY, 'Accept': 'application/json' }, timeout: 12000 }, function(resp) { var b = ''; resp.on('data', function(c){ b+=c; }); resp.on('end', function(){ if (resp.statusCode === 401 || resp.statusCode === 403) issues.push('Brevo API key REJECTED (HTTP ' + resp.statusCode + ') - emails will fail.'); else if (resp.statusCode >= 500) issues.push('Brevo API error (HTTP ' + resp.statusCode + ').'); resolve(); }); });
+          r.on('error', function() { issues.push('Brevo UNREACHABLE - emails may fail.'); resolve(); });
+          r.on('timeout', function() { try { r.destroy(); } catch(e){} issues.push('Brevo timed out - emails may fail.'); resolve(); });
           r.end();
         } catch(e) { resolve(); }
       });
     }
   } catch(e) {}
-  try { if (!(typeof JWT_SECRET !== 'undefined' && JWT_SECRET)) issues.push('JWT_SECRET missing — dashboard login links would break.'); } catch(e) {}
+  try { if (!(typeof JWT_SECRET !== 'undefined' && JWT_SECRET)) issues.push('JWT_SECRET missing - dashboard login links would break.'); } catch(e) {}
   try { Object.keys(PRODUCT_LEAD_FILES || {}).forEach(function(p) { var f = PRODUCT_LEAD_FILES[p] && PRODUCT_LEAD_FILES[p].file; if (f && !fs.existsSync(path.join(DATA_DIR, f))) issues.push('Pool file missing: ' + f); }); } catch(e) {}
-  try { var _pb = require('./postcoder_budget'); if (_pb && typeof _pb.getDailyBudget === 'function' && (_pb.getDailyBudget() - _pb.usage()) < 10) issues.push('Postcoder budget nearly exhausted — some door numbers may be missing.'); } catch(e) {}
+  try { var _pb = require('./postcoder_budget'); if (_pb && typeof _pb.getDailyBudget === 'function' && (_pb.getDailyBudget() - _pb.usage()) < 10) issues.push('Postcoder budget nearly exhausted - some door numbers may be missing.'); } catch(e) {}
   if (!issues.length) { console.log('[READINESS] Pre-9am check: all good'); return; }
   console.log('[READINESS] ISSUES: ' + issues.join(' | '));
   try {
-    sendAdminAlert('⚠ Pre-9am readiness check failed — action needed before 9am',
+    sendAdminAlert('⚠ Pre-9am readiness check failed - action needed before 9am',
       '<div style="font-family:Inter,Arial,sans-serif;font-size:14px;color:#e2e8f0;line-height:1.7">'
-      + '<b style="color:#f87171">These would break the 9am delivery — fix before 9am:</b>'
+      + '<b style="color:#f87171">These would break the 9am delivery - fix before 9am:</b>'
       + '<ul style="padding-left:18px;margin:8px 0">' + issues.map(function(x){ return '<li>' + x + '</li>'; }).join('') + '</ul>'
       + 'Live status: <a href="https://9amleads.com/portal/delivery-status.html" style="color:#38bdf8">delivery-status</a></div>');
   } catch(e) {}
@@ -18227,10 +18227,10 @@ cron.schedule('45 7 * * 1-5', async function() {
     if (!risky.length) { console.log('[SUPPLY-WARN] all customers have enough mailable in-area supply'); return; }
     console.log('[SUPPLY-WARN] at-risk: ' + risky.map(function(r){ return r.email + '(' + r.mailable + '/' + r.promised + ')'; }).join(', '));
     try {
-      sendAdminAlert('⚠ 9am supply warning — ' + today + ' (pre-9am)',
+      sendAdminAlert('⚠ 9am supply warning - ' + today + ' (pre-9am)',
         '<div style="font-family:Inter,Arial,sans-serif;font-size:13px;color:#e2e8f0;line-height:1.7">'
         + '<b style="color:#fbbf24">' + risky.length + ' customer(s) may fall short at 9am</b> (based on current mailable in-area pool supply):'
-        + '<ul style="padding-left:18px;margin:6px 0">' + risky.map(function(r){ return '<li>' + r.email + ' — ' + r.mailable + ' mailable vs ' + r.promised + ' promised <span style="color:#94a3b8">(' + r.areas + ')</span></li>'; }).join('') + '</ul>'
+        + '<ul style="padding-left:18px;margin:6px 0">' + risky.map(function(r){ return '<li>' + r.email + ' - ' + r.mailable + ' mailable vs ' + r.promised + ' promised <span style="color:#94a3b8">(' + r.areas + ')</span></li>'; }).join('') + '</ul>'
         + 'Top up the pool (scrape / PAF warm-up) before 9am, or those customers will be short. The 09:08/09:15/09:25 watchdog will still attempt a top-up after delivery.</div>');
     } catch(al) {}
   } catch(e) { console.log('[SUPPLY-WARN] error:', e.message); }
@@ -18357,7 +18357,7 @@ cron.schedule('0 9 * * 1-5', async () => {
   try {
     // DELIVERY FIRST: fire the 9am emails immediately so leads land at 09:00:00.
     // (Partner/affiliate/cap jobs run AFTER delivery below so they never delay the
-    // 9am promise — they added ~30s of pre-delivery work previously.)
+    // 9am promise - they added ~30s of pre-delivery work previously.)
     const http = require('http');
     var body = JSON.stringify({});
     var req = http.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (ADMIN_PASSWORD ) + '', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, function(res) {
@@ -18376,9 +18376,9 @@ cron.schedule('0 9 * * 1-5', async () => {
       try { sweepPoolCache(0); maybeGc('delivery-done'); } catch(eGc) {}
       // TIGHT GUARANTEE FINALISE: immediately after the 9am run, top up any customer who
       // landed below their promised count (emailing each added lead), then run the full
-      // audit — dedupe same-day rows, re-send any missing daily email, purge pending rows,
+      // audit - dedupe same-day rows, re-send any missing daily email, purge pending rows,
       // verify delivered == promised for every entitled customer and alert the founder on
-      // any breach — then send the founder the delivery report. Everything settles within
+      // any breach - then send the founder the delivery report. Everything settles within
       // ~2 minutes of 9am; nothing is deferred to 09:12/09:35 so issues surface instantly.
       try {
         autoFillDeliveryShortfalls(function() {
@@ -18394,7 +18394,7 @@ cron.schedule('0 9 * * 1-5', async () => {
     try { await runAutoSend(); } catch(ase) { console.log('[09:00 UK] Print & Post error:', ase.message); }
     // INSTANT FAILED-EMAIL RESEND: any email that failed during this delivery is
     // re-sent IMMEDIATELY (not hours later), so a customer whose email hiccuped at
-    // 9:00 gets it within seconds — the 9am promise must survive single-send failures.
+    // 9:00 gets it within seconds - the 9am promise must survive single-send failures.
     try { await resendFailedEmails(); } catch(rfE) { console.log('[09:00 UK] Instant resend error:', rfE.message); }
     // POST-DELIVERY JOBS (no longer delay the 9am emails):
     try { var _pj = runPartnerJobs(); console.log('[PARTNER] commission job:', JSON.stringify(_pj)); } catch(pjErr) { console.log('[PARTNER] commission job error:', pjErr.message); }
@@ -18429,7 +18429,7 @@ cron.schedule('0 9 * * 1-5', async () => {
 // }, { timezone: 'Europe/London' });
 
 
-// STALE-POOL MONITOR: 07:45 UK (after the 6am scrape, 75min before delivery) — if any
+// STALE-POOL MONITOR: 07:45 UK (after the 6am scrape, 75min before delivery) - if any
 // product's fresh (48h) supply has dropped dangerously low (a sign the scrapes have
 // been failing), auto-scrape it and alert the founder. Catches silent multi-day scrape
 // failures early enough to re-scrape well before 9am (not at 08:15, which left no time).
@@ -18454,7 +18454,7 @@ cron.schedule('45 6 * * 1-5', async () => {
         } catch(se) {}
       });
       // OWNER-EMAIL DIGEST MODE: the re-scrape above still runs automatically, but
-      // we no longer email the owner for every low-supply blip — these are usually
+      // we no longer email the owner for every low-supply blip - these are usually
       // transient and self-heal within minutes (they were confusing + noisy at 5-6am).
       // The single 07:00 morning report + the 07:45 real-shortfall alert cover it.
       console.log('[STALE-POOL] Low supply (auto-rescrape sent, owner NOT emailed): ' + spLow.join(' | '));
@@ -18512,7 +18512,7 @@ async function sendDeliveryCompleteReport() {
       html += '<tr style="border-bottom:1px solid #e2e8f0"><td style="padding:8px;color:#0f172a;font-weight:600">' + r.company + ' <span style="color:#94a3b8;font-weight:400">(' + r.email + ')</span></td><td style="padding:8px;color:#475569">' + r.product + '</td><td style="padding:8px;text-align:right;color:' + (r.ok ? '#16a34a' : '#dc2626') + ';font-weight:700">' + r.count + '/' + r.promised + '</td></tr>';
     });
     html += '</table><p style="font-size:11px;color:#94a3b8;margin-top:16px">Next delivery: next weekday at 9:00 UK. No action needed unless a row is red.</p></div>';
-    await sendBrevoEmail({ email: process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com', name: '9amLeads Admin' }, (allGood ? '✅ ' : '⚠️ ') + '9amLeads delivery complete — ' + todayS + ' (' + fulfilled + '/' + rows.length + ' fulfilled, ' + totalDelivered + ' leads)', html);
+    await sendBrevoEmail({ email: process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com', name: '9amLeads Admin' }, (allGood ? '✅ ' : '⚠️ ') + '9amLeads delivery complete - ' + todayS + ' (' + fulfilled + '/' + rows.length + ' fulfilled, ' + totalDelivered + ' leads)', html);
     console.log('[POST-DELIVERY-REPORT] Sent delivery summary (' + fulfilled + '/' + rows.length + ' fulfilled, ' + totalDelivered + ' leads)');
   } catch(e) { console.log('[POST-DELIVERY-REPORT] error:', e.message); }
 }
@@ -18522,14 +18522,14 @@ async function runDailyDeliveryReport() {
     var rDb = getDb();
     var todayR = new Date().toISOString().split('T')[0];
     // ONCE-PER-DAY GUARD: never email the morning report more than once a day.
-    // The 07:00 cron, the boot catch-up, and manual triggers all call this — without
+    // The 07:00 cron, the boot catch-up, and manual triggers all call this - without
     // a guard, a deploy restart between 7-9am fires a duplicate report every time.
     // Persisted in the DB so it survives restarts. Pass { force: true } to override.
     var _forceReport = !!(global.__FORCE_REPORT_FLAG__ || (typeof req !== 'undefined' && req.body && req.body.force));
     try {
       if (!rDb.last_delivery_report) rDb.last_delivery_report = {};
       if (rDb.last_delivery_report[todayR] && !_forceReport) {
-        console.log('[07:00 REPORT] Already emailed today (' + todayR + ') — skipping duplicate');
+        console.log('[07:00 REPORT] Already emailed today (' + todayR + ') - skipping duplicate');
         return { skipped: true, reason: 'already-emailed-today' };
       }
       // Mark "in progress" so a second caller (boot catch-up racing the cron) can't
@@ -18538,14 +18538,14 @@ async function runDailyDeliveryReport() {
       saveDb();
     } catch(e) {}
     // ---- 1) SELF-HEAL: re-scrape any low-supply product so errors are fixed BEFORE
-    // the report (not just reported). Also purge nothing destructive — just top up.
+    // the report (not just reported). Also purge nothing destructive - just top up.
     var spFix = getPoolSupply();
     var fixThresh = { moving: 60, probate: 20, newbusiness: 60, planning: 20, tenders: 10 };
     var fixed = [];
     Object.keys(fixThresh).forEach(function(prod) {
       var fresh = spFix && spFix[prod] ? (spFix[prod].fresh_48h || 0) : 0;
       if (fresh < fixThresh[prod]) {
-        fixed.push(prod + ' (had ' + fresh + ' fresh, min ' + fixThresh[prod] + ') — re-scraping');
+        fixed.push(prod + ' (had ' + fresh + ' fresh, min ' + fixThresh[prod] + ') - re-scraping');
         try {
           var rb = JSON.stringify({ product: prod, force: true });
           var rreq = require('http').request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/run-scrapers', headers: { 'Authorization': 'Bearer ' + (ADMIN_PASSWORD ) + '', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(rb) } }, function(rres) { rres.resume(); });
@@ -18564,7 +18564,7 @@ async function runDailyDeliveryReport() {
         var rPromised = parseInt(rc.leads_per_day, 10) > 0 ? parseInt(rc.leads_per_day, 10) : (getPlanLimit(rc.product, rc.plan, rc.coverage) || 5);
         // ACCOUNT FOR ALREADY-DELIVERED-TODAY: if a customer has already received
         // their full quota earlier today (e.g. a re-run/test), the preview shows 0
-        // NEW leads — that's NOT a shortfall, they already have their count. Only
+        // NEW leads - that's NOT a shortfall, they already have their count. Only
         // flag as short if today's delivered + preview < promised.
         var todayR2 = new Date().toISOString().split('T')[0];
         var rDeliveredToday = (rDb.leads || []).filter(function(l) { return l.customer_id === rc.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(todayR2) === 0 && (function(){ try { return !JSON.parse(l.data||'{}').rejected; } catch(e){ return true; } })(); }).length;
@@ -18601,11 +18601,11 @@ async function runDailyDeliveryReport() {
       '</div></div>';
     // OWNER-EMAIL DIGEST MODE: email the morning report ONLY when a customer would
     // genuinely be short at 9am (a real problem needing attention). On a healthy day
-    // no morning email is sent — the single 09:10 "delivery summary" is the one daily
+    // no morning email is sent - the single 09:10 "delivery summary" is the one daily
     // confirmation, and real problems are also flagged by the 07:15/07:45 guarantee
     // alerts. The self-heal re-scrape + DB metrics above ALWAYS still run.
     // EARLY TOP-UP (07:00): if any customer is short on their CHOSEN AREAS, force
-    // re-scrape those products NOW — not at the 08:20 planning run / 9am delivery —
+    // re-scrape those products NOW - not at the 08:20 planning run / 9am delivery -
     // so the founder has ~2 hours of real time to fix before 9am. The total-pool
     // supply thresholds above can look fine while a specific area is dry, so act on
     // the per-customer preview result (rShort) rather than pool totals.
@@ -18624,13 +18624,13 @@ async function runDailyDeliveryReport() {
       } catch(rtE) { console.log('[07:00 REPORT] early top-up error:', rtE.message); }
     }
     if (rShort.length) {
-      await sendBrevoEmail({ email: process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com', name: '9amLeads Admin' }, '9amLeads morning report — ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + (rShort.length ? ' · ' + rShort.length + ' need(s) attention' : ' · all ready'), html);
+      await sendBrevoEmail({ email: process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com', name: '9amLeads Admin' }, '9amLeads morning report - ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + (rShort.length ? ' · ' + rShort.length + ' need(s) attention' : ' · all ready'), html);
     } else {
-      console.log('[07:00 REPORT] All customers ready — morning email skipped (digest mode)');
+      console.log('[07:00 REPORT] All customers ready - morning email skipped (digest mode)');
     }
     // also update admin metrics so the dashboard preview reflects the final state.
     try { var _mDb = getDb(); if (!_mDb.last_delivery_report) _mDb.last_delivery_report = {}; _mDb.last_delivery_report[todayR] = { at: new Date().toISOString(), status: 'sent', customers: rRows.length, ready: rRows.filter(function(x){ return x.ok; }).length, short: rShort.length, short_customers: rShort }; saveDb(); } catch(me) {}
-    console.log('[07:00 REPORT] sent — ' + rRows.length + ' customers, ' + rShort.length + ' short');
+    console.log('[07:00 REPORT] sent - ' + rRows.length + ' customers, ' + rShort.length + ' short');
   } catch(e) { console.log('[07:00 REPORT] error:', e.message); }
 }
 cron.schedule('0 7 * * 1-5', async () => {
@@ -18646,7 +18646,7 @@ setTimeout(function() {
     var _ukDow = new Date().toLocaleDateString('en-GB', { timeZone: 'Europe/London', weekday: 'short' }).toLowerCase();
     var _wkd = !(_ukDow === 'sat' || _ukDow === 'sun');
     if (_wkd && _ukH >= 7 && _ukH < 9) {
-      console.log('[07:00 REPORT] Server booted during report window — firing missed report');
+      console.log('[07:00 REPORT] Server booted during report window - firing missed report');
       runDailyDeliveryReport().then(function() { console.log('[07:00 REPORT] catch-up report sent'); }).catch(function(e) { console.log('[07:00 REPORT] catch-up error:', e.message); });
     }
   } catch(e) { console.log('[07:00 REPORT] catch-up scheduler error:', e.message); }
@@ -18655,7 +18655,7 @@ setTimeout(function() {
 // compute their recent fill rate (delivered vs promised). If their chosen areas are
 // consistently under-delivering (fill < 80% over the last 7 days), email them a
 // helpful, psychology-aware nudge suggesting nearby areas/postcodes with more
-// supply — so they keep getting their full daily count and stay subscribed.
+// supply - so they keep getting their full daily count and stay subscribed.
 cron.schedule('0 10 * * 2', async () => {
   try {
     var ahDb = getDb();
@@ -18712,20 +18712,20 @@ function buildAdminStyleEmail(bodyHtml) {
 // initial 4 retries). Runs at 10:30 + 15:00 UK so a customer never permanently
 // misses their lead notification. Clears the queue on success.
 // TIGHT RESEND (09:02 + 09:10 UK): catch any delivery email that failed at 9am and
-// re-send within minutes — the 9am promise must survive single-send failures.
+// re-send within minutes - the 9am promise must survive single-send failures.
 cron.schedule('2 9 * * 1-5', async () => { try { await resendFailedEmails(); } catch(e) {} }, { timezone: 'Europe/London' });
 cron.schedule('10 9 * * 1-5', async () => { try { await resendFailedEmails(); } catch(e) {} }, { timezone: 'Europe/London' });
-// 09:10 STATUS NOTIFY — if any active customer did NOT receive their daily lead
+// 09:10 STATUS NOTIFY - if any active customer did NOT receive their daily lead
 // email today (delivery hiccuped), tell them NOW (reassuring: leads are on the way,
 // nothing to worry about) so they're never left wondering. Once the leads actually
 // arrive (delivered), a follow-up confirms "sorted". This keeps the 9am promise
-// even during an incident — the customer always knows their leads are coming.
+// even during an incident - the customer always knows their leads are coming.
 cron.schedule('10 9 * * 1-5', async () => {
   try {
     var sDb = getDb();
     var todayS = new Date().toISOString().split('T')[0];
     // Only customers who are EXPECTING leads today get the reassurance notice.
-    // A free trial that has ENDED no longer receives daily leads — promising them
+    // A free trial that has ENDED no longer receives daily leads - promising them
     // "your leads are on the way" would be wrong (their trial is over, not delayed).
     var sCusts = (sDb.customers || []).filter(function(c) {
       if (!c.plan || c.plan === 'cancelled' || isLeadsPaused(c)) return false;
@@ -18749,7 +18749,7 @@ cron.schedule('10 9 * * 1-5', async () => {
         var sDelivered = (sDb.leads || []).filter(function(l) { return l.customer_id === sc.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(todayS) === 0; }).length;
         if (sPromised > 0 && sDelivered >= sPromised) { sNotified[sKey] = 'sorted'; continue; }
         if (!gotEmail) {
-          // customer is missing their daily email right now — reassure them.
+          // customer is missing their daily email right now - reassure them.
           await sendBrevoEmail({ email: sc.email, name: sc.company || 'Customer' },
             'Your 9amLeads are on their way 🚚',
             '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:16px"><h2 style="color:#38bdf8;margin:0 0 8px">Your leads are on their way ✨</h2><p style="font-size:15px;line-height:1.6;color:#cbd5e1">Just a quick heads-up: today\'s fresh opportunities are still being delivered to your dashboard and inbox. They\'ll be with you very shortly.</p><p style="font-size:15px;line-height:1.6;color:#cbd5e1">No action needed. Everything is being handled and your leads will arrive today as usual. 😊</p><p style="font-size:13px;color:#94a3b8;margin:16px 0 0">- The 9amLeads Team</p></div>');
@@ -18763,7 +18763,7 @@ cron.schedule('10 9 * * 1-5', async () => {
     saveDb();
   } catch(e) { console.log('[09:10 STATUS] error:', e.message); }
 }, { timezone: 'Europe/London' });
-// 09:20 SORTED CONFIRM — for customers we told "on their way", once their leads
+// 09:20 SORTED CONFIRM - for customers we told "on their way", once their leads
 // actually arrive send a short "all sorted" confirmation so they know it's fixed.
 cron.schedule('20 9 * * 1-5', async () => {
   try {
@@ -18780,7 +18780,7 @@ cron.schedule('20 9 * * 1-5', async () => {
         var cGot = (cDb.leads || []).some(function(l) { return l.customer_id === cc.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(todayC) === 0; });
         if (cGot) {
           await sendBrevoEmail({ email: cc.email, name: cc.company || 'Customer' },
-            'All sorted — your leads are here ✅',
+            'All sorted - your leads are here ✅',
             '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:16px"><h2 style="color:#34d399;margin:0 0 8px">All sorted ✅</h2><p style="font-size:15px;line-height:1.6;color:#cbd5e1">We\'ve resolved the technical issue and your fresh leads are now in your dashboard and inbox.</p><p style="font-size:15px;line-height:1.6;color:#cbd5e1">Thank you for your patience. Everything is working normally again. 🙏</p><p style="font-size:13px;color:#94a3b8;margin:16px 0 0">- The 9amLeads Team</p></div>');
           cNotified[cKey] = 'sorted';
           console.log('[09:20 STATUS] Sorted confirmation sent to ' + cc.email);
@@ -18800,7 +18800,7 @@ cron.schedule('20 9 * * 1-5', async () => {
 // ===== DEPLOY-FAILURE MONITOR =====
 // Every 15 minutes, query Render's API for the latest deploy of this service. If
 // the newest deploy FAILED (update_failed / build_failed) while the founder's code
-// changed, email an ALERT so a failed deploy is caught and fixed automatically —
+// changed, email an ALERT so a failed deploy is caught and fixed automatically -
 // the founder should never have to manually report a deploy error. Runs only when
 // RENDER_API_KEY + RENDER_SERVICE_ID are set.
 cron.schedule('*/15 * * * *', async () => {
@@ -18833,7 +18833,7 @@ cron.schedule('*/15 * * * *', async () => {
     saveDb();
     var commitShort = latest.commit_id ? String(latest.commit_id).substring(0, 7) : '';
     var body = '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:16px"><h2 style="color:#f87171;margin:0 0 8px">⚠ 9amLeads deploy FAILED</h2><p style="font-size:14px;line-height:1.6;color:#cbd5e1">The latest deploy did not complete successfully:</p><ul style="font-size:13px;color:#e2e8f0;line-height:1.7;margin:8px 0"><li><b>Status:</b> ' + st + '</li><li><b>Commit:</b> ' + (commitShort || 'unknown') + '</li><li><b>Time:</b> ' + new Date(latest.createdAt || Date.now()).toLocaleString('en-GB', { timeZone: 'Europe/London' }) + '</li></ul><p style="font-size:13px;color:#94a3b8;line-height:1.6">The running server is still on the previous working deploy. Customers are unaffected, but new changes are not live. Please retry the deploy or investigate.</p></div>';
-    sendBrevoEmail({ email: process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com', name: '9amLeads Admin' }, '⚠ 9amLeads deploy failed — ' + commitShort, body);
+    sendBrevoEmail({ email: process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com', name: '9amLeads Admin' }, '⚠ 9amLeads deploy failed - ' + commitShort, body);
     console.log('[DEPLOY-MONITOR] Alerted: deploy ' + st + ' (' + commitShort + ')');
   } catch(e) { console.log('[DEPLOY-MONITOR] error:', e.message); }
 }, { timezone: 'Europe/London' });
@@ -18852,7 +18852,7 @@ async function resendFailedEmails() {
       try {
         var _cust = (feDb.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === String(m.email || '').toLowerCase(); });
         if (_cust && _cust.last_email_date === todayE) {
-          console.log('[EMAIL-CATCHUP] skip ' + m.email + ' — already emailed today');
+          console.log('[EMAIL-CATCHUP] skip ' + m.email + ' - already emailed today');
           continue;
         }
       } catch(ge) {}
@@ -18868,13 +18868,13 @@ async function resendFailedEmails() {
 }
 
 // ===== MONDAY-READINESS CHECK: Mon-Fri 07:45 UK (after the 6am scrape, before the 9am
-// delivery) — preview EVERY real customer and log a loud warning if any would
+// delivery) - preview EVERY real customer and log a loud warning if any would
 // shortfall at 9am, so the admin can deep-scrape the affected areas or top up
 // before customers are due their leads.
 cron.schedule('30 6 * * 1-5', async () => {
   try {
     var rdDb = getDb();
-    // ENTITLEMENT GATE: skip expired trials (and test accounts) — they are not owed
+    // ENTITLEMENT GATE: skip expired trials (and test accounts) - they are not owed
     // leads, so previewing them produced false "only X/Y" shortfall alerts (e.g. an
     // expired account showing 4/5 in its areas even though it gets nothing).
     var rdCusts = (rdDb.customers || []).filter(function(c) {
@@ -18928,7 +18928,7 @@ cron.schedule('30 6 * * 1-5', async () => {
 // FULFILMENT GUARANTEE (weekdays): verify EVERY real active customer can hit their
 // EXACT promised count at 9am using the same selection logic the delivery runs.
 // Runs at 07:30 UK (1.5h before delivery, after the 06:00 scrape + PAF enrichment
-// so supply is final) AND 08:15 UK (45 min before, as a final confirmation) — early
+// so supply is final) AND 08:15 UK (45 min before, as a final confirmation) - early
 // enough that any shortfall can be fixed (top-up / scrape / widen areas) WELL BEFORE
 // the 9am delivery, never discovered after. Supply only grows between checks and the
 // 48h freshness window holds, so an early "fulfilled" stays fulfilled at 09:00.
@@ -18984,14 +18984,14 @@ async function runFulfilmentGuarantee(label) {
         console.log('[GUARANTEE] ' + label + ': auto-remediation triggered (top-up-all + force-scrape [' + (_dProds.join(',') || 'none') + ']) for ' + gShort.length + ' shortfall(s)');
       } catch(grErr) { console.log('[GUARANTEE] auto-remediation error:', grErr.message); }
       // OWNER-EMAIL DIGEST MODE: email the shortfall ONCE per day (the first check
-      // that finds it — usually 07:15) rather than at BOTH 07:15 and 07:45 for the
+      // that finds it - usually 07:15) rather than at BOTH 07:15 and 07:45 for the
       // same issue. Persisted so restarts don't re-spam. The 09:10 delivery summary
       // + 09:30 action digest cover anything still unresolved after 9am.
       var _todayGuar = new Date().toISOString().split('T')[0];
       var _alreadySent = false;
       try { var _gd2 = getDb(); if (!_gd2.fulfilment_guarantee) _gd2.fulfilment_guarantee = {}; if (_gd2.fulfilment_guarantee.shortfall_emailed === _todayGuar) _alreadySent = true; } catch(e) {}
       if (_alreadySent) {
-        console.log('[GUARANTEE] ' + label + ': shortfall already emailed today (' + _todayGuar + ') — skipping duplicate alert');
+        console.log('[GUARANTEE] ' + label + ': shortfall already emailed today (' + _todayGuar + ') - skipping duplicate alert');
       } else {
         // Alert the founder NOW (well before 9am) so they can act / top up in time.
         var _gHtml = '<div style="font-family:Inter,Arial,sans-serif;max-width:540px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px"><h2 style="color:#f87171;margin:0 0 10px;font-size:18px">⚠ Fulfilment check (' + label + '): a customer will be short at 9am</h2><p style="font-size:14px;line-height:1.6;color:#cbd5e1">These customers will NOT get their full promised count at 9am:<br><br><ul style="margin:0;padding-left:18px">' + gShort.map(function(s){ return '<li>' + s + '</li>'; }).join('') + '</ul><br><b style="color:#fbbf24">An automatic top-up has already been triggered.</b> If any customer is still short at 9am it is a genuine supply gap for those areas.</p></div>';
@@ -19017,11 +19017,11 @@ async function runFulfilmentGuarantee(label) {
   } catch(e) { console.log('[GUARANTEE] ' + label + ' error:', e.message); }
 }
 cron.schedule('25 7 * * 1-5', function() { runFulfilmentGuarantee('07:25'); }, { timezone: 'Europe/London' });
-// FINAL CHECK runs 07:25 UK — 15 min after the 07:10 planning re-scrape kicks off
+// FINAL CHECK runs 07:25 UK - 15 min after the 07:10 planning re-scrape kicks off
 // (enough for the collector to land fresh apps) and right inside the 07:00 report /
 // 07:10 re-scrape / 07:25 verify cluster. This is the decisive "what will truly be
 // delivered" answer ~1h35m before the 9am delivery, leaving time to act. The old
-// 07:45 second check was dropped as redundant — one tight post-scrape verify is
+// 07:45 second check was dropped as redundant - one tight post-scrape verify is
 // enough, and 09:00 delivery + 09:15 auto-top-up backstop anything remaining.
 // NOTE: the guarantee finalise (auto top-up + dedupe + email reconcile + pending purge +
 // audit + founder report) now runs IMMEDIATELY inside the 09:00 delivery job (see the
@@ -19029,8 +19029,8 @@ cron.schedule('25 7 * * 1-5', function() { runFulfilmentGuarantee('07:25'); }, {
 
 
 // DAILY HEALTH DIGEST: every weekday at 09:30 UK (after the 9am delivery) email
-// the founder a short summary — customers served, delivery errors, supply levels
-// and budget heads-up — so the day's health is visible without logging in.
+// the founder a short summary - customers served, delivery errors, supply levels
+// and budget heads-up - so the day's health is visible without logging in.
 cron.schedule('30 9 * * 1-5', async () => {
   try {
     var ddDb = getDb();
@@ -19066,9 +19066,9 @@ cron.schedule('30 9 * * 1-5', async () => {
     // when something genuinely needs a manual decision (delivery errors, low
     // budgets, shortfalls). Everything else is auto-healed silently.
     var hasIssue = errs.length > 0 || pcLow || stLow || delToday === 0 || shortCount > 0;
-    if (!hasIssue) { console.log('[DIGEST] Healthy day — no action email needed'); return; }
+    if (!hasIssue) { console.log('[DIGEST] Healthy day - no action email needed'); return; }
     var errHtml = errs.length ? '<li>' + errs.join('</li><li>') + '</li>' : '<li>None recorded (may need a check)</li>';
-    sendAdminAlert('⚠ 9amLeads needs your attention — ' + todayD, '<div style="font-size:13px;color:#e2e8f0;line-height:1.7">' +
+    sendAdminAlert('⚠ 9amLeads needs your attention - ' + todayD, '<div style="font-size:13px;color:#e2e8f0;line-height:1.7">' +
       '<b style="color:#38bdf8">Active customers:</b> ' + activeC + '<br>' +
       '<b style="color:#38bdf8">Leads delivered today:</b> ' + delToday + '<br>' +
       '<b style="color:#38bdf8">Customers below promise:</b> ' + (shortCount > 0 ? ('<b style="color:#f87171">' + shortCount + ' ⚠</b>') : '0') + '<br>' +
@@ -19084,7 +19084,7 @@ cron.schedule('30 9 * * 1-5', async () => {
 // the TEST accounts + hello@9amleads.com ONLY - never real customers.
 
 
-// DELIVERY WATCHDOG: Mon-Fri 09:35 UK — if the 09:00 delivery cron missed (deploy,
+// DELIVERY WATCHDOG: Mon-Fri 09:35 UK - if the 09:00 delivery cron missed (deploy,
 // crash, race), re-trigger it so customers still get their daily leads. Checks the
 // date the delivery actually fired rather than a lifetime counter.
 cron.schedule('1 9 * * 1-5', async () => {
@@ -19092,7 +19092,7 @@ cron.schedule('1 9 * * 1-5', async () => {
     var todayStr = new Date().toISOString().split('T')[0];
     if (__lastDeliveryDate === todayStr) return; // already COMPLETED today (only skip when done)
     var __wStarted = (__deliveryStartedDate === todayStr);
-    console.log('[WATCHDOG] 09:01 delivery not complete' + (__wStarted ? ' (run in progress/stalled)' : ' (never fired)') + ' — re-triggering now (safety)');
+    console.log('[WATCHDOG] 09:01 delivery not complete' + (__wStarted ? ' (run in progress/stalled)' : ' (never fired)') + ' - re-triggering now (safety)');
     if (!__wStarted) {
     // NOTIFY CUSTOMERS: let every active customer know their leads are on the way.
     // Funny + lighthearted so a delay never sounds alarming. Sent once per day via a
@@ -19105,7 +19105,7 @@ cron.schedule('1 9 * * 1-5', async () => {
       // the way" delay notice must never reach them (that belongs to the re-join
       // campaign, not delivery ops). Paused/cancelled/bounced also excluded.
       var wCustomers = (wDb.customers || []).filter(function(c){ return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3) && !isLeadsPaused(c) && !trialExpiredUnpaid(c); });
-      var wSubject = '🦥 Your leads had a lie-in — but they\'re on the way!';
+      var wSubject = '🦥 Your leads had a lie-in - but they\'re on the way!';
       var wBody = '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:16px">'
         + '<h2 style="color:#fbbf24;margin:0 0 8px">Oops, the 9am alarm was a bit sleepy today 😴</h2>'
         + '<p style="font-size:15px;line-height:1.6;color:#cbd5e1">Nothing to worry about. Your <b>daily leads are on the way</b> right now. 🚚💨</p>'
@@ -19139,7 +19139,7 @@ cron.schedule('1 9 * * 1-5', async () => {
 });
 
 // NOTE: missed-delivery recovery on restart is handled by the existing
-// "DELIVERY SELF-CHECK ON BOOT" in the app.listen() callback (09:00–11:30 UK), which
+// "DELIVERY SELF-CHECK ON BOOT" in the app.listen() callback (09:00-11:30 UK), which
 // calls deliveryCompletionWatchdog('boot'). It now also honours the persisted
 // delivery_completed_date flag, so a day whose delivery already completed is never
 // re-run (which previously fired a heavy full delivery on every restart).
@@ -19163,8 +19163,8 @@ cron.schedule('*/5 * * * *', function() {
     var p = new Date().toLocaleString('en-GB', { timeZone: 'Europe/London', hour12: false });
     var mm = /(\d{2}):(\d{2})/.exec(p.split(', ')[1] || p);
     var mins = mm ? (+mm[1] * 60 + +mm[2]) : 0;
-    if (mins >= 8 * 60 + 30 && mins <= 9 * 60 + 45) { console.log('[MEM-WATCHDOG] RSS ' + Math.round(rssMB) + 'MB high but inside the 9am window — holding'); return; }
-    console.log('[MEM-WATCHDOG] RSS ' + Math.round(rssMB) + 'MB too high — graceful restart (' + p + ')');
+    if (mins >= 8 * 60 + 30 && mins <= 9 * 60 + 45) { console.log('[MEM-WATCHDOG] RSS ' + Math.round(rssMB) + 'MB high but inside the 9am window - holding'); return; }
+    console.log('[MEM-WATCHDOG] RSS ' + Math.round(rssMB) + 'MB too high - graceful restart (' + p + ')');
     try { _markCleanExit(); } catch(e) {}
     process.exit(0);
   } catch(e) {}
@@ -19185,11 +19185,11 @@ cron.schedule('0 8 1 * *', function() {
       + '<li>Upload it: <code>POST /api/admin/upload-epc-gz</code> (raw gzip body).</li>'
       + '<li>Rebuild SQLite: <code>POST /api/admin/build-epc-sqlite</code>.</li>'
       + '</ol>'
-      + '<div style="color:#94a3b8">If you skip a month nothing breaks — the index stays valid, it just misses the newest certificates.</div></div>');
+      + '<div style="color:#94a3b8">If you skip a month nothing breaks - the index stays valid, it just misses the newest certificates.</div></div>');
   } catch(e) { console.log('[EPC-REFRESH] reminder error: ' + (e && e.message)); }
 }, { timezone: 'Europe/London' });
 
-// DATABASE BACKUP — writes a local snapshot every hour (disk, cheap) but pushes the
+// DATABASE BACKUP - writes a local snapshot every hour (disk, cheap) but pushes the
 // off-server copy to GitHub every 4 hours only (the push is the bandwidth cost; 4h is
 // still plenty of recovery granularity and keeps Render bandwidth in check).
 cron.schedule('15 * * * *', async () => {
@@ -19203,7 +19203,7 @@ cron.schedule('15 * * * *', async () => {
 
 // ===== HEALTH ALERTING =====
 // Catch issues BEFORE they bite: every 30 min, check disk space, pool supply for
-// tomorrow's delivery, GitHub backup push status and recent errors — and email the
+// tomorrow's delivery, GitHub backup push status and recent errors - and email the
 // owner if anything is wrong. Throttled per issue (~4h) so it never spams.
 var _sentAlerts = {};
 function sendAlertIfStale(key, subject, html, cooldownMs) {
@@ -19230,7 +19230,7 @@ function runHealthAlerts() {
       if (fsd.statfs) {
         var st = fsd.statfsSync(DATA_DIR);
         var freePct = Math.round((st.bfree / st.blocks) * 100);
-        if (freePct < 20) issues.push('Disk free is ' + freePct + '% (below 20%) — backups/writes may stop');
+        if (freePct < 20) issues.push('Disk free is ' + freePct + '% (below 20%) - backups/writes may stop');
       }
     } catch(e) {}
     // 2. Pool supply short for tomorrow (active valid-trial customers)
@@ -19268,7 +19268,7 @@ function runHealthAlerts() {
     try {
       var dbDup = getDb();
       var dupFound = [];
-      // Only look at leads delivered in the last 48h — historical duplicates from
+      // Only look at leads delivered in the last 48h - historical duplicates from
       // before the dedupe fix would otherwise alert forever. Skip internal/test
       // accounts and expired trials (not owed leads).
       var _dupCut = Date.now() - 48 * 3600000;
@@ -19292,7 +19292,7 @@ function runHealthAlerts() {
       if (dupFound.length) issues.push('DUPLICATE leads delivered to: ' + dupFound.join(', '));
     } catch(e) {}
     if (issues.length) {
-      var html = '<div style="font-family:Arial;color:#e2e8f0;background:#0b1120;padding:20px"><h2>⚠ 9amLeads — issues detected</h2><ul style="color:#fecaca;line-height:1.8">' + issues.map(function(i) { return '<li>' + i + '</li>'; }).join('') + '</ul><p style="color:#94a3b8;font-size:12px">Check /api/health and the admin delivery preview.</p></div>';
+      var html = '<div style="font-family:Arial;color:#e2e8f0;background:#0b1120;padding:20px"><h2>⚠ 9amLeads - issues detected</h2><ul style="color:#fecaca;line-height:1.8">' + issues.map(function(i) { return '<li>' + i + '</li>'; }).join('') + '</ul><p style="color:#94a3b8;font-size:12px">Check /api/health and the admin delivery preview.</p></div>';
       // OWNER-EMAIL DIGEST MODE: throttle genuine problem alerts to ~once per 24h
       // (was 12h). Real outages still get through, healthy stretches stay silent.
       sendAlertIfStale('health-issues', '9amLeads alert: issues detected', html, 24 * 3600000);
@@ -19331,11 +19331,11 @@ function sendDailyDeliveryPreview(when) {
         if (when === 'post' || short.length) {
           var html = '<div style="font-family:Arial;color:#e2e8f0;background:#0b1120;padding:20px"><h2>📬 9amLeads ' + (when === 'pre' ? 'pre-delivery check' : 'delivery summary') + '</h2>' +
             '<h3 style="color:#4ade80">✓ ' + ok.length + ' customer(s) covered</h3>' +
-            (short.length ? '<h3 style="color:#f87171">⚠ ' + short.length + ' customer(s) short</h3><ul style="color:#fecaca;line-height:1.7">' + short.map(function(r) { return '<li>' + r.email + ' (' + r.product + '): ' + r.count + '/' + r.promised + (r.error ? ' — ' + r.error : '') + '</li>'; }).join('') + '</ul>' : '') +
+            (short.length ? '<h3 style="color:#f87171">⚠ ' + short.length + ' customer(s) short</h3><ul style="color:#fecaca;line-height:1.7">' + short.map(function(r) { return '<li>' + r.email + ' (' + r.product + '): ' + r.count + '/' + r.promised + (r.error ? ' - ' + r.error : '') + '</li>'; }).join('') + '</ul>' : '') +
             '<p style="color:#94a3b8;font-size:12px">Details: admin dashboard → delivery preview.</p></div>';
           sendBrevoEmail({ email: process.env.OWNER_EMAIL || 'ketzman1g@gmail.com', name: 'Owner' }, '9amLeads ' + (when === 'pre' ? 'pre-delivery check' : 'delivery summary') + ' (' + ok.length + ' ok' + (short.length ? ', ' + short.length + ' short' : '') + ')', html);
         } else {
-          console.log('[PRE-CHECK] All customers ready at pre-check — owner email skipped (digest mode)');
+          console.log('[PRE-CHECK] All customers ready at pre-check - owner email skipped (digest mode)');
         }
         resolve(rows);
       }
@@ -19344,9 +19344,9 @@ function sendDailyDeliveryPreview(when) {
   });
 }
 cron.schedule('30 6 * * 1-5', function() { try { sendDailyDeliveryPreview('pre'); } catch(e) {} }, { timezone: 'Europe/London' });
-// 09:10 post-preview removed — the 09:12 daily delivery summary is the single post-9am email.
+// 09:10 post-preview removed - the 09:12 daily delivery summary is the single post-9am email.
 // EXPECTED-BATCH REPORT (08:30 UK, weekdays): emails the founder the EXACT list that
-// will go out at 9am — per customer, the promised vs expected count and the FULL
+// will go out at 9am - per customer, the promised vs expected count and the FULL
 // address of every lead (after the early PAF pass), flagging any lead whose door
 // number will only be resolved at 9am. This is the "see what's being prepared, and
 // know of any issue well before 9am" check.
@@ -19438,12 +19438,12 @@ async function sendExpectedBatchReport(mode) {
     // DELTA MODE: the morning re-checks only email when the batch actually CHANGES
     // (a shortfall appears/disappears, or a door number gets resolved). No change = no email.
     if (mode === 'delta' && global.__expectedBatchSig === sig) {
-      console.log('[EXPECTED-BATCH] delta check — no change since last report (skipped)');
+      console.log('[EXPECTED-BATCH] delta check - no change since last report (skipped)');
       return { skipped: true, customers: totalCustomers, leads: totalLeads, short: totalShort, noDoor: totalNoDoor };
     }
     var subjIssues = (totalShort + totalNoDoor);
     await sendBrevoEmail({ email: process.env.OWNER_EMAIL || 'ketzman1g@gmail.com', name: 'Owner' },
-      (mode === 'delta' ? '9amLeads batch UPDATE — ' : '9amLeads batch — ') + totalCustomers + ' customers, ' + totalLeads + ' leads' + (subjIssues ? ', ' + subjIssues + ' issue(s)' : ', all ready'), html);
+      (mode === 'delta' ? '9amLeads batch UPDATE - ' : '9amLeads batch - ') + totalCustomers + ' customers, ' + totalLeads + ' leads' + (subjIssues ? ', ' + subjIssues + ' issue(s)' : ', all ready'), html);
     global.__expectedBatchSig = sig;
     console.log('[EXPECTED-BATCH] ' + mode + ' sent to owner (' + totalCustomers + ' customers, ' + totalLeads + ' leads, ' + totalShort + ' short)');
     return { sent: true, mode: mode, customers: totalCustomers, leads: totalLeads, short: totalShort, noDoor: totalNoDoor };
@@ -19543,7 +19543,7 @@ cron.schedule('20 7 * * 1-5', function() { try { warmUpDeliveryPaf(); } catch(e)
 app.post('/api/admin/paf-warmup', adminAuth, async (req, res) => { try { res.json(await warmUpDeliveryPaf()); } catch(e) { res.status(500).json({ error: e.message }); } });
 // POST-DELIVERY STANNP NORMALISE (09:45 UK, weekdays): after the 9am send, normalise
 // every delivered non-tender lead's address so ALL dashboard leads are print & post
-// ready without manual fixes. Idempotent + self-healing — covers moving, probate,
+// ready without manual fixes. Idempotent + self-healing - covers moving, probate,
 // newbusiness and planning (never tenders).
 cron.schedule('45 9 * * 1-5', function() {
   try { normaliseAllDeliveredStannpAddresses(); } catch(e) { console.log('[STANNP-NORMALISE-CRON] ' + e.message); }
@@ -19553,13 +19553,13 @@ cron.schedule('45 9 * * 1-5', function() {
 cron.schedule('0 10 * * *', function() {
   try { pruneStalePoolLeads(); } catch(e) { console.log('[POOL-PRUNE-CRON] ' + e.message); }
 }, { timezone: 'Europe/London' });
-// POST /api/admin/prune-pools — manually trigger the pool cleanup now.
+// POST /api/admin/prune-pools - manually trigger the pool cleanup now.
 app.post('/api/admin/prune-pools', adminAuth, (req, res) => {
   try { res.json({ success: true, ...pruneStalePoolLeads() }); }
   catch(e) { res.status(500).json({ error: e.message }); }
 });
-// POST /api/admin/email-preview — manually trigger the pre-delivery email now.
-// POST /api/admin/send-sample-weekly — send the weekly nurture email (with the Bulk
+// POST /api/admin/email-preview - manually trigger the pre-delivery email now.
+// POST /api/admin/send-sample-weekly - send the weekly nurture email (with the Bulk
 // Send pitch) to any address so the founder can review live output. { email, week }
 app.post('/api/admin/send-sample-weekly', adminAuth, async (req, res) => {
   try {
@@ -19573,7 +19573,7 @@ app.post('/api/admin/send-sample-weekly', adminAuth, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/send-all-customer-samples — send a copy of every customer-facing
+// POST /api/admin/send-all-customer-samples - send a copy of every customer-facing
 // email to one address so the founder can review the real output in their inbox.
 // { email }  Sends: daily lead sheet (moving sample), the full trial nurture set,
 // the paid welcome/tips series, a weekly follow-up, and the status/missed-lead
@@ -19646,7 +19646,7 @@ app.post('/api/admin/send-all-customer-samples', adminAuth, async (req, res) => 
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/send-lead-sheet-samples — email ONLY the daily-lead sheet samples
+// POST /api/admin/send-lead-sheet-samples - email ONLY the daily-lead sheet samples
 // (one per product) to the owner so they can review the corrected mobile lead layout.
 // Body: { email } defaults to ketzman1g@gmail.com. Sends in the BACKGROUND so the
 // request returns instantly (5 HTML emails exceed the proxy idle timeout otherwise).
@@ -19663,7 +19663,7 @@ app.post('/api/admin/send-lead-sheet-samples', adminAuth, async (req, res) => {
         var _cust = __emailDemoCustomer(_prod);
         var _leads = __emailSampleLeads(_prod);
         var _html = generateLeadEmailHTML(_cust, _leads);
-        await sendBrevoEmail({ email: to, name: '9amLeads Owner' }, 'TEST — Daily lead sheet (' + _prod + ') — mobile view', _html);
+        await sendBrevoEmail({ email: to, name: '9amLeads Owner' }, 'TEST - Daily lead sheet (' + _prod + ') - mobile view', _html);
       } catch(_le) { console.log('[LEAD-SHEET-SAMPLE] ' + _prod + ' send failed: ' + _le.message); }
     }
     console.log('[LEAD-SHEET-SAMPLE] All lead-sheet samples sent to ' + to);
@@ -19737,7 +19737,7 @@ function __renderLibraryEmail(id) {
   throw new Error('Unknown email id: ' + id);
 }
 
-// POST /api/admin/send-library-email — send one email from the Email Library to an address.
+// POST /api/admin/send-library-email - send one email from the Email Library to an address.
 app.post('/api/admin/send-library-email', adminAuth, async (req, res) => {
   try {
     var id = String((req.body && req.body.id) || '');
@@ -19996,7 +19996,7 @@ function crmSetupReminderEmail(cust, issue) {
     + '<tr><td style="height:4px;background-color:' + ACC + ';font-size:0;line-height:0">&nbsp;</td></tr>' + inner + '</table></td></tr></table></body></html>';
 }
 
-// GET /api/admin/email-library — every email a customer can receive, grouped by
+// GET /api/admin/email-library - every email a customer can receive, grouped by
 // WHEN it is sent (not by template type), each with fully-rendered HTML so it can
 // be previewed inline at desktop and mobile width. Used by the Admin Email Library.
 app.get('/api/admin/email-library', adminAuth, (req, res) => {
@@ -20097,7 +20097,7 @@ app.get('/api/admin/failed-emails', adminAuth, (req, res) => {
   try { var q = getDb().failed_emails || []; res.json({ success: true, count: q.length, items: q.slice(-40).map(function(x){ return { email: x.email, name: x.name, subject: String(x.subject || '').substring(0, 160), attempts: x.attempts || 1, at: x.at }; }) }); }
   catch (e) { res.status(500).json({ error: e.message }); }
 });
-// POST /api/admin/failed-emails/clear — empty the retry queue (stops repeated emails).
+// POST /api/admin/failed-emails/clear - empty the retry queue (stops repeated emails).
 app.post('/api/admin/failed-emails/clear', adminAuth, (req, res) => {
   try { var dbc = getDb(); var n = (dbc.failed_emails || []).length; dbc.failed_emails = []; saveDb(); res.json({ success: true, cleared: n }); }
   catch (e) { res.status(500).json({ error: e.message }); }
@@ -20112,7 +20112,7 @@ app.post('/api/admin/email-preview', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// STANNP LOW-BALANCE ALERT — checks the print-credit balance every 30 minutes and
+// STANNP LOW-BALANCE ALERT - checks the print-credit balance every 30 minutes and
 // emails the owner if it drops below the threshold, so real customer orders never
 // fail silently because our print partner credit ran out. Only alerts once per
 // low-balance "episode" (re-alerts if it drops below the next lower tier).
@@ -20251,7 +20251,7 @@ cron.schedule('7 9 * * 1-5', async () => {
           vDb.leads.push(gNew);
           // TRIAL EXTENSION: add 2 free days to the affected customer's trial. Only
           // ever extends a trial that is currently ACTIVE (the entitlement gate above
-          // guarantees this) — never an expired one.
+          // guarantees this) - never an expired one.
           var gExtendDays = 2;
           if (gCust.plan === 'free_trial') {
             var gTrialBase = gCust.trial_ends ? new Date(gCust.trial_ends) : new Date();
@@ -20398,7 +20398,7 @@ cron.schedule('0 0 * * *', async () => {
   } catch(e) { console.log('[AUDIT] Error:', e.message); }
 });
 
-// POST /api/admin/dm-campaign-status — set a direct-mail campaign's status
+// POST /api/admin/dm-campaign-status - set a direct-mail campaign's status
 // (admin override, e.g. cancel a failed order). Body: { campaign_id, status, note? }
 app.post('/api/admin/dm-campaign-status', adminAuth, (req, res) => {
   try {
@@ -20418,7 +20418,7 @@ app.post('/api/admin/dm-campaign-status', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/audit/reports — Get audit reports
+// GET /api/admin/audit/reports - Get audit reports
 app.get('/api/admin/audit/reports', adminAuth, (req, res) => {
   try {
     var db2 = getDb();
@@ -20427,7 +20427,7 @@ app.get('/api/admin/audit/reports', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/audit/run — Manually trigger audit
+// POST /api/admin/audit/run - Manually trigger audit
 app.post('/api/admin/audit/run', adminAuth, async (req, res) => {
   try {
     // Reuse audit logic by calling directly
@@ -20481,7 +20481,7 @@ async function runAutoSend() {
       if (paused > 0) {
         db.prepare('UPDATE direct_mail_automation_settings SET enable_auto_send = 0, auto_paused_reason = ? WHERE enable_auto_send = 1').run('Low Stannp balance (£' + asBal.balance.toFixed(2) + ')');
         saveDb();
-        sendAdminAlert('⚠ Auto-Send paused — Stannp balance low', '<div style="font-size:13px;color:#e2e8f0;line-height:1.7">Print &amp; Post balance is <b style="color:#fbbf24">£' + asBal.balance.toFixed(2) + '</b>. Auto-Send has been <b>auto-paused</b> for all customers so no print jobs fail mid-send.<br><br>Please top up your Stannp balance. When it\u2019s healthy, I can re-enable Auto-Send for everyone.</div>');
+        sendAdminAlert('⚠ Auto-Send paused - Stannp balance low', '<div style="font-size:13px;color:#e2e8f0;line-height:1.7">Print &amp; Post balance is <b style="color:#fbbf24">£' + asBal.balance.toFixed(2) + '</b>. Auto-Send has been <b>auto-paused</b> for all customers so no print jobs fail mid-send.<br><br>Please top up your Stannp balance. When it\u2019s healthy, I can re-enable Auto-Send for everyone.</div>');
       }
       return { checked: customers.length, enabled: 0, skipped: customers.length, sent: 0, failed: 0, total_spend: 0, balance: asBal.balance, auto_paused: true };
     }
@@ -20559,7 +20559,7 @@ async function runAutoSend() {
 
       // 8. Check daily spend limit (repeat schedule charges for all follow-ups up front)
       var scheduleIntervals = (settings.schedule_intervals && settings.schedule_intervals.length) ? settings.schedule_intervals : (settings.send_schedule === 'repeat' ? [0,14,28] : [0]);
-      // Price at the customer's chosen format (£/item) — NOT the legacy
+      // Price at the customer's chosen format (£/item) - NOT the legacy
       // calcDmPrice (which applied a £29 platform fee + £99 minimum order).
       var autoPrice = dmPerItemPrice(autoMailType, settings.default_format || '');
       var perBatch = Math.round(todaysLeads.length * autoPrice * 100) / 100;
@@ -20587,7 +20587,7 @@ async function runAutoSend() {
       try { var monthOrders = db.prepare('SELECT * FROM direct_mail_orders WHERE customer_id = ?').all(cust.id); monthOrders.forEach(function(o) { thisMonthSpend += Number(o.total_cost || 0); }); } catch(e) {}
       if (settings.pause_on_spend_limit && settings.max_monthly_spend > 0 && thisMonthSpend >= settings.max_monthly_spend) { console.log('[AUTO-SEND] Skip:', cust.email, 'spend limit reached'); results.skipped++; continue; }
 
-      // 11. Create campaign automatically — use the customer's chosen MAIL TYPE
+      // 11. Create campaign automatically - use the customer's chosen MAIL TYPE
       // so the actual send knows whether it's a letter, leaflet, or leaflet+letter.
       var campaign = {
         id: uuidv4(), customer_id: cust.id, name: 'Print & Post - ' + today,
@@ -20708,7 +20708,7 @@ async function runAutoSend() {
                 console.log('[AUTO-SEND] Print & Post paused for:', cust.email);
                 if (cust && cust.id) {
                   dmDashboardNotify(cust.id, 'auto_send_paused', ' Print & Post Paused', 'Print & Post has been paused due to a failed payment. Update your payment method to resume.', '');
-                  sendDMAdminAlert('payment_failure', 'Print & Post Payment Failed', 'Customer: ' + (cust.email || cust.id) + '. Amount: £' + totalCost.toFixed(2) + ' — Error: ' + (chargeResult?.last_payment_error?.message || 'Unknown'));
+                  sendDMAdminAlert('payment_failure', 'Print & Post Payment Failed', 'Customer: ' + (cust.email || cust.id) + '. Amount: £' + totalCost.toFixed(2) + ' - Error: ' + (chargeResult?.last_payment_error?.message || 'Unknown'));
                 }
               }
               results.failed++;
@@ -20723,7 +20723,7 @@ async function runAutoSend() {
           db.prepare('UPDATE customers SET auto_send_paused = ? WHERE id = ?').run(1, cust.id);
           results.skipped++;
         } else {
-          // No saved payment method — auto-send can't charge the customer, so we
+          // No saved payment method - auto-send can't charge the customer, so we
           // must NOT mail for free. Pause auto-send and require a card to be saved.
           // (Only in a non-production test/dev mode would we ever mock-send.)
           if (process.env.NODE_ENV === 'test') {
@@ -20734,7 +20734,7 @@ async function runAutoSend() {
             console.log('[AUTO-SEND] Skip:', cust.email, 'no saved card for auto-charge'); asRec(cust, 'failed', 'no saved card - Print & Post paused, nothing mailed');
             db.prepare('UPDATE customers SET auto_send_paused = ? WHERE id = ?').run(1, cust.id);
             db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('failed', new Date().toISOString(), campaign.id, cust.id);
-            db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, 'approved', 'failed', 'system', 'No saved card — Print & Post paused', new Date().toISOString());
+            db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, 'approved', 'failed', 'system', 'No saved card - Print & Post paused', new Date().toISOString());
             if (cust && cust.id) dmDashboardNotify(cust.id, 'auto_send_paused', '⏸️ Print & Post Paused', 'Print & Post was paused because no card is saved for automatic billing. Add a card in Auto Print & Post to resume.', '');
             results.failed++;
           }
@@ -20794,7 +20794,7 @@ async function runAutoSend() {
               console.log('[AUTO-SEND] Failed:', cust.email, dmSend && dmSend.error || 'send error');
               if (cust && cust.id) {
                 dmDashboardNotify(cust.id, 'auto_send_failed', '❌ Print & Post Failed', 'Print & Post send failed: ' + (dmSend && dmSend.error || 'Provider error'), '');
-                sendDMAdminAlert('auto_send_error', 'Print & Post Provider Error', 'Customer: ' + (cust.email || cust.id) + '. Campaign: ' + campaign.name + ' — Error: ' + (dmSend && dmSend.error || 'Unknown'));
+                sendDMAdminAlert('auto_send_error', 'Print & Post Provider Error', 'Customer: ' + (cust.email || cust.id) + '. Campaign: ' + campaign.name + ' - Error: ' + (dmSend && dmSend.error || 'Unknown'));
               }
             }
           } catch(dmErr) {
@@ -20819,7 +20819,7 @@ app.post('/api/direct-mail/run-auto-send', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/direct-mail/auto-simulate — DRY-RUN simulation of Auto Print & Post.
+// POST /api/direct-mail/auto-simulate - DRY-RUN simulation of Auto Print & Post.
 // Shows exactly what would happen today WITHOUT charging the card or sending to
 // Stannp: how many leads would be mailed, the cost, the schedule, and whether a
 // card is on file for the real charge. Safe to run anytime, no card required.
@@ -20929,7 +20929,7 @@ app.post('/api/direct-mail/auto-simulate', authMiddleware, async (req, res) => {
 
 // TRIAL AUTO-CHARGE (extracted so the cron and the admin preview/force endpoint
 // share one code path). For an expired-trial customer with a saved card, creates
-// a weekly Starter subscription on the stored payment method — the first charge
+// a weekly Starter subscription on the stored payment method - the first charge
 // lands the moment the trial ends (Stripe bills immediately on subscription
 // creation for a past-due first period). Returns a per-customer result record.
 // dryRun=true validates every prerequisite against Stripe WITHOUT charging.
@@ -20994,10 +20994,10 @@ async function trialAutoChargeCustomer(cust, opts) {
       if (pmv.customer && pmv.customer !== cust.stripe_customer_id) { res2.status = 'skip_card_wrong_customer'; res2.message = 'Saved card belongs to a different Stripe customer'; return res2; }
     } catch(pme) { res2.status = 'skip_card_check_failed'; res2.message = 'Stripe payment-method check failed: ' + pme.message; return res2; }
 
-    // All prerequisites met — would charge
+    // All prerequisites met - would charge
     res2.ready_to_charge = true;
     res2.would_charge = 'Weekly ' + (res2.price_amount || '£25.00') + ' Starter subscription on ' + (res2.card_brand || 'card') + ' ending ' + (res2.card_last4 || '') + ' (billed immediately, then weekly)';
-    if (dryRun) { res2.status = 'ready'; res2.message = 'DRY RUN: would auto-charge — ' + res2.would_charge; return res2; }
+    if (dryRun) { res2.status = 'ready'; res2.message = 'DRY RUN: would auto-charge - ' + res2.would_charge; return res2; }
 
     // Actually create the subscription (charges the card now)
     var finalPlan = (cust.selected_plan === 'pro' || cust.selected_plan === 'enterprise') ? cust.selected_plan : 'starter';
@@ -21010,7 +21010,7 @@ async function trialAutoChargeCustomer(cust, opts) {
       off_session: 'true',
       'payment_behavior': 'allow_incomplete'
     };
-    // OPTION 2: one item per subscribed lead type — recurs at the weekly sum.
+    // OPTION 2: one item per subscribed lead type - recurs at the weekly sum.
     for (var ii2 = 0; ii2 < priceIds2.length; ii2++) {
       subBody2['items[' + ii2 + '][price]'] = priceIds2[ii2];
     }
@@ -21031,7 +21031,7 @@ async function trialAutoChargeCustomer(cust, opts) {
       saveDb();
       res2.status = 'charged';
       res2.subscription_id = subResult.id;
-      res2.message = 'Charged — ' + chosenLabel2 + ' subscription ' + subResult.id + ' created (weekly)';
+      res2.message = 'Charged - ' + chosenLabel2 + ' subscription ' + subResult.id + ' created (weekly)';
       console.log('[TRIAL AUTO-CHARGE] Charged ' + cust.email + ', upgraded to ' + finalPlan + ' (' + subResult.id + ')');
       // Persist an "invoice paid" receipt + email a confirmation receipt.
       var recOpts = {
@@ -21067,7 +21067,7 @@ cron.schedule('0 8 * * *', async () => {
   // KILL-SWITCH: TRIAL_AUTO_CHARGE_ENABLED must be explicitly 'true' for the
   // auto-charge to run. Default OFF prevents any accidental/repeated charges.
   if (String(process.env.TRIAL_AUTO_CHARGE_ENABLED || 'false').toLowerCase() !== 'true') {
-    console.log('[TRIAL AUTO-CHARGE] Disabled (TRIAL_AUTO_CHARGE_ENABLED != true) — skipping.');
+    console.log('[TRIAL AUTO-CHARGE] Disabled (TRIAL_AUTO_CHARGE_ENABLED != true) - skipping.');
     return;
   }
   console.log('[TRIAL AUTO-CHARGE] Checking expired trials...');
@@ -21089,10 +21089,10 @@ cron.schedule('0 8 * * *', async () => {
   } catch(e) { console.log('[TRIAL AUTO-CHARGE] Error:', e.message); }
 }, { timezone: 'Europe/London' });
 
-// GET /api/admin/trial-charge/preview — dry-run the trial→starter auto-charge for
+// GET /api/admin/trial-charge/preview - dry-run the trial→starter auto-charge for
 // every expired-trial customer (or one email) so we can verify the cron WILL
 // charge correctly before it runs. Validates price + card against Stripe.
-// POST /api/admin/trial-charge/run — actually run the auto-charge for one account
+// POST /api/admin/trial-charge/run - actually run the auto-charge for one account
 // (used to test the full flow live; creates a real subscription/charge).
 app.get('/api/admin/trial-charge/preview', adminAuth, async (req, res) => {
   try {
@@ -21124,7 +21124,7 @@ app.post('/api/admin/trial-charge/run', adminAuth, async (req, res) => {
 // // // // TRIAL GOODWILL EMAIL (ONE-OFF): explains the extension. Sends a single 8am
 // email to the customers whose trials we extended after a technical issue, so
 // they know their trial was continued as a goodwill gesture and their 9am
-// deliveries are still coming. Sends ONCE TOTAL per customer — after all are
+// deliveries are still coming. Sends ONCE TOTAL per customer - after all are
 // sent, the timer is cleared so it never repeats.
 var _goodwillTimer = cron.schedule('0 8 * * *', async () => {
   try {
@@ -21165,13 +21165,13 @@ var _goodwillTimer = cron.schedule('0 8 * * *', async () => {
     }
     fs.writeFileSync(gwFile, JSON.stringify(gwLog));
     if (allSent) {
-      console.log('[GOODWILL] All extension emails sent — stopping the one-off timer.');
+      console.log('[GOODWILL] All extension emails sent - stopping the one-off timer.');
       try { _goodwillTimer.stop(); } catch(e) {}
     }
   } catch(gwe) { console.log('[GOODWILL] cron error:', gwe.message); }
 });
 
-// REPEAT MAILING CRON — dispatches scheduled follow-up campaigns (paid repeat
+// REPEAT MAILING CRON - dispatches scheduled follow-up campaigns (paid repeat
 // series) to Stannp on their due date. Runs daily at 07:00 UTC (08:00 UK).
 cron.schedule('0 7 * * *', async () => {
   console.log('[REPEAT-MAIL] Checking scheduled follow-ups...');
@@ -21293,7 +21293,7 @@ cron.schedule('*/30 * * * *', async () => {
   } catch(e) { console.log('[DM-TRACKING] Poll error:', e.message); }
 });
 
-// POST /api/cancel-trial — cancel trial, no charge
+// POST /api/cancel-trial - cancel trial, no charge
 app.post('/api/cancel-trial', authMiddleware, async (req, res) => {
   try {
     var customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
@@ -21305,7 +21305,7 @@ app.post('/api/cancel-trial', authMiddleware, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/account/delete — GDPR right to be forgotten. Permanently erases the
+// POST /api/account/delete - GDPR right to be forgotten. Permanently erases the
 // customer's personal data: account, leads, profiles, campaigns, recipients,
 // templates, automation settings, orders and status history. Also cancels any
 // active Stripe subscription and releases their postcode claims.
@@ -21315,12 +21315,12 @@ app.post('/api/account/delete', authMiddleware, async (req, res) => {
     if (!customer) return res.status(404).json({ error: 'Customer not found' });
     // SECURITY: the dashboard is reachable via a passwordless magic link in the daily
     // email, so a deletion MUST be explicitly confirmed with the account password and
-    // a typed "DELETE" — otherwise anyone with the email link could wipe the account.
+    // a typed "DELETE" - otherwise anyone with the email link could wipe the account.
     var _cf = String((req.body && req.body.confirm) || '');
     var _pw = String((req.body && req.body.password) || '');
     if (_cf !== 'DELETE') return res.status(400).json({ error: 'Type DELETE to confirm account deletion.' });
     if (!_pw || !customer.password_hash || !bcrypt.compareSync(_pw, customer.password_hash)) {
-      return res.status(401).json({ error: 'Incorrect or missing password — account not deleted.' });
+      return res.status(401).json({ error: 'Incorrect or missing password - account not deleted.' });
     }
     var uid = req.user.id;
     // 1. Cancel any active Stripe subscription so they're not charged again
@@ -21417,7 +21417,7 @@ async function runCampaignEmails(dry) {
       // emails must stop. A customer is "effectively paid" if their plan is no
       // longer free_trial OR they have an active Stripe subscription (covers any
       // async lag between payment and the plan update). Paid customers get the
-      // paid welcome/tips series instead — never more trial follow-ups.
+      // paid welcome/tips series instead - never more trial follow-ups.
       var isPaidNow = cust.plan !== 'free_trial' || !!cust.stripe_subscription_id;
 
       var isCancelledNow = String(cust.plan || '') === 'cancelled';
@@ -21459,7 +21459,7 @@ async function runCampaignEmails(dry) {
             }
           }
           // trial_day7 ("ends tomorrow"): send it while the trial is STILL active,
-          // roughly one day before it ends — not after it ends (which is what the
+          // roughly one day before it ends - not after it ends (which is what the
           // old logic did and made the subject misleading).
           var msToTrialEnd = trialEnds.getTime() - new Date().getTime();
           var daysToTrialEnd = msToTrialEnd / 86400000;
@@ -21510,7 +21510,7 @@ async function runCampaignEmails(dry) {
             var e = CAMPAIGN_EMAILS[ei];
             // Don't offer the month-3 reactivation once the free-reset cap is used.
             if (e.template === 'trial_month3' && parseInt(cust.trial_resets || '0', 10) >= parseInt(process.env.MAX_TRIAL_RESETS || '2', 10)) continue;
-            // NEVER send a free-trial (day 1-7) template once the trial has expired —
+            // NEVER send a free-trial (day 1-7) template once the trial has expired -
             // those belong to the active-trial phase only.
             if (_wbHandled) continue;
             if (e.day <= 7) continue;
@@ -21520,7 +21520,7 @@ async function runCampaignEmails(dry) {
             if (e.template.indexOf('trial_wk') === 0 || e.template === 'trial_month3') continue;
             // The trial-expired email (trial_day9 = "Your daily leads have paused") fires
             // AS SOON AS the trial ends (threshold 0), so expired users get the email we
-            // set for trial expiry — not two days later.
+            // set for trial expiry - not two days later.
             var _thr = (e.template === 'trial_day9') ? 0 : (e.day - 7);
             if (daysSinceTrialEnd >= _thr && !campaignSent.includes(e.template)) {
               campaignSent.push(e.template);
@@ -21559,7 +21559,7 @@ app.post('/api/admin/run-campaigns', adminAuth, async (req, res) => {
   try { res.json(await runCampaignEmails(!!(req.body && req.body.dry))); }
   catch (e) { res.status(500).json({ error: e.message }); }
 });
-// POST /api/admin/reset-winback — remove win-back marks from campaign_sent so the
+// POST /api/admin/reset-winback - remove win-back marks from campaign_sent so the
 // sequence can (re)send. Used after a dry run, or to re-run the win-back.
 app.post('/api/admin/reset-winback', adminAuth, (req, res) => {
   try {
@@ -21576,7 +21576,7 @@ app.post('/api/admin/reset-winback', adminAuth, (req, res) => {
     res.json({ success: true, reset: n });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
-// POST /api/admin/trim-overdelivered — remove any leads delivered TODAY beyond a
+// POST /api/admin/trim-overdelivered - remove any leads delivered TODAY beyond a
 // customer's daily target (fixes accidental over-delivery). Newest excess first.
 app.post('/api/admin/trim-overdelivered', adminAuth, (req, res) => {
   try {
@@ -21637,7 +21637,7 @@ cron.schedule('30 8 * * 1', async () => {
       if (cc.last_digest_date === thisWeekKey) continue;
       // ONLY send to customers who joined before the START of this 7-day window,
       // i.e. who have been active for a FULL week. A brand-new signup (signed up
-      // yesterday) must NOT receive a weekly summary yet — they have no history.
+      // yesterday) must NOT receive a weekly summary yet - they have no history.
       var created = cc.created_at ? new Date(cc.created_at).getTime() : 0;
       var weekStartMs = new Date(weekAgo).getTime();
       if (created > weekStartMs) { skipped++; continue; }
@@ -21799,7 +21799,7 @@ cron.schedule('0 0 * * *', async () => {
     } catch(e) { console.log('[HEALTH] Alert email failed:', e.message); }
   }
 });
-// POST /api/admin/direct-scrape — run the FREE direct Rightmove scrape (no Apify)
+// POST /api/admin/direct-scrape - run the FREE direct Rightmove scrape (no Apify)
 // for specific postcode areas and merge the leads into the moving pool. Rightmove's
 // list displayAddresses include door numbers for many properties, which is the
 // cheapest way to top up numbered supply in an area.
@@ -21826,7 +21826,7 @@ app.post('/api/admin/direct-scrape', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/pool-leads — list moving pool leads for given postcode areas
+// GET /api/admin/pool-leads - list moving pool leads for given postcode areas
 // (with url + address), so we can see exactly what numbered supply exists.
 app.get('/api/admin/pool-leads', adminAuth, (req, res) => {
   try {
@@ -21869,7 +21869,7 @@ app.get('/api/admin/dump-lead-raw', adminAuth, (req, res) => {
 });
 
 // DIAGNOSTIC: dump pool area distribution for a product
-// POST /api/admin/pool/enrich-addresses — back-fill town/city/county + door/street
+// POST /api/admin/pool/enrich-addresses - back-fill town/city/county + door/street
 // on ALL existing pool leads and persist to the pool file. Ensures every lead has
 // the full address (Print & Post guarantee). Idempotent.
 app.post('/api/admin/pool/enrich-addresses', adminAuth, async (req, res) => {
@@ -21892,7 +21892,7 @@ app.post('/api/admin/pool/enrich-addresses', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/backfill-delivered-addresses — retro-fill town/city/county on
+// POST /api/admin/backfill-delivered-addresses - retro-fill town/city/county on
 // ALREADY-DELIVERED lead rows (the customer's dashboard history) so every moving
 // lead shows the FULL printable address (door + street + town/county + postcode),
 // not just "2 Sussex Road, E6 2PS". Pool enrichment fixes future deliveries; this
@@ -21935,7 +21935,7 @@ app.post('/api/admin/backfill-delivered-addresses', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/probate-reenrich — re-fetch the Gazette linked-data detail for
+// POST /api/admin/probate-reenrich - re-fetch the Gazette linked-data detail for
 // probate leads whose address is missing a street (town/county/postcode only) or
 // is really the deceased's name, and fix BOTH the pool copy and any delivered /
 // pending copy. Uses the same detail fetch as scrape time (direct JSON → HTML →
@@ -22014,7 +22014,7 @@ app.post('/api/admin/probate-reenrich', adminAuth, async (req, res) => {
 
 // ===== POOL PRUNE (no unused-lead backlog) =====
 // Leads are scraped daily, so any pool lead NOT used within 3 days (72h) is deleted
-// — fresh = 24h, fallback = 48h, gone after 72h. Monday keeps Friday-9am-and-later
+// - fresh = 24h, fallback = 48h, gone after 72h. Monday keeps Friday-9am-and-later
 // leads so weekend supply still fills Monday's accounts, then ages out. Applies to
 // EVERY product pool (moving/probate/newbusiness/planning/tenders).
 function pruneStalePoolLeads() {
@@ -22206,7 +22206,7 @@ function getCustomerBulkPack(customer) {
 }
 
 // MASKED ADDRESS for the PRE-PAYMENT preview: enough to judge lead quality (company,
-// town, outward postcode) but never a mailable address — door number hidden, street
+// town, outward postcode) but never a mailable address - door number hidden, street
 // name partly masked, full postcode hidden. Full addresses are only revealed after
 // payment in the dashboard bulk section.
 function maskBulkAddress(l) {
@@ -22233,7 +22233,7 @@ function maskedBulkPreview(n) {
   return getBulkEligibleLeads().slice(0, n).map(maskBulkAddress);
 }
 
-// POST /api/admin/boost-grant — grant a boost pack (reserve archive leads + set pack),
+// POST /api/admin/boost-grant - grant a boost pack (reserve archive leads + set pack),
 // mimicking the Stripe webhook, for testing / manual grants. Body: { email, product, age, count }
 app.post('/api/admin/boost-grant', adminAuth, (req, res) => {
   try {
@@ -22252,7 +22252,7 @@ app.post('/api/admin/boost-grant', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/boost-seed — backdate pool leads into the 1-month / 2-month archive
+// POST /api/admin/boost-seed - backdate pool leads into the 1-month / 2-month archive
 // age bands so Boost packs can be tested (and topped up). Body: { product, months }
 app.post('/api/admin/boost-seed', adminAuth, (req, res) => {
   try {
@@ -22286,7 +22286,7 @@ app.post('/api/admin/boost-seed', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/bulk-seed — backdate `count` newest newbusiness pool leads to 4 days
+// POST /api/admin/bulk-seed - backdate `count` newest newbusiness pool leads to 4 days
 // old so they become bulk-eligible (the reserve fills naturally over time; this lets
 // us top it up / test on demand). Body: { count }
 app.post('/api/admin/bulk-seed', adminAuth, (req, res) => {
@@ -22311,7 +22311,7 @@ app.post('/api/admin/bulk-seed', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/bulk-grant — grant a bulk pack to a customer (reserve leads + set
+// POST /api/admin/bulk-grant - grant a bulk pack to a customer (reserve leads + set
 // pack, mimicking a paid Stripe webhook). For testing / manual grants. Body: { email, count }
 app.post('/api/admin/bulk-grant', adminAuth, (req, res) => {
   try {
@@ -22327,7 +22327,7 @@ app.post('/api/admin/bulk-grant', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/newbusiness/bulk — eligibility + inventory + purchased pack status
+// GET /api/newbusiness/bulk - eligibility + inventory + purchased pack status
 app.get('/api/newbusiness/bulk', authMiddleware, (req, res) => {
   try {
     var c = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
@@ -22348,7 +22348,7 @@ app.get('/api/newbusiness/bulk', authMiddleware, (req, res) => {
     }
     var materials = (function() {
       try {
-        // Bulk postage is A5 LEAFLET only — the customer needs BOTH a flyer front
+        // Bulk postage is A5 LEAFLET only - the customer needs BOTH a flyer front
         // AND a flyer back uploaded before they can send.
         var front = db.prepare("SELECT COUNT(*) AS count FROM direct_mail_materials WHERE customer_id = ? AND type = 'flyer_front'").get(c.id);
         var back = db.prepare("SELECT COUNT(*) AS count FROM direct_mail_materials WHERE customer_id = ? AND type = 'flyer_back'").get(c.id);
@@ -22371,7 +22371,7 @@ app.get('/api/newbusiness/bulk', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/newbusiness/bulk/checkout — create a Stripe one-time checkout for a pack
+// POST /api/newbusiness/bulk/checkout - create a Stripe one-time checkout for a pack
 app.post('/api/newbusiness/bulk/checkout', authMiddleware, async (req, res) => {
   try {
     var count = parseInt(req.body && req.body.count, 10);
@@ -22387,7 +22387,7 @@ app.post('/api/newbusiness/bulk/checkout', authMiddleware, async (req, res) => {
     if (pack && pack.status !== 'sent' && pack.status !== 'expired') return res.status(400).json({ error: 'You already have a pack waiting to be sent (' + pack.count + ' leads). Send it first, or it expires in 7 days.' });
     if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe not configured' });
     var eligible = getBulkEligibleLeads();
-    if (eligible.length < count) return res.status(400).json({ error: 'Not enough exclusive leads available right now (' + eligible.length + ' ready). New leads mature into the archive within a few days — check back soon.', available: eligible.length });
+    if (eligible.length < count) return res.status(400).json({ error: 'Not enough exclusive leads available right now (' + eligible.length + ' ready). New leads mature into the archive within a few days - check back soon.', available: eligible.length });
     var amountPence = bulkPackTotal(count, mailType);
     var typeLabel = mailType === 'both' ? 'leaflet + letter' : mailType + ' only';
     var baseUrl = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
@@ -22413,7 +22413,7 @@ app.post('/api/newbusiness/bulk/checkout', authMiddleware, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/newbusiness/bulk/send — confirm & send the purchased pack via print & post.
+// POST /api/newbusiness/bulk/send - confirm & send the purchased pack via print & post.
 // Body { dry_run: true } validates everything (materials, leads, mail type) and
 // reports readiness WITHOUT creating a campaign or firing any real Stannp mail.
 app.post('/api/newbusiness/bulk/send', authMiddleware, async (req, res) => {
@@ -22498,7 +22498,7 @@ app.post('/api/newbusiness/bulk/send', authMiddleware, async (req, res) => {
 // Fire the background Stannp send for a bulk pack campaign. On success the reserved
 // pool leads are marked sold (never re-sold / never delivered) and the pack is marked
 // sent. On failure the pack returns to 'pending' so the customer can retry (reusing
-// the same campaign — never a duplicate order).
+// the same campaign - never a duplicate order).
 function fireBulkSend(c, pack, campaignId, leads) {
   var sendP = sendDmCampaign(campaignId, c.id);
   sendP.then(function(sr) {
@@ -22522,7 +22522,7 @@ function fireBulkSend(c, pack, campaignId, leads) {
         console.log('[BULK] Pack marked sent for ' + c.email + ' (' + (leads || []).length + ' leads)');
       } catch(pe) { console.log('[BULK] pack-mark error:', pe.message); }
     } else {
-      // send failed (e.g. provider down) — allow a retry, reusing the same campaign
+      // send failed (e.g. provider down) - allow a retry, reusing the same campaign
       try {
         var rp = getCustomerBulkPack(c) || pack;
         if (rp.status === 'sending') { rp.status = 'pending'; db.prepare('UPDATE customers SET bulk_pack = ? WHERE id = ?').run(JSON.stringify(rp), c.id); saveDb(); }
@@ -22564,17 +22564,17 @@ function checkBulkReserveReady() {
 cron.schedule('0 11 * * *', function() {
   try { checkBulkReserveReady(); } catch(e) { console.log('[BULK-ALERT-CRON] ' + e.message); }
 }, { timezone: 'Europe/London' });
-// POST /api/admin/bulk-check — manually run the reserve-ready check now
+// POST /api/admin/bulk-check - manually run the reserve-ready check now
 app.post('/api/admin/bulk-check', adminAuth, (req, res) => {
   try { res.json({ success: true, ...checkBulkReserveReady() }); }
   catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/clean-probate-pool — remove funeral-notice / early-estate junk and
+// POST /api/admin/clean-probate-pool - remove funeral-notice / early-estate junk and
 // name-as-postcode garbage from the probate pool so only real probate leads remain
 // (accurate mailable count + clean reporting). Real Gazette leads are kept.
 // Body { home_only: true } keeps ONLY executor-direct leads (executor applied in
-// person, home address published) — the product rule: no solicitor-routed leads.
+// person, home address published) - the product rule: no solicitor-routed leads.
 app.post('/api/admin/clean-probate-pool', adminAuth, (req, res) => {
   try {
     var homeOnly = !!(req.body && req.body.home_only);
@@ -22587,7 +22587,7 @@ app.post('/api/admin/clean-probate-pool', adminAuth, (req, res) => {
     var kept = pool.filter(function(l) {
       if (!l) return false;
       var src = String(l.source || '').toLowerCase();
-      // 1. Funeral notices / early-estate are NOT probate — remove outright.
+      // 1. Funeral notices / early-estate are NOT probate - remove outright.
       if (/early[-_ ]?estate|funeral[-_ ]?notice|funeral|obituary|death[-_ ]?notice/.test(src)) { removedByReason.funeral++; return false; }
       if (l.preProbate) { removedByReason.funeral++; return false; }
       // 2. Name-as-postcode garbage ("JOHN", "PETE", "RITA" in the postcode field).
@@ -22605,7 +22605,7 @@ app.post('/api/admin/clean-probate-pool', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/normalise-pool — clean + town/county-enrich a product's POOL leads
+// POST /api/admin/normalise-pool - clean + town/county-enrich a product's POOL leads
 app.post('/api/admin/normalise-pool', adminAuth, (req, res) => {
   try {
     var prod = String((req.body && req.body.product) || '').trim();
@@ -22638,7 +22638,7 @@ app.post('/api/admin/normalise-pool', adminAuth, (req, res) => {
 // Bulk packs priced per lead by MAIL TYPE (print & post included), mirroring the
 // single Print & Post offers: A5 leaflet £3.00 / A4 letter £2.50 / leaflet+letter £4.50.
 // Cost to us: leaflet £1.18, letter £1.02, both £2.20 (Stannp).
-var BULK_MAIL_RATES = { leaflet: 249, letter: 199, both: 399 }; // pence per lead — bulk/boost volume discount sits UNDER single on-demand rates
+var BULK_MAIL_RATES = { leaflet: 249, letter: 199, both: 399 }; // pence per lead - bulk/boost volume discount sits UNDER single on-demand rates
 var BOOST_PACK_SIZES = { moving: [100, 250, 500, 1000], probate: [50, 100, 200, 500], planning: [100, 250, 500, 1000], newbusiness: [100, 250, 500, 1000] };
 var NB_BULK_SIZES = [100, 250, 500, 1000];
 function bulkPackTotal(count, mailType) { return (BULK_MAIL_RATES[mailType] || BULK_MAIL_RATES.leaflet) * (count || 0); }
@@ -22676,7 +22676,7 @@ function getBoostArchiveLeads(product, ageKey, count) {
   (arr || []).forEach(function(l) {
     if (!l || l.bulk_reserved || l.bulk_sold || l.boost_reserved || l.boost_sold) return;
     // Age = when the property/notice REALLY appeared (sourceListedDate from the portal,
-    // else pickFreshDate) — NOT when we scraped it. Long-running listings are genuine
+    // else pickFreshDate) - NOT when we scraped it. Long-running listings are genuine
     // 1-2-month-old archive leads even if scraped today.
     var d = l.sourceListedDate || pickFreshDate(l) || l.incorporationDate || l.incorporated_on || String(l.scrapedAt || l.createdAt || l.firstVisibleDate || '');
     var t = d ? new Date(d).getTime() : 0;
@@ -22826,7 +22826,7 @@ function releaseStaleBoostReservations() {
       if (!keep) { l.boost_reserved = 0; delete l.boost_reserved_by; delete l.boost_reserved_at; changed = true; released++; return; }
       var ra = l.boost_reserved_at ? new Date(l.boost_reserved_at).getTime() : 0;
       if (ra && Date.now() - ra > 48 * 3600000) {
-        // Customer still exists but abandoned the cart — free the lead up.
+        // Customer still exists but abandoned the cart - free the lead up.
         l.boost_reserved = 0; delete l.boost_reserved_by; delete l.boost_reserved_at; changed = true; released++;
       }
     }
@@ -22839,7 +22839,7 @@ function releaseStaleBoostReservations() {
   return released;
 }
 
-// GET /api/admin/crash-log — read the recorded uncaught errors/rejections (debug aid)
+// GET /api/admin/crash-log - read the recorded uncaught errors/rejections (debug aid)
 app.get('/api/admin/crash-log', adminAuth, (req, res) => {
   try {
     var crashFile = path.join(DATA_DIR, 'crash_log.json');
@@ -22849,7 +22849,7 @@ app.get('/api/admin/crash-log', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/boost — availability + any purchased boost pack
+// GET /api/boost - availability + any purchased boost pack
 app.get('/api/boost', authMiddleware, (req, res) => {
   try {
     var c = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
@@ -22865,7 +22865,7 @@ app.get('/api/boost', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/boost/checkout — create a Stripe checkout. Body: { product, age, count, mail_type }
+// POST /api/boost/checkout - create a Stripe checkout. Body: { product, age, count, mail_type }
 app.post('/api/boost/checkout', authMiddleware, async (req, res) => {
   try {
     var product = String((req.body && req.body.product) || '').toLowerCase();
@@ -22915,7 +22915,7 @@ app.post('/api/boost/checkout', authMiddleware, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/boost/reserved — the purchased pack's reserved leads (full addresses) +
+// GET /api/boost/reserved - the purchased pack's reserved leads (full addresses) +
 // whether A5 leaflet materials are ready, so the customer can review before sending.
 app.get('/api/boost/reserved', authMiddleware, (req, res) => {
   try {
@@ -22934,7 +22934,7 @@ app.get('/api/boost/reserved', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/boost/send — confirm & send the purchased boost pack (A5 leaflet).
+// POST /api/boost/send - confirm & send the purchased boost pack (A5 leaflet).
 app.post('/api/boost/send', authMiddleware, async (req, res) => {
   try {
     var c = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
@@ -23017,7 +23017,7 @@ function fireBoostSend(c, pack, campaignId, leads) {
   }).catch(function() {});
 }
 
-// GET /api/admin/bulk-pools — availability in every bulk/archive pool so the founder
+// GET /api/admin/bulk-pools - availability in every bulk/archive pool so the founder
 // can monitor Boost (moving/probate 1m/2m) and New Business bulk (3-7d) inventory.
 app.get('/api/admin/bulk-pools', adminAuth, (req, res) => {
   try {
@@ -23096,7 +23096,7 @@ function normalizeStannpAddress(d) {
       } catch(e) { delete d.town; delete d.city; }
     }
     // COMPACT-POSTCODE TOWN: a town/city that is an unspaced postcode token
-    // ("LE30UW", "GL516QL") is garbage from the source scrape — drop it so the
+    // ("LE30UW", "GL516QL") is garbage from the source scrape - drop it so the
     // rebuild never carries it as a town and a real town/county is derived.
     if (/^[A-Z]{1,2}\d[A-Z\d]{2,5}$/i.test(String(d.city || d.town || '').trim())) { delete d.town; delete d.city; }
     // town: parse from address text, else cached town-from-postcode (free).
@@ -23106,7 +23106,7 @@ function normalizeStannpAddress(d) {
       else { try { var _gt = require('./rightmove_scraper_v2').getTownForPostcode(d.postcode || ''); if (_gt) { d.town = _gt; d.city = _gt; } } catch(e) {} }
     }
     // TOWN-IS-A-STREET GUARD: a parsed town that ends in a street suffix is actually
-    // the STREET name (house-name addresses) — replace with the town-from-postcode.
+    // the STREET name (house-name addresses) - replace with the town-from-postcode.
     if (d.town && /\b(road|street|avenue|lane|drive|close|court|crescent|gardens|grove|terrace|way|walk|hill|place|mews|rise|row|park|square|green|broadway|path|view|gate|parade|way)\b$/i.test(String(d.town))) {
       try { var _gt3 = require('./rightmove_scraper_v2').getTownForPostcode(d.postcode); if (_gt3) { d.town = _gt3; d.city = _gt3; } else { delete d.town; delete d.city; } } catch(e) { delete d.town; delete d.city; }
     }
@@ -23121,7 +23121,7 @@ function normalizeStannpAddress(d) {
       var _segs = String(d.address || d.fullAddress || '').split(',').map(function(x){ return String(x).trim(); }).filter(Boolean);
       for (var si = 0; si < _segs.length; si++) {
         var _seg = _segs[si];
-        // drop embedded unspaced postcode segments ("LE30UW", "GL516QL") — not real
+        // drop embedded unspaced postcode segments ("LE30UW", "GL516QL") - not real
         // address lines; the field postcode is the authoritative one.
         if (/^[A-Z]{1,2}\d[A-Z\d]{2,5}$/i.test(_seg)) continue;
         var _numM = _seg.match(/^\s*((?:Flat|Apartment|Unit|Suite|Maisonette|Room)\s+[A-Z0-9\-]+|\d{1,5}[A-Za-z]?(?:[-\u2013]\d{1,5}[A-Za-z]?)?)\s+(.+)$/i);
@@ -23170,9 +23170,9 @@ function normalizeStannpAddress(d) {
 
 // MOVING TOWN/COUNTY ENRICHMENT: the moving delivery normalises each lead's printable
 // address down to the street line ("55 Victoria Street") to guarantee it starts with
-// the door number — but that DROPS the town/county. This re-attaches a town and county
+// the door number - but that DROPS the town/county. This re-attaches a town and county
 // (from any fields the lead kept, else cached town-from-postcode, else the postcode's
-// county — which always exists) so every moving address shows "55 Victoria Street,
+// county - which always exists) so every moving address shows "55 Victoria Street,
 // Chester, Cheshire, CH2 1NN". Idempotent: skips addresses that already carry an area.
 function enrichMovingLeadTown(ld) {
   try {
@@ -23185,7 +23185,7 @@ function enrichMovingLeadTown(ld) {
     var pcCompact = pc.replace(/\s+/g, '');
     var streetSeg = (segments[0] || full).replace(/\s*[A-Z]{1,2}\d[A-Z0-9]?\s?\d[A-Z]{2}\s*$/i, '').trim();
     if (!streetSeg || !hasStreetName(streetSeg)) return ld;
-    // A town must be a REAL place — reject a bare postcode-area/outcode ("EN","CR","KT",
+    // A town must be a REAL place - reject a bare postcode-area/outcode ("EN","CR","KT",
     // "SW1"), the postcode itself, a region word, or a value already inside the street
     // (e.g. "Boston Exchange 83 Cardigan Lane, Boston Exchange, Leeds"). Previously this
     // function bailed out whenever ANY segment followed the street, so those junk towns
@@ -23273,7 +23273,7 @@ function normaliseAllDeliveredStannpAddresses() {
 }
 
 // ===== STANNP ADDRESS AUDIT + FIX =====
-// POST /api/admin/audit-stannp-addresses — scan EVERY delivered dashboard lead for
+// POST /api/admin/audit-stannp-addresses - scan EVERY delivered dashboard lead for
 // every product EXCEPT tenders and report whether it can be printed & posted by
 // Stannp (correct premise + street + town + valid UK postcode). With `fix: true` it
 // also normalises each lead's data (door number, street, town, county, postcode,
@@ -23355,7 +23355,7 @@ app.get('/api/admin/pool-areas', adminAuth, (req, res) => {
     res.json({ file: poolFile, total: arr.length, commercial_count: arr.filter(function(l){ return l.commercial; }).length, residential_count: arr.filter(function(l){ return !l.commercial; }).length, commercial_postcodes: commercialPostcodes, by_area: areas, by_date: byDate, keys: (raw && typeof raw === 'object' ? Object.keys(raw).filter(function(k){return k.indexOf('_')!==0;}).slice(0,20) : []), samples: arr.slice(0,5).map(function(l){return {postcode:l.postcode,address:l.address,location:l.location,name:l.name,commercial:l.commercial,source:l.source,propertyType:l.propertyType,scrapedAt:l.scrapedAt,keys:Object.keys(l).slice(0,15)};} ) });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
-// GET /api/admin/deep-scrape-log — read the deep scrape worker's log file
+// GET /api/admin/deep-scrape-log - read the deep scrape worker's log file
 app.get('/api/admin/deep-scrape-log', adminAuth, (req, res) => {
   try {
     var lf = path.join(DATA_DIR, 'deep-scrape.log');
@@ -23364,7 +23364,7 @@ app.get('/api/admin/deep-scrape-log', adminAuth, (req, res) => {
     res.json({ success: true, exists: content.length > 0, content: content });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
-// GET /api/admin/test-zoopla-actor — test whether the Apify Rightmove actor is
+// GET /api/admin/test-zoopla-actor - test whether the Apify Rightmove actor is
 // available and can scrape a given area. Used to confirm the actor is active
 // before enabling the area-targeted worker. Query: ?area=EN (default EN)
 app.get('/api/admin/test-zoopla-actor', adminAuth, (req, res) => {
@@ -23375,8 +23375,8 @@ app.get('/api/admin/test-zoopla-actor', adminAuth, (req, res) => {
     // SAFETY GUARD: live Apify actor tests cost credits. Disabled unless explicitly
     // enabled via ALLOW_LIVE_RIGHTMOVE_TESTS=true (see STAGE 28).
     var allowLive = process.env.ALLOW_LIVE_RIGHTMOVE_TESTS === 'true' || process.env.ALLOW_LIVE_RIGHTMOVE_TESTS === '1';
-    if (!allowLive) return res.json({ success: false, rented: false, guarded: true, area: area, error: 'Live Rightmove/Apify test blocked — set ALLOW_LIVE_RIGHTMOVE_TESTS=true to enable. Use mock tests instead (test/optimisation_mock_test.js).' });
-    // Region scrape (reliable) — the worker uses this. The returned leads carry
+    if (!allowLive) return res.json({ success: false, rented: false, guarded: true, area: area, error: 'Live Rightmove/Apify test blocked - set ALLOW_LIVE_RIGHTMOVE_TESTS=true to enable. Use mock tests instead (test/optimisation_mock_test.js).' });
+    // Region scrape (reliable) - the worker uses this. The returned leads carry
     // full outcodes/postcodes, so the delivery's exact-area filter keeps only the
     // customer's chosen postcode areas.
     var locId = 'REGION%5E87490';
@@ -23403,7 +23403,7 @@ app.get('/api/admin/test-zoopla-actor', adminAuth, (req, res) => {
           }
           var msg = b.substring(0, 300);
           var rented = msg.indexOf('actor-is-not-rented') === -1;
-          return res.json({ success: false, rented: rented, area: area, error: msg, message: rented ? 'Actor call returned non-array (may need longer/retry)' : 'Actor NOT RENTED yet — rent it in the Apify console' });
+          return res.json({ success: false, rented: rented, area: area, error: msg, message: rented ? 'Actor call returned non-array (may need longer/retry)' : 'Actor NOT RENTED yet - rent it in the Apify console' });
         } catch(e) { return res.json({ success: false, rented: false, error: e.message }); }
       });
     });
@@ -23412,7 +23412,7 @@ app.get('/api/admin/test-zoopla-actor', adminAuth, (req, res) => {
     req2.write(body); req2.end();
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
-// POST /api/admin/leads/update-address — fix a specific delivered lead's address.
+// POST /api/admin/leads/update-address - fix a specific delivered lead's address.
 // Body: { email, lead_id, address }
 app.post('/api/admin/leads/update-address', adminAuth, (req, res) => {
   try {
@@ -23434,11 +23434,11 @@ app.post('/api/admin/leads/update-address', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/leads/fix-and-trim — fix a customer's delivered lead addresses
+// POST /api/admin/leads/fix-and-trim - fix a customer's delivered lead addresses
 // (extract postcode from the address text, attach county-from-postcode, rebuild
 // fullAddress = street + town/county + postcode) and optionally trim TODAY's
 // delivered leads down to `keep_today` (marks the newest extras as removed).
-// Body: { email, keep_today }  — keep_today 0 = don't trim.
+// Body: { email, keep_today }  - keep_today 0 = don't trim.
 app.post('/api/admin/leads/fix-and-trim', adminAuth, (req, res) => {
   try {
     var email = String((req.body && req.body.email) || '').toLowerCase().trim();
@@ -23499,7 +23499,7 @@ app.post('/api/admin/leads/fix-and-trim', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/leads/purge-undelivered — remove all UNDELIVERED leads for a
+// POST /api/admin/leads/purge-undelivered - remove all UNDELIVERED leads for a
 // customer (test-data reset). Keeps delivered history. Body: { email }
 app.post('/api/admin/leads/purge-undelivered', adminAuth, (req, res) => {
   try {
@@ -23515,7 +23515,7 @@ app.post('/api/admin/leads/purge-undelivered', adminAuth, (req, res) => {
     res.json({ success: true, removed: removed });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
-// POST /api/admin/leads/delete — remove a specific lead by id (admin cleanup of
+// POST /api/admin/leads/delete - remove a specific lead by id (admin cleanup of
 // duplicate / manual-test / wrongly-delivered leads). Body: { email, lead_id }
 app.post('/api/admin/leads/delete', adminAuth, (req, res) => {
   try {
@@ -23532,7 +23532,7 @@ app.post('/api/admin/leads/delete', adminAuth, (req, res) => {
     res.json({ success: true, removed: removed, lead_id: leadId });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
-// POST /api/admin/leads/add-moving — add a confirmed Moving Lead (by Rightmove URL)
+// POST /api/admin/leads/add-moving - add a confirmed Moving Lead (by Rightmove URL)
 // to a customer's account (admin / manual confirmation flow). Fetches the property
 // detail page for the full door-numbered address + postcode, then pushes a lead
 // record into the customer's account exactly like the delivery path does.
@@ -23567,7 +23567,7 @@ app.post('/api/admin/leads/add-moving', adminAuth, async (req, res) => {
     res.json({ success: true, lead_id: tpNew.id, address: detail.fullAddress, postcode: detail.postcode });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
-// GET /api/admin/moving-leads-log — review all Moving Leads across every customer
+// GET /api/admin/moving-leads-log - review all Moving Leads across every customer
 // (admin error-checking sheet). Shows each customer's current leads with address,
 // postcode, door number, verification status, freshness, and the Rightmove URL.
 app.get('/api/admin/moving-leads-log', adminAuth, (req, res) => {
@@ -23621,10 +23621,10 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
   // cron + the 09:30 watchdog overlapping, or a manual run mid-flight). Without
   // this, both runs could send the daily email to the same customer (duplicate
   // emails = complaints). The DB exact-count guards the lead count, but this
-  // guards the EMAIL. If a run is already in progress, we skip silently — the
+  // guards the EMAIL. If a run is already in progress, we skip silently - the
   // in-flight run handles everything.
   // SELF-HEAL: if the lock has been held > 15 minutes it is STALE (a crashed/hung
-  // run never released it — e.g. a Postcoder call that didn't time out). Override
+  // run never released it - e.g. a Postcoder call that didn't time out). Override
   // it so the next real delivery (especially the 09:00 cron) can never be blocked
   // permanently. A normal delivery completes well under 15 min.
   // NEVER BEFORE 9AM UK: the 9am promise means leads go out at 09:00 UK, never early.
@@ -23647,7 +23647,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
     // 6 min (was 15): a stalled run must free the lock quickly so the 09:08/09:15/09:25
     // recovery watchdogs can re-run and still hit the 9am promise.
     if (_lockAge > 6 * 60 * 1000) {
-      console.log('[DELIVERY] Stale delivery lock (' + Math.round(_lockAge / 1000) + 's) — releasing and continuing');
+      console.log('[DELIVERY] Stale delivery lock (' + Math.round(_lockAge / 1000) + 's) - releasing and continuing');
       _deliveryLock = false;
     } else {
       console.log('[DELIVERY] Skipped: another delivery run already in progress');
@@ -23678,7 +23678,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
     var emailQueue = [];
     // Premise-identifier gate shared by the whole delivery flow (pool fallback,
     // Postcoder enrich, door-number gate, final PAF pass). Defined at route scope
-    // — NOT inside the POSTCODER-enabled block — so it is always available even
+    // - NOT inside the POSTCODER-enabled block - so it is always available even
     // when Postcoder is off (otherwise delivery 500s for every customer).
     function hasPremiseNumber(addr, pc) {
       return hasUsablePremiseAddress(addr, pc);
@@ -23715,7 +23715,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
     // (CR0), county/region targets and keyword matches (areaMatchesLead). Moving
     // additionally allows a genuinely NEARBY fallback (<= MOVING_MAX_FALLBACK_KM) so
     // a sparse area can still reach its promised count. Never returns true for a
-    // far-away lead — the customer gets fewer leads rather than a useless one.
+    // far-away lead - the customer gets fewer leads rather than a useless one.
     function candidateInArea(ld, areas, prod, ukwide) {
       if (ukwide) return true;
       if (!areas || !areas.length) return true; // no areas configured: don't block
@@ -23741,7 +23741,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
     // PER-RUN POOL CACHE: the scrape pool files (e.g. moving-leads.json holds 1600+
     // properties) are large. Reading + JSON.parse-ing them for EVERY customer on the
     // 9am run would delay later customers' emails past 09:00. Read each product's
-    // pool ONCE per delivery run and reuse it — the loop then flies through the
+    // pool ONCE per delivery run and reuse it - the loop then flies through the
     // whole customer list and every email goes out at ~09:00 sharp.
     var _deliveryPoolCache = {};
     function getDeliveryPool(prod) {
@@ -23759,7 +23759,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       arr = arr.filter(function(l) { return !/zoopla/i.test(String(l.source || '')); });
       // PRE-PROBATE / EARLY-ESTATE EXCLUSION: death/funeral notices are NOT confirmed
       // probate. They are "Early Estate Opportunity" leads for house-clearance /
-      // removals / auction / probate-buyers — never delivered as confirmed probate.
+      // removals / auction / probate-buyers - never delivered as confirmed probate.
       // Tagged source=early-estate (was funeral-notices) + preProbate=true.
       arr = arr.filter(function(l) {
         var ls = String(l.source || '').toLowerCase();
@@ -23825,7 +23825,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
     var dayOfWeekN = new Date().getDay(); // 0=Sun, 6=Sat
     var isForcedTest = !!(req.body && req.body.test_only);
     if ((dayOfWeekN === 0 || dayOfWeekN === 6) && !isForcedTest) {
-      console.log('[DELIVERY] Weekend (' + dayOfWeekN + ') — skipping delivery (Mon-Fri only)');
+      console.log('[DELIVERY] Weekend (' + dayOfWeekN + ') - skipping delivery (Mon-Fri only)');
       // RELEASE THE LOCK before returning: this early exit sits AFTER the lock is set,
       // so without this the lock stayed held and skipped every later run until the
       // 6-minute stale-release kicked in (which is why test/single runs skipped).
@@ -23833,7 +23833,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       return res.json({ success: true, skipped: 'weekend', message: 'Leads are delivered Monday-Friday only. No leads were sent.' });
     }
     // PURGE ORPHAN LEADS: leads whose customer_id no longer exists (deleted
-    // accounts) must never be delivered — they'd go to the wrong area and never
+    // accounts) must never be delivered - they'd go to the wrong area and never
     // show in any dashboard. Removes them before the delivery loop.
     try {
       var validCustIds = new Set((db.customers || []).map(function(c) { return c.id; }));
@@ -23854,7 +23854,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       if (onlyEmail && String(c.email || '').toLowerCase() !== onlyEmail) return false;
       // TEST-ACCOUNT ISOLATION: test.* accounts ONLY ever receive leads in test_only
       // mode (the 15-min delivery-test cron / manual run-test). The real 09:00
-      // delivery NEVER sends to test accounts — only real paying customers. This
+      // delivery NEVER sends to test accounts - only real paying customers. This
       // keeps test data out of the live email + dashboard + Print & Post pipeline.
       var _isTest = /^test\./.test(String(c.email || '').toLowerCase());
       // test.* accounts now receive the REAL 9am Mon-Fri delivery like any other
@@ -23862,7 +23862,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       // test accounts for manual testing.
       if (testOnly && !_isTest) return false;
       // GLOBAL DELIVERY HOLD (weekend testing): when db.delivery_hold is set, ONLY
-      // test.* accounts may receive leads — every real customer is blocked from BOTH
+      // test.* accounts may receive leads - every real customer is blocked from BOTH
       // inbox and dashboard, on forced/manual runs too (not just the Mon-Fri cron).
       // AUTO-EXPIRES at db.delivery_hold_until so a forgotten weekend hold can NEVER
       // block a Monday 9am delivery. Toggle with POST /api/admin/delivery-hold.
@@ -23962,7 +23962,7 @@ _deliverDiag[cust.email].products = products;
         custLeadFilters.minContractVal = parseInt(lfFlat['f-min-val'] || lfFlat.minContractValue) || 0;
         custLeadFilters.keywords = String(lfFlat['f-keywords'] || lfFlat.keywords || '').toLowerCase();
         custLeadFilters.sectors = (Array.isArray(lfFlat['f-sectors']) ? lfFlat['f-sectors'] : (lfFlat['f-sectors'] ? [lfFlat['f-sectors']] : []));
-        // STRICT MODE: customer opted out of automatic widening — filters stay hard,
+        // STRICT MODE: customer opted out of automatic widening - filters stay hard,
         // even if that means fewer than the promised count (their explicit choice).
         custLeadFilters.strict = !!(lfFlat._strict || lf2._strict);
       } catch(e) {}
@@ -23989,7 +23989,7 @@ _deliverDiag[cust.email].products = products;
           if (cust.product === 'moving') {
             // MOVING: only the optional MAX-BEDROOMS filter applies (a removal company
             // may only move homes up to N beds). Min beds / max price / property type
-            // filters are NOT used for moving — removal companies move any size home,
+            // filters are NOT used for moving - removal companies move any size home,
             // and extra filters shrink the deliverable pool and break the 5/day promise.
             if (!filterRelaxForFill) {
               var b = parseInt(ld2.bedrooms) || 0;
@@ -23998,7 +23998,7 @@ _deliverDiag[cust.email].products = products;
             // COMMERCIAL FILTER: only accept leads matching the customer's moving_type
             // (residential/commercial/both). A residential-only customer must never
             // receive a commercial property (cafe/shop/office/unit etc). Always enforced
-            // — this is an identity-level rule, never relaxed by guaranteed-fill.
+            // - this is an identity-level rule, never relaxed by guaranteed-fill.
             var _mt = 'both';
             try { var _pc2 = JSON.parse(cust.product_config || '{}'); _mt = (_pc2.moving && _pc2.moving.moving_type) || cust.moving_type || 'both'; } catch(e) {}
             if (_mt === 'residential' && isCommercialLead(ld2)) return false;
@@ -24098,7 +24098,7 @@ _deliverDiag[cust.email].products = products;
           // NEVER promote a queued lead whose property/listing was ALREADY DELIVERED
           // (to this customer on a previous day, or to anyone). The queue can contain a
           // duplicate row for a property already sent, which the primary pick used to
-          // promote blindly — that is how the same listing reached a customer twice on
+          // promote blindly - that is how the same listing reached a customer twice on
           // consecutive days. Checks URL + reference + address/postcode + property id.
           var _pu = String(pld.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
           // TEST ACCOUNTS skip global exclusivity (dedicated pool) so they can never be
@@ -24204,7 +24204,7 @@ _deliverDiag[cust.email].products = products;
           // HONOUR THE CUSTOMER'S DAILY CAP: the weekly-estimate daily cap is an
           // upper bound, but the customer's actual promised daily count (leads_per_day
           // / plan limit) is what they signed up for. Never exceed the smaller of the
-          // two — "no more no less" (e.g. a free_trial planning account promised 1/day
+          // two - "no more no less" (e.g. a free_trial planning account promised 1/day
           // must not receive ceil(25/5)=5/day).
           var custDayCap = parseInt(cust.leads_per_day, 10) || getPlanLimit(prod, plan, (pcfg[prod] && pcfg[prod].coverage) || cust.coverage || 'county') || 1;
           if (custDayCap > 0 && custDayCap < dMax) dMax = custDayCap;
@@ -24215,10 +24215,10 @@ _deliverDiag[cust.email].products = products;
         return true;
       }
       // Available undelivered leads per product.
-      // FRESHNESS RULE (≤48h) for ALL products: leads are strictly fresh — sourced
+      // FRESHNESS RULE (≤48h) for ALL products: leads are strictly fresh - sourced
       // within the last 24h (primary) or 24-48h (fallback). The scrapers now drop
       // anything older than 48h, so pools contain only fresh leads. No stale or
-      // accumulated pool leads are ever used — the promise is "fresh within 24
+      // accumulated pool leads are ever used - the promise is "fresh within 24
       // hours", with a 48h fallback so quiet areas aren't starved. Delivery
       // prefers the freshest (24h) leads first via the sorting below.
       var freshCutoffNow = getFreshCutoffIso();
@@ -24227,7 +24227,7 @@ _deliverDiag[cust.email].products = products;
       function isLeadFresh24(l, cut) {
         try {
           var ld2 = JSON.parse(l.data || '{}');
-          // NEVER deliver manual-test / user-created test leads to customers —
+          // NEVER deliver manual-test / user-created test leads to customers -
           // those are for the customer's own Print & Post / sample testing, not
           // their daily lead supply.
           if (ld2.source === 'manual-test' || ld2.source === 'manual_test') return false;
@@ -24246,7 +24246,7 @@ _deliverDiag[cust.email].products = products;
           if (!fv) return false;
           // 24h PRIMARY, 48h FALLBACK (uniform across ALL products): the customer
           // promise is "fresh leads 24-48h max old". Leads are iterated fresh-first
-          // (24h) and 48h only fills gaps — never older. The `cut` param (when the
+          // (24h) and 48h only fills gaps - never older. The `cut` param (when the
           // caller passes freshCutoff48) marks the 48h fallback pass; otherwise the
           // default is the 24h primary window.
           var backfillCutoff = cut || freshCutoffNow;
@@ -24285,7 +24285,7 @@ _deliverDiag[cust.email].products = products;
         }
       });
       // PERSISTENT per-customer delivered refs (urls + references). Stored on the
-      // customer object so it survives lead-table cleanup and can never be lost —
+      // customer object so it survives lead-table cleanup and can never be lost -
       // this is the hard guarantee that a customer NEVER receives the same lead twice.
       var custDeliveredRefs = {};
       try { (JSON.parse(cust.delivered_refs || '[]')).forEach(function(u) { custDeliveredRefs[u] = true; }); } catch(e) {}
@@ -24297,7 +24297,7 @@ _deliverDiag[cust.email].products = products;
           if (u && custDeliveredRefs[u]) return false;
           if (dd.reference && custDeliveredRefs['r:' + String(dd.reference).toLowerCase()]) return false;
           // Never deliver a lead already delivered to THIS customer OR ANY customer
-          // (global exclusivity) — shared leads between overlapping areas are prevented.
+          // (global exclusivity) - shared leads between overlapping areas are prevented.
           if (u && (deliveredUrls[u] || (!_isTestCust && globalDeliveredUrls[u]))) return false;
           // IN-RUN dedup: reject a property/listing already assigned this run.
           var normU = String(u).split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
@@ -24326,7 +24326,7 @@ _deliverDiag[cust.email].products = products;
       // FILL/TOP-UP DEDUPE: the guaranteed-fill / door-number / PAF top-up passes
       // below pull candidates from the RAW scrape pool file, which is NOT pre-filtered
       // by notDeliveredBefore(). On a repeated run (watchdog/manual re-run) they could
-      // therefore re-add a lead already delivered to this customer today — a duplicate
+      // therefore re-add a lead already delivered to this customer today - a duplicate
       // row the dashboard (which de-dupes by URL) counts once, leaving the customer
       // silently short. Returns true if the candidate was already delivered to this
       // customer (or anyone), by URL, address+postcode, property identity or reference.
@@ -24356,7 +24356,7 @@ _deliverDiag[cust.email].products = products;
           if (l.customer_id !== cust.id || l.delivered !== 0 || l.product !== p) return false;
           // NEVER re-deliver a rejected/blocked lead (founder-flagged wrong/commercial/
           // out-of-area). The lead may exist as delivered=0 rows in the DB even after
-          // being blocked — filter by the data flags so it can never be picked up again.
+          // being blocked - filter by the data flags so it can never be picked up again.
           try { var _pd = JSON.parse(l.data || '{}'); if (_pd.rejected || _pd.blocked || _pd.blocked_by_admin) return false; } catch(_pe) {}
           if (!isLeadFresh24(l)) return false;
           if (!leadPassesFilters((l && typeof l.data === 'string' && l.data) ? JSON.parse(l.data) : (l || {}))) return false;
@@ -24406,14 +24406,14 @@ _deliverDiag[cust.email].products = products;
       // EXACT-COUNT GUARANTEE: never over-deliver. If leads were already delivered
       // to this customer today (e.g. a manual re-run, or the 09:00 + 09:30 watchdog
       // both fired), only deliver the remaining gap so the customer gets EXACTLY the
-      // promised count — no more, no less.
+      // promised count - no more, no less.
       var alreadyDeliveredToday = (db.leads || []).filter(function(l) {
         return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.startsWith(today) && !_leadIsRejected(l);
       }).length;
       // TEST/FORCE MODE: if body has force=true (a test delivery), ignore today's
       // already-delivered count and send the full quota so we can verify output.
       // This applies to BOTH a single-customer test (onlyEmail) and the automated
-      // 30-min test run (test_only) — so every test run re-delivers the full
+      // 30-min test run (test_only) - so every test run re-delivers the full
       // promised quota with fresh leads, emails + dashboards updating each time.
       var forceFull = (req.body && req.body.force === true) && (onlyEmail || testOnly);
       totalNeeded = forceFull ? totalDailyLimit : Math.max(0, totalNeeded - alreadyDeliveredToday);
@@ -24421,21 +24421,21 @@ _deliverDiag[cust.email].products = products;
       // REAL (non-test) customer must ADD fresh leads up to the daily cap WITHOUT
       // deleting the leads already delivered + emailed at 9am. Deleting them (the old
       // "force = replace" behaviour) made the dashboard show fewer leads than the
-      // customer was emailed — a broken promise. Test accounts are clean-slated
+      // customer was emailed - a broken promise. Test accounts are clean-slated
       // separately by the test cron, so force here just tops up toward the cap.
       if (forceFull && !/^test\./.test(String(cust.email || '').toLowerCase()) && alreadyDeliveredToday < totalDailyLimit) {
         totalNeeded = totalDailyLimit - alreadyDeliveredToday;
-        console.log('[DELIVERY] force fill-up: ' + cust.email + ' has ' + alreadyDeliveredToday + '/day delivered (kept) — adding ' + totalNeeded + ' to reach ' + totalDailyLimit);
+        console.log('[DELIVERY] force fill-up: ' + cust.email + ' has ' + alreadyDeliveredToday + '/day delivered (kept) - adding ' + totalNeeded + ' to reach ' + totalDailyLimit);
       } else if (forceFull && !/^test\./.test(String(cust.email || '').toLowerCase()) && alreadyDeliveredToday >= totalDailyLimit) {
         totalNeeded = 0;
-        console.log('[DELIVERY] force: ' + cust.email + ' already at ' + alreadyDeliveredToday + '/' + totalDailyLimit + ' today — nothing to add');
+        console.log('[DELIVERY] force: ' + cust.email + ' already at ' + alreadyDeliveredToday + '/' + totalDailyLimit + ' today - nothing to add');
       }
       // NO SPLIT EMAILS: if this customer already received their daily email (a
       // watchdog/manual re-run), top up the missing leads in the DB but NEVER send
       // a second partial email. All promised leads go out in ONE email.
       // "Already emailed today" = an email was ACTUALLY sent today (last_email_date).
       // IMPORTANT: a pre-9am top-up/test lead delivered today must NOT suppress the
-      // 9am email — the customer's daily EMAIL is the promise, and it goes out once
+      // 9am email - the customer's daily EMAIL is the promise, and it goes out once
       // per day regardless of when the first lead arrived. (The delivered-lead check
       // was wrongly blocking the email: a single early lead made alreadyEmailedToday
       // true and the 9am email was skipped while leads were topped up silently.)
@@ -24447,16 +24447,16 @@ _deliverDiag[cust.email].products = products;
       if (totalNeeded === 0) {
         // SKIP-COUNT BUT STILL EMAIL: a customer may already be at their daily
         // quota because leads were delivered EARLIER today by a pre-9am path
-        // (scrape-time delivery / early PAF / top-up) — but if those leads were
+        // (scrape-time delivery / early PAF / top-up) - but if those leads were
         // never EMAILED, the customer sees them in the dashboard and never gets
         // the daily email. That's a broken promise ("leads arrive + email at 9am").
         // So when already at quota but NOT yet emailed AND not silent, still send
         // the email with today's already-delivered leads. NEVER sends in silent
-        // mode (no_email) — the 15-min test cron's founder delivery must not email.
+        // mode (no_email) - the 15-min test cron's founder delivery must not email.
         if (!alreadyEmailedToday && !_noEmailSkip) {
           var skipEmailLeads = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0; });
           if (skipEmailLeads.length > 0) {
-            console.log('[DELIVERY] ' + cust.email + ': at quota (' + alreadyDeliveredToday + '/day) but NOT yet emailed — sending email with today\'s ' + skipEmailLeads.length + ' lead(s)');
+            console.log('[DELIVERY] ' + cust.email + ': at quota (' + alreadyDeliveredToday + '/day) but NOT yet emailed - sending email with today\'s ' + skipEmailLeads.length + ' lead(s)');
             custLeads = skipEmailLeads;
             try { cust.last_email_date = today; } catch(leErr2) {}
             var skSubj = '9amLeads \u2022 Your Daily Opportunities on ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -24473,7 +24473,7 @@ _deliverDiag[cust.email].products = products;
             continue;
           }
         }
-        console.log('[DELIVERY] ' + cust.email + ' already received ' + alreadyDeliveredToday + ' today (promise=' + totalDailyLimit + ') — skipping (exact-count)');
+        console.log('[DELIVERY] ' + cust.email + ' already received ' + alreadyDeliveredToday + ' today (promise=' + totalDailyLimit + ') - skipping (exact-count)');
         continue;
       }
       // Per-product daily caps (multi-product customers): track how many leads of
@@ -24502,7 +24502,7 @@ _deliverDiag[cust.email].products = products;
         if (!canTakeProduct(r1prod, cust.plan, weekStart2, today, custLeads)) continue;
         var r1pool = (availByProd[r1prod] || []).filter(function(l) { return pickedIds.indexOf(l.id) === -1; }).sort(function(a,b){
           // Prefer the freshest leads first (latest source date across all fields),
-          // so 24h leads deliver before 24-48h fallback leads — across every product.
+          // so 24h leads deliver before 24-48h fallback leads - across every product.
           // Keep ALL within the fresh window so the exact-count promise is always met.
           // CRITICAL for exact-count + real door numbers: leads that ALREADY have a
           // confirmed house number are preferred, so the door-number gate rarely drops
@@ -24533,7 +24533,7 @@ _deliverDiag[cust.email].products = products;
           if (!found) {
             // NEVER deliver an out-of-area lead to fill a slot. The fallback must
             // only pick a pool lead that genuinely matches the customer's areas
-            // (via the county/postcode map) — otherwise a "Devon/Cornwall/E.Sussex"
+            // (via the county/postcode map) - otherwise a "Devon/Cornwall/E.Sussex"
             // customer silently receives Harrogate/Liverpool/Bradford leads.
             var fbLead = null;
             for (var fbI = 0; fbI < r1pool.length && !fbLead; fbI++) {
@@ -24546,7 +24546,7 @@ _deliverDiag[cust.email].products = products;
           custLeads.push(r1pool[0]); pickedIds.push(r1pool[0].id); prodTaken[r1prod]++;
         }
       }
-      // Round 2: fill remaining slots — cycle through (product × area) round-robin
+      // Round 2: fill remaining slots - cycle through (product × area) round-robin
       if (custLeads.length < totalNeeded) {
         var maxRounds = Math.min(50, Math.ceil(totalNeeded * 2));
                 for (var r2 = 0; r2 < maxRounds && custLeads.length < totalNeeded; r2++) {
@@ -24558,7 +24558,7 @@ _deliverDiag[cust.email].products = products;
             var r2pool = (availByProd[r2prod] || []).filter(function(l) { return pickedIds.indexOf(l.id) === -1; }).sort(function(a,b){
               // Prefer fresh leads first, but keep ALL so the promise is always met.
               // Prefer already-confirmed (door-numbered) leads first so the gate
-              // rarely drops a selected lead — guarantees exact count + real numbers.
+              // rarely drops a selected lead - guarantees exact count + real numbers.
               function confirmed(l){ try{ var dd=JSON.parse(l.data||'{}'); return hasPremiseNumber(dd.fullAddress||dd.address||dd.deceasedAddress||'', dd.postcode||''); }catch(e){ return false; } }
               var ca = confirmed(a), cb = confirmed(b);
               if (ca !== cb) return ca ? -1 : 1;
@@ -24571,12 +24571,12 @@ _deliverDiag[cust.email].products = products;
             // but supply exists elsewhere in their product+area, pull from the
             // global undelivered pool so we ALWAYS meet the promised count. The
             // global pool is already ranked (confirmed-number first, then closest
-            // postcode, then freshest) — take it in that order, never re-sorted.
+            // postcode, then freshest) - take it in that order, never re-sorted.
             if (r2pool.length === 0) {
               r2pool = (availGlobalByProd[r2prod] || []).filter(function(l) { return pickedIds.indexOf(l.id) === -1; });
               // DISTANCE CAP: only allow out-of-area global-pool leads that are close
               // enough (moving). Far-away fallback (Glasgow for a London customer) is
-              // worse than a shortfall — the lead is useless to a local removals firm.
+              // worse than a shortfall - the lead is useless to a local removals firm.
               if (r2prod === 'moving' && custAreas.length > 0 && !/all.?uk|uk.?wide|nationwide|whole.?uk/i.test(custAreas.join(' '))) {
                 r2pool = r2pool.filter(function(_gl) { try { var _gd = JSON.parse(_gl.data || '{}'); return isFallbackLeadAcceptable(_gd.postcode || '', custAreas); } catch(e) { return false; } });
               }
@@ -24590,7 +24590,7 @@ _deliverDiag[cust.email].products = products;
               try {
                 var poolArr = interleavePoolByAreas(getDeliveryPool(r2prod), custAreas);
                 // CLOSEST-POSTCODE ORDER: rank the fallback pool so leads in (or near)
-                // the customer's chosen areas come first — exact-area leads are 0km,
+                // the customer's chosen areas come first - exact-area leads are 0km,
                 // so they naturally lead; adjacent areas follow. Used only when the
                 // customer's own area supply is short, so out-of-area is a last resort.
                 if (cust.product === 'moving') {
@@ -24603,7 +24603,7 @@ _deliverDiag[cust.email].products = products;
                 console.log('[DELIVERY] Pool-file fallback for ' + cust.email + ' ' + r2prod + ': file=' + (PRODUCT_LEAD_FILES[r2prod] ? PRODUCT_LEAD_FILES[r2prod].file : 'moving-leads.json') + ' flattened=' + poolArr.length);
                 if (Array.isArray(poolArr) && poolArr.length > 0) {
                   var existingKeys = {};
-                  // PER-CUSTOMER dedup (was product-level — a pool lead delivered to
+                  // PER-CUSTOMER dedup (was product-level - a pool lead delivered to
                   // one customer was blocked from filling a different customer).
                   (db.leads || []).forEach(function(l){ if(l.product===r2prod && l.customer_id === cust.id){ try{var ld=JSON.parse(l.data||'{}'); var k=(ld.postcode||ld.address||ld.id||ld.url||''); existingKeys[k]=1; }catch(e){} } });
                   var createdFromPool = [];
@@ -24658,12 +24658,12 @@ _deliverDiag[cust.email].products = products;
                         custAreaHit = custAreas.some(function(a){ return extractPostcodeArea(a) === areaOfPoolLead; });
                       }
                     } else { custAreaHit = true; }
-                    // FALLBACK for tenders (national opportunities — no location, so
+                    // FALLBACK for tenders (national opportunities - no location, so
                     // accept anywhere). Probate/newbusiness/planning use the CLOSEST-AREA
                     // fallback: accept only if the lead's postcode is within MAX_FALLBACK_KM
                     // of a chosen area (like moving). A probate customer in Somerset must
                     // NEVER get a Pinner (HA5, ~250km) lead just because their county had
-                    // no fresh grants — the fallback is CLOSEST areas, not national.
+                    // no fresh grants - the fallback is CLOSEST areas, not national.
                     if (!custAreaHit && r2prod === 'tenders') custAreaHit = true;
                     if (!custAreaHit && (r2prod === 'probate' || r2prod === 'newbusiness' || r2prod === 'planning')) {
                       var _nbPc = rl.postcode || rl.address || rl.deceasedAddress || rl.fullAddress || rl.location || rl.name || '';
@@ -24672,12 +24672,12 @@ _deliverDiag[cust.email].products = products;
                     // MOVING CLOSEST-POSTCODE FALLBACK: when a moving customer's own
                     // areas are short, accept leads from OUTSIDE their areas (ranked by
                     // closest postcode via the sort above) so the promised count is
-                    // always met — never deliver a shortfall when supply exists nearby.
+                    // always met - never deliver a shortfall when supply exists nearby.
                     if (!custAreaHit && r2prod !== 'moving') continue;
                     // DISTANCE CAP: out-of-area fallback leads must be within a
                     // reasonable radius of the customer's chosen areas. A Croydon
                     // removals firm must NEVER receive a Glasgow/Edinburgh/Dundee lead
-                    // just because London supply ran out — reject anything beyond
+                    // just because London supply ran out - reject anything beyond
                     // MAX_FALLBACK_KM and let the customer be short instead.
                     if (!custAreaHit && r2prod === 'moving' && !isFallbackLeadAcceptable(rl.postcode || rl.address || rl.location || rl.name || '', custAreas)) continue;
                     var poolKey = (rl.postcode||rl.address||rl.id||rl.url||'');
@@ -24719,7 +24719,7 @@ _deliverDiag[cust.email].products = products;
                     // usually only has outcode-level postcodes and bare street names,
                     // so we fetch the free Rightmove detail page to get the numbered
                     // address + full postcode, then PAF-verify the door number. If we
-                    // can't confirm all of this, skip the lead — the loop keeps going
+                    // can't confirm all of this, skip the lead - the loop keeps going
                     // until we find complete leads or fresh supply is exhausted.
                     if (r2prod === 'moving') {
                       var fRawAddr = poolLeadData.address || '';
@@ -24766,7 +24766,7 @@ _deliverDiag[cust.email].products = products;
                       var finPc = poolLeadData.postcode || '';
                       var finNum = hasPremiseNumber(finAddr, finPc);
                       var finFullPc = /[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(finPc).trim());
-                      // NOTE: no per-lead console.log here — thousands of synchronous
+                      // NOTE: no per-lead console.log here - thousands of synchronous
                       // stdout writes blocked the event loop and tripped the health check.
                       if (!finNum || !finFullPc || !hasStreetName(finAddr) || hasBadUnitCode(finAddr)) { _poolSkip = (_poolSkip || 0) + 1; continue; }
                       // Listing link is required too.
@@ -24818,7 +24818,7 @@ _deliverDiag[cust.email].products = products;
                 var areaLead2 = findLeadForProductAndArea(r2prod, sortedAreas2[sa2], r2pool, pickedIds);
                 if (areaLead2) {
                   // GLOBAL EXCLUSIVITY: a lead already delivered or assigned to ANY
-                  // customer this run must NOT be reassigned to another customer —
+                  // customer this run must NOT be reassigned to another customer -
                   // overlapping-area customers should never receive the same property.
                   try {
                     var _ald = JSON.parse(areaLead2.data || '{}');
@@ -24841,12 +24841,12 @@ _deliverDiag[cust.email].products = products;
               if (!found2) {
                 // NEVER deliver an out-of-area lead here. The FINAL GUARANTEE PASS
                 // below pulls the remaining gap from the scrape pool file, which
-                // strictly enforces area matching — so the promise is met from the
+                // strictly enforces area matching - so the promise is met from the
                 // customer's own areas, never from a mismatched or orphaned lead.
                 continue;
               }
             } else {
-              // No specific areas (ukwide) — take the freshest, but ALWAYS claim
+              // No specific areas (ukwide) - take the freshest, but ALWAYS claim
               // it for this customer so it shows in their dashboard and delivers
               // to the right account.
               if (r2pool[0] && r2pool[0].customer_id !== cust.id) {
@@ -24900,7 +24900,7 @@ _deliverDiag[cust.email].products = products;
             }
             if (!Array.isArray(fgArr) || fgArr.length === 0) continue;
             var fgExisting = {};
-            // PER-CUSTOMER dedup (was product-level — a pool lead delivered to one
+            // PER-CUSTOMER dedup (was product-level - a pool lead delivered to one
             // customer was being blocked from filling a DIFFERENT customer, which
             // shrank usable supply at scale and caused false "no leads in pool").
             (db.leads || []).forEach(function(l){ if(l.product===fgProd && l.customer_id === cust.id){ try{var ld=JSON.parse(l.data||'{}'); var k=(ld.postcode||ld.address||ld.id||ld.url||''); fgExisting[k]=1; }catch(e){} } });
@@ -24912,12 +24912,12 @@ _deliverDiag[cust.email].products = products;
               if (alreadyDeliveredLead(fgLead)) continue;
               // FRESHNESS (this pass only runs when the customer is SHORT of their
               // promised count): prefer leads with a listing date within 48h but
-              // don't hard-reject older real in-area listings — PAF confirms the
+              // don't hard-reject older real in-area listings - PAF confirms the
               // exact door number at delivery, so we fill the count with real
               // addresses rather than leave the customer short.
               var fgD = pickFreshDate(fgLead);
               if (!fgD) continue;
-              // TENDERS: the "fresh lead" promise is a HARD freshness rule — a
+              // TENDERS: the "fresh lead" promise is a HARD freshness rule - a
               // tender published months/years ago (standing DPS framework notices,
               // renewals) must NEVER be delivered as a "fresh" opportunity. The
               // cutoff already extends back to Friday 09:00 UK on a Monday, so this
@@ -24997,7 +24997,7 @@ _deliverDiag[cust.email].products = products;
               // real street name (number + street + area + postcode). A bare building
               // name or street-only address is NOT mail-ready. With relaxed PAF
               // (PAF_RELAXED_PICK=true) a street-only lead with a full postcode +
-              // street name is allowed through — the delivery PAF pass adds the door
+              // street name is allowed through - the delivery PAF pass adds the door
               // number to the EXACT lead being sent, and drops it if PAF can't.
               if (fgProd === 'moving') {
                 var fgPafRelaxed = process.env.PAF_RELAXED_PICK === 'true' || process.env.PAF_RELAXED_PICK === '1';
@@ -25022,13 +25022,13 @@ _deliverDiag[cust.email].products = products;
       
       if (custLeads.length === 0) {
         // Not an error if this customer ALREADY received their full daily count
-        // today — the re-run simply has nothing new to add.
+        // today - the re-run simply has nothing new to add.
         var servedToday = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && String(l.delivered_at).startsWith(today); }).length;
         if (servedToday >= totalDailyLimit) {
           console.log('[DELIVERY] ' + cust.email + ': already served ' + servedToday + '/' + totalDailyLimit + ' today (nothing new needed)');
           continue;
         }
-        console.log('[DELIVERY] WARN: ' + cust.email + ' (' + cust.product + ') got 0 leads today — no undelivered leads in pool');
+        console.log('[DELIVERY] WARN: ' + cust.email + ' (' + cust.product + ') got 0 leads today - no undelivered leads in pool');
         errors++;
         lastErr = cust.email + ': no leads in pool';
         // ALERT the founder (throttled to ~2/day per email so a repeated failure
@@ -25044,7 +25044,7 @@ _deliverDiag[cust.email].products = products;
             sendAdminAlert('⚠ Delivery shortfall: ' + cust.email, '<div style="font-size:13px;color:#e2e8f0;line-height:1.7">' +
               '<b style="color:#fbbf24">' + cust.email + '</b> (' + cust.product + ') received <b>0 leads</b> today but is promised ' + totalDailyLimit + '.<br><br>' +
               'Areas: ' + (custAreas || []).join(', ') + '<br>' +
-              'This is usually a supply shortfall in their areas — run the readiness check or deep-scrape their areas to top up.</div>');
+              'This is usually a supply shortfall in their areas - run the readiness check or deep-scrape their areas to top up.</div>');
           }
         } catch(alE) { console.log('[DELIVERY] alert err:', alE.message); }
         continue;
@@ -25070,12 +25070,12 @@ _deliverDiag[cust.email].products = products;
       // push + rounds + global/pool fallbacks can overshoot on re-runs, so cap the
       // final batch to exactly totalDailyLimit before emailing. Combined with the
       // top-up below, this guarantees the customer gets EXACTLY their promised
-      // count in one email — never under, never over.
+      // count in one email - never under, never over.
         if (custLeads.length > totalDailyLimit) {
           console.log('[DELIVERY-FINAL-CAP] ' + cust.email + ': hard-capped ' + custLeads.length + ' -> ' + totalDailyLimit + ' (never over-deliver)');
           // PERMANENTLY REMOVE the overflow leads from the DB so they can NEVER be
           // marked delivered, counted in a report, or emailed. "No more no less" is
-          // absolute — an overflow lead is deleted, not just skipped.
+          // absolute - an overflow lead is deleted, not just skipped.
           try {
             var _overflowIds = custLeads.slice(totalDailyLimit).map(function(ol) { return ol.id; }).filter(Boolean);
             if (_overflowIds.length) {
@@ -25088,7 +25088,7 @@ _deliverDiag[cust.email].products = products;
       // EXACT-COUNT GUARANTEE: dedup above can only reduce the count (two pool
       // entries can share an address/postcode). If we are now short of the
       // promised total, TOP UP from the fresh scrape pool until we hit the exact
-      // promise — NEVER deliver less than promised in one email. This is critical:
+      // promise - NEVER deliver less than promised in one email. This is critical:
       // customers are promised an exact daily count and underdelivering causes
       // complaints. Skip this only if the pool genuinely has no fresh matching leads.
       if (custLeads.length > 0 && custLeads.length < totalNeeded) {
@@ -25107,7 +25107,7 @@ _deliverDiag[cust.email].products = products;
             var tpPicked = null;
             for (var tpi = 0; tpi < tpArr.length; tpi++) {
               var tl = tpArr[tpi];
-              // NEVER re-deliver a lead this customer (or any customer) already had —
+              // NEVER re-deliver a lead this customer (or any customer) already had -
               // the top-up used to ignore delivered history and re-send the same tenders.
               var _tlUrl = String(tl.url || '').trim();
               var _tlRef = String(tl.reference || tl.tenderNoticeId || '').toLowerCase().trim();
@@ -25182,7 +25182,7 @@ _deliverDiag[cust.email].products = products;
         } catch(tpErr) { console.log('[DELIVERY-TOPDUP] error:', tpErr.message); }
       }
       if (custLeads.length === 0) continue;
-      // FINAL dedupe AFTER the top-up — the top-up can add a lead already in the batch
+      // FINAL dedupe AFTER the top-up - the top-up can add a lead already in the batch
       // (tenders have no address, so it must dedupe on url/reference).
       var _seenFinal = {};
       custLeads = custLeads.filter(function(cl) {
@@ -25226,19 +25226,19 @@ _deliverDiag[cust.email].products = products;
             if (!ld || typeof ld !== 'object') ld = { postcode: l.postcode || '', address: l.address || l.fullAddress || '', fullAddress: l.fullAddress || l.address || '' };
             var addr = ld.fullAddress || ld.address || ld.deceasedAddress || '';
             // POSTCODER = MOVING ONLY. Probate/newbusiness/planning/tenders are NOT
-            // run through Postcoder — the user has no real probate customers yet, so
+            // run through Postcoder - the user has no real probate customers yet, so
             // spending paid PAF credits on probate is wasted. Probate leads deliver
             // with whatever door number/postcode their source already carries (the
             // door-number gate still applies, but no paid lookups). Moving keeps full
             // PAF because removals firms NEED exact door numbers.
             var isProperty = l.product === 'moving';
-            // Skip leads the post-scrape PAF pass already tried and failed — never
+            // Skip leads the post-scrape PAF pass already tried and failed - never
             // re-pay for a lead PAF has already rejected (it's dropped by the gate).
             if (l.paf_failed || ld.paf_failed) return false;
             return isProperty && ld.postcode && !hasPremiseNumber(addr, ld.postcode);
           });
           // TEST-MODE CREDIT SAVER: the 15-min test cron runs ~96x/day on 25 test
-          // accounts. Postcoder/Propalt are PAID per lookup — enriching test leads
+          // accounts. Postcoder/Propalt are PAID per lookup - enriching test leads
           // burns real money for zero customer value. Test deliveries SKIP all paid
           // address resolution (the door-number gate still verifies what's already
           // in the data, and real customers get full PAF at 9am).
@@ -25249,7 +25249,7 @@ _deliverDiag[cust.email].products = products;
           // ===== DELIVERY-TIME PROPALT RESOLUTION (cheap, batched by postcode) =====
           // Resolves the exact door number + UPRN for the leads ACTUALLY being
           // delivered, using Propalt get-properties batched by postcode (6 credits /
-          // postcode returns ~0.3 credits/property — NOT per-lead). Gated by
+          // postcode returns ~0.3 credits/property - NOT per-lead). Gated by
           // PROPALT_ENABLED and a daily credit cap so Propalt cost never spirals.
           // Runs BEFORE Postcoder so PAF can then confirm the verified address.
           var __propaltMonthlyUsed = __propaltMonthlyUsed || 0;
@@ -25334,7 +25334,7 @@ _deliverDiag[cust.email].products = products;
                 // Rebuild a clean street address from door number + street when we
                 // have both, so the lead always shows "12 Albert Road" not "Albert Road".
                 // Then APPEND the town/county from the full PAF address when PAF
-                // supplied one (better for the customer) — "12 Albert Road, Wandsworth".
+                // supplied one (better for the customer) - "12 Albert Road, Wandsworth".
                 if (e3Num && e3Street) {
                   var cleanStreet = String(e3Street).replace(/,\s*$/,'').trim();
                   var streetPart = String(e3Num).replace(/,\s*$/,'').trim() + ' ' + cleanStreet;
@@ -25363,7 +25363,7 @@ _deliverDiag[cust.email].products = products;
                 }
                 ld.address = (hasNum || !ld.address) ? e3Addr : ld.address;
                 // Only overwrite fullAddress with the PAF result if PAF gave a PROPER
-                // address (hasNum). Otherwise keep the original address — PAF can
+                // address (hasNum). Otherwise keep the original address - PAF can
                 // return a bare street (e.g. "Park Road") that would lose a good
                 // "Flat 12, Eaton Mansions" address and cause the gate to drop it.
                 ld.fullAddress = (hasNum || !ld.fullAddress) ? e3Addr : ld.fullAddress;
@@ -25371,7 +25371,7 @@ _deliverDiag[cust.email].products = products;
                 // address which can carry a leading building/court/company name
                 // ("Flat 1, St. Catharines Court, 19 Alexandra Drive"). The customer
                 // must see the door/flat number + street first, so normalise AFTER
-                // PAF enrichment too — this is the exact address that gets emailed.
+                // PAF enrichment too - this is the exact address that gets emailed.
                 if (l.product === 'moving') {
                   ld.address = normaliseMovingAddress(ld.address || '') || ld.address;
                   ld.fullAddress = normaliseMovingAddress(ld.fullAddress || '') || ld.fullAddress;
@@ -25389,12 +25389,12 @@ _deliverDiag[cust.email].products = products;
       // house number) so mail reaches the right property. A lead without a verified
       // door number is useless for print & post and must NOT be sent. After the
       // Postcoder enrich above, drop any lead that still lacks a confirmed premise
-      // number — the customer gets only leads with real, usable addresses.
+      // number - the customer gets only leads with real, usable addresses.
       var doorGatedBefore = custLeads.length;
       // Door-number gate applies ONLY to property products that need a house
       // number for Print & Post (moving, probate). Business-type products
       // (newbusiness, tenders, planning) have company addresses, not house
-      // numbers, so they must NOT be gated — otherwise every business lead is
+      // numbers, so they must NOT be gated - otherwise every business lead is
       // dropped and customers get 0.
       // MAILABLE-ADDRESS GATE (ALL postcode products): every lead we email must have
       // a full postcode + street + door/flat/house number. Previously ONLY moving and
@@ -25410,7 +25410,7 @@ _deliverDiag[cust.email].products = products;
         return leadMailableAddress(ld, l.product || cust.product);
       });
       if (custLeads.length !== doorGatedBefore) {
-        console.log('[DELIVERY] Door-number gate: dropped ' + (doorGatedBefore - custLeads.length) + ' of ' + doorGatedBefore + ' leads for ' + cust.email + ' (no verified house number) — kept ' + custLeads.length);
+        console.log('[DELIVERY] Door-number gate: dropped ' + (doorGatedBefore - custLeads.length) + ' of ' + doorGatedBefore + ' leads for ' + cust.email + ' (no verified house number) - kept ' + custLeads.length);
       }
       if (custLeads.length === 0) {
         console.log('[DELIVERY] ' + cust.email + ': all ' + doorGatedBefore + ' leads dropped by door-number gate - running top-up to replace them');
@@ -25419,7 +25419,7 @@ _deliverDiag[cust.email].products = products;
       // short of their promised count, pull REPLACEMENT leads from the pool and
       // enrich them so they have a verified door number, keeping the exact-count
       // promise WITH correct addresses. We never re-add a lead that still has no
-      // confirmed number — so every sent lead is correctly addressed.
+      // confirmed number - so every sent lead is correctly addressed.
       try {
         var shortBy = Math.max(0, totalDailyLimit - custLeads.length);
         if (shortBy > 0 && (process.env.POSTCODER_ENABLED === 'true' || process.env.POSTCODER_ENABLED === '1')) {
@@ -25491,7 +25491,7 @@ _deliverDiag[cust.email].products = products;
           if (added > 0) {
             console.log('[DELIVERY] Door-number top-up: added ' + added + ' replacement lead(s) for ' + cust.email + ' (now ' + custLeads.length + ' of ' + totalDailyLimit + ' promised)');
           } else if (shortBy > 0) {
-            console.log('[DELIVERY] Door-number top-up: no replacement leads with verified numbers for ' + cust.email + ' (kept ' + custLeads.length + ' — short by ' + shortBy + ')');
+            console.log('[DELIVERY] Door-number top-up: no replacement leads with verified numbers for ' + cust.email + ' (kept ' + custLeads.length + ' - short by ' + shortBy + ')');
           }
         }
       } catch(topErr) { console.log('[DELIVERY] Door-number top-up error:', topErr.message); }
@@ -25504,7 +25504,7 @@ _deliverDiag[cust.email].products = products;
       // FINAL EXACT-COUNT GUARANTEE: if still short of the promised count, create
       // fresh leads from the scrape pool file and PAF-enrich them until we reach
       // EXACTLY totalDailyLimit confirmed-numbered leads. This guarantees the
-      // customer gets exactly what they were promised — no more, no less — and
+      // customer gets exactly what they were promised - no more, no less - and
       // every lead has a verified door number. If supply genuinely runs out, we
       // deliver what exists (never over-deliver, never fabricate).
       try {
@@ -25533,10 +25533,10 @@ _deliverDiag[cust.email].products = products;
                 var fAddr = fl.fullAddress || fl.address || '';
                 // SKIP bare-postcode pool entries: if the pool lead has NO street/name
                 // address (just a postcode or area code), it can never become a proper
-                // address — skip it rather than pull a useless bare-postcode lead.
+                // address - skip it rather than pull a useless bare-postcode lead.
                 if (!fAddr || !/[A-Za-z]/.test(fAddr.replace(/[0-9,\s-]+/g, ''))) continue;
                 var fld = Object.assign({}, fl, { id: fl.id, address: fAddr, postcode: fl.postcode || '', product: fprod });
-                // TENDERS: opportunities, not postal addresses — accept directly (title/
+                // TENDERS: opportunities, not postal addresses - accept directly (title/
                 // description/buyer is the identifier), no PAF/postcode required.
                 if (fprod === 'tenders' && (fl.title || fl.description || fl.buyer)) {
                   fcreated.push(fld);
@@ -25554,16 +25554,16 @@ _deliverDiag[cust.email].products = products;
                 // FILL CAP: cap the number of slow PAF lookups per customer so a hard
                 // customer can NEVER block the whole delivery (which stalled today and
                 // left later customers with no email). Deliver what's available once
-                // the cap is reached — reliability over chasing the exact count.
+                // the cap is reached - reliability over chasing the exact count.
                 var fillLookups = (typeof _fillLookupsC === 'undefined' ? 0 : _fillLookupsC);
                 if (fillLookups >= parseInt(process.env.EXACT_COUNT_FILL_CAP || '15', 10)) {
-                  console.log('[FILL-CAP] ' + cust.email + ' hit fill cap — delivering ' + custLeads.length + '/' + totalDailyLimit);
+                  console.log('[FILL-CAP] ' + cust.email + ' hit fill cap - delivering ' + custLeads.length + '/' + totalDailyLimit);
                   break;
                 }
                 _fillLookupsC = fillLookups + 1;
                 var fenr = await pcDeliver.enrichMovingLeadsPostcoder([fld]);
                 // Accept a lead if it has a valid postcode + address (deliverable).
-                // A confirmed buildingNumber is preferred but not required — the
+                // A confirmed buildingNumber is preferred but not required - the
                 // relaxed gate delivers leads with real postcodes/addresses even when
                 // PAF can't confirm the exact door number.
                 var fenrPc = (fenr && fenr[0] && fenr[0].postcode) || fl.postcode || '';
@@ -25572,7 +25572,7 @@ _deliverDiag[cust.email].products = products;
                 // STRICT: only accept a replacement lead that has a REAL street number
                 // in the address (e.g. "12 The Grange"). A named building with no
                 // street number (e.g. "Eaton Mansions", "FLAT 1, GREENWICH COURT") must
-                // NOT be added — otherwise we fill the count with un-postable leads.
+                // NOT be added - otherwise we fill the count with un-postable leads.
                 var fenrHasNum = hasPremiseNumber(fenrAddr, fenrPc);
                 if (fenr && fenr[0] && fenrAddr && fenrFullPc && fenrHasNum) {
                   var fenrLead = fenr[0];
@@ -25592,7 +25592,7 @@ _deliverDiag[cust.email].products = products;
           if (custLeads.length >= totalDailyLimit) {
             console.log('[DELIVERY] Final guarantee pass: ' + cust.email + ' now at ' + custLeads.length + '/' + totalDailyLimit + ' confirmed leads');
           } else {
-            console.log('[DELIVERY-TOPDUP] WARNING: ' + cust.email + ' supply exhausted — delivered ' + custLeads.length + ' of ' + totalDailyLimit + ' promised (no over-delivery)');
+            console.log('[DELIVERY-TOPDUP] WARNING: ' + cust.email + ' supply exhausted - delivered ' + custLeads.length + ' of ' + totalDailyLimit + ' promised (no over-delivery)');
           }
         }
       } catch(fgErr) { console.log('[DELIVERY] Final guarantee pass outer error:', fgErr.message); }
@@ -25646,7 +25646,7 @@ _deliverDiag[cust.email].products = products;
               }
               // Bounded: stop PAF-ing this customer once the budget is spent (guarantee tops up).
               if (Date.now() - ncPafStart > ncPafBudgetMs) {
-                console.log('[DELIVERY] Final PAF pass: per-customer PAF budget (' + ncPafBudgetMs + 'ms) reached for ' + cust.email + ' — deferring remaining lookups to the guarantee');
+                console.log('[DELIVERY] Final PAF pass: per-customer PAF budget (' + ncPafBudgetMs + 'ms) reached for ' + cust.email + ' - deferring remaining lookups to the guarantee');
                 break;
               }
               // Enrich via Postcoder (cached) to confirm the number.
@@ -25689,12 +25689,12 @@ _deliverDiag[cust.email].products = products;
                 if (alreadyDeliveredLead(ncl)) continue;
                 // FRESHNESS (top-up only, runs when the customer is short): prefer
                 // leads whose LISTING date is within 48h, but don't hard-reject older
-                // in-area listings — they are real, current on-market properties and
+                // in-area listings - they are real, current on-market properties and
                 // PAF confirms the exact door number at delivery. This is how we fill
                 // a short customer's count with real addresses.
                 var nclD = ncl.firstVisibleDate || ncl.updateDate || ncl.scrapedAt || '';
-                if (nclD && nclD >= freshCutoffNow) { /* fresh — fine */ }
-                else if (!nclD) { /* no date — allow */ }
+                if (nclD && nclD >= freshCutoffNow) { /* fresh - fine */ }
+                else if (!nclD) { /* no date - allow */ }
                 var nclArea = extractPostcodeArea(ncl.postcode || ncl.address || '');
                 if (!nclArea) continue;
                 var nclAreaHit = false;
@@ -25867,7 +25867,7 @@ _deliverDiag[cust.email].products = products;
         }
         // MOVING FINAL ADDRESS NORMALISE: ALWAYS run last (after PAF enrich + town
         // backfill) so EVERY delivered moving lead shows the door/flat number +
-        // street first — never a leading building/company/court name. This applies
+        // street first - never a leading building/company/court name. This applies
         // regardless of where the lead came from (existing DB row, pool, PAF, town
         // backfill). "Childrens House Nursery School, 92 Bruce Road" -> "92 Bruce Road".
         if (cust.product === 'moving' && Array.isArray(custLeads) && custLeads.length) {
@@ -25917,11 +25917,11 @@ _deliverDiag[cust.email].products = products;
         // BULLETPROOF FINAL HARD-CAP: under NO circumstances may a customer receive
         // more than their promised daily quota in one email/batch. Every top-up,
         // fill, quality-review, PAF and guarantee pass above can re-grow custLeads,
-        // so clamp to EXACTLY totalDailyLimit here — before the email is built and
+        // so clamp to EXACTLY totalDailyLimit here - before the email is built and
         // before delivered is marked. "No more no less" is the #1 promise; a 6th
         // lead must never reach the mailbox or the delivered ledger.
         // HARD DISTANCE GATE (moving): drop ANY out-of-area moving lead beyond the
-        // max fallback radius — a Croydon removals firm must never be emailed a
+        // max fallback radius - a Croydon removals firm must never be emailed a
         // Glasgow/Edinburgh/Dundee property. Far-away leads are worse than a
         // shortfall (useless to a local mover), so they are removed here and the
         // customer is emailed only the genuinely-close leads.
@@ -26018,20 +26018,20 @@ _deliverDiag[cust.email].products = products;
           if (_deliverDiag[cust.email]) { _deliverDiag[cust.email].final_len = custLeads.length + ' limit=' + totalDailyLimit; _deliverDiag[cust.email].ms = Date.now() - _custT0; }
         }
         // NO SPLIT EMAILS: if this customer already got their daily email, only
-        // mark the top-up leads as delivered — don't send a second email.
+        // mark the top-up leads as delivered - don't send a second email.
         // (In test/force mode we DO send the email so we can verify output.)
         // Runs AFTER the final Postcoder number-confirmation pass so the email
         // reflects the CONFIRMED door-numbered addresses, never the pre-confirmation
         // street-only addresses.
         // SILENT MODE (no_email): admin operations (replace-leads/block-pool-lead
-        // resets) must NOT email the customer — the founder does not want customers
+        // resets) must NOT email the customer - the founder does not want customers
         // notified of internal lead corrections. The leads are updated in the
         // dashboard, but no email goes out.
         var _noEmail = !!(req.body && req.body.no_email);
         if ((!alreadyEmailedToday || forceFull) && !_noEmail) {
           // EMAIL FIRST, THEN DASHBOARD: send this customer's email IMMEDIATELY
           // (before marking delivered / saveDb below) so the email hits the inbox
-          // BEFORE the dashboard shows the leads — and both happen inside the same
+          // BEFORE the dashboard shows the leads - and both happen inside the same
           // 09:00 run. The 9am promise is "email + dashboard together at 9am", and
           // email-first guarantees the customer never sees dashboard leads without
           // the matching email. Persist last_email_date so a crash can't duplicate.
@@ -26062,13 +26062,13 @@ _deliverDiag[cust.email].products = products;
         } else {
           // ALREADY EMAILED TODAY (e.g. a repeated/double run of the 9am job): do NOT
           // deliver any further rows for this customer. Previously these candidates
-          // were marked delivered "silently" — which is exactly how customers ended up
+          // were marked delivered "silently" - which is exactly how customers ended up
           // with MORE leads in their dashboard than in their inbox. "No more no less"
           // means once today's email has gone out, the day is settled for this customer;
           // any genuine shortfall is filled by the post-run auto-fill which emails each
           // added lead individually.
           if (custLeads.length) {
-            console.log('[DELIVERY] ' + cust.email + ': already emailed today — discarding ' + custLeads.length + ' extra candidate(s) to prevent over-delivery');
+            console.log('[DELIVERY] ' + cust.email + ': already emailed today - discarding ' + custLeads.length + ' extra candidate(s) to prevent over-delivery');
             custLeads = [];
           }
         }
@@ -26085,7 +26085,7 @@ pushToCrm(cust, crmPayload2, 'daily delivery');
         // more than their promised daily quota in one email/batch. Every top-up,
         // fill, quality-review and guarantee pass above can re-grow custLeads, so
         // clamp to EXACTLY totalDailyLimit immediately before marking delivered +
-        // emailing. "No more no less" is the #1 promise — a 6th lead must never
+        // emailing. "No more no less" is the #1 promise - a 6th lead must never
         // reach the mailbox or the delivered ledger.
         if (custLeads.length > totalDailyLimit) {
           console.log('[DELIVERY-FINAL-CAP] ' + cust.email + ': hard-capped ' + custLeads.length + ' -> ' + totalDailyLimit + ' (never over-deliver)');
@@ -26139,7 +26139,7 @@ pushToCrm(cust, crmPayload2, 'daily delivery');
         } catch(guaranteeErr) { console.log('[DELIVER-GUARANTEE] check error:', guaranteeErr.message); }
       } catch(ex) { errors++; console.log('[DELIVER] Error: ' + ex?.message); lastErr = ex?.message; }
     }
-    // FLUSH remaining queued emails in parallel (after the loop) — ensures every
+    // FLUSH remaining queued emails in parallel (after the loop) - ensures every
     // customer's daily email goes out even if the batch flush didn't fill to 15.
     if (emailQueue.length > 0) {
       var finalBatch = emailQueue.splice(0, emailQueue.length);
@@ -26302,7 +26302,7 @@ function stripeApiRequest(method, path, data) {
   });
 }
 
-// POST /api/admin/upgrade — upgrade a customer's plan (admin only)
+// POST /api/admin/upgrade - upgrade a customer's plan (admin only)
 app.post('/api/admin/upgrade', adminAuth, (req, res) => {
   try {
     const { email, plan, leads_per_day, product, coverage, target_areas, lead_type, biz_field3, trial_ends } = req.body;
@@ -26322,7 +26322,7 @@ app.post('/api/admin/upgrade', adminAuth, (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/create-checkout — create Stripe Checkout Session
+// POST /api/create-checkout - create Stripe Checkout Session
 // POST /api/auth/change-plan - upgrade OR downgrade. Downgrades to a lower plan are
 // applied instantly on the customer's existing Stripe subscription (no payment link;
 // the next recurring charge uses the lower price). Upgrades / no-subscription cases
@@ -26457,7 +26457,7 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
       }
       lineItemPrices = [priceId];
     } else {
-      // OPTION 2 — PER-LEAD-TYPE BILLING.
+      // OPTION 2 - PER-LEAD-TYPE BILLING.
       // Charge ONE line item per subscribed lead type on a SINGLE Stripe
       // subscription, so the weekly charge recurs at the SUM of every product's
       // price (e.g. Moving £25 + Probate £25 = £50/wk). The subscribed types are
@@ -26489,7 +26489,7 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
     const cancelUrl = baseUrl + '/portal/dashboard.html?checkout=cancel';
 
     // CHARGE IMMEDIATELY: every subscription checkout takes payment RIGHT AWAY.
-    // No free-trial carryover — when a customer pays for a Starter/Pro/Enterprise
+    // No free-trial carryover - when a customer pays for a Starter/Pro/Enterprise
     // package (even mid-trial) the first weekly charge lands immediately and the
     // paid plan + lead count activate at once.
     var trialDays = 0;
@@ -26513,7 +26513,7 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
       sessionBody['metadata[subscribed_products]'] = subscribedProducts.join(',');
     }
 
-    // No trial period — the first weekly charge is taken immediately on checkout.
+    // No trial period - the first weekly charge is taken immediately on checkout.
     if (trialDays > 0) {
       sessionBody['subscription_data[trial_period_days]'] = trialDays;
     }
@@ -26530,7 +26530,7 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
   }
 });
 
-// POST /api/setup-checkout — Stripe Checkout in setup mode (save card, no charge)
+// POST /api/setup-checkout - Stripe Checkout in setup mode (save card, no charge)
 app.post('/api/setup-checkout', authMiddleware, async (req, res) => {
   try {
     if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe not configured.' });
@@ -26565,7 +26565,7 @@ app.post('/api/setup-checkout', authMiddleware, async (req, res) => {
 // Handle setup成功的 webhook in the stripe webhook handler (setup_intent.succeeded saves payment method)
 
 // ===== DIRECT MAIL PAYMENTS =====
-// POST /api/stripe/webhook — handle Stripe subscription events
+// POST /api/stripe/webhook - handle Stripe subscription events
 // Processes: checkout.session.completed (new subscription), invoice.paid
 // (successful weekly renewal), invoice.payment_failed (dunning),
 // customer.subscription.deleted (cancellation).
@@ -26637,7 +26637,7 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
             // Determine a Stripe customer id. Setup-mode checkout doesn't always
             // create a customer, so if one isn't present, CREATE one for this user
             // and attach the saved payment method. Without a customer id the trial
-            // auto-charge cannot bill the card — this fixes that.
+            // auto-charge cannot bill the card - this fixes that.
             var stripeCustId = si.customer || customer.stripe_customer_id || session.customer || '';
             if (!stripeCustId) {
               var newCust = await stripeApiRequest('POST', 'customers', { email: customer.email, name: customer.company || customer.name || '' });
@@ -26653,13 +26653,13 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
               console.log('[STRIPE] Saved card for ' + (customerEmail || customer.id) + ' (auto-billing ready, customer ' + stripeCustId + ')');
               // AFFILIATE NOTE: saving a card alone does NOT earn the affiliate.
               // The referral only starts earning when the customer PAYS their first
-              // invoice for a paid package (starter/pro/enterprise) — see invoice.paid.
+              // invoice for a paid package (starter/pro/enterprise) - see invoice.paid.
             }
           }
         }
       }
 
-      // New subscription — set plan + save Stripe customer/subscription IDs
+      // New subscription - set plan + save Stripe customer/subscription IDs
       if (customerEmail && plan) {
         var customer = db.prepare('SELECT * FROM customers WHERE email = ?').get(customerEmail);
         if (customer) {
@@ -26682,7 +26682,7 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
             if (attPartner) {
               try { db.prepare('UPDATE customers SET affiliate_payout_status = ? WHERE id = ?').run('converted', customer.id); } catch(cv1) {}
               partnerAudit('customer_converted', { partner_id: att.partner_id, customer_id: customer.id });
-              partnerNotify(att.partner_id, 'paid', 'Great news — a customer you referred is now a paying customer: ' + (customer.company || customerEmail) + '. Your £25 commission is paid once the qualifying period has passed.', customer.id);
+              partnerNotify(att.partner_id, 'paid', 'Great news - a customer you referred is now a paying customer: ' + (customer.company || customerEmail) + '. Your £25 commission is paid once the qualifying period has passed.', customer.id);
               trackAnalytics('partner_referral_converted', { code: att.referral_code, partner_id: att.partner_id, src: partnerTypeOf(attPartner) });
             }
             }
@@ -26706,7 +26706,7 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
       }
 
       // SINGLE Print & Post payment (metadata.type = direct_mail_campaign): complete
-      // the campaign here — mark paid, send to Stannp, email receipt, mark lead posted.
+      // the campaign here - mark paid, send to Stannp, email receipt, mark lead posted.
       // (The second /api/stripe/webhook route also handles this, but Express routes
       // match in order, so the FIRST route must process it or it is dropped.)
       if (metaType === 'direct_mail_campaign' || (session.metadata && session.metadata.type === 'direct_mail_campaign')) {
@@ -26785,14 +26785,14 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
       }
     }
 
-    // Weekly renewal succeeded — keep plan active (Stripe handles billing)
+    // Weekly renewal succeeded - keep plan active (Stripe handles billing)
     else if (evType === 'invoice.paid') {
       var inv = event.data.object;
       var invCustEmail = inv.customer_email || '';
       var invCustomer = inv.customer ? db.prepare('SELECT * FROM customers WHERE stripe_customer_id = ?').get(inv.customer) : null;
       if (!invCustomer && invCustEmail) invCustomer = db.prepare('SELECT * FROM customers WHERE email = ?').get(invCustEmail);
       if (invCustomer) {
-        // No COALESCE — the JSON DB shim doesn't support it, which silently broke
+        // No COALESCE - the JSON DB shim doesn't support it, which silently broke
         // this UPDATE and left leads_paused stuck at 1 after a recovery.
         var invKeepPlan = invCustomer.plan || 'starter';
         db.prepare('UPDATE customers SET auto_send_paused = 0, leads_paused = 0, plan = ? WHERE id = ?').run(invKeepPlan, invCustomer.id);
@@ -26814,7 +26814,7 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
               var _pmts = (getDb().payments || []).filter(function(r){
                 if (r.product && r.product === 'direct_mail') return false; // Print & Post orders are not subscription payments
                 // Also ignore one-off purchases (lead top-ups, Boost/Bulk packs, single
-                // Print & Post) — only real subscription payments should count toward the
+                // Print & Post) - only real subscription payments should count toward the
                 // referral's 2nd-invoice milestone.
                 var _subj = String((r.description || '') + ' ' + (r.plan || '') + ' ' + (r.product || '')).toLowerCase();
                 if (/(one-?off|top-?up|boost|bulk|direct.?mail|print.?post|single)/.test(_subj)) return false;
@@ -26823,7 +26823,7 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
               _pmtCount = _pmts.length;
             } catch(pcErr) {}
             var invCount = _pmtCount + 1; // this invoice
-            // 'converted' (paid via Stripe checkout) used to be a dead-end — nothing ever
+            // 'converted' (paid via Stripe checkout) used to be a dead-end - nothing ever
             // promoted it, so checkout-converted referrals never earned. Treat it the same
             // as 'referral_pending': the 2nd PAID invoice is what earns the commission.
             var _invSt = invCustomer.affiliate_payout_status || '';
@@ -26834,7 +26834,7 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
                   new Date(Date.now() + 30 * 86400000).toISOString(),
                   invCustomer.id);
               saveDb();
-              console.log('[AFFILIATE] Referral from ' + (invCustomer.affiliate_code || invCustomer.affiliate_id) + ' earned (2nd invoice £' + (inv.amount_paid / 100) + ' paid, plan ' + invPaidPlan2 + ') — payout pending for ' + invCustomer.email);
+              console.log('[AFFILIATE] Referral from ' + (invCustomer.affiliate_code || invCustomer.affiliate_id) + ' earned (2nd invoice £' + (inv.amount_paid / 100) + ' paid, plan ' + invPaidPlan2 + ') - payout pending for ' + invCustomer.email);
             }
           }
         } catch(affErr) { console.log('[AFFILIATE] invoice.paid affiliate error:', affErr.message); }
@@ -26861,7 +26861,7 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
       }
     }
 
-    // Payment failed — pause auto-charge + notify
+    // Payment failed - pause auto-charge + notify
       else if (evType === 'invoice.payment_failed') {
       var invF = event.data.object;
       var fCustEmail = invF.customer_email || '';
@@ -27027,7 +27027,7 @@ async function validateDmArtworkBeforeCheckout(mailType, templateId, formatId, c
   }
 }
 
-// POST /api/direct-mail/campaigns/:id/pricing — Calculate campaign price
+// POST /api/direct-mail/campaigns/:id/pricing - Calculate campaign price
 app.post('/api/direct-mail/campaigns/:id/pricing', authMiddleware, (req, res) => {
   try {
     var campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
@@ -27042,7 +27042,7 @@ app.post('/api/direct-mail/campaigns/:id/pricing', authMiddleware, (req, res) =>
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/direct-mail/campaigns/:id/checkout — Create Stripe checkout for campaign
+// POST /api/direct-mail/campaigns/:id/checkout - Create Stripe checkout for campaign
 // Determine a campaign's mail type from its description/notes (same logic as sendDmCampaign).
 function getCampaignMailType(campaign) {
   var hint = (campaign && (campaign.description || campaign.notes || '')) || '';
@@ -27127,7 +27127,7 @@ app.post('/api/direct-mail/campaigns/:id/checkout', authMiddleware, async (req, 
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/direct-mail/campaigns/:id/payment — Get payment status
+// GET /api/direct-mail/campaigns/:id/payment - Get payment status
 app.get('/api/direct-mail/campaigns/:id/payment', authMiddleware, (req, res) => {
   try {
     var campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
@@ -27136,11 +27136,11 @@ app.get('/api/direct-mail/campaigns/:id/payment', authMiddleware, (req, res) => 
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/direct-mail/verify-payment — CLIENT-SIDE PAYMENT VERIFICATION FALLBACK.
+// POST /api/direct-mail/verify-payment - CLIENT-SIDE PAYMENT VERIFICATION FALLBACK.
 // Called by the dashboard after the customer returns from the Stripe checkout
 // (?dm_payment=success&campaign_id=X). Queries Stripe directly for the checkout
 // session; if the payment succeeded it completes the campaign (mark paid, send to
-// Stannp, email receipt, mark lead posted) — even if the webhook was delayed or
+// Stannp, email receipt, mark lead posted) - even if the webhook was delayed or
 // missed. Idempotent: safe to call multiple times.
 app.post('/api/direct-mail/verify-payment', authMiddleware, async (req, res) => {
   try {
@@ -27240,7 +27240,7 @@ app.post('/api/direct-mail/verify-payment', authMiddleware, async (req, res) => 
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// Stripe webhook — receives checkout.session.completed events
+// Stripe webhook - receives checkout.session.completed events
 // IMPORTANT: This route uses raw body parser for Stripe signature verification
 app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   try {
@@ -27264,7 +27264,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
       event = JSON.parse(payload);
     } else {
       // FAIL CLOSED: if the webhook secret isn't configured we must NOT accept the
-      // event — otherwise a forged webhook could flip a customer to paid. Reject.
+      // event - otherwise a forged webhook could flip a customer to paid. Reject.
       return res.status(503).json({ error: 'Webhook verification not configured' });
     }
 
@@ -27403,7 +27403,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
           } catch(rcErr) { console.log('[WEBHOOK] Recipient rows error:', rcErr.message); }
           if (custRow && custRow.email) {
             var receiptBody =
-              '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">Great news &mdash; your Print &amp; Post order is confirmed and paid. Here\'s everything you need to know:</p>' +
+              '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">Great news - your Print &amp; Post order is confirmed and paid. Here\'s everything you need to know:</p>' +
               '<div style="background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.2);border-radius:12px;padding:16px 20px;margin:0 0 16px">' +
               '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:3px 0;font-size:13px;color:#8890b0;width:40%">Order</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">' + (campaignRecord.name || 'Print &amp; Post') + '</td></tr>' +
               '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Amount paid</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">' + paidAmount + '</td></tr>' +
@@ -27612,7 +27612,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
     }
 
     // Handle successful one-off payment intents (off-session direct charges:
-    // auto Print & Post, sequence steps) — ensure a persisted receipt is recorded.
+    // auto Print & Post, sequence steps) - ensure a persisted receipt is recorded.
     if (event.type === 'payment_intent.succeeded') {
       const pi = event.data.object;
       if (pi && pi.metadata) {
@@ -27654,7 +27654,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
   }
 });
 
-// POST /api/admin/stripe/setup-webhook — Create/verify the Stripe webhook endpoint
+// POST /api/admin/stripe/setup-webhook - Create/verify the Stripe webhook endpoint
 // using the server's own Stripe key, and save the signing secret so payment
 // events (checkout.session.completed) are processed (marks campaigns paid + sends
 // to Stannp). Returns the configured endpoint details.
@@ -27718,7 +27718,7 @@ app.post('/api/admin/stripe/setup-webhook', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/stripe/diag — Diagnostic: list recent checkout sessions + webhook
+// GET /api/admin/stripe/diag - Diagnostic: list recent checkout sessions + webhook
 // delivery attempts for a campaign/email, to see why a payment webhook didn't arrive.
 app.get('/api/admin/stripe/diag', adminAuth, async (req, res) => {
   try {
@@ -27753,7 +27753,7 @@ app.get('/api/admin/stripe/diag', adminAuth, async (req, res) => {
     res.json({ success: true, diag: out });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
-// GET /api/admin/stripe/verify-prices — verify every configured price ID is
+// GET /api/admin/stripe/verify-prices - verify every configured price ID is
 // active + weekly on Stripe, and confirm the matching interval for the weekly
 // auto-charge (trial→starter) path.
 app.get('/api/admin/stripe/verify-prices', adminAuth, async (req, res) => {
@@ -27790,7 +27790,7 @@ app.get('/api/admin/stripe/verify-prices', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/stripe/test-status — report test-mode configuration state
+// GET /api/admin/stripe/test-status - report test-mode configuration state
 app.get('/api/admin/stripe/test-status', adminAuth, (req, res) => {
   try {
     res.json({
@@ -27806,7 +27806,7 @@ app.get('/api/admin/stripe/test-status', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/stripe/test-setup — create test-mode price IDs in the Stripe
+// POST /api/admin/stripe/test-setup - create test-mode price IDs in the Stripe
 // TEST account (requires STRIPE_TEST_SECRET_KEY) matching the live amounts, and
 // save them to stripe-config.json under testPriceIds. Safe: test prices never
 // accept real charges. Idempotent: reuses existing test prices by nickname.
@@ -27884,7 +27884,7 @@ app.post('/api/admin/stripe/test-setup', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/stripe/test-customer — create a Stripe TEST customer + attach a
+// POST /api/admin/stripe/test-customer - create a Stripe TEST customer + attach a
 // test card (defaults to 4242...) to a given account, so the trial→starter
 // auto-charge can be tested end-to-end with no real money. Idempotent.
 app.post('/api/admin/stripe/test-customer', adminAuth, async (req, res) => {
@@ -27924,7 +27924,7 @@ app.post('/api/admin/stripe/test-customer', adminAuth, async (req, res) => {
     res.json({ success: true, email: email, stripe_customer_id: sc, stripe_payment_method_id: pm.id, card_brand: attached.card ? attached.card.brand : 'visa', card_last4: attached.card ? attached.card.last4 : '4242', message: 'Test card attached. Now expire the trial + run /api/admin/trial-charge/run.' });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
-// POST /api/admin/direct-mail/complete-pending — Manually complete a stuck paid
+// POST /api/admin/direct-mail/complete-pending - Manually complete a stuck paid
 // campaign (payment confirmed in Stripe but webhook didn't arrive): mark paid,
 // send to Stannp, email receipt, mark lead posted.
 app.post('/api/admin/direct-mail/complete-pending', adminAuth, async (req, res) => {
@@ -27953,7 +27953,7 @@ app.post('/api/admin/direct-mail/complete-pending', adminAuth, async (req, res) 
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/stannp/webhook — Receive Stannp status updates
+// POST /api/stannp/webhook - Receive Stannp status updates
 app.post('/api/stannp/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   try {
     // Verify webhook signature if secret is configured
@@ -27970,7 +27970,7 @@ app.post('/api/stannp/webhook', express.raw({ type: 'application/json' }), async
     var providerStatus = (payload.status || payload.event || '').toLowerCase();
     var webhookId = payload.webhook_id || payload.id || 'wh_' + Date.now();
 
-    // Idempotency check — skip if already processed
+    // Idempotency check - skip if already processed
     if (webhookId) {
       var existingLog = db.prepare('SELECT id FROM direct_mail_provider_logs WHERE provider = ? AND request_body LIKE ?').get('stannp', '%' + webhookId + '%');
       if (existingLog) { console.log('[STANNP-WEBHOOK] Duplicate webhook skipped:', webhookId); return res.json({ received: true }); }
@@ -28031,7 +28031,7 @@ app.post('/api/stannp/webhook', express.raw({ type: 'application/json' }), async
   }
 });
 
-// POST /api/direct-mail/campaigns/:id/sync-status — Manually sync provider status (admin)
+// POST /api/direct-mail/campaigns/:id/sync-status - Manually sync provider status (admin)
 app.post('/api/direct-mail/campaigns/:id/sync-status', authMiddleware, async (req, res) => {
   try {
     var campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
@@ -28055,7 +28055,7 @@ app.post('/api/direct-mail/campaigns/:id/sync-status', authMiddleware, async (re
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/subscribe — upgrade current user's plan (after Stripe payment confirmed)
+// POST /api/subscribe - upgrade current user's plan (after Stripe payment confirmed)
 app.post('/api/subscribe', authMiddleware, async (req, res) => {
   const { plan, session_id } = req.body;
   const validPlans = ['starter', 'pro', 'enterprise'];
@@ -28098,7 +28098,7 @@ app.post('/api/subscribe', authMiddleware, async (req, res) => {
   });
 });
 
-// GET /api/subscription — check current subscription status
+// GET /api/subscription - check current subscription status
 app.get('/api/subscription', authMiddleware, (req, res) => {
   const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
   if (!customer) return res.status(404).json({ error: 'User not found' });
@@ -28173,7 +28173,7 @@ app.get('/api/subscription', authMiddleware, (req, res) => {
   });
 });
 
-// POST /api/subscription/cancel — cancel subscription for paid plans (stops weekly billing at period end)
+// POST /api/subscription/cancel - cancel subscription for paid plans (stops weekly billing at period end)
 app.post('/api/subscription/cancel', authMiddleware, async (req, res) => {
   try {
     const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
@@ -28214,7 +28214,7 @@ app.post('/api/subscription/cancel', authMiddleware, async (req, res) => {
   }
 });
 
-// POST /api/stripe/portal — open Stripe Customer Portal for billing management
+// POST /api/stripe/portal - open Stripe Customer Portal for billing management
 app.post('/api/stripe/portal', authMiddleware, async (req, res) => {
   try {
     var cust = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
@@ -28234,7 +28234,7 @@ app.post('/api/stripe/portal', authMiddleware, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/subscription/update — change plan (upgrade or downgrade)
+// POST /api/subscription/update - change plan (upgrade or downgrade)
 app.post('/api/subscription/update', authMiddleware, async (req, res) => {
   try {
     const { plan } = req.body;
@@ -28280,7 +28280,7 @@ app.post('/api/subscription/update', authMiddleware, async (req, res) => {
       return res.json({ success: true, message: 'Plan upgraded to ' + planLabel, plan: planLabel, leads_per_day: newLeadsPerDay });
     }
 
-    // No existing subscription — create a new one via checkout for the new plan
+    // No existing subscription - create a new one via checkout for the new plan
     const result = await stripeApiRequest('POST', 'checkout/sessions', {
       mode: 'subscription',
       customer_email: customer.email,
@@ -28304,7 +28304,7 @@ app.post('/api/subscription/update', authMiddleware, async (req, res) => {
   }
 });
 
-// GET /api/payments — Payment history & billing overview for the dashboard.
+// GET /api/payments - Payment history & billing overview for the dashboard.
 // Shows the customer's weekly plan, next billing date, upcoming invoice,
 // payment method on file, and a history of invoices (paid / upcoming / failed).
 app.get('/api/payments', authMiddleware, async (req, res) => {
@@ -28491,7 +28491,7 @@ app.get('/api/payments', authMiddleware, async (req, res) => {
 
 // ===== DEDUPLICATION DATABASE =====
 // ===== DIRECT MAIL PAYMENT METHODS =====
-// POST /api/direct-mail/setup-payment — Create SetupIntent to save a payment method
+// POST /api/direct-mail/setup-payment - Create SetupIntent to save a payment method
 app.post('/api/direct-mail/setup-payment', authMiddleware, async (req, res) => {
   try {
     if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe not configured' });
@@ -28528,7 +28528,7 @@ app.post('/api/direct-mail/setup-payment', authMiddleware, async (req, res) => {
   } catch(e) { console.log('[DM-SEND-BULK] error:', e && e.message, e && e.stack ? e.stack.substring(0, 300) : ''); res.status(500).json({ error: (e && e.message) || 'Print & Post could not be started. Please try again.' }); }
 });
 
-// POST /api/direct-mail/auto-card/session — Create a Stripe HOSTED setup session so
+// POST /api/direct-mail/auto-card/session - Create a Stripe HOSTED setup session so
 // the customer can securely save a card for Auto Print & Post billing on Stripe's
 // page (no inline card element needed). After they save it, the webhook
 // (session.mode === 'setup') attaches the payment method and we mark has_card=true.
@@ -28564,7 +28564,7 @@ app.post('/api/direct-mail/auto-card/session', authMiddleware, async (req, res) 
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/direct-mail/auto-card/status — Return whether the customer has a card
+// POST /api/direct-mail/auto-card/status - Return whether the customer has a card
 // on file for auto-billing (helper for the dashboard).
 app.get('/api/direct-mail/auto-card/status', authMiddleware, (req, res) => {
   try {
@@ -28573,7 +28573,7 @@ app.get('/api/direct-mail/auto-card/status', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/direct-mail/confirm-payment-method — Store confirmed payment method
+// POST /api/direct-mail/confirm-payment-method - Store confirmed payment method
 app.post('/api/direct-mail/confirm-payment-method', authMiddleware, async (req, res) => {
   try {
     const { payment_method_id } = req.body;
@@ -28607,7 +28607,7 @@ app.post('/api/direct-mail/confirm-payment-method', authMiddleware, async (req, 
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/direct-mail/payment-method — Get saved payment method info
+// GET /api/direct-mail/payment-method - Get saved payment method info
 app.get('/api/direct-mail/payment-method', authMiddleware, async (req, res) => {
   try {
     const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
@@ -28624,7 +28624,7 @@ app.get('/api/direct-mail/payment-method', authMiddleware, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// DELETE /api/direct-mail/payment-method — Remove saved payment method
+// DELETE /api/direct-mail/payment-method - Remove saved payment method
 app.delete('/api/direct-mail/payment-method', authMiddleware, async (req, res) => {
   try {
     const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
@@ -28637,7 +28637,7 @@ app.delete('/api/direct-mail/payment-method', authMiddleware, async (req, res) =
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/direct-mail/auto-send-pause — Toggle auto-send paused state
+// POST /api/direct-mail/auto-send-pause - Toggle auto-send paused state
 app.post('/api/direct-mail/auto-send-pause', authMiddleware, (req, res) => {
   try {
     var paused = req.body.paused ? 1 : 0;
@@ -28668,7 +28668,7 @@ function normalizeName(name) {
 }
 
 // Anti-fraud name match for KYC: legal name (from ID) vs bank account holder must be
-// the SAME person, but we don't reject valid variations — titles (Mr/Mrs/Dr), a middle
+// the SAME person, but we don't reject valid variations - titles (Mr/Mrs/Dr), a middle
 // name present on one but not the other, or a first-name initial ("K. Mandalia" vs
 // "Ketz Mandalia") are fine as long as the SURNAME matches exactly and the given names
 // overlap (full token or initial).
@@ -28695,7 +28695,7 @@ function namesMatchLegalBank(a, b) {
   return covers(givenA, givenB) || covers(givenB, givenA);
 }
 
-// GET /api/scraped-businesses — return all known businesses (for dedup client-side)
+// GET /api/scraped-businesses - return all known businesses (for dedup client-side)
 app.get('/api/scraped-businesses', (req, res) => {
   const { product } = req.query;
   let list = loadScrapedBusinesses();
@@ -28703,7 +28703,7 @@ app.get('/api/scraped-businesses', (req, res) => {
   res.json(list);
 });
 
-// POST /api/scraped-businesses/check — check which of the submitted businesses are new
+// POST /api/scraped-businesses/check - check which of the submitted businesses are new
 app.post('/api/scraped-businesses/check', (req, res) => {
   try {
     const { candidates } = req.body;
@@ -28742,7 +28742,7 @@ app.post('/api/scraped-businesses/check', (req, res) => {
   }
 });
 
-// POST /api/scraped-businesses/add — save newly scraped businesses
+// POST /api/scraped-businesses/add - save newly scraped businesses
 app.post('/api/scraped-businesses/add', (req, res) => {
   try {
     const { businesses, product, query } = req.body;
@@ -28790,7 +28790,7 @@ app.post('/api/scraped-businesses/add', (req, res) => {
   }
 });
 
-// GET /api/scraped-businesses/stats — dedup statistics
+// GET /api/scraped-businesses/stats - dedup statistics
 app.get('/api/scraped-businesses/stats', (req, res) => {
   const list = loadScrapedBusinesses();
   const byProduct = {};
@@ -28807,7 +28807,7 @@ app.get('/api/scraped-businesses/stats', (req, res) => {
 
 // ===== SCRAPER ENDPOINTS =====
 
-// POST /api/scrape-run — execute a scraper for a given product and store results
+// POST /api/scrape-run - execute a scraper for a given product and store results
 app.post('/api/scrape-run', async (req, res) => {
   try {
     const { product, query, location, instructions, maxResults, emails } = req.body;
@@ -28859,7 +28859,7 @@ app.post('/api/scrape-run', async (req, res) => {
   }
 });
 
-// GET /api/scrape-results — list all scrape runs
+// GET /api/scrape-results - list all scrape runs
 app.get('/api/scrape-results', (req, res) => {
   const configDir = path.join(DATA_DIR, 'scrape-runs');
   try {
@@ -28876,7 +28876,7 @@ app.get('/api/scrape-results', (req, res) => {
   }
 });
 
-// GET /api/scrape-results/:id — get a specific scrape run
+// GET /api/scrape-results/:id - get a specific scrape run
 app.get('/api/scrape-results/:id', (req, res) => {
   const filePath = path.join(DATA_DIR, 'scrape-runs', req.params.id + '.json');
   try {
@@ -28891,7 +28891,7 @@ app.get('/api/scrape-results/:id', (req, res) => {
   }
 });
 
-// POST /api/scrape-save — save scraped leads to customer records
+// POST /api/scrape-save - save scraped leads to customer records
 app.post('/api/scrape-save', async (req, res) => {
   try {
     const { product, leads } = req.body;
@@ -28917,7 +28917,7 @@ app.post('/api/scrape-save', async (req, res) => {
 });
 
 // ===== LEAD DISTRIBUTION ENDPOINTS =====
-// POST /api/distribute — trigger lead distributor (match scraped leads to customers)
+// POST /api/distribute - trigger lead distributor (match scraped leads to customers)
 app.post('/api/distribute', adminAuth, (req, res) => {
   const { product } = req.body || {};
   const bgId = (require('uuid').v4)();
@@ -28976,7 +28976,7 @@ app.post('/api/distribute', adminAuth, (req, res) => {
   })();
 });
 
-// GET /api/admin/distribution-logs — recent distribution runs (result/error)
+// GET /api/admin/distribution-logs - recent distribution runs (result/error)
 app.get('/api/admin/distribution-logs', adminAuth, (req, res) => {
   try {
     var db2 = getDb();
@@ -29037,7 +29037,7 @@ function isRealTrackingCampaign(c, recipients) {
   return realId.length > 0;
 }
 
-// GET /api/admin/tracking-overview — admin view of all live post tracking across
+// GET /api/admin/tracking-overview - admin view of all live post tracking across
 // every campaign/recipient, so support can see exactly where mail is.
 app.get('/api/admin/tracking-overview', adminAuth, (req, res) => {
   try {
@@ -29143,7 +29143,7 @@ app.post('/api/admin/tracking/e2e-test', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/tracking/sync-all — force refresh of ALL in-flight mailpieces from Stannp.
+// POST /api/admin/tracking/sync-all - force refresh of ALL in-flight mailpieces from Stannp.
 app.post('/api/admin/tracking/sync-all', adminAuth, async (req, res) => {
   try {
     var dbA = getDb();
@@ -29167,7 +29167,7 @@ app.post('/api/admin/tracking/sync-all', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/tracking/config — report webhook + provider config state.
+// GET /api/admin/tracking/config - report webhook + provider config state.
 app.get('/api/admin/tracking/config', adminAuth, (req, res) => {
   res.json({
     success: true,
@@ -29179,7 +29179,7 @@ app.get('/api/admin/tracking/config', adminAuth, (req, res) => {
   });
 });
 
-// POST /api/admin/tracking/reconcile — force a reconcile against Stannp's reporting
+// POST /api/admin/tracking/reconcile - force a reconcile against Stannp's reporting
 // API so every mailpiece status is the REAL current value from Stannp.
 app.post('/api/admin/tracking/reconcile', adminAuth, async (req, res) => {
   try {
@@ -29189,7 +29189,7 @@ app.post('/api/admin/tracking/reconcile', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/tracking/real-data-check — audit which tracking records are REAL
+// GET /api/admin/tracking/real-data-check - audit which tracking records are REAL
 // (numeric Stannp ids) vs mock/legacy/demo, so we can confirm customers only see real data.
 app.get('/api/admin/tracking/real-data-check', adminAuth, (req, res) => {
   try {
@@ -29212,7 +29212,7 @@ app.get('/api/admin/tracking/real-data-check', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/tracking/demo-seed — create sample campaigns + recipients at every
+// POST /api/admin/tracking/demo-seed - create sample campaigns + recipients at every
 // tracking stage so the Live Post Tracking dashboard can be previewed end-to-end.
 // Bodies { email } (defaults to the demo account ketzman1g@gmail.com).
 app.post('/api/admin/tracking/demo-seed', adminAuth, (req, res) => {
@@ -29230,7 +29230,7 @@ app.post('/api/admin/tracking/demo-seed', adminAuth, (req, res) => {
     var fiveDaysAgo = new Date(now.getTime() - 5 * 86400000).toISOString();
     var weekAgo = new Date(now.getTime() - 7 * 86400000).toISOString();
 
-    // Demo scenarios — one campaign per stage. provider_campaign_id uses demo ids.
+    // Demo scenarios - one campaign per stage. provider_campaign_id uses demo ids.
     var demos = [
       { name: 'Demo: Printing Now', mailType: 'A5 Flyer', created: hourAgo, items: [
         { name: 'Pritesh Sharma', address1: '12 Kings Road', city: 'Harrow', postcode: 'HA1 1SJ', status: 'printing', step: 2, emoji: '\uD83D\uDD27', updated: hourAgo, hist: [{status:'queued',label:'Accepted',at:hourAgo,desc:'Order accepted by the print house'},{status:'printing',label:'Printing',at:hourAgo,desc:'Your mail is being printed'}] },
@@ -29290,7 +29290,7 @@ app.post('/api/admin/tracking/demo-seed', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/tracking/demo-cleanup — remove all demo tracking campaigns (notes = DEMO_TRACKING).
+// POST /api/admin/tracking/demo-cleanup - remove all demo tracking campaigns (notes = DEMO_TRACKING).
 app.post('/api/admin/tracking/demo-cleanup', adminAuth, (req, res) => {
   try {
     var dbC = getDb();
@@ -29304,7 +29304,7 @@ app.post('/api/admin/tracking/demo-cleanup', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/distribute-sync — run the distributor for one product INLINE and
+// POST /api/admin/distribute-sync - run the distributor for one product INLINE and
 // return the full result (or error) so we can see exactly why assignments fail.
 app.post('/api/admin/distribute-sync', adminAuth, async (req, res) => {
   try {
@@ -29321,7 +29321,7 @@ app.post('/api/admin/distribute-sync', adminAuth, async (req, res) => {
   }
 });
 
-// GET /api/debug/last-email — view the last generated lead email HTML in browser
+// GET /api/debug/last-email - view the last generated lead email HTML in browser
 app.get('/api/debug/last-email', adminAuth, async (req, res) => {
   try {
     _dbData = null;
@@ -29340,7 +29340,7 @@ app.get('/api/debug/last-email', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).send('<p>Error: ' + (e && e.message || '') + '</p>'); }
 });
 
-// GET /api/distribute/status — distribution summary
+// GET /api/distribute/status - distribution summary
 app.get('/api/distribute/status', (req, res) => {
   try {
     const db = getDb();
@@ -29505,7 +29505,7 @@ app.get('/api/health', (req, res) => {
           var activeByProd = {};
           (dbS.customers || []).forEach(function(c) {
       if (!c.plan || c.plan === 'cancelled' || isLeadsPaused(c)) return;
-      // Never alert on internal/test accounts or EXPIRED free trials — they are not
+      // Never alert on internal/test accounts or EXPIRED free trials - they are not
       // owed leads, so "no leads in X" is expected and not actionable.
       if (isInternalAccount(c)) return;
       if (String(c.email || '').indexOf('test.') === 0) return;
@@ -29530,11 +29530,11 @@ app.get('/api/health', (req, res) => {
 });
 
 // ===== WEBSITE ANALYTICS (Plausible-style, self-hosted, cookie-free) =====
-// Tracks anonymous pageviews. No cookies, no personal data — a visitor id is a
+// Tracks anonymous pageviews. No cookies, no personal data - a visitor id is a
 // random token generated on first load and stored in localStorage. Each visit
 // records path, referrer, user-agent (truncated) and a timestamp.
 
-// POST /api/track — log a pageview from the tracking snippet
+// POST /api/track - log a pageview from the tracking snippet
 app.get('/api/track', (req, res) => { try { var dbG = getDb(); if (!dbG.pageviews) dbG.pageviews = []; var when = new Date().toISOString(); dbG.pageviews.push({ id: uuidv4(), visitor: String(req.query.v || req.query.p || '').substring(0,64), path: String(req.query.p || req.path || '/').substring(0,300), referrer: String(req.headers.referer || req.headers.referrer || '').substring(0,300), ua: String(req.headers['user-agent'] || '').substring(0,300), created_at: when }); if (dbG.pageviews.length > 200000) dbG.pageviews.splice(0, dbG.pageviews.length - 200000); saveDb(); } catch(e) {} res.set('Content-Type','image/gif'); res.send(Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7','base64')); });
 
 app.post('/api/track', (req, res) => {
@@ -29558,7 +29558,7 @@ app.post('/api/track', (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/analytics/overview?days=30 — summary for admin: total pageviews,
+// GET /api/analytics/overview?days=30 - summary for admin: total pageviews,
 // unique visitors, top pages, top referrers, daily series.
 app.get('/api/analytics/overview', adminAuth, (req, res) => {
   try {
@@ -29606,7 +29606,7 @@ function cleanPlanningAddress(a) {
   // 1) Find the first genuine postcode token (space optional: "CO5 9AU" or "CO59AU").
   var pcRe = /\b([A-Z]{1,2}[0-9][A-Z0-9]?)\s?([0-9][A-Z]{2})\b/;
   var m = s.match(pcRe);
-  if (!m) return s; // no postcode at all — return as-is
+  if (!m) return s; // no postcode at all - return as-is
   var pc = (m[1] + ' ' + m[2]).toUpperCase();
   // 2) Head = everything before the postcode. If nothing before it, keep as-is.
   var head = s.slice(0, m.index).replace(/[,\s]+$/, '').trim();
@@ -29629,9 +29629,9 @@ function generateLeadEmailHTML(customer, leads) {  const brand = getProductBrand
   const dashboardUrl = 'https://www.9amleads.com/portal/dashboard.html';
   // MAGIC LINK: mint a short-lived JWT for THIS customer so the email's buttons
   // (View on Dashboard / Print & Post them all) open the customer's dashboard or
-  // leads page DIRECTLY — no sign-in required. The link identifies the customer by
+  // leads page DIRECTLY - no sign-in required. The link identifies the customer by
   // email (token is signed with JWT_SECRET), so it always opens the RIGHT account.
-  // Expires in 24h (matches the daily email cadence) — a stale email link just
+  // Expires in 24h (matches the daily email cadence) - a stale email link just
   // redirects to normal login.
   var _magicToken = '';
   try { _magicToken = jwt.sign({ id: customer.id, email: customer.email, product: customer.product }, JWT_SECRET, { expiresIn: '24h' }); } catch(te) {}
@@ -29649,7 +29649,7 @@ function generateLeadEmailHTML(customer, leads) {  const brand = getProductBrand
   body += '<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f1f5f9"><tr><td align="center" style="padding:24px 16px">';
   body += '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">';
 
-  // Header — dark deep-navy background with bright text (official 9amLeads logo)
+  // Header - dark deep-navy background with bright text (official 9amLeads logo)
   body += '<tr><td style="background-color:#0f172a;background-image:linear-gradient(135deg,#0f172a,#1e293b);padding:28px 30px 18px;border-radius:16px 16px 0 0;text-align:center;border-bottom:3px solid #0ea5e9">';
   body += '<table cellpadding="0" cellspacing="0" align="center"><tr>';
   body += '<td style="background-color:#0ea5e9;background-image:linear-gradient(135deg,#0ea5e9,#2563eb);border-radius:12px;width:44px;height:44px;text-align:center;vertical-align:middle;line-height:44px;font-family:Outfit,Arial,Helvetica,sans-serif;font-size:22px;font-weight:900;color:#ffffff;box-shadow:0 2px 10px rgba(14,165,233,0.4)">9</td>';
@@ -29660,7 +29660,7 @@ function generateLeadEmailHTML(customer, leads) {  const brand = getProductBrand
   if (areasLabel) body += '<p style="color:#94a3b8;font-size:11px;margin:14px 0 0;text-transform:uppercase;letter-spacing:3px;font-weight:600">' + areasLabel + '</p>';
   body += '</td></tr>';
 
-  // Greeting + count — dark card
+  // Greeting + count - dark card
   body += '<tr><td style="background:#12141e;padding:24px 30px 18px">';
   body += '<table cellpadding="0" cellspacing="0"><tr><td><span style="display:inline-block;padding:3px 12px;border-radius:6px;background-color:' + brand.color + ';background-image:linear-gradient(135deg,' + brand.color + ',' + brand.color2 + ');color:#fff;font-size:9px;font-weight:800;letter-spacing:0.8px;text-transform:uppercase">' + brand.short + '</span></td></tr></table>';
   body += '<h2 style="font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:800;color:#ffffff;margin:10px 0 4px;letter-spacing:-0.3px">Good Morning, ' + (customer.company || 'there') + '</h2>';
@@ -29714,7 +29714,7 @@ function generateLeadEmailHTML(customer, leads) {  const brand = getProductBrand
       subtitle = [pPubStr, pFull, pDod, pClaims].filter(Boolean).join(', ');
     } else if (leadProduct === 'newbusiness') {
       title = d.companyName || d.name || d.company || 'New Company Registration';
-      // FULL registered address (number + street + town + full postcode) in the email —
+      // FULL registered address (number + street + town + full postcode) in the email -
       // the customer needs the exact postal address, not just the town/city.
       var nbAddr = d.address || d.fullAddress || l.address || '';
       var nbPc = d.postcode || l.postcode || '';
@@ -29796,7 +29796,7 @@ function generateLeadEmailHTML(customer, leads) {  const brand = getProductBrand
       }
       if (d.agent) chips.push({ icon: '\uD83D\uDC64', text: d.agent });
     } else if (leadProduct === 'probate') {
-      // Address + name are already in title/subtitle — chips show the extra details
+      // Address + name are already in title/subtitle - chips show the extra details
       if (d.grantDate) chips.push({ icon: '\uD83D\uDCC5', text: 'Grant date: ' + new Date(d.grantDate).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) });
       if (d.dateOfDeath) chips.push({ icon: '\uD83D\uDCC5', text: 'Died ' + new Date(d.dateOfDeath).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) });
       if (d.claimExpiry) chips.push({ icon: '\u23F0', text: 'Claims by ' + new Date(d.claimExpiry).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) });
@@ -29820,7 +29820,7 @@ function generateLeadEmailHTML(customer, leads) {  const brand = getProductBrand
       if (d.status) chips.push({ icon: '\uD83D\uDD34', text: d.status });
       if (d.receivedDate || d.dateSubmitted) chips.push({ icon: '\uD83D\uDCC5', text: 'Planning application date: ' + new Date(d.receivedDate || d.dateSubmitted).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) });
       if (d.applicant) chips.push({ icon: '\uD83D\uDC64', text: 'Applicant: ' + d.applicant });
-      // No external links — planning source is white-labelled.
+      // No external links - planning source is white-labelled.
     } else {
       if (d.buyer) chips.push({ icon: '\uD83C\uDFED', text: d.buyer });
       if (d.contractValueLabel && d.contractValueLabel !== '&pound') chips.push({ icon: '\u00A3', text: d.contractValueLabel });
@@ -29856,7 +29856,7 @@ function generateLeadEmailHTML(customer, leads) {  const brand = getProductBrand
       body += '</div>';
     }
 
-    // Action buttons — website / portal links
+    // Action buttons - website / portal links
     var actionLinks = [];
     if (leadProduct === 'planning') {
       var planUrl = d.url || d.applicationUrl || d.detailsUrl || d.detailUrl || d.councilUrl || '';
@@ -29878,7 +29878,7 @@ function generateLeadEmailHTML(customer, leads) {  const brand = getProductBrand
       if (d.noticeUrl) actionLinks.push({ url: d.noticeUrl, label: 'View on UK Gazette' });       else actionLinks.push({ url: 'https://www.gov.uk/search-will-probate', label: 'Search Probate Records' });
       actionLinks.push({ url: _magicDashUrl, label: 'View on Dashboard' });
     } else if (leadProduct === 'tenders') {
-      // Tenders are applied for ONLINE — the Apply Online button is the primary action
+      // Tenders are applied for ONLINE - the Apply Online button is the primary action
       var tendApplyUrl = d.applyLink || d.pcsUrl || d.tenderUrl || d.portalUrl || d.url || (d.tenderNoticeId ? 'https://www.contractsfinder.service.gov.uk/notice/' + d.tenderNoticeId : '');
       if (tendApplyUrl && !d.generated) actionLinks.push({ url: tendApplyUrl, label: '\uD83D\uDCE8 Apply Online' });
       else if (d.pcsUrl && !d.generated) actionLinks.push({ url: d.pcsUrl, label: 'View on PCS' });
@@ -29897,7 +29897,7 @@ function generateLeadEmailHTML(customer, leads) {  const brand = getProductBrand
   }
   body += '</td></tr>';
 
-  // Product insight card — consistent with campaign emails
+  // Product insight card - consistent with campaign emails
   var insightCards2 = {
     moving: { emoji: '\uD83D\uDE9A', tip: 'Send a printed brochure with Print &amp; Post the day a property goes SSTC, or a commercial premises comes to market. Bulk send to your whole batch in one click. A letter on the kitchen table gets read while emails get deleted.', metric: '' },
     planning: { emoji: '\uD83C\uDFD7\uFE0F', tip: 'Use Print &amp; Post to bulk send your flyer to every planning applicant the week their application is submitted. You\'ll be ahead of every competitor quoting.', metric: '' },
@@ -29905,7 +29905,7 @@ function generateLeadEmailHTML(customer, leads) {  const brand = getProductBrand
     newbusiness: { emoji: '\uD83C\uDFE2', tip: 'New companies often have no website yet. Bulk send your brochure to every registered office with Print &amp; Post, then follow up by post or phone once their details go live.', metric: 'Avg. client LTV: 2-5 years' },
     tenders: { emoji: '\uD83D\uDCCB', tip: 'Send a printed capability pack with Print &amp; Post to stand out, and follow up before the deadline. Buyers notice the professional touch.', metric: '' }
   };
-  // PRINT & POST ALL — one-click button right after the daily leads list so the
+  // PRINT & POST ALL - one-click button right after the daily leads list so the
   // customer can print & post every lead (bulk) from their leads page.
   body += '<tr><td style="background:#ffffff;padding:2px 28px 2px">' +
     '<div style="text-align:center;padding:16px 0">' +
@@ -29924,23 +29924,23 @@ function generateLeadEmailHTML(customer, leads) {  const brand = getProductBrand
   body += '<div style="margin-top:6px"><a href="https://www.facebook.com/share/1SBwDAUuxh/" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:#e2e8f0;line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#3f3f46">fb</a><a href="https://www.tiktok.com/@9amleads.com" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:#e2e8f0;line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#3f3f46">tt</a><a href="https://www.instagram.com/9amleads/" style="display:inline-block;width:24px;height:24px;border-radius:50%;background:#e2e8f0;line-height:24px;text-align:center;text-decoration:none;margin:0 2px;font-size:9px;color:#3f3f46">ig</a></div>';
   body += '</div></div></td></tr>';
 
-  // Tips section — Reject & Replace, Print & Post, upload flyer/intro letter
+  // Tips section - Reject & Replace, Print & Post, upload flyer/intro letter
   body += '<tr><td style="background:#ffffff;padding:0 24px 18px">' +
     '<div style="background:#eef2ff;border:1px solid #e0e7ff;border-radius:12px;padding:16px 18px">' +
     '<div style="font-size:13px;font-weight:800;color:#1e293b;font-family:Outfit,Arial,sans-serif;margin-bottom:8px">💡 Make the most of today\'s leads</div>' +
     '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="width:100%;max-width:100%;word-break:break-word">' +
     '<tr><td style="padding:6px 0;vertical-align:top;width:22px;color:#0ea5e9;font-weight:900;font-size:12px">1.</td>' +
-    '<td style="padding:6px 0;font-size:12px;color:#1e293b;line-height:1.6;vertical-align:top;word-break:break-word"><strong>Reject &amp; Replace</strong> &mdash; is a lead wrong or outside your area? Click <strong>Reject &amp; Replace</strong> on it in <a href="' + dashboardUrl + '" style="color:#2563eb">My Leads</a> and we\'ll instantly swap it for a fresh in-area lead.</td></tr>' +
+    '<td style="padding:6px 0;font-size:12px;color:#1e293b;line-height:1.6;vertical-align:top;word-break:break-word"><strong>Reject &amp; Replace</strong> - is a lead wrong or outside your area? Click <strong>Reject &amp; Replace</strong> on it in <a href="' + dashboardUrl + '" style="color:#2563eb">My Leads</a> and we\'ll instantly swap it for a fresh in-area lead.</td></tr>' +
     '<tr><td style="padding:6px 0;vertical-align:top;width:22px;color:#0ea5e9;font-weight:900;font-size:12px">2.</td>' +
-    '<td style="padding:6px 0;font-size:12px;color:#1e293b;line-height:1.6;vertical-align:top;word-break:break-word"><strong>Print &amp; Post</strong> &mdash; send this lead a physical letter through Royal Mail so your business reaches them in the post, not just their inbox. Use <strong>Print &amp; Post</strong> on the lead, or turn on <strong>Auto-Send</strong> and we mail every new lead for you automatically after the 9am delivery.</td></tr>' +
+    '<td style="padding:6px 0;font-size:12px;color:#1e293b;line-height:1.6;vertical-align:top;word-break:break-word"><strong>Print &amp; Post</strong> - send this lead a physical letter through Royal Mail so your business reaches them in the post, not just their inbox. Use <strong>Print &amp; Post</strong> on the lead, or turn on <strong>Auto-Send</strong> and we mail every new lead for you automatically after the 9am delivery.</td></tr>' +
     '<tr><td style="padding:6px 0;vertical-align:top;width:22px;color:#0ea5e9;font-weight:900;font-size:12px">3.</td>' +
-    '<td style="padding:6px 0;font-size:12px;color:#1e293b;line-height:1.6;vertical-align:top;word-break:break-word"><strong>Upload your flyer + intro letter</strong> &mdash; add your flyer (front &amp; back) and a short intro letter once in <strong>Print &amp; Post</strong> settings. They\'re used for every mailing, so your business always arrives looking professional.</td></tr>' +
+    '<td style="padding:6px 0;font-size:12px;color:#1e293b;line-height:1.6;vertical-align:top;word-break:break-word"><strong>Upload your flyer + intro letter</strong> - add your flyer (front &amp; back) and a short intro letter once in <strong>Print &amp; Post</strong> settings. They\'re used for every mailing, so your business always arrives looking professional.</td></tr>' +
     '</table>' +
     '<div style="margin-top:10px"><a href="' + _magicLeadsUrl + '" style="display:inline-block;margin-right:6px;margin-bottom:6px;padding:8px 18px;background-color:#0ea5e9;background-image:linear-gradient(135deg,#0ea5e9,#2563eb);color:#ffffff;text-decoration:none;border-radius:50px;font-size:12px;font-weight:700">Open My Leads</a>' +
     '<a href="' + _magicLeadsUrl + '" style="display:inline-block;padding:8px 18px;background:#ffffff;border:1px solid #2563eb;color:#2563eb;text-decoration:none;border-radius:50px;font-size:12px;font-weight:700">Print &amp; Post</a></div>' +
     '</div></td></tr>';
 
-  // QUICK WIN TIPS — product-specific conversion advice (kept short, actionable)
+  // QUICK WIN TIPS - product-specific conversion advice (kept short, actionable)
   var quickTipsMap = {
     moving: '🖨️ Bulk send a letter or flyer to your whole batch with Print &amp; Post. A printed letter on the kitchen table is what wins the move.',
     probate: '✉️ Bulk send a compassionate letter to every executor with Print &amp; Post. The firm that reaches them first with a warm letter wins the instruction.',
@@ -29954,7 +29954,7 @@ function generateLeadEmailHTML(customer, leads) {  const brand = getProductBrand
     '<strong>💡 Quick win:</strong> ' + (quickTipsMap[customer.product] || quickTipsMap.general) +
     '</div></td></tr>';
 
-  // Footer — dark navy (matches header)
+  // Footer - dark navy (matches header)
   body += '<tr><td style="background-color:#0f172a;background-image:linear-gradient(135deg,#0f172a,#1e293b);padding:22px 30px 20px;border-radius:0 0 16px 16px;text-align:center;border-top:1px solid #0ea5e9">';
   body += '<div style="font-family:Outfit,Arial,Helvetica,sans-serif;font-size:17px;font-weight:900;color:#38bdf8;text-align:center;margin-bottom:12px"><span style="display:inline-block;width:26px;height:26px;border-radius:8px;text-align:center;line-height:26px;font-size:13px;background-color:#0ea5e9;background-image:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;margin-right:6px;vertical-align:middle;font-family:Outfit,Arial,sans-serif">9</span><span style="vertical-align:middle">9amLeads</span></div>';
   var pricingLink = customer.product === 'planning' ? 'https://www.9amleads.com/planningleads' : customer.product === 'moving' ? 'https://www.9amleads.com/movingleadsdaily' : customer.product === 'probate' ? 'https://www.9amleads.com/probateleads' : customer.product === 'newbusiness' ? 'https://www.9amleads.com/newbusinessalert' : customer.product === 'tenders' ? 'https://www.9amleads.com/tenders' : 'https://www.9amleads.com/pricing';
@@ -30275,7 +30275,7 @@ app.get('/api/campaigns', authMiddleware, (req, res) => {
 var PRINT_POST_PRICES = {
   // Per-item prices charged to customer (GBP), priced against Stannp's actual
   // Royal Mail Standard rates so we stay profitable. A letter is cheaper than a
-  // leaflet — Stannp's own rates reflect this (A4 letter £1.02, A5 postcard £1.18).
+  // leaflet - Stannp's own rates reflect this (A4 letter £1.02, A5 postcard £1.18).
   // Single (on-demand, post-now) sits ABOVE the bulk/boost pack rates so buying a
   // 50-1000 pack reads as a genuine volume discount. Margins (single):
   // leaflet +£1.81, letter +£1.47, pack +£2.29 per item.
@@ -30298,7 +30298,7 @@ var PRINT_POST_PRICES = {
 // above it; if it's a normal business letter with no such heading, it keeps the
 // whole body intact (never empties the letter).
 function cleanLetterBodyForPrint(text) {
-  // Print EXACTLY what the customer wrote. No stripping of any content — if the
+  // Print EXACTLY what the customer wrote. No stripping of any content - if the
   // customer includes "BE FIRST. MAKE CONTACT..." or anything else, it prints.
   // Previously we stripped a "9amLeads marketing footer" but this removed lines
   // customers legitimately wrote themselves (e.g. their own tagline), making the
@@ -30319,7 +30319,7 @@ function cleanLetterBodyForPrint(text) {
 }
 
 // Build the CLEAN A4 letter HTML: sender return address top-right, date, divider,
-// then the cleaned letter body (no recipient address — Stannp prints that in its
+// then the cleaned letter body (no recipient address - Stannp prints that in its
 // own envelope window). Used by both the live Stannp send path and the free admin
 // preview endpoint so they always match.
 function buildCleanLetterHtml(templateBody, senderName, senderAddr) {
@@ -30347,12 +30347,12 @@ function cleanMailText(text) {
   //    so a lone line-start * is treated as a bullet, never an emphasis marker.
   s = s.replace(/^\s*\*+\s+/gm, '• ');
   s = s.replace(/^\s*(-\s+|\+\s+)/gm, '• ');
-  // 3. Strip markdown bold (**bold**) — remove only the asterisk pairs
+  // 3. Strip markdown bold (**bold**) - remove only the asterisk pairs
   s = s.replace(/\*\*/g, '');
   // 4. Strip markdown headings (#) and horizontal rules
   s = s.replace(/^\s*#{1,6}\s*/gm, '');
   s = s.replace(/^\s*(---+|\*\*\*+|___+)\s*$/gm, '');
-  // 5. Non-greedy italic *text* (single line) — keep the words
+  // 5. Non-greedy italic *text* (single line) - keep the words
   s = s.replace(/\*([^*\n]+)\*/g, '$1');
   // 6. Strip inline backticks and links (but keep the link text)
   s = s.replace(/`/g, '');
@@ -30361,7 +30361,7 @@ function cleanMailText(text) {
   s = s.replace(/\*+/g, '');
   // 8. Collapse 3+ blank lines to one
   s = s.replace(/\n{3,}/g, '\n\n');
-  // 9. Collapse runs of spaces/tabs to a single space — pasted text (PDFs, docs)
+  // 9. Collapse runs of spaces/tabs to a single space - pasted text (PDFs, docs)
   //    is often full of double spaces/indents that inflate the character count.
   s = s.replace(/[ \t]+/g, ' ');
   // 10. Trim trailing spaces before line breaks
@@ -30381,7 +30381,7 @@ var DM_FORMATS = [
   { id: 'letter_a4', label: 'A4 Letter', size: 'letter', kind: 'letter', width: 0, height: 0, mm: '210×297mm', safe: '210×297mm', template: 'a4-letter.pdf', price: 2.49, desc: 'Professional A4 letter with windowed envelope.' }
 ];
 
-// GET /api/direct-mail/my-bulk-leads — every lead the customer has bought via a bulk /
+// GET /api/direct-mail/my-bulk-leads - every lead the customer has bought via a bulk /
 // boost pack (reserved or already sent), paginated 25 per page, with dispatch status.
 app.get('/api/direct-mail/my-bulk-leads', authMiddleware, (req, res) => {
   try {
@@ -30405,7 +30405,7 @@ app.get('/api/direct-mail/my-bulk-leads', authMiddleware, (req, res) => {
                        ((l.boost_reserved === 1 || l.boost_reserved === '1' || l.boost_reserved === true) && l.boost_reserved_by === c.id);
         if (!mineFlag) return;
         // PRINT & POST GATE: only mailable leads (door + street + full postcode + town,
-        // except tenders) may be posted — never hand Stannp an incomplete address.
+        // except tenders) may be posted - never hand Stannp an incomplete address.
         if (!isMailableLead(l, pk)) return;
         mine.push({ id: l.id || l.company_number || '', name: l.name || l.company || l.companyName || l.company_name || 'Lead', company: l.company || l.companyName || l.company_name || '', address: l.fullAddress || l.address || '', postcode: l.postcode || '', reserved_at: l.bulk_reserved_at || l.boost_reserved_at || l.createdAt || '', product: pk });
       });
@@ -30458,7 +30458,7 @@ app.get('/api/direct-mail/my-bulk-leads', authMiddleware, (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/direct-mail/bulk-leads/delete — delete selected purchased bulk/boost leads
+// POST /api/direct-mail/bulk-leads/delete - delete selected purchased bulk/boost leads
 // from the customer's account (releases them back to the pool). { ids: [...] }
 app.post('/api/direct-mail/bulk-leads/delete', authMiddleware, (req, res) => {
   try {
@@ -30488,7 +30488,7 @@ app.post('/api/direct-mail/bulk-leads/delete', authMiddleware, (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/direct-mail/pricing — return Print & Post prices and formats
+// GET /api/direct-mail/pricing - return Print & Post prices and formats
 app.get('/api/direct-mail/pricing', (req, res) => {
   res.json({
     success: true,
@@ -30504,14 +30504,14 @@ var DIRECT_MAIL_STATUSES = ['draft','awaiting_approval','approved','awaiting_pay
 // 1. Customer Business Profiles
 var BUSINESS_TYPES = ['Removals','Roofing','Plumbing','Cleaning','Solar','Windows and Doors','Estate Agency','Mortgage Broker','Insurance','Gardening','Pest Control','Other'];
 
-// POST /api/direct-mail/profile — Create or update business profile
+// POST /api/direct-mail/profile - Create or update business profile
 app.post('/api/direct-mail/profile', authMiddleware, (req, res) => {
   try {
     if (!req.body.company_name) return res.status(400).json({ error: 'Business name is required' });
     if (!req.body.phone && !req.body.email) return res.status(400).json({ error: 'Phone or email is required' });
     if (!req.body.business_type) return res.status(400).json({ error: 'Business type is required' });
     const existing = db.prepare('SELECT * FROM customer_business_profiles WHERE customer_id = ?').get(req.user.id);
-    // Merge — only overwrite fields provided in the request; keep existing values
+    // Merge - only overwrite fields provided in the request; keep existing values
     // for anything absent so a partial save never wipes the customer's profile.
     function pickP(field, def) {
       if (req.body[field] !== undefined && req.body[field] !== null) return req.body[field];
@@ -30566,7 +30566,7 @@ app.post('/api/direct-mail/profile', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/direct-mail/logo — Upload logo (base64)
+// POST /api/direct-mail/logo - Upload logo (base64)
 app.post('/api/direct-mail/logo', authMiddleware, (req, res) => {
   try {
     if (!req.body.logo) return res.status(400).json({ error: 'No logo data provided' });
@@ -30576,7 +30576,7 @@ app.post('/api/direct-mail/logo', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/direct-mail/profile — Get customer's business profile
+// GET /api/direct-mail/profile - Get customer's business profile
 app.get('/api/direct-mail/profile', authMiddleware, (req, res) => {
   try {
     const profile = db.prepare('SELECT * FROM customer_business_profiles WHERE customer_id = ?').get(req.user.id);
@@ -30585,7 +30585,7 @@ app.get('/api/direct-mail/profile', authMiddleware, (req, res) => {
 });
 
 // 2. Direct Mail Templates
-// POST /api/direct-mail/templates — Create a new template
+// POST /api/direct-mail/templates - Create a new template
 app.post('/api/direct-mail/templates', authMiddleware, (req, res) => {
   try {
     if (!req.body.name) return res.status(400).json({ error: 'Template name is required' });
@@ -30613,7 +30613,7 @@ app.post('/api/direct-mail/templates', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// PUT /api/direct-mail/templates/:id — Update a template
+// PUT /api/direct-mail/templates/:id - Update a template
 app.put('/api/direct-mail/templates/:id', authMiddleware, (req, res) => {
   try {
     var existing = db.prepare('SELECT * FROM direct_mail_templates WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
@@ -30633,7 +30633,7 @@ app.put('/api/direct-mail/templates/:id', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/direct-mail/templates/:id/duplicate — Duplicate a template
+// POST /api/direct-mail/templates/:id/duplicate - Duplicate a template
 app.post('/api/direct-mail/templates/:id/duplicate', authMiddleware, (req, res) => {
   try {
     var source = db.prepare('SELECT * FROM direct_mail_templates WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
@@ -30651,7 +30651,7 @@ app.post('/api/direct-mail/templates/:id/duplicate', authMiddleware, (req, res) 
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/direct-mail/templates/:id/approve — Approve a template
+// POST /api/direct-mail/templates/:id/approve - Approve a template
 app.post('/api/direct-mail/templates/:id/approve', authMiddleware, (req, res) => {
   try {
     var existing = db.prepare('SELECT * FROM direct_mail_templates WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
@@ -30661,7 +30661,7 @@ app.post('/api/direct-mail/templates/:id/approve', authMiddleware, (req, res) =>
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/direct-mail/templates — Get customer's templates
+// GET /api/direct-mail/templates - Get customer's templates
 app.get('/api/direct-mail/templates', authMiddleware, (req, res) => {
   try {
     const templates = db.prepare('SELECT * FROM direct_mail_templates WHERE customer_id = ? ORDER BY created_at DESC').all(req.user.id);
@@ -30681,7 +30681,7 @@ app.get('/api/direct-mail/templates', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/direct-mail/templates/:id — Get template by ID (customer data isolated)
+// GET /api/direct-mail/templates/:id - Get template by ID (customer data isolated)
 app.get('/api/direct-mail/templates/:id', authMiddleware, (req, res) => {
   try {
     const template = db.prepare('SELECT * FROM direct_mail_templates WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
@@ -30690,7 +30690,7 @@ app.get('/api/direct-mail/templates/:id', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// DELETE /api/direct-mail/templates/:id — Delete a template
+// DELETE /api/direct-mail/templates/:id - Delete a template
 app.delete('/api/direct-mail/templates/:id', authMiddleware, (req, res) => {
   try {
     var existing = db.prepare('SELECT * FROM direct_mail_templates WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
@@ -30701,7 +30701,7 @@ app.delete('/api/direct-mail/templates/:id', authMiddleware, (req, res) => {
 });
 
 // 3. Direct Mail Campaigns
-// POST /api/direct-mail/campaigns — Create a new campaign
+// POST /api/direct-mail/campaigns - Create a new campaign
 app.post('/api/direct-mail/campaigns', authMiddleware, (req, res) => {
   try {
     if (!req.body.name) return res.status(400).json({ error: 'Campaign name is required' });
@@ -30735,7 +30735,7 @@ app.post('/api/direct-mail/campaigns', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/direct-mail/campaigns — Get customer's campaigns
+// GET /api/direct-mail/campaigns - Get customer's campaigns
 app.get('/api/direct-mail/campaigns', authMiddleware, (req, res) => {
   try {
     const campaigns = db.prepare('SELECT * FROM direct_mail_campaigns WHERE customer_id = ? ORDER BY created_at DESC').all(req.user.id);
@@ -30771,7 +30771,7 @@ app.get('/api/direct-mail/campaigns', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/direct-mail/campaigns/:id — Get campaign by ID (customer data isolated)
+// GET /api/direct-mail/campaigns/:id - Get campaign by ID (customer data isolated)
 app.get('/api/direct-mail/campaigns/:id', authMiddleware, (req, res) => {
   try {
     const campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
@@ -30784,7 +30784,7 @@ app.get('/api/direct-mail/campaigns/:id', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// PUT /api/direct-mail/campaigns/:id/status — Update campaign status
+// PUT /api/direct-mail/campaigns/:id/status - Update campaign status
 app.put('/api/direct-mail/campaigns/:id/status', authMiddleware, (req, res) => {
   try {
     const { status, notes } = req.body;
@@ -30809,7 +30809,7 @@ app.put('/api/direct-mail/campaigns/:id/status', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// DELETE /api/direct-mail/campaigns/:id — Delete draft campaign
+// DELETE /api/direct-mail/campaigns/:id - Delete draft campaign
 app.delete('/api/direct-mail/campaigns/:id', authMiddleware, (req, res) => {
   try {
     const campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
@@ -30822,7 +30822,7 @@ app.delete('/api/direct-mail/campaigns/:id', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/direct-mail/campaigns/:id/status-history — Get campaign status history
+// GET /api/direct-mail/campaigns/:id/status-history - Get campaign status history
 app.get('/api/direct-mail/campaigns/:id/status-history', authMiddleware, (req, res) => {
   try {
     const history = db.prepare('SELECT * FROM direct_mail_status_history WHERE campaign_id = ? AND customer_id = ? ORDER BY created_at DESC').all(req.params.id, req.user.id);
@@ -30830,7 +30830,7 @@ app.get('/api/direct-mail/campaigns/:id/status-history', authMiddleware, (req, r
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/direct-mail/test — Log a test result for a campaign
+// POST /api/direct-mail/test - Log a test result for a campaign
 app.post('/api/direct-mail/test', authMiddleware, (req, res) => {
   try {
     const testLog = {
@@ -30848,7 +30848,7 @@ app.post('/api/direct-mail/test', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/direct-mail/test/:campaignId — Get test logs for a campaign
+// GET /api/direct-mail/test/:campaignId - Get test logs for a campaign
 app.get('/api/direct-mail/test/:campaignId', authMiddleware, (req, res) => {
   try {
     const tests = db.prepare('SELECT * FROM direct_mail_test_logs WHERE campaign_id = ? AND customer_id = ? ORDER BY created_at DESC').all(req.params.campaignId, req.user.id);
@@ -30861,7 +30861,7 @@ app.get('/api/direct-mail/test/:campaignId', authMiddleware, (req, res) => {
 async function sendDmCampaign(campaignId, customerId) {
   // Concurrency guard: if this campaign is already mid-send (e.g. the Stripe
   // webhook and the dashboard verify-payment both fire), do NOT send it a second
-  // time — that would create duplicate paid orders at our print partner.
+  // time - that would create duplicate paid orders at our print partner.
   var _dmSendLock = global.__dmSendLock || (global.__dmSendLock = {});
   if (_dmSendLock[campaignId]) {
     console.log('[DM-SEND] Campaign already in-flight, skipping duplicate send: ' + campaignId);
@@ -30953,7 +30953,7 @@ async function sendDmCampaignInner(campaignId, customerId) {
     var mat = db.prepare('SELECT * FROM direct_mail_materials WHERE id = ? AND customer_id = ?').get(materialIds[mi], customerId);
     if (mat && mat.file_data) {
       // Ensure the file name carries the material's role (front/back/letter) so
-      // the send path can match it — otherwise "ChatGPT Image..." names don't
+      // the send path can match it - otherwise "ChatGPT Image..." names don't
       // contain "front"/"back" and the leaflet send rejects them.
       var role = (mat.type === 'flyer_back') ? 'flyer_back' : (mat.type === 'letter' ? 'letter' : 'flyer_front');
       files.push({ name: role + '_' + (mat.name || (role + '.png')), file_data: mat.file_data, type: mat.type });
@@ -31018,14 +31018,14 @@ async function sendDmCampaignInner(campaignId, customerId) {
       var rcptWithPages = Object.assign({}, rcpt);
       // Attach a cross-reference tag so Stannp reporting / reporting/list can be
       // matched back to our exact recipient (lead). Stannp stores custom tags per
-      // mailpiece and returns them in reporting/list — a reliable fallback to the
+      // mailpiece and returns them in reporting/list - a reliable fallback to the
       // webhook for reconciling real delivery status.
       rcptWithPages.tags = '9amleads:' + String(rcpt.id).substring(0, 18) + (rcpt.lead_id ? ':' + String(rcpt.lead_id).substring(0, 18) : '');
       if (templateBody) {
         // CLEAN the letter body for print BEFORE rendering: strip the marketing
         // preamble (address block, "Dear...", "5 TYPES OF BUSINESS LEADS",
         // "GET FRESH...", "MORE THAN JUST LEADS"), any unmerged placeholder tokens
-        // like "00000 / 0000", and stray duplicated names — the letter should start
+        // like "00000 / 0000", and stray duplicated names - the letter should start
         // at the real product/services content. Stannp prints the recipient address
         // itself in the envelope window, so it must not appear in the letter.
         // Look up the customer's business profile for the return address
@@ -31038,7 +31038,7 @@ async function sendDmCampaignInner(campaignId, customerId) {
         }
         rcptWithPages.sender = { name: senderName, address: senderAddr };
         var _clean = buildCleanLetterHtml(templateBody || '', senderName, senderAddr);
-        // Do NOT insert the recipient address into the letter body — Stannp prints
+        // Do NOT insert the recipient address into the letter body - Stannp prints
         // the recipient name + address itself in the envelope window. Inserting it
         // here makes the address appear TWICE on the printed letter.
         rcptWithPages.pages = _clean.html
@@ -31085,7 +31085,7 @@ async function sendDmCampaignInner(campaignId, customerId) {
     }
     var providerCampaignId = sentIds.length ? sentIds.join(',') : '';
     // A campaign that finishes with SOME recipients failed (after automatic retries)
-    // must never leave a paid-for lead unsent silently — alert the founder so they can
+    // must never leave a paid-for lead unsent silently - alert the founder so they can
     // re-run just the failures for the customer (fulfilment guarantee).
     if (failedIds.length > 0 && sentIds.length > 0) {
       try {
@@ -31155,7 +31155,7 @@ async function sendDmCampaignInner(campaignId, customerId) {
   return { success: true, provider: provider.name, provider_campaign_id: providerCampaignId, recipient_count: recipientCount, message: 'Campaign sent to ' + provider.name + ' for printing' };
 }
 
-// POST /api/direct-mail/campaigns/:id/send — Send campaign to provider (manual)
+// POST /api/direct-mail/campaigns/:id/send - Send campaign to provider (manual)
 app.post('/api/direct-mail/campaigns/:id/send', authMiddleware, async (req, res) => {
   try {
     var result = await sendDmCampaign(req.params.id, req.user.id);
@@ -31170,7 +31170,7 @@ app.post('/api/direct-mail/campaigns/:id/send', authMiddleware, async (req, res)
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/direct-mail/campaigns/:id/simulate-status — Simulate provider status update (for testing)
+// POST /api/direct-mail/campaigns/:id/simulate-status - Simulate provider status update (for testing)
 app.post('/api/direct-mail/campaigns/:id/simulate-status', authMiddleware, async (req, res) => {
   try {
     var campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
@@ -31186,7 +31186,7 @@ app.post('/api/direct-mail/campaigns/:id/simulate-status', authMiddleware, async
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/direct-mail/campaigns/:id/proof — Get proof of posting
+// GET /api/direct-mail/campaigns/:id/proof - Get proof of posting
 app.get('/api/direct-mail/campaigns/:id/proof', authMiddleware, async (req, res) => {
   try {
     var campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
@@ -31210,7 +31210,7 @@ app.get('/api/direct-mail/campaigns/:id/proof', authMiddleware, async (req, res)
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/direct-mail/lead/:id/proof — Get proof of posting for a LEAD by looking
+// GET /api/direct-mail/lead/:id/proof - Get proof of posting for a LEAD by looking
 // up the campaign via the lead's stored post_order_id (Stannp order id).
 app.get('/api/direct-mail/lead/:id/proof', authMiddleware, async (req, res) => {
   try {
@@ -31248,7 +31248,7 @@ app.get('/api/direct-mail/campaigns/:id/provider-status', authMiddleware, async 
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/direct-mail/campaigns/:id/cancel-with-provider — Cancel with provider
+// POST /api/direct-mail/campaigns/:id/cancel-with-provider - Cancel with provider
 app.post('/api/direct-mail/campaigns/:id/cancel-with-provider', authMiddleware, async (req, res) => {
   try {
     var campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
@@ -31265,7 +31265,7 @@ app.post('/api/direct-mail/campaigns/:id/cancel-with-provider', authMiddleware, 
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/direct-mail/automation — Save automation settings
+// POST /api/direct-mail/automation - Save automation settings
 app.post('/api/direct-mail/automation', authMiddleware, (req, res) => {
   try {
     var enabled = req.body.enable_auto_send ? 1 : 0;
@@ -31313,7 +31313,7 @@ app.post('/api/direct-mail/automation', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/direct-mail/automation — Get automation settings
+// GET /api/direct-mail/automation - Get automation settings
 app.get('/api/direct-mail/automation', authMiddleware, (req, res) => {
   try {
     const settings = db.prepare('SELECT * FROM direct_mail_automation_settings WHERE customer_id = ?').get(req.user.id);
@@ -31321,9 +31321,9 @@ app.get('/api/direct-mail/automation', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/direct-mail/materials/:id/preview-zone — Serve the leaflet front with
+// GET /api/direct-mail/materials/:id/preview-zone - Serve the leaflet front with
 // the AUTO ADDRESS ZONE visibly marked, so customers see exactly where Stannp's
-// native clearzone will print the recipient address. Preview only — the real
+// native clearzone will print the recipient address. Preview only - the real
 // artwork is never modified (Stannp overlays the white zone at print time).
 app.get('/api/direct-mail/materials/:id/preview-zone', authQueryOrHeader, async (req, res) => {
   try {
@@ -31344,7 +31344,7 @@ app.get('/api/direct-mail/materials/:id/preview-zone', authQueryOrHeader, async 
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/direct-mail/materials/:id/final-print — Serve the EXACT final artwork
+// GET /api/direct-mail/materials/:id/final-print - Serve the EXACT final artwork
 // that will be sent to Stannp: upscaled to the format's 300 DPI full-bleed size
 // (e.g. A5-PORT 1819x2551) with the white address clear zone baked onto the
 // front. This is byte-for-byte what sendMailpiece sends, so the customer's
@@ -31372,7 +31372,7 @@ app.get('/api/direct-mail/materials/:id/final-print', authQueryOrHeader, async (
     // Artwork is now JPEG (compressed for Stannp upload limits)
     res.setHeader('Content-Type', 'image/jpeg');
     // No-store so previews/downloads always show the CURRENT baked artwork
-    // (white address zone etc.) — never a stale cached copy from the CDN edge.
+    // (white address zone etc.) - never a stale cached copy from the CDN edge.
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     res.setHeader('Pragma', 'no-cache');
     if (req.query.download === '1' || req.query.download === 'true') {
@@ -31382,7 +31382,7 @@ app.get('/api/direct-mail/materials/:id/final-print', authQueryOrHeader, async (
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/direct-mail/materials/:id/file — Serve an uploaded material's stored
+// GET /api/direct-mail/materials/:id/file - Serve an uploaded material's stored
 // file (image or PDF) so the dashboard can PREVIEW the saved leaflet/letter.
 app.get('/api/direct-mail/materials/:id/file', authQueryOrHeader, (req, res) => {
   try {
@@ -31405,7 +31405,7 @@ app.get('/api/direct-mail/materials/:id/file', authQueryOrHeader, (req, res) => 
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/direct-mail/setup — Get the customer's full Print & Post setup status:
+// GET /api/direct-mail/setup - Get the customer's full Print & Post setup status:
 // business profile, uploaded materials, default template, and readiness flags.
 app.get('/api/direct-mail/setup', authMiddleware, (req, res) => {
   try {
@@ -31447,7 +31447,7 @@ app.get('/api/direct-mail/setup', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/direct-mail/setup — ONE-CLICK "Save my Print & Post setup".
+// POST /api/direct-mail/setup - ONE-CLICK "Save my Print & Post setup".
 // Saves business info + leaflet front/back + cover letter in a single call and
 // builds/updates the customer's default template so every one-click send and
 // auto-campaign uses these saved materials automatically.
@@ -31455,7 +31455,7 @@ app.post('/api/direct-mail/setup', authMiddleware, (req, res) => {
   try {
     var nowIso = new Date().toISOString();
 
-    // 1. Business profile — merge with existing so a PARTIAL save (e.g. "Save My
+    // 1. Business profile - merge with existing so a PARTIAL save (e.g. "Save My
     // Leaflet" sends only format + cover letter) NEVER wipes fields the customer
     // already filled in. Only fields explicitly provided in the request are
     // updated; anything absent keeps its existing value.
@@ -31584,7 +31584,7 @@ app.post('/api/direct-mail/setup', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/direct-mail/test-receipt — Send a sample Print & Post receipt
+// POST /api/admin/direct-mail/test-receipt - Send a sample Print & Post receipt
 // email to a customer/email so they can review the design before a real order.
 app.post('/api/admin/direct-mail/test-receipt', adminAuth, async (req, res) => {
   try {
@@ -31595,7 +31595,7 @@ app.post('/api/admin/direct-mail/test-receipt', adminAuth, async (req, res) => {
     var orderRef = req.body.order_ref || '211936512';
     var mailType = req.body.mail_type || '';
     var sampleBody =
-      '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">Great news &mdash; your Print &amp; Post order is confirmed and paid. Here\'s everything you need to know:</p>' +
+      '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">Great news - your Print &amp; Post order is confirmed and paid. Here\'s everything you need to know:</p>' +
       '<div style="background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.2);border-radius:12px;padding:16px 20px;margin:0 0 16px">' +
       '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:3px 0;font-size:13px;color:#8890b0;width:40%">Order</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">Print &amp; Post: ' + name + (mailType ? ' (' + mailType + ')' : '') + '</td></tr>' +
       '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Amount paid</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">&pound;' + amount + '</td></tr>' +
@@ -31619,7 +31619,7 @@ app.post('/api/admin/direct-mail/test-receipt', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/direct-mail/mark-posted — Mark a customer's lead as posted
+// POST /api/admin/direct-mail/mark-posted - Mark a customer's lead as posted
 // (used for manual Print & Post sends / testing so My Leads shows the badge).
 app.post('/api/admin/direct-mail/mark-posted', adminAuth, (req, res) => {
   try {
@@ -31641,7 +31641,7 @@ app.post('/api/admin/direct-mail/mark-posted', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/direct-mail/repair-template — Link a customer's latest uploaded
+// POST /api/admin/direct-mail/repair-template - Link a customer's latest uploaded
 // flyer front/back/letter materials to their default template (repairs templates
 // whose material links were wiped by a save with empty file inputs), then returns
 // the template state. Admin only.
@@ -31670,7 +31670,7 @@ app.post('/api/admin/direct-mail/repair-template', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/direct-mail/auto-status — Simple auto print & post status for the toggle.
+// GET /api/direct-mail/auto-status - Simple auto print & post status for the toggle.
 // Returns whether the customer's setup is ready (template + profile) and current
 // auto-send state, plus what will happen when enabled.
 app.get('/api/direct-mail/auto-status', authMiddleware, (req, res) => {
@@ -31719,7 +31719,7 @@ app.get('/api/direct-mail/auto-status', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/direct-mail/auto-toggle — ONE-CLICK auto print & post toggle.
+// POST /api/direct-mail/auto-toggle - ONE-CLICK auto print & post toggle.
 // When enabled, auto-configures automation settings from the customer's existing
 // Print & Post setup (default template, letter, sensible spend defaults, consent)
 // so every day's delivered leads are printed + posted automatically.
@@ -31803,7 +31803,7 @@ app.post('/api/direct-mail/auto-toggle', authMiddleware, (req, res) => {
 });
 
 // ===== GDPR / SUPPRESSION / PRIVACY =====
-// GET /api/direct-mail/suppression — Get customer's suppression list
+// GET /api/direct-mail/suppression - Get customer's suppression list
 app.get('/api/direct-mail/suppression', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -31812,7 +31812,7 @@ app.get('/api/direct-mail/suppression', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/direct-mail/suppression — Add address to suppression list
+// POST /api/direct-mail/suppression - Add address to suppression list
 app.post('/api/direct-mail/suppression', authMiddleware, (req, res) => {
   try {
     if (!req.body.postcode && !req.body.address_line1) return res.status(400).json({ error: 'Postcode or address required' });
@@ -31835,7 +31835,7 @@ app.post('/api/direct-mail/suppression', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// DELETE /api/direct-mail/suppression/:id — Remove from suppression list
+// DELETE /api/direct-mail/suppression/:id - Remove from suppression list
 app.delete('/api/direct-mail/suppression/:id', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -31903,7 +31903,7 @@ app.delete('/api/direct-mail/suppression/:id', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/direct-mail/suppression — Get all suppression entries
+// GET /api/admin/direct-mail/suppression - Get all suppression entries
 app.get('/api/admin/direct-mail/suppression', adminAuth, (req, res) => {
   try {
     var db2 = getDb();
@@ -31928,7 +31928,7 @@ function isAddressSuppressed(customerId, postcode, addressLine1) {
   } catch(e) { return false; }
 }
 
-// GET /api/direct-mail/terms — Get terms acceptance
+// GET /api/direct-mail/terms - Get terms acceptance
 app.get('/api/direct-mail/terms', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -31938,7 +31938,7 @@ app.get('/api/direct-mail/terms', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/direct-mail/terms — Accept terms
+// POST /api/direct-mail/terms - Accept terms
 app.post('/api/direct-mail/terms', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -31950,7 +31950,7 @@ app.post('/api/direct-mail/terms', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/direct-mail/campaigns/:id/recipients — Add recipient to campaign
+// GET /api/direct-mail/campaigns/:id/recipients - Add recipient to campaign
 app.post('/api/direct-mail/campaigns/:id/recipients', authMiddleware, (req, res) => {
   try {
     const campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
@@ -31980,7 +31980,7 @@ app.post('/api/direct-mail/campaigns/:id/recipients', authMiddleware, (req, res)
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/direct-mail/leads — Get leads available for campaign selection
+// GET /api/direct-mail/leads - Get leads available for campaign selection
 app.get('/api/direct-mail/leads', authMiddleware, (req, res) => {
   try {
     const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
@@ -32038,7 +32038,7 @@ app.get('/api/direct-mail/leads', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/direct-mail/send-lead — ONE-CLICK print & post a single lead.
+// POST /api/direct-mail/send-lead - ONE-CLICK print & post a single lead.
 // Creates a campaign, adds the lead as recipient, and returns a Stripe checkout
 // URL so the customer can pay and have it printed + posted immediately.
 // Build clean Stannp address fields from a lead's parsed data. Moving leads
@@ -32065,8 +32065,8 @@ function buildStannpRecipientFromLead(parsed) {
   var address_line1 = parsed.address_line1 || bldAddr || spl.line1;
   // BUILDING-NUMBER FIX: the stored address_line1 / street may omit the door number
   // while the FULL address string carries it ("4 Farmborough Close"). Always prefer
-  // the most COMPLETE line — the one starting with a house/flat number or the full
-  // split line — so Stannp's envelope window prints the correct address (a missing
+  // the most COMPLETE line - the one starting with a house/flat number or the full
+  // split line - so Stannp's envelope window prints the correct address (a missing
   // "4" makes the letter undeliverable). Never pick a bare street over a numbered one.
   function _hasNum(s) { return /^\s*\d{1,5}[A-Za-z]?(?:[\/\-]\s*\d{1,4})?\b/.test(s) || /^\s*(flat|unit|apt|maisonette|suite)\b/i.test(s); }
   if (spl.line1 && _hasNum(spl.line1)) {
@@ -32078,13 +32078,13 @@ function buildStannpRecipientFromLead(parsed) {
   var postcode = cleanUkPostcode(parsed.postcode || '');
   var city = parsed.city || parsed.town || spl.city;
   // GARBAGE-CITY GUARD: a 1-2 letter "city" is a postcode area leaked into the
-  // address ("L", "N", "SW") — never send that to Stannp. Replace with the cached
+  // address ("L", "N", "SW") - never send that to Stannp. Replace with the cached
   // town-from-postcode (free), else the split address's last part, else drop it.
   if (city && /^[A-Z]{1,2}$/.test(String(city).trim())) {
     try { var _gtC = require('./rightmove_scraper_v2').getTownForPostcode(postcode); if (_gtC) city = _gtC; else city = spl.city || ''; } catch(e) { city = spl.city || ''; }
   }
   // TOWN FALLBACK: if the address has no town/area, derive it from the postcode
-  // (cached Postcoder town — zero extra cost, reuses the PAF cache). Print & Post
+  // (cached Postcoder town - zero extra cost, reuses the PAF cache). Print & Post
   // needs a town for reliable Royal Mail routing.
   if (!city) {
     try { var _rmT = require('./rightmove_scraper_v2'); city = _rmT.getTownForPostcode(postcode); } catch(e) {}
@@ -32266,7 +32266,7 @@ app.post('/api/direct-mail/send-lead', authMiddleware, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/direct-mail/send-sample — send a test mailing to the customer's OWN
+// POST /api/direct-mail/send-sample - send a test mailing to the customer's OWN
 // address so free trial users (and anyone) can see the real printed result and
 // live tracking. Uses their saved materials + cover letter, charges the normal
 // per-item price, and marks the campaign as a SAMPLE so it's easy to spot.
@@ -32355,7 +32355,7 @@ app.post('/api/direct-mail/send-sample', authMiddleware, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/direct-mail/send-repeat — Print & post a lead NOW and schedule
+// POST /api/direct-mail/send-repeat - Print & post a lead NOW and schedule
 // automatic follow-up mailings (e.g. now, +2 weeks, +1 month). One Stripe
 // checkout covers the full series. Each follow-up is stored as a scheduled
 // campaign that the repeat cron dispatches to Stannp on its due date.
@@ -32486,7 +32486,7 @@ app.post('/api/direct-mail/send-repeat', authMiddleware, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/direct-mail/repeat-series — List the customer's repeat mailing series
+// GET /api/direct-mail/repeat-series - List the customer's repeat mailing series
 // with each mailing's due date + status (for the dashboard).
 app.get('/api/direct-mail/repeat-series', authMiddleware, (req, res) => {
   try {
@@ -32517,7 +32517,7 @@ app.get('/api/direct-mail/repeat-series', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/direct-mail/send-bulk — Print & post MULTIPLE leads in one go.
+// POST /api/direct-mail/send-bulk - Print & post MULTIPLE leads in one go.
 // Creates one campaign with all selected leads as recipients and returns a single
 // Stripe checkout for the combined total. Skips leads that already have full
 // addresses; reports any that can't be mailed.
@@ -32723,7 +32723,7 @@ app.post('/api/direct-mail/send-bulk', authMiddleware, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/direct-mail/send-bulk-repeat — Print & post MULTIPLE leads NOW and
+// POST /api/direct-mail/send-bulk-repeat - Print & post MULTIPLE leads NOW and
 // schedule automatic follow-up mailings (e.g. now, +2 weeks, +1 month) for the
 // whole batch. One Stripe payment covers the full series (leads × price ×
 // mailings). Each mailing is a separate campaign holding all selected leads;
@@ -32949,7 +32949,7 @@ var ALLOWED_FILE_TYPES = ['application/pdf','image/png','image/jpeg','image/jpg'
 var ALLOWED_EXTENSIONS = ['.pdf','.png','.jpg','.jpeg'];
 var MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
-// POST /api/direct-mail/upload — Upload a file (base64 JSON)
+// POST /api/direct-mail/upload - Upload a file (base64 JSON)
 app.post('/api/direct-mail/upload', authMiddleware, (req, res) => {
   try {
     var fileType = req.body.file_type || '';
@@ -32999,7 +32999,7 @@ app.post('/api/direct-mail/upload', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// PUT /api/direct-mail/materials/:id — Replace a material's file (used by the
+// PUT /api/direct-mail/materials/:id - Replace a material's file (used by the
 // Vistaprint-style position/crop editor to save the customer's positioned flyer).
 app.put('/api/direct-mail/materials/:id', authMiddleware, (req, res) => {
   try {
@@ -33019,7 +33019,7 @@ app.put('/api/direct-mail/materials/:id', authMiddleware, (req, res) => {
       else if (mime === 'image/png') { if (!/\.png$/i.test(fileName)) fileName = fileName.replace(/\.[^.]*$/, '') + '.png'; }
     }
     // Strip any data-URI prefix (e.g. "data:image/png;base64,") so the stored
-    // value is PURE base64 — the /file endpoint decodes it with Buffer.from
+    // value is PURE base64 - the /file endpoint decodes it with Buffer.from
     // (which fails on a data-URI prefix and corrupts the image). The editor sends
     // a data URI, so we must normalise it here.
     if (fileData.indexOf(',') !== -1 && /^data:[^,]+;base64,/i.test(fileData)) {
@@ -33033,10 +33033,10 @@ app.put('/api/direct-mail/materials/:id', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/direct-mail/materials — Save an uploaded material (base64 JSON).
+// POST /api/direct-mail/materials - Save an uploaded material (base64 JSON).
 // The Print & Post dashboard (direct-mail.html) calls THIS endpoint on "Upload
 // Files". Without it the upload silently 404'd and the flyer/letter never saved.
-// POST /api/direct-mail/materials/validate — Check an artwork file against the
+// POST /api/direct-mail/materials/validate - Check an artwork file against the
 // Stannp print spec for a format BEFORE the customer pays. Returns errors
 // (can't print) and warnings (quality risk). The UI calls this when a flyer
 // front/back is selected so problems are caught immediately, not at send time.
@@ -33051,7 +33051,7 @@ app.post('/api/direct-mail/materials/validate', authMiddleware, async (req, res)
     // Auto-orient before validating: if the uploaded image is stored in the
     // opposite orientation to the selected format (e.g. a landscape flyer saved
     // portrait, or a portrait flyer saved landscape), rotate 90° so it validates
-    // correctly — matching what prepareA5Artwork does at preview/send time. The
+    // correctly - matching what prepareA5Artwork does at preview/send time. The
     // user designs the artwork in the orientation they want; the system handles
     // the rotation consistently everywhere.
     var vBuf = null, vMeta = null;
@@ -33133,7 +33133,7 @@ app.post('/api/direct-mail/materials', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/direct-mail/materials — Get customer's uploaded materials
+// GET /api/direct-mail/materials - Get customer's uploaded materials
 app.get('/api/direct-mail/materials', authMiddleware, (req, res) => {
   try {
     var campaignId = req.query.campaign_id || '';
@@ -33152,7 +33152,7 @@ app.get('/api/direct-mail/materials', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/direct-mail/materials/:id — Get a single material with file data (customer isolated)
+// GET /api/direct-mail/materials/:id - Get a single material with file data (customer isolated)
 app.get('/api/direct-mail/materials/:id', authMiddleware, (req, res) => {
   try {
     var material = db.prepare('SELECT * FROM direct_mail_materials WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
@@ -33161,7 +33161,7 @@ app.get('/api/direct-mail/materials/:id', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// DELETE /api/direct-mail/materials/:id — Delete a material (customer isolated)
+// DELETE /api/direct-mail/materials/:id - Delete a material (customer isolated)
 app.delete('/api/direct-mail/materials/:id', authMiddleware, (req, res) => {
   try {
     var material = db.prepare('SELECT * FROM direct_mail_materials WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
@@ -33171,7 +33171,7 @@ app.delete('/api/direct-mail/materials/:id', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/direct-mail/stats — Get direct mail stats for customer
+// GET /api/direct-mail/stats - Get direct mail stats for customer
 app.get('/api/direct-mail/stats', authMiddleware, (req, res) => {
   try {
     const total = db.prepare('SELECT COUNT(*) as count FROM direct_mail_campaigns WHERE customer_id = ?').get(req.user.id);
@@ -33185,7 +33185,7 @@ app.get('/api/direct-mail/stats', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/test/delivery — manually trigger delivery for one customer
+// POST /api/test/delivery - manually trigger delivery for one customer
 app.post('/api/test/delivery', authMiddleware, async (req, res) => {
   // Reload DB from file to get latest state
   _dbData = null;
@@ -33258,7 +33258,7 @@ app.post('/api/test/delivery', authMiddleware, async (req, res) => {
   }
 });
 
-// POST /api/admin/impersonate — generate login token for any customer (admin access)
+// POST /api/admin/impersonate - generate login token for any customer (admin access)
 app.post('/api/admin/impersonate', adminAuth, async (req, res) => {
   try {
     const { customer_id } = req.body;
@@ -33655,7 +33655,7 @@ function httpCallLocal(method, path, body) {
 }
 function runDeliveryTestReport() {
   // SELF-HEALING LOCK: if a previous run's lock is still set but is stale (>6 min),
-  // force-clear it — a crashed/hung run must never block the 15-min cron forever
+  // force-clear it - a crashed/hung run must never block the 15-min cron forever
   // (that's what just happened: a stuck lock skipped every subsequent tick).
   if (_testReportLock) {
     if (_testReportLockAt && (Date.now() - _testReportLockAt) > 360000) {
@@ -33675,7 +33675,7 @@ function runDeliveryTestReport() {
         var date = new Date().toISOString().split('T')[0];
         var testCusts = (db.customers || []).filter(function(c) { return /^test\./.test(String(c.email || '').toLowerCase()); });
         if (!testCusts.length) { _testReportLock = false; _testReportLockAt = 0; resolve({ ok: false, reason: 'no test accounts' }); return; }
-        // FOUNDER MONITORING ACCOUNT: hello@9amleads.com is the founder's own account —
+        // FOUNDER MONITORING ACCOUNT: hello@9amleads.com is the founder's own account -
         // include it in the 15-min test runs so its dashboard + email + leads are
         // verified every run alongside the test accounts (it is a REAL customer, so it
         // is NOT clean-slated; it gets a targeted force delivery instead).
@@ -33699,11 +33699,11 @@ function runDeliveryTestReport() {
         // must KEEP its full lead history since signup. Its today-count stays at
         // exactly 5 because the force-replace delivery (see deliver) replaces today's
         // batch instead of accumulating, and the founder delivery is SILENT (no_email)
-        // so it never emails a second daily batch — the founder reads the report email.
+        // so it never emails a second daily batch - the founder reads the report email.
         var _testIds = {};
         testCusts.forEach(function(c) { if (!/^test\./.test(String(c.email || ''))) return; _testIds[c.id] = true; });
         // KEEP DELIVERED leads (only clear PENDING rows). The delivery dedupe is built
-        // from delivered leads — deleting them wiped the memory and made every test run
+        // from delivered leads - deleting them wiped the memory and made every test run
         // re-deliver the SAME leads. Keeping them means no repeat leads, ever, for test
         // and real customers alike. The per-run report still works because each run tags
         // its leads with a unique run_id + delivered_at timestamp.
@@ -33721,7 +33721,7 @@ function runDeliveryTestReport() {
         var delivRes = await httpCallLocal('POST', '/api/admin/deliver', { test_only: true, force: true, run_id: runId });
         // ALSO deliver to the founder's real account (targeted, force, SILENT) so its
         // dashboard shows exactly 5 fresh leads every 15-min run. no_email:true because
-        // the founder's real 9am email already went out — this is an internal monitor
+        // the founder's real 9am email already went out - this is an internal monitor
         // re-delivery, NOT a second customer email. The founder reads the test report.
         var founderRunId = 'mon-' + date + '-' + Date.now().toString(36);
         var founderDeliv = await httpCallLocal('POST', '/api/admin/deliver', { customer_email: MONITOR_EMAIL, force: true, run_id: founderRunId, no_email: true });
@@ -33729,7 +33729,7 @@ function runDeliveryTestReport() {
         // re-delivers the FULL quota (force), so this run's leads = those with
         // delivered_at >= runStart. This is accurate because forceFull re-delivers
         // fresh leads every run (the exact-count cap keeps each EMAIL at exactly
-        // the promised count — no more, no less).
+        // the promised count - no more, no less).
         var PLAN = { moving: 5, probate: 2, newbusiness: 5, planning: 1, tenders: 1 };
         var lines = [];
         var issues = [];
@@ -33740,7 +33740,7 @@ function runDeliveryTestReport() {
           var areas = []; try { areas = JSON.parse(c.target_areas || '[]'); } catch(e) {}
           var promised = PLAN[c.product] || 5;
           // THIS RUN'S leads = those tagged with THIS run's unique delivery_run_id.
-          // Each lead is counted exactly once — no timestamp races, no shared-DB
+          // Each lead is counted exactly once - no timestamp races, no shared-DB
           // mutation confusion. Weekly-capped products (planning/tenders) deliver
           // up to their daily cap; if a run correctly delivers 0 because today's
           // cap was already reached earlier, the report shows today's cumulative
@@ -33756,7 +33756,7 @@ function runDeliveryTestReport() {
           });
           // AUTHORITATIVE COUNT OVERRIDE: the deliver response's per_customer map
           // records the EXACT number of leads the deliver emailed to this customer
-          // (after the bulletproof hard-cap). Trust it over the DB scan — the DB
+          // (after the bulletproof hard-cap). Trust it over the DB scan - the DB
           // scan can be thrown off by a stale/cached in-memory copy, but the
           // deliver's own counter is authoritative. If they disagree, slice the
           // thisRun leads to the authoritative count.
@@ -33766,7 +33766,7 @@ function runDeliveryTestReport() {
             try { var _diagC = (delivRes && delivRes.json && delivRes.json.diag && delivRes.json.diag[c.email]) || null; if (_diagC && _diagC.final_len) { var _m = String(_diagC.final_len).match(/^(\d+)/); if (_m) _authCount = parseInt(_m[1], 10); } } catch(de2) {}
           }
           if (_authCount >= 0 && _authCount !== thisRun.length) {
-            console.log('[TEST] ' + c.email + ': deliver says ' + _authCount + ', DB scan says ' + thisRun.length + ' — trusting deliver');
+            console.log('[TEST] ' + c.email + ': deliver says ' + _authCount + ', DB scan says ' + thisRun.length + ' - trusting deliver');
             thisRun = thisRun.slice(0, _authCount);
           }
           var leads = thisRun.map(function(l) {
@@ -33789,7 +33789,7 @@ function runDeliveryTestReport() {
           // founder delivery was skipped (delivery lock held by the test run a moment
           // before) yet the account HAS delivered leads today, report today's actual
           // leads instead of a scary "0/5 NO-LEADS". The founder cares that delivery
-          // WORKS — a skipped-but-already-delivered run is not a failure.
+          // WORKS - a skipped-but-already-delivered run is not a failure.
           if (leads.length === 0 && c.email === MONITOR_EMAIL && todayTotal.length > 0) {
             leads = todayTotal.map(function(l) {
               var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
@@ -33832,7 +33832,7 @@ function runDeliveryTestReport() {
           var needsArea = c.product !== 'tenders';
           // REAL-DATA LINK: only moving/probate leads must carry a real source URL
           // (Rightmove/OTM/Gazette notice). New-business (Companies House) and
-          // tenders leads legitimately have no property link — they're companies/
+          // tenders leads legitimately have no property link - they're companies/
           // opportunities, so a missing link is NOT a failure for those products.
           var needsLink = (c.product === 'moving' || c.product === 'probate');
           // Full postcode matters for mailable products; tenders are opportunities.
@@ -33861,10 +33861,10 @@ function runDeliveryTestReport() {
           if (repDb.test_reports.length > 48) repDb.test_reports = repDb.test_reports.slice(-48);
           saveDb();
         } catch(repErr) { console.log('[TEST] report persist error:', repErr.message); }
-        // 4) email the report ONLY when there are ISSUES (reliably — no undefined
+        // 4) email the report ONLY when there are ISSUES (reliably - no undefined
         // vars, always try; failures go to the failed-email queue so the catch-up
         // cron re-sends them). When everything delivers cleanly (0 issues) we do
-        // NOT email — otherwise the founder's inbox gets flooded with a "all OK"
+        // NOT email - otherwise the founder's inbox gets flooded with a "all OK"
         // report every 15 minutes. You only hear about the runs that need action.
         try {
           if (issues.length > 0) {
@@ -33883,7 +33883,7 @@ function runDeliveryTestReport() {
               '<div style="display:flex;align-items:center;gap:12px;margin-bottom:18px"><span style="display:inline-flex;align-items:center;justify-content:center;min-width:56px;height:56px;border-radius:50%;background:rgba(239,68,68,0.15);border:2px solid #ef4444;color:#f87171;font-size:24px;font-weight:900">' + issues.length + '</span><div><div style="font-size:15px;font-weight:800;color:#f87171">' + issues.length + ' issue' + (issues.length === 1 ? '' : 's') + ' need attention</div><div style="font-size:11px;color:#94a3b8;margin-top:2px">' + (testCusts.length - rows.filter(function(r){ return r.flags.length === 0; }).length) + ' of ' + testCusts.length + ' test accounts failed checks</div></div></div>' +
               '<table style="width:100%;border-collapse:collapse;background:#12141e;border:1px solid #1e293b;border-radius:10px;overflow:hidden"><thead><tr style="background:#1a1d29"><th style="padding:10px 14px;text-align:left;font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.8px">Product</th><th style="padding:10px 14px;text-align:left;font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.8px">Test account</th><th style="padding:10px 14px;text-align:left;font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.8px">Delivered</th><th style="padding:10px 14px;text-align:right;font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.8px">Status</th></tr></thead><tbody>' + _rowHtml + '</tbody></table>' +
               '<div style="margin-top:16px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:12px 16px;font-size:12px;color:#fca5a5;line-height:1.6"><strong style="color:#f87171">What needs fixing:</strong><br>' + escHtml(issues.join('<br>')) + '</div>' +
-              '<p style="font-size:10px;color:#64748b;margin-top:14px;line-height:1.5">Test run delivers to test accounts only — real customers are never touched. Door = door/flat number, PC = full postcode, link = real source URL, 24h/48h = lead age. Leads must be max 24h in chosen areas (48h only as fallback).</p>' +
+              '<p style="font-size:10px;color:#64748b;margin-top:14px;line-height:1.5">Test run delivers to test accounts only - real customers are never touched. Door = door/flat number, PC = full postcode, link = real source URL, 24h/48h = lead age. Leads must be max 24h in chosen areas (48h only as fallback).</p>' +
               '</div></div>';
             var subj = '9amLeads delivery test (' + new Date().toLocaleString('en-GB', { timeZone: 'Europe/London' }) + ') - ' + issues.length + ' issue(s)';
             sendBrevoEmail({ email: 'hello@9amleads.com', name: '9amLeads Owner' }, subj, html).then(function() { console.log('[TEST] report email sent'); }).catch(function(em) {
@@ -33891,7 +33891,7 @@ function runDeliveryTestReport() {
               try { var feDb = getDb(); if (!feDb.failed_emails) feDb.failed_emails = []; feDb.failed_emails.push({ email: 'hello@9amleads.com', name: '9amLeads Owner', subject: subj, html: html, at: new Date().toISOString(), attempts: 1 }); if (feDb.failed_emails.length > 200) feDb.failed_emails.splice(0, feDb.failed_emails.length - 200); saveDb(); } catch(fe) { console.log('[TEST] report failed-email queue error:', fe.message); }
             });
           } else {
-            console.log('[TEST] ' + testCusts.length + ' test accounts all OK (' + Math.round((Date.now() - runStart.getTime()) / 1000) + 's) — no report email (all clean)');
+            console.log('[TEST] ' + testCusts.length + ' test accounts all OK (' + Math.round((Date.now() - runStart.getTime()) / 1000) + 's) - no report email (all clean)');
           }
         } catch(emErr) { console.log('[TEST] report email exception:', emErr.message); }
         resolve({ ok: true, issues: issues.length, report: report });
@@ -33901,14 +33901,14 @@ function runDeliveryTestReport() {
     })();
   });
 }
-// Every 15 minutes — automated delivery test + report (TEST ONLY). Gated by
+// Every 15 minutes - automated delivery test + report (TEST ONLY). Gated by
 // TEST_DELIVERY_CRON=true (off by default). Each run delivers EXACTLY the
-// promised quota to every test.* account ONLY (never real customers — the deliver
+// promised quota to every test.* account ONLY (never real customers - the deliver
 // endpoint now isolates test accounts), so the founder can verify the system is
 // bulletproof: exact count, door numbers, full postcodes and real links. Emails
 // the report to hello@9amleads.com. The real Mon-Fri 09:00 delivery is unaffected.
 cron.schedule('*/15 * * * *', () => {
-  // GATED by TEST_DELIVERY_CRON=true — set it to false (or unset) to STOP the
+  // GATED by TEST_DELIVERY_CRON=true - set it to false (or unset) to STOP the
   // 15-min test cron entirely. It only ever delivers to test.* accounts +
   // hello@9amleads.com (never real customers), but it does consume Postcoder/CPU
   // so the founder can disable it when monitoring isn't wanted.
@@ -33922,7 +33922,7 @@ cron.schedule('*/15 * * * *', () => {
   } catch(ce) { console.log('[TEST-CRON] scheduling error:', ce.message); }
 }, { timezone: 'Europe/London' });
 
-// POST /api/admin/replace-leads — remove bad delivered leads (commercial/duplicate/
+// POST /api/admin/replace-leads - remove bad delivered leads (commercial/duplicate/
 // out-of-area) from a customer and re-deliver fresh replacements from their areas,
 // then re-email the corrected batch. Body: { email, urls: ["...","..."] }
 app.post('/api/admin/replace-leads', adminAuth, async (req, res) => {
@@ -33958,7 +33958,7 @@ app.post('/api/admin/replace-leads', adminAuth, async (req, res) => {
       return l;
     });
     // SILENT BY DEFAULT: admin lead corrections (replace-leads / reset_all) must NOT
-    // notify the customer by email — the founder does not want customers to know
+    // notify the customer by email - the founder does not want customers to know
     // about internal lead updates. Only send if `email: true` is explicitly passed.
     var sendEmail = !!(req.body && req.body.email === true);
     cust.last_email_date = sendEmail ? '' : cust.last_email_date; // don't clear if silent
@@ -33985,7 +33985,7 @@ app.post('/api/admin/replace-leads', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/customer-templates?email=X — dump a customer's letter templates so
+// GET /api/admin/customer-templates?email=X - dump a customer's letter templates so
 // the exact ai_generated_text that flows into the Stannp letter can be inspected.
 app.get('/api/admin/customer-templates', adminAuth, (req, res) => {
   try {
@@ -34000,7 +34000,7 @@ app.get('/api/admin/customer-templates', adminAuth, (req, res) => {
     res.json({ success: true, email: em, customer_id: cust.id, default_template_id: settings ? settings.default_template_id : '', templates: tpls });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
-// POST /api/admin/cancel-letter — cancel a Stannp letter order (admin). Used to
+// POST /api/admin/cancel-letter - cancel a Stannp letter order (admin). Used to
 // remove stale orders that were created before the letter-layout fixes so they
 // don't print with the old content. Uses the server's STANNP_API_KEY.
 app.post('/api/admin/cancel-letter', adminAuth, async (req, res) => {
@@ -34015,7 +34015,7 @@ app.post('/api/admin/cancel-letter', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/letter-preview?email=X&template_id=Y — generate the EXACT A4
+// GET /api/admin/letter-preview?email=X&template_id=Y - generate the EXACT A4
 // letter PDF (via pdfkit) that Stannp would print, WITHOUT sending to Stannp or
 // charging anything. Free way to verify the letter content + layout before paying.
 app.get('/api/admin/letter-preview', adminAuth, async (req, res) => {
@@ -34037,7 +34037,7 @@ app.get('/api/admin/letter-preview', adminAuth, async (req, res) => {
     // NOTE: do NOT insert the recipient address into the letter body. Stannp prints
     // the recipient name + address itself in the envelope window (top of the page),
     // so adding it here makes the address appear TWICE on the printed letter. The
-    // preview + actual send both keep the body address-free — Stannp owns the address.
+    // preview + actual send both keep the body address-free - Stannp owns the address.
     clean.html = clean.html
       .replace(/\[name\]/gi, rcptMock.name)
       .replace(/\[address\]/gi, '')
@@ -34054,7 +34054,7 @@ app.get('/api/admin/letter-preview', adminAuth, async (req, res) => {
       doc.on('data', buffers.push.bind(buffers));
       var done = new Promise(function(resolve, reject) { doc.on('end', resolve); doc.on('error', reject); });
       var bodyFont = unicodeFont ? 'uni' : 'Helvetica';
-      // No sender header/divider — Stannp prints the recipient address in its own
+      // No sender header/divider - Stannp prints the recipient address in its own
       // envelope window at the TOP of the page, so the body starts BELOW it (285pt)
       // to stay visible, and is sized to fit one page.
       doc.font(bodyFont).fontSize(10).text(clean.body, 50, 285, { width: 595 - 100, lineBreak: true, align: 'left' });
@@ -34073,7 +34073,7 @@ app.get('/api/admin/letter-preview', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/set-areas — set a customer's target areas + coverage (admin).
+// POST /api/admin/set-areas - set a customer's target areas + coverage (admin).
 // Used to align test accounts (e.g. newbusiness from postcode areas to counties)
 // without needing the customer's JWT.
 app.post('/api/admin/set-areas', adminAuth, (req, res) => {
@@ -34093,7 +34093,7 @@ app.post('/api/admin/set-areas', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/send-test-email — send a SAMPLE of the delivery-test report email
+// POST /api/admin/send-test-email - send a SAMPLE of the delivery-test report email
 // to any address so the founder can preview the new layout without a real run.
 // Body: { email } (defaults to hello@9amleads.com)
 app.post('/api/admin/send-test-email', adminAuth, async (req, res) => {
@@ -34123,14 +34123,14 @@ app.post('/api/admin/send-test-email', adminAuth, async (req, res) => {
       '<div style="display:flex;align-items:center;gap:12px;margin-bottom:18px"><span style="display:inline-flex;align-items:center;justify-content:center;min-width:56px;height:56px;border-radius:50%;background:rgba(239,68,68,0.15);border:2px solid #ef4444;color:#f87171;font-size:24px;font-weight:900">' + issuesCount + '</span><div><div style="font-size:15px;font-weight:800;color:#f87171">' + issuesCount + ' issues need attention</div><div style="font-size:11px;color:#94a3b8;margin-top:2px">2 of 26 test accounts failed checks</div></div></div>' +
       '<table style="width:100%;border-collapse:collapse;background:#12141e;border:1px solid #1e293b;border-radius:10px;overflow:hidden"><thead><tr style="background:#1a1d29"><th style="padding:10px 14px;text-align:left;font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.8px">Product</th><th style="padding:10px 14px;text-align:left;font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.8px">Test account</th><th style="padding:10px 14px;text-align:left;font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.8px">Delivered</th><th style="padding:10px 14px;text-align:right;font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.8px">Status</th></tr></thead><tbody>' + _rowHtml + '</tbody></table>' +
       '<div style="margin-top:16px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:12px 16px;font-size:12px;color:#fca5a5;line-height:1.6"><strong style="color:#f87171">What needs fixing:</strong><br>test.moving2@9amleads.com: SHORT 3/5 · 1 out-of-area<br>test.planning1@9amleads.com: SHORT 0/1 · NO-LEADS</div>' +
-      '<p style="font-size:10px;color:#64748b;margin-top:14px;line-height:1.5">Test run delivers to test accounts only — real customers are never touched. Door = door/flat number, PC = full postcode, link = real source URL, 24h/48h = lead age. Leads must be max 24h in chosen areas (48h only as fallback).</p>' +
+      '<p style="font-size:10px;color:#64748b;margin-top:14px;line-height:1.5">Test run delivers to test accounts only - real customers are never touched. Door = door/flat number, PC = full postcode, link = real source URL, 24h/48h = lead age. Leads must be max 24h in chosen areas (48h only as fallback).</p>' +
       '</div></div>';
-    await sendBrevoEmail({ email: to, name: '9amLeads Owner' }, '9amLeads delivery test — SAMPLE of new layout', html);
+    await sendBrevoEmail({ email: to, name: '9amLeads Owner' }, '9amLeads delivery test - SAMPLE of new layout', html);
     res.json({ success: true, sent_to: to });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/send-status-email-samples — send sample copies of the two
+// POST /api/admin/send-status-email-samples - send sample copies of the two
 // customer status emails (the 09:10 "on their way" delay notice and the 09:20
 // "all sorted" confirmation) so the founder can review the wording/design.
 // Body: { email } (defaults to hello@9amleads.com)
@@ -34139,12 +34139,12 @@ app.post('/api/admin/send-status-email-samples', adminAuth, async (req, res) => 
     var to = String((req.body && req.body.email) || 'hello@9amleads.com').trim();
     var delayHtml = '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:16px"><h2 style="color:#38bdf8;margin:0 0 8px">Your leads are on their way ✨</h2><p style="font-size:15px;line-height:1.6;color:#cbd5e1">Just a quick heads-up: today\'s fresh opportunities are still being delivered to your dashboard and inbox. They\'ll be with you very shortly.</p><p style="font-size:15px;line-height:1.6;color:#cbd5e1">No action needed. Everything is being handled and your leads will arrive today as usual. 😊</p><p style="font-size:13px;color:#94a3b8;margin:16px 0 0">- The 9amLeads Team</p></div>';
     var sortedHtml = '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:16px"><h2 style="color:#34d399;margin:0 0 8px">All sorted ✅</h2><p style="font-size:15px;line-height:1.6;color:#cbd5e1">We\'ve resolved the technical issue and your fresh leads are now in your dashboard and inbox.</p><p style="font-size:15px;line-height:1.6;color:#cbd5e1">Thank you for your patience. Everything is working normally again. 🙏</p><p style="font-size:13px;color:#94a3b8;margin:16px 0 0">- The 9amLeads Team</p></div>';
-    await sendBrevoEmail({ email: to, name: '9amLeads Owner' }, 'SAMPLE — Leads on their way (09:10 delay notice)', delayHtml);
-    await sendBrevoEmail({ email: to, name: '9amLeads Owner' }, 'SAMPLE — All sorted (09:20 confirmation)', sortedHtml);
+    await sendBrevoEmail({ email: to, name: '9amLeads Owner' }, 'SAMPLE - Leads on their way (09:10 delay notice)', delayHtml);
+    await sendBrevoEmail({ email: to, name: '9amLeads Owner' }, 'SAMPLE - All sorted (09:20 confirmation)', sortedHtml);
     res.json({ success: true, sent_to: to });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
-// POST /api/admin/send-delivery-report — manually trigger the 07:00 morning
+// POST /api/admin/send-delivery-report - manually trigger the 07:00 morning
 // delivery report email (self-heals supply first, then emails readiness).
 app.post('/api/admin/send-delivery-report', adminAuth, async (req, res) => {
   try {
@@ -34166,7 +34166,7 @@ app.post('/api/admin/send-customer-email', adminAuth, async (req, res) => {
       return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0;
     });
     if (todayLeads.length === 0) return res.json({ error: 'No delivered leads today for ' + em });
-    if (cust.last_email_date === today && !(req.body && req.body.force)) return res.json({ error: em + ' was already emailed today — not sending duplicate' });
+    if (cust.last_email_date === today && !(req.body && req.body.force)) return res.json({ error: em + ' was already emailed today - not sending duplicate' });
     var subject = '9amLeads \u2022 Your Daily Opportunities on ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
     var html = generateLeadEmailHTML(cust, todayLeads);
     await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, subject, html);
@@ -34184,7 +34184,7 @@ app.get('/api/admin/test-report', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/run-test — placeholder replaced below
+// GET /api/admin/run-test - placeholder replaced below
 app.get('/api/admin/delivery-audit', adminAuth, (req, res) => {
   try {
     var db = getDb();
@@ -34193,7 +34193,7 @@ app.get('/api/admin/delivery-audit', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/guarantee-audit — run (and report) today's delivery guarantee audit:
+// GET /api/admin/guarantee-audit - run (and report) today's delivery guarantee audit:
 // verifies delivered == promised for every active customer, resends any missing daily
 // email, removes same-day duplicates, and lists any breach. This is the "no more, no
 // less" proof the founder can check any time after 9am.
@@ -34202,12 +34202,12 @@ app.get('/api/admin/guarantee-audit', adminAuth, (req, res) => {
   catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/run-test — run the automated delivery test + email the report now.
+// POST /api/admin/run-test - run the automated delivery test + email the report now.
 app.post('/api/admin/run-test', adminAuth, (req, res) => {
   runDeliveryTestReport().then(function(r) { res.json({ success: true, result: r }); });
 });
 
-// POST /api/admin/update-filters — set a customer's lead filters (biz_field2) by email.
+// POST /api/admin/update-filters - set a customer's lead filters (biz_field2) by email.
 app.post('/api/admin/update-filters', adminAuth, (req, res) => {
   try {
     var email = String((req.body && req.body.email) || '').toLowerCase();
@@ -34222,7 +34222,7 @@ app.post('/api/admin/update-filters', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/pool-sample?product=probate&n=20 — raw sample of a product's pool
+// GET /api/admin/pool-sample?product=probate&n=20 - raw sample of a product's pool
 // (for diagnosing supply/address issues). Returns the actual stored fields.
 app.get('/api/admin/pool-sample', adminAuth, (req, res) => {
   try {
@@ -34279,8 +34279,8 @@ function normalizeBodyPart(part) {
 // Generate one high-quality post via OpenAI and queue it as a draft.
 async function generateAutoBlogPost(category) {
   var typeLabel = BLOG_CATEGORIES[category] || 'business leads';
-  var system = 'You write high-quality, genuinely useful UK blog posts FOR BUSINESS OWNERS who buy leads to win work (removal companies, solicitors, accountants, builders, tender bidders). Every post must help a business owner find, win and convert more clients — write directly TO the business owner, never to homeowners/consumers. 9amLeads delivers fresh UK business leads every morning at 9am across moving, probate, new business (Companies House), planning permission and public sector tenders. Write like an experienced practitioner: specific, actionable, UK-focused, no fluff, no hype. Never overclaim exclusivity. Return ONLY valid JSON.';
-  var user = 'Write a long-form blog post about "' + typeLabel + '". Choose a specific, practical angle a UK business would search for and find genuinely useful. The article body MUST be at least 950 words — count the words carefully and write enough detailed, specific content. Return strict JSON matching exactly this schema: {"title": string, "description": string (a 1-2 sentence meta description), "category": "' + category + '", "keywords": array of 5 strings, "faqs": array of exactly 4 objects {"q": string, "a": string of 2-3 sentences}, "sections": array of 6-7 objects {"h": string (H2 heading), "body": array where each element is either a plain string paragraph OR an object with exactly one key from {"ul": [strings]}, {"table": [[strings]]}, {"cta": string}}}. Write paragraphs of 70-110 words so the article is genuinely in-depth. Include at least one table AND at least one list. Do not use markdown, backticks or literal newlines inside strings; escape quotes properly.';
+  var system = 'You write high-quality, genuinely useful UK blog posts FOR BUSINESS OWNERS who buy leads to win work (removal companies, solicitors, accountants, builders, tender bidders). Every post must help a business owner find, win and convert more clients - write directly TO the business owner, never to homeowners/consumers. 9amLeads delivers fresh UK business leads every morning at 9am across moving, probate, new business (Companies House), planning permission and public sector tenders. Write like an experienced practitioner: specific, actionable, UK-focused, no fluff, no hype. Never overclaim exclusivity. Return ONLY valid JSON.';
+  var user = 'Write a long-form blog post about "' + typeLabel + '". Choose a specific, practical angle a UK business would search for and find genuinely useful. The article body MUST be at least 950 words - count the words carefully and write enough detailed, specific content. Return strict JSON matching exactly this schema: {"title": string, "description": string (a 1-2 sentence meta description), "category": "' + category + '", "keywords": array of 5 strings, "faqs": array of exactly 4 objects {"q": string, "a": string of 2-3 sentences}, "sections": array of 6-7 objects {"h": string (H2 heading), "body": array where each element is either a plain string paragraph OR an object with exactly one key from {"ul": [strings]}, {"table": [[strings]]}, {"cta": string}}}. Write paragraphs of 70-110 words so the article is genuinely in-depth. Include at least one table AND at least one list. Do not use markdown, backticks or literal newlines inside strings; escape quotes properly.';
   var res = await callOpenAIChat([{ role: 'system', content: system }, { role: 'user', content: user }]);
   var content = (res.choices && res.choices[0] && res.choices[0].message && res.choices[0].message.content) || '';
   var parsed = JSON.parse(content);
@@ -34388,7 +34388,7 @@ app.post('/api/admin/blog/delete', adminAuth, function(req, res) {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/blog/respace — Re-space the QUEUED (unpublished) posts to an even
+// POST /api/admin/blog/respace - Re-space the QUEUED (unpublished) posts to an even
 // cadence (BLOG_POSTS_PER_DAY/day) starting from the next future slot, and drop
 // queued near-duplicate titles (keeping the earliest of each cluster).
 app.post('/api/admin/blog/respace', adminAuth, function(req, res) {
@@ -34414,7 +34414,7 @@ app.post('/api/admin/blog/respace', adminAuth, function(req, res) {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/blog/reset-variations — Delete ALL auto-generated variation posts
+// POST /api/admin/blog/reset-variations - Delete ALL auto-generated variation posts
 // (keeps base templates + hand-written posts) so the daily cron can release 6-8/day fresh.
 app.post('/api/admin/blog/reset-variations', adminAuth, function(req, res) {
   try {
@@ -34465,7 +34465,7 @@ app.get('/api/admin/seo/report', adminAuth, function(req, res) {
       blog_accessible: true,
       automation: {
         enabled: true,
-        cron: 'Daily 04:00 UK — auto-releases 6-8 new posts, refreshes sitemap, pings Google/Bing/IndexNow',
+        cron: 'Daily 04:00 UK - auto-releases 6-8 new posts, refreshes sitemap, pings Google/Bing/IndexNow',
         last_run: dbData.seo_last_run || null,
         posts_left_to_auto: remaining
       },
@@ -34491,13 +34491,13 @@ app.get('/api/admin/seo/report', adminAuth, function(req, res) {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ===== GOOGLE SEARCH CONSOLE (GSC) — real Google search performance =====
+// ===== GOOGLE SEARCH CONSOLE (GSC) - real Google search performance =====
 // Unlike the self-hosted conversion analytics (/api/admin/analytics) this shows
 // actual Google impressions/clicks/position for the verified 9amleads.com property.
 var gscMod = null;
 function getGsc() { if (!gscMod) gscMod = require('./gsc_integration'); return gscMod; }
 
-// GET /api/admin/gsc/status — is GSC configured/connected, which property, last sync.
+// GET /api/admin/gsc/status - is GSC configured/connected, which property, last sync.
 app.get('/api/admin/gsc/status', adminAuth, function(req, res) {
   try {
     var g = getGsc();
@@ -34535,7 +34535,7 @@ function buildGscAuthUrl(g, creds) {
   return 'https://accounts.google.com/o/oauth2/v2/auth?' + params;
 }
 
-// POST /api/admin/gsc/connect — returns the consent URL for the admin to open.
+// POST /api/admin/gsc/connect - returns the consent URL for the admin to open.
 // Optional body: { client_id, client_secret } to save OAuth app credentials first
 // (otherwise read from GSC_CLIENT_ID / GSC_CLIENT_SECRET env vars).
 app.post('/api/admin/gsc/connect', adminAuth, async function(req, res) {
@@ -34555,7 +34555,7 @@ app.post('/api/admin/gsc/connect', adminAuth, async function(req, res) {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/gsc/callback — Google redirects the admin's browser here with ?code.
+// GET /api/admin/gsc/callback - Google redirects the admin's browser here with ?code.
 // Public (no adminAuth): Google cannot send our Bearer header. Validates state,
 // exchanges the code, stores tokens, auto-picks the property, redirects to the panel.
 app.get('/api/admin/gsc/callback', async function(req, res) {
@@ -34592,7 +34592,7 @@ app.get('/api/admin/gsc/callback', async function(req, res) {
   } catch(e) { console.log('[GSC] callback error:', e.message); res.status(500).send('GSC callback error: ' + e.message); }
 });
 
-// POST /api/admin/gsc/set-property — choose which GSC property to read (optional).
+// POST /api/admin/gsc/set-property - choose which GSC property to read (optional).
 app.post('/api/admin/gsc/set-property', adminAuth, async function(req, res) {
   try {
     var g = getGsc();
@@ -34608,7 +34608,7 @@ app.post('/api/admin/gsc/set-property', adminAuth, async function(req, res) {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/gsc/data?days=30 — pull real search performance from Google.
+// GET /api/admin/gsc/data?days=30 - pull real search performance from Google.
 app.get('/api/admin/gsc/data', adminAuth, async function(req, res) {
   try {
     var g = getGsc();
@@ -34620,7 +34620,7 @@ app.get('/api/admin/gsc/data', adminAuth, async function(req, res) {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/gsc/inspect?url=... — check whether a specific URL is indexed by Google.
+// GET /api/admin/gsc/inspect?url=... - check whether a specific URL is indexed by Google.
 app.get('/api/admin/gsc/inspect', adminAuth, async function(req, res) {
   try {
     var g = getGsc();
@@ -34632,7 +34632,7 @@ app.get('/api/admin/gsc/inspect', adminAuth, async function(req, res) {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/gsc/inspect-blog — index status for every public blog post, so we can
+// GET /api/admin/gsc/inspect-blog - index status for every public blog post, so we can
 // see exactly which posts Google has indexed vs not (and the coverage reason).
 app.get('/api/admin/gsc/inspect-blog', adminAuth, async function(req, res) {
   try {
@@ -34655,7 +34655,7 @@ app.get('/api/admin/gsc/inspect-blog', adminAuth, async function(req, res) {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/blog/consolidate — detect near-duplicate posts (by normalised title)
+// POST /api/admin/blog/consolidate - detect near-duplicate posts (by normalised title)
 // and mark all but the best in each cluster as duplicates of the keeper. Duplicates
 // 301-redirect to the keeper and are excluded from the blog index + sitemap. Body:
 // { dry_run: true } to preview without writing.
@@ -34692,7 +34692,28 @@ app.post('/api/admin/blog/consolidate', adminAuth, function(req, res) {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/gsc/opportunities?days=90 — keywords closest to page 1 (best ROI).
+// POST /api/admin/blog/clean-dashes - replace em/en dashes with plain hyphens across
+// every stored blog post (html, title, description) and refresh the sitemap.
+app.post('/api/admin/blog/clean-dashes', adminAuth, function(req, res) {
+  try {
+    var dbD = getDb();
+    var fixed = 0, fields = 0;
+    (dbD.blog_posts || []).forEach(function(p) {
+      var changed = false;
+      ['html', 'title', 'description'].forEach(function(k) {
+        if (typeof p[k] === 'string' && /[\u2014\u2013]/.test(p[k])) {
+          p[k] = p[k].replace(/\u2014/g, '-').replace(/\u2013/g, '-');
+          fields++; changed = true;
+        }
+      });
+      if (changed) fixed++;
+    });
+    if (fixed) { saveDb(); try { writeSitemap(); } catch(e) {} }
+    res.json({ success: true, posts_fixed: fixed, fields: fields });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/gsc/opportunities?days=90 - keywords closest to page 1 (best ROI).
 app.get('/api/admin/gsc/opportunities', adminAuth, async function(req, res) {
   try {
     var g = getGsc();
@@ -34733,7 +34754,7 @@ function getDirectoryTracker() {
   return dbDt.backlink_tracker;
 }
 
-// GET /api/admin/backlink-tracker — list all directory/backlink opportunities.
+// GET /api/admin/backlink-tracker - list all directory/backlink opportunities.
 app.get('/api/admin/backlink-tracker', adminAuth, function(req, res) {
   try {
     var t = getDirectoryTracker();
@@ -34744,7 +34765,7 @@ app.get('/api/admin/backlink-tracker', adminAuth, function(req, res) {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/backlink-tracker — add a new opportunity (name/url/why).
+// POST /api/admin/backlink-tracker - add a new opportunity (name/url/why).
 app.post('/api/admin/backlink-tracker', adminAuth, function(req, res) {
   try {
     var name = String((req.body && req.body.name) || '').trim();
@@ -34757,7 +34778,7 @@ app.post('/api/admin/backlink-tracker', adminAuth, function(req, res) {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// PATCH /api/admin/backlink-tracker/:id — update status (+ optional url/why/notes).
+// PATCH /api/admin/backlink-tracker/:id - update status (+ optional url/why/notes).
 app.post('/api/admin/backlink-tracker/:id', adminAuth, function(req, res) {
   try {
     var t = getDirectoryTracker();
@@ -34777,7 +34798,7 @@ app.post('/api/admin/backlink-tracker/:id', adminAuth, function(req, res) {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// DELETE /api/admin/backlink-tracker/:id — remove an opportunity.
+// DELETE /api/admin/backlink-tracker/:id - remove an opportunity.
 app.delete('/api/admin/backlink-tracker/:id', adminAuth, function(req, res) {
   try {
     var t = getDirectoryTracker();
@@ -34789,7 +34810,7 @@ app.delete('/api/admin/backlink-tracker/:id', adminAuth, function(req, res) {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/gsc/disconnect — clear stored tokens.
+// POST /api/admin/gsc/disconnect - clear stored tokens.
 app.post('/api/admin/gsc/disconnect', adminAuth, function(req, res) {
   try {
     var g = getGsc();
@@ -34866,13 +34887,13 @@ app.post('/api/admin/blog/generate', adminAuth, function(req, res) {
       if (dbData.blog_posts.some(function(p) { return p.slug === slug; })) continue;
       var paraPool = [
         'In today\'s market, every UK business owner needs an edge to win work. ' + title + ' gives you a steady, repeatable pipeline you can rely on.',
-        productName + ' hand you fresh, sourced opportunities every morning — so you are not waiting for the phone to ring or scraping directories yourself.',
+        productName + ' hand you fresh, sourced opportunities every morning - so you are not waiting for the phone to ring or scraping directories yourself.',
         'Consistency is key with ' + type + '. A fresh batch each morning builds a daily outreach habit that compounds into booked work.',
         'The businesses that win with ' + type + ' act fast. A structured morning workflow means you contact the homeowner or prospect while the opportunity is still fresh.',
-        productName + ' come from official registers and portals and are updated daily. Accurate, fresh, actionable — the kind of data you can act on the same morning.',
+        productName + ' come from official registers and portals and are updated daily. Accurate, fresh, actionable - the kind of data you can act on the same morning.',
         'The cost of ' + type + ' is predictable and fixed. No auction dynamics, no rising CPCs, no guesswork on your marketing budget.',
         'Being first to contact wins. When a fresh opportunity lands at 9am, the business that reaches out first controls the conversation.',
-        productName + ' give you your own daily allocation of fresh opportunities in the areas you choose — never the same lead twice.',
+        productName + ' give you your own daily allocation of fresh opportunities in the areas you choose - never the same lead twice.',
       ];
       var sections = '';
       sections += '<h2>Why ' + title.split(' ').slice(0,3).join(' ') + ' Matters</h2><p>' + paraPool[0] + '</p><p>' + paraPool[1] + '</p>';
@@ -34894,7 +34915,7 @@ app.post('/api/admin/blog/generate', adminAuth, function(req, res) {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/blog/regen — Rebuild SEO HTML for ALL existing posts
+// POST /api/admin/blog/regen - Rebuild SEO HTML for ALL existing posts
 // (adds JSON-LD, meta keywords, canonical, internal product links to older posts)
 app.post('/api/admin/blog/topup', adminAuth, function(req, res) {
   // On-demand queue top-up: generate OpenAI-scheduled posts so the 2/day cadence
@@ -34938,7 +34959,7 @@ app.post('/api/admin/blog/regen', adminAuth, function(req, res) {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/blog/generate-all — Generate all remaining templates
+// POST /api/admin/blog/generate-all - Generate all remaining templates
 app.post('/api/admin/blog/generate-all', adminAuth, function(req, res) {
   try {
     var dbData = getDb();
@@ -34977,7 +34998,7 @@ app.post('/api/admin/blog/generate-all', adminAuth, function(req, res) {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/direct-mail/dashboard — Admin DM overview
+// GET /api/admin/direct-mail/dashboard - Admin DM overview
 app.get('/api/admin/direct-mail/dashboard', adminAuth, (req, res) => {
   try {
     var db2 = getDb();
@@ -35030,7 +35051,7 @@ app.get('/api/admin/direct-mail/dashboard', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/direct-mail/campaigns — All campaigns
+// GET /api/admin/direct-mail/campaigns - All campaigns
 app.get('/api/admin/direct-mail/campaigns', adminAuth, (req, res) => {
   try {
     var db2 = getDb();
@@ -35049,7 +35070,7 @@ app.get('/api/admin/direct-mail/campaigns', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/direct-mail/campaigns/:id/retry — Retry a failed campaign
+// POST /api/admin/direct-mail/campaigns/:id/retry - Retry a failed campaign
 app.post('/api/admin/direct-mail/campaigns/:id/retry', adminAuth, async (req, res) => {
   try {
     var db2 = getDb();
@@ -35061,7 +35082,7 @@ app.post('/api/admin/direct-mail/campaigns/:id/retry', adminAuth, async (req, re
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/direct-mail/campaigns/:id/cancel — Cancel a campaign
+// POST /api/admin/direct-mail/campaigns/:id/cancel - Cancel a campaign
 app.post('/api/admin/direct-mail/campaigns/:id/cancel', adminAuth, (req, res) => {
   try {
     var campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ?').get(req.params.id);
@@ -35072,7 +35093,7 @@ app.post('/api/admin/direct-mail/campaigns/:id/cancel', adminAuth, (req, res) =>
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/direct-mail/campaigns/:id/refund — Mark as refunded
+// POST /api/admin/direct-mail/campaigns/:id/refund - Mark as refunded
 app.post('/api/admin/direct-mail/campaigns/:id/refund', adminAuth, (req, res) => {
   try {
     var campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ?').get(req.params.id);
@@ -35083,7 +35104,7 @@ app.post('/api/admin/direct-mail/campaigns/:id/refund', adminAuth, (req, res) =>
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/direct-mail/campaigns/:id/delete-permanent — Permanently delete a
+// POST /api/admin/direct-mail/campaigns/:id/delete-permanent - Permanently delete a
 // campaign and its recipients/status history (admin). Used to clean up test data.
 app.post('/api/admin/direct-mail/campaigns/:id/delete-permanent', adminAuth, (req, res) => {
   try {
@@ -35097,7 +35118,7 @@ app.post('/api/admin/direct-mail/campaigns/:id/delete-permanent', adminAuth, (re
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/direct-mail/campaigns/:id/sync — Manually sync provider status
+// POST /api/admin/direct-mail/campaigns/:id/sync - Manually sync provider status
 app.post('/api/admin/direct-mail/campaigns/:id/sync', adminAuth, async (req, res) => {
   try {
     var campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ?').get(req.params.id);
@@ -35110,7 +35131,7 @@ app.post('/api/admin/direct-mail/campaigns/:id/sync', adminAuth, async (req, res
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/direct-mail/customers/:id/suspend-auto-send — Suspend customer Print & Post
+// POST /api/admin/direct-mail/customers/:id/suspend-auto-send - Suspend customer Print & Post
 app.post('/api/admin/direct-mail/customers/:id/suspend-auto-send', adminAuth, (req, res) => {
   try {
     db.prepare('UPDATE customers SET auto_send_paused = ? WHERE id = ?').run(req.body.paused !== false ? 1 : 0, req.params.id);
@@ -35118,7 +35139,7 @@ app.post('/api/admin/direct-mail/customers/:id/suspend-auto-send', adminAuth, (r
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/direct-mail/provider-logs — Get provider logs
+// GET /api/admin/direct-mail/provider-logs - Get provider logs
 app.get('/api/admin/direct-mail/provider-logs', adminAuth, (req, res) => {
   try {
     var db2 = getDb();
@@ -35131,12 +35152,12 @@ app.get('/api/admin/direct-mail/provider-logs', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/direct-mail/pricing — Get pricing config
+// GET /api/admin/direct-mail/pricing - Get pricing config
 app.get('/api/admin/direct-mail/pricing', adminAuth, (req, res) => {
   res.json({ success: true, pricing: DM_PRICE_CONFIG });
 });
 
-// POST /api/direct-mail/price-calc — Calculate price (for admin detailed view)
+// POST /api/direct-mail/price-calc - Calculate price (for admin detailed view)
 app.post('/api/direct-mail/price-calc', authMiddleware, (req, res) => {
   try {
     var count = parseInt(req.body.recipient_count) || 1;
@@ -35145,7 +35166,7 @@ app.post('/api/direct-mail/price-calc', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/direct-mail/pricing — Update pricing config
+// POST /api/admin/direct-mail/pricing - Update pricing config
 app.post('/api/admin/direct-mail/pricing', adminAuth, (req, res) => {
   try {
     var fields = ['platform_fee','min_fee','markup_pct','per_recipient_margin','ai_letter_fee','ai_flyer_fee','ai_pack_fee','auto_send_monthly_fee','vat_pct','provider_cost_per_unit','discount_codes'];
@@ -35163,7 +35184,7 @@ app.post('/api/admin/direct-mail/pricing', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/direct-mail/run-auto-send — Trigger Print & Post
+// POST /api/admin/direct-mail/run-auto-send - Trigger Print & Post
 app.post('/api/admin/direct-mail/run-auto-send', adminAuth, async (req, res) => {
   try {
     var results = await runAutoSend();
@@ -35171,7 +35192,7 @@ app.post('/api/admin/direct-mail/run-auto-send', adminAuth, async (req, res) => 
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/direct-mail/features — Get feature access for current customer
+// GET /api/direct-mail/features - Get feature access for current customer
 app.get('/api/direct-mail/features', authMiddleware, (req, res) => {
   try {
     var customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
@@ -35188,12 +35209,12 @@ app.get('/api/direct-mail/features', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/direct-mail/features — Get all feature config (admin)
+// GET /api/admin/direct-mail/features - Get all feature config (admin)
 app.get('/api/admin/direct-mail/features', adminAuth, (req, res) => {
   res.json({ success: true, features: DM_FEATURE_ACCESS });
 });
 
-// POST /api/admin/direct-mail/features — Update feature config (admin)
+// POST /api/admin/direct-mail/features - Update feature config (admin)
 app.post('/api/admin/direct-mail/features', adminAuth, (req, res) => {
   try {
     var plans = ['free_trial','starter','pro','enterprise'];
@@ -35278,7 +35299,7 @@ app.post('/api/admin/run-scrapers', adminAuth, (req, res) => {
 
     // HANG-GUARD: no scraper may block the daily run forever. Each scrape is
     // wrapped so a hung region/provider (Rightmove direct, OTM, etc.) aborts after
-    // its budget and the run moves on — yesterday's pool + the other sources keep
+    // its budget and the run moves on - yesterday's pool + the other sources keep
     // the delivery supplied.
     function withTimeout(promise, ms, label) {
       return new Promise(function(resolve) {
@@ -35296,7 +35317,7 @@ app.post('/api/admin/run-scrapers', adminAuth, (req, res) => {
 
         // Tiered freshness filter: 0-24h primary, 24-48h fallback. On Mondays the
         // reject floor extends to Saturday 00:00 so weekend-scraped leads are kept
-        // (they fill Monday's accounts — see getFreshCutoffIso).
+        // (they fill Monday's accounts - see getFreshCutoffIso).
     function filterFresh(leads, dateField) {
       if (!leads || !Array.isArray(leads)) return { fresh: [], fallback: [], rejected: 0 };
       var now = new Date();
@@ -35305,7 +35326,7 @@ app.post('/api/admin/run-scrapers', adminAuth, (req, res) => {
       var result = { fresh: [], fallback: [], rejected: 0 };
       leads.forEach(function(l) {
         // Freshness is judged ONLY on the caller's chosen date field (e.g.
-        // firstVisibleDate for moving). Never fall back to scrapedAt — that would
+        // firstVisibleDate for moving). Never fall back to scrapedAt - that would
         // mark a months-old listing as fresh just because we scraped it today.
         var dateVal = l[dateField] || '';
         if (dateVal >= cutoff24h) result.fresh.push(l);
@@ -35339,7 +35360,7 @@ function syncCustomers(product) {
     const onlyProduct = req.body && req.body.product;
 
     // Run each product's scrape CONCURRENTLY so the full scrape completes within
-    // the process timeout. Previously this looped sequentially — moving (with its
+    // the process timeout. Previously this looped sequentially - moving (with its
     // deep Apify worker + enrichment) is so slow that newbusiness/probate/planning/
     // tenders never ran, leaving 4 of 5 products with no fresh supply. Each product
     // runs in its own detached try/catch; running them in parallel fixes the timeout.
@@ -35370,7 +35391,7 @@ function syncCustomers(product) {
             function chParseDate(ds) { if (!ds) return 0; var t = Date.parse(ds); return isNaN(t) ? 0 : t; }
             function chDateStr(ms) { return new Date(ms).toISOString().split('T')[0]; }
             function chFetchAdvancedPage(fromDate, startIndex, size, cb) {
-              // Companies House ADVANCED Company Search — supports incorporated_from
+              // Companies House ADVANCED Company Search - supports incorporated_from
               // (unlike standard /search/companies which sorts by name relevance and
               // never surfaces fresh companies). Verified working on this key/tier:
               // returns genuinely newly-incorporated companies with real addresses.
@@ -35403,7 +35424,7 @@ function syncCustomers(product) {
               }
               return all;
             }
-            // Fetch companies incorporated since 48h ago — a wider window gives a
+            // Fetch companies incorporated since 48h ago - a wider window gives a
             // much richer pool (~8,000+ active companies vs ~1,900 for 24h) so
             // customers always have supply. Fresh-first delivery still prioritises
             // the newest 24h for the "fresh" promise.
@@ -35426,7 +35447,7 @@ function syncCustomers(product) {
               return { id: 'CH_NB_' + c.company_number, name: chCompanyName, companyNumber: c.company_number, companyName: chCompanyName, address: chAddress, postcode: chPostcode, incorporationDate: c.incorporated_on || c.date_of_creation || '', sicCode: (c.sic_codes || []).join(', ') || '', source: 'Companies House API', scrapedAt: new Date().toISOString() };
             });
             // Strict: keep only those incorporated within 24h, else fallback to 48h.
-            // We keep BOTH so the pool holds a richer supply — customers get the
+            // We keep BOTH so the pool holds a richer supply - customers get the
             // newest first, but a wider 48h window avoids quiet-day shortages.
             var nb24 = nbFiltered.filter(function(l){ var t = chParseDate(l.incorporationDate); return t >= cutoff24hMs; });
             var nb48 = nbFiltered.filter(function(l){ var t = chParseDate(l.incorporationDate); return t >= cutoff48hMs && t < cutoff24hMs; });
@@ -35520,7 +35541,7 @@ function syncCustomers(product) {
             } catch(e) { console.log('[SCRAPER] Apify Tenders error:', e.message); }
           }
           // PCS Scotland + Sell2Wales + data.gov.uk ALWAYS run (not just as a
-          // fallback) to maximise daily tender supply — Contracts Finder alone can
+          // fallback) to maximise daily tender supply - Contracts Finder alone can
           // return as few as 6 notices on a quiet day. Each source adds genuinely
           // different notices; running all of them keeps the pool full enough to
           // deliver every customer's promised count.
@@ -35550,7 +35571,7 @@ function syncCustomers(product) {
                   req.on('error', function() { resolve([]); }); req.setTimeout(15000, function() { req.destroy(); resolve([]); }); req.end();
                 });
               }
-              // Sell2Wales (Welsh government tender portal) — the missing UK portal.
+              // Sell2Wales (Welsh government tender portal) - the missing UK portal.
               async function fetchSell2Wales() {
                 return new Promise(function(resolve) {
                   // Sell2Wales's OCDS Web API (api.sell2wales.gov.wales/v1) is currently
@@ -35598,7 +35619,7 @@ function syncCustomers(product) {
               }
               // Fetch from multiple sources in parallel. data.gov.uk is NOT included:
               // its package_search returns dataset metadata (e.g. "Contracts Finder
-              // API" — a page ABOUT contracts), not actual tender opportunities, so
+              // API" - a page ABOUT contracts), not actual tender opportunities, so
               // it only ever pollutes the pool. PCS (real Scottish notices) +
               // Sell2Wales (Welsh) add genuine volume.
               var pcsPromise = fetchPCS();
@@ -35671,7 +35692,7 @@ function syncCustomers(product) {
             } catch(e) { console.log('[SCRAPER] Tenders fallback error:', e.message); leads = []; }
           }
           // ENRICH tender leads with buyer contact + how-to-apply from the detail page.
-          // Tenders must be applied for online (portal/email), not via post — so each
+          // Tenders must be applied for online (portal/email), not via post - so each
           // lead carries the contact name/phone/email/address/apply link the customer
           // needs to actually respond.
           try {
@@ -35688,7 +35709,7 @@ function syncCustomers(product) {
             var planScraper = require('./planning_scraper');
             // Aggregate the postcode areas of ALL planning customers so the PLOTA
             // query targets the places our customers actually want leads from
-            // (planning supply is intentionally scoped to signed-up customers' areas —
+            // (planning supply is intentionally scoped to signed-up customers' areas -
             // with few planning customers the pool stays small, which is fine).
             var planCusts = (getDb().customers || []).filter(function(c) { return c.product === 'planning' || ((c.biz_field3 || '').indexOf('planning') !== -1); });
             // UK-WIDE by default: query PLOTA free-text across every UK town (from
@@ -35720,7 +35741,7 @@ function syncCustomers(product) {
             });
             leads = await withTimeout(planScraper.collectPlanningLeads({ postcodeAreas: planAreas.length ? planAreas : undefined, filters: planFilters, maxItems: parseInt(process.env.PLANNING_MAX_ITEMS || '1000', 10) }), 8 * 60000, 'Planning scrape');
             if (leads && leads.length > 0) {
-              // Planning leads are freshly scraped — no additional freshness filter
+              // Planning leads are freshly scraped - no additional freshness filter
               // (brownfield/application data is current at scrape time).
               console.log('[SCRAPER] Planning: ' + leads.length + ' leads for areas ' + planAreas.join(','));
             } else {
@@ -35800,7 +35821,7 @@ function syncCustomers(product) {
               var _cut48G = new Date(Date.now() - 48 * 3600000).toISOString();
               var _freshG = _mvPoolG.filter(function(pl) { return (pl.firstVisibleDate || pl.scrapedAt || '') >= _cut48G; }).length;
               // An area counts as "low" only below 5 MAILABLE leads (door + full
-              // postcode) — not 20 raw, which fired the paid worker almost daily.
+              // postcode) - not 20 raw, which fired the paid worker almost daily.
               var _areasLowG = (mvAreas || []).some(function(ar) {
                 return _mvPoolG.filter(function(pl) {
                   var pcG = String(pl.postcode || '').trim();
@@ -35851,7 +35872,7 @@ function syncCustomers(product) {
               try { cAreas = prim.target_areas ? JSON.parse(prim.target_areas) : JSON.parse(c.target_areas || '[]'); } catch(e) { cAreas = []; }
               // The moving scraper expects POSTCODE AREAS (SO, PO, SP, ...). County/region
               // targets ("Dorset", "Hampshire", "Wiltshire") must be EXPANDED to their
-              // postcode areas first — otherwise the scraper can't map them and silently
+              // postcode areas first - otherwise the scraper can't map them and silently
               // falls back to the default cities, so the customer's OWN areas never get
               // scraped (a county moving account would get zero in-area leads).
               cAreas.forEach(function(a) {
@@ -35862,7 +35883,7 @@ function syncCustomers(product) {
                 else if (mvAreas.indexOf(s) === -1) mvAreas.push(s);
               });
             });
-            // MOVING COLLECTION — HYBRID (freshness + exact address):
+            // MOVING COLLECTION - HYBRID (freshness + exact address):
             //   Rightmove supplies the FRESH 0-24h listings (the business promise).
             //   Propalt verifies each lead's UPRN + exact address (90% UPRN, 100%
             //   full address, no guessed door numbers). Propalt is used as a pure
@@ -35882,7 +35903,7 @@ function syncCustomers(product) {
               // embed the numbered full address + full postcode into the pool, so every
               // pool lead is complete (house/flat number + street + postcode + URL)
               // BEFORE delivery. Runs only for leads that already have a URL and lack a
-              // confirmed number. Free — no Postcoder spend. Bounded concurrency.
+              // confirmed number. Free - no Postcoder spend. Bounded concurrency.
               try {
                 var mvNeedEnrich = (leads || []).filter(function(hl) {
                   if (hl.commercial) return false;
@@ -35909,7 +35930,7 @@ function syncCustomers(product) {
                   var _rssMb = Math.round(process.memoryUsage().rss / 1048576);
                   var _enrichDefault = _rssMb > 1100 ? 0 : (_rssMb > 850 ? 100 : 200);
                   var mvEnrichMax = Math.min(mvNeedEnrich.length, parseInt(process.env.MOVING_ENRICH_MAX || String(_enrichDefault), 10));
-                  if (_rssMb > 850) console.log('[SCRAPER] Memory high (' + _rssMb + 'MB) — moving enrichment capped at ' + mvEnrichMax);
+                  if (_rssMb > 850) console.log('[SCRAPER] Memory high (' + _rssMb + 'MB) - moving enrichment capped at ' + mvEnrichMax);
                   var mvToEnrich = mvNeedEnrich.slice(0, mvEnrichMax);
                   if (mvToEnrich.length > 0) {
                   var mvEnriched = await rmScraper.enrichMovingLeads(mvToEnrich, 4);
@@ -35984,7 +36005,7 @@ function syncCustomers(product) {
             } catch(mErr) { console.log('[SCRAPER] Moving collection error: ' + mErr.message); }
             if (leads && leads.length > 0) {
               console.log('[SCRAPER] Moving: ' + leads.length + ' total, ' + leads.filter(function(l){return l.commercial;}).length + ' commercial, wantCommercial=' + mvWantCommercial);
-              // Keep ALL live on-market listings — they are all real, current
+              // Keep ALL live on-market listings - they are all real, current
               // properties. Prefer recently-updated first but do NOT discard
               // older ones (that was causing too few leads). Customers want a
               // full selection of genuine moving opportunities in their areas.
@@ -36006,7 +36027,7 @@ function syncCustomers(product) {
               function leadFreshBucket(l) {
                 // Prefer Rightmove's own stable listing date. If the source didn't
                 // provide one, fall back to OUR first_seen_at (first sight of the
-                // property — never reset on re-sight), then scrapedAt. This guarantees
+                // property - never reset on re-sight), then scrapedAt. This guarantees
                 // a previously-seen property can never be re-bucketed as "new".
                 var fv = l.firstVisibleDate || l.first_seen_at || '';
                 var up = l.updateDate || '';
@@ -36045,7 +36066,7 @@ function syncCustomers(product) {
               });
               // STRICT FRESHNESS (48h max): only newly listed / recently updated
               // properties (≤24h primary, 24-48h fallback) are used. The old 7-day
-              // "week" safety net is DROPPED — the customer promise is fresh leads
+              // "week" safety net is DROPPED - the customer promise is fresh leads
               // within 24 hours, so older listings must never be delivered. If an
               // area is quiet, the customer gets fewer fresh leads that day rather
               // than stale ones (exact-count still holds; supply is genuinely fresh).
@@ -36081,7 +36102,7 @@ function syncCustomers(product) {
             }
             // ENRICH moving leads with FULL addresses (door number + street +
             // postcode). Two layers:
-            //   1) FREE: fetch each property's Rightmove detail page (parallel) —
+            //   1) FREE: fetch each property's Rightmove detail page (parallel) -
             //      extracts streetAddress (includes the door number) + postcode.
             //      Runs on ALL leads so every property gets a door number where
             //      Rightmove publishes it.
@@ -36151,7 +36172,7 @@ function syncCustomers(product) {
                 } catch(pcErr) { console.log('[SCRAPER] Collection PAF error:', pcErr.message); }
               }
             } catch(encErr) { console.log('[SCRAPER] Rightmove enrichment error:', encErr.message); }
-            // Zoopla supplement (Apify) — DISABLED BY DEFAULT to stop the $30/mo
+            // Zoopla supplement (Apify) - DISABLED BY DEFAULT to stop the $30/mo
             // actor rental bleeding money during testing. Rightmove's direct scrape
             // already provides full displayAddress + house numbers, and the
             // enrichment above adds real postcodes. Zoopla was only an extra
@@ -36195,7 +36216,7 @@ function syncCustomers(product) {
             // (the free path can be blocked from some datacenter IPs).
             leads = await probateScraper.collectProbateLeads({ maxItems: 100, useApifyFirst: false });
             // PRUNE NON-DECEASED NOTICES that slipped through (company/solicitor
-            // notices from the Apify actor/feed are NOT probate leads — a probate
+            // notices from the Apify actor/feed are NOT probate leads - a probate
             // lead is a deceased PERSON). The scraper filters these too, but this
             // belt-and-braces guard also cleans any firm leads already in the pool.
             try {
@@ -36244,7 +36265,7 @@ function syncCustomers(product) {
         var freshCount = leads && leads.length ? leads.length : 0;
         // FRESH-ONLY POOL: every lead stored in the pool must be under 48h old
         // (24h primary + 24-48h fallback) for ALL products. We never accumulate
-        // old leads — the pool only holds what was scraped (or source-published)
+        // old leads - the pool only holds what was scraped (or source-published)
         // within the last 48 hours, so no stale lead can ever be delivered.
         // Previous pool entries are kept ONLY if they still fall inside the 48h
         // window (covers a source being slow/flaky today).
@@ -36302,7 +36323,7 @@ function syncCustomers(product) {
           } catch(fpe) { console.log('[SCRAPER] Probate pool firm-prune error:', fpe.message); }
         }
         leads = merged.filter(isPoolLeadFresh).slice(0, 5000);
-        // NOTE: NO 72h floor — the customer promise is FRESH leads (24h primary,
+        // NOTE: NO 72h floor - the customer promise is FRESH leads (24h primary,
         // 48h fallback). If a chosen area is short, the DELIVERY pulls the closest
         // available fresh lead from adjacent areas (ranked by leadClosestKm, within
         // MAX_FALLBACK_KM) instead of aging older leads. Keeping stale 72h+ leads
@@ -36352,7 +36373,7 @@ function syncCustomers(product) {
             console.log('[SCRAPER] ' + product + ': location enriched ' + _enr + '/' + leads.length + ', urls added ' + _urls);
           } catch(enrE) { console.log('[SCRAPER] location enrich error:', enrE.message); }
         }
-        // MERGE into the existing pool — NEVER overwrite. A 0-result scrape (e.g.
+        // MERGE into the existing pool - NEVER overwrite. A 0-result scrape (e.g.
         // Rightmove blocking the Render IP) must not wipe existing supply. New
         // leads are added on top; existing leads are kept as fallback. Fresh leads
         // sort first; capped at 6000 so the pool stays healthy.
@@ -36377,11 +36398,11 @@ function syncCustomers(product) {
         fs.writeFileSync(poolPath, JSON.stringify(leads, null, 2));
         // Only mark "scraped today" if we actually got leads. If a source returns
         // 0 (e.g. PLOTA key not yet configured, Gazette blocked), DON'T lock the
-        // product out for the rest of the day — a later scrape (or after the user
+        // product out for the rest of the day - a later scrape (or after the user
         // upgrades Plota/Apify) must be able to retry and fill supply. Otherwise a
         // customer is left under-promised for the whole day with no way to recover.
         if (leads.length > 0) markScrapedToday(product);
-        else console.log('[SCRAPER] ' + product + ' produced 0 leads — NOT marking scraped-today so it can be retried');
+        else console.log('[SCRAPER] ' + product + ' produced 0 leads - NOT marking scraped-today so it can be retried');
         var leadSource = leads && leads.length > 0 ? (leads[0].source || 'unknown') : 'empty';
         fs.writeFileSync(path.join(DATA_DIR, product + '-source.txt'), leadSource);
         results[product] = leadSource + '_' + (leads ? leads.length : 0) + '(fresh:' + freshCount + ',buffered:' + (leads ? leads.length - freshCount : 0) + ')';
@@ -36396,7 +36417,7 @@ function syncCustomers(product) {
       if (onlyProduct && prod !== onlyProduct) return Promise.resolve();
       return scrapeProduct(prod, cfg, forceScrape);
     }));
-    // === SUPPLEMENT: Disabled — no demo leads are generated ===
+    // === SUPPLEMENT: Disabled - no demo leads are generated ===
     // Only real scraped data is used for all lead types.
     // Log scraper run to database
     try {
@@ -36423,7 +36444,7 @@ function syncCustomers(product) {
   }
   })();
 });
-// POST /api/admin/test-ch — test Companies House API from Render
+// POST /api/admin/test-ch - test Companies House API from Render
 // Stream worker status
 app.get('/api/admin/stream-status', adminAuth, function(req, res) {
   try {
@@ -36457,7 +36478,7 @@ app.post('/api/admin/test-ch', adminAuth, async function(req, res) {
     res.json({ success: true, result: 'Companies House OK', tenders: tenderResult });
   } catch(e) { res.json({ error: e.message }); }
 });
-// POST /api/admin/test-email — send a test email and return the Brevo response/error
+// POST /api/admin/test-email - send a test email and return the Brevo response/error
 app.post('/api/admin/test-email', adminAuth, async (req, res) => {
   try {
     const toEmail = req.body.email || 'hello@9amleads.com';
@@ -36508,13 +36529,13 @@ app.post('/api/admin/test-daily', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message, body: String(e.message).substring(0, 300) }); }
 });
 
-// POST /api/admin/send-welcome — send the welcome (trial_day1) email to all
+// POST /api/admin/send-welcome - send the welcome (trial_day1) email to all
 // free-trial customers who haven't received it yet
 app.post('/api/admin/send-welcome', adminAuth, async (req, res) => {
   try {
     var force = req.body && req.body.force;
     // ONLY ACTIVE free trials: an EXPIRED trial (trial_ends in the past, still on
-    // free_trial plan) must never receive the free-trial welcome email — that is the
+    // free_trial plan) must never receive the free-trial welcome email - that is the
     // post-trial series' job. Excluding expired here stops "Your Free Trial Is Active"
     // landing in the inbox of someone whose trial already ended.
     var customers = (getDb().customers || []).filter(function(c) { return c.plan === 'free_trial' && !trialExpiredUnpaid(c); });
@@ -36538,7 +36559,7 @@ app.post('/api/admin/send-welcome', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/send-reminder — send a trial-ending reminder email to one customer
+// POST /api/admin/send-reminder - send a trial-ending reminder email to one customer
 app.post('/api/admin/send-reminder', adminAuth, async (req, res) => {
   try {
     var customerId = req.body && req.body.customer_id;
@@ -36548,7 +36569,7 @@ app.post('/api/admin/send-reminder', adminAuth, async (req, res) => {
     if (!cust.email) return res.status(400).json({ error: 'Customer has no email' });
     // "Your free trial ends tomorrow" only makes sense for an ACTIVE trial. Refuse to
     // send it once the trial has expired (use the post-trial series instead).
-    if (trialExpiredUnpaid(cust)) return res.status(400).json({ error: 'Trial already expired — use the trial-expired series, not the "ends tomorrow" reminder.' });
+    if (trialExpiredUnpaid(cust)) return res.status(400).json({ error: 'Trial already expired - use the trial-expired series, not the "ends tomorrow" reminder.' });
     var subject = getEditedCampaignSubject('trial_day7', 'Your Free Trial Ends Tomorrow');
     var html = getCampaignEmailHTMLWithEdits(cust, 'trial_day7');
     await sendBrevoEmail({ email: cust.email, name: cust.company || cust.contact_name || 'Customer' }, subject, html);
@@ -36561,7 +36582,7 @@ app.post('/api/admin/send-reminder', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/send-campaign-email — send ANY campaign template (trial_day7,
+// POST /api/admin/send-campaign-email - send ANY campaign template (trial_day7,
 // trial_day9, etc.) to a specific email so you can review what customers receive
 // at trial-end. Uses that email's customer record for personalisation.
 app.post('/api/admin/send-campaign-email', adminAuth, async (req, res) => {
@@ -36587,7 +36608,7 @@ app.post('/api/admin/send-campaign-email', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/cron-status — report delivery cron fire count and server time
+// GET /api/admin/cron-status - report delivery cron fire count and server time
 app.get('/api/admin/cron-status', adminAuth, (req, res) => {  res.json({
     server_time: new Date().toISOString(),
     delivery_fire_count: __deliveryFireCount || 0,
@@ -36595,7 +36616,7 @@ app.get('/api/admin/cron-status', adminAuth, (req, res) => {  res.json({
     process_uptime_ms: process.uptime() * 1000
   });
 });
-// GET /api/admin/delivery-audit — recent daily delivery records so you can always
+// GET /api/admin/delivery-audit - recent daily delivery records so you can always
 // verify every day's delivery happened and how many leads/emails went out.
 app.get('/api/admin/delivery-audit', adminAuth, (req, res) => {
   try {
@@ -36603,7 +36624,7 @@ app.get('/api/admin/delivery-audit', adminAuth, (req, res) => {
     res.json({ success: true, records: dbA.delivery_audit || [] });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
-// GET /api/admin/fulfilment-report — per customer+lead-type fulfilment ledger for a
+// GET /api/admin/fulfilment-report - per customer+lead-type fulfilment ledger for a
 // day: expected, actual, shortfall, fulfilment %, status (FULFILLED / UNDER_FULFILLED
 // / OVER_DELIVERED). Over-delivery is surfaced here as a bug. Query: ?date=YYYY-MM-DD
 // (defaults to today) and optional &underonly=1.
@@ -36623,8 +36644,8 @@ app.get('/api/admin/fulfilment-report', adminAuth, (req, res) => {
     res.json({ success: true, date: (req.query.date || new Date().toISOString().split('T')[0]), summary: summary, rows: rows });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
-// POST /api/admin/backup — trigger a manual database backup (local + GitHub).
-// GET /api/admin/backup — list recent backups so you can verify the safety net.
+// POST /api/admin/backup - trigger a manual database backup (local + GitHub).
+// GET /api/admin/backup - list recent backups so you can verify the safety net.
 app.post('/api/admin/backup', adminAuth, async (req, res) => {
   try {
     var file = await runFullBackup();
@@ -36639,7 +36660,7 @@ app.get('/api/admin/backup', adminAuth, (req, res) => {
     res.json({ success: true, repo: BACKUP_GITHUB_REPO, local_backups: list.length, latest: list.length ? list[list.length - 1] : 'none', db_size_bytes: fs.existsSync(DB_FILE) ? fs.statSync(DB_FILE).size : 0, backups: sized });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
-// POST /api/admin/postcoder/enrich-pool — one-time verification: re-enrich door-less
+// POST /api/admin/postcoder/enrich-pool - one-time verification: re-enrich door-less
 // leads already in a product's pool via Postcoder (Royal Mail PAF). Bounded by
 // POSTCODER_DAILY_BUDGET to keep credits low. Body: { product: 'moving', max }
 app.post('/api/admin/postcoder/enrich-pool', adminAuth, async (req, res) => {
@@ -36685,7 +36706,7 @@ app.post('/api/admin/postcoder/enrich-pool', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/postcoder/enrich-customer-leads — enrich the door-less DB leads
+// POST /api/admin/postcoder/enrich-customer-leads - enrich the door-less DB leads
 // already assigned to one customer (their existing dashboard leads) via Postcoder,
 // adding a door number + street + postcode. Bounded by the shared daily budget and
 // by an optional `max`. This fixes leads that were created before door-number
@@ -36815,7 +36836,7 @@ app.get('/api/admin/system-status', adminAuth, (req, res) => {
       stannp: !!STANNP_API_KEY,
       postcoder_enabled: process.env.POSTCODER_ENABLED === 'true' || process.env.POSTCODER_ENABLED === '1'
     };
-    // Postcoder daily credit usage (shared guard) — how many lookups spent today
+    // Postcoder daily credit usage (shared guard) - how many lookups spent today
     // vs the global budget, so we can see exactly where credits go.
     try {
       var pcBudgetMod = require('./postcoder_budget');
@@ -36824,7 +36845,7 @@ app.get('/api/admin/system-status', adminAuth, (req, res) => {
         used_today: pcBudgetMod.usage(),
         daily_budget: pcBudgetMod.getDailyBudget()
       };
-      // Postcoder cache hit visibility — how much reuse is avoiding paid lookups.
+      // Postcoder cache hit visibility - how much reuse is avoiding paid lookups.
       try {
         var pcCacheMod = require('./postcoder_cache');
         out.postcoder.cache = pcCacheMod.stats();
@@ -36862,7 +36883,7 @@ app.get('/api/admin/system-status', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/health-report — friendly health summary (green/yellow/red)
+// GET /api/admin/health-report - friendly health summary (green/yellow/red)
 // built from the full system-status. Returns issues list for the admin UI.
 app.get('/api/admin/health-report', adminAuth, async (req, res) => {
   try {
@@ -36880,7 +36901,7 @@ app.get('/api/admin/health-report', adminAuth, async (req, res) => {
     if (!BREVO_API_KEY) issues.push({ severity:'high', label:'Brevo (email) not configured', details:[], message:'Brevo (email) not configured' });
     if (!process.env.APIFY_API_KEY) issues.push({ severity:'medium', label:'Apify not configured (Zoopla backup)', details:[], message:'Apify not configured' });
 
-    // Stannp print-credit balance — if it's too low to print & post, customer
+    // Stannp print-credit balance - if it's too low to print & post, customer
     // orders will fail at checkout. Report it + raise a high issue so the owner
     // is alerted before real customers hit a dead end.
     try {
@@ -36889,7 +36910,7 @@ app.get('/api/admin/health-report', adminAuth, async (req, res) => {
         var stBal = await stProv.getBalance();
         if (stBal && stBal.success) {
           var stBalance = stBal.balance || 0;
-          issues.push({ severity: stBalance < 25 ? 'high' : (stBalance < 50 ? 'medium' : 'low'), label: 'Stannp print credit: £' + stBalance.toFixed(2), details: [ 'Top up at Stannp dashboard before running low — orders fail below ~£2 per item.' ], message: 'Stannp balance £' + stBalance.toFixed(2) });
+          issues.push({ severity: stBalance < 25 ? 'high' : (stBalance < 50 ? 'medium' : 'low'), label: 'Stannp print credit: £' + stBalance.toFixed(2), details: [ 'Top up at Stannp dashboard before running low - orders fail below ~£2 per item.' ], message: 'Stannp balance £' + stBalance.toFixed(2) });
         } else {
           issues.push({ severity:'medium', label:'Stannp balance check failed', details:[ (stBal && stBal.error) || '' ], message:'Stannp balance unreachable' });
         }
@@ -36898,7 +36919,7 @@ app.get('/api/admin/health-report', adminAuth, async (req, res) => {
 
     // Per-product supply vs PROMISED DAILY DEMAND (exact-count guarantee).
     // The customer is promised a specific number of leads/day per plan. We must
-    // verify the fresh supply actually covers that demand — otherwise the exact-
+    // verify the fresh supply actually covers that demand - otherwise the exact-
     // count delivery cannot fulfil the promise and customers complain. This is
     // the key readiness check for launch (Plota for planning, Apify for probate/
     // tenders, etc.).
@@ -36970,7 +36991,7 @@ app.get('/api/admin/health-report', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/product-file?product=tenders — inspect a product lead file
+// GET /api/admin/product-file?product=tenders - inspect a product lead file
 app.get('/api/admin/product-file', adminAuth, (req, res) => {
   try {
     const product = req.query.product || 'tenders';
@@ -36987,7 +37008,7 @@ app.get('/api/admin/product-file', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/test-probate — run the probate scraper, save leads to the product file, return result
+// POST /api/admin/test-probate - run the probate scraper, save leads to the product file, return result
 app.post('/api/admin/test-probate', adminAuth, async (req, res) => {
   try {
     var probateScraper = require('./probate_leads_scraper');
@@ -37001,7 +37022,7 @@ app.post('/api/admin/test-probate', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/test-tenders — fetch area-relevant tenders (Contracts Finder),
+// POST /api/admin/test-tenders - fetch area-relevant tenders (Contracts Finder),
 // merge into the tenders product file, and return the result. Useful for testing
 // that tenders reach the pool in the customer's chosen county/region.
 app.post('/api/admin/test-tenders', adminAuth, async (req, res) => {
@@ -37032,7 +37053,7 @@ app.post('/api/admin/test-tenders', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/test-planning — run the planning scraper, save leads to the product file, return result
+// POST /api/admin/test-planning - run the planning scraper, save leads to the product file, return result
 app.post('/api/admin/test-planning', adminAuth, async (req, res) => {
   try {
     var planScraper = require('./planning_scraper');
@@ -37088,7 +37109,7 @@ app.post('/api/admin/backfill-planning-urls', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/plota-health — verify the PLOTA_API_KEY is valid and returning
+// GET /api/admin/plota-health - verify the PLOTA_API_KEY is valid and returning
 // data (council list + a quick application query). Use this right after upgrading
 // Plota to confirm the new key works before trusting the next delivery.
 app.get('/api/admin/plota-health', adminAuth, async (req, res) => {
@@ -37117,7 +37138,7 @@ app.get('/api/admin/plota-health', adminAuth, async (req, res) => {
       applications_http: apps.status,
       councils_returned: councilCount,
       applications_returned: appCount,
-      message: (councils.status === 200 && apps.status === 200) ? 'PLOTA key OK — councils=' + councilCount + ', applications available=' + appCount : 'PLOTA key returned HTTP ' + councils.status + '/' + apps.status + ' — may need upgrading or the key is invalid'
+      message: (councils.status === 200 && apps.status === 200) ? 'PLOTA key OK - councils=' + councilCount + ', applications available=' + appCount : 'PLOTA key returned HTTP ' + councils.status + '/' + apps.status + ' - may need upgrading or the key is invalid'
     });
   } catch(e) { res.status(500).json({ success: false, configured: !!process.env.PLOTA_API_KEY, error: e.message }); }
 });
@@ -37145,7 +37166,7 @@ app.post('/api/admin/reset-weekly', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/reset-deliveries — reset a customer's DAILY delivery state so
+// POST /api/admin/reset-deliveries - reset a customer's DAILY delivery state so
 // the next delivery run re-delivers their full promised count in a fresh email.
 // Un-delivers today's (and any) delivered leads for the customer and clears
 // last_email_date so the exact-count guard treats them as not-yet-delivered.
@@ -37167,11 +37188,11 @@ app.post('/api/admin/reset-deliveries', adminAuth, (req, res) => {
     });
     if (cust.last_email_date) cust.last_email_date = null;
     saveDb();
-    res.json({ success: true, customer: cust.email, un_delivered: unDelivered, message: 'Delivery state reset — next run will deliver the full promised count in one email' });
+    res.json({ success: true, customer: cust.email, un_delivered: unDelivered, message: 'Delivery state reset - next run will deliver the full promised count in one email' });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/purge-leads — remove ALL leads for a customer to start fresh
+// POST /api/admin/purge-leads - remove ALL leads for a customer to start fresh
 app.post('/api/admin/purge-leads', adminAuth, (req, res) => {
   try {
     const email = req.body.email;
@@ -37188,7 +37209,7 @@ app.post('/api/admin/purge-leads', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/stannp-balance — report Stannp print credit balance (admin)
+// GET /api/admin/stannp-balance - report Stannp print credit balance (admin)
 app.get('/api/admin/stannp-balance', adminAuth, async (req, res) => {
   try {
     var provider = getDirectMailProvider();
@@ -37198,7 +37219,7 @@ app.get('/api/admin/stannp-balance', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/stannp/list — List recent Stannp mailpieces (letters + postcards)
+// GET /api/admin/stannp/list - List recent Stannp mailpieces (letters + postcards)
 // so the owner can confirm orders exist and find them in the Stannp dashboard.
 app.get('/api/admin/stannp/list', adminAuth, async (req, res) => {
   try {
@@ -37219,7 +37240,7 @@ app.get('/api/admin/stannp/list', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/stannp/account — Fetch the Stannp account details for the
+// GET /api/admin/stannp/account - Fetch the Stannp account details for the
 // configured API key (name/email/id) so the business owner knows which Stannp
 // account to log into to see orders.
 app.get('/api/admin/stannp/account', adminAuth, async (req, res) => {
@@ -37235,7 +37256,7 @@ app.get('/api/admin/stannp/account', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/stannp/order/:id — Fetch a Stannp mailpiece by ID (letters then
+// GET /api/admin/stannp/order/:id - Fetch a Stannp mailpiece by ID (letters then
 // postcards) to confirm order type/status/recipient for support + visibility checks.
 app.get('/api/admin/stannp/order/:id', adminAuth, async (req, res) => {
   try {
@@ -37256,7 +37277,7 @@ app.get('/api/admin/stannp/order/:id', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/add-test-lead — inject a custom test lead into a customer's
+// POST /api/admin/add-test-lead - inject a custom test lead into a customer's
 // leads so it shows in their dashboard "My Leads" for Print & Post testing.
 app.post('/api/admin/add-test-lead', adminAuth, (req, res) => {
   try {
@@ -37350,7 +37371,7 @@ app.post('/api/analytics/event', async (req, res) => {
     res.json({ ok: true });
   } catch(e) { res.json({ ok: true }); }
 });
-// POST /api/exit-intent — capture an abandoning visitor's email and send them a
+// POST /api/exit-intent - capture an abandoning visitor's email and send them a
 // sample lead email so they can see the source/score/details for themselves.
 app.post('/api/exit-intent', async (req, res) => {
   try {
@@ -37381,7 +37402,7 @@ app.post('/api/exit-intent', async (req, res) => {
     res.json({ ok: true });
   } catch(e) { res.json({ ok: true }); }
 });
-// GET /api/admin/analytics — conversion funnel dashboard (unique users + rates +
+// GET /api/admin/analytics - conversion funnel dashboard (unique users + rates +
 // trial/lead-type/plan performance + zero-lead trials). Supports ?days=1|7|30|0.
 app.get('/api/admin/analytics', adminAuth, (req, res) => {
   try {
@@ -37433,7 +37454,7 @@ app.get('/api/admin/analytics', adminAuth, (req, res) => {
       var trialEnd = c.trial_ends ? new Date(c.trial_ends).getTime() : 0;
       var isTrial = c.plan === 'free_trial';
       var isPaid = paidPlans.indexOf(c.plan) !== -1;
-      // Trials started: ever signed up in this window (created_at) — approximate via events.
+      // Trials started: ever signed up in this window (created_at) - approximate via events.
       var inWindow = !cutoff || (c.created_at ? new Date(c.created_at).getTime() >= cutoff : true);
       var p = c.product || 'moving';
       if (!byProduct[p]) byProduct[p] = { trials: 0, converted: 0, receivedTotal: 0, viewedTotal: 0, contactedTotal: 0 };
@@ -37516,7 +37537,7 @@ app.get('/api/admin/analytics', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/delete-customer — remove a customer by email for fresh signup
+// POST /api/admin/delete-customer - remove a customer by email for fresh signup
 app.post('/api/admin/delete-customer', adminAuth, (req, res) => {
   try {
     const email = req.body.email;
@@ -37538,7 +37559,7 @@ app.post('/api/admin/delete-customer', adminAuth, (req, res) => {
     res.json({ success: true, message: 'Customer deleted: ' + email });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
-// POST /api/admin/purge-test-data — permanently remove ALL test.* accounts and their
+// POST /api/admin/purge-test-data - permanently remove ALL test.* accounts and their
 // residual data (leads, fulfilment ledger, activity, email log, analytics). Keeps the
 // public demo* accounts. One-time cleanup now the test accounts are no longer needed.
 app.post('/api/admin/purge-test-data', adminAuth, function(req, res) {
@@ -37573,7 +37594,7 @@ app.post('/api/admin/purge-test-data', adminAuth, function(req, res) {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/backups — list local database backups (hourly snapshots) so a
+// GET /api/admin/backups - list local database backups (hourly snapshots) so a
 // mistakenly deleted customer can be recovered from a pre-deletion backup.
 // POST /api/admin/backups/prune - delete OLD local database backups to free disk
 // space (the 1GB Render disk fills up with ~60MB hourly snapshots). Keeps the most
@@ -37604,7 +37625,7 @@ app.get('/api/admin/backups', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/restore-customers — restore specific customers + their leads from a
+// POST /api/admin/restore-customers - restore specific customers + their leads from a
 // backup file into the live DB (merge, keeps current customers). Body:
 // { backup_file: 'database-....json', emails: ['a@b.com', ...] }
 app.post('/api/admin/restore-customers', adminAuth, (req, res) => {
@@ -37627,7 +37648,7 @@ app.post('/api/admin/restore-customers', adminAuth, (req, res) => {
     // MERGE BACKUP LEADS for existing customers: historical leads that the live DB
     // no longer has (e.g. deleted by a destructive admin cleanup / force-replace
     // reset) are re-added so every customer keeps their full lead history since
-    // signup. The customer's CURRENT batch (delivered today) is preserved — a lead
+    // signup. The customer's CURRENT batch (delivered today) is preserved - a lead
     // already present (same id) is never duplicated, and backup leads marked
     // 'removed' are restored as their ORIGINAL delivered state so they re-appear.
     var leadAdded = 0;
@@ -37636,7 +37657,7 @@ app.post('/api/admin/restore-customers', adminAuth, (req, res) => {
       if (ids.indexOf(l.customer_id) === -1) return;
       if ((db.leads || []).some(function(x) { return x.id === l.id; })) return;
       // Restore HISTORICAL leads only (delivered before today). Today's batch is
-      // handled separately and must stay at the exact promised count — the backup's
+      // handled separately and must stay at the exact promised count - the backup's
       // today-leads may reflect an over-delivered/duplicate state, so never merge
       // them back in (it would re-inflate "leads today").
       if (l.delivered && l.delivered_at && l.delivered_at.indexOf(todayStr) === 0) return;
@@ -37650,7 +37671,7 @@ app.post('/api/admin/restore-customers', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/restore-full-db — restore the ENTIRE database from a backup file
+// POST /api/admin/restore-full-db - restore the ENTIRE database from a backup file
 // (customers + leads + everything). For disaster recovery when database.json gets
 // corrupted/truncated (e.g. a failed write shrank it to a few KB). Body:
 // { backup_file: 'database-....json' }
@@ -37681,7 +37702,7 @@ app.post('/api/admin/restore-full-db', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/purge-demo — remove demo migration accounts only (keeps real signups)
+// POST /api/admin/purge-demo - remove demo migration accounts only (keeps real signups)
 app.post('/api/admin/purge-demo', adminAuth, (req, res) => {
   try {
     const db = getDb();
@@ -37697,7 +37718,7 @@ app.post('/api/admin/purge-demo', adminAuth, (req, res) => {
   }
 });
 
-// GET /api/admin/export — export customers for marketing
+// GET /api/admin/export - export customers for marketing
 app.get('/api/admin/export', adminAuth, (req, res) => {
   const customers = db.prepare(`
     SELECT email, company, contact_name, phone, product, lead_type, business_type, 
@@ -37795,7 +37816,7 @@ app.post('/api/send-enquiry', async (req, res) => {
   }
 });
 
-// POST /api/admin/release-postcodes — release specific or all postcode claims (admin only)
+// POST /api/admin/release-postcodes - release specific or all postcode claims (admin only)
 app.post('/api/admin/release-postcodes', async (req, res) => {
   try {
     const auth = req.headers.authorization;
@@ -37834,7 +37855,7 @@ app.post('/api/admin/reset', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/update-lead-type — admin updates lead type rules
+// POST /api/admin/update-lead-type - admin updates lead type rules
 app.post('/api/admin/update-lead-type', adminAuth, (req, res) => {
   try {
     const { key, updates } = req.body;
@@ -37862,7 +37883,7 @@ app.post('/api/admin/update-lead-type', adminAuth, (req, res) => {
 });
 
 // ===== REFERRAL SYSTEM (Step 2) =====
-// GET /api/referral — customer referral dashboard
+// GET /api/referral - customer referral dashboard
 app.get('/api/referral', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -37882,7 +37903,7 @@ app.get('/api/referral', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/referral/use — apply referral code on signup
+// POST /api/referral/use - apply referral code on signup
 app.post('/api/referral/use', async (req, res) => {
   try {
     const { code, email } = req.body;
@@ -37898,7 +37919,7 @@ app.post('/api/referral/use', async (req, res) => {
 });
 
 // ===== CASE STUDY SYSTEM (Step 3) =====
-// POST /api/case-studies — create case study from won lead
+// POST /api/case-studies - create case study from won lead
 app.post('/api/case-studies', authMiddleware, (req, res) => {
   try {
     const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
@@ -37920,7 +37941,7 @@ app.post('/api/case-studies', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/case-studies — public approved case studies
+// GET /api/case-studies - public approved case studies
 app.get('/api/case-studies', async (req, res) => {
   try {
     const db = getDb();
@@ -37929,12 +37950,12 @@ app.get('/api/case-studies', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/case-studies — admin list all
+// GET /api/admin/case-studies - admin list all
 app.get('/api/admin/case-studies', adminAuth, (req, res) => {
   try { const db = getDb(); res.json({ case_studies: db.case_studies || [] }); } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/case-studies/approve — approve/reject
+// POST /api/admin/case-studies/approve - approve/reject
 app.post('/api/admin/case-studies/approve', adminAuth, (req, res) => {
   try {
     const db = getDb(); const { id, status } = req.body;
@@ -37948,7 +37969,7 @@ app.post('/api/admin/case-studies/approve', adminAuth, (req, res) => {
 });
 
 // ===== COMPETITOR MONITORING (Step 4) =====
-// POST /api/competitors — add competitor
+// POST /api/competitors - add competitor
 app.post('/api/competitors', authMiddleware, (req, res) => {
   try {
     const db = getDb();
@@ -37959,7 +37980,7 @@ app.post('/api/competitors', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/competitors — customer competitors list
+// GET /api/competitors - customer competitors list
 app.get('/api/competitors', authMiddleware, (req, res) => {
   try {
     const db = getDb();
@@ -37969,7 +37990,7 @@ app.get('/api/competitors', authMiddleware, (req, res) => {
 });
 
 // ===== AI ACCOUNT MANAGER (Step 5) =====
-// GET /api/ai-advisor — AI recommendations based on real data
+// GET /api/ai-advisor - AI recommendations based on real data
 app.get('/api/ai-advisor', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -38003,7 +38024,7 @@ app.get('/api/ai-advisor', authMiddleware, (req, res) => {
 });
 
 // ===== ADMIN NOTIFICATIONS (Step 8) =====
-// GET /api/admin/notifications — admin alerts
+// GET /api/admin/notifications - admin alerts
 app.get('/api/admin/notifications', adminAuth, (req, res) => {
   try {
     const db = getDb();
@@ -38040,11 +38061,11 @@ app.get('/api/admin/notifications', adminAuth, (req, res) => {
 });
 
 // ===== QA TEST SUITE (Step 7) =====
-// GET /api/admin/qa-tests — get test results
+// GET /api/admin/qa-tests - get test results
 app.get('/api/admin/qa-tests', adminAuth, (req, res) => {
   try { const db = getDb(); res.json({ tests: db.qa_tests || [] }); } catch(e) { res.status(500).json({ error: e.message }); }
 });
-// POST /api/admin/qa-tests — save test result
+// POST /api/admin/qa-tests - save test result
 app.post('/api/admin/qa-tests', adminAuth, (req, res) => {
   try {
     const db = getDb();
@@ -38055,8 +38076,8 @@ app.post('/api/admin/qa-tests', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ===== METRICS (Step 6) — LTV and founder finance metrics =====
-// GET /api/admin/metrics — LTV, ARPU, churn, etc.
+// ===== METRICS (Step 6) - LTV and founder finance metrics =====
+// GET /api/admin/metrics - LTV, ARPU, churn, etc.
 app.get('/api/admin/metrics', adminAuth, (req, res) => {
   try {
     const db = getDb();
@@ -38252,9 +38273,9 @@ function seedDefaultCampaignPacks() {
     if (db2.campaign_packs && db2.campaign_packs.length > 0) return;
     var defaults = [
       { name:'Emergency Plumbing Offer', business_type:'Plumbing', objective:'Generate emergency plumbing calls', headline:'Burst Pipe? Same-Day Emergency Plumbing', suggested_offer:'£50 off any emergency repair', cta:'Call Now for Immediate Help', color_style:'#dc2626', qr_setting:'url', audience:'Homeowners with recent water issues' },
-      { name:'Roof Inspection & Repair', business_type:'Roofing', objective:'Get roof inspection bookings', headline:'Free Roof Inspection — No Obligation', suggested_offer:'Free no-obligation roof inspection', cta:'Book Your Free Survey Today', color_style:'#ea580c', qr_setting:'phone', audience:'Homeowners in target postcode areas' },
+      { name:'Roof Inspection & Repair', business_type:'Roofing', objective:'Get roof inspection bookings', headline:'Free Roof Inspection - No Obligation', suggested_offer:'Free no-obligation roof inspection', cta:'Book Your Free Survey Today', color_style:'#ea580c', qr_setting:'phone', audience:'Homeowners in target postcode areas' },
       { name:'Professional Moving Services', business_type:'Removals', objective:'Win moving contracts', headline:'Moving Soon? Get a Free Quote Today', suggested_offer:'Free no-obligation moving quote', cta:'Get Your Free Quote', color_style:'#0ea5e9', qr_setting:'url', audience:'Homeowners who have listed their property' },
-      { name:'Deep Clean Special Offer', business_type:'Cleaning', objective:'Book cleaning appointments', headline:'Professional Deep Clean — 20% Off First Booking', suggested_offer:'20% off first deep clean', cta:'Book Your Clean Now', color_style:'#10b981', qr_setting:'phone', audience:'New homeowners and tenants' },
+      { name:'Deep Clean Special Offer', business_type:'Cleaning', objective:'Book cleaning appointments', headline:'Professional Deep Clean - 20% Off First Booking', suggested_offer:'20% off first deep clean', cta:'Book Your Clean Now', color_style:'#10b981', qr_setting:'phone', audience:'New homeowners and tenants' },
       { name:'Garden Clearance & Maintenance', business_type:'Gardening', objective:'Get gardening service bookings', headline:'Transform Your Garden This Season', suggested_offer:'Free quote + 10% off first month', cta:'Get Your Free Garden Quote', color_style:'#16a34a', qr_setting:'url', audience:'Homeowners with gardens in target areas' },
       { name:'Sell Your Property Faster', business_type:'Estate Agents', objective:'Win property listings', headline:'Sold in 30 Days or We\'ll Market for Free', suggested_offer:'Free property valuation', cta:'Book Your Free Valuation', color_style:'#6366f1', qr_setting:'url', audience:'Homeowners planning to sell' },
       { name:'Mortgage Pre-Approval', business_type:'Mortgage Brokers', objective:'Generate mortgage enquiries', headline:'Secure Your Mortgage Before You House Hunt', suggested_offer:'Free mortgage pre-approval check', cta:'Check Your Eligibility Free', color_style:'#7c3aed', qr_setting:'url', audience:'First-time buyers and movers' },
@@ -38291,7 +38312,7 @@ function seedDefaultCampaignPacks() {
 }
 
 // Campaign Pack API endpoints
-// GET /api/campaign-packs — Get available packs (defaults + customer's custom)
+// GET /api/campaign-packs - Get available packs (defaults + customer's custom)
 app.get('/api/campaign-packs', authMiddleware, (req, res) => {
   try {
     var businessType = req.query.business_type || '';
@@ -38311,7 +38332,7 @@ app.get('/api/campaign-packs', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/campaign-packs/:id — Get pack details
+// GET /api/campaign-packs/:id - Get pack details
 app.get('/api/campaign-packs/:id', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -38326,7 +38347,7 @@ app.get('/api/campaign-packs/:id', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/campaign-packs/:id/apply-profile — Apply business profile to pack
+// POST /api/campaign-packs/:id/apply-profile - Apply business profile to pack
 app.post('/api/campaign-packs/:id/apply-profile', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -38344,7 +38365,7 @@ app.post('/api/campaign-packs/:id/apply-profile', authMiddleware, (req, res) => 
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/campaign-packs/save — Save a pack as customer's template
+// POST /api/campaign-packs/save - Save a pack as customer's template
 app.post('/api/campaign-packs/save', authMiddleware, (req, res) => {
   try {
     var packData = req.body;
@@ -38368,7 +38389,7 @@ app.post('/api/campaign-packs/save', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// PUT /api/campaign-packs/:id — Update customer's custom pack
+// PUT /api/campaign-packs/:id - Update customer's custom pack
 app.put('/api/campaign-packs/:id', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -38381,7 +38402,7 @@ app.put('/api/campaign-packs/:id', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/campaign-packs/:id/duplicate — Duplicate a pack (default or custom)
+// POST /api/campaign-packs/:id/duplicate - Duplicate a pack (default or custom)
 app.post('/api/campaign-packs/:id/duplicate', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -38404,7 +38425,7 @@ app.post('/api/campaign-packs/:id/duplicate', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// DELETE /api/campaign-packs/:id — Delete customer's custom pack
+// DELETE /api/campaign-packs/:id - Delete customer's custom pack
 app.delete('/api/campaign-packs/:id', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -38418,7 +38439,7 @@ app.delete('/api/campaign-packs/:id', authMiddleware, (req, res) => {
 });
 
 // Admin endpoints
-// GET /api/admin/campaign-packs — Get all packs (admin)
+// GET /api/admin/campaign-packs - Get all packs (admin)
 app.get('/api/admin/campaign-packs', adminAuth, (req, res) => {
   try {
     var db2 = getDb();
@@ -38428,7 +38449,7 @@ app.get('/api/admin/campaign-packs', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/campaign-packs — Create or update a default pack (admin)
+// POST /api/admin/campaign-packs - Create or update a default pack (admin)
 app.post('/api/admin/campaign-packs', adminAuth, (req, res) => {
   try {
     var db2 = getDb();
@@ -38455,7 +38476,7 @@ app.post('/api/admin/campaign-packs', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/campaign-packs/:id/toggle — Enable/disable a default pack
+// POST /api/admin/campaign-packs/:id/toggle - Enable/disable a default pack
 app.post('/api/admin/campaign-packs/:id/toggle', adminAuth, (req, res) => {
   try {
     var db2 = getDb();
@@ -38499,7 +38520,7 @@ function seedMarketplaceTemplates() {
   } catch(e) { console.log('[MARKETPLACE] Seed error:', e.message); }
 }
 
-// GET /api/marketplace/templates — Browse marketplace templates
+// GET /api/marketplace/templates - Browse marketplace templates
 app.get('/api/marketplace/templates', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -38515,7 +38536,7 @@ app.get('/api/marketplace/templates', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/marketplace/templates/:id — Get template details
+// GET /api/marketplace/templates/:id - Get template details
 app.get('/api/marketplace/templates/:id', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -38526,7 +38547,7 @@ app.get('/api/marketplace/templates/:id', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/marketplace/templates/save — Save marketplace template to customer account
+// POST /api/marketplace/templates/save - Save marketplace template to customer account
 app.post('/api/marketplace/templates/save', authMiddleware, (req, res) => {
   try {
     var sourceId = req.body.source_id;
@@ -38549,7 +38570,7 @@ app.post('/api/marketplace/templates/save', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// PUT /api/marketplace/templates/:id — Update customer's saved template
+// PUT /api/marketplace/templates/:id - Update customer's saved template
 app.put('/api/marketplace/templates/:id', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -38561,7 +38582,7 @@ app.put('/api/marketplace/templates/:id', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// DELETE /api/marketplace/templates/:id — Remove customer's saved template
+// DELETE /api/marketplace/templates/:id - Remove customer's saved template
 app.delete('/api/marketplace/templates/:id', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -38615,32 +38636,32 @@ function seedSeasonalCampaigns() {
     if (db2.seasonal_campaigns && db2.seasonal_campaigns.length > 0) return;
     if (!db2.seasonal_campaigns) db2.seasonal_campaigns = [];
     var data = [
-      { month:1, season:'Winter', headline:'New Year, Fresh Start — Book Your Home Improvement', offer:'10% off January bookings', cta:'Start Your Project', business_types:'Builder,Kitchens,Bathrooms,Decorator,General Trades', objective:'Home improvement' },
-      { month:1, season:'Winter', headline:'New Year Deep Clean — Start the Year Fresh', offer:'£20 off full home deep clean', cta:'Book Your Clean', business_types:'Cleaning,Carpet Cleaning', objective:'New Year cleaning' },
-      { month:1, season:'Winter', headline:'January Sale — 15% Off All Services', offer:'15% off first booking of 2025', cta:'Claim Your Discount', business_types:'All', objective:'New Year promotion' },
-      { month:2, season:'Winter', headline:'Beat the Winter Chills — Heating & Insulation Check', offer:'Free heating system check', cta:'Book Your Check', business_types:'Plumbing,Electrician,Builder', objective:'Winter maintenance' },
-      { month:3, season:'Spring', headline:'Spring Cleaning Special —£50 Off Full Clean', offer:'£50 off full spring clean', cta:'Book Spring Clean', business_types:'Cleaning,Carpet Cleaning', objective:'Spring cleaning' },
+      { month:1, season:'Winter', headline:'New Year, Fresh Start - Book Your Home Improvement', offer:'10% off January bookings', cta:'Start Your Project', business_types:'Builder,Kitchens,Bathrooms,Decorator,General Trades', objective:'Home improvement' },
+      { month:1, season:'Winter', headline:'New Year Deep Clean - Start the Year Fresh', offer:'£20 off full home deep clean', cta:'Book Your Clean', business_types:'Cleaning,Carpet Cleaning', objective:'New Year cleaning' },
+      { month:1, season:'Winter', headline:'January Sale - 15% Off All Services', offer:'15% off first booking of 2025', cta:'Claim Your Discount', business_types:'All', objective:'New Year promotion' },
+      { month:2, season:'Winter', headline:'Beat the Winter Chills - Heating & Insulation Check', offer:'Free heating system check', cta:'Book Your Check', business_types:'Plumbing,Electrician,Builder', objective:'Winter maintenance' },
+      { month:3, season:'Spring', headline:'Spring Cleaning Special -£50 Off Full Clean', offer:'£50 off full spring clean', cta:'Book Spring Clean', business_types:'Cleaning,Carpet Cleaning', objective:'Spring cleaning' },
       { month:3, season:'Spring', headline:'Get Your Garden Ready for Spring', offer:'Free garden consultation', cta:'Book Your Garden Service', business_types:'Gardening', objective:'Spring garden prep' },
-      { month:3, season:'Spring', headline:'Spring Roof Check — Free Inspection', offer:'Free roof inspection', cta:'Book Roof Check', business_types:'Roofing', objective:'Spring roof check' },
-      { month:3, season:'Spring', headline:'Exterior Spring Clean — Pressure Washing', offer:'20% off exterior cleaning', cta:'Book Exterior Clean', business_types:'Cleaning,Windows and Doors', objective:'Exterior spring clean' },
-      { month:4, season:'Spring', headline:'Easter Special — Book Before [Date] for 10% Off', offer:'10% off if booked before Easter', cta:'Claim Easter Offer', business_types:'All', objective:'Easter promotion' },
+      { month:3, season:'Spring', headline:'Spring Roof Check - Free Inspection', offer:'Free roof inspection', cta:'Book Roof Check', business_types:'Roofing', objective:'Spring roof check' },
+      { month:3, season:'Spring', headline:'Exterior Spring Clean - Pressure Washing', offer:'20% off exterior cleaning', cta:'Book Exterior Clean', business_types:'Cleaning,Windows and Doors', objective:'Exterior spring clean' },
+      { month:4, season:'Spring', headline:'Easter Special - Book Before [Date] for 10% Off', offer:'10% off if booked before Easter', cta:'Claim Easter Offer', business_types:'All', objective:'Easter promotion' },
       { month:4, season:'Spring', headline:'Spring Driveway & Patio Refresh', offer:'Free design consultation', cta:'Get Your Driveway Quote', business_types:'Driveways', objective:'Spring driveway' },
-      { month:5, season:'Spring', headline:'Moving Season — Book Your Removals Early', offer:'£50 off any removal booking', cta:'Get Moving Quote', business_types:'Removals,Estate Agents', objective:'Moving season' },
-      { month:6, season:'Summer', headline:'Summer Sale — 20% Off All Services', offer:'20% off summer bookings', cta:'Book Summer Service', business_types:'All', objective:'Summer promotion' },
-      { month:6, season:'Summer', headline:'Solar Ready for Summer — Save on Bills', offer:'Free solar viability survey', cta:'Get Solar Quote', business_types:'Solar', objective:'Summer solar' },
-      { month:7, season:'Summer', headline:'Summer Pest Control — Protect Your Home', offer:'£25 off pest control treatment', cta:'Call Pest Control', business_types:'Pest Control', objective:'Summer pest control' },
-      { month:7, season:'Summer', headline:'Summer Home Improvements — No VAT', offer:'No VAT on projects booked this month', cta:'Start Your Project', business_types:'Builder,Kitchens,Bathrooms', objective:'Summer improvements' },
-      { month:8, season:'Summer', headline:'Back to School — Organise Your Home', offer:'Free home organisation consultation', cta:'Book Now', business_types:'Cleaning,Removals', objective:'Back to school' },
-      { month:9, season:'Autumn', headline:'Autumn Boiler Service — Stay Warm This Winter', offer:'£79 boiler service — normally £120', cta:'Book Boiler Service', business_types:'Plumbing', objective:'Boiler service' },
-      { month:9, season:'Autumn', headline:'Winter-Proof Your Home — Free Survey', offer:'Free winter readiness survey', cta:'Book Winter Check', business_types:'Roofing,Builder,Electrician', objective:'Winter prep' },
-      { month:9, season:'Autumn', headline:'Gutter Clearance for Autumn — £60', offer:'Full gutter clearance for £60', cta:'Book Gutter Clearance', business_types:'Roofing,Cleaning,Gardening', objective:'Autumn gutter clearance' },
-      { month:10, season:'Autumn', headline:'October Fall Sale — Save Big', offer:'25% off all services this month', cta:'Claim Offer', business_types:'All', objective:'Autumn promotion' },
+      { month:5, season:'Spring', headline:'Moving Season - Book Your Removals Early', offer:'£50 off any removal booking', cta:'Get Moving Quote', business_types:'Removals,Estate Agents', objective:'Moving season' },
+      { month:6, season:'Summer', headline:'Summer Sale - 20% Off All Services', offer:'20% off summer bookings', cta:'Book Summer Service', business_types:'All', objective:'Summer promotion' },
+      { month:6, season:'Summer', headline:'Solar Ready for Summer - Save on Bills', offer:'Free solar viability survey', cta:'Get Solar Quote', business_types:'Solar', objective:'Summer solar' },
+      { month:7, season:'Summer', headline:'Summer Pest Control - Protect Your Home', offer:'£25 off pest control treatment', cta:'Call Pest Control', business_types:'Pest Control', objective:'Summer pest control' },
+      { month:7, season:'Summer', headline:'Summer Home Improvements - No VAT', offer:'No VAT on projects booked this month', cta:'Start Your Project', business_types:'Builder,Kitchens,Bathrooms', objective:'Summer improvements' },
+      { month:8, season:'Summer', headline:'Back to School - Organise Your Home', offer:'Free home organisation consultation', cta:'Book Now', business_types:'Cleaning,Removals', objective:'Back to school' },
+      { month:9, season:'Autumn', headline:'Autumn Boiler Service - Stay Warm This Winter', offer:'£79 boiler service - normally £120', cta:'Book Boiler Service', business_types:'Plumbing', objective:'Boiler service' },
+      { month:9, season:'Autumn', headline:'Winter-Proof Your Home - Free Survey', offer:'Free winter readiness survey', cta:'Book Winter Check', business_types:'Roofing,Builder,Electrician', objective:'Winter prep' },
+      { month:9, season:'Autumn', headline:'Gutter Clearance for Autumn - £60', offer:'Full gutter clearance for £60', cta:'Book Gutter Clearance', business_types:'Roofing,Cleaning,Gardening', objective:'Autumn gutter clearance' },
+      { month:10, season:'Autumn', headline:'October Fall Sale - Save Big', offer:'25% off all services this month', cta:'Claim Offer', business_types:'All', objective:'Autumn promotion' },
       { month:10, season:'Autumn', headline:'Pre-Winter Roof Inspection', offer:'Free inspection + discounted repairs', cta:'Book Roof Check', business_types:'Roofing', objective:'Pre-winter roof check' },
-      { month:10, season:'Autumn', headline:'Autumn Garden Clearance — Leaf Removal', offer:'Free quote for garden clearance', cta:'Book Garden Clearance', business_types:'Gardening', objective:'Autumn garden' },
-      { month:11, season:'Autumn', headline:'Emergency Services — Fast Response This Winter', offer:'Priority response — call now', cta:'Call Emergency Line', business_types:'Plumbing,Electrician,Locksmith,Pest Control', objective:'Emergency readiness' },
-      { month:12, season:'Winter', headline:'Christmas Clean — Sparkling Home for the Holidays', offer:'15% off pre-Christmas clean', cta:'Book Christmas Clean', business_types:'Cleaning,Carpet Cleaning', objective:'Christmas cleaning' },
-      { month:12, season:'Winter', headline:'End of Year Sale — 30% Off All Services', offer:'30% off — our best offer of the year', cta:'Claim Year-End Offer', business_types:'All', objective:'Year-end promotion' },
-      { month:12, season:'Winter', headline:'New Year, New Home — Plan Your 2026 Project', offer:'Free consultation for 2026 projects', cta:'Plan Your Project', business_types:'Builder,Kitchens,Bathrooms,Driveways,Windows and Doors', objective:'Year-end planning' }
+      { month:10, season:'Autumn', headline:'Autumn Garden Clearance - Leaf Removal', offer:'Free quote for garden clearance', cta:'Book Garden Clearance', business_types:'Gardening', objective:'Autumn garden' },
+      { month:11, season:'Autumn', headline:'Emergency Services - Fast Response This Winter', offer:'Priority response - call now', cta:'Call Emergency Line', business_types:'Plumbing,Electrician,Locksmith,Pest Control', objective:'Emergency readiness' },
+      { month:12, season:'Winter', headline:'Christmas Clean - Sparkling Home for the Holidays', offer:'15% off pre-Christmas clean', cta:'Book Christmas Clean', business_types:'Cleaning,Carpet Cleaning', objective:'Christmas cleaning' },
+      { month:12, season:'Winter', headline:'End of Year Sale - 30% Off All Services', offer:'30% off - our best offer of the year', cta:'Claim Year-End Offer', business_types:'All', objective:'Year-end promotion' },
+      { month:12, season:'Winter', headline:'New Year, New Home - Plan Your 2026 Project', offer:'Free consultation for 2026 projects', cta:'Plan Your Project', business_types:'Builder,Kitchens,Bathrooms,Driveways,Windows and Doors', objective:'Year-end planning' }
     ];
     data.forEach(function(d) {
       db2.seasonal_campaigns.push({
@@ -38655,7 +38676,7 @@ function seedSeasonalCampaigns() {
   } catch(e) { console.log('[SEASONAL] Seed error:', e.message); }
 }
 
-// GET /api/seasonal/recommendations — Get seasonal campaign recommendations for customer
+// GET /api/seasonal/recommendations - Get seasonal campaign recommendations for customer
 app.get('/api/seasonal/recommendations', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -38692,7 +38713,7 @@ app.get('/api/seasonal/recommendations', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/seasonal/:month — Get campaigns for a specific month
+// GET /api/seasonal/:month - Get campaigns for a specific month
 app.get('/api/seasonal/:month', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -38723,7 +38744,7 @@ app.post('/api/admin/seasonal/campaigns', adminAuth, (req, res) => {
 // ===== DONE FOR YOU CAMPAIGN REQUEST =====
 var REQUEST_STATUSES = ['requested','in_review','draft_preparing','ready_for_approval','approved','paid','sent','completed'];
 
-// POST /api/direct-mail/requests — Submit a campaign request
+// POST /api/direct-mail/requests - Submit a campaign request
 app.post('/api/direct-mail/requests', authMiddleware, (req, res) => {
   try {
     if (!req.body.business_type || !req.body.campaign_goal) return res.status(400).json({ error: 'Business type and campaign goal required' });
@@ -38744,7 +38765,7 @@ app.post('/api/direct-mail/requests', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/direct-mail/requests — Get customer's requests
+// GET /api/direct-mail/requests - Get customer's requests
 app.get('/api/direct-mail/requests', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -38754,7 +38775,7 @@ app.get('/api/direct-mail/requests', authMiddleware, (req, res) => {
 });
 
 // Admin endpoints
-// GET /api/admin/direct-mail/requests — Get all requests
+// GET /api/admin/direct-mail/requests - Get all requests
 app.get('/api/admin/direct-mail/requests', adminAuth, (req, res) => {
   try {
     var db2 = getDb();
@@ -38769,7 +38790,7 @@ app.get('/api/admin/direct-mail/requests', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// PUT /api/admin/direct-mail/requests/:id — Update request status/admin notes
+// PUT /api/admin/direct-mail/requests/:id - Update request status/admin notes
 app.put('/api/admin/direct-mail/requests/:id', adminAuth, (req, res) => {
   try {
     var db2 = getDb();
@@ -38784,7 +38805,7 @@ app.put('/api/admin/direct-mail/requests/:id', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/direct-mail/requests/:id/create-campaign — Create campaign from request
+// POST /api/admin/direct-mail/requests/:id/create-campaign - Create campaign from request
 app.post('/api/admin/direct-mail/requests/:id/create-campaign', adminAuth, (req, res) => {
   try {
     var db2 = getDb();
@@ -38799,7 +38820,7 @@ app.post('/api/admin/direct-mail/requests/:id/create-campaign', adminAuth, (req,
 });
 
 // ===== CAMPAIGN NOTES & OUTCOMES =====
-// POST /api/direct-mail/campaigns/:id/outcome — Add/update outcome for a campaign
+// POST /api/direct-mail/campaigns/:id/outcome - Add/update outcome for a campaign
 app.post('/api/direct-mail/campaigns/:id/outcome', authMiddleware, (req, res) => {
   try {
     var campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
@@ -38831,7 +38852,7 @@ app.post('/api/direct-mail/campaigns/:id/outcome', authMiddleware, (req, res) =>
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/direct-mail/campaigns/:id/outcome — Get outcome for a campaign
+// GET /api/direct-mail/campaigns/:id/outcome - Get outcome for a campaign
 app.get('/api/direct-mail/campaigns/:id/outcome', authMiddleware, (req, res) => {
   try {
     var campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
@@ -38846,7 +38867,7 @@ app.get('/api/direct-mail/campaigns/:id/outcome', authMiddleware, (req, res) => 
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/direct-mail/outcomes — Get all outcomes for customer (for analytics)
+// GET /api/direct-mail/outcomes - Get all outcomes for customer (for analytics)
 app.get('/api/direct-mail/outcomes', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -38875,7 +38896,7 @@ app.get('/api/direct-mail/outcomes', authMiddleware, (req, res) => {
 var HEALTH_CHECK_INTERVAL = null;
 var HEALTH_CACHE = null;
 
-// GET /api/admin/platform-health — Full platform health check
+// GET /api/admin/platform-health - Full platform health check
 app.get('/api/admin/platform-health', adminAuth, async (req, res) => {
   try {
     var results = {};
@@ -38955,7 +38976,7 @@ app.get('/api/admin/platform-health', adminAuth, async (req, res) => {
       results.website = { status: websiteCheck && websiteCheck.statusCode ? 'healthy' : 'warning', last_ok: new Date().toISOString(), error: websiteCheck && websiteCheck.error ? websiteCheck.error : null };
     } catch(e) { results.website = { status: 'offline', last_ok: null, error: e.message }; }
 
-    // 10. Email deliverability (#19) — check the last delivery run didn't bounce/fail.
+    // 10. Email deliverability (#19) - check the last delivery run didn't bounce/fail.
     try {
       var _aud = (getDb().delivery_audit || []).slice(-3);
       var _recentFails = 0, _recentTotal = 0;
@@ -38964,7 +38985,7 @@ app.get('/api/admin/platform-health', adminAuth, async (req, res) => {
       results.emails = { status: _failPct > 0.1 ? 'warning' : 'healthy', last_ok: new Date().toISOString(), emails_sent: _recentTotal, failures: _recentFails, error: _failPct > 0.1 ? 'High email failure rate in recent deliveries' : null };
     } catch(e) { results.emails = { status: 'warning', last_ok: null, error: 'Deliverability check failed: ' + e.message }; }
 
-    // 11. Backup (#20) — confirm a recent backup file exists and is valid.
+    // 11. Backup (#20) - confirm a recent backup file exists and is valid.
     try {
       var backupOk = false, backupAgeHours = null;
       try {
@@ -39002,7 +39023,7 @@ app.get('/admin/health', (req, res) => {
 });;
 
 // ===== ADMIN IMPERSONATION =====
-// POST /api/admin/impersonate — Generate a token to login as a customer
+// POST /api/admin/impersonate - Generate a token to login as a customer
 app.post('/api/admin/impersonate', adminAuth, (req, res) => {
   try {
     var customerId = req.body.customer_id;
@@ -39021,7 +39042,7 @@ app.post('/api/admin/impersonate', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/impersonate/logs — View impersonation logs
+// GET /api/admin/impersonate/logs - View impersonation logs
 app.get('/api/admin/impersonate/logs', adminAuth, (req, res) => {
   try {
     var db2 = getDb();
@@ -39031,7 +39052,7 @@ app.get('/api/admin/impersonate/logs', adminAuth, (req, res) => {
 });
 
 // ===== CUSTOMER SUCCESS DASHBOARD =====
-// GET /api/direct-mail/success — Customer success dashboard data
+// GET /api/direct-mail/success - Customer success dashboard data
 app.get('/api/direct-mail/success', authMiddleware, (req, res) => {
   try {
     var profile = db.prepare('SELECT * FROM customer_business_profiles WHERE customer_id = ?').get(req.user.id);
@@ -39067,7 +39088,7 @@ app.get('/api/direct-mail/success', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// Admin: GET /api/admin/direct-mail/success — All customers' success progress
+// Admin: GET /api/admin/direct-mail/success - All customers' success progress
 app.get('/api/admin/direct-mail/success', adminAuth, (req, res) => {
   try {
     var db2 = getDb();
@@ -39094,7 +39115,7 @@ app.get('/api/admin/direct-mail/success', adminAuth, (req, res) => {
 });
 
 // ===== ACTIVITY TIMELINE =====
-// GET /api/direct-mail/timeline — Get customer's activity timeline
+// GET /api/direct-mail/timeline - Get customer's activity timeline
 app.get('/api/direct-mail/timeline', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -39103,7 +39124,7 @@ app.get('/api/direct-mail/timeline', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// Admin: GET /api/admin/direct-mail/timeline — All activity
+// Admin: GET /api/admin/direct-mail/timeline - All activity
 app.get('/api/admin/direct-mail/timeline', adminAuth, (req, res) => {
   try {
     var db2 = getDb();
@@ -39125,7 +39146,7 @@ var DEMO_MODE_ENABLED = false;
 var DEMO_MODE_FILE = path.join(DATA_DIR, 'demo-mode.json');
 try { if (fs.existsSync(DEMO_MODE_FILE)) DEMO_MODE_ENABLED = JSON.parse(fs.readFileSync(DEMO_MODE_FILE, 'utf-8')).enabled === true; } catch(e) {}
 
-// GET /api/demo/data — Get sample demo data (no auth required)
+// GET /api/demo/data - Get sample demo data (no auth required)
 app.get('/api/demo/data', (req, res) => {
   if (!DEMO_MODE_ENABLED) return res.json({ success: false, error: 'Demo mode disabled' });
   res.json({
@@ -39155,7 +39176,7 @@ app.get('/api/demo/data', (req, res) => {
   });
 });
 
-// POST /api/admin/demo-mode/toggle — Enable/disable demo mode
+// POST /api/admin/demo-mode/toggle - Enable/disable demo mode
 app.post('/api/admin/demo-mode/toggle', adminAuth, (req, res) => {
   try {
     DEMO_MODE_ENABLED = req.body.enabled === true;
@@ -39165,13 +39186,13 @@ app.post('/api/admin/demo-mode/toggle', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/demo-mode/status — Get demo mode status
+// GET /api/admin/demo-mode/status - Get demo mode status
 app.get('/api/admin/demo-mode/status', adminAuth, (req, res) => {
   res.json({ success: true, demo_mode: DEMO_MODE_ENABLED });
 });
 
 // ===== ONBOARDING WIZARD =====
-// GET /api/onboarding/progress — Get customer onboarding progress
+// GET /api/onboarding/progress - Get customer onboarding progress
 app.get('/api/onboarding/progress', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -39202,7 +39223,7 @@ app.get('/api/onboarding/progress', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/onboarding/progress — Save onboarding progress
+// POST /api/onboarding/progress - Save onboarding progress
 app.post('/api/onboarding/progress', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -39216,7 +39237,7 @@ app.post('/api/onboarding/progress', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// Admin: GET /api/admin/onboarding — View all customers' onboarding progress
+// Admin: GET /api/admin/onboarding - View all customers' onboarding progress
 app.get('/api/admin/onboarding', adminAuth, (req, res) => {
   try {
     var db2 = getDb();
@@ -39240,7 +39261,7 @@ function seedKnowledgeArticles() {
     if (!db2.knowledge_articles) db2.knowledge_articles = [];
     var defaults = [
       { category:'Getting Started', title:'Welcome to 9am Leads', content:'9am Leads delivers fresh sales opportunities to your dashboard every morning at 9am. You can view, export, and take action on your leads immediately. Plus, our Direct Mail Centre lets you automatically send professional flyers and letters to your leads by post.', video_url:'', order:1 },
-      { category:'Getting Started', title:'Setting Up Your Business Profile', content:'Your Business Profile is used across the platform — for AI-generated flyers and letters, campaign packs, and direct mail campaigns. Complete your business name, type, services, area, logo, and contact details.', video_url:'', order:2 },
+      { category:'Getting Started', title:'Setting Up Your Business Profile', content:'Your Business Profile is used across the platform - for AI-generated flyers and letters, campaign packs, and direct mail campaigns. Complete your business name, type, services, area, logo, and contact details.', video_url:'', order:2 },
       { category:'Lead Generation', title:'How Daily Leads Work', content:'New leads are delivered to your dashboard every morning at 9am. Each lead includes name, address, and details based on your selected lead type and postcode areas. You can filter, search, and export your leads.', video_url:'', order:1 },
       { category:'Direct Mail', title:'Creating Your First Campaign', content:'Go to Direct Mail Centre → Create Campaign. Choose your leads, select or generate your materials, review and approve, then send. Your campaign will be printed and posted by our partner.', video_url:'', order:1 },
       { category:'Direct Mail', title:'Campaign Packs', content:'Campaign Packs are pre-built industry templates. Select a pack for your business type, apply your Business Profile details, and save it as a template. Available for 20+ industries.', video_url:'', order:2 },
@@ -39253,7 +39274,7 @@ function seedKnowledgeArticles() {
       { category:'Templates', title:'Saving and Managing Templates', content:'Save your AI-generated content as reusable templates. Templates include your business details, content, and style choices. Use templates in manual campaigns or Print & Post.', video_url:'', order:1 },
       { category:'FAQs', title:'How do I get more leads?', content:'Add more postcode areas in your dashboard settings. You can also upgrade your plan for more leads per day. Make sure your target areas match where your ideal customers are located.', video_url:'', order:1 },
       { category:'FAQs', title:'Can I cancel anytime?', content:'Yes. You can cancel your subscription at any time from Settings. Print & Post can be paused or cancelled from the Print & Post Settings page. There are no long-term contracts.', video_url:'', order:2 },
-      { category:'Video Tutorials', title:'Dashboard Overview', content:'A quick tour of your 9am Leads dashboard — leads, campaigns, Direct Mail Centre, AI Marketing Builder, and analytics.', video_url:'https://www.youtube.com/embed/dQw4w9WgXcQ', order:1 },
+      { category:'Video Tutorials', title:'Dashboard Overview', content:'A quick tour of your 9am Leads dashboard - leads, campaigns, Direct Mail Centre, AI Marketing Builder, and analytics.', video_url:'https://www.youtube.com/embed/dQw4w9WgXcQ', order:1 },
       { category:'Video Tutorials', title:'Creating a Direct Mail Campaign', content:'Step-by-step guide to creating your first direct mail campaign from lead selection to sending.', video_url:'https://www.youtube.com/embed/dQw4w9WgXcQ', order:2 },
       { category:'Video Tutorials', title:'Using the AI Marketing Builder', content:'How to generate professional flyers and letters using AI, edit them, save as templates, and use in campaigns.', video_url:'https://www.youtube.com/embed/dQw4w9WgXcQ', order:3 }
     ];
@@ -39265,7 +39286,7 @@ function seedKnowledgeArticles() {
   } catch(e) { console.log('[KNOWLEDGE] Seed error:', e.message); }
 }
 
-// GET /api/knowledge/articles — List articles (published only for customers)
+// GET /api/knowledge/articles - List articles (published only for customers)
 app.get('/api/knowledge/articles', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -39283,7 +39304,7 @@ app.get('/api/knowledge/articles', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/knowledge/articles/:id — Get article detail
+// GET /api/knowledge/articles/:id - Get article detail
 app.get('/api/knowledge/articles/:id', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -39296,7 +39317,7 @@ app.get('/api/knowledge/articles/:id', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/knowledge/bookmarks — Toggle bookmark
+// POST /api/knowledge/bookmarks - Toggle bookmark
 app.post('/api/knowledge/bookmarks', authMiddleware, (req, res) => {
   try {
     var articleId = req.body.article_id;
@@ -39310,7 +39331,7 @@ app.post('/api/knowledge/bookmarks', authMiddleware, (req, res) => {
 });
 
 // Admin endpoints
-// GET /api/admin/knowledge/articles — All articles (including unpublished)
+// GET /api/admin/knowledge/articles - All articles (including unpublished)
 app.get('/api/admin/knowledge/articles', adminAuth, (req, res) => {
   try {
     var db2 = getDb();
@@ -39318,7 +39339,7 @@ app.get('/api/admin/knowledge/articles', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/knowledge/articles — Create/update article
+// POST /api/admin/knowledge/articles - Create/update article
 app.post('/api/admin/knowledge/articles', adminAuth, (req, res) => {
   try {
     var db2 = getDb();
@@ -39332,13 +39353,13 @@ app.post('/api/admin/knowledge/articles', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/knowledge/seed — Re-seed default articles
+// POST /api/admin/knowledge/seed - Re-seed default articles
 app.post('/api/admin/knowledge/seed', adminAuth, (req, res) => {
   try { var db2 = getDb(); db2.knowledge_articles = []; saveDb(); seedKnowledgeArticles(); res.json({ success: true, message: 'Articles re-seeded' }); } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // ===== MARKETING HEALTH SCORE =====
-// GET /api/direct-mail/health-score — Customer's marketing health score
+// GET /api/direct-mail/health-score - Customer's marketing health score
 app.get('/api/direct-mail/health-score', authMiddleware, (req, res) => {
   try {
     var profile = db.prepare('SELECT * FROM customer_business_profiles WHERE customer_id = ?').get(req.user.id);
@@ -39383,7 +39404,7 @@ app.get('/api/direct-mail/health-score', authMiddleware, (req, res) => {
 });
 
 // ===== CAMPAIGN ANALYTICS =====
-// GET /api/direct-mail/analytics — Customer campaign analytics
+// GET /api/direct-mail/analytics - Customer campaign analytics
 app.get('/api/direct-mail/analytics', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -39430,7 +39451,7 @@ app.get('/api/direct-mail/analytics', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/admin/direct-mail/analytics — Admin platform-wide analytics
+// GET /api/admin/direct-mail/analytics - Admin platform-wide analytics
 app.get('/api/admin/direct-mail/analytics', adminAuth, (req, res) => {
   try {
     var db2 = getDb();
@@ -39482,7 +39503,7 @@ app.get('/api/admin/direct-mail/analytics', adminAuth, (req, res) => {
 });
 
 // ===== ADDRESS QUALITY CHECKER =====
-// POST /api/direct-mail/check-addresses — Check address quality before sending
+// POST /api/direct-mail/check-addresses - Check address quality before sending
 app.post('/api/direct-mail/check-addresses', authMiddleware, (req, res) => {
   try {
     var leadIds = req.body.lead_ids || [];
@@ -39560,7 +39581,7 @@ app.post('/api/direct-mail/check-addresses', authMiddleware, (req, res) => {
 });
 
 // ===== CAMPAIGN CALENDAR =====
-// GET /api/direct-mail/calendar — Get all campaign events for calendar view
+// GET /api/direct-mail/calendar - Get all campaign events for calendar view
 app.get('/api/direct-mail/calendar', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -39619,7 +39640,7 @@ app.get('/api/direct-mail/calendar', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// Admin: GET /api/admin/direct-mail/calendar — All customers' campaign calendar
+// Admin: GET /api/admin/direct-mail/calendar - All customers' campaign calendar
 app.get('/api/admin/direct-mail/calendar', adminAuth, (req, res) => {
   try {
     var db2 = getDb();
@@ -39654,7 +39675,7 @@ app.get('/api/admin/direct-mail/calendar', adminAuth, (req, res) => {
 // ===== MULTI-TOUCH POSTAL SEQUENCES =====
 var SEQUENCE_STATUSES = ['active','paused','completed','cancelled'];
 
-// POST /api/direct-mail/sequences — Create a sequence
+// POST /api/direct-mail/sequences - Create a sequence
 app.post('/api/direct-mail/sequences', authMiddleware, (req, res) => {
   try {
     if (!req.body.name) return res.status(400).json({ error: 'Sequence name required' });
@@ -39689,7 +39710,7 @@ app.post('/api/direct-mail/sequences', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/direct-mail/sequences — List customer's sequences
+// GET /api/direct-mail/sequences - List customer's sequences
 app.get('/api/direct-mail/sequences', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -39706,7 +39727,7 @@ app.get('/api/direct-mail/sequences', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/direct-mail/sequences/:id — Get sequence details with steps
+// GET /api/direct-mail/sequences/:id - Get sequence details with steps
 app.get('/api/direct-mail/sequences/:id', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -39717,7 +39738,7 @@ app.get('/api/direct-mail/sequences/:id', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// PUT /api/direct-mail/sequences/:id — Update sequence (name, spend limit, pause/resume)
+// PUT /api/direct-mail/sequences/:id - Update sequence (name, spend limit, pause/resume)
 app.put('/api/direct-mail/sequences/:id', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -39749,7 +39770,7 @@ app.put('/api/direct-mail/sequences/:id', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/direct-mail/sequences/:id/process-step — Process next scheduled step
+// POST /api/direct-mail/sequences/:id/process-step - Process next scheduled step
 app.post('/api/direct-mail/sequences/:id/process-step', authMiddleware, async (req, res) => {
   try {
     var db2 = getDb();
@@ -39853,7 +39874,7 @@ app.post('/api/direct-mail/sequences/:id/process-step', authMiddleware, async (r
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// DELETE /api/direct-mail/sequences/:id — Delete a sequence (only if cancelled/completed)
+// DELETE /api/direct-mail/sequences/:id - Delete a sequence (only if cancelled/completed)
 app.delete('/api/direct-mail/sequences/:id', authMiddleware, (req, res) => {
   try {
     var db2 = getDb();
@@ -39988,7 +40009,7 @@ function seedDemoAccount() {
     saveDb();
   } catch(e) { console.log('[DEMO] seed error: ' + (e && e.message)); }
 }
-// GET /api/demo/login?product=moving — mint a short-lived READ-ONLY token.
+// GET /api/demo/login?product=moving - mint a short-lived READ-ONLY token.
 app.get('/api/demo/login', (req, res) => {
   try {
     var product = String(req.query.product || 'moving').toLowerCase();
@@ -40016,7 +40037,7 @@ app.listen(PORT, () => {
 
   // CRASH / RESTART ALERT: if the server boots, email the owner. If this happens
   // outside a deploy, the process crashed and auto-restarted (Render restarts it).
-  // THROTTLED to once per 6 hours (default) — Render restarts on every deploy /
+  // THROTTLED to once per 6 hours (default) - Render restarts on every deploy /
   // sleep-wake, so without throttling the owner gets flooded with "restarted"
   // emails. Only a restart with no recent deploy/crash history is worth emailing,
   // and even then at most once per window.
@@ -40039,7 +40060,7 @@ app.listen(PORT, () => {
         var recentBoots = dbB.__boots.filter(function(t) { return nowB - t < 15 * 60000; });
         if (recentBoots.length >= 4 && (nowB - (dbB.__last_bootalert || 0)) > 2 * 3600000) {
           sendBrevoEmail({ email: bootEmail, name: '9amLeads Owner' }, '⚠ 9amLeads is crash-looping',
-            '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="font-family:Outfit,sans-serif;color:#f87171;margin:0 0 8px">Crash loop detected</h1><p style="color:#ccc;line-height:1.7">The 9amLeads backend has restarted ' + recentBoots.length + ' times in the last 15 minutes — this is a crash loop, not a normal deploy.</p><p style="color:#ccc;line-height:1.7">Check the Render logs immediately. Routine single restarts are no longer emailed.</p></div>').catch(function(){});
+            '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="font-family:Outfit,sans-serif;color:#f87171;margin:0 0 8px">Crash loop detected</h1><p style="color:#ccc;line-height:1.7">The 9amLeads backend has restarted ' + recentBoots.length + ' times in the last 15 minutes - this is a crash loop, not a normal deploy.</p><p style="color:#ccc;line-height:1.7">Check the Render logs immediately. Routine single restarts are no longer emailed.</p></div>').catch(function(){});
           dbB.__last_bootalert = nowB;
         }
         saveDb();
@@ -40068,13 +40089,13 @@ app.listen(PORT, () => {
   } catch(e) {}
   // DELIVERY SELF-CHECK ON BOOT: if the service restarted during/after the 9am window
   // (deploy, crash, OOM, sleep-wake) and today's delivery is NOT complete, recover
-  // immediately — a restart at 09:00 must never cost customers their leads.
+  // immediately - a restart at 09:00 must never cost customers their leads.
   try {
     var _bootDow = new Date().toLocaleString('en-GB', { timeZone: 'Europe/London', weekday: 'short' });
     var _bootHm = new Date().toLocaleString('en-GB', { timeZone: 'Europe/London', hour12: false }).split(', ').pop().split(':');
     var _bootMin = parseInt(_bootHm[0], 10) * 60 + parseInt(_bootHm[1], 10);
     var _isWeekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].indexOf(_bootDow) !== -1;
-    if (_isWeekday && _bootMin >= 540 && _bootMin < 720) { // 09:00–12:00 UK (never before 09:00, or it would deliver early)
+    if (_isWeekday && _bootMin >= 540 && _bootMin < 720) { // 09:00-12:00 UK (never before 09:00, or it would deliver early)
       setTimeout(function() {
         try {
           var _db = getDb();
@@ -40082,7 +40103,7 @@ app.listen(PORT, () => {
           // Honour the persisted completion flag: if a full delivery already succeeded
           // today (before this restart), do NOT fire another heavy full run just because
           // a customer is genuinely short of supply (auto-fill handles that).
-          if (_db.delivery_completed_date === _today) { console.log('[BOOT-SELFCHECK] delivery already completed today — OK'); return; }
+          if (_db.delivery_completed_date === _today) { console.log('[BOOT-SELFCHECK] delivery already completed today - OK'); return; }
           var _short = 0;
           (_db.customers || []).forEach(function(c) {
             if (!c.plan || c.plan === 'cancelled') return;
@@ -40092,8 +40113,8 @@ app.listen(PORT, () => {
             var have = (_db.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(_today) === 0; }).length;
             if (have < promised) _short++;
           });
-          if (_short > 0) { console.log('[BOOT-SELFCHECK] ' + _short + ' customer(s) short after restart — running recovery watchdog'); try { deliveryCompletionWatchdog('boot'); } catch(e) {} }
-          else console.log('[BOOT-SELFCHECK] delivery complete for today — OK');
+          if (_short > 0) { console.log('[BOOT-SELFCHECK] ' + _short + ' customer(s) short after restart - running recovery watchdog'); try { deliveryCompletionWatchdog('boot'); } catch(e) {} }
+          else console.log('[BOOT-SELFCHECK] delivery complete for today - OK');
         } catch(e) { console.log('[BOOT-SELFCHECK] error:', e.message); }
       }, 15000);
     }
@@ -40171,10 +40192,10 @@ try {
   }
 
   // STREAM DRAIN: every 2 minutes, pull companies queued by the streaming worker
-  // and merge them into the NEWBUSINESS POOL FILE (newbusiness-leads.json) — the
+  // and merge them into the NEWBUSINESS POOL FILE (newbusiness-leads.json) - the
   // SAME file the delivery/preview read via loadProductPool/getDeliveryPool.
   // (Previously this wrote to the DB leads table with customer_id='scraper', which
-  // the delivery never reads — so stream companies never became deliverable and the
+  // the delivery never reads - so stream companies never became deliverable and the
   // new business pool sat at 0. This is the fix.)
   var _streamDrainTimer = setInterval(function() {
     try {
