@@ -20353,7 +20353,16 @@ async function runAutoSend() {
   var db = db_shim;
   var today = new Date().toISOString().split('T')[0];
   var customers = (dbJSON.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3) && !isLeadsPaused(c) && !trialExpiredUnpaid(c); });
-  var results = { checked: 0, enabled: 0, skipped: 0, sent: 0, failed: 0, total_spend: 0 };
+  var results = { checked: 0, enabled: 0, skipped: 0, sent: 0, failed: 0, total_spend: 0, details: [] };
+  // Per-customer outcome recorder so the run result explains WHY each account was
+  // skipped/failed (previously only totals were returned, so a skip was undiagnosable).
+  function asRec(cust, status, reason, extra) {
+    try {
+      var d = { email: (cust && cust.email) || '', status: status, reason: reason || '' };
+      if (extra) { d.detail = extra; }
+      results.details.push(d);
+    } catch(e) {}
+  }
 
   // SELF-HEAL: if the Stannp balance is too low to mail, auto-pause Auto-Send for
   // everyone (so no print jobs fail mid-send) + alert the founder to top up.
@@ -20381,15 +20390,15 @@ async function runAutoSend() {
     try {
       // 1. Check customer has auto send settings
       var settings = db.prepare('SELECT * FROM direct_mail_automation_settings WHERE customer_id = ?').get(cust.id);
-      if (!settings || !settings.enable_auto_send) { results.skipped++; continue; }
+      if (!settings || !settings.enable_auto_send) { results.skipped++; asRec(cust, 'skipped', 'auto-send not enabled'); continue; }
       results.enabled++;
       // 3. Check approved template exists
-      if (!settings.default_template_id) { console.log('[AUTO-SEND] Skip:', cust.email, 'no template'); results.skipped++; continue; }
+      if (!settings.default_template_id) { console.log('[AUTO-SEND] Skip:', cust.email, 'no template'); results.skipped++; asRec(cust, 'skipped', 'no template selected'); continue; }
       var template = db.prepare('SELECT * FROM direct_mail_templates WHERE id = ? AND customer_id = ?').get(settings.default_template_id, cust.id);
-      if (!template) { console.log('[AUTO-SEND] Skip:', cust.email, 'template not found'); results.skipped++; continue; }
+      if (!template) { console.log('[AUTO-SEND] Skip:', cust.email, 'template not found'); results.skipped++; asRec(cust, 'skipped', 'template not found'); continue; }
 
       // 2. Check consent
-      if (!settings.consent_given) { console.log('[AUTO-SEND] Skip:', cust.email, 'no consent'); results.skipped++; continue; }
+      if (!settings.consent_given) { console.log('[AUTO-SEND] Skip:', cust.email, 'no consent'); results.skipped++; asRec(cust, 'skipped', 'consent not given'); continue; }
 
       // Resolve the customer's chosen mail type + format. Prefer the explicitly
       // saved settings (settings.mail_type / default_format) but ALWAYS fall back
@@ -20420,7 +20429,7 @@ async function runAutoSend() {
         }
       }
       // 5. Check minimum leads before sending
-      if (todaysLeads.length < (settings.min_leads_before_send || 1)) { console.log('[AUTO-SEND] Skip:', cust.email, 'only', todaysLeads.length, 'leads'); results.skipped++; continue; }
+      if (todaysLeads.length < (settings.min_leads_before_send || 1)) { console.log('[AUTO-SEND] Skip:', cust.email, 'only', todaysLeads.length, 'leads'); results.skipped++; asRec(cust, 'skipped', 'only ' + todaysLeads.length + ' delivered lead(s) today (minimum is ' + (settings.min_leads_before_send || 1) + ')'); continue; }
 
       // 6. Check duplicate mailing rules
       var recentCampaigns = db.prepare('SELECT * FROM direct_mail_campaigns WHERE customer_id = ? AND created_at >= ?').all(cust.id, new Date(Date.now() - (settings.repeat_mailing_days || 90) * 86400000).toISOString());
@@ -20436,7 +20445,7 @@ async function runAutoSend() {
       if (settings.max_letters_per_day > 0 && todaysLeads.length > settings.max_letters_per_day) {
         todaysLeads = todaysLeads.slice(0, settings.max_letters_per_day);
       }
-      if (todaysLeads.length === 0) { console.log('[AUTO-SEND] Skip:', cust.email, 'no leads after dedup'); results.skipped++; continue; }
+      if (todaysLeads.length === 0) { console.log('[AUTO-SEND] Skip:', cust.email, 'no leads after dedup'); results.skipped++; asRec(cust, 'skipped', 'no mailable delivered leads today (after dedup)'); continue; }
 
       // 8. Check daily spend limit (repeat schedule charges for all follow-ups up front)
       var scheduleIntervals = (settings.schedule_intervals && settings.schedule_intervals.length) ? settings.schedule_intervals : (settings.send_schedule === 'repeat' ? [0,14,28] : [0]);
@@ -20447,7 +20456,7 @@ async function runAutoSend() {
       var totalCost = Math.round(perBatch * scheduleIntervals.length * 100) / 100;
       if (settings.max_daily_spend > 0 && perBatch > settings.max_daily_spend) {
         var capped = Math.floor(settings.max_daily_spend / autoPrice);
-        if (capped < 1) { console.log('[AUTO-SEND] Skip:', cust.email, 'daily spend limit exceeded'); results.skipped++; continue; }
+        if (capped < 1) { console.log('[AUTO-SEND] Skip:', cust.email, 'daily spend limit exceeded'); results.skipped++; asRec(cust, 'skipped', 'daily spend limit (£' + settings.max_daily_spend + ') is too low for one item'); continue; }
         todaysLeads = todaysLeads.slice(0, capped);
         perBatch = Math.round(todaysLeads.length * autoPrice * 100) / 100;
         totalCost = Math.round(perBatch * scheduleIntervals.length * 100) / 100;
@@ -20458,7 +20467,7 @@ async function runAutoSend() {
       var monthCost = Math.round(thisMonthLeads.length * autoPrice * 100) / 100;
       if (settings.max_monthly_spend > 0 && (monthCost + totalCost) > settings.max_monthly_spend) {
         console.log('[AUTO-SEND] Skip:', cust.email, 'monthly spend limit would exceed');
-        results.skipped++; continue;
+        results.skipped++; asRec(cust, 'skipped', 'monthly spend limit would be exceeded'); continue;
       }
 
       // 10. Check if paused due to payment or provider failure
@@ -20612,7 +20621,7 @@ async function runAutoSend() {
             db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_id = ?, stripe_payment_status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('auto_send_mock', 'paid', new Date().toISOString(), campaign.id, cust.id);
             db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, 'approved', 'paid', 'system', 'Mock payment (no Stripe configured)', new Date().toISOString());
           } else {
-            console.log('[AUTO-SEND] Skip:', cust.email, 'no saved card for auto-charge');
+            console.log('[AUTO-SEND] Skip:', cust.email, 'no saved card for auto-charge'); asRec(cust, 'failed', 'no saved card - Print & Post paused, nothing mailed');
             db.prepare('UPDATE customers SET auto_send_paused = ? WHERE id = ?').run(1, cust.id);
             db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('failed', new Date().toISOString(), campaign.id, cust.id);
             db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, 'approved', 'failed', 'system', 'No saved card — Print & Post paused', new Date().toISOString());
@@ -20633,6 +20642,7 @@ async function runAutoSend() {
               db.prepare('UPDATE direct_mail_campaigns SET status = ?, provider = ?, provider_campaign_id = ?, provider_status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('sent_to_provider', 'stannp', dmSend.provider_campaign_id || '', 'processing', new Date().toISOString(), campaign.id, cust.id);
               db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), cust.id, campaign.id, 'paid', 'sent_to_provider', 'system', 'Sent ' + validAddressCount + ' items to Stannp', new Date().toISOString());
               results.sent++;
+            asRec(cust, 'sent', validAddressCount + ' item(s) mailed (' + autoMailType + ')', '£' + totalCost.toFixed(2));
               results.total_spend += totalCost;
               console.log('[AUTO-SEND] Sent:', cust.email, validAddressCount, 'items (' + autoMailType + '), cost: £' + totalCost.toFixed(2));
               if (cust && cust.id) {
