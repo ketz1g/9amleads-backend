@@ -19260,17 +19260,12 @@ app.get('/api/admin/email-library', adminAuth, (req, res) => {
     for (var ci = 0; ci < CAMPAIGN_EMAILS.length; ci++) {
       var ce = CAMPAIGN_EMAILS[ci];
       if (String(ce.template).indexOf('trial_wk') === 0) continue;
-      var whenTxt = ce.day <= 6 ? 'Day ' + ce.day + ' of your free trial' : ce.day === 7 ? '1 day before the trial ends' : String(ce.day - 7) + ' day(s) after the trial ends';
+      if (ce.day > 7) continue; // post-trial is handled by the Win-back group below
+      var whenTxt = ce.day <= 6 ? 'Day ' + ce.day + ' of your free trial' : '1 day before the trial ends';
       trialEmails.push({ id: ce.template, name: 'Trial follow-up (day ' + ce.day + ')', when: whenTxt, day: ce.day, html: campaignBody(ce.template) });
     }
-    groups.push({ key:'trial', label:'Trial nurture sequence', icon:'\uD83C\uDF89', sends:'Day-gated while on (and just after) the free trial', emails: trialEmails.sort(function(a,b){ return (a.day||0)-(b.day||0); }) });
-    // 4) WEEKLY FOLLOW-UPS (after trial, weeks 5-26)
-    var weekly = [];
-    for (var wk = 5; wk <= 14; wk++) {
-      try { weekly.push({ id:'trial_wk'+wk, name:'Weekly follow-up (week '+wk+')', week: wk, when:'Every week after the trial (weeks 5-26)', html: buildWeeklyTrialTemplate(demoCustomer('moving'), wk, 'Moving Leads', '#0ea5e9', 'moving') }); }
-      catch(we) {}
-    }
-    groups.push({ key:'weekly', label:'Weekly reactivation (after trial)', icon:'\uD83D\uDD04', sends:'One per week for ~6 months after the trial ends', emails: weekly });
+    groups.push({ key:'trial', label:'Trial nurture sequence (while on trial)', icon:'\uD83C\uDF89', sends:'Day-gated while the free trial is active', emails: trialEmails.sort(function(a,b){ return (a.day||0)-(b.day||0); }) });
+    // 4) (Weekly reactivation removed - expired trials now follow the Win-back sequence.)
     // 5) PAID CUSTOMER SERIES
     var paid = [];
     for (var pai = 0; pai < PAID_EMAIL_SERIES.length; pai++) {
