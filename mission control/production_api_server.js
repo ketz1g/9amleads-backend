@@ -10290,6 +10290,26 @@ app.post('/api/admin/customers/restore', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/customers/set-stripe { email, stripe_customer_id, stripe_subscription_id }
+// Link a (restored) customer to their Stripe customer/subscription, because the billing
+// webhooks resolve the account BY stripe_customer_id (without it, renewals and dunning
+// never reach them).
+app.post('/api/admin/customers/set-stripe', adminAuth, (req, res) => {
+  try {
+    var email = String((req.body && req.body.email) || '').toLowerCase().trim();
+    var scid = String((req.body && req.body.stripe_customer_id) || '').trim();
+    var ssid = String((req.body && req.body.stripe_subscription_id) || '').trim();
+    if (!email || !scid) return res.status(400).json({ error: 'email and stripe_customer_id required' });
+    var dbS2 = getDb();
+    var c2 = (dbS2.customers || []).find(function(x) { return String(x.email || '').toLowerCase() === email; });
+    if (!c2) return res.status(404).json({ error: 'customer not found' });
+    c2.stripe_customer_id = scid;
+    if (ssid) c2.stripe_subscription_id = ssid;
+    saveDb();
+    res.json({ success: true, email: c2.email, stripe_customer_id: c2.stripe_customer_id, stripe_subscription_id: c2.stripe_subscription_id || '' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/admin/crm-status - which customers have a CRM connected, and the result of
 // their most recent push (status + when + lead count + response snippet).
 app.get('/api/admin/crm-status', adminAuth, (req, res) => {
