@@ -39756,6 +39756,22 @@ var DEMO_ACCOUNTS = {
   tenders:     { id: 'demo0000-0000-4000-8000-000000000005', email: 'demo-tenders@9amleads.com',     company: 'Demo Contractors', lead_type: 'Public Tenders',       business_type: 'IT, Construction & More' }
 };
 var DEMO_PRODUCTS = Object.keys(DEMO_ACCOUNTS);
+// Demo probate leads use REAL recent Gazette notices from the live probate pool, so the
+// source link opens the exact notice the demo lead describes (an invented name would
+// never match a real notice). Falls back to the built-in sample names if the pool is bare.
+var __demoProbatePool = null;
+function __demoProbateReal(i) {
+  try {
+    if (!__demoProbatePool) {
+      var _pf = path.join(DATA_DIR, 'probate-leads.json');
+      var _arr = JSON.parse(fs.readFileSync(_pf, 'utf-8'));
+      __demoProbatePool = (Array.isArray(_arr) ? _arr : []).filter(function(l) {
+        return l && (l.deceasedName || l.name) && (l.deceasedAddress || l.address) && l.url && /thegazette\.co\.uk\/notice\//.test(String(l.url));
+      });
+    }
+    return __demoProbatePool.length ? __demoProbatePool[i % __demoProbatePool.length] : null;
+  } catch(e) { return null; }
+}
 function __demoLeadData(product, i) {
   var base = new Date(); base.setHours(9, 0, 0, 0);
   if (product === 'moving') {
@@ -39765,6 +39781,12 @@ function __demoLeadData(product, i) {
     return { address: (12 + i * 7) + ' ' + streets[i] + ', ' + a[1], town: a[1], city: a[2], postcode: a[0], bedrooms: 2 + (i % 3), price: prices[i], propertyType: (i % 2 ? 'Semi-Detached' : 'Detached'), status: (i % 3 === 0 ? 'Under Offer' : 'Available'), agent: 'Demo Estate Agents', url: 'https://www.rightmove.co.uk/properties/' + (1000000 + i), firstVisibleDate: new Date(base.getTime() - (i < 5 ? 0 : i - 4) * 86400000).toISOString().split('T')[0] };
   }
   if (product === 'probate') {
+    // Prefer a REAL recent Gazette notice so the demo's source link matches exactly.
+    var _rpr = __demoProbateReal(i);
+    if (_rpr) {
+      var _raddr = _rpr.deceasedAddress || _rpr.address || '';
+      return { deceasedName: _rpr.deceasedName || _rpr.name || 'Probate Estate', deceasedAddress: _raddr, locality: _rpr.town || '', postcode: _rpr.postcode || '', address: _raddr, town: _rpr.town || '', fullAddress: _rpr.fullAddress || (_raddr + (_rpr.postcode ? ', ' + _rpr.postcode : '')), grantDate: _rpr.grantDate || _rpr.publishedDate || _rpr.receivedDate || _rpr.date_received || new Date(base.getTime() - (i < 5 ? 0 : i - 4) * 86400000).toISOString(), estateValue: _rpr.estateValue || 0, solicitor: _rpr.solicitor || 'Probate Solicitor', probateRegistry: _rpr.probateRegistry || '', occupation: _rpr.occupation || '', url: _rpr.url, source: 'The Gazette' };
+    }
     var names = ['Margaret Collins', 'John Thompson', 'Helen Wood', 'Richard Khan', 'Patricia Taylor', 'Joseph Brown', 'Dorothy Walker', 'David Thompson'];
     var addrs = [['7 The Paddock', 'Sunbury', 'TW16 5EX'], ['46 Station Road', 'Woking', 'GU21 1AA'], ['89 Park Lane', 'Tunbridge Wells', 'TN1 1AA'], ['128 Church Road', 'Camden', 'NW1 1AA'], ['112 London Road', 'Caterham', 'CR3 1AA'], ['117 Green Lane', 'Folkestone', 'CT19 1AA'], ['105 Manor Road', 'Westminster', 'SW1A 1AA'], ['36 King Street', 'Woking', 'GU22 1AA']][i];
     return { deceasedName: names[i], deceasedAddress: addrs[0], locality: addrs[1], postcode: addrs[2], address: addrs[0] + ', ' + addrs[1], town: addrs[1], fullAddress: addrs[0] + ', ' + addrs[1] + ', ' + addrs[2], grantDate: new Date(base.getTime() - (i < 5 ? 0 : i - 4) * 86400000).toISOString(), estateValue: [284242, 271141, 273395, 498323, 221122, 442489, 677911, 164246][i], solicitor: 'Demo Legal Services', probateRegistry: 'Newcastle', occupation: 'Retired', url: 'https://www.thegazette.co.uk/all-notices/notice?text=' + encodeURIComponent(names[i]) };
