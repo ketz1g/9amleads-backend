@@ -3545,13 +3545,13 @@ const app = express();
 // ===== LIVE POST TRACKING (Stannp) =====
 // Map a Stannp mailpiece status to our friendly status + label + step index.
 var STANNP_STATUS_MAP = [
-  { match: ['accepted', 'queued', 'received'], status: 'queued', label: 'Accepted', step: 1, emoji: '\u2705', desc: 'Order accepted by the print house' },
-  { match: ['processing', 'printing', 'in_progress', 'produced', 'producing'], status: 'printing', label: 'Printing', step: 2, emoji: '\uD83D\uDD27', desc: 'Your mail is being printed' },
-  { match: ['dispatched', 'posted', 'handed_over'], status: 'dispatched', label: 'Dispatched', step: 3, emoji: '\uD83D\uDE9A', desc: 'Handed to Royal Mail' },
-  { match: ['local_delivery', 'out_for_delivery'], status: 'out_for_delivery', label: 'Out for delivery', step: 4, emoji: '\uD83D\uDEE3\uFE0F', desc: 'At the local delivery office' },
-  { match: ['delivered', 'completed'], status: 'delivered', label: 'Delivered', step: 5, emoji: '\uD83D\uDCEB', desc: 'Delivered to the address' },
-  { match: ['returned'], status: 'returned', label: 'Returned', step: 6, emoji: '\u21A9\uFE0F', desc: 'Returned to sender' },
-  { match: ['cancelled', 'canceled', 'failed', 'rejected'], status: 'cancelled', label: 'Cancelled / Failed', step: 6, emoji: '\u26D4', desc: 'This item was not posted' }
+  { match: ['accepted', 'queued', 'received', 'pending', 'submitted'], status: 'queued', label: 'Accepted', step: 1, emoji: '\u2705', desc: 'Order accepted by the print house' },
+  { match: ['processing', 'printing', 'printed', 'in_progress', 'produced', 'producing', 'printed_and_packed', 'packed'], status: 'printing', label: 'Printing', step: 2, emoji: '\uD83D\uDD27', desc: 'Your mail is being printed' },
+  { match: ['dispatched', 'posted', 'handed_over', 'in_transit', 'in transit', 'collected', 'shipped'], status: 'dispatched', label: 'Dispatched', step: 3, emoji: '\uD83D\uDE9A', desc: 'Handed to Royal Mail' },
+  { match: ['local_delivery', 'out_for_delivery', 'out for delivery', 'sorted', 'with_courier', 'at_local_depot'], status: 'out_for_delivery', label: 'Out for delivery', step: 4, emoji: '\uD83D\uDEE3\uFE0F', desc: 'At the local delivery office' },
+  { match: ['delivered', 'completed', 'delivery_confirmed'], status: 'delivered', label: 'Delivered', step: 5, emoji: '\uD83D\uDCEB', desc: 'Delivered to the address' },
+  { match: ['returned', 'returned_to_sender', 'rts'], status: 'returned', label: 'Returned', step: 6, emoji: '\u21A9\uFE0F', desc: 'Returned to sender' },
+  { match: ['cancelled', 'canceled', 'failed', 'rejected', 'undeliverable'], status: 'cancelled', label: 'Cancelled / Failed', step: 6, emoji: '\u26D4', desc: 'This item was not posted' }
 ];
 function mapStannpStatus(rawStatus) {
   var s = String(rawStatus || '').toLowerCase().trim();
