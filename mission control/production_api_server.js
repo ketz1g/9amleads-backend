@@ -20410,7 +20410,10 @@ async function runAutoSend() {
       var autoFormat = settings.default_format || (tplType === 'flyer_plus_letter' ? 'flyer_plus_letter' : tplType === 'flyer_front_back' ? 'flyer_a5_portrait' : '');
 
       // 4. Get today's delivered leads
-      var todaysLeads = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.startsWith(today); });
+      // NOTE: read the JSON data (dbJSON), NOT db.leads - the SQL shim has no `.leads`
+      // property, so the previous `db.leads` was always undefined and Auto Send could
+      // NEVER find any leads to mail (it always skipped with "0 leads").
+      var todaysLeads = ((dbJSON && dbJSON.leads) || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.startsWith(today); });
       var pickedIds = {};
       // Filter by lead types if set
       if (settings.lead_types) {
@@ -20463,7 +20466,7 @@ async function runAutoSend() {
       }
 
       // 9. Check monthly spend limit
-      var thisMonthLeads = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today.substring(0, 7)) === 0; });
+      var thisMonthLeads = ((dbJSON && dbJSON.leads) || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today.substring(0, 7)) === 0; });
       var monthCost = Math.round(thisMonthLeads.length * autoPrice * 100) / 100;
       if (settings.max_monthly_spend > 0 && (monthCost + totalCost) > settings.max_monthly_spend) {
         console.log('[AUTO-SEND] Skip:', cust.email, 'monthly spend limit would exceed');
