@@ -13175,6 +13175,36 @@ app.post('/api/admin/top-up-today', adminAuth, (req, res) => {
     }
     if (!picked) return res.status(400).json({ error: 'No fresh in-area lead available to top up today. Try again later.' });
     var dT = { address: picked.address || picked.fullAddress || '', fullAddress: picked.fullAddress || picked.address || '', postcode: picked.postcode || '', url: picked.url || '', street: picked.street || '', building_number: picked.building_number || '', source: picked.source || '', firstVisibleDate: picked.firstVisibleDate || nowIso, scrapedAt: nowIso };
+    // PRESERVE product-specific fields. The old fixed field set above dropped the
+    // company name (newbusiness), deceased name (probate), proposal (planning) and
+    // tender details (tenders), so any lead added by a top-up rendered as a generic
+    // "New Company Registration" / blank on both the dashboard and the daily email.
+    if (cust.product === 'newbusiness') {
+      dT.company = picked.companyName || picked.name || picked.company || '';
+      dT.companyName = dT.company;
+      dT.companyNumber = picked.companyNumber || picked.company_number || '';
+      dT.sicCode = picked.sicCode || picked.sic_description || '';
+      dT.incorporationDate = picked.incorporationDate || picked.dateOfCreation || '';
+      dT.website = picked.website || '';
+    } else if (cust.product === 'probate') {
+      dT.deceasedName = picked.deceasedName || picked.name || '';
+      dT.deceasedAddress = picked.deceasedAddress || '';
+      dT.grantDate = picked.grantDate || picked.publishedDate || picked.date_received || '';
+      dT.publishedDate = picked.publishedDate || picked.grantDate || picked.date_received || '';
+      dT.estateValue = picked.estateValue || '';
+    } else if (cust.product === 'planning') {
+      dT.proposal = picked.proposal || picked.description || '';
+      dT.council = picked.council || picked.contractingAuthority || '';
+      dT.applicationType = picked.applicationType || '';
+      dT.reference = picked.reference || '';
+    } else if (cust.product === 'tenders') {
+      dT.tenderTitle = picked.tenderTitle || picked.title || '';
+      dT.description = picked.description || '';
+      dT.contractingAuthority = picked.contractingAuthority || '';
+      dT.contractValue = picked.contractValue || '';
+      dT.deadlineDate = picked.deadlineDate || '';
+      dT.cpvCode = picked.cpvCode || '';
+    }
     if (!dT.town && picked.town) dT.town = picked.town;
     if (!dT.city && picked.city) dT.city = picked.city;
     if (!dT.county && picked.county) dT.county = picked.county;
@@ -13184,6 +13214,63 @@ app.post('/api/admin/top-up-today', adminAuth, (req, res) => {
     dbT.leads.push({ id: uuidv4(), customer_id: cust.id, product: cust.product, data: JSON.stringify(dT), status: 'delivered', delivered: 1, created_at: nowIso, delivered_at: delivAt, release_at: delivAt });
     saveDb();
     res.json({ success: true, email: email, added: 1, lead: (dT.fullAddress || dT.address || '') + ', ' + (dT.postcode || ''), today_count: todayCount + 1, daily_limit: dailyLimit });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/backfill-lead-details - repair leads whose product-specific fields
+// were dropped by the older top-up path (company name / deceased name / proposal /
+// tender details), by matching each lead back to the pool on url or address+postcode.
+// Idempotent - only touches leads that are actually missing the field.
+app.post('/api/admin/backfill-lead-details', adminAuth, (req, res) => {
+  try {
+    var dbB = getDb();
+    var pools = {};
+    Object.keys(PRODUCT_LEAD_FILES).forEach(function(p) {
+      try { pools[p] = JSON.parse(fs.readFileSync(path.join(DATA_DIR, PRODUCT_LEAD_FILES[p].file), 'utf-8')) || []; } catch(e) { pools[p] = []; }
+      if (!Array.isArray(pools[p])) pools[p] = [];
+    });
+    function _bUrl(u) { return String(u || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim(); }
+    function _bAddr(a) { return String(a || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 40); }
+    var fixed = 0, checked = 0;
+    (dbB.leads || []).forEach(function(l) {
+      var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) { return; }
+      var need = false;
+      if (l.product === 'newbusiness') need = !(d.company || d.companyName || d.name);
+      else if (l.product === 'probate') need = !(d.deceasedName || d.name);
+      else if (l.product === 'planning') need = !(d.proposal || d.description);
+      else if (l.product === 'tenders') need = !(d.tenderTitle || d.title);
+      if (!need) return;
+      checked++;
+      var lu = _bUrl(d.url), la = _bAddr(d.address || d.fullAddress), lpc = String(d.postcode || '').toUpperCase().replace(/\s+/g, '');
+      var pool = pools[l.product] || [];
+      var hit = null;
+      for (var i = 0; i < pool.length; i++) {
+        var pl = pool[i];
+        if (lu && _bUrl(pl.url) === lu) { hit = pl; break; }
+        var pa = _bAddr(pl.address || pl.fullAddress), ppc = String(pl.postcode || '').toUpperCase().replace(/\s+/g, '');
+        if (la && pa && la === pa && (!lpc || !ppc || lpc === ppc)) { hit = pl; break; }
+      }
+      if (!hit) return;
+      if (l.product === 'newbusiness') {
+        d.company = hit.companyName || hit.name || hit.company || '';
+        d.companyName = d.company;
+        d.companyNumber = d.companyNumber || hit.companyNumber || hit.company_number || '';
+        d.sicCode = d.sicCode || hit.sicCode || hit.sic_description || '';
+        d.incorporationDate = d.incorporationDate || hit.incorporationDate || hit.dateOfCreation || '';
+      } else if (l.product === 'probate') {
+        d.deceasedName = hit.deceasedName || hit.name || '';
+        d.deceasedAddress = d.deceasedAddress || hit.deceasedAddress || '';
+      } else if (l.product === 'planning') {
+        d.proposal = hit.proposal || hit.description || '';
+        d.council = d.council || hit.council || '';
+      } else if (l.product === 'tenders') {
+        d.tenderTitle = hit.tenderTitle || hit.title || '';
+        d.description = d.description || hit.description || '';
+      }
+      if (d.company || d.deceasedName || d.proposal || d.tenderTitle) { l.data = JSON.stringify(d); fixed++; }
+    });
+    saveDb();
+    res.json({ success: true, checked: checked, fixed: fixed });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
