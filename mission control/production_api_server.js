@@ -36933,9 +36933,12 @@ app.post('/api/admin/backfill-planning-urls', adminAuth, (req, res) => {
     pool.forEach(function(l) {
       if (l.url) return;
       var m = /^PLAN_(\d{3,})$/.exec(String(l.id || ''));
-      if (!m) { skipped++; return; }
-      l.url = 'https://www.planning.data.gov.uk/entity/' + m[1];
-      fixed++;
+      if (m) { l.url = 'https://www.planning.data.gov.uk/entity/' + m[1]; fixed++; return; }
+      // No derivable record id (e.g. Plota leads): link to the Planning Portal search
+      // for this application so every planning lead still shows a usable source.
+      var q = String(l.reference || l.address || l.fullAddress || '').trim();
+      if (q) { l.url = 'https://www.planningportal.co.uk/search?q=' + encodeURIComponent(q.substring(0, 90)); fixed++; }
+      else skipped++;
     });
     if (fixed) fs.writeFileSync(pf, JSON.stringify(pool, null, 2));
     res.json({ success: true, pool: pool.length, fixed: fixed, skipped: skipped });
