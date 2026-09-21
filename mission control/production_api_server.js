@@ -10228,12 +10228,24 @@ app.post('/api/crm/push', authMiddleware, async (req, res) => {
     if (!webhookUrl) return res.status(400).json({ error: 'No CRM webhook URL configured. Go to Settings to add one.' });
     const leads = db.prepare('SELECT * FROM leads WHERE customer_id = ? AND delivered = 1 ORDER BY created_at DESC LIMIT 10').all(customer.id);
     if (leads.length === 0) return res.json({ success: false, message: 'No delivered leads to push. Leads will be pushed automatically at 9am daily.' });
-    const payload = { customer: { name: customer.company, email: customer.email, product: customer.lead_type }, leads: leads.map(formatLeadForCRM), source: '9amLeads', timestamp: new Date().toISOString() };
-    const response = await httpsPost(webhookUrl, payload);
-    res.json({ success: response.status >= 200 && response.status < 300, status: response.status, leads_pushed: leads.length, response: (response.body || '').substring(0, 500) });
+    const payload = { customer: { name: customer.company, email: customer.email, product: customer.lead_type }, leads: leads.map(leadRowToCrmPayload), source: '9amLeads', timestamp: new Date().toISOString() };
+    const response = await pushToCrm({ crm_webhook_url: webhookUrl, email: customer.email }, payload, 'manual push');
+    res.json({ success: !!response.ok, status: response.status || 0, leads_pushed: leads.length, response: (response.body || response.error || '').substring(0, 500) });
   } catch (e) {
     res.json({ success: false, error: e.message });
   }
+});
+
+// GET /api/admin/crm-status - which customers have a CRM connected, and the result of
+// their most recent push (status + when + lead count + response snippet).
+app.get('/api/admin/crm-status', adminAuth, (req, res) => {
+  try {
+    var dbC = getDb();
+    var rows = (dbC.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && !isInternalAccount(c); }).map(function(c) {
+      return { email: c.email, company: c.company || '', product: c.product || '', plan: c.plan || '', crm_webhook_url: c.crm_webhook_url || '', crm_last_push: c.crm_last_push || null };
+    });
+    res.json({ success: true, total: rows.length, with_crm: rows.filter(function(r) { return r.crm_webhook_url; }).length, customers: rows });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // ===== AI IMAGE GENERATION =====
@@ -16655,6 +16667,54 @@ function formatLeadForCRM(lead) {
   // Any extra fields
   if (lead.name && !lead.address) base.name = lead.name;
   return base;
+}
+// Build a CRM-ready payload from a DB lead row. The stored lead fields live inside
+// `data` as a JSON STRING, so passing a raw row straight to formatLeadForCRM produced
+// an EMPTY lead (only id/source/timestamps) - the CRM never received the address or
+// details. This parses `data`, merges the row identity/timestamps, then formats.
+function leadRowToCrmPayload(l) {
+  var d = {};
+  try { d = (typeof l.data === 'string') ? JSON.parse(l.data || '{}') : (l.data || {}); } catch(e) { d = {}; }
+  d.id = l.id;
+  d.delivered_at = l.delivered_at || d.delivered_at;
+  d.created_at = l.created_at || d.created_at;
+  if (!d.source) d.source = l.source;
+  if (!d.product) d.product = l.product;
+  return formatLeadForCRM(d);
+}
+// POST a JSON payload to a CRM webhook with a hard timeout, and RECORD the result on
+// the customer (crm_last_push) so a silent failure is visible in admin instead of lost.
+function pushToCrm(cust, payload, label) {
+  return new Promise(function(resolve) {
+    try {
+      var url = cust.crm_webhook_url;
+      if (!url) return resolve({ ok: false, error: 'no url' });
+      function record(status, ok, detail) {
+        try {
+          var dbc = getDb();
+          var live = (dbc.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === String(cust.email || '').toLowerCase(); });
+          if (live) { live.crm_last_push = { at: new Date().toISOString(), label: label || '', status: status, ok: ok, leads: (payload && payload.leads ? payload.leads.length : 0), response: String(detail || '').substring(0, 300) }; saveDb(); }
+        } catch(e) {}
+      }
+      var body = JSON.stringify(payload);
+      var req = require('https').request(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, function(r) {
+        var b = ''; r.on('data', function(c) { b += c; });
+        r.on('end', function() {
+          var ok = r.statusCode >= 200 && r.statusCode < 300;
+          record(r.statusCode, ok, b);
+          console.log('[CRM] ' + (cust.email || '') + ' ' + (label || '') + ' -> ' + r.statusCode + (ok ? ' OK' : ' FAILED'));
+          resolve({ ok: ok, status: r.statusCode, body: String(b || '').substring(0, 300) });
+        });
+      });
+      req.on('error', function(e) {
+        record(0, false, e.message);
+        console.log('[CRM] ' + (cust.email || '') + ' ' + (label || '') + ' -> ERROR ' + e.message);
+        resolve({ ok: false, status: 0, error: e.message });
+      });
+      req.setTimeout(15000, function() { try { req.destroy(); } catch(e) {} record(0, false, 'timeout'); resolve({ ok: false, status: 0, error: 'timeout' }); });
+      req.write(body); req.end();
+    } catch(e) { resolve({ ok: false, error: e.message }); }
+  });
 }
 
 // ===== OPPORTUNITY SCORE ENGINE =====
@@ -25572,14 +25632,15 @@ _deliverDiag[cust.email].products = products;
             custLeads = [];
           }
         }
-        // Send to CRM webhook if configured
-        if (cust.crm_webhook_url) {
-          try {
-            var crmPayload2 = JSON.stringify({ customer: cust.email, company: cust.company, leads: custLeads, delivered_at: new Date().toISOString() });
-            var crmReq2 = require('https').request(cust.crm_webhook_url, { method:'POST', headers:{ 'Content-Type':'application/json', 'Content-Length':Buffer.byteLength(crmPayload2) } });
-            crmReq2.write(crmPayload2); crmReq2.end();
-          } catch(ce) { console.log('[DELIVERY] CRM webhook failed:', cust.email); }
-        }
+// Send to CRM webhook if configured. Uses the SAME flat, CRM-ready shape as the
+// manual push (it previously posted raw DB rows whose `data` was a JSON STRING, so
+// the CRM received empty leads). pushToCrm adds a 15s timeout and records the result.
+if (cust.crm_webhook_url && custLeads.length) {
+try {
+var crmPayload2 = { customer: { name: cust.company, email: cust.email, product: cust.product }, leads: custLeads.map(leadRowToCrmPayload), source: '9amLeads', delivered_at: new Date().toISOString() };
+pushToCrm(cust, crmPayload2, 'daily delivery');
+} catch(ce) { console.log('[DELIVERY] CRM webhook failed:', cust.email, ce.message); }
+}
         // BULLETPROOF FINAL HARD-CAP: under NO circumstances may a customer receive
         // more than their promised daily quota in one email/batch. Every top-up,
         // fill, quality-review and guarantee pass above can re-grow custLeads, so
