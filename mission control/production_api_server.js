@@ -3597,9 +3597,15 @@ function recordMailpieceTracking(customerId, campaignId, recipientId, mailpieceI
         var deliv = campRcpts.filter(function(r) { return r.provider_status === 'delivered'; }).length;
         var disp = campRcpts.filter(function(r) { return r.provider_status === 'dispatched' || r.provider_status === 'out_for_delivery'; }).length;
         var print = campRcpts.filter(function(r) { return r.provider_status === 'printing' || r.provider_status === 'queued'; }).length;
-        camp.tracking_summary = { total: campRcpts.length, delivered: deliv, dispatched: disp, printing: print };
-        camp.provider_status = deliv === campRcpts.length ? 'delivered' : (deliv > 0 || disp > 0 ? 'dispatched' : 'printing');
-        camp.provider_status_label = camp.provider_status === 'delivered' ? 'Delivered' : camp.provider_status === 'dispatched' ? 'Dispatched' : 'Printing';
+        var canc = campRcpts.filter(function(r) { return r.provider_status === 'cancelled'; }).length;
+        var ret = campRcpts.filter(function(r) { return r.provider_status === 'returned'; }).length;
+        camp.tracking_summary = { total: campRcpts.length, delivered: deliv, dispatched: disp, printing: print, cancelled: canc, returned: ret };
+        // A campaign whose items are ALL cancelled/returned must NOT read as "Printing".
+        if (deliv === campRcpts.length) camp.provider_status = 'delivered';
+        else if (canc + ret === campRcpts.length) camp.provider_status = (canc >= ret ? 'cancelled' : 'returned');
+        else if (deliv > 0 || disp > 0) camp.provider_status = 'dispatched';
+        else camp.provider_status = 'printing';
+        camp.provider_status_label = { delivered: 'Delivered', dispatched: 'Dispatched', cancelled: 'Cancelled / Failed', returned: 'Returned', printing: 'Printing' }[camp.provider_status] || 'Printing';
       }
       if (!camp.tracking_history) camp.tracking_history = [];
       var lastCampEvt = camp.tracking_history.length ? camp.tracking_history[camp.tracking_history.length - 1] : null;
