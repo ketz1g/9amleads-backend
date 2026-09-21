@@ -19197,17 +19197,18 @@ function buildWinbackEmailHTML(product, step) {
     return '<tr><td style="padding:14px 34px 6px"><p style="margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:' + p.accent + '">' + kick + '</p>'
       + '<h1 style="margin:0 0 14px;font-size:23px;line-height:1.3;font-weight:800;color:' + INK + '">' + title + '</h1>';
   }
-  var _wbSubjMap = { 1: 'Let us get your flyer through their door', 2: 'Upload your flyer - we do the rest', 3: 'The 3-week test', 4: 'Last chance - get your flyer out there', 5: 'Still thinking about it?', 6: 'One month on - still want work to come to you?' };
+  var _wbSubjMap = { 1: 'Why a leaflet beats an ad (and a shared lead)', 2: 'Upload your flyer - we do the rest', 3: 'The 3-week test', 4: 'Stop chasing leads - let them come to you', 5: 'Quiet week? Bulk Send a bigger batch', 6: 'One month on - still want work to come to you?' };
   var subject = _wbSubjMap[step] || 'The 3-week test';
   var inner;
   if (step === 1) {
-    inner = logo + head('Time to put it to work', 'Let us get your flyer through their door')
-      + '<p style="margin:0 0 14px;color:' + INK + ';font-size:15px;line-height:1.65">Hi,<br><br>You have seen how the dashboard works, so let us get you actually using Print &amp; Post. Upload your flyer or letter (or just email it to hello@9amleads.com and we will do it for you) and we print, address and post it to your ' + p.plural + '.</p></td></tr>'
+    inner = logo + head('The honest truth', 'Why a leaflet beats an ad (and a shared lead)')
+      + '<p style="margin:0 0 14px;color:' + INK + ';font-size:15px;line-height:1.65">Hi,<br><br>You have seen the dashboard. Here is why the post works when online advertising and bought leads do not.</p></td></tr>'
       + '<tr><td style="padding:0 34px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">'
-      + block('Be honest with yourself - it is not overnight', ['Give it a few weeks of consistent posting', 'Then you will notice more phone enquiries', 'This is how you know it is working: ask every caller where they found you', 'When they say the flyer through the door, you know'])
-      + block('Why it beats chasing work', ['Your customers come to you - minimal effort and spend', 'You reach them before competitors who wait for them to search', 'One win covers the cost many times over'])
+      + block('Online ads are rented attention', ['You are bidding against every rival for the same clicks', 'Cost per click keeps rising while the results fall', 'The moment you stop paying, you disappear'])
+      + block('Bought leads are shared leads', ['The same lead is sold to several firms at once', 'You are competing on price before you have even spoken', 'You chase and quote and often lose - while the seller profits'])
+      + block('A leaflet is yours alone', ['It is physical - it sits on the kitchen table and is read when they are ready', 'No auction, no cost per click, no rivals competing for the same job', 'You reach the door first, before they start shopping around'])
       + '</table></td></tr>' + cta(PRICING, 'Start your Print & Post', 'Pick a package &middot; cancel anytime') + footer;
-    return shell(subject, 'Upload your flyer, give it a few weeks, and ask every caller where they found you.', inner);
+    return shell(subject, 'Ads are rented, bought leads are shared. A leaflet through the door is yours alone.', inner);
   }
   if (step === 2) {
     inner = logo + head('One upload, done', 'Upload your flyer, we do the rest')
@@ -19217,20 +19218,21 @@ function buildWinbackEmailHTML(product, step) {
     return shell(subject, 'Upload your flyer once - we print, address and post it for you.', inner);
   }
   if (step === 4) {
-    inner = logo + head('Last chance', 'Last chance to get your flyer out there')
-      + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">Hi,<br><br>This is the last email I will send about this. If you want work to come to you instead of chasing it, now is the time.</p>'
-      + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">Pick a package, upload your flyer, and we will print, address and post it to every ' + p.plural + ' for you. Your customers come to you, with minimal effort and spend, before your competitors.</p>'
+    inner = logo + head('Stop chasing', 'Stop chasing leads. Start receiving them.')
+      + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">Hi,<br><br>Imagine this instead: no chasing leads, no wasting money on advertising. Your phone rings constantly with people who are already interested - which is always an easier sale.</p>'
+      + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">One quick thing to get right: make sure your website, landing pages, social media and reviews are up to date. When those callers check you out, it should look good and give them no reason not to get a quote.</p>'
+      + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">Do that and you save on marketing, win better customers, and skip the hassle of chasing and competing on price.</p>'
       + '</td></tr>'
       + cta(PRICING, 'Get started - pick your package', 'From &pound;25 per week &middot; cancel anytime') + footer;
-    return shell(subject, 'Last chance - get your flyer out there and let the work come to you.', inner);
+    return shell(subject, 'Stop chasing leads and ads. Get your phone ringing with people already interested.', inner);
   }
   if (step === 5) {
-    inner = logo + head('Still thinking?', 'Still thinking about it?')
-      + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">Hi,<br><br>No pressure at all. If you have been meaning to get your flyer out there, here is a gentle reminder: pick a package, upload your flyer, and we print, address and post it to every ' + p.plural + ' for you.</p>'
-      + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">Your customers come to you, with minimal effort and spend, before your competitors. Any questions, just reply and I will answer personally.</p>'
+    inner = logo + head('Quiet week?', 'Quiet week? Bulk Send keeps you busy')
+      + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">Hi,<br><br>Every business has quiet weeks. When work slows, Bulk Send lets you buy a bigger batch of never-sent archive leads and mail them in one go - so the pipeline keeps filling even when the phone is quiet.</p>'
+      + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">And you can track every mailpiece in your dashboard, with proof of posting, so you always know exactly what has gone out.</p>'
       + '</td></tr>'
       + cta(PRICING, 'Get started - pick your package', 'From &pound;25 per week &middot; cancel anytime') + footer;
-    return shell(subject, 'No pressure - just a reminder that we can get your flyer out there for you.', inner);
+    return shell(subject, 'Quiet week? Bulk Send a bigger batch - and track every mailpiece.', inner);
   }
   if (step === 6) {
     inner = logo + head('One month on', 'One month on - still want work to come to you?')
@@ -19240,13 +19242,14 @@ function buildWinbackEmailHTML(product, step) {
       + cta(PRICING, 'Get started - pick your package', 'From &pound;25 per week &middot; cancel anytime') + footer;
     return shell(subject, 'One month on - still want work to come to you? Start your Print & Post.', inner);
   }
-  inner = logo + head('Give it 3 weeks', 'The 3-week test')
-    + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">Hi,<br><br>Here is the honest truth: Print &amp; Post is not overnight. Give it three weeks of consistent posting and the phone starts ringing more. The simplest way to prove it is working: ask every caller where they found you. When they say the flyer through the door, you know it is working.</p></td></tr>'
+  inner = logo + head('Give it time', 'The 3-week test')
+    + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">Hi,<br><br>Here is the honest truth: Print &amp; Post is not overnight. It takes a few weeks to nurture the customers. But keep posting consistently and soon the phone starts ringing - and keeps ringing.</p>'
+    + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">Instead of chasing leads and wasting money on advertising, people who are already interested call you. That is a far easier sale. To see it is working: ask every caller where they found you. When they say the flyer through the door, you know.</p></td></tr>'
     + '<tr><td style="padding:0 34px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">'
-    + block('Why this wins for you', ['Customers come to you, so you spend less effort and less chasing', 'You reach them before competitors who wait for them to search', 'Bulk Send keeps it going through quiet periods'])
+    + block('Why this wins for you', ['Your customers come to you - no chasing, no competing on price', 'You reach them before competitors who wait for them to search', 'It saves on marketing and brings better customers'])
     + '</table></td></tr>'
     + cta(PRICING, 'Get started - pick your package', 'From &pound;25 per week &middot; cancel anytime') + footer;
-  return shell(subject, 'Give it three weeks. Ask every caller where they found you. That is how you know.', inner);
+  return shell(subject, 'Give it a few weeks. Then the phone starts ringing - with people already interested.', inner);
 }
 
 // GET /api/admin/email-library — every email a customer can receive, grouped by
@@ -19308,11 +19311,11 @@ app.get('/api/admin/email-library', adminAuth, (req, res) => {
     // 8) WIN-BACK (expired trials)
     var winback = [];
     var _wbLabels = { moving: 'Moving Leads', probate: 'Probate Leads', newbusiness: 'New Business Alerts', planning: 'Planning Permissions', tenders: 'Public Tenders' };
-    var _wbNames = { 1: 'Why the post wins', 2: 'We print and post it for you', 3: 'The closer', 4: 'Last chance', 5: 'Still thinking?', 6: 'One month on' };
+    var _wbNames = { 1: 'Why the post wins', 2: 'We print and post it for you', 3: 'The 3-week test', 4: 'Stop chasing', 5: 'Bulk Send', 6: 'One month on' };
     ['moving', 'probate', 'newbusiness', 'planning', 'tenders'].forEach(function(wp) {
       [1, 2, 3, 4, 5, 6].forEach(function(ws) {
         try {
-          var _wbsubj = { 1: 'Let us get your flyer through their door', 2: 'Upload your flyer - we do the rest', 3: 'The 3-week test', 4: 'Last chance - get your flyer out there', 5: 'Still thinking about it?', 6: 'One month on - still want work to come to you?' }[ws];
+          var _wbsubj = { 1: 'Why a leaflet beats an ad (and a shared lead)', 2: 'Upload your flyer - we do the rest', 3: 'The 3-week test', 4: 'Stop chasing leads - let them come to you', 5: 'Quiet week? Bulk Send a bigger batch', 6: 'One month on - still want work to come to you?' }[ws];
           try { var _wbe = loadEmailEdits()['winback_' + wp + '_' + ws]; if (_wbe && _wbe.subject) _wbsubj = _wbe.subject; } catch(x) {}
           winback.push({ id: 'winback_' + wp + '_' + ws, name: 'Win-back - ' + _wbLabels[wp] + ' - step ' + ws + ' (' + _wbNames[ws] + ')', subject: _wbsubj, when: 'Expired trials: day ' + [0, 3, 7, 14, 21, 30][ws - 1] + ' after the trial ends', html: buildWinbackEmailHTML(wp, ws) });
         } catch(we) {}
@@ -20680,7 +20683,7 @@ async function runCampaignEmails(dry) {
           // Replaces the old day 9/12/16/21/30 posts; after day 7 the long-term drip
           // (weekly week 5+, month-3 reactivation) takes over.
           var _wbProduct = cust.product || 'moving';
-          var _wbSubjects = { 1: 'Let us get your flyer through their door', 2: 'Upload your flyer - we do the rest', 3: 'The 3-week test', 4: 'Last chance - get your flyer out there', 5: 'Still thinking about it?', 6: 'One month on - still want work to come to you?' };
+          var _wbSubjects = { 1: 'Why a leaflet beats an ad (and a shared lead)', 2: 'Upload your flyer - we do the rest', 3: 'The 3-week test', 4: 'Stop chasing leads - let them come to you', 5: 'Quiet week? Bulk Send a bigger batch', 6: 'One month on - still want work to come to you?' };
           var _WINBACK = [{ d: 0, s: 1 }, { d: 3, s: 2 }, { d: 7, s: 3 }, { d: 14, s: 4 }, { d: 21, s: 5 }, { d: 30, s: 6 }];
           var _wbHandled = false;
           for (var wi = 0; wi < _WINBACK.length; wi++) {
