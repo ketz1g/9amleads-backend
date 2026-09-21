@@ -549,6 +549,34 @@ function isCompleteMovingAddress(addr, pc) {
   var tc = parseTownCountyFromAddress(a, pc);
   return !!(tc.town || tc.city || tc.county);
 }
+// SINGLE mailability check for ANY product, used by every top-up / direct-mail path.
+// Critically this is applied to the ADDRESS THAT GETS STORED, not the pool source: a
+// top-up can pass its source check yet write a less-complete field, and top-up-today
+// writes leads as already DELIVERED (bypassing the delivery gate entirely).
+function isLeadMailableForSend(ld, prod) {
+  if (prod === 'tenders') return true;
+  if (!ld) return false;
+  var addr = String(ld.fullAddress || ld.address || ld.deceasedAddress || '').trim();
+  var pc = String(ld.postcode || '').trim();
+  if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(pc)) return false;
+  if (prod === 'moving') return isCompleteMovingAddress(addr, pc);
+  return hasUsablePremiseAddress(addr, pc) && hasStreetName(addr);
+}
+// Return the MOST COMPLETE of a lead's address fields (the one that actually passes the
+// premise + street + postcode gate), so we never store a street-only `address` alongside
+// a complete `fullAddress` - downstream code (Stannp, dashboard) picks `address` first.
+function bestMailableAddress(ld) {
+  if (!ld) return '';
+  var pc = String(ld.postcode || '').trim();
+  var fullPc = /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(pc);
+  var a = String(ld.fullAddress || '').trim();
+  var b = String(ld.address || '').trim();
+  var okA = fullPc && a && hasUsablePremiseAddress(a, pc) && hasStreetName(a);
+  var okB = fullPc && b && hasUsablePremiseAddress(b, pc) && hasStreetName(b);
+  if (okA) return a;
+  if (okB) return b;
+  return a || b;
+}
 // GLOBAL Stannp print & post gate (all products except tenders): a lead is mailable
 // only if it carries a usable premise (door/flat number) + street name + full postcode.
 // Moving additionally requires a town/area. Used by the bulk print flow so Stannp is
@@ -7797,10 +7825,11 @@ app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
         var nowIso = new Date().toISOString();
         var dT = Object.assign({}, l);
         delete dT.id;
-        if (prod === 'moving') {
-          dT.address = dT.address || dT.fullAddress || '';
-          dT.fullAddress = dT.fullAddress || dT.address || '';
-        }
+        // Store the MOST COMPLETE address in BOTH fields, and never queue a lead that
+        // would not be mailable once stored (a street-only `address` used to survive).
+        var _bestA = bestMailableAddress(dT);
+        if (_bestA) { dT.fullAddress = _bestA; dT.address = _bestA; }
+        if (prod !== 'tenders' && !isLeadMailableForSend(dT, prod)) continue;
         dT.scrapedAt = nowIso;
         if (!dT.firstVisibleDate) dT.firstVisibleDate = nowIso;
         dbT.leads.push({ id: uuidv4(), customer_id: cust.id, product: prod, data: JSON.stringify(dT), status: 'new', delivered: 0, created_at: nowIso, delivered_at: null, release_at: todayStr + 'T09:00:00.000Z' });
@@ -7831,7 +7860,9 @@ app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
           var nowIso3 = new Date().toISOString();
           var dT3 = Object.assign({}, l3);
           delete dT3.id;
-          if (prod === 'moving') { dT3.address = dT3.address || dT3.fullAddress || ''; dT3.fullAddress = dT3.fullAddress || dT3.address || ''; }
+          var _bestB = bestMailableAddress(dT3);
+          if (_bestB) { dT3.fullAddress = _bestB; dT3.address = _bestB; }
+          if (prod !== 'tenders' && !isLeadMailableForSend(dT3, prod)) continue;
           dT3.scrapedAt = dT3.scrapedAt || nowIso3;
           if (!dT3.firstVisibleDate) dT3.firstVisibleDate = nowIso3;
           dbT.leads.push({ id: uuidv4(), customer_id: cust.id, product: prod, data: JSON.stringify(dT3), status: 'new', delivered: 0, created_at: nowIso3, delivered_at: null, release_at: todayStr + 'T09:00:00.000Z' });
@@ -13285,7 +13316,7 @@ app.post('/api/admin/top-up-today', adminAuth, (req, res) => {
       break;
     }
     if (!picked) return res.status(400).json({ error: 'No fresh in-area lead available to top up today. Try again later.' });
-    var dT = { address: picked.address || picked.fullAddress || '', fullAddress: picked.fullAddress || picked.address || '', postcode: picked.postcode || '', url: picked.url || '', street: picked.street || '', building_number: picked.building_number || '', source: picked.source || '', firstVisibleDate: picked.firstVisibleDate || nowIso, scrapedAt: nowIso };
+    var dT = { address: picked.fullAddress || picked.address || '', fullAddress: picked.fullAddress || picked.address || '', postcode: picked.postcode || '', url: picked.url || '', street: picked.street || '', building_number: picked.building_number || '', source: picked.source || '', firstVisibleDate: picked.firstVisibleDate || nowIso, scrapedAt: nowIso };
     // PRESERVE product-specific fields. The old fixed field set above dropped the
     // company name (newbusiness), deceased name (probate), proposal (planning) and
     // tender details (tenders), so any lead added by a top-up rendered as a generic
@@ -13321,6 +13352,15 @@ app.post('/api/admin/top-up-today', adminAuth, (req, res) => {
     if (!dT.county && picked.county) dT.county = picked.county;
     if (cust.product === 'moving') { try { enrichMovingLeadTown(dT); } catch(e) {} }
     else { try { normalizeStannpAddress(dT); } catch(e) {} }
+    // Store the MOST COMPLETE address in both fields (never a street-only `address`).
+    var _bestT = bestMailableAddress(dT);
+    if (_bestT) { dT.fullAddress = _bestT; dT.address = _bestT; }
+    // MAILABILITY GATE ON THE STORED LEAD: this path writes leads as already DELIVERED,
+    // so it bypasses the 09:00 delivery gate. Never top up with a lead that would not be
+    // mailable once stored (missing door number / partial postcode / no street name).
+    if (!isLeadMailableForSend(dT, cust.product)) {
+      return res.status(400).json({ error: 'No mailable in-area lead available to top up today (the best candidate has no full postal address). Try again later.' });
+    }
     var delivAt = today + 'T09:00:00.000Z';
     dbT.leads.push({ id: uuidv4(), customer_id: cust.id, product: cust.product, data: JSON.stringify(dT), status: 'delivered', delivered: 1, created_at: nowIso, delivered_at: delivAt, release_at: delivAt });
     saveDb();
