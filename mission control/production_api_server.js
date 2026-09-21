@@ -67,6 +67,15 @@ const PUBLIC_URL = process.env.PUBLIC_URL || 'https://www.9amleads.com';
     alertCrash('uncaughtException', err);
   });
   process.on('unhandledRejection', function(reason) {
+    // Attach the outbound requests still in flight at rejection time - a network
+    // timeout (e.g. AggregateError ETIMEDOUT) otherwise gives no clue WHICH call failed.
+    try {
+      var inflight = (global.__recentNet || []).filter(function(r) { return !r.done; });
+      if (inflight.length) {
+        var hint = '\n\nIn-flight outbound requests at the time:\n' + inflight.slice(-8).map(function(r) { return '  - ' + r.url + ' (' + Math.round((Date.now() - r.at) / 1000) + 's)'; }).join('\n');
+        if (reason && typeof reason === 'object') { try { reason.message = String(reason.message || '') + hint; } catch(e) {} }
+      }
+    } catch(e) {}
     recordCrash('unhandledRejection', reason && reason.message ? reason : (reason || 'unknown rejection'));
     console.error('[CRASH] unhandledRejection:', reason && reason.stack || reason);
     alertCrash('unhandledRejection', reason);
@@ -86,8 +95,24 @@ const PUBLIC_URL = process.env.PUBLIC_URL || 'https://www.9amleads.com';
         var req = orig.apply(mod, arguments);
         try {
           var host = (typeof options === 'string') ? options : (options && (options.hostname || options.host));
-          if (host && (String(host).indexOf('127.0.0.1') !== -1 || String(host).indexOf('localhost') !== -1)) {
+          var isLocal = host && (String(host).indexOf('127.0.0.1') !== -1 || String(host).indexOf('localhost') !== -1);
+          if (isLocal) {
             req.setTimeout(300000, function() { try { req.destroy(new Error('internal request timeout')); } catch(e) {} });
+          } else if (host) {
+            // Track EXTERNAL outbound calls so an unhandled network rejection can name
+            // the request that was in flight (otherwise ETIMEDOUT gives no source).
+            try {
+              var _path = (typeof options === 'object' && options && options.path) ? options.path : '';
+              var _entry = { at: Date.now(), url: String(host) + String(_path).split('?')[0], done: false };
+              global.__recentNet = global.__recentNet || [];
+              global.__recentNet.push(_entry);
+              if (global.__recentNet.length > 60) global.__recentNet = global.__recentNet.slice(-60);
+              var _mark = function() { _entry.done = true; };
+              req.on('response', _mark);
+              req.on('error', _mark);
+              req.on('timeout', _mark);
+              req.on('close', _mark);
+            } catch(e) {}
           }
         } catch(e) {}
         return req;
