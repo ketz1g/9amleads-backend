@@ -12265,6 +12265,20 @@ async function preVerifyMovingLeads() {
           }
         } catch(e) {}
       }
+      // EPC (FREE, in-memory): resolve the door number from the local EPC index before
+      // spending any Postcoder credit.
+      if (typeof EPC_INDEX !== 'undefined' && EPC_INDEX.isLoaded && EPC_INDEX.isLoaded()) {
+        try {
+          var _epcA = EPC_INDEX.resolveFullAddress(_lA.fullAddress || _lA.address || '', _lA.postcode || '');
+          if (_epcA && hasUsablePremiseAddress(_epcA, _lA.postcode || '')) {
+            _lA.address = _epcA;
+            _lA.fullAddress = _epcA;
+            _lA.paf_done = true; _lA.paf_failed = false;
+            enriched++;
+            continue;
+          }
+        } catch(e) {}
+      }
     }
     try {
       var b = require('./postcoder_budget');
@@ -24675,6 +24689,19 @@ _deliverDiag[cust.email].products = products;
               if (ncData.udprn || (!ncIsFlat && ncClearNumber && ncFullPcOk && ncData.url)) {
                 confirmedLeads.push(ncLead);
                 continue;
+              }
+              // EPC FIRST (FREE, in-memory): resolve the door number from the local EPC
+              // index before spending any Postcoder credit. Keeps the 9am run fast.
+              if (typeof EPC_INDEX !== 'undefined' && EPC_INDEX.isLoaded && EPC_INDEX.isLoaded()) {
+                try {
+                  var _epcFull = EPC_INDEX.resolveFullAddress(ncAddr, ncPc);
+                  if (_epcFull && hasPremiseNumber(_epcFull, ncPc) && ncFullPcOk && hasFullAddress(_epcFull, ncPc)) {
+                    ncData.fullAddress = _epcFull; ncData.address = _epcFull;
+                    ncLead.data = JSON.stringify(ncData);
+                    confirmedLeads.push(ncLead);
+                    continue;
+                  }
+                } catch(epcErr) {}
               }
               // Bounded: stop PAF-ing this customer once the budget is spent (guarantee tops up).
               if (Date.now() - ncPafStart > ncPafBudgetMs) {
