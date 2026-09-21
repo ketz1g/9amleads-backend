@@ -17501,6 +17501,10 @@ function deliveryCompletionWatchdog(label) {
 // across the 9am hour — enough to catch and fix a shortfall quickly without over-running.
 // No-op when all fulfilled; the founder alert is throttled to once per 30 min.
 cron.schedule('5,20,35,50 9 * * 1-5', function() { try { deliveryCompletionWatchdog('auto'); } catch(e) {} }, { timezone: 'Europe/London' });
+// CONTINUOUS SELF-HEAL (10:00-11:30 UK): keep checking until the day's delivery is
+// complete, so a crash / restart / late recovery at ANY point in the morning still
+// ends with every customer fulfilled — fully hands-off. No-op when already complete.
+cron.schedule('0,30 10-11 * * 1-5', function() { try { deliveryCompletionWatchdog('auto-late'); } catch(e) {} }, { timezone: 'Europe/London' });
 
 // ===== DAILY DELIVERY SUMMARY (09:12 UK Mon-Fri) =====
 // Positive confirmation every weekday: "X/Y customers fulfilled". Sent even on a
@@ -39139,7 +39143,7 @@ app.listen(PORT, () => {
     var _bootHm = new Date().toLocaleString('en-GB', { timeZone: 'Europe/London', hour12: false }).split(', ').pop().split(':');
     var _bootMin = parseInt(_bootHm[0], 10) * 60 + parseInt(_bootHm[1], 10);
     var _isWeekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].indexOf(_bootDow) !== -1;
-    if (_isWeekday && _bootMin >= 540 && _bootMin < 690) { // 09:00–11:30 UK
+    if (_isWeekday && _bootMin >= 540 && _bootMin < 720) { // 09:00–12:00 UK (never before 09:00, or it would deliver early)
       setTimeout(function() {
         try {
           var _db = getDb();
