@@ -105,6 +105,7 @@ tbody tr:hover td{background:#f8fafc}
 <button onclick="switchTab('analytics')"><i class="fas fa-chart-pie"></i> Analytics</button>
 <button onclick="switchTab('partners')"><i class="fas fa-handshake"></i> Partners</button>
 <button onclick="switchTab('affiliates')"><i class="fas fa-handshake"></i> Affiliates</button>
+<button onclick="switchTab('crm')"><i class="fas fa-plug"></i> CRM <span id="crmBadge" style="display:none;background:#0ea5e9;color:#fff;font-size:10px;font-weight:700;border-radius:20px;padding:1px 7px;margin-left:2px"></span></button>
 
 <button onclick="switchTab('emails')"><i class="fas fa-envelope-open-text"></i> Emails <span id="emailCountBadge" style="display:none;background:#eff6ff;color:#0ea5e9;font-size:10px;font-weight:700;border-radius:20px;padding:1px 7px;margin-left:2px"></span></button>
 <button onclick="switchTab('activity')"><i class="fas fa-bolt"></i> Activity</button>
@@ -120,6 +121,14 @@ tbody tr:hover td{background:#f8fafc}
 </div>
 
 <div class="container">
+
+<!-- ============ CRM ============ -->
+<div class="tab-panel" id="tab-crm">
+<div class="hero"><div class="hero-text"><h1>🔌 CRM Connections</h1><p>Every customer's CRM webhook, the result of their last push, and a one-click test. Leads are sent as flat JSON (address, postcode, city, bedrooms, property type, price, status, agent, source, url) plus the product-specific fields for probate / new business / planning / tenders.</p></div>
+<div class="hero-actions"><button class="btn btn-outline" onclick="loadCrm()"><i class="fas fa-rotate"></i> Refresh</button></div></div>
+<div id="crmSummary" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px"></div>
+<div id="crmBody"><div class="loading">Loading CRM connections...</div></div>
+</div>
 
 <!-- ============ BULK POOL ============ -->
 <div class="tab-panel" id="tab-bulkpool">
@@ -554,7 +563,58 @@ function switchTab(name) {
   if (name === 'bulkpool') loadBulkPoolPage();
   if (name === 'emails') loadEmailLibrary();
   if (name === 'activity') loadActivity();
+  if (name === 'crm') loadCrm();
   window.scrollTo(0, 0);
+}
+
+// ===== CRM CONNECTIONS =====
+function loadCrm() {
+  var body = document.getElementById('crmBody');
+  if (!body) return;
+  body.innerHTML = '<div class="loading">Loading CRM connections...</div>';
+  fetch(API + '/api/admin/crm-status?t=' + Date.now(), { headers: adminHeaders() })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      var rows = (d && d.customers) || [];
+      var badge = document.getElementById('crmBadge');
+      if (badge) { badge.style.display = d.with_crm ? 'inline-block' : 'none'; badge.textContent = d.with_crm; }
+      var sum = document.getElementById('crmSummary');
+      var failing = rows.filter(function(r){ return r.crm_webhook_url && (!r.crm_last_push || !r.crm_last_push.ok); }).length;
+      function tile(label, val, col) { return '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:10px 16px;min-width:120px"><div style="font-size:11px;color:#64748b">' + label + '</div><div style="font-size:20px;font-weight:800;color:' + col + '">' + val + '</div></div>'; }
+      if (sum) sum.innerHTML = tile('Connected', d.with_crm, '#0ea5e9') + tile('Not connected', d.total - d.with_crm, '#64748b') + tile('Needs attention', failing, failing ? '#ef4444' : '#16a34a');
+      var h = '<table class="table"><tr><th>Customer</th><th>Product</th><th>CRM webhook</th><th>Last push</th><th>Actions</th></tr>';
+      if (!rows.length) h += '<tr><td colspan="5" class="empty">No customers</td></tr>';
+      rows.forEach(function(r){
+        var lp = r.crm_last_push, lpCell = '-';
+        if (lp) {
+          var col = lp.ok ? '#16a34a' : '#ef4444';
+          lpCell = '<span style="color:' + col + ';font-weight:700">' + (lp.ok ? 'OK ' + lp.status : 'FAILED ' + (lp.status || 'err')) + '</span>' +
+            '<div style="font-size:11px;color:#64748b">' + esc(lp.label || '') + ' &middot; ' + (lp.leads || 0) + ' leads<br>' + (lp.at ? new Date(lp.at).toLocaleString('en-GB', { timeZone: 'Europe/London' }) : '') + '</div>' +
+            (lp.response ? '<div style="font-size:10px;color:#94a3b8;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(lp.response) + '">' + esc(lp.response) + '</div>' : '');
+        }
+        var urlCell = r.crm_webhook_url ? '<span style="font-size:11px;color:#0ea5e9;word-break:break-all">' + esc(r.crm_webhook_url) + '</span>' : '<span style="color:#94a3b8">Not connected</span>';
+        var actions = r.crm_webhook_url
+          ? '<button class="btn btn-outline btn-sm" onclick="crmTest(\'' + esc(r.email) + '\')"><i class="fas fa-plug"></i> Test</button> <button class="btn btn-outline btn-sm" onclick="crmPush(\'' + esc(r.email) + '\')"><i class="fas fa-paper-plane"></i> Push</button>'
+          : '<span style="font-size:11px;color:#94a3b8">-</span>';
+        h += '<tr><td><b>' + esc(r.email) + '</b><div style="font-size:11px;color:#64748b">' + esc(r.company || '') + ' &middot; ' + esc(r.plan || '') + '</div></td>' +
+          '<td>' + esc(r.product || '') + '</td><td>' + urlCell + '</td><td>' + lpCell + '</td><td>' + actions + '</td></tr>';
+      });
+      body.innerHTML = h + '</table>';
+    })
+    .catch(function(){ body.innerHTML = '<div class="loading">Could not load CRM status.</div>'; });
+}
+function crmTest(email) {
+  fetch(API + '/api/admin/crm-test', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ email: email }) })
+    .then(function(r){ return r.json(); })
+    .then(function(d){ alert('CRM test for ' + email + '\n\nResult: ' + (d.success ? 'SUCCESS' : 'FAILED') + ' (HTTP ' + (d.status || 0) + ')\n\n' + (d.response || d.error || '')); loadCrm(); })
+    .catch(function(e){ alert('Test error: ' + e.message); });
+}
+function crmPush(email) {
+  if (!confirm('Push the last delivered leads for ' + email + ' to their CRM now?')) return;
+  fetch(API + '/api/admin/crm-push', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ email: email }) })
+    .then(function(r){ return r.json(); })
+    .then(function(d){ alert('CRM push for ' + email + '\n\nResult: ' + (d.success ? 'SUCCESS' : 'FAILED') + ' (HTTP ' + (d.status || 0) + ')\nLeads pushed: ' + (d.leads_pushed || 0) + '\n\n' + (d.response || d.error || '')); loadCrm(); })
+    .catch(function(e){ alert('Push error: ' + e.message); });
 }
 
 // ===== ACTIVITY FEED =====

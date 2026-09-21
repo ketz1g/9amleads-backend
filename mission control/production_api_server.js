@@ -10248,6 +10248,37 @@ app.get('/api/admin/crm-status', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/crm-test { email } - send the standard test payload to a customer's
+// configured CRM webhook and return the raw result (200/404/etc) so admin can verify.
+app.post('/api/admin/crm-test', adminAuth, async (req, res) => {
+  try {
+    var email = String((req.body && req.body.email) || '').toLowerCase().trim();
+    var dbCT = getDb();
+    var custCT = (dbCT.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
+    if (!custCT) return res.status(404).json({ error: 'Customer not found' });
+    if (!custCT.crm_webhook_url) return res.status(400).json({ error: 'This customer has no CRM webhook configured' });
+    var outCT = await pushToCrm(custCT, { test: true, message: '9amLeads CRM webhook test', customer: { email: custCT.email, company: custCT.company || '' }, timestamp: new Date().toISOString() }, 'admin test');
+    res.json({ success: !!outCT.ok, status: outCT.status || 0, response: (outCT.body || outCT.error || '').substring(0, 400) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/crm-push { email } - push the customer's most recent delivered leads
+// to their CRM now (recovery / verification).
+app.post('/api/admin/crm-push', adminAuth, async (req, res) => {
+  try {
+    var email = String((req.body && req.body.email) || '').toLowerCase().trim();
+    var dbCP = getDb();
+    var custCP = (dbCP.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
+    if (!custCP) return res.status(404).json({ error: 'Customer not found' });
+    if (!custCP.crm_webhook_url) return res.status(400).json({ error: 'This customer has no CRM webhook configured' });
+    var leadsCP = (dbCP.leads || []).filter(function(l) { return l.customer_id === custCP.id && l.delivered; }).slice(-10);
+    if (!leadsCP.length) return res.status(400).json({ error: 'No delivered leads to push' });
+    var payloadCP = { customer: { name: custCP.company || '', email: custCP.email, product: custCP.product || '' }, leads: leadsCP.map(leadRowToCrmPayload), source: '9amLeads', timestamp: new Date().toISOString() };
+    var outCP = await pushToCrm(custCP, payloadCP, 'admin push');
+    res.json({ success: !!outCP.ok, status: outCP.status || 0, leads_pushed: leadsCP.length, response: (outCP.body || outCP.error || '').substring(0, 400) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== AI IMAGE GENERATION =====
 
 // POST /api/ai/generate-image — Generate image via DALL-E 3
@@ -16664,6 +16695,10 @@ function formatLeadForCRM(lead) {
   if (lead.contractValue) base.contract_value = lead.contractValue;
   if (lead.closingDate) base.closing_date = lead.closingDate;
   if (lead.cpvCode) base.cpv_code = lead.cpvCode;
+  // Common fields useful to any CRM
+  if (lead.product) base.product = lead.product;
+  if (lead.url) base.url = lead.url;
+  base.full_address = lead.fullAddress || lead.address || '';
   // Any extra fields
   if (lead.name && !lead.address) base.name = lead.name;
   return base;
