@@ -1,4 +1,4 @@
-﻿// Companies House Streaming API â€” Persistent Background Worker
+﻿﻿// Companies House Streaming API - Persistent Background Worker
 // Long-running HTTP connection that processes real-time company incorporation events.
 // Starts without a timepoint to receive live events immediately from the moment of connection.
 // Saves timepoints continuously and reconnects with exponential backoff after any interruption.
@@ -71,7 +71,7 @@ function extractPostcodeArea(pc) {
 function fetchCompanyProfile(companyNumber, apiKey) {
   return new Promise((resolve) => {
     // Company profile comes from the REST API, which uses the REST key
-    // (COMPANIES_HOUSE_API_KEY) â€” NOT the stream key. The stream key only works on
+    // (COMPANIES_HOUSE_API_KEY) - NOT the stream key. The stream key only works on
     // stream.companieshouse.gov.uk; using it here 401s and drops every company.
     var restKey = process.env.COMPANIES_HOUSE_API_KEY || apiKey;
     var req = https.get({ hostname: 'api.company-information.service.gov.uk', path: '/company/' + encodeURIComponent(companyNumber), headers: { 'Authorization': 'Basic ' + Buffer.from(restKey + ':').toString('base64') }, timeout: 15000 }, (res) => {
@@ -103,14 +103,14 @@ function connect(apiKey) {
     streamPath += '?timepoint=' + savedTp;
     console.log('[STREAM] Resuming from timepoint ' + savedTp);
   } else {
-    console.log('[STREAM] Starting fresh â€” receiving live events from now (no timepoint)');
+    console.log('[STREAM] Starting fresh - receiving live events from now (no timepoint)');
   }
 
   var opts = {
     hostname: 'stream.companieshouse.gov.uk',
     path: streamPath,
     headers: { 'Authorization': 'Basic ' + Buffer.from(apiKey + ':').toString('base64') },
-    timeout: 0 // No timeout â€” long-lived connection
+    timeout: 0 // No timeout - long-lived connection
   };
 
   state.connected = false;
@@ -277,7 +277,7 @@ function scheduleReconnect(apiKey) {
   setTimeout(() => connect(apiKey), delay);
 }
 
-// Health check â€” runs every 30s to detect stale connections
+// Health check - runs every 30s to detect stale connections
 function startHealthCheck(apiKey) {
   setInterval(() => {
     var now = new Date();
@@ -285,8 +285,8 @@ function startHealthCheck(apiKey) {
     var secondsSinceLastEvent = (now - new Date(state.lastEventAt)) / 1000;
     state.lag = Math.round(secondsSinceLastEvent);
     if (secondsSinceLastEvent > LAG_WARN_SECONDS && state.connected) {
-      console.log('[STREAM] WARNING: No event for ' + Math.round(secondsSinceLastEvent) + 's â€” reconnecting');
-      state.lastError = 'stale â€” reconnecting';
+      console.log('[STREAM] WARNING: No event for ' + Math.round(secondsSinceLastEvent) + 's - reconnecting');
+      state.lastError = 'stale - reconnecting';
       if (state.req) { try { state.req.destroy(); } catch(e) {} state.req = null; }
       connect(apiKey);
     }

@@ -34692,27 +34692,6 @@ app.post('/api/admin/blog/consolidate', adminAuth, function(req, res) {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/blog/clean-dashes - replace em/en dashes with plain hyphens across
-// every stored blog post (html, title, description) and refresh the sitemap.
-app.post('/api/admin/blog/clean-dashes', adminAuth, function(req, res) {
-  try {
-    var dbD = getDb();
-    var fixed = 0, fields = 0;
-    (dbD.blog_posts || []).forEach(function(p) {
-      var changed = false;
-      ['html', 'title', 'description'].forEach(function(k) {
-        if (typeof p[k] === 'string' && /[\u2014\u2013]/.test(p[k])) {
-          p[k] = p[k].replace(/\u2014/g, '-').replace(/\u2013/g, '-');
-          fields++; changed = true;
-        }
-      });
-      if (changed) fixed++;
-    });
-    if (fixed) { saveDb(); try { writeSitemap(); } catch(e) {} }
-    res.json({ success: true, posts_fixed: fixed, fields: fields });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
 // GET /api/admin/gsc/opportunities?days=90 - keywords closest to page 1 (best ROI).
 app.get('/api/admin/gsc/opportunities', adminAuth, async function(req, res) {
   try {
@@ -40355,8 +40334,9 @@ function loadEmailEdits() {
   var o;
   try { o = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'email-edits.json'), 'utf-8')); }
   catch(e) { return {}; }
-  // Sanitize em/en dashes in any SAVED edits (they were written before the house style
-  // changed) so a dash can never reach a customer's email or the admin preview.
+  // Sanitize em/en dashes in any SAVED edits so a dash can never reach a customer email
+  // or the admin preview. Covers .body (campaign edits), .html (win-back/cancelled) and
+  // .subject.
   try {
     Object.keys(o || {}).forEach(function(k) {
       var e = o[k]; if (!e || typeof e !== 'object') return;
