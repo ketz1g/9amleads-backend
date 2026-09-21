@@ -40056,7 +40056,7 @@ app.listen(PORT, () => {
           var _b = ''; _rs.on('data', function(c) { _b += c; });
           _rs.on('end', function() {
             var _isDeploy = false;
-            try { var _arr = JSON.parse(_b); var _latest = _arr && _arr[0] && _arr[0].deploy; if (_latest && _latest.finishedAt) { var _fin = new Date(_latest.finishedAt).getTime(); if (_fin && (nowB - _fin) < 300000) _isDeploy = true; } } catch(e) {}
+            try { var _arr = JSON.parse(_b); var _latest = _arr && _arr[0] && _arr[0].deploy; if (_latest && _latest.finishedAt) { var _fin = new Date(_latest.finishedAt).getTime(); if (_fin && (nowB - _fin) < 900000) _isDeploy = true; } } catch(e) {}
             _recordBoot(_isDeploy);
           });
         });
