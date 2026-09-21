@@ -91,7 +91,7 @@ function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
   const used = (status.postcoder && status.postcoder.used_today) || 0;
   const enabled = status.postcoder && status.postcoder.enabled;
   console.log('Postcoder enabled:', enabled, '| used_today:', used, '| daily_budget:', budget);
-  if (!enabled) { console.log('Postcoder not enabled on server — nothing to do.'); return; }
+  if (!enabled) { console.log('Postcoder not enabled on server - nothing to do.'); return; }
   if (used >= budget) { console.log('Daily budget already exhausted (' + used + '/' + budget + '). Re-run after midnight UK.'); return; }
 
   const customers = await getCustomers();

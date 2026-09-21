@@ -281,7 +281,7 @@ async function loadGscData() {
       });
       th += '</table>';
     }
-    tEl.innerHTML = th || '<div style="color:#64748b;font-size:12px;padding:8px 0">No Google search data in the last 28 days yet — new posts take time to be indexed and ranked.</div>';
+    tEl.innerHTML = th || '<div style="color:#64748b;font-size:12px;padding:8px 0">No Google search data in the last 28 days yet - new posts take time to be indexed and ranked.</div>';
   } catch(e) {
     var stEl2 = document.getElementById('gscStats');
     if (stEl2) stEl2.innerHTML = '<div class="empty" style="grid-column:1/-1;color:#ef4444">Failed to load GSC data: ' + esc(e.message) + '</div>';

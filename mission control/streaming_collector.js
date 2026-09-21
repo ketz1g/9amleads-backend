@@ -1,4 +1,4 @@
-// Companies House Streaming API — New Business Lead Collector
+// Companies House Streaming API - New Business Lead Collector
 // Connects to the official company-profile stream, captures newly incorporated
 // companies within the configured freshness window, and queues them for delivery.
 //
@@ -121,7 +121,7 @@ async function collectFreshLeads(apiKey, freshnessHours = 48) {
         saveTimepoint(timepoint);
         saveSeenCompanies(seen);
 
-        // Enrich — fetch profiles for each new incorporation
+        // Enrich - fetch profiles for each new incorporation
         if (keptCount > 0) {
           console.log('[STREAM] Enriching ' + leads.length + ' companies...');
           var enrichedLeads = [];
@@ -179,7 +179,7 @@ async function collectFreshLeads(apiKey, freshnessHours = 48) {
       resolve([]);
     });
     req.setTimeout(610000, () => {
-      console.log('[STREAM] Timeout — closing');
+      console.log('[STREAM] Timeout - closing');
       req.destroy();
       saveTimepoint(timepoint);
       resolve([]);

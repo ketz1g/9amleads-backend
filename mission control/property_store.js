@@ -9,7 +9,7 @@
 // details live in the per-product pool files; this store is only the identity +
 // first-seen ledger used to guard freshness.
 //
-// Kept deliberately simple (single JSON file, in-memory map) — no enterprise infra.
+// Kept deliberately simple (single JSON file, in-memory map) - no enterprise infra.
 const fs = require('fs');
 const path = require('path');
 

@@ -54,7 +54,7 @@ function flush() { if (!batch.length) return; db.exec('BEGIN'); try { for (const
         batch.push([pc, parts.filter(Boolean).join(', ').replace(/\s+/g, ' ').trim()]);
         if (batch.length >= 20000) flush();
       });
-      rl.on('close', function () { flush(); console.log('[SCOT-SQLITE] ' + f + ' done — rows=' + rows); resolve(); });
+      rl.on('close', function () { flush(); console.log('[SCOT-SQLITE] ' + f + ' done - rows=' + rows); resolve(); });
       rl.on('error', function () { resolve(); });
     });
   }

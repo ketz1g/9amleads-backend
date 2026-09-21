@@ -115,7 +115,7 @@ async function load() {
   try {
     var r = await fetch(API + '/api/admin/customer-dashboard?email=' + encodeURIComponent(email) + '&t=' + Date.now(), { headers: headers() });
     var d = await r.json();
-    if (!r.ok || !d.success) { document.getElementById('statusLine').innerHTML = '<span style="color:#ef4444">Could not load (HTTP ' + r.status + '): ' + esc(d.error || 'unknown') + ' — check the admin password.</span>'; return; }
+    if (!r.ok || !d.success) { document.getElementById('statusLine').innerHTML = '<span style="color:#ef4444">Could not load (HTTP ' + r.status + '): ' + esc(d.error || 'unknown') + ' - check the admin password.</span>'; return; }
     document.getElementById('metaLine').innerHTML = '<span><b>Email:</b> ' + esc(email) + '</span><span><b>Product:</b> ' + esc(d.product) + '</span><span><b>Plan:</b> ' + esc(d.plan) + '</span><span><b>Areas:</b> ' + esc(d.areas || '-') + '</span><span><b>Delivered:</b> ' + d.delivered + '</span><span><b>Pending:</b> ' + d.pending + '</span><span><b>Total:</b> ' + d.total + '</span>';
     var rows = '';
     (d.leads || []).forEach(function(l) {
@@ -136,7 +136,7 @@ async function load() {
     document.getElementById('statusLine').innerHTML = '<span style="color:#22c55e">Loaded ' + (d.leads || []).length + ' leads.</span>';
     loadEmailHistory();
   } catch(e) {
-    document.getElementById('statusLine').innerHTML = '<span style="color:#ef4444">Error: ' + esc(e.message) + ' — check the admin password and try again.</span>';
+    document.getElementById('statusLine').innerHTML = '<span style="color:#ef4444">Error: ' + esc(e.message) + ' - check the admin password and try again.</span>';
   }
 }
 // EMAIL HISTORY for this customer (what they've received + click to view contents)
@@ -147,7 +147,7 @@ async function loadEmailHistory() {
     var d = await r.json();
     var tb = document.getElementById('emailRows');
     if (!r.ok || !d.success) { tb.innerHTML = '<tr><td colspan="4" class="sub" style="padding:16px;color:#ef4444">Could not load email history.</td></tr>'; return; }
-    if (!d.emails || !d.emails.length) { tb.innerHTML = '<tr><td colspan="4" class="sub" style="padding:16px">No emails logged yet. Emails are recorded from the moment each one is sent — the daily 9am lead sheet will appear here after the next delivery.</td></tr>'; return; }
+    if (!d.emails || !d.emails.length) { tb.innerHTML = '<tr><td colspan="4" class="sub" style="padding:16px">No emails logged yet. Emails are recorded from the moment each one is sent - the daily 9am lead sheet will appear here after the next delivery.</td></tr>'; return; }
     tb.innerHTML = d.emails.map(function(e){
       var uk = '-';
       try { uk = new Date(e.at).toLocaleString('en-GB', { timeZone:'Europe/London', day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }); } catch(e2){ uk = e.at || '-'; }

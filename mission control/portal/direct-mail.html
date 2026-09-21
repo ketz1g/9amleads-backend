@@ -55,7 +55,7 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 </div>
 
 <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px 14px;margin:0 0 14px;font-size:12px;color:#14532d;line-height:1.6">
-💡 <strong>Quick tips:</strong> Save your leaflet + cover letter once and reuse them for every mailing · <strong>Auto-Send</strong> posts new leads automatically after each 9am delivery · Follow up leads a couple of weeks later with <strong>Post Again</strong> — most jobs are won on the second letter.
+💡 <strong>Quick tips:</strong> Save your leaflet + cover letter once and reuse them for every mailing · <strong>Auto-Send</strong> posts new leads automatically after each 9am delivery · Follow up leads a couple of weeks later with <strong>Post Again</strong> - most jobs are won on the second letter.
 </div>
 
 <div id="toast"></div>
@@ -63,7 +63,7 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 <!-- Step 1: Business Profile -->
 <div class="card">
 <div class="sect-title"><i class="fas fa-building" style="color:var(--accent)"></i> Step 1 · Your Business Profile</div>
-<p style="font-size:12px;color:var(--text2);margin-bottom:12px">Your sender name &amp; address printed on every mailing. Fill it in once — it's saved and reused.</p>
+<p style="font-size:12px;color:var(--text2);margin-bottom:12px">Your sender name &amp; address printed on every mailing. Fill it in once - it's saved and reused.</p>
 <div class="grid-2">
 <div><label class="label">Company Name</label><input class="input" id="p-company" placeholder="Your company name"></div>
 <div><label class="label">Contact Name</label><input class="input" id="p-name" placeholder="Your name"></div>
@@ -109,7 +109,7 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 <div id="letter-preview-box" style="display:none;margin-top:16px;border:1px solid var(--border);border-radius:10px;padding:14px;background:#fff">
 <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:8px"><span><i class="fas fa-envelope" style="color:var(--accent);margin-right:4px"></i> Your Letter Preview <span style="color:var(--success);font-weight:700">One-Sided A4 · Address Window Shown</span></span><button class="btn btn-outline btn-sm" onclick="deleteActiveLetter()" style="white-space:nowrap"><i class="fas fa-trash"></i> Delete Letter</button></div>
 <div style="display:flex;gap:14px;flex-wrap:wrap">
-  <!-- The A4 page (portrait, fixed aspect) — big + readable -->
+  <!-- The A4 page (portrait, fixed aspect) - big + readable -->
   <div style="flex:0 0 600px">
     <div style="background:#fff;border:1px solid #cbd5e1;border-radius:4px;width:600px;height:849px;overflow:hidden;box-shadow:0 2px 12px rgba(15,23,42,0.10);padding:24px 28px;position:relative">
       <!-- Address window (section across the top; ~40mm tall) -->
@@ -124,7 +124,7 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
   </div>
   <!-- Guidance -->
   <div style="flex:1;min-width:240px;font-size:11px;color:var(--text2);line-height:1.7">
-    <b style="color:#0ea5e9">The blue box (top-left)</b> is the <b>envelope window</b> — the recipient's address prints there, so keep it clear.<br><br>
+    <b style="color:#0ea5e9">The blue box (top-left)</b> is the <b>envelope window</b> - the recipient's address prints there, so keep it clear.<br><br>
     <b>Your letter fills one side of A4.</b> Keep it to <b style="color:var(--success)">~300 words / ~1,900 characters</b> (the counter below flags when it's too long). The preview updates live as you write.<br><br>
     <b>Symbols &amp; icons:</b> ✓, •, £ and other common symbols print correctly. Colour emojis (😀) can't be printed, so keep to plain text for a clean result.
   </div>
@@ -141,8 +141,8 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 
 <!-- Final print preview with whited-out address zone + download -->
 <div id="final-print-preview" style="display:none;margin-top:16px;border:1px solid var(--border);border-radius:10px;padding:14px;background:#f8fafc">
-<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px"><i class="fas fa-print" style="color:var(--accent);margin-right:4px"></i> Your Print-Ready Leaflet <span style="color:var(--success);font-weight:700">(white address zone baked in — nothing is cut off)</span></div>
-<p style="font-size:11px;color:var(--text2);margin-bottom:10px">This is exactly what will print. The white address zone stays clean on the <b>back</b> (right for landscape, top-left for portrait); use <b>Edit</b> on either preview to tweak the position — it updates as you adjust it.</p>
+<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px"><i class="fas fa-print" style="color:var(--accent);margin-right:4px"></i> Your Print-Ready Leaflet <span style="color:var(--success);font-weight:700">(white address zone baked in - nothing is cut off)</span></div>
+<p style="font-size:11px;color:var(--text2);margin-bottom:10px">This is exactly what will print. The white address zone stays clean on the <b>back</b> (right for landscape, top-left for portrait); use <b>Edit</b> on either preview to tweak the position - it updates as you adjust it.</p>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
   <div style="border:1px solid var(--border);border-radius:10px;padding:8px;background:#fff;text-align:center">
     <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:8px">Front. Print-Ready <span style="color:var(--success);font-weight:400">(full design)</span> <span id="fp-front-label" style="font-weight:400;color:var(--muted)"></span> <button id="fp-front-edit" onclick="fpEditFront()" style="display:none;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;color:var(--accent);border:1px solid var(--border);background:#fff;cursor:pointer"><i class="fas fa-crop-alt"></i> Edit</button></div>
@@ -157,7 +157,7 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
     <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:8px">Back. Print-Ready <span style="color:var(--success);font-weight:400">(white address zone)</span> <button id="fp-back-edit" onclick="fpEditBack()" style="display:none;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;color:var(--accent);border:1px solid var(--border);background:#fff;cursor:pointer"><i class="fas fa-crop-alt"></i> Edit</button></div>
     <div style="position:relative;display:inline-block;max-width:100%;border:1px solid #334155;border-radius:6px;padding:0">
       <img id="fp-back-img" alt="Final print preview (back, white address zone)" style="max-width:100%;max-height:250px;border-radius:4px;display:block">
-      <div id="fp-back-err" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#fee2e2;border:1px solid #fecaca;border-radius:6px;padding:8px 12px;font-size:11px;font-weight:700;color:#b91c1c;white-space:nowrap;z-index:5">Back preview could not load — please refresh (Ctrl+F5)</div>
+      <div id="fp-back-err" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#fee2e2;border:1px solid #fecaca;border-radius:6px;padding:8px 12px;font-size:11px;font-weight:700;color:#b91c1c;white-space:nowrap;z-index:5">Back preview could not load - please refresh (Ctrl+F5)</div>
     </div>
     <div style="font-size:10px;color:var(--muted);margin-top:6px" id="fp-back-name"></div>
     <a class="btn btn-outline btn-sm" style="display:flex;justify-content:center;font-size:11px;margin-top:8px" id="fp-download-back"><i class="fas fa-download"></i> Download My Back</a>
@@ -170,22 +170,22 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 <div id="flyer-tips" style="display:none;margin-top:14px;border:1px solid var(--border);border-radius:10px;padding:12px 14px;background:#fff">
 <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px"><i class="fas fa-lightbulb" style="color:#f59e0b;margin-right:4px"></i> Top tips</div>
 <div style="font-size:11px;color:var(--text2);line-height:1.7">
-  • The <b>print-ready preview</b> above is exactly what we print — your design is positioned automatically around the white address zone, so nothing is cut off.<br>
+  • The <b>print-ready preview</b> above is exactly what we print - your design is positioned automatically around the white address zone, so nothing is cut off.<br>
   • Use <b>Edit / Position</b> on any saved flyer to drag or stretch your design; keep everything inside the <b>blue safe area</b> and out of the <b>white address zone</b> (Royal Mail machine-reads it).<br>
-  • <b>Download the template</b> below to design your own — it shows the bleed, safe zone and clear zone guides.<br>
+  • <b>Download the template</b> below to design your own - it shows the bleed, safe zone and clear zone guides.<br>
   • After editing, <b>hard-refresh (Ctrl+F5)</b> if the preview looks old.
 </div>
 </div>
 <div style="margin-top:14px;padding:12px 14px;background:#f8fafc;border:1px dashed var(--border);border-radius:10px">
 <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px"><i class="fas fa-file-upload" style="color:var(--accent);margin-right:4px"></i> Upload or replace your files</div>
-<div style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.6">Pick your flyer <b>front</b> and <b>back</b> (PNG/JPG/PDF) — they're checked against the print spec automatically. Use <b>Edit / Position</b> to fine-tune, then <b>Save My Leaflet</b>.</div>
+<div style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.6">Pick your flyer <b>front</b> and <b>back</b> (PNG/JPG/PDF) - they're checked against the print spec automatically. Use <b>Edit / Position</b> to fine-tune, then <b>Save My Leaflet</b>.</div>
 <div class="grid-3">
 <div><label class="label">Leaflet Front</label><input type="file" class="input" id="up-flyer-front" accept=".pdf,.png,.jpg,.jpeg" onchange="validateArtwork(this,'flyer_front')"></div>
 <div><label class="label">Leaflet Back</label><input type="file" class="input" id="up-flyer-back" accept=".pdf,.png,.jpg,.jpeg" onchange="validateArtwork(this,'flyer_back')"></div>
 <div><label class="label">Cover Letter PDF (optional)</label><input type="file" class="input" id="up-letter" accept=".pdf,.png,.jpg,.jpeg"></div>
 </div>
 <div id="artwork-validation" style="margin-top:10px;display:none"></div>
-<div style="margin-top:10px;padding:10px 12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;font-size:11.5px;color:#1e40af;line-height:1.6"><i class="fas fa-life-ring" style="margin-right:5px"></i><b>Having trouble uploading?</b> No problem &mdash; just email your leaflet (front and back) and cover letter to <a href="mailto:hello@9amleads.com" style="color:#0ea5e9;font-weight:700">hello@9amleads.com</a> and we&rsquo;ll upload them for you.</div>
+<div style="margin-top:10px;padding:10px 12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;font-size:11.5px;color:#1e40af;line-height:1.6"><i class="fas fa-life-ring" style="margin-right:5px"></i><b>Having trouble uploading?</b> No problem - just email your leaflet (front and back) and cover letter to <a href="mailto:hello@9amleads.com" style="color:#0ea5e9;font-weight:700">hello@9amleads.com</a> and we&rsquo;ll upload them for you.</div>
 </div>
 <div style="margin-top:8px;padding:9px 12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;font-size:11px;color:#0369a1">
 <i class="fas fa-info-circle" style="margin-right:4px"></i>The recipient's address is printed automatically in a reserved <b>clear zone</b>, kept white so Royal Mail can machine-read it. We print edge-to-edge with a 6mm bleed, and the safe-zone is handled for you.
@@ -371,11 +371,11 @@ function saveTemplate(){
   if(!body.ai_generated_text){toast('Write a cover letter first');return;}
   // Match the print: characters are the reliable measure (a ~300-word letter runs
   // ~1,800-1,900 chars depending on word length). Allow up to 1,900 chars / 300
-  // words — fits one A4 page with a safe margin.
+  // words - fits one A4 page with a safe margin.
   var saveClean=cleanLetterPreviewText(body.ai_generated_text);
   var saveChars=saveClean.length, saveWords=saveClean?saveClean.split(/\s+/).filter(function(w){return w.length>0;}).length:0;
   if(saveChars>1900||saveWords>300){
-    toast('✕ Letter is too long — max 1,900 characters / 300 words so it fits one A4 page. Please shorten it.');
+    toast('✕ Letter is too long - max 1,900 characters / 300 words so it fits one A4 page. Please shorten it.');
     var sc=document.getElementById('letter-counter'); if(sc)sc.style.color='#dc2626';
     return;
   }
@@ -384,7 +384,7 @@ function saveTemplate(){
       toast('Cover letter saved');
       loadTemplates();
       // Show the letter preview immediately with the saved text (flyers always
-      // show their preview — letters must too, so the box is shown + filled with
+      // show their preview - letters must too, so the box is shown + filled with
       // exactly what was just saved, never left blank after saving).
       var lp=document.getElementById('letter-preview-box'); if(lp)lp.style.display='block';
       var bodyEl=document.getElementById('lp-letter-body'); if(bodyEl)bodyEl.textContent=cleanLetterPreviewText(body.ai_generated_text)||'(letter is empty)';
@@ -536,7 +536,7 @@ function updateLetterPreviewLive(){
   }
   if(!box||!bodyEl)return;
   // Always keep the preview in sync with what's in the editor, even while the
-  // preview box is hidden — otherwise it shows a stale/truncated saved letter.
+  // preview box is hidden - otherwise it shows a stale/truncated saved letter.
   bodyEl.textContent=clean||'Your cover letter text appears here.';
   checkLetterFit();
 }
@@ -567,7 +567,7 @@ function checkLetterFit(){
   var bodyEl=document.getElementById('lp-letter-body');
   if(!statusEl||!bodyEl)return;
   var text=bodyEl.textContent||'';
-  // SAFE LETTER SPEC: characters are the reliable measure — a ~300-word letter
+  // SAFE LETTER SPEC: characters are the reliable measure - a ~300-word letter
   // runs ~1,800-1,900 chars depending on word length, and one A4 page prints up
   // to ~2,000 chars. Allow 1,900 chars / 300 words for a safe margin.
   var charCount = text.trim().length;
@@ -591,13 +591,13 @@ function checkLetterFit(){
     }
   }
   if(tooLong){
-    statusEl.textContent='✕ ' + wordCount + ' words / ' + charCount + ' chars — too long for one A4 page (max ' + maxWords + ' words / ' + maxChars + ' chars). Shorten it.';
+    statusEl.textContent='✕ ' + wordCount + ' words / ' + charCount + ' chars - too long for one A4 page (max ' + maxWords + ' words / ' + maxChars + ' chars). Shorten it.';
     statusEl.style.color='#dc2626';
   } else if(charCount > 1800 || wordCount > 285){
-    statusEl.textContent='~' + wordCount + ' words / ' + charCount + ' chars — near the limit (max ' + maxWords + ' words / ' + maxChars + ' chars). Consider shortening slightly for comfort.';
+    statusEl.textContent='~' + wordCount + ' words / ' + charCount + ' chars - near the limit (max ' + maxWords + ' words / ' + maxChars + ' chars). Consider shortening slightly for comfort.';
     statusEl.style.color='#b45309';
   } else {
-    statusEl.textContent='✓ Fits on one A4 page (' + wordCount + ' words / ' + charCount + ' chars — max ' + maxWords + ' words / ' + maxChars + ' chars)';
+    statusEl.textContent='✓ Fits on one A4 page (' + wordCount + ' words / ' + charCount + ' chars - max ' + maxWords + ' words / ' + maxChars + ' chars)';
     statusEl.style.color='#15803d';
   }
 }
@@ -615,7 +615,7 @@ function loadLetterPreview(){
   if(bodyEl)bodyEl.textContent=cleanLetterPreviewText(editorText)||'Loading your saved cover letter…';
   checkLetterFit();
   // Note: no return address is shown. The printed letter (Stannp A4) contains
-  // only the letter body — Stannp prints the recipient address in its own
+  // only the letter body - Stannp prints the recipient address in its own
   // envelope window, and the sender's return address is NOT part of what prints.
   // Fetch the saved setup/cover letter so the preview reflects what's saved,
   // BUT only when the editor field is empty. If the customer has typed/pasted
@@ -829,7 +829,7 @@ function loadMaterials(){
 // and wire the download buttons. Uses the /api/direct-mail/setup response which
 // returns preview_zone_url (whited out) + preview_url (original) + format spec.
 function markInLine(side, ok){
-  // (preview no longer shows IN LINE borders/badges — the indicator lives in the editor)
+  // (preview no longer shows IN LINE borders/badges - the indicator lives in the editor)
   ok = (ok === undefined) ? true : ok;
 }
 function loadFinalPrintPreview(){  var box=document.getElementById('final-print-preview');
@@ -1134,7 +1134,7 @@ function openFlyerEditor(id, name, matType, formatId){
     // Detect whether the BACK design already has the white address zone baked
     // into its top (the editor's previous saves white out the top 28%). If it
     // does, the design is already laid out below the zone and must be shown
-    // FULL-BLEED (edge to edge) so the preview and editor agree — the blue
+    // FULL-BLEED (edge to edge) so the preview and editor agree - the blue
     // address-zone overlay in the editor simply sits on top of the baked white.
     // Fresh back uploads (no baked zone) are fitted below the zone instead.
     _flyerEditor.hasBakedZone = false;
@@ -1211,7 +1211,7 @@ function flyerEditorReset(){
   var w=_flyerEditor.pageW, h=_flyerEditor.pageH;
   var iw=_flyerEditor.img? _flyerEditor.img.width:1, ih=_flyerEditor.img? _flyerEditor.img.height:1;
   if (_flyerEditor.matType === 'flyer_back') {
-    // Back: fit the design into the USABLE area — the whole page MINUS the white
+    // Back: fit the design into the USABLE area - the whole page MINUS the white
     // address zone box, so no design content is ever hidden behind it. For
     // landscape the zone is a right-side box; for portrait a top-left box.
     var uz = feBackUsableRect(w, h);
@@ -1242,14 +1242,14 @@ function feSetStatus(msg, type){
 }
 function feShowFitResult(){
   var ed=_flyerEditor;
-  // Run the content-risk check first — a warning about covered/trimmed content is
+  // Run the content-risk check first - a warning about covered/trimmed content is
   // more important than the success message, so it takes precedence.
   var hadWarn = feCheckContentRisk();
   if(hadWarn) return;
   if(ed.matType==='flyer_back'){
-    feSetStatus('✓ Fitted to the full page — the design fills edge-to-edge. Stannp prints the recipient address in its own corner window.', 'ok');
+    feSetStatus('✓ Fitted to the full page - the design fills edge-to-edge. Stannp prints the recipient address in its own corner window.', 'ok');
   } else {
-    feSetStatus('✓ Fitted to the full page — the design fills edge-to-edge, nothing cut off.', 'ok');
+    feSetStatus('✓ Fitted to the full page - the design fills edge-to-edge, nothing cut off.', 'ok');
   }
 }
 // Analyse the loaded design and warn the customer about print-safety issues:
@@ -1331,7 +1331,7 @@ function flyerEditorAutoFit(){
     // FRONT: STRETCH to exactly fill the full page (edge-to-edge, no white).
     // The front design is auto-cropped of pure-white margins at load, so the
     // visible content fills the entire page width AND height. Stretching
-    // (non-uniform scale) is intentional — it guarantees zero white bands and
+    // (non-uniform scale) is intentional - it guarantees zero white bands and
     // zero cropped content, matching Stannp's full-bleed guideline.
     ed.rw = w;
     ed.rh = h;
@@ -1470,7 +1470,7 @@ function flyerEditorDraw(){
     } else {
       inLine = dx <= ox + tol && (dx + dw) >= ox + pw - tol && dy <= oy + tol && (dy + dh) >= oy + ph - tol;
     }
-    // Draw the bleed line (always) — green when in line, red when not.
+    // Draw the bleed line (always) - green when in line, red when not.
     ctx.strokeStyle = inLine ? '#22c55e' : '#ef4444';
     ctx.lineWidth = inLine ? 3 : 2;
     ctx.setLineDash([7,4]);
@@ -1479,10 +1479,10 @@ function flyerEditorDraw(){
     // Label above the bleed line.
     ctx.fillStyle = inLine ? '#16a34a' : '#dc2626';
     ctx.font = 'bold 13px Arial'; ctx.textAlign = 'center';
-    ctx.fillText(inLine ? '✓ IN LINE — reaches the bleed line, nothing cut off' : '⚠ Adjust so the flyer reaches the bleed line', ox + pw/2, by1 - 4);
+    ctx.fillText(inLine ? '✓ IN LINE - reaches the bleed line, nothing cut off' : '⚠ Adjust so the flyer reaches the bleed line', ox + pw/2, by1 - 4);
     ctx.textAlign = 'left';
   }
-  // ADDRESS ZONE (BACK only) — matches Stannp's actual clearzone position:
+  // ADDRESS ZONE (BACK only) - matches Stannp's actual clearzone position:
   //   portrait : top-left  box  (x 14-36%, y 7-17%)
   //   landscape: right-side box  (x 68-88%, y 30-41%)
   if(ed.matType==='flyer_back'){
@@ -1496,7 +1496,7 @@ function flyerEditorDraw(){
       zw = Math.round(pw * 0.36) - zx; zh = Math.round(ph * 0.17) - zy;
     }
     var zcx = ox+zx, zcy = oy+zy;
-    // Solid white so nothing behind it shows through — this is exactly where the
+    // Solid white so nothing behind it shows through - this is exactly where the
     // recipient address prints.
     ctx.fillStyle='#ffffff'; ctx.fillRect(zcx, zcy, zw, zh);
     // Diagonal hatch so it reads clearly as a "reserved" area.
@@ -1508,7 +1508,7 @@ function flyerEditorDraw(){
     ctx.strokeStyle='#0c4a6e'; ctx.lineWidth=4; ctx.strokeRect(zcx, zcy, zw, zh);
     ctx.strokeStyle='#0c4a6e'; ctx.setLineDash([8,5]); ctx.lineWidth=2; ctx.strokeRect(zcx+3, zcy+3, zw-6, zh-6); ctx.setLineDash([]);
     ctx.fillStyle='#0c4a6e'; ctx.font='bold 11px Arial'; ctx.textAlign='center';
-    ctx.fillText('ADDRESS ZONE — recipient address prints here', zcx+zw/2, zcy+Math.min(26, zh/2));
+    ctx.fillText('ADDRESS ZONE - recipient address prints here', zcx+zw/2, zcy+Math.min(26, zh/2));
     ctx.font='bold 10px Arial';
     ctx.fillText('Keep this area plain (white)', zcx+zw/2, zcy+Math.min(44, zh/2)+12);
     ctx.textAlign='left';
@@ -1534,7 +1534,7 @@ function saveFlyerEditor(){
     var dw=_flyerEditor.rw*sxP, dh=_flyerEditor.rh*syP;
     ctx.drawImage(_flyerEditor.img, dx, dy, dw, dh);
   }
-  // Back: ensure the address zone is white — at Stannp's actual clearzone position:
+  // Back: ensure the address zone is white - at Stannp's actual clearzone position:
   // portrait top-left box, landscape right-side box. (If the design already has the
   // zone baked, re-whitening the same area is harmless.)
   if(_flyerEditor.matType === 'flyer_back'){
@@ -1582,7 +1582,7 @@ function saveFlyerEditor(){
       try { document.addEventListener('click', function(ev){ var a = ev.target && ev.target.closest ? ev.target.closest('a[href*="utm_source=demo"]') : null; if (a) { try { fetch('/api/analytics/event', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ event: 'demo_signup_click', uid: 'demo', props: { product: sess.product || 'moving' } }) }); } catch(e) {} } }, true); } catch(e) {}
       var _bn = document.createElement('div');
       _bn.style.cssText = 'background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;border-radius:14px;padding:14px 18px;margin:12px auto;max-width:1100px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;font-family:Inter,Arial,sans-serif';
-      _bn.innerHTML = '<div style="font-size:14px;font-weight:700;line-height:1.5">You are viewing the live demo. Try your <strong>free week</strong> &mdash; no card required.</div><a href="' + _signup + '" style="background:#fff;color:#1d4ed8;font-weight:800;font-size:14px;padding:11px 22px;border-radius:50px;text-decoration:none;white-space:nowrap">Try your free week &mdash; no card required &rarr;</a>';
+      _bn.innerHTML = '<div style="font-size:14px;font-weight:700;line-height:1.5">You are viewing the live demo. Try your <strong>free week</strong> - no card required.</div><a href="' + _signup + '" style="background:#fff;color:#1d4ed8;font-weight:800;font-size:14px;padding:11px 22px;border-radius:50px;text-decoration:none;white-space:nowrap">Try your free week - no card required &rarr;</a>';
       document.body.insertBefore(_bn, document.body.firstChild);
       var _fab = document.createElement('a');
       _fab.href = _signup;
@@ -1593,7 +1593,7 @@ function saveFlyerEditor(){
         try { if (sessionStorage.getItem('demo_popup_shown')) return; sessionStorage.setItem('demo_popup_shown','1'); } catch(e) {}
         var ov = document.createElement('div');
         ov.style.cssText = 'position:fixed;inset:0;z-index:100001;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:20px';
-        ov.innerHTML = '<div style="max-width:420px;background:#fff;border-radius:16px;padding:26px;text-align:center;font-family:Inter,Arial,sans-serif;box-shadow:0 20px 60px rgba(0,0,0,.4)"><div style="font-size:34px">\uD83C\uDF89</div><h3 style="margin:8px 0 6px;font-size:21px;font-weight:800;color:#0f172a">Like what you see?</h3><p style="margin:0 0 16px;font-size:14px;color:#64748b;line-height:1.6">Try your <strong>free week</strong> - no card required, cancel anytime.</p><a href="' + _signup + '" style="display:block;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;font-weight:800;font-size:15px;padding:14px;border-radius:50px;text-decoration:none">Try it free &mdash; no card required &rarr;</a><button id="demoPopupClose" style="margin-top:10px;background:none;border:none;color:#94a3b8;font-size:13px;cursor:pointer">Keep exploring the demo</button></div>';
+        ov.innerHTML = '<div style="max-width:420px;background:#fff;border-radius:16px;padding:26px;text-align:center;font-family:Inter,Arial,sans-serif;box-shadow:0 20px 60px rgba(0,0,0,.4)"><div style="font-size:34px">\uD83C\uDF89</div><h3 style="margin:8px 0 6px;font-size:21px;font-weight:800;color:#0f172a">Like what you see?</h3><p style="margin:0 0 16px;font-size:14px;color:#64748b;line-height:1.6">Try your <strong>free week</strong> - no card required, cancel anytime.</p><a href="' + _signup + '" style="display:block;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;font-weight:800;font-size:15px;padding:14px;border-radius:50px;text-decoration:none">Try it free - no card required &rarr;</a><button id="demoPopupClose" style="margin-top:10px;background:none;border:none;color:#94a3b8;font-size:13px;cursor:pointer">Keep exploring the demo</button></div>';
         document.body.appendChild(ov);
         try { document.getElementById('demoPopupClose').onclick = function(){ ov.remove(); }; } catch(e) {}
         ov.addEventListener('click', function(e){ if (e.target === ov) ov.remove(); });
@@ -1623,10 +1623,10 @@ function saveFlyerEditor(){
     <button onclick="closeFlyerEditor()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#64748b">✕</button>
   </div>
   <p style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px">
-    <b>You control the final print.</b> <b style="color:#16a34a">When the GREEN line appears around the page, your flyer is perfectly fitted</b> — nothing gets cut off and it prints edge-to-edge. <b style="color:#1d4ed8">Keep important content inside the blue dashed lines</b> (the safe area). Easiest: click <b>"Fit to Page (one click)"</b> below and it sizes the flyer for you. You can then <b>drag</b> to nudge it, <b>drag a blue square</b> to stretch, or use <b>+ / −</b> to scale. On the <b>Back</b>, the design stays below the blue address box (the white area for the recipient's address). When it looks right, click <b>Save</b>.
+    <b>You control the final print.</b> <b style="color:#16a34a">When the GREEN line appears around the page, your flyer is perfectly fitted</b> - nothing gets cut off and it prints edge-to-edge. <b style="color:#1d4ed8">Keep important content inside the blue dashed lines</b> (the safe area). Easiest: click <b>"Fit to Page (one click)"</b> below and it sizes the flyer for you. You can then <b>drag</b> to nudge it, <b>drag a blue square</b> to stretch, or use <b>+ / −</b> to scale. On the <b>Back</b>, the design stays below the blue address box (the white area for the recipient's address). When it looks right, click <b>Save</b>.
   </p>
   <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:9px 12px;margin-bottom:12px;font-size:12px;color:#166534;line-height:1.6">
-    <b><i class="fas fa-circle-check" style="color:#16a34a;margin-right:4px"></i>Green line = ready.</b> Once the flyer fills the page, a <b>green line</b> appears around the print area and the label says <b>"✓ IN LINE — nothing cut off"</b>. If it shows <b>red</b>, click <b>Fit to Page</b> to resize it automatically, or drag the handles until it turns green.
+    <b><i class="fas fa-circle-check" style="color:#16a34a;margin-right:4px"></i>Green line = ready.</b> Once the flyer fills the page, a <b>green line</b> appears around the print area and the label says <b>"✓ IN LINE - nothing cut off"</b>. If it shows <b>red</b>, click <b>Fit to Page</b> to resize it automatically, or drag the handles until it turns green.
   </div>
   <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:9px 12px;margin-bottom:12px;font-size:12px;color:#1e3a8a;line-height:1.6">
     <b><i class="fas fa-bullseye" style="color:#2563eb;margin-right:4px"></i>Blue lines = your safe area.</b> Keep all important content within the <b>blue dashed border</b> around the page. Content outside it may be trimmed or sit too close to the edge to print cleanly. If your flyer is too small or too large, use the handles or <b>Reset View</b> to adjust it until it fits nicely inside the blue lines.
@@ -1642,7 +1642,7 @@ function saveFlyerEditor(){
   </div>
   <div style="display:flex;gap:10px;align-items:center;justify-content:center;margin-top:10px;flex-wrap:wrap;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:8px 12px">
     <button class="btn btn-primary btn-sm" onclick="flyerEditorAutoFit()" style="background:linear-gradient(135deg,#16a34a,#15803d);border:none;color:#fff;font-weight:800"><i class="fas fa-arrows-to-circle"></i> Fit to Page (one click)</button>
-    <div style="font-size:11px;color:#15803d;line-height:1.5">Automatically sizes your flyer to fit the whole page — nothing gets cut off, and it sits right up to the green line.</div>
+    <div style="font-size:11px;color:#15803d;line-height:1.5">Automatically sizes your flyer to fit the whole page - nothing gets cut off, and it sits right up to the green line.</div>
   </div>
   <div style="display:flex;gap:10px;align-items:center;justify-content:center;margin-top:12px;flex-wrap:wrap;background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:8px 10px">
     <div style="font-size:11px;color:var(--text2);font-weight:700;letter-spacing:.3px">POSITION (mm)</div>
@@ -1667,7 +1667,7 @@ function saveFlyerEditor(){
       <button onclick="closeHelp()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#64748b">✕</button>
     </div>
     <div style="padding:12px 14px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;font-size:13px;color:#1e3a8a;line-height:1.6;margin-bottom:14px">
-      <b>Have an issue?</b> Contact us and we'll sort it out — <b>we can even edit your design for you.</b> Tell us what's wrong (e.g. a leaflet header cut off, the address overlapping, or just send us your files) and we'll fix it.
+      <b>Have an issue?</b> Contact us and we'll sort it out - <b>we can even edit your design for you.</b> Tell us what's wrong (e.g. a leaflet header cut off, the address overlapping, or just send us your files) and we'll fix it.
     </div>
     <div style="margin-bottom:10px"><label class="label">Your name</label><input class="input" id="h-name" placeholder="Your name"></div>
     <div style="margin-bottom:10px"><label class="label">Your email</label><input class="input" id="h-email" placeholder="you@email.com"></div>

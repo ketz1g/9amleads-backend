@@ -1,7 +1,7 @@
 // LIGHTWEIGHT SCRAPER USAGE TRACKING
 // Records how many Rightmove pages / Apify actor calls / search runs happen per day
 // and how many properties are new vs already-known. This is cost + dedup visibility
-// (Rightmove direct scraping is free; Apify actor runs cost credits). Kept minimal —
+// (Rightmove direct scraping is free; Apify actor runs cost credits). Kept minimal -
 // a JSON ledger + an in-memory fast path, surfaced via admin/system-status.
 const fs = require('fs');
 const path = require('path');

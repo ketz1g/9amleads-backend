@@ -236,7 +236,7 @@ tbody tr:hover td{background:#f8fafc}
 <div id="healthIssues"></div>
 <div id="healthSystem" style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:#64748b"></div>
 <div id="healthProducts" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-top:14px"></div>
-<div style="margin-top:18px;font-weight:800;font-size:13px;color:#1e293b">🚀 Bulk &amp; Boost pools <span style="font-weight:400;font-size:11px;color:#64748b">(archive leads for bulk packs — never used for the daily 24/48h delivery)</span></div>
+<div style="margin-top:18px;font-weight:800;font-size:13px;color:#1e293b">🚀 Bulk &amp; Boost pools <span style="font-weight:400;font-size:11px;color:#64748b">(archive leads for bulk packs - never used for the daily 24/48h delivery)</span></div>
 <div id="bulkPools" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-top:10px"></div>
 </div>
 </div>
@@ -333,7 +333,7 @@ tbody tr:hover td{background:#f8fafc}
 <button class="btn btn-outline btn-sm" onclick="runAffAutomation()" title="Send pending nurture/reactivation emails now"><i class="fas fa-paper-plane"></i> Run automation</button>
 <button class="btn btn-primary btn-sm" onclick="createAffiliateForm()"><i class="fas fa-plus"></i> Add Affiliate</button>
 </div>
-<p style="font-size:12.5px;color:#475569;margin:0 0 10px">Referrals use an affiliate's name or code at signup → customer gets an extended trial → the affiliate earns <b>£25</b> once the customer pays their <b>second</b> invoice for a Starter/Pro/Enterprise package. Cleared commissions appear in the green payout queue below — <b>transfer the money, then click Confirm paid</b> (the affiliate is emailed automatically). No minimum. Wheel wins also queue here. Associations earn £30 (25 + £5 bonus).</p>
+<p style="font-size:12.5px;color:#475569;margin:0 0 10px">Referrals use an affiliate's name or code at signup → customer gets an extended trial → the affiliate earns <b>£25</b> once the customer pays their <b>second</b> invoice for a Starter/Pro/Enterprise package. Cleared commissions appear in the green payout queue below - <b>transfer the money, then click Confirm paid</b> (the affiliate is emailed automatically). No minimum. Wheel wins also queue here. Associations earn £30 (25 + £5 bonus).</p>
 <div id="affPendingWrap"></div>
 <div id="affPayoutQueueWrap"></div>
 <div class="table-wrap" id="affiliateTableWrap"><div class="loading">Loading affiliates...</div></div>
@@ -419,7 +419,7 @@ function openDeliveryPreview() {
     .then(function(d) {
       if (d.error) { document.getElementById('dp-content').innerHTML = '<span style="color:#dc2626">' + d.error + '</span>'; return; }
       var html = '<p style="font-size:11px;color:#64748b;margin-bottom:10px">Generated ' + (d.generated_at || '').replace('T', ' ').substring(0, 16) + ' UTC - ' + d.note + '</p>';
-      // FULFILMENT GUARANTEE STATUS (latest 07:15 / 07:45 check) — the FINAL, post-check
+      // FULFILMENT GUARANTEE STATUS (latest 07:15 / 07:45 check) - the FINAL, post-check
       // state so the founder sees the guaranteed outcome the moment they open this.
       if (d.guarantee) {
         var gAt = (d.guarantee.last_run || '').replace('T', ' ').substring(0, 16);
@@ -1092,7 +1092,7 @@ function loadAffiliatePayoutQueue() {
     .then(function(d) {
       if (!d.success || !d.ready || !d.ready.length) { el.innerHTML = ''; return; }
       el.innerHTML = '<div style="background:#ecfdf5;border:1px solid #6ee7b7;border-radius:12px;padding:12px 14px;margin-bottom:14px">' +
-        '<div style="font-weight:800;color:#065f46;font-size:13px;margin-bottom:8px">💷 ' + d.ready.length + ' payout' + (d.ready.length > 1 ? 's' : '') + ' READY to transfer — total £' + Number(d.ready_total || 0).toFixed(2) + '</div>' +
+        '<div style="font-weight:800;color:#065f46;font-size:13px;margin-bottom:8px">💷 ' + d.ready.length + ' payout' + (d.ready.length > 1 ? 's' : '') + ' READY to transfer - total £' + Number(d.ready_total || 0).toFixed(2) + '</div>' +
         '<div style="display:flex;flex-direction:column;gap:6px">' + d.ready.map(function(p) {
           return '<div style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #d1fae5;border-radius:8px;padding:8px 10px;flex-wrap:wrap">' +
             '<div style="flex:1;min-width:200px"><b>' + esc(p.affiliate) + '</b>' +
@@ -1142,7 +1142,7 @@ function reviewApplication(id) {
           '<div style="font-size:11px;color:#64748b;margin-top:6px">Recorded ' + pEsc(app.voice.recorded_at || '') + '</div></div>'
         : '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin-bottom:14px;color:#64748b;font-size:12px">No voice recording submitted.</div>';
       var tcOk = app.terms_accepted || (a.kyc && a.kyc.tc_accepted);
-      var tcHtml = '<div style="display:flex;align-items:flex-start;gap:8px;background:' + (tcOk ? '#f0fdf4' : '#fef2f2') + ';border:1px solid ' + (tcOk ? '#bbf7d0' : '#fecaca') + ';border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:' + (tcOk ? '#166534' : '#b91c1c') + '"><b>' + (tcOk ? '✓' : '✗') + '</b><div><b>Terms &amp; Conditions: ' + (tcOk ? 'TICKED' : 'NOT accepted') + '</b><br>' + (tcOk ? 'Accepted ' + pEsc(app.terms_accepted_at || '') : 'They did not tick the T&amp;C box — should not have submitted') + '</div></div>';
+      var tcHtml = '<div style="display:flex;align-items:flex-start;gap:8px;background:' + (tcOk ? '#f0fdf4' : '#fef2f2') + ';border:1px solid ' + (tcOk ? '#bbf7d0' : '#fecaca') + ';border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:' + (tcOk ? '#166534' : '#b91c1c') + '"><b>' + (tcOk ? '✓' : '✗') + '</b><div><b>Terms &amp; Conditions: ' + (tcOk ? 'TICKED' : 'NOT accepted') + '</b><br>' + (tcOk ? 'Accepted ' + pEsc(app.terms_accepted_at || '') : 'They did not tick the T&amp;C box - should not have submitted') + '</div></div>';
       var content = scoreHtml + tcHtml + voiceHtml +
         '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;max-height:340px;overflow-y:auto;margin-bottom:14px">' +
         q('1. Willing to find own customers?', s.q1) +
@@ -1155,7 +1155,7 @@ function reviewApplication(id) {
         q('8. Reply to "we already get enough work from referrals"', s.q8) +
         q('9. Explain the £25 commission to a friend', s.q9) +
         q('10. Comfortable calling businesses?', s.q10) +
-        q('11. Trial customer stops replying — what do you do?', s.q11) +
+        q('11. Trial customer stops replying - what do you do?', s.q11) +
         q('12. Referred businesses before?', s.q12) +
         q('13. Questions for us', s.q13) +
         (app.review_note ? '<div style="font-size:12px;color:#16a34a;margin-top:8px"><b>Review note:</b> ' + pEsc(app.review_note) + '</div>' : '') +

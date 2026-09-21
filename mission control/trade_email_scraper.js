@@ -2,7 +2,7 @@
 // Finds the NEWEST UK businesses (from the Companies House-backed newbusiness
 // pool / CH API), classifies them by SIC code into the trades behind our 5 lead
 // types, finds each company's contact EMAIL (via their website), and returns them
-// for import into Brevo lists per trade — so we can run trade-specific campaigns.
+// for import into Brevo lists per trade - so we can run trade-specific campaigns.
 //
 // Flow: newest companies -> SIC -> trade -> website (search) -> email -> Brevo list.
 const https = require('https');

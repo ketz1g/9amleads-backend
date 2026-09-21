@@ -1,5 +1,5 @@
 /**
- * Probate Leads — Probate Grant Scraper & Delivery Engine
+ * Probate Leads - Probate Grant Scraper & Delivery Engine
  * 
  * Data sources:
  * 1. PRIMARY: Apify Gov.uk Probate scraper (when available)
@@ -135,7 +135,7 @@ function fetchProbateRegistry() {
 function fetchGazetteHTML(maxItems, pageNum) {
   return new Promise((resolve) => {
     // Use the Wills & Probate section path, NOT /all-notices. As of Sept 2026 the
-    // Gazette moved the deceased-estates category under /wills-and-probate/notice —
+    // Gazette moved the deceased-estates category under /wills-and-probate/notice -
     // the old /all-notices/notice?notice-type=deceased-estates URL silently returns
     // unrelated insolvency/bankruptcy notices ("Notice of Intended Dividends" etc)
     // with no deceased address. The /wills-and-probate path returns genuine
@@ -291,7 +291,7 @@ function fetchGazetteViaJina(maxItems, pageNum) {
 // streetAddress/locality/postalCode). If it yields no street (some notices only
 // expose the address as a single vcard:adr string, and the JSON can be
 // rate-limited/empty), FALL BACK to the notice's HTML detail page which always
-// contains an "Address of Deceased" / "Person Address Details" dd — parse that
+// contains an "Address of Deceased" / "Person Address Details" dd - parse that
 // full string and split it into street + locality + postcode. This guarantees
 // every probate lead gets a real street so the PAF pass can add a door number.
 // Fetch the Gazette's linked-data JSON THROUGH r.jina.ai so detail enrichment also
@@ -305,7 +305,7 @@ function fetchGazetteDetailViaJina(noticeId) {
       res.on('data', chunk => body += chunk);
       res.on('end', () => {
         if (res.statusCode !== 200) { resolve(null); return; }
-        // Jina may prepend a "Title:/URL Source:/Markdown Content:" header — strip
+        // Jina may prepend a "Title:/URL Source:/Markdown Content:" header - strip
         // to the first '{' so the JSON parses.
         const brace = body.indexOf('{');
         if (brace > 0) body = body.slice(brace);
@@ -347,7 +347,7 @@ function fetchGazetteDetail(noticeId) {
       });
     });
     req.on('error', () => {
-      // JSON endpoint unreachable — go straight to the HTML fallback.
+      // JSON endpoint unreachable - go straight to the HTML fallback.
       fetchGazetteDetailHTML(noticeId).then(function(htmlDetail) {
         if (htmlDetail) { resolve(htmlDetail); return; }
         fetchGazetteDetailViaJina(noticeId).then(function(jinaDetail) { resolve(jinaDetail); });
@@ -393,9 +393,9 @@ function parseGazetteLinkedData(body) {
   const claimDeadline = isAbout.hasClaimDeadline || '';
   // The Gazette's structured data names the personal representative (executor) and
   // their address for service of claims. When a SOLICITOR handled the estate (the
-  // majority), that name is the firm and the address is the firm's office — writing
+  // majority), that name is the firm and the address is the firm's office - writing
   // there reaches the estate but via the solicitor. When the executor applied in
-  // person (no solicitor), the name is the executor and the address IS their HOME —
+  // person (no solicitor), the name is the executor and the address IS their HOME -
   // the golden lead (a probate company can write direct). Classify every notice so a
   // customer knows whether they're getting a home address or a solicitor-care-of one.
   let solicitor = '';
@@ -436,7 +436,7 @@ function parseGazetteLinkedData(body) {
       // A person (title or recognisable first name) applying personally -> executor home.
       executorName = repName || executorName; executorType = executorAddress ? 'home' : '';
     } else {
-      // Ambiguous (e.g. two surnames "Blackhurst Swainson Goodier") — exclude rather
+      // Ambiguous (e.g. two surnames "Blackhurst Swainson Goodier") - exclude rather
       // than risk a firm being sold as a "home" executor.
       solicitor = repName || solicitor; executorType = 'solicitor';
     }
@@ -657,13 +657,13 @@ async function enrichGazetteLeads(leads, limit) {
     // company / solicitor notices (e.g. "JMW Solicitors", "ORGANICS XL LTD") and
     // generic notice-category entries ("Notices under the Trustee Act 1925",
     // "Appointment of Liquidators", "Other Notices", "Crown Office") that are NOT
-    // deceased-estate probate leads. A probate lead must be a deceased PERSON —
+    // deceased-estate probate leads. A probate lead must be a deceased PERSON -
     // firm names, organisations and notice titles are dropped.
     var firmRe = /\b(LTD|LIMITED|LLP|PLC|SERVICES|SOLICITORS|SOLICITOR|COMPANY|GROUP|ASSOCIATES|PARTNERSHIP|STAIRLIFTS|FLOORING|SUPPLIES|ORGANICS|LEGAL|LAW|TRUSTEES?|ASSOCIATION|CHARITY|TRUST|PARTNERS)\b/i;
     var noticeTitleRe = /^(?:NOTICES?\s+(?:UNDER|OF|IN)?|APPOINTMENT\s+OF|OTHER\s+NOTICES?|CROWN\s+OFFICE|DECLARATION\s+OF|NOTICE\s+IS\s+HEREBY|IN\s+THE\s+MATTER\s+OF|PETITIONS?\s+TO\s+(?:WIND|DISSOLVE))/i;
     enriched = enriched.filter(function(l) {
       var n = String(l.name || l.deceasedName || '').trim();
-      if (!n) return true; // keep unnamed (rare) — enrichment/PAF may still fill it
+      if (!n) return true; // keep unnamed (rare) - enrichment/PAF may still fill it
       if (noticeTitleRe.test(n)) {
         console.log('[PROBATE] filtered notice-title entry: ' + n);
         return false;
@@ -1052,7 +1052,7 @@ function generateEmailHTML(sheet) {
     '<h1 style="font-family:Outfit,sans-serif;font-size:24px;font-weight:800;color:#fff;margin:0">\n' +
     '  <span style="color:' + color + '">Probate</span> Leads\n' +
     '</h1>\n' +
-    '<p style="color:#888;font-size:14px;margin:8px 0 0">' + sheet.company + ' — Daily Probate Sheet</p>\n' +
+    '<p style="color:#888;font-size:14px;margin:8px 0 0">' + sheet.company + ' - Daily Probate Sheet</p>\n' +
     '</td></tr>\n' +
     '<tr><td style="background:#0a0a0a;padding:24px 32px">\n' +
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">\n' +
@@ -1123,11 +1123,11 @@ async function runForCustomer(customerId, useSampleData) {
   
   let leads = [];
   if (!useSampleData) {
-    console.log('\n  (Apify scraper disabled — will use sample data)');
+    console.log('\n  (Apify scraper disabled - will use sample data)');
   }
   
   if (leads.length === 0) {
-    console.log('  LIVE SCRAPE FAILED — using sample data as fallback');
+    console.log('  LIVE SCRAPE FAILED - using sample data as fallback');
     leads = generateSampleProbates(customer.counties, customer.leadsPerDay || 15);
     leads = leads.map(l => ({ ...l, customerId }));
     console.log('  Generated ' + leads.length + ' sample probate leads');
@@ -1152,7 +1152,7 @@ async function runForCustomer(customerId, useSampleData) {
   console.log('  With property: ' + sheet.summary.withProperty);
   
   sheet.leads.slice(0, 3).forEach((l, i) => {
-    console.log('    ' + (i+1) + '. ' + l.name + ' — ' + l.address + ' — ' + l.estateValue);
+    console.log('    ' + (i+1) + '. ' + l.name + ' - ' + l.address + ' - ' + l.estateValue);
   });
   
   const emailHTML = generateEmailHTML(sheet);
@@ -1186,7 +1186,7 @@ function showStatus() {
   const leads = loadJSON(LEADS_FILE);
   const deliveries = loadJSON(DELIVERY_FILE);
   
-  console.log('\n=== Probate Leads — Status ===\n');
+  console.log('\n=== Probate Leads - Status ===\n');
   for (const [id, c] of Object.entries(customers)) {
     const cLeads = leads[id] || [];
     const todayLeads = cLeads.filter(l => l.scrapedAt && l.scrapedAt.startsWith(new Date().toISOString().split('T')[0]));
@@ -1224,7 +1224,7 @@ async function main() {
     fs.writeFileSync(path.join(DATA_DIR, 'probate-delivery-' + args[1] + '-' + sheet.date + '.html'), html);
     console.log('Email HTML saved');
   } else {
-    console.log('Probate Leads — Scraper & Delivery Engine');
+    console.log('Probate Leads - Scraper & Delivery Engine');
     console.log('');
     console.log('Usage:');
     console.log('  --add-customer <id> <company> <email> <counties>    Add customer');
@@ -1249,7 +1249,7 @@ async function collectProbateLeads(config) {
   // Primary: FREE Gazette ATOM feed (no Apify cost, fast, reliable). Returns
   // real deceased-estates notices with names + publication dates + URLs.
   // Paginate a couple of pages so we capture ALL of today's notices (not just
-  // the first page) — the Gazette publishes ~20-27 deceased-estate notices/day.
+  // the first page) - the Gazette publishes ~20-27 deceased-estate notices/day.
   var maxItems = config.maxItems || 50;
   var self = this;
   return (async function() {
@@ -1306,7 +1306,7 @@ async function collectProbateLeads(config) {
           console.log('[PROBATE] Jina proxy returned ' + jina.length + ' notices');
           // ENRICH: the listing markdown sometimes carries only a town/county (no
           // street). The linked-data JSON (direct or via the Jina fallback) always
-          // has the deceased's full street address, so enrich before returning —
+          // has the deceased's full street address, so enrich before returning -
           // otherwise delivered probate leads can arrive without a street/door.
           if (config.skipEnrich !== true) {
             try { jina = await enrichGazetteLeads(jina, Math.min(jina.length, 100)); } catch(e) { console.log('[PROBATE] Jina enrich error: ' + e.message); }

@@ -9,7 +9,7 @@
 //   4. Ingest results into the central property inventory (UPRN dedup).
 //   5. Track per-district yield + API usage for future prioritisation + admin.
 //
-// This is DECOUPLED from the 9am delivery scheduler — delivery never calls Propalt.
+// This is DECOUPLED from the 9am delivery scheduler - delivery never calls Propalt.
 // The collector runs earlier (configurable time) so data is ready before 9am.
 //
 // Shadow mode (MOVING_LEADS_SHADOW_MODE=true): collect + store + measure but do NOT

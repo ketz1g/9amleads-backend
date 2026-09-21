@@ -4,7 +4,7 @@
 //
 // Usage:
 //   node build_epc_index.js <path-to-zip> [dataDir] [areaFilterCsv]
-//     areaFilterCsv (optional): e.g. "L,CH,WA,CF,BS,NP,GL,BA" — only keep postcodes whose
+//     areaFilterCsv (optional): e.g. "L,CH,WA,CF,BS,NP,GL,BA" - only keep postcodes whose
 //     area matches. Omit to index the whole UK (much bigger).
 const fs = require('fs');
 const path = require('path');
@@ -39,7 +39,7 @@ function findCol(headers, names) {
 }
 
 function handleEntry(zipfile, entry) {
-  // ONLY the certificate files carry addresses — skip recommendations-*.csv etc.
+  // ONLY the certificate files carry addresses - skip recommendations-*.csv etc.
   if (!/certificates-\d{4}\.csv$/i.test(entry.fileName)) { zipfile.readEntry(); return; }
   files++;
   zipfile.openReadStream(entry, function(err, rs) {
@@ -77,7 +77,7 @@ function handleEntry(zipfile, entry) {
       }
     });
     rs.on('end', function() {
-      console.log('[EPC-BUILD] ' + entry.fileName + ' done — rows=' + rows + ' kept=' + kept + ' postcodes=' + Object.keys(index).length);
+      console.log('[EPC-BUILD] ' + entry.fileName + ' done - rows=' + rows + ' kept=' + kept + ' postcodes=' + Object.keys(index).length);
       zipfile.readEntry();
     });
     rs.on('error', function(e) { console.error('[EPC-BUILD] read err: ' + e.message); zipfile.readEntry(); });

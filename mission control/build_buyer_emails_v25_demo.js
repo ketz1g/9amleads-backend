@@ -15,7 +15,7 @@ const D = { moving: '#0b6bb3', probate: '#6d28d9', newbusiness: '#0e7490', plann
 const UTM = 'utm_source=email&utm_medium=cold&utm_campaign=v25_demo';
 
 function clean(s) {
-  return String(s == null ? '' : s).replace(/\u2014/g, '-').replace(/\u2013/g, '-').replace(/&mdash;/g, '-').replace(/&ndash;/g, '-').replace(/\s+-\s+/g, ' - ');
+  return String(s == null ? '' : s).replace(/\u2014/g, '-').replace(/\u2013/g, '-').replace(/-/g, '-').replace(/-/g, '-').replace(/\s+-\s+/g, ' - ');
 }
 function demoUrl(product) { return 'https://www.9amleads.com/portal/demo.html?product=' + product + '&' + UTM; }
 function leadNoun(st) {
@@ -294,7 +294,7 @@ ids.forEach(function (id) {
   fs.mkdirSync(dir, { recursive: true });
   [['1', email1], ['2', email2]].forEach(function (pair) {
     const html = pair[1](st, prod, accent, id);
-    if (/\u2014|\u2013|&mdash;|&ndash;/.test(html)) console.log('WARN dash in ' + id + '-' + pair[0]);
+    if (/\u2014|\u2013|-|-/.test(html)) console.log('WARN dash in ' + id + '-' + pair[0]);
     fs.writeFileSync(path.join(dir, id + '-' + pair[0] + '.html'), html);
   });
   console.log('Wrote ' + id + ' (1 real lead, 2 dashboard, 3 free week)');

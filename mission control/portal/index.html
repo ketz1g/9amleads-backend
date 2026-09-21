@@ -203,11 +203,11 @@ setTimeout(__applyProductPreselect, 60);
         if (le) le.parentNode.insertBefore(ok, le);
         else if (lf) lf.insertBefore(ok, lf.firstChild);
       }
-      ok.textContent = '✓ Email verified! Your account is confirmed — please sign in below.';
+      ok.textContent = '✓ Email verified! Your account is confirmed - please sign in below.';
     }
     var err = q.get('error');
     if (err) {
-      var msgs = { missing_token: 'That link is missing its verification token. Please log in or email us for help.', invalid_token: 'That verification link is invalid or has already been used. Please log in — if you still see a verification prompt, email us and we will sort it.', server_error: 'Something went wrong verifying your email. Email us and we will fix it right away.' };
+      var msgs = { missing_token: 'That link is missing its verification token. Please log in or email us for help.', invalid_token: 'That verification link is invalid or has already been used. Please log in - if you still see a verification prompt, email us and we will sort it.', server_error: 'Something went wrong verifying your email. Email us and we will fix it right away.' };
       var se = document.getElementById('signup-error');
       if (se) { se.textContent = msgs[err] || ('Verification issue: ' + err); se.style.display = 'block'; }
     }
@@ -280,7 +280,7 @@ setTimeout(__applyProductPreselect, 60);
 <div class="form-group" style="margin-bottom:14px">
 <label>Affiliate name or code <span class="ml" style="color:#0ea5e9">(optional · get 14 days free trial instead of 7)</span></label>
 <input type="text" id="s-affiliate" placeholder="e.g. James or JAMES24 (referral code, optional)" class="sf" style="margin-bottom:6px">
-<div id="partner-trial-note" style="display:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 12px;font-size:12px;color:#1e40af;line-height:1.6;margin-bottom:6px">🎁 <strong>Partner Extended Trial</strong> — You've arrived via a 9amLeads partner. Your free trial is extended to <strong>14 days</strong>. No card required. Nothing is charged automatically.</div>
+<div id="partner-trial-note" style="display:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 12px;font-size:12px;color:#1e40af;line-height:1.6;margin-bottom:6px">🎁 <strong>Partner Extended Trial</strong> - You've arrived via a 9amLeads partner. Your free trial is extended to <strong>14 days</strong>. No card required. Nothing is charged automatically.</div>
 <p style="font-size:10px;color:#6b7280;margin:0">Were you referred by a friend or partner? Enter their name or code and your free trial is extended to 14 days. Works for every lead type.</p>
 </div>
 
@@ -359,7 +359,7 @@ function updateMovingTypeLabel() {
 </div>
 
 <div class="form-group">
-<label>Where do you work? <span class="ml" id="s-area-label">(choose at least 3 postcode areas — e.g. HA, EN, SW, B, CM)</span></label>
+<label>Where do you work? <span class="ml" id="s-area-label">(choose at least 3 postcode areas - e.g. HA, EN, SW, B, CM)</span></label>
 <div id="s-postcode-tags" class="tags"></div>
 <div id="s-signup-overlap-note" style="display:none;margin-top:8px;padding:8px 12px;border-radius:6px;font-size:11px;line-height:1.5"></div>
 <div id="s-competition-note" style="display:none;margin-top:8px;padding:10px 14px;border-radius:8px;background:#fff7ed;border:1px solid #fed7aa;font-size:12px;line-height:1.6;color:#7c2d12"></div>
@@ -492,11 +492,11 @@ function updateMovingTypeLabel() {
 <button type="button" class="qa" onclick="addQuickArea('YO')">YO</button>
 <button type="button" class="qa" onclick="addQuickArea('ZE')">ZE</button>
 </div>
-<div class="ar"><input type="text" id="s-postcode-input" placeholder="Type a postcode area and press Add — e.g. SW, EN, N, CM" class="sf" onkeydown="if(event.key==='Enter'){addSignupPostcode();event.preventDefault()}">
+<div class="ar"><input type="text" id="s-postcode-input" placeholder="Type a postcode area and press Add - e.g. SW, EN, N, CM" class="sf" onkeydown="if(event.key==='Enter'){addSignupPostcode();event.preventDefault()}">
 <button type="button" class="btn-s" id="s-add-btn" onclick="addSignupPostcode()">Add</button>
 <button type="button" class="btn-o" id="s-alluk-btn" onclick="setAllUK()">All UK</button></div>
 <span id="s-postcode-count" class="ml"></span>
-<div id="s-alluk-note" style="display:none;margin-top:8px;padding:8px 12px;border-radius:6px;background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.2);font-size:11px;color:#7dd3fc;line-height:1.5"><b>All of UK selected</b> — you'll receive leads from across the whole country. The area list below is disabled so nothing else gets mixed in. Click the × on the "all-uk" tag to choose specific areas instead.</div>
+<div id="s-alluk-note" style="display:none;margin-top:8px;padding:8px 12px;border-radius:6px;background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.2);font-size:11px;color:#7dd3fc;line-height:1.5"><b>All of UK selected</b> - you'll receive leads from across the whole country. The area list below is disabled so nothing else gets mixed in. Click the × on the "all-uk" tag to choose specific areas instead.</div>
 </div>
 <div id="s-postcode-error" class="err"></div>
 <div style="font-size:10px;color:#6b7280;line-height:1.6;margin-top:6px"><b>ℹ️ Quiet days:</b> On days when fewer fresh leads are available in your exact postcode areas, we send you the leads <b>closest to your chosen postcodes</b> so you still get your full daily count. You are never sent the same opportunity twice.</div>
@@ -510,8 +510,8 @@ function updateMovingTypeLabel() {
   <div class="ar">
     <select id="s-county-select" style="width:100%;padding:9px 12px;background:#1e2030;border:1px solid #2a2d42;border-radius:6px;font-size:12px;color:#e2e8f0;font-family:inherit" onchange="addSpecialistCounty(this.value)"><option value="">Choose a county or area...</option></select>
   </div>
-  <div style="font-size:10px;color:#6b7280;line-height:1.6;margin-top:6px">New business, planning, probate and tenders leads are matched by county/area. Select at least 3 areas (2 for Probate &amp; Tenders) or choose All UK for best coverage &mdash; Pro &amp; Enterprise can go UK-wide.</div>
-  <div style="font-size:10px;color:#6b7280;line-height:1.6;margin-top:6px"><b>&#8505;&#65039; Quiet days:</b> Lead availability varies by county. If no fresh leads are available in your exact chosen areas on any day, we deliver the leads <b>closest to your chosen areas</b> so you still receive your full daily count &mdash; never fewer than promised. See our Terms for full details.</div>
+  <div style="font-size:10px;color:#6b7280;line-height:1.6;margin-top:6px">New business, planning, probate and tenders leads are matched by county/area. Select at least 3 areas (2 for Probate &amp; Tenders) or choose All UK for best coverage - Pro &amp; Enterprise can go UK-wide.</div>
+  <div style="font-size:10px;color:#6b7280;line-height:1.6;margin-top:6px"><b>&#8505;&#65039; Quiet days:</b> Lead availability varies by county. If no fresh leads are available in your exact chosen areas on any day, we deliver the leads <b>closest to your chosen areas</b> so you still receive your full daily count - never fewer than promised. See our Terms for full details.</div>
 </div>
 
 <div id="s-filters-container"></div>
@@ -548,7 +548,7 @@ function updateMovingTypeLabel() {
 <p style="font-size:11px;color:#6b7280;text-align:center;margin-top:8px;line-height:1.7"><i class="fas fa-check-circle" style="color:#22c55e"></i> 7 days free &nbsp;·&nbsp; <i class="fas fa-check-circle" style="color:#22c55e"></i> No card required &nbsp;·&nbsp; <i class="fas fa-check-circle" style="color:#22c55e"></i> Cancel anytime &nbsp;·&nbsp; <i class="fas fa-check-circle" style="color:#22c55e"></i> Choose your areas</p>
 <div style="text-align:center;margin-top:6px;font-size:12px;color:#64748b" id="signup-help"><i class="fas fa-life-ring" style="color:#0ea5e9;margin-right:5px"></i>Having trouble signing up? <a href="mailto:hello@9amleads.com?subject=Signup%20help%20needed" style="color:#0ea5e9;font-weight:700;text-decoration:underline">Email us</a> and we'll get you set up.</div>
 <button class="btn-s" onclick="showLogin()">Already have an account? Sign In</button>
-<p style="font-size:11px;color:#5c6480;text-align:center;margin-top:14px">Earn £25 for every customer you refer — <a href="/portal/affiliate.html" style="color:#0ea5e9">become an affiliate</a></p>
+<p style="font-size:11px;color:#5c6480;text-align:center;margin-top:14px">Earn £25 for every customer you refer - <a href="/portal/affiliate.html" style="color:#0ea5e9">become an affiliate</a></p>
 
 </div><!-- LOGIN FORM -->
 <div id="login-form" style="display:none">
@@ -599,7 +599,7 @@ function applyAllUKState() {
   var on = isAllUKMode();
   document.querySelectorAll('#s-postcode-wrapper .qa').forEach(function(b){ b.disabled = on; b.style.opacity = on ? '0.35' : ''; b.style.cursor = on ? 'not-allowed' : ''; });
   var inp = document.getElementById('s-postcode-input');
-  if (inp) { inp.disabled = on; inp.style.opacity = on ? '0.5' : ''; inp.placeholder = on ? 'All of UK selected - pickers disabled' : 'Type a postcode area and press Add — e.g. SW, EN, N, CM'; }
+  if (inp) { inp.disabled = on; inp.style.opacity = on ? '0.5' : ''; inp.placeholder = on ? 'All of UK selected - pickers disabled' : 'Type a postcode area and press Add - e.g. SW, EN, N, CM'; }
   var addBtn = document.getElementById('s-add-btn');
   if (addBtn) { addBtn.disabled = on; addBtn.style.opacity = on ? '0.5' : ''; }
   var allUkBtn = document.getElementById('s-alluk-btn');
@@ -619,11 +619,11 @@ function setAllUK() { selectedCoverage = 'ukwide'; signupPostcodes = ['all-uk'];
    var err = document.getElementById('s-postcode-error');
    err.style.display = 'none';
    if (!area || area.length < 1) { err.textContent = 'Please type a postcode area (e.g. SW, EN, N, CM)'; err.style.display = 'block'; return; }
-   // Reject "all of UK" style selections — customers must pick specific areas.
+   // Reject "all of UK" style selections - customers must pick specific areas.
    if (/all.?uk|uk.?wide|nationwide|whole.?uk/i.test(area)) {
-     err.textContent = 'Please pick specific postcode areas (e.g. HA, EN, SW, B, CM) — "All of UK" is not available.'; err.style.display = 'block'; return;
+     err.textContent = 'Please pick specific postcode areas (e.g. HA, EN, SW, B, CM) - "All of UK" is not available.'; err.style.display = 'block'; return;
    }
-   // Must be a valid postcode AREA (e.g. L, SW, EN, CM) from the UK list — NOT a
+   // Must be a valid postcode AREA (e.g. L, SW, EN, CM) from the UK list - NOT a
    // district (e.g. L36) or an arbitrary code. We match on the area's first 1-2
    // letters against the official list so customers pick whole areas.
    var areaNorm = area.toUpperCase();
@@ -681,7 +681,7 @@ function isCountyBased() {
 }
 function getPostcodeAreaLimit() {
    var p = getSelectedPlan();
-   // Pro / Enterprise: unlimited postcode areas (and counties/areas) — matches the
+   // Pro / Enterprise: unlimited postcode areas (and counties/areas) - matches the
    // backend POSTCODE_LIMITS (pro/enterprise = 999) and the plan cards.
    if (p === 'pro' || p === 'enterprise') return 999;
    // Free Trial / Starter: moving & new business are capped at 3-5 postcode areas
@@ -699,8 +699,8 @@ function updatePostcodeLimit() {
    if (label) label.textContent = limit >= 999 ? 'unlimited' : String(limit);
    var areaLabel = document.getElementById('s-area-label');
    if (areaLabel) {
-     if (limit >= 999) areaLabel.textContent = isCountyBased() ? '(unlimited counties/areas — add as many as you need)' : '(unlimited postcode areas — add the areas you cover or choose All UK)';
-     else areaLabel.textContent = isCountyBased() ? (getSelectedLeadTypes().indexOf('tenders') !== -1 || getSelectedLeadTypes().indexOf('probate') !== -1 ? '(select at least 2 counties/areas)' : '(select at least 3 counties/areas)') : '(choose at least 3 postcode areas — e.g. HA, EN, SW, B, CM)';
+     if (limit >= 999) areaLabel.textContent = isCountyBased() ? '(unlimited counties/areas - add as many as you need)' : '(unlimited postcode areas - add the areas you cover or choose All UK)';
+     else areaLabel.textContent = isCountyBased() ? (getSelectedLeadTypes().indexOf('tenders') !== -1 || getSelectedLeadTypes().indexOf('probate') !== -1 ? '(select at least 2 counties/areas)' : '(select at least 3 counties/areas)') : '(choose at least 3 postcode areas - e.g. HA, EN, SW, B, CM)';
    }
    renderSignupPostcodes();
    onLeadTypeChange();
@@ -805,7 +805,7 @@ function renderSignupFilters() {
 }
 
 // Approximate live supply for the selected product + areas, plus a nudge when a
-// filter selection is very narrow. Never blocks signup — guidance only.
+// filter selection is very narrow. Never blocks signup - guidance only.
 var _filterSupplyTimer = null;
 function updateFilterSupply() {
   var el = document.getElementById('s-filter-supply');
@@ -828,7 +828,7 @@ function updateFilterSupply() {
         var sel = getFilters()[prod] || {};
         var chosen = prod === 'planning' ? (sel['f-app-type'] || []) : (sel['f-sectors'] || []);
         var msg = 'In your areas right now: <b>' + d.total + '</b> ' + prod + ' leads available.';
-        if (chosen.length === 1) msg += ' <span style="color:#fbbf24">You picked just 1 category — we recommend 2+ so we can keep your full daily count.</span>';
+        if (chosen.length === 1) msg += ' <span style="color:#fbbf24">You picked just 1 category - we recommend 2+ so we can keep your full daily count.</span>';
         else if (chosen.length >= 2) msg += ' Your selection matches well.';
         el.innerHTML = msg;
         el.style.display = 'block';
@@ -972,7 +972,7 @@ function populateCountySelect() {
   var sel = document.getElementById('s-county-select');
   if (!sel) return;
   var prod = getSelectedLeadTypes()[0];
-  // TENDERS: ONLY the 6 broad UK regions (+ All UK) — no individual counties.
+  // TENDERS: ONLY the 6 broad UK regions (+ All UK) - no individual counties.
   // Tenders are national opportunities, so a whole region (or All UK) gives the
   // customer the widest possible coverage instead of town/county-level limits.
   // PROBATE: counties + the official English regions the backend accepts (min 2).
@@ -1266,7 +1266,7 @@ var pLimit = getPostcodeAreaLimit();
   if (selectedCoverage === 'postcode' && targetAreas.length > pLimit && pLimit < 999) {
     document.getElementById('signup-error').textContent = 'Your ' + planVal + ' plan allows up to ' + pLimit + ' postcode areas. You selected ' + targetAreas.length + '. Upgrade to Pro or Enterprise for unlimited areas.'; document.getElementById('signup-error').style.display = 'block'; button.innerHTML = '<i class="fas fa-rocket"></i> Create Free Account'; button.disabled = false; return;
   }
-  // ALL products: minimum 3 areas/postcodes (choose up to the plan limit — no
+  // ALL products: minimum 3 areas/postcodes (choose up to the plan limit - no
   // strict "exactly 5"). Moving free/starter caps at 5, others at 3 minimum.
   if (selectedCoverage === 'postcode' && pLimit < 999) {
     var curProd = typeof product === 'string' ? product : (document.getElementById('s-product') ? document.getElementById('s-product').value : 'moving');
@@ -1318,7 +1318,7 @@ var pLimit = getPostcodeAreaLimit();
         var _extNote = '';
         try { if (d.customer && Number(d.customer.trial_days) > 7) _extNote = '<div style="margin-top:10px;padding:8px 10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;font-size:12px;color:#1e40af">🎁 Your extended ' + d.customer.trial_days + '-day free trial has been applied.</div>'; } catch(e) {}
         if (d.customer && d.customer.email_verified === 0) {
-          success.innerHTML = '<b>Account created!</b> We\'ve emailed a verification link to <b>' + email + '</b> — please click it (check spam too) to activate your account.<br/><br/><button onclick="resendVerify(\'' + email.replace(/'/g,'') + '\')" style="padding:8px 14px;border:none;border-radius:8px;background:#0ea5e9;color:#fff;font-size:12px;font-weight:700;cursor:pointer">Re-send verification email</button>' + _extNote;
+          success.innerHTML = '<b>Account created!</b> We\'ve emailed a verification link to <b>' + email + '</b> - please click it (check spam too) to activate your account.<br/><br/><button onclick="resendVerify(\'' + email.replace(/'/g,'') + '\')" style="padding:8px 14px;border:none;border-radius:8px;background:#0ea5e9;color:#fff;font-size:12px;font-weight:700;cursor:pointer">Re-send verification email</button>' + _extNote;
         } else {
           success.innerHTML = 'Account created! Redirecting...' + _extNote;
         }
@@ -1355,7 +1355,7 @@ function doLogin() {
       } else {
         error.style.display = 'block';
         if (d && d.needsVerification) {
-          error.innerHTML = 'Please verify your email first. We emailed a verification link to <b>' + (d.email || email) + '</b> — check your inbox and spam, then click the link.<br/><br/><button onclick="resendVerify(\'' + email.replace(/'/g,'') + '\')" style="padding:8px 14px;border:none;border-radius:8px;background:#0ea5e9;color:#fff;font-size:12px;font-weight:700;cursor:pointer">Re-send verification email</button>';
+          error.innerHTML = 'Please verify your email first. We emailed a verification link to <b>' + (d.email || email) + '</b> - check your inbox and spam, then click the link.<br/><br/><button onclick="resendVerify(\'' + email.replace(/'/g,'') + '\')" style="padding:8px 14px;border:none;border-radius:8px;background:#0ea5e9;color:#fff;font-size:12px;font-weight:700;cursor:pointer">Re-send verification email</button>';
         } else if (d && d.error) { error.textContent = d.error; }
       }
     }).catch(function() { error.style.display = 'block'; });
@@ -1370,8 +1370,8 @@ function resendVerify(email) {
     .then(function(r) { return r.json(); })
     .then(function(d) {
       e.style.display = 'block';
-      if (d.already_verified) e.innerHTML = 'Your email is already verified — you can sign in now.';
-      else if (d.success) e.innerHTML = 'Verification email re-sent to <b>' + em + '</b> — check your inbox and spam, then click the link to activate.';
+      if (d.already_verified) e.innerHTML = 'Your email is already verified - you can sign in now.';
+      else if (d.success) e.innerHTML = 'Verification email re-sent to <b>' + em + '</b> - check your inbox and spam, then click the link to activate.';
       else e.innerHTML = d.error || 'Could not re-send. Email us at hello@9amleads.com for help.';
     })
     .catch(function() { e.innerHTML = 'Could not re-send. Email us at hello@9amleads.com for help.'; });
@@ -1418,7 +1418,7 @@ function setHeroView(v) {
   var params = new URLSearchParams(window.location.search);
   var refParam = params.get('ref');
   // ONLY apply an affiliate when the visitor actually arrived via a referral link
-  // (?ref=) — never automatically from a stale 9am_aff cookie, which used to show
+  // (?ref=) - never automatically from a stale 9am_aff cookie, which used to show
   // "you've arrived via a partner" (e.g. jim21) to returning visitors.
   if (refParam) {
     try {

@@ -1,5 +1,5 @@
 /**
- * Planning Permission Alerts — Lead Scraper & Delivery Engine
+ * Planning Permission Alerts - Lead Scraper & Delivery Engine
  * 
  * Scraping strategy:
  * 1. PRIMARY: Apify Planning Portal scraper (when available)
@@ -23,7 +23,7 @@ const APIFY_API_KEY = process.env.APIFY_API_KEY;
 // Accept a few common names so the key works however it's stored on the host.
 const PLOTA_API_KEY = process.env.PLOTA_API_KEY || process.env.PLOTA_KEY || process.env.PLOTA_TOKEN || '';
 function getPlotaKey() { return PLOTA_API_KEY; }
-if (!PLOTA_API_KEY) console.log('[PLANNING] WARNING: PLOTA_API_KEY not set — Plota source disabled (falling back to free planning.data.gov.uk only)');
+if (!PLOTA_API_KEY) console.log('[PLANNING] WARNING: PLOTA_API_KEY not set - Plota source disabled (falling back to free planning.data.gov.uk only)');
 
 const DATA_DIR = path.join(__dirname, 'data');
 const CUSTOMERS_FILE = path.join(DATA_DIR, 'planning-customers.json');
@@ -181,7 +181,7 @@ function fetchPlanningApify(postcodeArea) {
 }
 
 // ===== FREE PLANNING DATA (planning.data.gov.uk) =====
-// Official UK government planning data — Open Government Licence v3.0, free, no key.
+// Official UK government planning data - Open Government Licence v3.0, free, no key.
 // Brownfield land register (37k+ sites with planning permission status) is the
 // most complete planning dataset currently available. Queryable via /entity.json.
 function fetchFreePlanningData(maxItems) {
@@ -208,7 +208,7 @@ function fetchFreePlanningData(maxItems) {
             id: 'PLAN_' + (p.entity || p.reference || Date.now()),
             address: (p['site-address'] || p.name || '').trim() || 'Brownfield site',
             postcode: extractPostcode(p.name + ' ' + (p['site-address'] || '')),
-            description: p.notes || ('Brownfield land site ' + (p.reference || '') + ' — ' + (p['planning-permission-status'] || 'available for development')),
+            description: p.notes || ('Brownfield land site ' + (p.reference || '') + ' - ' + (p['planning-permission-status'] || 'available for development')),
             applicantName: p['agent-name'] || '',
             applicationType: (p['planning-permission-type'] || 'Full Planning Permission'),
             status: (p['planning-permission-status'] || 'available').replace(/-/g, ' '),
@@ -264,7 +264,7 @@ function fetchPlotaPlanning(postcode, maxItems, category) {
         if (res.statusCode !== 200) { console.log('    Plota HTTP ' + res.statusCode); resolve([]); return; }
         try {
           const j = JSON.parse(body);
-          // PLOTA returns items under "results" (was "data" — a bug that silently
+          // PLOTA returns items under "results" (was "data" - a bug that silently
           // returned zero leads from the main postcode source). Accept both.
           const items = j.results || j.applications || j.data || (Array.isArray(j) ? j : []);
           if (!items.length) { console.log('    Plota returned no applications'); resolve([]); return; }
@@ -551,7 +551,7 @@ function generateEmailHTML(sheet) {
         <h1 style="font-family:Outfit,sans-serif;font-size:24px;font-weight:800;color:#fff;margin:0">
           <span style="color:${color}">Planning</span> Alerts
         </h1>
-        <p style="color:#888;font-size:14px;margin:8px 0 0">${sheet.company} — Daily Planning Lead Sheet</p>
+        <p style="color:#888;font-size:14px;margin:8px 0 0">${sheet.company} - Daily Planning Lead Sheet</p>
       </td></tr>
       <tr><td style="background:#0a0a0a;padding:24px 32px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
@@ -590,7 +590,7 @@ function generateEmailHTML(sheet) {
       <tr><td style="background:#0a0a0a;padding:24px 32px;border-top:1px solid #1a1a1a">
         <p style="color:#888;font-size:12px;margin:0">You're receiving this because you subscribed to Planning Permission Alerts. 
         <a href="#" style="color:${color}">View in dashboard</a> | <a href="#" style="color:#888">Unsubscribe</a></p>
-        <p style="color:#555;font-size:11px;margin:8px 0 0">Planning Permission Alerts \u00a9 ${new Date().getFullYear()} — Part of 9amLeads</p>
+        <p style="color:#555;font-size:11px;margin:8px 0 0">Planning Permission Alerts \u00a9 ${new Date().getFullYear()} - Part of 9amLeads</p>
       </td></tr>
     </table>
   </td></tr></table>
@@ -599,7 +599,7 @@ function generateEmailHTML(sheet) {
 
 // ===== RUN FOR A CUSTOMER =====
 async function runForCustomer(customerId, useSampleData) {
-  console.log('\n=== Planning Permission Alerts — Running for: ' + customerId + ' ===');
+  console.log('\n=== Planning Permission Alerts - Running for: ' + customerId + ' ===');
 
   const customers = loadJSON(CUSTOMERS_FILE);
   const customer = customers[customerId];
@@ -625,11 +625,11 @@ async function runForCustomer(customerId, useSampleData) {
 
   let leads = [];
   if (!useSampleData) {
-    console.log('  (Apify scraper disabled — will use sample data)');
+    console.log('  (Apify scraper disabled - will use sample data)');
   }
 
   if (leads.length === 0) {
-    console.log('  LIVE SCRAPE FAILED — using sample data as fallback');
+    console.log('  LIVE SCRAPE FAILED - using sample data as fallback');
     leads = generateSampleLeads(customer.postcodes, customer.leadsPerDay || 25);
     leads = leads.map(l => ({ ...l, customerId }));
     console.log('  Generated ' + leads.length + ' sample planning applications');
@@ -658,7 +658,7 @@ async function runForCustomer(customerId, useSampleData) {
 
   console.log('\n  First 3 leads:');
   sheet.leads.slice(0, 3).forEach((l, i) => {
-    console.log('    ' + (i+1) + '. ' + l.address + ' — ' + l.applicationType + ' — ' + l.value);
+    console.log('    ' + (i+1) + '. ' + l.address + ' - ' + l.applicationType + ' - ' + l.value);
   });
 
   const emailHTML = generateEmailHTML(sheet);
@@ -704,7 +704,7 @@ function showStatus() {
   const leads = loadJSON(LEADS_FILE);
   const deliveries = loadJSON(DELIVERY_FILE);
 
-  console.log('\n=== Planning Permission Alerts — Status ===\n');
+  console.log('\n=== Planning Permission Alerts - Status ===\n');
   console.log('Customers:');
   for (const [id, c] of Object.entries(customers)) {
     const cLeads = leads[id] || [];
@@ -770,7 +770,7 @@ async function main() {
     fs.writeFileSync(path.join(DATA_DIR, 'planning-delivery-' + id + '-' + sheet.date + '.html'), html);
     console.log('  Email HTML saved');
   } else {
-    console.log('Planning Permission Alerts — Lead Scraper & Delivery Engine');
+    console.log('Planning Permission Alerts - Lead Scraper & Delivery Engine');
     console.log('');
     console.log('Usage:');
     console.log('  --add-customer <id> <company> <email> <postcodes>    Add customer');
@@ -816,7 +816,7 @@ const PLOTA_CATEGORY_MAP = {
   'shopfronts': 'shopfronts'
 };
 
-// Fetch planning APPLICATIONS (not just brownfield) from planning.data.gov.uk —
+// Fetch planning APPLICATIONS (not just brownfield) from planning.data.gov.uk -
 // the official OGL v3 source covering all UK councils/counties. This significantly
 // boosts per-county supply compared to PLOTA alone (which clusters in active areas).
 // One page (100 records) at a given offset.
@@ -949,7 +949,7 @@ async function collectPlanningLeads(config) {
     'west-midlands-region': ['B1','CV1','DY1','ST1','WV1']
   };
   let rawAreas = config.postcodeAreas || ['SW1', 'N1', 'B1', 'M1', 'NW1', 'CR0', 'WD1'];
-  // Region names (e.g. "greater-london") are queried as free text on PLOTA —
+  // Region names (e.g. "greater-london") are queried as free text on PLOTA -
   // much lighter than expanding to hundreds of postcode areas (which rate-limits).
   // Concrete postcode areas (e.g. "SW1", "NW3") are queried by postcode.
   const REGION_QUERY_MAP = {
@@ -1018,12 +1018,12 @@ async function collectPlanningLeads(config) {
   }
   console.log('    Planning PLOTA returned ' + results.length + ' applications across ' + catSlugs.length + ' categories');
   // ADDITIONAL SUPPLY: merge official planning.data.gov.uk APPLICATIONS (all
-  // councils/counties) to boost per-county volume — not just a low-result fallback.
+  // councils/counties) to boost per-county volume - not just a low-result fallback.
   try {
     const apps = await fetchPlanningApplications(config.maxItems || 100, areas);
     if (apps && apps.length > 0) results = results.concat(apps);
   } catch(e) { console.log('    Planning applications source error: ' + e.message); }
-  // Fallback — free official UK planning data (brownfield sites) if still thin
+  // Fallback - free official UK planning data (brownfield sites) if still thin
   if (results.length < 5) {
     console.log('    Planning PLOTA low/empty, using free planning.data.gov.uk...');
     try {

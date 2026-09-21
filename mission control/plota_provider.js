@@ -103,7 +103,7 @@ function resolveDistricts(area) {
 // - we query the districts inside the areas people actually want).
 async function collectFresh(config) {
   if (!API_KEY) {
-    console.log('[PLOTA] No API key configured — set PLOTA_API_KEY');
+    console.log('[PLOTA] No API key configured - set PLOTA_API_KEY');
     return { leads: [], status: 'no_key', message: 'PLOTA_API_KEY not set' };
   }
   config = config || {};

@@ -52,7 +52,7 @@ function matchesTerritory(leadPostcode, territories) {
     if (area === want) return true;
     // A multi-letter territory ("NW") is a strict prefix of the lead area ("NW1").
     // A single-letter territory ("B") matches only leads whose AREA is exactly "B"
-    // (Birmingham), NOT "BT" (Belfast) — because "BT".slice(0,1) === "B" would be a
+    // (Birmingham), NOT "BT" (Belfast) - because "BT".slice(0,1) === "B" would be a
     // false positive. So single-letter territories require the full area equality above.
     if (want.length === 2 && area.indexOf(want) === 0) return true;
     return false;

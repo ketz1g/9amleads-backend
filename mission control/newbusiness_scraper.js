@@ -1,5 +1,5 @@
 /**
- * New Business Alerts — Companies House Scraper & Delivery Engine
+ * New Business Alerts - Companies House Scraper & Delivery Engine
  *
  * Scraping strategy:
  * 1. PRIMARY: Apify Companies House Scraper (pay-per-use)
@@ -674,7 +674,7 @@ function generateEmailHTML(sheet) {
         <h1 style="font-family:Outfit,sans-serif;font-size:24px;font-weight:800;color:#fff;margin:0">
           <span style="color:${color}">New Business</span> Alert
         </h1>
-        <p style="color:#888;font-size:14px;margin:8px 0 0">${sheet.company} — Daily Lead Sheet</p>
+        <p style="color:#888;font-size:14px;margin:8px 0 0">${sheet.company} - Daily Lead Sheet</p>
       </td></tr>
       <tr><td style="background:#0a0a0a;padding:24px 32px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
@@ -707,7 +707,7 @@ function generateEmailHTML(sheet) {
         <p style="color:#888;font-size:12px;margin:0">You're receiving this because you subscribed to New Business Alerts. 
         <a href="#" style="color:${color}">View in dashboard</a> | <a href="#" style="color:#888">Unsubscribe</a></p>
         <p style="color:#555;font-size:11px;margin:8px 0 0">Data sourced from Companies House © ${new Date().getFullYear()}</p>
-        <p style="color:#555;font-size:11px;margin:4px 0 0">New Business Alerts — Part of 9amLeads</p>
+        <p style="color:#555;font-size:11px;margin:4px 0 0">New Business Alerts - Part of 9amLeads</p>
       </td></tr>
     </table>
   </td></tr></table>
@@ -767,7 +767,7 @@ async function runForCustomer(customerId, useSampleData) {
   }
 
   if (leads.length === 0) {
-    console.log('  LIVE SCRAPE FAILED — using sample data as fallback');
+    console.log('  LIVE SCRAPE FAILED - using sample data as fallback');
     const locations = customer.locales || customer.locations || ['manchester'];
     const sicCodes = customer.sicCodes || [];
     leads = generateSampleLeads(locations, sicCodes, customer.leadsPerDay || 50);
@@ -799,7 +799,7 @@ async function runForCustomer(customerId, useSampleData) {
 
   console.log('\n  First 3 leads:');
   sheet.leads.slice(0, 3).forEach((l, i) => {
-    console.log('    ' + (i+1) + '. ' + l.companyName + ' — ' + l.sicDescription + ' — ' + l.address);
+    console.log('    ' + (i+1) + '. ' + l.companyName + ' - ' + l.sicDescription + ' - ' + l.address);
   });
 
   const emailHTML = generateEmailHTML(sheet);
@@ -852,7 +852,7 @@ function showStatus() {
   const leads = loadJSON(LEADS_FILE);
   const deliveries = loadJSON(DELIVERY_FILE);
 
-  console.log('\n=== New Business Alerts — Status ===\n');
+  console.log('\n=== New Business Alerts - Status ===\n');
   console.log('Customers:');
   for (const [id, c] of Object.entries(customers)) {
     const cLeads = leads[id] || [];
@@ -934,7 +934,7 @@ async function main() {
     fs.writeFileSync(path.join(DATA_DIR, 'newbusiness-delivery-' + id + '-' + sheet.date + '.html'), html);
     console.log('  Email HTML saved');
   } else {
-    console.log('New Business Alerts — Companies House Scraper & Delivery Engine');
+    console.log('New Business Alerts - Companies House Scraper & Delivery Engine');
     console.log('');
     console.log('Usage:');
     console.log('  --add-customer <id> <company> <email> <cities>      Add customer');

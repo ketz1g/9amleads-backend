@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bulk Postage — Exclusive Lead Archive | 9amLeads</title>
+<title>Bulk Postage - Exclusive Lead Archive | 9amLeads</title>
 <style>
 :root{--bg:#f7f7f8;--card:#fff;--text:#111827;--text2:#4b5563;--muted:#6b7280;--border:#e5e7eb;--accent:#f97316;--green:#166534;--green-bg:#f0fdf4;--green-bd:#86efac;--radius:14px;--ff:'Inter',system-ui,sans-serif}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -56,7 +56,7 @@ h3{font-size:15px;font-weight:700;margin-bottom:10px}
   </div>
 
   <h1>Bulk Postage</h1>
-  <div class="sub">Exclusive UK lead packs — review, then we print &amp; post your marketing to every lead.</div>
+  <div class="sub">Exclusive UK lead packs - review, then we print &amp; post your marketing to every lead.</div>
 
   <div id="loading">Loading bulk postage...</div>
 
@@ -65,7 +65,7 @@ h3{font-size:15px;font-weight:700;margin-bottom:10px}
     <div id="upgradeBox" class="card upgrade" style="display:none">
       <div class="ic">&#128272;</div>
       <h3 style="margin-bottom:8px">archive lead packs are a Pro feature</h3>
-      <p class="hint" style="max-width:480px;margin:0 auto 18px" id="upgradeMsg">Upgrade to Pro to unlock bulk postage packs — 50 or 100 aimed-never-sent archive UK leads, printed &amp; posted with your own marketing materials.</p>
+      <p class="hint" style="max-width:480px;margin:0 auto 18px" id="upgradeMsg">Upgrade to Pro to unlock bulk postage packs - 50 or 100 aimed-never-sent archive UK leads, printed &amp; posted with your own marketing materials.</p>
       <a class="btn btn-primary" href="/portal/upgrade.html">Upgrade to Pro</a>
     </div>
 
@@ -99,10 +99,10 @@ h3{font-size:15px;font-weight:700;margin-bottom:10px}
       <div class="card" style="margin-top:16px">
         <h3>How it works</h3>
         <div class="hint">
-          1. <b>Buy a pack</b> &mdash; 100, 250, 500 or 1000 aimed-never-sent archive UK New Business leads.<br>
-          2. <b>Choose what we post</b> &mdash; your A5 leaflet, your A4 letter, or both.<br>
+          1. <b>Buy a pack</b> - 100, 250, 500 or 1000 aimed-never-sent archive UK New Business leads.<br>
+          2. <b>Choose what we post</b> - your A5 leaflet, your A4 letter, or both.<br>
           3. <b>Full addresses revealed</b> once purchased, then <b>Confirm &amp; Post</b>.<br>
-          <span style="font-size:12px">Your leaflet front/back (for leaflet packs) or cover letter (for letter packs) must be loaded in <b>Print &amp; Post</b> first (Step 2). New leads mature into the archive as they age 3&ndash;7 days without being sent.</span>
+          <span style="font-size:12px">Your leaflet front/back (for leaflet packs) or cover letter (for letter packs) must be loaded in <b>Print &amp; Post</b> first (Step 2). New leads mature into the archive as they age 3-7 days without being sent.</span>
         </div>
       </div>
     </div>
@@ -110,9 +110,9 @@ h3{font-size:15px;font-weight:700;margin-bottom:10px}
     <!-- Review + Send state -->
     <div id="reviewBox" style="display:none">
       <div class="card">
-        <h3>&#128230; Your pack &mdash; <span id="packCount">0</span> exclusive UK leads</h3>
+        <h3>&#128230; Your pack - <span id="packCount">0</span> exclusive UK leads</h3>
         <p class="hint" style="margin-bottom:12px">These leads were never sent to anyone else. Review them, then we print &amp; post your materials to every one.</p>
-        <div id="materialsWarn" class="warn" style="display:none">Bulk packs are posted as <b>A5 leaflets</b> — you need BOTH your <b>leaflet front AND leaflet back</b> loaded in Print &amp; Post (Step 2) before you can send your pack.</div>
+        <div id="materialsWarn" class="warn" style="display:none">Bulk packs are posted as <b>A5 leaflets</b> - you need BOTH your <b>leaflet front AND leaflet back</b> loaded in Print &amp; Post (Step 2) before you can send your pack.</div>
         <div class="lead-list" id="leadsList"></div>
         <button class="btn btn-green" id="sendBtn" onclick="sendBulk()"><i class="fas fa-paper-plane"></i> Confirm &amp; Send all to Print &amp; Post</button>
         <span style="font-size:12px;color:var(--muted);margin-left:10px">One click posts every lead in this pack.</span>
@@ -163,7 +163,7 @@ function load(){
       if (pl) {
         pl.innerHTML = (s.preview && s.preview.length) ? s.preview.map(function(p){
           return '<div class="lead-row"><b>' + esc(p.company) + '</b><br><span class="addr">' + esc(p.street_masked || '') + ', ' + esc(p.town || '') + ', ' + esc(p.postcode_masked || '') + '</span></div>';
-        }).join('') : '<div class="hint" style="padding:16px">The archive is maturing — check back in a day or two.</div>';
+        }).join('') : '<div class="hint" style="padding:16px">The archive is maturing - check back in a day or two.</div>';
       }
     }
     if (hasPack) {
@@ -219,7 +219,7 @@ if (window.location.search.indexOf('bulk_paid=success') !== -1) { setTimeout(fun
       if (document.getElementById('demoTopBanner')) return;
       var bn = document.createElement('div'); bn.id = 'demoTopBanner';
       bn.style.cssText = 'background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;border-radius:14px;padding:14px 18px;margin:12px auto;max-width:1100px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;font-family:Inter,Arial,sans-serif';
-      bn.innerHTML = '<div style="font-size:14px;font-weight:700;line-height:1.5">You are viewing the live demo. Try your <strong>free week</strong> &mdash; no card required.</div><a href="' + signup + '" style="background:#fff;color:#1d4ed8;font-weight:800;font-size:14px;padding:11px 22px;border-radius:50px;text-decoration:none;white-space:nowrap">Try your free week &mdash; no card required &rarr;</a>';
+      bn.innerHTML = '<div style="font-size:14px;font-weight:700;line-height:1.5">You are viewing the live demo. Try your <strong>free week</strong> - no card required.</div><a href="' + signup + '" style="background:#fff;color:#1d4ed8;font-weight:800;font-size:14px;padding:11px 22px;border-radius:50px;text-decoration:none;white-space:nowrap">Try your free week - no card required &rarr;</a>';
       document.body.insertBefore(bn, document.body.firstChild);
       var fab = document.createElement('a'); fab.href = signup; fab.textContent = '\uD83C\uDF81 Try it free \u2014 no card required';
       fab.style.cssText = 'position:fixed;right:18px;bottom:24px;z-index:99999;background:#16a34a;color:#fff;font-weight:800;font-size:14px;padding:12px 20px;border-radius:50px;text-decoration:none;box-shadow:0 8px 24px rgba(22,163,74,.45);font-family:Inter,Arial,sans-serif';
@@ -228,7 +228,7 @@ if (window.location.search.indexOf('bulk_paid=success') !== -1) { setTimeout(fun
         try { if (sessionStorage.getItem('demo_popup_shown')) return; sessionStorage.setItem('demo_popup_shown','1'); } catch(e) {}
         var ov = document.createElement('div');
         ov.style.cssText = 'position:fixed;inset:0;z-index:100001;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:20px';
-        ov.innerHTML = '<div style="max-width:420px;background:#fff;border-radius:16px;padding:26px;text-align:center;font-family:Inter,Arial,sans-serif;box-shadow:0 20px 60px rgba(0,0,0,.4)"><div style="font-size:34px">\uD83C\uDF89</div><h3 style="margin:8px 0 6px;font-size:21px;font-weight:800;color:#0f172a">Like what you see?</h3><p style="margin:0 0 16px;font-size:14px;color:#64748b;line-height:1.6">Try your <strong>free week</strong> &mdash; no card required, cancel anytime.</p><a href="' + signup + '" style="display:block;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;font-weight:800;font-size:15px;padding:14px;border-radius:50px;text-decoration:none">Try it free &mdash; no card required &rarr;</a><button id="demoPopupClose" style="margin-top:10px;background:none;border:none;color:#94a3b8;font-size:13px;cursor:pointer">Keep exploring the demo</button></div>';
+        ov.innerHTML = '<div style="max-width:420px;background:#fff;border-radius:16px;padding:26px;text-align:center;font-family:Inter,Arial,sans-serif;box-shadow:0 20px 60px rgba(0,0,0,.4)"><div style="font-size:34px">\uD83C\uDF89</div><h3 style="margin:8px 0 6px;font-size:21px;font-weight:800;color:#0f172a">Like what you see?</h3><p style="margin:0 0 16px;font-size:14px;color:#64748b;line-height:1.6">Try your <strong>free week</strong> - no card required, cancel anytime.</p><a href="' + signup + '" style="display:block;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;font-weight:800;font-size:15px;padding:14px;border-radius:50px;text-decoration:none">Try it free - no card required &rarr;</a><button id="demoPopupClose" style="margin-top:10px;background:none;border:none;color:#94a3b8;font-size:13px;cursor:pointer">Keep exploring the demo</button></div>';
         document.body.appendChild(ov);
         try { document.getElementById('demoPopupClose').onclick = function(){ ov.remove(); }; } catch(e) {}
         ov.addEventListener('click', function(e){ if (e.target === ov) ov.remove(); });

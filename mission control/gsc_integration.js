@@ -8,7 +8,7 @@
  * them on the persistent data disk, auto-pick the 9amleads.com property, and the
  * admin can then read search-analytics (clicks / impressions / ctr / position).
  *
- * All HTTP is raw Node https — no googleapis dependency, matching the codebase.
+ * All HTTP is raw Node https - no googleapis dependency, matching the codebase.
  */
 
 var https = require('https');
@@ -122,7 +122,7 @@ async function ensureToken(creds) {
   var expiresAt = parseInt(cfg.expires_at || 0, 10);
   // Refresh if no expiry recorded or it expires within 60s.
   if (!expiresAt || Date.now() > expiresAt - 60000) {
-    if (!cfg.refresh_token) throw new Error('No refresh token available — reconnect Google Search Console.');
+    if (!cfg.refresh_token) throw new Error('No refresh token available - reconnect Google Search Console.');
     var r = await refreshAccess(cfg.refresh_token, creds);
     var j = parseJson(r.body);
     if (r.status !== 200 || !j.access_token) throw new Error('Token refresh failed (' + r.status + '): ' + String(j.error_description || j.error || '').slice(0, 200));
@@ -212,7 +212,7 @@ async function fetchDashboard(days, siteUrl) {
   if (!prop) {
     var sites = await listSites();
     prop = pickProperty(sites.json && sites.json.siteEntry, null);
-    if (!prop) throw new Error('No Search Console property available — verify 9amleads.com in Google Search Console first.');
+    if (!prop) throw new Error('No Search Console property available - verify 9amleads.com in Google Search Console first.');
     updateConfig({ property: prop });
   }
   var end = isoDaysAgo(1); // GSC data lags ~2 days; yesterday is the latest meaningful end.

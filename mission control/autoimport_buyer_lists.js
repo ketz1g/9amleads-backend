@@ -1,4 +1,4 @@
-// autoimport_buyer_lists.js — watches the shared data dir for completed buyer CSV
+// autoimport_buyer_lists.js - watches the shared data dir for completed buyer CSV
 // scrapes and imports each into its Brevo list + attaches to its draft campaign.
 // Spawned detached by production_api_server.js (boot hook) so it runs 24/7 on the
 // Render disk where the CSVs land. Self-throttles on Brevo's ~100 req/hr budget and

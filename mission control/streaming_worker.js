@@ -166,7 +166,7 @@ function connect(apiKey) {
           if (tp) saveTimepoint(tp);
 
           // The /companies stream delivers company-profile:changed events (event.type
-          // is always "changed"), NOT "incorporated". New companies appear here too —
+          // is always "changed"), NOT "incorporated". New companies appear here too -
           // we detect them by fetching the profile and checking date_of_creation is
           // fresh (within the cutoff). To avoid hammering the REST API for every
           // update to existing companies, we:

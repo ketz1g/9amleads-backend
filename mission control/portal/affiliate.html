@@ -319,7 +319,7 @@ tr:last-child td{border-bottom:none}
 </div>
 <div id="app-step-2" style="display:none">
 <p style="font-size:12px;font-weight:700;color:#0ea5e9;margin:0 0 12px">Step 2 of 3 · A few quick questions</p>
-<div class="fg"><label>1. Are you willing to find your own customers? We provide the marketing tools, scripts and templates — you do the outreach.</label>
+<div class="fg"><label>1. Are you willing to find your own customers? We provide the marketing tools, scripts and templates - you do the outreach.</label>
 <select id="q1" style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px"><option value="">Choose...</option><option value="Yes">Yes</option><option value="No">No</option><option value="Unsure">Unsure</option></select></div>
 <div class="fg"><label>2. Are you willing to use your own phone to call businesses?</label>
 <select id="q2" style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px"><option value="">Choose...</option><option value="Yes">Yes</option><option value="No">No</option><option value="Prefer text-only">Prefer text-only</option></select></div>
@@ -345,7 +345,7 @@ tr:last-child td{border-bottom:none}
 <div id="app-step-3" style="display:none">
 <p style="font-size:12px;font-weight:700;color:#0ea5e9;margin:0 0 12px">Step 3 of 3 · Voice test</p>
 <p style="font-size:12px;color:#94a3b8;margin-bottom:14px">Read the script below aloud and record it so we can hear how you'd sound calling businesses. <b style="color:#e2e8f0">Keep it under 30 seconds.</b></p>
-<div style="background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.3);border-radius:10px;padding:14px;font-size:13px;color:#e2e8f0;line-height:1.7;margin-bottom:14px">"Hi, this is <b>[your name]</b> from 9amLeads. We send removal companies fresh moving leads every morning at 9am — homes that have just gone under offer in their area. It's a 14-day free trial, no card needed. Would now be a good time to talk?"</div>
+<div style="background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.3);border-radius:10px;padding:14px;font-size:13px;color:#e2e8f0;line-height:1.7;margin-bottom:14px">"Hi, this is <b>[your name]</b> from 9amLeads. We send removal companies fresh moving leads every morning at 9am - homes that have just gone under offer in their area. It's a 14-day free trial, no card needed. Would now be a good time to talk?"</div>
 <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
 <button class="btn-mini" id="rec-btn" onclick="toggleRec()">🎙️ Record</button>
 <button class="btn-mini" id="rec-play" style="display:none" onclick="playRec()">▶ Play</button>
@@ -522,10 +522,10 @@ tr:last-child td{border-bottom:none}
 <p style="font-size:12px;color:#94a3b8;margin-bottom:14px">You need a list of businesses to reach out to. Here are the best free ways to find them, with exactly what to do. Then use the scripts below to contact them.</p>
 <div class="tool-sec">
 <div class="step"><b>🔍 Google Maps &amp; Google Search</b>The fastest way to build a list. Type what you're looking for into Google Maps, e.g. "removal companies London", "solicitors [your town]", "builders [your area]". You get the name, address and <b>phone number</b> for free. Make a shortlist of 10-20, then call or WhatsApp them using the scripts below.</div>
-<div class="step"><b>📱 Social media</b>Facebook groups for local businesses are gold. Search "[your town] business owners", "removals UK", "tradespeople UK" — join, read who's active, and message business owners directly. LinkedIn works too: search "[industry] + [town]", connect, and send a short message. Their phone is usually on their page.</div>
+<div class="step"><b>📱 Social media</b>Facebook groups for local businesses are gold. Search "[your town] business owners", "removals UK", "tradespeople UK" - join, read who's active, and message business owners directly. LinkedIn works too: search "[industry] + [town]", connect, and send a short message. Their phone is usually on their page.</div>
 <div class="step"><b>🗣️ Word of mouth</b>Your best list is people you already know. Ask friends, family and neighbours: "Do you know a removal firm / solicitor / builder / accountant?" Every "yes" is a warm introduction that's far more likely to sign up. Warm referrals convert the best.</div>
 <div class="step"><b>🏪 Speak to local companies in person</b>Walk into local shops, estate agents and trades on your high street. Say you run a referral service for business leads and ask who'd be interested. A 2-minute chat in person beats a cold call every time.</div>
-<div class="step"><b>📇 Online directories</b>Yell.com, Google Business Profile, Checkatrade, and trade association member lists (e.g. BAR for removals) list businesses with phone numbers and reviews. Reviews tell you who's busy and active — those are your best targets.</div>
+<div class="step"><b>📇 Online directories</b>Yell.com, Google Business Profile, Checkatrade, and trade association member lists (e.g. BAR for removals) list businesses with phone numbers and reviews. Reviews tell you who's busy and active - those are your best targets.</div>
 <div class="step"><b>🏆 Look for busy businesses</b>Target businesses with lots of reviews, an active social media page, or "we're fully booked" energy. A busy business is a business that will see the value in more leads. Quiet ones may not be a good fit.</div>
 <div class="step"><b>📌 Your weekly goal</b>Build a list of 10 new businesses to contact each week. 10 contacts = usually 2-3 free trials = £50-£75 in potential commission plus wheel progress. Consistency beats bursts.</div>
 </div>
@@ -886,7 +886,7 @@ var D = null, RES = null, LEADS = null, curType = 'moving';
 // Show a dash instead of "£0" until there's real money to display.
 function money(v){
   var n=Number(v);
-  return (isFinite(n)&&n>0)?('£'+(n%1===0?n:n.toFixed(2))):'—';
+  return (isFinite(n)&&n>0)?('£'+(n%1===0?n:n.toFixed(2))):'-';
 }
 
 function showLogin(){document.getElementById('login-view').style.display='block';document.getElementById('register-view').style.display='none';}
@@ -1215,7 +1215,7 @@ function init(){
     // #5 benchmark cards
     if(d.benchmark){
       var cr=document.getElementById('c-rate'); if(cr)cr.textContent=d.benchmark.my_rate+'%';
-      var ca=document.getElementById('c-avg'); if(ca)ca.textContent=d.benchmark.enough_data ? d.benchmark.programme_avg+'%' : '—';
+      var ca=document.getElementById('c-avg'); if(ca)ca.textContent=d.benchmark.enough_data ? d.benchmark.programme_avg+'%' : '-';
       var cas=document.getElementById('c-avg-sub');
       if(cas){
         if(d.benchmark.referrals===0) cas.textContent='refer someone to see your rate';
@@ -1587,17 +1587,17 @@ function loadPayouts(){
 }
 /* ---- AFFILIATE TIPS (rotating, motivational) ---- */
 var AFF_TIPS=[
-  {icon:"🔥",title:"You're on fire — keep sharing!",text:"Every business you share your code with today is a potential £25. Send your link to 3 businesses before lunch."},
+  {icon:"🔥",title:"You're on fire - keep sharing!",text:"Every business you share your code with today is a potential £25. Send your link to 3 businesses before lunch."},
   {icon:"🎡",title:"Hit 50 retained and spin!",text:"Every 50 retained signups unlocks the Wheel of Fortune for prizes up to £200 (then £500, then £1000). Keep referring!"},
   {icon:"💡",title:"Lead with the 14-day code.",text:"Normally it's a 7-day trial. With your code they get 14 days free, no card, cancel anytime. That line closes more signups than anything else."},
   {icon:"📞",title:"Call within the first hour.",text:"The customer who hears from you first trusts you first. When a referral signs up, message or call them the same day."},
   {icon:"📈",title:"Track your pipeline.",text:"Your Leads tab shows every referral at each stage. Watch who's in trial and nudge them toward their first paid week."},
   {icon:"💸",title:"Your £25 lands within about a week of their 2nd invoice.",text:"Help them through the first paid week and your commission clears."},
-  {icon:"🖨️",title:"Mention auto Print & Post.",text:"We send their leaflets and letters for them, tracked live. It's a service competitors don't offer — use it in your pitch."},
+  {icon:"🖨️",title:"Mention auto Print & Post.",text:"We send their leaflets and letters for them, tracked live. It's a service competitors don't offer - use it in your pitch."},
   {icon:"✅",title:"Never let a trial go cold.",text:"Follow up on day 1, day 3 and day 7. Most sign-ups come from the second or third message."},
   {icon:"🤝",title:"Ask happy customers for referrals.",text:"A customer who loves their leads knows other businesses. Ask them to share your code too."},
   {icon:"🏆",title:"You're building real income.",text:"Each retained customer is worth up to £25 to you, plus wheel rewards. Small daily actions compound into serious money."},
-  {icon:"📊",title:"Check your Rewards tab.",text:"Watch your retained count climb toward the next spin. It's your scoreboard — keep it moving."},
+  {icon:"📊",title:"Check your Rewards tab.",text:"Watch your retained count climb toward the next spin. It's your scoreboard - keep it moving."},
   {icon:"🎯",title:"Match the lead to the right script.",text:"Removal firm? Moving script. Solicitor? Probate script. Builder? Planning script. The right script converts better every time."}
 ];
 var _affTipIdx=0;
@@ -1635,7 +1635,7 @@ function loadKyc(){
     if(stEl)stEl.textContent=stText;
     if(stEl)stEl.style.color=stColor;
     if(subEl){
-      if(k.status==='approved')subEl.textContent='Approved — your ID is verified and payouts are unlocked.';
+      if(k.status==='approved')subEl.textContent='Approved - your ID is verified and payouts are unlocked.';
       else if(k.status==='pending_review')subEl.textContent='Your verification is pending. We review IDs and will email you as soon as it is approved.';
       else if(k.status==='rejected')subEl.textContent=(k.id_review_note||'Your ID could not be verified. Please re-upload a clear photo.')+' Your legal name must match your bank account holder.';
       else subEl.textContent='Verify your identity to unlock payouts. It takes 2 minutes.';

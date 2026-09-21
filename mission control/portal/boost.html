@@ -70,7 +70,7 @@ h3{font-size:15px;font-weight:700;margin-bottom:10px}
     <div class="banner">
       <div class="ic">&#128640;</div>
       <div><b>Archive lead packs</b>
-        <div class="hint">These leads have <b>never been sold on to another subscriber (rare shares possible at high demand)</b>. Because they're older archive leads, other buyers may receive the same ones too &mdash; so act fast and be first to respond.</div>
+        <div class="hint">These leads have <b>never been sold on to another subscriber (rare shares possible at high demand)</b>. Because they're older archive leads, other buyers may receive the same ones too - so act fast and be first to respond.</div>
       </div>
     </div>
     <div class="card">
@@ -94,8 +94,8 @@ h3{font-size:15px;font-weight:700;margin-bottom:10px}
       <div class="packs" id="packsBox"></div>
     </div>
     <div id="reviewBox" class="card" style="display:none">
-      <h3>&#128230; Your pack &mdash; <span id="packCount">0</span> archive leads</h3>
-      <div id="materialsWarn" class="warn" style="display:none">Boost packs are posted as <b>A5 leaflets</b> &mdash; you need BOTH your leaflet front AND back loaded in Print &amp; Post (Step 2) first.</div>
+      <h3>&#128230; Your pack - <span id="packCount">0</span> archive leads</h3>
+      <div id="materialsWarn" class="warn" style="display:none">Boost packs are posted as <b>A5 leaflets</b> - you need BOTH your leaflet front AND back loaded in Print &amp; Post (Step 2) first.</div>
       <div class="lead-list" id="leadsList"></div>
       <button class="btn btn-green" id="sendBtn" onclick="sendBoost()">Confirm &amp; Send all to Print &amp; Post</button>
     </div>
@@ -141,7 +141,7 @@ function render(){
   var biggestReady=ready.length?ready[ready.length-1]:0;
   var stockTxt = av>0
     ? (biggestReady ? '<span style="color:#16a34a;font-weight:800">'+biggestReady+'-pack in stock now</span>' : '') + ' &middot; '+av+' '+nm.toLowerCase()+' leads ready in this band'
-    : '<span style="color:#fbbf24;font-weight:800">Pool filling &mdash; check back soon</span>';
+    : '<span style="color:#fbbf24;font-weight:800">Pool filling - check back soon</span>';
   document.getElementById('availAge').innerHTML = stockTxt; 
   var sizes=(D.sizes&&D.sizes[ST.product])||[]; 
   var rate=(D.mail_rates&&D.mail_rates[ST.mail])||249; 
@@ -152,8 +152,8 @@ function render(){
     var can = av >= cnt;
     var fmt = total % 1 === 0 ? total.toLocaleString('en-GB') : total.toFixed(2);
     var canText = can
-      ? '<div style="font-size:11px;color:#16a34a;font-weight:800;margin-top:8px">&#10003; In stock &mdash; ready to buy</div>'
-      : '<div style="font-size:11px;color:#fbbf24;margin-top:8px">Need '+cnt+' &middot; '+av+' ready now &mdash; pool filling, available soon</div>';
+      ? '<div style="font-size:11px;color:#16a34a;font-weight:800;margin-top:8px">&#10003; In stock - ready to buy</div>'
+      : '<div style="font-size:11px;color:#fbbf24;margin-top:8px">Need '+cnt+' &middot; '+av+' ready now - pool filling, available soon</div>';
     return '<div class="pack" style="opacity:'+(can?1:.5)+'">'
       + '<div class="num">'+cnt+'</div>'
       + '<div style="font-size:11.5px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:.6px;margin:0 0 2px">'+lbl+'</div>'

@@ -1,7 +1,7 @@
 // Central Moving Lead property inventory.
 //
 // One canonical record per PROPERTY (keyed by UPRN where available), shared across
-// all customers — NOT a copy per customer. Also tracks listing events so the same
+// all customers - NOT a copy per customer. Also tracks listing events so the same
 // property is not re-sent unchanged every day, and future event types
 // (NEW_LISTING, RELISTED, PRICE_REDUCED, SOLD_STC, UNDER_OFFER, WITHDRAWN) are
 // supported.

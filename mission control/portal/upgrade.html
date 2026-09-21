@@ -56,7 +56,7 @@ ul li i{color:var(--success);font-size:11px;width:15px;flex-shrink:0}
 <div class="hero">
 <div class="eyebrow">Choose your plan</div>
 <h1>Upgrade to a paid package</h1>
-<p>Your trial leads carry over automatically — once you're on a Starter, Pro or Enterprise plan, all your previous leads unlock and your fresh 9am deliveries keep flowing every weekday morning.</p>
+<p>Your trial leads carry over automatically - once you're on a Starter, Pro or Enterprise plan, all your previous leads unlock and your fresh 9am deliveries keep flowing every weekday morning.</p>
 </div>
 
 <div class="grid" id="plan-grid">
@@ -67,7 +67,7 @@ ul li i{color:var(--success);font-size:11px;width:15px;flex-shrink:0}
 <ul>
 <li><i class="fas fa-check"></i> <span data-f="starter">5 postcode areas</span></li>
 <li><i class="fas fa-check"></i> Your own daily allocation</li>
-<li><i class="fas fa-check"></i> Daily delivery at 9am Mon–Fri</li>
+<li><i class="fas fa-check"></i> Daily delivery at 9am Mon-Fri</li>
 <li><i class="fas fa-check"></i> Marketing templates included</li>
 <li><i class="fas fa-check"></i> Print &amp; Post available</li>
 </ul>
@@ -82,7 +82,7 @@ ul li i{color:var(--success);font-size:11px;width:15px;flex-shrink:0}
 <ul>
 <li><i class="fas fa-check"></i> <span data-f="pro">Unlimited areas</span></li>
 <li><i class="fas fa-check"></i> Your own daily allocation</li>
-<li><i class="fas fa-check"></i> Daily delivery at 9am Mon–Fri</li>
+<li><i class="fas fa-check"></i> Daily delivery at 9am Mon-Fri</li>
 <li><i class="fas fa-check"></i> Marketing templates included</li>
 <li><i class="fas fa-check"></i> Priority support</li>
 </ul>
@@ -96,7 +96,7 @@ ul li i{color:var(--success);font-size:11px;width:15px;flex-shrink:0}
 <ul>
 <li><i class="fas fa-check"></i> <span data-f="enterprise">All UK coverage</span></li>
 <li><i class="fas fa-check"></i> Your own daily allocation</li>
-<li><i class="fas fa-check"></i> Daily delivery at 9am Mon–Fri</li>
+<li><i class="fas fa-check"></i> Daily delivery at 9am Mon-Fri</li>
 <li><i class="fas fa-check"></i> Marketing templates included</li>
 <li><i class="fas fa-check"></i> CRM-ready exports</li>
 </ul>
@@ -105,7 +105,7 @@ ul li i{color:var(--success);font-size:11px;width:15px;flex-shrink:0}
 </div>
 
 <div class="note">
-<b>Your leads are safe.</b> Upgrading does not reset or remove anything — all the leads you received during your free trial stay on your dashboard and become visible again immediately once your payment is confirmed. You can cancel any paid plan anytime.
+<b>Your leads are safe.</b> Upgrading does not reset or remove anything - all the leads you received during your free trial stay on your dashboard and become visible again immediately once your payment is confirmed. You can cancel any paid plan anytime.
 </div>
 <a href="/portal/dashboard.html" class="back"><i class="fas fa-arrow-left" style="font-size:10px;margin-right:5px"></i> Back to Dashboard</a>
 </div>
@@ -166,7 +166,7 @@ function upgrade(plan) {
     else {
       btn.disabled = false;
       var msg = 'Unable to start checkout. ' + ((d && d.error) || 'Please try again.');
-      setStatus(esc(msg) + ' &mdash; or email <a href="mailto:hello@9amleads.com" style="color:#0ea5e9">hello@9amleads.com</a>');
+      setStatus(esc(msg) + ' - or email <a href="mailto:hello@9amleads.com" style="color:#0ea5e9">hello@9amleads.com</a>');
     }
   }).catch(function() {
     btn.disabled = false;
@@ -221,7 +221,7 @@ function upgrade(plan) {
       if (document.getElementById('demoTopBanner')) return;
       var bn = document.createElement('div'); bn.id = 'demoTopBanner';
       bn.style.cssText = 'background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;border-radius:14px;padding:14px 18px;margin:12px auto;max-width:1100px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;font-family:Inter,Arial,sans-serif';
-      bn.innerHTML = '<div style="font-size:14px;font-weight:700;line-height:1.5">You are viewing the live demo. Try your <strong>free week</strong> &mdash; no card required.</div><a href="' + signup + '" style="background:#fff;color:#1d4ed8;font-weight:800;font-size:14px;padding:11px 22px;border-radius:50px;text-decoration:none;white-space:nowrap">Try your free week &mdash; no card required &rarr;</a>';
+      bn.innerHTML = '<div style="font-size:14px;font-weight:700;line-height:1.5">You are viewing the live demo. Try your <strong>free week</strong> - no card required.</div><a href="' + signup + '" style="background:#fff;color:#1d4ed8;font-weight:800;font-size:14px;padding:11px 22px;border-radius:50px;text-decoration:none;white-space:nowrap">Try your free week - no card required &rarr;</a>';
       document.body.insertBefore(bn, document.body.firstChild);
       var fab = document.createElement('a'); fab.href = signup; fab.textContent = '\uD83C\uDF81 Try it free \u2014 no card required';
       fab.style.cssText = 'position:fixed;right:18px;bottom:24px;z-index:99999;background:#16a34a;color:#fff;font-weight:800;font-size:14px;padding:12px 20px;border-radius:50px;text-decoration:none;box-shadow:0 8px 24px rgba(22,163,74,.45);font-family:Inter,Arial,sans-serif';
@@ -230,7 +230,7 @@ function upgrade(plan) {
         try { if (sessionStorage.getItem('demo_popup_shown')) return; sessionStorage.setItem('demo_popup_shown','1'); } catch(e) {}
         var ov = document.createElement('div');
         ov.style.cssText = 'position:fixed;inset:0;z-index:100001;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:20px';
-        ov.innerHTML = '<div style="max-width:420px;background:#fff;border-radius:16px;padding:26px;text-align:center;font-family:Inter,Arial,sans-serif;box-shadow:0 20px 60px rgba(0,0,0,.4)"><div style="font-size:34px">\uD83C\uDF89</div><h3 style="margin:8px 0 6px;font-size:21px;font-weight:800;color:#0f172a">Like what you see?</h3><p style="margin:0 0 16px;font-size:14px;color:#64748b;line-height:1.6">Try your <strong>free week</strong> &mdash; no card required, cancel anytime.</p><a href="' + signup + '" style="display:block;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;font-weight:800;font-size:15px;padding:14px;border-radius:50px;text-decoration:none">Try it free &mdash; no card required &rarr;</a><button id="demoPopupClose" style="margin-top:10px;background:none;border:none;color:#94a3b8;font-size:13px;cursor:pointer">Keep exploring the demo</button></div>';
+        ov.innerHTML = '<div style="max-width:420px;background:#fff;border-radius:16px;padding:26px;text-align:center;font-family:Inter,Arial,sans-serif;box-shadow:0 20px 60px rgba(0,0,0,.4)"><div style="font-size:34px">\uD83C\uDF89</div><h3 style="margin:8px 0 6px;font-size:21px;font-weight:800;color:#0f172a">Like what you see?</h3><p style="margin:0 0 16px;font-size:14px;color:#64748b;line-height:1.6">Try your <strong>free week</strong> - no card required, cancel anytime.</p><a href="' + signup + '" style="display:block;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;font-weight:800;font-size:15px;padding:14px;border-radius:50px;text-decoration:none">Try it free - no card required &rarr;</a><button id="demoPopupClose" style="margin-top:10px;background:none;border:none;color:#94a3b8;font-size:13px;cursor:pointer">Keep exploring the demo</button></div>';
         document.body.appendChild(ov);
         try { document.getElementById('demoPopupClose').onclick = function(){ ov.remove(); }; } catch(e) {}
         ov.addEventListener('click', function(e){ if (e.target === ov) ov.remove(); });

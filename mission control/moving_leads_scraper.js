@@ -1,8 +1,8 @@
 /**
- * Moving Leads Daily — Lead Scraper & Delivery Engine
+ * Moving Leads Daily - Lead Scraper & Delivery Engine
  * 
  * Scraping strategy:
- * 1. PRIMARY: Apify Rightmove Scraper (pay-per-use, ~$0.05/run) — most reliable
+ * 1. PRIMARY: Apify Rightmove Scraper (pay-per-use, ~$0.05/run) - most reliable
  * 2. FALLBACK: OnTheMarket HTML scraping (no CAPTCHA)  
  * 3. DEMO: Sample data for testing the pipeline end-to-end
  * 
@@ -323,7 +323,7 @@ function generateEmailHTML(sheet) {
         <h1 style="font-family:Outfit,sans-serif;font-size:24px;font-weight:800;color:#fff;margin:0">
           <span style="color:${color}">Moving</span> Leads Daily
         </h1>
-        <p style="color:#888;font-size:14px;margin:8px 0 0">${sheet.company} — Daily Lead Sheet</p>
+        <p style="color:#888;font-size:14px;margin:8px 0 0">${sheet.company} - Daily Lead Sheet</p>
       </td></tr>
       <tr><td style="background:#0a0a0a;padding:24px 32px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
@@ -390,12 +390,12 @@ async function runForCustomer(customerId, useSampleData) {
   // Scrape leads via Apify (real data) or sample data
   let leads = [];
   if (!useSampleData) {
-    console.log('  (Apify scraper disabled — will use sample data)');
+    console.log('  (Apify scraper disabled - will use sample data)');
   }
   
   // Fall back to sample data if Apify returned nothing or --sample flag used
   if (leads.length === 0) {
-    console.log('  LIVE SCRAPE FAILED — using sample data as fallback');
+    console.log('  LIVE SCRAPE FAILED - using sample data as fallback');
     leads = generateSampleLeads(customer.postcodes, customer.leadsPerDay || 20);
     leads = leads.map(l => ({ ...l, customerId }));
     console.log('  Generated ' + leads.length + ' sample leads');
@@ -428,7 +428,7 @@ async function runForCustomer(customerId, useSampleData) {
   // Show first 3 leads
   console.log('\n  First 3 leads:');
   sheet.leads.slice(0, 3).forEach((l, i) => {
-    console.log('    ' + (i+1) + '. ' + l.address + ' — ' + l.bedrooms + ' bed ' + l.propertyType + ' — ' + l.price);
+    console.log('    ' + (i+1) + '. ' + l.address + ' - ' + l.bedrooms + ' bed ' + l.propertyType + ' - ' + l.price);
   });
   
   // Generate email HTML (would be sent via Brevo/email API at 9am)
@@ -477,7 +477,7 @@ function showStatus() {
   const leads = loadJSON(LEADS_FILE);
   const deliveries = loadJSON(DELIVERY_FILE);
   
-  console.log('\n=== Moving Leads Daily — Status ===\n');
+  console.log('\n=== Moving Leads Daily - Status ===\n');
   console.log('Customers:');
   for (const [id, c] of Object.entries(customers)) {
     const cLeads = leads[id] || [];
@@ -543,7 +543,7 @@ async function main() {
     fs.writeFileSync(path.join(DATA_DIR, 'delivery-' + id + '-' + sheet.date + '.html'), html);
     console.log('  Email HTML saved');
   } else {
-    console.log('Moving Leads Daily — Lead Scraper & Delivery Engine');
+    console.log('Moving Leads Daily - Lead Scraper & Delivery Engine');
     console.log('');
     console.log('Usage:');
     console.log('  --add-customer <id> <company> <email> <postcodes>    Add customer');

@@ -1,4 +1,4 @@
-// Multi-Business Lead Engine — Powers New Business Alert, Planning Permission Leads, Probate Leads
+// Multi-Business Lead Engine - Powers New Business Alert, Planning Permission Leads, Probate Leads
 // Each business follows the same model: scrape → store → email clients
 
 require('dotenv').config();
@@ -88,10 +88,10 @@ async function runNewBusinessAlert(config) {
   for (const client of (biz.clients || []).filter(c => c.active)) {
     if (!client.email) continue;
     const batch = companies.slice(0, client.leadsPerDay || 20);
-    const text = batch.map(c => `${c.name} (${c.companyNumber}) — ${c.address}`).join('\n');
+    const text = batch.map(c => `${c.name} (${c.companyNumber}) - ${c.address}`).join('\n');
     try {
       await sendEmail(config, client.email,
-        `NewBusinessAlert — ${batch.length} new companies today`,
+        `NewBusinessAlert - ${batch.length} new companies today`,
         `Hi ${client.name},\n\nNew companies registered today:\n\n${text}\n\nNewBusinessAlert`);
       console.log(`  Emailed ${batch.length} leads to ${client.email}`);
     } catch(e) { console.log(`  Email error: ${e.message}`); }
@@ -115,10 +115,10 @@ async function runPlanningLeads(config) {
   for (const client of (biz.clients || []).filter(c => c.active)) {
     if (!client.email) continue;
     const batch = apps.slice(0, client.leadsPerDay || 15);
-    const text = batch.map(a => `${a.address} — ${a.type}`).join('\n');
+    const text = batch.map(a => `${a.address} - ${a.type}`).join('\n');
     try {
       await sendEmail(config, client.email,
-        `PlanningLeads — ${batch.length} new planning applications`,
+        `PlanningLeads - ${batch.length} new planning applications`,
         `Hi ${client.name},\n\nNew planning applications today:\n\n${text}\n\nPlanningPermissionLeads`);
       console.log(`  Emailed ${batch.length} leads to ${client.email}`);
     } catch(e) { console.log(`  Email error: ${e.message}`); }
@@ -142,10 +142,10 @@ async function runProbateLeads(config) {
   for (const client of (biz.clients || []).filter(c => c.active)) {
     if (!client.email) continue;
     const batch = records.slice(0, client.leadsPerDay || 10);
-    const text = batch.map(r => `${r.name} — ${r.type} (${r.date})`).join('\n');
+    const text = batch.map(r => `${r.name} - ${r.type} (${r.date})`).join('\n');
     try {
       await sendEmail(config, client.email,
-        `ProbateLeads — ${batch.length} new probate grants`,
+        `ProbateLeads - ${batch.length} new probate grants`,
         `Hi ${client.name},\n\nNew probate records today:\n\n${text}\n\nProbateLeads`);
       console.log(`  Emailed ${batch.length} leads to ${client.email}`);
     } catch(e) { console.log(`  Email error: ${e.message}`); }

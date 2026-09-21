@@ -747,7 +747,7 @@ function postcoderVerifyUprn(uprn) {
     if (process.env.POSTCODER_ENABLED !== 'true' && process.env.POSTCODER_ENABLED !== '1') return resolve(null);
     const key = process.env.POSTCODER_API_KEY;
     if (!key || !uprn) return resolve(null);
-    // CACHE-FIRST: UPRNs are stable and immutable — never re-pay Postcoder for a
+    // CACHE-FIRST: UPRNs are stable and immutable - never re-pay Postcoder for a
     // UPRN we've already validated.
     try {
       const pcCache = require('./postcoder_cache');
@@ -787,7 +787,7 @@ function postcoderVerifyUprn(uprn) {
 }
 
 // Fetch ALL properties in a postcode (with UPRNs) via Propalt get-properties.
-// ONE call (6 credits) returns ~23 properties with UPRNs — the cost-efficient way
+// ONE call (6 credits) returns ~23 properties with UPRNs - the cost-efficient way
 // to resolve many leads sharing a postcode. Returns the array or null on error.
 async function propaltGetPropertiesByPostcode(postcode) {
   if (!CONFIG.propaltKey || !postcode) return null;

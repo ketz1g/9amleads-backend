@@ -1,6 +1,6 @@
 // Customer postcode AREA coverage configuration (Stage 17/29).
 //
-// Customers select whole postcode areas (e.g. HA, EN, SG, B, CM) — NOT districts.
+// Customers select whole postcode areas (e.g. HA, EN, SG, B, CM) - NOT districts.
 // This module manages:
 //   - how many included postcode areas each plan gets (configurable, not hard-coded)
 //   - which areas are "included" vs future paid "add-on" areas
@@ -61,7 +61,7 @@ function customerCoversArea(customer, area) {
   return ev.includedAreas.indexOf(want) !== -1 || ev.addonAreas.indexOf(want) !== -1;
 }
 
-// Whole-area match only (not prefix) — B != BT, N != NE/NW.
+// Whole-area match only (not prefix) - B != BT, N != NE/NW.
 function normalizeArea(area) {
   const a = String(area || '').toUpperCase().trim();
   const m = a.match(/^([A-Z]{1,2})/);

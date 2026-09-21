@@ -49,7 +49,7 @@ function splitCsvLine(line) {
           header = cols.map(function (h) { return norm(h).replace(/ /g, ''); });
           return;
         }
-        // Second row is a human-readable header — skip it.
+        // Second row is a human-readable header - skip it.
         if (rowNo === 2 && /property_uprn|osg_uprn|building_reference_number/i.test(line)) return;
         if (!header) return;
         const iA1 = header.indexOf('address1'); const iA2 = header.indexOf('address2');
@@ -69,7 +69,7 @@ function splitCsvLine(line) {
       rl.on('close', resolve);
       rl.on('error', resolve);
     });
-    console.log('[MERGE] ' + f + ' done — total postcodes=' + index.size + ' added=' + added);
+    console.log('[MERGE] ' + f + ' done - total postcodes=' + index.size + ' added=' + added);
   }
 
   // 3. Write the merged TSV.

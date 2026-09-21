@@ -6,9 +6,9 @@
 //
 // Why: Rightmove / Zoopla / OnTheMarket all HIDE the house number in list view, so most
 // scraped leads are street-only and fail the mailable gate. Given a street + full
-// postcode we can look the real addresses up locally — no per-lookup cost, no bandwidth.
+// postcode we can look the real addresses up locally - no per-lookup cost, no bandwidth.
 //
-// Storage: SQLite (epc-index.db) queried per postcode — the full UK index (19m addresses)
+// Storage: SQLite (epc-index.db) queried per postcode - the full UK index (19m addresses)
 // is far too big to load into RAM, but as a SQLite file (~1.2GB) on a >=2GB disk it is
 // instant and near-zero memory. Built from the gzipped TSV (epc-index.tsv.gz, ~90MB).
 //
@@ -61,7 +61,7 @@ function buildSqlite(dataDir, onDone) {
         const addrs = line.slice(t + 1).split('|').filter(Boolean);
         for (const a of addrs) batch.push([pc, a]);
         if (batch.length >= 20000) {
-          // YIELD between batches — a long synchronous insert run blocked the loop and
+          // YIELD between batches - a long synchronous insert run blocked the loop and
           // crashed the box on the full 20m-row index.
           flush();
           queue = queue.then(function () { return new Promise(function (r) { setImmediate(r); }); });
@@ -84,7 +84,7 @@ function buildSqlite(dataDir, onDone) {
 
 function loadIndex(dataDir) {
   try {
-    // 1. SQLite (full index) — preferred. England&Wales + Scotland are separate files.
+    // 1. SQLite (full index) - preferred. England&Wales + Scotland are separate files.
     const dbf = path.join(dataDir, 'epc-index.db');
     const dbf2 = path.join(dataDir, 'scot-epc.db');
     if (DatabaseSync && (fs.existsSync(dbf) || fs.existsSync(dbf2))) {
@@ -120,7 +120,7 @@ function _matchFromList(list, street) {
   if (!s) return null;
   // Use ONLY the street line (before the first comma) and strip any leading house
   // number. The input is often "Wentloog Road, Cardiff" while the EPC address is
-  // "179, Wentloog Road, Rumney, CARDIFF" — matching the whole string would fail.
+  // "179, Wentloog Road, Rumney, CARDIFF" - matching the whole string would fail.
   const firstSeg = String(street || '').split(',')[0];
   let streetOnly = norm(firstSeg).replace(/^\d+[a-z]?\s+/, '').trim();
   if (!streetOnly) streetOnly = s.replace(/^\d+[a-z]?\s+/, '').trim();

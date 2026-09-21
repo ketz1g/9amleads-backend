@@ -27,10 +27,10 @@ const LAST_SCRAPE_FILE = path.join(DATA_DIR, 'last-scrape.json');
 const APIFY_KEY = process.env.APIFY_API_KEY || '';
 
 // Rightmove OUTCODE identifiers for postcode areas. Only include areas we have
-// accounts for — the worker filters to these. Add new area IDs here as customers
+// accounts for - the worker filters to these. Add new area IDs here as customers
 // subscribe to new postcodes (cheap + scales slowly).
 const AREA_OUTCODE = {
-  // EN/HA/LU removed — their Rightmove outcode IDs are resolved dynamically via
+  // EN/HA/LU removed - their Rightmove outcode IDs are resolved dynamically via
   // typeahead (the hardcoded guesses returned 0 leads). Other areas keep their IDs.
   'E': 93917, 'N': 93917, 'NW': 93961,
   'SE': 93917, 'SW': 93917, 'W': 93917, 'EC': 93917, 'WC': 93917,
@@ -58,7 +58,7 @@ function loadJson(file) {
   try { return JSON.parse(fs.readFileSync(file, 'utf-8')); } catch(e) { return null; }
 }
 // Force a promise to resolve within ms (prevents a hung Apify call from blocking
-// the whole area loop — the worker was dying after the first area because a
+// the whole area loop - the worker was dying after the first area because a
 // subsequent run-sync never resolved).
 function withTimeout(promise, ms, label) {
   return new Promise(function(resolve) {
@@ -66,7 +66,7 @@ function withTimeout(promise, ms, label) {
     var t = setTimeout(function() {
       if (done) return;
       done = true;
-      console.log('[DEEP-SCRAPE] TIMEOUT ' + (label || '') + ' after ' + ms + 'ms — continuing');
+      console.log('[DEEP-SCRAPE] TIMEOUT ' + (label || '') + ' after ' + ms + 'ms - continuing');
       resolve(null);
     }, ms);
     Promise.resolve(promise).then(function(v) {
@@ -154,7 +154,7 @@ function resolveOutcodeId(areaCode) {
 // Cost-controlled: low maxProperties, 256MB memory, list-only (no 5x multiplier).
 function scrapeAreaApify(areaCode, outcodeId, maxProps, type) {
   return new Promise(function(resolve) {
-    if (!APIFY_KEY) { console.log('[DEEP-SCRAPE] No APIFY_API_KEY — skipping Apify for ' + areaCode); resolve([]); return; }
+    if (!APIFY_KEY) { console.log('[DEEP-SCRAPE] No APIFY_API_KEY - skipping Apify for ' + areaCode); resolve([]); return; }
     var section = type === 'commercial' ? 'commercial-property-for-sale' : 'property-for-sale';
     // Prefer a resolved OUTCODE (targeted to the exact area) when available; this
     // isolates EN/HA/LU specifically. Fall back to a region search otherwise.
@@ -169,14 +169,14 @@ function scrapeAreaApify(areaCode, outcodeId, maxProps, type) {
       L: 'REGION%5E813', M: 'REGION%5E904', WA: 'REGION%5E1403', CH: 'REGION%5E313', WN: 'REGION%5E1452',
       IG: 'REGION%5E674', RM: 'REGION%5E1138', DA: 'REGION%5E407', CM: 'REGION%5E307',
       AL: 'REGION%5E1244', KT: 'REGION%5E746', CR: 'REGION%5E391', PR: 'REGION%5E1097',
-      // SCOTLAND (verified city region ids 2026-08-24 — the old 87492 was Battersea!)
+      // SCOTLAND (verified city region ids 2026-08-24 - the old 87492 was Battersea!)
       G: 'REGION%5E550', EH: 'REGION%5E475', DD: 'REGION%5E452', KY: 'REGION%5E754', FK: 'REGION%5E501',
       AB: 'REGION%5E4', DG: 'REGION%5E448', IV: 'REGION%5E687', KA: 'REGION%5E740', ML: 'REGION%5E958',
       PA: 'REGION%5E1040', PH: 'REGION%5E1060', TD: 'REGION%5E540',
-      // YORKSHIRE & HUMBER (verified 2026-08-24 — old 87488 was a Dundee neighbourhood)
+      // YORKSHIRE & HUMBER (verified 2026-08-24 - old 87488 was a Dundee neighbourhood)
       LS: 'REGION%5E787', S: 'REGION%5E1195', DN: 'REGION%5E430', HU: 'REGION%5E665', WF: 'REGION%5E1386',
       BD: 'REGION%5E198', HD: 'REGION%5E664', HG: 'REGION%5E598', HX: 'REGION%5E664', YO: 'REGION%5E1498',
-      // WEST MIDLANDS (verified 2026-08-24 — old 87491 was Acton Green, West London)
+      // WEST MIDLANDS (verified 2026-08-24 - old 87491 was Acton Green, West London)
       B: 'REGION%5E162', CV: 'REGION%5E368', DY: 'REGION%5E443', WS: 'REGION%5E1392', WV: 'REGION%5E1476',
       ST: 'REGION%5E1271', WR: 'REGION%5E162', TF: 'REGION%5E1476'
     };
@@ -185,7 +185,7 @@ function scrapeAreaApify(areaCode, outcodeId, maxProps, type) {
       if (outcodeId) locId = 'OUTCODE%5E' + outcodeId;
       else {
       // Region fallback - the correct Rightmove CITY region id for the area.
-      // IMPORTANT (2026-08-24): the old "UK region" ids 87486-87497 are WRONG —
+      // IMPORTANT (2026-08-24): the old "UK region" ids 87486-87497 are WRONG -
       // they resolve to small London/Dundee neighbourhoods (87492=Battersea,
       // 87488=Ethiebeaton Dundee, 87491=Acton Green), so Scotland/Yorkshire/Midlands
       // fell back to them and produced ZERO in-area supply. These city ids are

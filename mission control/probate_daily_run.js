@@ -1,4 +1,4 @@
-// Probate daily run — executed by GitHub Actions (free tier) every weekday.
+// Probate daily run - executed by GitHub Actions (free tier) every weekday.
 // The Gazette blocks Render's datacenter IP (HTTP 403) but NOT GitHub Actions' IPs,
 // so this job scrapes the REAL UK Gazette probate notices from Actions and imports
 // them into Render's probate pool before the 9am delivery. Uses executor capture +
@@ -11,7 +11,7 @@ async function main() {
   console.log('[PROBATE-DAILY] starting ' + new Date().toISOString());
   let leads = [];
   // RETRY LOOP: the Gazette WAF intermittently 403s datacenter IPs (Render, GitHub
-  // Actions). Retry with backoff a few times — a pause often clears the block.
+  // Actions). Retry with backoff a few times - a pause often clears the block.
   for (var attempt = 1; attempt <= 4 && leads.length === 0; attempt++) {
     try {
       leads = await sc.collectProbateLeads({ maxItems: 60, useApifyFirst: false });
@@ -31,7 +31,7 @@ async function main() {
   });
   console.log('[PROBATE-DAILY] stats: executor_home=' + home + ' via_solicitor=' + sol + ' with_postcode=' + withPc);
   // PRODUCT (option 1): deliver ALL real probate leads on the DECEASED'S last address
-  // (the property) — that is 100% reliable supply and the customer's mailer goes to
+  // (the property) - that is 100% reliable supply and the customer's mailer goes to
   // the property addressed "The Executor of [deceased]". Executor-direct (home) leads
   // are flagged as a premium bonus but never required. Only funeral/junk is dropped
   // (collectProbateLeads already returns real Gazette notices only).

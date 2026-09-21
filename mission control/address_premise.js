@@ -6,7 +6,7 @@
 // number ("Flat 12, Eaton Mansions"), or a named house/building ("The Old
 // Rectory", "Blandford House"). A bare street/place name with no identifier
 // ("St. Davids Square", "Lamb Court", "Park Road") is rejected so it is either
-// resolved to an exact number by PAF or dropped — never emailed as an address
+// resolved to an exact number by PAF or dropped - never emailed as an address
 // without a door number, flat number, street number or house name.
 
 // Comprehensive UK street-suffix words (Royal Mail / AMU standard set). Without
@@ -23,7 +23,7 @@ function hasUsablePremiseAddress(addr, pc, opts) {
   a = a.replace(/^[,\s]+/, '').replace(/[\s,]+$/, '');
   if (!a) return false;
   // Multi-unit building indicators: if the address names a block/tower/wharf/etc.
-  // the street number points to the BUILDING, not a specific flat — it must have a
+  // the street number points to the BUILDING, not a specific flat - it must have a
   // "Flat X"/"Apartment X" number to be mailable ("Landmark East Tower, 24 Marsh
   // Wall" without a flat number cannot be posted to a specific flat).
   var MULTI_UNIT_RE = /(?:tower|towers|apartments|block|court|courts|wharf|point|heights|mansions|residence|residences|quarters|villas|suites|studios|flats)\b/i;
@@ -46,7 +46,7 @@ function hasUsablePremiseAddress(addr, pc, opts) {
   if (!words.length) return false;
   var last = words[words.length - 1].replace(/\.$/, '');
   if (STREET_SUFFIX_RE.test(last)) return false;
-  // 4) NAMED PROPERTY — must STILL have a door/flat/apartment number to be
+  // 4) NAMED PROPERTY - must STILL have a door/flat/apartment number to be
   //    deliverable. A bare building name ("Camille House, Beulah Hill",
   //    "Prospect House, Coombe Wood Rd") does NOT identify a specific premise a
   //    removals company can act on, so it is REJECTED unless a number appears

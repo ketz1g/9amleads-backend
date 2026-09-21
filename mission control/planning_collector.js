@@ -1,6 +1,6 @@
 // Planning Data Collector
 // Uses the planning provider interface to collect from Plota (primary) or other providers.
-// Add new providers via planning_provider.js — no changes needed here.
+// Add new providers via planning_provider.js - no changes needed here.
 //
 // Usage:
 //   const planner = require('./planning_collector');

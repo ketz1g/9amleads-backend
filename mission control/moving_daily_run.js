@@ -1,4 +1,4 @@
-// Moving daily run — executed by GitHub Actions (free tier) every weekday.
+// Moving daily run - executed by GitHub Actions (free tier) every weekday.
 // Rightmove blocks Render's datacenter IP but NOT GitHub Actions' IPs, so this job
 // scrapes Rightmove for fresh properties in the moving customers' postcode areas
 // (plus a broad national default) and imports them into Render's moving pool,

@@ -1,4 +1,4 @@
-// run_buyer_subtypes.js — per-subtype directory scrape.
+// run_buyer_subtypes.js - per-subtype directory scrape.
 // For each subtype in the taxonomy, scans Thomson Local across UK towns until it
 // has `target` business emails, saving per-subtype CSV + progress (resumable).
 //

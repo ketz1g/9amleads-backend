@@ -1,4 +1,4 @@
-// warmup.js — Brevo sender warm-up.
+// warmup.js - Brevo sender warm-up.
 // The "9am moving leads" campaign was blasted to 2,524 cold contacts in one shot,
 // which got most filtered to spam (285/2500 opens). This module instead ramps the
 // SAME content out in small, growing daily batches over ~3 weeks so Gmail/Outlook
@@ -86,7 +86,7 @@ async function runWarmup(force) {
   const cRes = await req('GET', '/v3/emailCampaigns/' + SOURCE_CAMPAIGN_ID);
   let src; try { src = JSON.parse(cRes.body); } catch(e) { log('campaign fetch failed: ' + cRes.body.substring(0,200)); return { success: false, error: cRes.body }; }
   // 4. Create a campaign to the temp list.
-  // IMPROVED CONTENT (engagement-focused): short, value-first, one CTA — far less
+  // IMPROVED CONTENT (engagement-focused): short, value-first, one CTA - far less
   // likely to be spam-filtered than the original all-caps marketing wall.
   var warmSubject = 'Fresh removals leads in your area - 1 week free';
   var warmHtml =

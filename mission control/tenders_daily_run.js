@@ -1,4 +1,4 @@
-// Tenders daily run — executed by GitHub Actions (free tier) every weekday.
+// Tenders daily run - executed by GitHub Actions (free tier) every weekday.
 // Contracts Finder / Find a Tender intermittently block Render's datacenter IP but
 // NOT GitHub Actions' IPs, so this job scrapes the UK's public tender notices from
 // Actions and imports them into Render's tenders pool before the 9am delivery.

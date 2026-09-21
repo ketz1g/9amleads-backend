@@ -1,4 +1,4 @@
-// buyer_taxonomy.js — source of truth for per-business-type cold outreach.
+// buyer_taxonomy.js - source of truth for per-business-type cold outreach.
 // One entry per business subtype a product is sold to. Each carries tailored
 // industry copy used by build_buyer_emails.js to emit one HTML email per subtype.
 const path = require('path');

@@ -71,17 +71,17 @@ function spend() {
   if (!enabled()) return false;
   // DELIVERY-ONLY: paid Postcoder lookups are reserved for the 9am delivery (and any
   // address we actually send to a customer). Scrape-time pool pre-enrichment must NOT
-  // spend credits unless explicitly enabled with POSTCODER_SCRAPE_ENABLED=true — the
+  // spend credits unless explicitly enabled with POSTCODER_SCRAPE_ENABLED=true - the
   // founder wants the absolute minimum credit use. Delivery sets the global context
   // flag for the duration of the run.
   // Allowed contexts:
   //   - __POSTCODER_DELIVERY_CTX__ : the 9am delivery run
   //   - __POSTCODER_EARLY_CTX__    : the PRE-9AM warm-up / pre-verify passes, which
-  //     number ONLY the exact leads each customer will be sent (efficient — no whole
+  //     number ONLY the exact leads each customer will be sent (efficient - no whole
   //     pool stocking). This lets door numbers be resolved hours before 9am so the
   //     9am run is a simple, reliable send.
   //   - POSTCODER_SCRAPE_ENABLED=true : whole-pool scrape-time pre-enrichment (OFF by
-  //     default — it spends on leads that may never be delivered).
+  //     default - it spends on leads that may never be delivered).
   if (!global.__POSTCODER_DELIVERY_CTX__ && !global.__POSTCODER_EARLY_CTX__ && process.env.POSTCODER_SCRAPE_ENABLED !== 'true') return false;
   var today = new Date().toISOString().split('T')[0];
   var u = load();
@@ -108,10 +108,10 @@ function canLookup() {
   // Drop entries older than the window
   u.window = u.window.filter(function(t) { return (now - t) < RATE_WINDOW_MS; });
   if (u.window.length >= RATE_LIMIT) {
-    // Roll back the spend — we're rate-limited, not budget-limited.
+    // Roll back the spend - we're rate-limited, not budget-limited.
     u.used = Math.max(0, (u.used || 1) - 1);
     save(u);
-    console.log('[POSTCODER] Rate limit reached (' + RATE_LIMIT + '/5min) — pausing lookups to avoid IP restriction.');
+    console.log('[POSTCODER] Rate limit reached (' + RATE_LIMIT + '/5min) - pausing lookups to avoid IP restriction.');
     return false;
   }
   u.window.push(now);

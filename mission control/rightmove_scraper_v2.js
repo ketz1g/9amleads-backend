@@ -11,7 +11,7 @@ function _usageInc(field, n) {
 
 // Full-UK coverage: each entry is a RIGHTMOVE CITY REGION identifier that
 // resolves to a real city's property search (verified HTTP 200, 2026-08-24).
-// NOTE: the old "UK official region" ids (87486-87497) were WRONG — they all
+// NOTE: the old "UK official region" ids (87486-87497) were WRONG - they all
 // resolve to small London/Dundee neighbourhoods (87492=Battersea, 87493=Belgravia,
 // 87488=Ethiebeaton Dundee, etc.), so any customer area relying on them got ZERO
 // in-area supply. These city ids come from Rightmove's own city pages
@@ -147,7 +147,7 @@ function fetchRightmovePage(locationId, locationName, pageIndex) {
                 source: 'Rightmove',
                 scrapedAt: new Date().toISOString(),
                 city: (function() {
-                  // Area-targeted regions are named like "E area", "NW area" — strip
+                  // Area-targeted regions are named like "E area", "NW area" - strip
                   // the " area" suffix so it never leaks into the displayed town.
                   var locN = typeof searchResults.location === 'object' ? (searchResults.location.name || locationName) : (searchResults.location || locationName);
                   return String(locN || '').replace(/\s+area$/i, '').trim();
@@ -180,7 +180,7 @@ function fetchRightmovePage(locationId, locationName, pageIndex) {
     doFetch(path, 0, 2);
   });
 }
-// COMMERCIAL PROPERTY — Rightmove's commercial section (offices, retail, warehouses,
+// COMMERCIAL PROPERTY - Rightmove's commercial section (offices, retail, warehouses,
 // industrial, pubs, land, etc). Same OUTCODE/REGION identifiers as residential but
 // under /commercial-property-for-sale/ and /commercial-property-to-let/. Results use
 // the same __NEXT_DATA__ structure; we tag them commercial:true so the distributor
@@ -264,7 +264,7 @@ function fetchCommercialRightmovePage(locationId, locationName, pageIndex, isLet
     });
     req.on('error', function(e) { resolve([]); });
     req.setTimeout(30000, function() { req.destroy(); resolve([]); });
-    // HARD TIMER: see fetchRightmovePage — a stalled connect must not hang the run.
+    // HARD TIMER: see fetchRightmovePage - a stalled connect must not hang the run.
     var _hardTc = setTimeout(function() { try { req.destroy(); } catch(e) {} console.log('[RIGHTMOVE-COMMERCIAL] hard timeout ' + locationId + ' idx=' + pageIndex); resolve([]); }, 25000);
     req.on('close', function() { clearTimeout(_hardTc); });
     req.end();
@@ -276,7 +276,7 @@ function fetchCommercialRightmovePage(locationId, locationName, pageIndex, isLet
 async function collectCommercialLeads(config) {
   config = config || {};
   // DATACENTER-IP MODE: when force_apify is set (or env FORCE_COMMERCIAL_APIFY=1),
-  // skip the slow direct Rightmove scrape entirely and use the Apify actor — direct
+  // skip the slow direct Rightmove scrape entirely and use the Apify actor - direct
   // commercial scraping is usually blocked from datacenter IPs (Render) and can hang
   // for minutes before returning nothing.
   var forceApify = config.force_apify || process.env.FORCE_COMMERCIAL_APIFY === '1' || process.env.FORCE_COMMERCIAL_APIFY === 'true';
@@ -345,7 +345,7 @@ async function collectCommercialLeads(config) {
   // datacenter IPs. If we got nothing, retry via the Apify actor with a residential
   // proxy so commercial leads still reach the pool.
   if (deduped.length === 0) {
-    // COMMERCIAL APIFY IS OPT-IN (default OFF) — it was billing every morning. Only
+    // COMMERCIAL APIFY IS OPT-IN (default OFF) - it was billing every morning. Only
     // fall back to the paid actor when APIFY_COMMERCIAL_ENABLED=true.
     var _commApifyOn = String(process.env.APIFY_COMMERCIAL_ENABLED || 'false').toLowerCase() === 'true';
     if (!_commApifyOn) {
@@ -354,7 +354,7 @@ async function collectCommercialLeads(config) {
     try {
       var apifyAreas = (config.areas && Array.isArray(config.areas) && config.areas.length) ? config.areas : (config.locations || []).map(function(l){ return String(l.name || '').replace(' area', '').trim(); }).filter(Boolean);
       if (apifyAreas.length) {
-        console.log('[RIGHTMOVE-COMMERCIAL] Direct scrape empty — trying Apify for ' + apifyAreas.join(','));
+        console.log('[RIGHTMOVE-COMMERCIAL] Direct scrape empty - trying Apify for ' + apifyAreas.join(','));
         var apifyLeads = await fetchRightmoveApifyCommercial(apifyAreas, config.pages ? config.pages * 24 : 60);
         (apifyLeads || []).forEach(function(l) { if (!seenIds[l.id]) { seenIds[l.id] = true; deduped.push(l); } });
         console.log('[RIGHTMOVE-COMMERCIAL] Apify fallback added ' + (apifyLeads || []).length + ' (total ' + deduped.length + ')');
@@ -370,7 +370,7 @@ async function collectCommercialLeads(config) {
 // the Rightmove detail page, Postcoder returns the numbered addresses so we can
 // append the correct house number.
 // NOTE: Postcoder charges credits per lookup (2 credits ≈ 7p). It is DISABLED by
-// default — the Rightmove detail page already returns a full numbered address for
+// default - the Rightmove detail page already returns a full numbered address for
 // free, so Postcoder is only a precision upgrade. Enable only if explicitly set
 // (POSTCODER_ENABLED=true) and keep usage to the final delivered leads only.
 function lookupPostcoderAddress(postcode, streetHint, doorNumber) {
@@ -387,7 +387,7 @@ function lookupPostcoderAddress(postcode, streetHint, doorNumber) {
     try {
       const pcCache = require('./postcoder_cache');
       addresses = pcCache.get(cleanPc);
-    } catch(ce) { /* cache unavailable — fall through to live lookup */ }
+    } catch(ce) { /* cache unavailable - fall through to live lookup */ }
 
     if (addresses && Array.isArray(addresses) && addresses.length) {
       return resolve(matchPafAddress(addresses, cleanPc, streetHint, doorNumber));
@@ -400,7 +400,7 @@ function lookupPostcoderAddress(postcode, streetHint, doorNumber) {
     try {
       const pcBudget = require('./postcoder_budget');
       if (!pcBudget.canLookup()) {
-        console.log('[POSTCODER] Daily/rate limit reached — skipping lookup for ' + (postcode || ''));
+        console.log('[POSTCODER] Daily/rate limit reached - skipping lookup for ' + (postcode || ''));
         return resolve({ budgetExhausted: true });
       }
     } catch(pe) { console.log('[POSTCODER] Budget guard error:', pe.message); }
@@ -470,22 +470,22 @@ function matchPafAddress(addresses, cleanPc, streetHint, doorNumber) {
         udprn: numberMatch.udprn || ''
       };
       // The vision hint didn't match a PAF building number directly (e.g. the
-      // hint read "Flat 1" but the building number is "52"). That's fine — the
+      // hint read "Flat 1" but the building number is "52"). That's fine - the
       // PAF address is authoritative, so fall through to pick a street match
       // that HAS a real building number. We never guess: we only ever use a
       // number that PAF publishes.
-      console.log('[POSTCODER] Door number hint ' + dn + ' did not directly match PAF for ' + cleanPc + ' — using PAF building number.');
+      console.log('[POSTCODER] Door number hint ' + dn + ' did not directly match PAF for ' + cleanPc + ' - using PAF building number.');
     }
     // STREET-NAME MATCH (no door number hint): Rightmove never publishes house
     // numbers, so we match the lead's street name against the PAF addresses in the
     // postcode. CRITICAL: we must NEVER assign a generic number (e.g. "1") when a
-    // street has multiple numbered properties — that would mail to the wrong house.
+    // street has multiple numbered properties - that would mail to the wrong house.
     // We only accept the match when it is UNAMBIGUOUS:
     //   - the street name appears for exactly ONE PAF address in the postcode, OR
     //   - the property is a named building/flat (premise present) with no competing
     //     numbered house on the same street in that postcode.
     // If the street has several distinct door numbers, we cannot know which one, so
-    // we reject (return null) — accuracy over count. The customer gets only leads
+    // we reject (return null) - accuracy over count. The customer gets only leads
     // whose exact house number PAF confirms without ambiguity.
     const streetNorm = hint.replace(/[^a-z]/g, '');
     const streetMatches = addresses.filter(function(a) {
@@ -494,7 +494,7 @@ function matchPafAddress(addresses, cleanPc, streetHint, doorNumber) {
       // Exact street match, or the hint is a full/partial prefix of the PAF street.
       return s === streetNorm || streetNorm.indexOf(s) === 0 || s.indexOf(streetNorm) === 0 || (s.indexOf(streetNorm) !== -1 && streetNorm.length >= 6);
     });
-    // Deduplicate by number/premise — if the street resolves to a SINGLE distinct
+    // Deduplicate by number/premise - if the street resolves to a SINGLE distinct
     // address we can confirm it; if it resolves to MULTIPLE, it is ambiguous and we
     // must NOT guess a number.
     const distinct = [];
@@ -523,10 +523,10 @@ function matchPafAddress(addresses, cleanPc, streetHint, doorNumber) {
     // Normally we reject (never guess). With PAF_RELAXED_PICK=true the business
     // asked to fill the count, so we pick the FIRST numbered address on the street
     // as the most-likely match (a real, mail-ready address for the same street +
-    // postcode — the customer can confirm the exact number against the listing).
+    // postcode - the customer can confirm the exact number against the listing).
     if (distinct.length > 1) {
       if (process.env.PAF_RELAXED_PICK === 'true' || process.env.PAF_RELAXED_PICK === '1') {
-        console.log('[POSTCODER] Ambiguous street ' + cleanPc + ' (' + streetNorm + '): ' + distinct.length + ' numbers — relaxed PAF picks first (fill count)');
+        console.log('[POSTCODER] Ambiguous street ' + cleanPc + ' (' + streetNorm + '): ' + distinct.length + ' numbers - relaxed PAF picks first (fill count)');
         const sm = distinct[0];
         return {
           fullAddress: sm.summaryline || sm.addressline1 || '',
@@ -538,7 +538,7 @@ function matchPafAddress(addresses, cleanPc, streetHint, doorNumber) {
           udprn: sm.udprn || ''
         };
       }
-      console.log('[POSTCODER] Ambiguous street match for ' + cleanPc + ' (' + streetNorm + '): ' + distinct.length + ' numbers — rejecting (never guess)');
+      console.log('[POSTCODER] Ambiguous street match for ' + cleanPc + ' (' + streetNorm + '): ' + distinct.length + ' numbers - rejecting (never guess)');
     }
   }
   // No confirmable address -> reject (accuracy over count).
@@ -601,7 +601,7 @@ function fetchPropertyDetail(propertyUrl) {
   });
 }
 
-// Postcoder FREE-TEXT ADDRESS SEARCH — resolves a partial address (street + town) to a
+// Postcoder FREE-TEXT ADDRESS SEARCH - resolves a partial address (street + town) to a
 // full address + postcode. Used for probate leads whose source only provides a partial
 // address. Same paid lookup + budget guard as lookupPostcoderAddress.
 function searchPostcoderAddress(query) {
@@ -783,7 +783,7 @@ function parseZooplaAddress(html) {
 // Resolve a full address (with house number) using the Apify "Rightmove
 // Land Registry Full Address & House Number Finder" actor. This is authoritative
 // (HM Land Registry sold-price data) but only returns a match for properties
-// that have a past sale record — so it is used as a FALLBACK when the photo/PAF
+// that have a past sale record - so it is used as a FALLBACK when the photo/PAF
 // route fails to produce a number. Returns a lead-style address object or null.
 async function lookupLandRegistryAddress(postcode, streetHint, soldPrice, soldYear) {
   return new Promise((resolve) => {
@@ -1184,7 +1184,7 @@ function fetchRightmoveApifyCommercial(areas, maxProperties) {
         // (the actor is occasionally flaky with many commercial URLs).
         var leads1 = await runActor(buildSaleUrls(true));
         if (leads1.length === 0) {
-          console.log('[RIGHTMOVE-COMMERCIAL-APIFY] area run empty — retrying with Greater London only');
+          console.log('[RIGHTMOVE-COMMERCIAL-APIFY] area run empty - retrying with Greater London only');
           leads1 = await runActor(buildSaleUrls(false));
         }
         resolve(leads1);
@@ -1314,7 +1314,7 @@ function fetchZooplaApify(areas, maxProperties) {
 }
 
 // Town/city for a postcode, from the cached PAF address array (NO new Postcoder
-// spend — reuses what earlier lookups already cached). Returns '' when unknown.
+// spend - reuses what earlier lookups already cached). Returns '' when unknown.
 function getTownForPostcode(postcode) {
   try {
     var cleanPc = (postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -1388,7 +1388,7 @@ async function backfillLeadTowns(leads) {
     // FREE POSTCODE-AREA FALLBACK: if Postcoder had no cache/credits for this
     // postcode (so no town was returned), derive an AREA from the postcode prefix
     // (e.g. "E11" -> "Leytonstone, London", "SE25" -> "South Croydon", "HA5" ->
-    // "Pinner"). Print & Post NEEDS an area for Royal Mail routing — every lead must
+    // "Pinner"). Print & Post NEEDS an area for Royal Mail routing - every lead must
     // have one, even without spending a Postcoder credit. Map the outcode to a known
     // town/county (covers all UK area codes) so no lead ever ships without an area.
     if (!town && pc) {

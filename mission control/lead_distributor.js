@@ -199,7 +199,7 @@ function leadMatchesTarget(lead, customer, product) {
   var pc = getProductConfig(customer, product);
   const targets = pc.targets;
   const coverage = pc.coverage;
-  // Area match — match by city/county/region name
+  // Area match - match by city/county/region name
   let areaMatch = false;
   if (targets.length > 0) {
     // Check if targets are postcode area codes (1-2 letters) or city names
@@ -234,7 +234,7 @@ function leadMatchesTarget(lead, customer, product) {
           if (areaNorm.length >= 3 && leadTextNorm.indexOf(areaNorm) !== -1) { areaMatch = true; break; }
         }
         // Postcode-area targets (e.g. B, EN, NW, G, BA): STRICT postcode matching.
-        // Never do loose "includes()" text matching for these — a single-letter area
+        // Never do loose "includes()" text matching for these - a single-letter area
         // like "G" would match the letter 'g' inside any word (e.g. "building"),
         // delivering leads from every region to the customer.
         if (isPostcodeAreaAny) {
@@ -246,7 +246,7 @@ function leadMatchesTarget(lead, customer, product) {
           // area and delivered out-of-area. The postcode is the reliable signal.
           var leadAll = (lead.postcode || '') + ' ' + (lead.address || '') + ' ' + (lead.location || '');
           // Match the EXACT postcode area code (e.g. "BA", "G", "TQ") followed by
-          // a digit — NOT a wildcard. Previously each letter was turned into [A-Z],
+          // a digit - NOT a wildcard. Previously each letter was turned into [A-Z],
           // so "BA" matched any two-letter postcode area (KT, WR, TS...) and leads
           // were delivered to customers outside their chosen areas.
           var escArea = areaCodeUpper.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -263,7 +263,7 @@ function leadMatchesTarget(lead, customer, product) {
             'HA': 'london', 'BR': 'london', 'RM': 'london', 'W': 'london', 'E': 'london', 'N': 'london',
             'EC': 'london', 'WC': 'london'
           };
-          // Town-name match is only a hint — it MUST be confirmed by the lead's
+          // Town-name match is only a hint - it MUST be confirmed by the lead's
           // postcode area actually matching the requested area code (e.g. NW +
           // "London" must NOT match a lead whose postcode is SW11).
           if (areaTownMap[areaCodeUpper] && leadText.includes(areaTownMap[areaCodeUpper])) {
@@ -330,7 +330,7 @@ function leadMatchesTarget(lead, customer, product) {
     areaMatch = true;
   }
 
-  // Filter matching — support both legacy single-product and per-product format
+  // Filter matching - support both legacy single-product and per-product format
   const filterStr = customer.biz_field2 || '';
   let tier = 1;
   let planningCategory = '';
@@ -425,12 +425,12 @@ function leadMatchesTarget(lead, customer, product) {
         if (Array.isArray(filterTypes) && filterTypes.length > 0) {
           filterTypes = filterTypes.map(function(t) { return t.toLowerCase(); });
           appTypeMatched = filterTypes.some(function(t) { return appType.includes(t) || planningCategory.includes(t) || t.includes(planningCategory); });
-          // App type not matched: don't hard-reject — lower priority (tier 2) so
+          // App type not matched: don't hard-reject - lower priority (tier 2) so
           // real planning applications still reach the customer when the type
           // doesn't exactly match the filter list.
           if (!appTypeMatched) tier = 2;
         }
-        // Keyword matching — if set, further narrows results but doesn't block if none match
+        // Keyword matching - if set, further narrows results but doesn't block if none match
         if (filters.keywords) {
           const keywords = filters.keywords.toLowerCase().split(',').map(k => k.trim()).filter(k => k);
           if (keywords.length > 0) {
@@ -507,7 +507,7 @@ function normaliseLead(rawLead, product, customerId) {
     base.street = rawLead.street || '';
     base.town = rawLead.town || '';
     // Preserved so delivery-time Postcoder PAF can confirm the exact door number
-    // on ambiguous blocks — the vision AI read it from the photo at collection.
+    // on ambiguous blocks - the vision AI read it from the photo at collection.
     base.doorNumberHint = rawLead.doorNumberHint || '';
     base.photo = rawLead.photo || '';
     base.latitude = rawLead.latitude || rawLead.lat || null;
@@ -724,7 +724,7 @@ async function distributeProduct(product) {
   // FRESH-ONLY (24h): only leads collected (scrapedAt) OR source-published
   // (firstVisibleDate / updateDate / incorporationDate / publishedDate) within
   // the last 48 hours are ever assigned (24h primary, 24-48h fallback). Old pool
-  // leads are never reused — the customer promise is "fresh leads within 24 hours",
+  // leads are never reused - the customer promise is "fresh leads within 24 hours",
   // with a 48h fallback so quiet areas aren't starved. On Mondays the floor
   // extends to Saturday 00:00 so weekend-scraped leads still fill Monday's
   // accounts (see getFreshCutoffIso).
@@ -733,7 +733,7 @@ async function distributeProduct(product) {
   function isFresh(l) {
     // COMMERCIAL LEADS: always treated as fresh (they were scraped in this run's
     // 24h window). Commercial listings stay listed for years so their source
-    // dates are old, but scrapedAt is now — the customer wants fresh scrapes of
+    // dates are old, but scrapedAt is now - the customer wants fresh scrapes of
     // currently-listed commercial premises.
     if (l.commercial) {
       return true;
@@ -756,7 +756,7 @@ async function distributeProduct(product) {
     allScrapedLeads.sort(function(a, b) { return (b._isToday ? 1 : 0) - (a._isToday ? 1 : 0); });
     console.log(`  Using fresh pool: ${allScrapedLeads.length} leads (today's first, 24-48h fallback)`);
   } else {
-    console.log('  No fresh leads within 48h — no assignments made today');
+    console.log('  No fresh leads within 48h - no assignments made today');
   }
 
   // Deduplicate within the current batch (same company number, address, OR postcode)
@@ -775,9 +775,9 @@ async function distributeProduct(product) {
     // POSTCODE DEDUP for moving: the same property is sometimes scraped with
     // slightly different address strings (e.g. "Wembley, HA9 8LP" vs "HA9 8LP"),
     // which the address key misses. A postcode is effectively unique per property
-    // for moving leads, so dedup on it too — this stops duplicate postcodes being
+    // for moving leads, so dedup on it too - this stops duplicate postcodes being
     // assigned to a customer (which the delivery dedup then drops, underdelivering).
-    // EXCEPTION: commercial leads are NEVER postcode-deduped against residential —
+    // EXCEPTION: commercial leads are NEVER postcode-deduped against residential -
     // an office and a flat at the same postcode are DIFFERENT opportunities, and
     // commercial listings are distinct leads the customer explicitly asked for.
     var pcKey = (l.postcode || '').toString().toUpperCase().replace(/\s+/g, ' ').trim();
@@ -804,7 +804,7 @@ async function distributeProduct(product) {
 
   // Get leads already in DB to avoid duplicates (same product only).
   // IMPORTANT: only UNDELIVERED leads block re-assignment. Delivered leads are
-  // history — the same property legitimately appears in the pool again (Rightmove
+  // history - the same property legitimately appears in the pool again (Rightmove
   // listings persist for weeks) and the customer should get their fresh daily
   // follow-up of that listing. Blocking on delivered history caused customers to
   // be short-changed (moving pro got 1-2 leads because yesterday's identical
@@ -821,7 +821,7 @@ async function distributeProduct(product) {
 
   // STALE-UNDELIVERED PURGE: remove undelivered leads older than the 24h fresh
   // window BEFORE matching. Because delivery is strictly fresh-only (≤24h), an
-  // undelivered lead from a previous day can NEVER be delivered — it would only
+  // undelivered lead from a previous day can NEVER be delivered - it would only
   // poison today's dedup (the same property appears in today's pool, sees itself
   // "already assigned", and is skipped). This was the root cause of customers
   // (e.g. moving pro 15/day) receiving 1-2 leads instead of their quota on the
@@ -911,7 +911,7 @@ async function distributeProduct(product) {
     }
 
     // FALLBACK ONLY for tenders/probate (products where a lead may carry no
-    // clean county text at all). MOVING, NEWBUSINESS and PLANNING are EXCLUDED —
+    // clean county text at all). MOVING, NEWBUSINESS and PLANNING are EXCLUDED -
     // they have reliable postcode/application data and must use STRICT area
     // matching, never a fallback that delivers out-of-area leads. This was the
     // bug that sent wrong-area leads (e.g. Cambridge leads to a B/HA/NW customer,
@@ -1067,7 +1067,7 @@ async function distributeProduct(product) {
       // are HISTORY and do NOT block re-assignment for MOVING only (a property stays
       // on Rightmove for weeks, so the same fresh listing can be delivered again on a
       // later day as a daily follow-up). For every OTHER product (probate, planning,
-      // tenders, newbusiness) a delivered lead MUST block re-assignment — those are
+      // tenders, newbusiness) a delivered lead MUST block re-assignment - those are
       // single-delivery opportunities (a probate grant or planning application is
       // delivered once, never repeated).
       // DEDUP KEY by product: newbusiness MUST dedupe by COMPANY NUMBER (many
@@ -1145,7 +1145,7 @@ async function distributeProduct(product) {
     assignLead(assignment, null, null, 2);
   }
 
-  // PASS 4 — QUOTA GUARANTEE: every customer must receive their FULL promised
+  // PASS 4 - QUOTA GUARANTEE: every customer must receive their FULL promised
   // daily count, never less. If the normal matching passes left a customer short,
   // top them up from the remaining pool (preferring their requested areas, then
   // any remaining real lead) so we always deliver exactly what was sold.
@@ -1189,7 +1189,7 @@ async function distributeProduct(product) {
     }
     var stillShort = activeCustomers.filter(function(c) { return (customerUsage[c.id] || 0) < (customerLimits[c.id] || 0); });
     if (stillShort.length > 0) {
-      console.log('  [QUOTA-GUARANTEE] WARNING: supply exhausted — ' + stillShort.map(function(c) { return c.email || c.id; }).join(', ') + ' below promised quota');
+      console.log('  [QUOTA-GUARANTEE] WARNING: supply exhausted - ' + stillShort.map(function(c) { return c.email || c.id; }).join(', ') + ' below promised quota');
     }
   }
 
@@ -1228,7 +1228,7 @@ async function distributeProduct(product) {
     }
   } catch(e) { console.log('  [ENRICH] Error: ' + e.message); }
 
-    // Phase 4: No demo supplement — only real scraped data used
+    // Phase 4: No demo supplement - only real scraped data used
   var generated = 0;
   saveJSON(DB_FILE, db);
 
@@ -1248,7 +1248,7 @@ async function distributeAll(force) {
   console.log('========================================\n');
 
   if ((dayOfWeek === 0 || dayOfWeek === 6) && !force) {
-    console.log('  Weekend — no lead distribution (Mon-Fri only). Use --force to override.\n');
+    console.log('  Weekend - no lead distribution (Mon-Fri only). Use --force to override.\n');
     return [];
   }
 

@@ -128,7 +128,7 @@ function render(db){
   var isSales = p.partner_type === 'sales_partner';
   var html = '';
   // Banner
-  html += '<div class="banner"><strong>Your referral link</strong> — share this and anyone who signs up through it gets an extended 14-day free trial.<br><div class="link-box" style="margin-top:6px">' + esc(db.referral_link) + ' <button class="copy-btn" onclick="copyText(\'' + esc(db.referral_link) + '\', this)">Copy</button></div></div>';
+  html += '<div class="banner"><strong>Your referral link</strong> - share this and anyone who signs up through it gets an extended 14-day free trial.<br><div class="link-box" style="margin-top:6px">' + esc(db.referral_link) + ' <button class="copy-btn" onclick="copyText(\'' + esc(db.referral_link) + '\', this)">Copy</button></div></div>';
   html += '<div class="grid grid-3" style="margin-bottom:14px">' +
     '<div class="stat"><div class="n">' + (db.clicks || 0) + '</div><div class="l">Referral Clicks</div></div>' +
     '<div class="stat"><div class="n">' + (db.trials || 0) + '</div><div class="l">Trials</div></div>' +
@@ -144,7 +144,7 @@ function render(db){
   if (unread.length) {
     var wIcon = { cancelled:'🚨', payment_failed:'⚠️', paid:'🎉' };
     html += '<div class="card"><div class="sect-title">Notifications</div>';
-    unread.forEach(function(n){ html += '<div class="fb-item" style="background:#fffbeb;border-color:#fde68a"><b>' + (wIcon[n.type]||'🔔') + ' ' + esc(n.type.replace('_',' ')) + '</b> — ' + esc(n.message) + '</div>'; });
+    unread.forEach(function(n){ html += '<div class="fb-item" style="background:#fffbeb;border-color:#fde68a"><b>' + (wIcon[n.type]||'🔔') + ' ' + esc(n.type.replace('_',' ')) + '</b> - ' + esc(n.message) + '</div>'; });
     html += '</div>';
   }
   // Customer portfolio (payment status + leads so the partner can support/retain)
@@ -299,7 +299,7 @@ function togglePortfolioLeads(id){
   if (el) el.classList.toggle('hidden');
 }
 function logCustomerCheckin(id, company){
-  var html = '<div class="card"><div class="sect-title">Log Check-In' + (company ? ' — ' + esc(company) : '') + '</div>' +
+  var html = '<div class="card"><div class="sect-title">Log Check-In' + (company ? ' - ' + esc(company) : '') + '</div>' +
     '<input class="inp" id="ck-cust" type="hidden" value="' + esc(id) + '">' +
     '<label>What did you discuss / how are they doing?</label><textarea class="inp" id="ck-note" rows="3" placeholder="e.g. Happy with leads, wants more probate coverage..."></textarea>' +
     '<label>Schedule next check-in</label><input class="inp" id="ck-next" type="date">' +
@@ -335,7 +335,7 @@ function saveFeedback(){
     customer_comment: document.getElementById('fb-comment').value,
     partner_notes: document.getElementById('fb-notes').value,
     requested_action: document.getElementById('fb-action').value
-  }, function(d){ if (d && d.success) { document.getElementById('tab-feedback').innerHTML = '<div class="card" style="text-align:center;padding:24px">✅ <b>Feedback submitted.</b> Thank you — it goes straight to the 9amLeads team.</div>'; } else alert('Could not submit feedback'); });
+  }, function(d){ if (d && d.success) { document.getElementById('tab-feedback').innerHTML = '<div class="card" style="text-align:center;padding:24px">✅ <b>Feedback submitted.</b> Thank you - it goes straight to the 9amLeads team.</div>'; } else alert('Could not submit feedback'); });
 }
 function renderResources(){
   api('GET', '/api/partner/resources', null, function(d){

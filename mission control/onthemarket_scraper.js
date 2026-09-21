@@ -59,7 +59,7 @@ async function httpGetRetry(host, path, opts) {
     if (last.status === 429 || last.status === 403 || last.status >= 500 || last.status === 0) {
       continue; // retry
     }
-    break; // 404 etc — don't retry
+    break; // 404 etc - don't retry
   }
   return last;
 }
@@ -121,7 +121,7 @@ function parseDetailPostcode(body) {
 // full printable address in its data layer, e.g.
 //   "address":"299 Kennington Road\nKennington\nSE11 4QE"
 //   "address":"1 Charlton Road, London, Greater London, SE3 7EU"
-// Returns { postcode, address } — the address with town/county, newlines->commas.
+// Returns { postcode, address } - the address with town/county, newlines->commas.
 // Fetch ONE OTM listing's detail page and return its FULL printable address (number +
 // street + town + postcode). FREE (no Apify / no Postcoder). The list page only carries
 // a street-only address; the detail page embeds the full address. Bounded by the caller.
@@ -211,7 +211,7 @@ function extractPostcodeArea(pc) {
 //   "Apartment 101, 145 Farnworth" -> "Apartment 101"
 //   "2 Yew Tree Road"            -> "2"
 // Returns '' when the address doesn't start with a number/flat (e.g. "Costcutter
-// Supermarket, 55 Burlington Street" — a named premise; leave door blank).
+// Supermarket, 55 Burlington Street" - a named premise; leave door blank).
 function extractBuildingNumber(addr) {
   const s = String(addr || '').trim();
   const m = s.match(/^(?:Flat|Apartment|Suite|Unit)\s+[A-Z0-9\-]+/i);
@@ -244,7 +244,7 @@ function extractTownCounty(addr, postcode) {
   // Remove trailing postcode / partial postcode segments
   while (parts.length && /^[A-Z]{1,2}\d/i.test(parts[parts.length-1])) parts.pop();
   if (!parts.length) return { town: '', city: '', county: '' };
-  // Street-only address ("204A Brixton Road") has NO town info — leave it empty so
+  // Street-only address ("204A Brixton Road") has NO town info - leave it empty so
   // the postcode-based enrichment fills it, rather than faking "Brixton Road" as a town.
   if (parts.length === 1) return { town: '', city: '', county: '' };
   // "299 Kennington Road, Kennington"          -> town = Kennington
@@ -331,7 +331,7 @@ async function collectOnTheMarketLeads(params) {
         // Extract the door number / flat from the front of the address so the
         // delivery's door-number gate and Postcoder PAF can use it. OTM embeds it
         // in the address text ("55 Burlington Street", "Flat 3 X", "Apartment 101"),
-        // but leaves the field blank — without extraction every lead would be
+        // but leaves the field blank - without extraction every lead would be
         // rejected as door-less and never delivered.
         building_number: extractBuildingNumber(l.address),
         street: extractStreetName(l.address),

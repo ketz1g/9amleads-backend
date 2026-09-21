@@ -1,5 +1,5 @@
 /**
- * Public Sector Tenders — Contracts Finder Scraper & Delivery Engine
+ * Public Sector Tenders - Contracts Finder Scraper & Delivery Engine
  * 
  * Data sources:
  * 1. PRIMARY: Gov.uk Contracts Finder API (free, no key required)
@@ -285,7 +285,7 @@ async function collectTendersLeads(config) {
   const maxCount = config.maxCount || 250;
   // Paginate Contracts Finder (empty keyword = ALL live notices). ~20 per page.
   // Loop up to 15 pages (~300 notices) or until a page returns fewer than 10
-  // (end of results) — captures the full daily supply across every UK council
+  // (end of results) - captures the full daily supply across every UK council
   // and government department.
   async function paginate() {
     let all = [];
@@ -299,7 +299,7 @@ async function collectTendersLeads(config) {
       // small delay to be polite to the site
       await new Promise(r => setTimeout(r, 400));
     }
-    // ADD Find a Tender (FTS) — the UK's high-value contract portal. Complements
+    // ADD Find a Tender (FTS) - the UK's high-value contract portal. Complements
     // Contracts Finder with a separate supply stream (different notices). Run up
     // to 12 pages so high-value notices add meaningful volume to the pool.
     for (let f = 1; f <= 12; f++) {
@@ -308,7 +308,7 @@ async function collectTendersLeads(config) {
       let added = 0;
       fts.forEach(function(l){ if (l.id && !seenIds.has(l.id)) { seenIds.add(l.id); all.push(l); added++; } });
       if (added === 0 || all.length >= maxCount) break;
-      // FTS rate-limits aggressively (429 on rapid requests) — pace the pages out.
+      // FTS rate-limits aggressively (429 on rapid requests) - pace the pages out.
       await new Promise(r => setTimeout(r, 2500));
     }
     return all;
@@ -318,7 +318,7 @@ async function collectTendersLeads(config) {
 
 // ===== FIND A TENDER (FTS) SCRAPER =====
 // FTS (www.find-tender.service.gov.uk) is the UK's official replacement for the
-// OJEU/TED regime — high-value public contracts across the whole UK. It publishes
+// OJEU/TED regime - high-value public contracts across the whole UK. It publishes
 // ~20 notices per search-result page and carries hundreds of thousands of notices.
 // This adds a second, complementary supply stream on top of Contracts Finder.
 function fetchFindATender(maxCount, pageNum) {
@@ -414,7 +414,7 @@ function fetchTenderDetail(url) {
           const text = body.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
           const html = body;
           const out = {};
-          // Contact name — CF uses "Contact name", PCS uses "Contact person"
+          // Contact name - CF uses "Contact name", PCS uses "Contact person"
           const nameMatch = text.match(/Contact\s+(?:name|person)\s*:?\s*([A-Z][A-Za-z' .-]{2,60}?)(?=\s+(?:Address|Telephone|Email|E-mail|Country|NUTS)\b)/i);
           if (nameMatch) out.contactName = nameMatch[1].trim();
           else {
@@ -470,7 +470,7 @@ function fetchTenderDetail(url) {
               }
             }
           }
-          // How to apply / application info — stop at "About the buyer"
+          // How to apply / application info - stop at "About the buyer"
           const applyStart = text.indexOf('How to apply');
           if (applyStart !== -1) {
             const applyEnd = text.indexOf('About the buyer', applyStart);
@@ -581,7 +581,7 @@ function generateSampleTenders(keywords, location, count) {
     const deadline = new Date(Date.now() + Math.floor(Math.random() * 60 + 14) * 86400000);
     const published = new Date(Date.now() - Math.floor(Math.random() * 14) * 86400000);
     const cpv = cpvCodes[Math.floor(Math.random() * cpvCodes.length)];
-    const cpvLabel = cpv + ' — ' + ['IT Services', 'Construction', 'Cleaning', 'Catering', 'Consultancy',
+    const cpvLabel = cpv + ' - ' + ['IT Services', 'Construction', 'Cleaning', 'Catering', 'Consultancy',
       'Software', 'Health', 'Construction', 'Waste', 'Maintenance', 'FM', 'IT',
       'Legal', 'Architecture', 'Grounds', 'Energy', 'Vehicles', 'Print',
       'Arboriculture', 'Playground', 'Electrical', 'Gas', 'Pest Control',
@@ -703,7 +703,7 @@ function generateEmailHTML(sheet) {
     '<h1 style="font-family:Outfit,sans-serif;font-size:24px;font-weight:800;color:#fff;margin:0">\n' +
     '  Public Sector <span style="color:' + color + '">Tenders</span>\n' +
     '</h1>\n' +
-    '<p style="color:#888;font-size:14px;margin:8px 0 0">' + sheet.company + ' — Daily Tender Sheet</p>\n' +
+    '<p style="color:#888;font-size:14px;margin:8px 0 0">' + sheet.company + ' - Daily Tender Sheet</p>\n' +
     '</td></tr>\n' +
     '<tr><td style="background:#0a0a0a;padding:24px 32px">\n' +
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">\n' +
@@ -789,7 +789,7 @@ async function runForCustomer(customerId, useSampleData) {
   }
 
   if (leads.length === 0) {
-    console.log('  LIVE SCRAPE FAILED — using sample data as fallback');
+    console.log('  LIVE SCRAPE FAILED - using sample data as fallback');
     leads = generateSampleTenders(customer.keywords, customer.location, customer.leadsPerDay || 15);
     leads = leads.map(l => ({ ...l, customerId }));
     console.log('  Generated ' + leads.length + ' sample tenders');
@@ -811,7 +811,7 @@ async function runForCustomer(customerId, useSampleData) {
   console.log('  Summary: ' + JSON.stringify(sheet.summary.byLocation));
 
   sheet.leads.slice(0, 3).forEach((l, i) => {
-    console.log('    ' + (i+1) + '. ' + l.title + ' — ' + l.contractValue + ' — ' + l.deadlineDate);
+    console.log('    ' + (i+1) + '. ' + l.title + ' - ' + l.contractValue + ' - ' + l.deadlineDate);
   });
 
   const emailHTML = generateEmailHTML(sheet);
@@ -852,7 +852,7 @@ function showStatus() {
   const leads = loadJSON(LEADS_FILE);
   const deliveries = loadJSON(DELIVERY_FILE);
 
-  console.log('\n=== Public Sector Tenders — Status ===\n');
+  console.log('\n=== Public Sector Tenders - Status ===\n');
   for (const [id, c] of Object.entries(customers)) {
     const cLeads = leads[id] || [];
     const todayLeads = cLeads.filter(l => l.scrapedAt && l.scrapedAt.startsWith(new Date().toISOString().split('T')[0]));
@@ -909,7 +909,7 @@ async function main() {
     fs.writeFileSync(path.join(DATA_DIR, 'tenders-delivery-' + args[1] + '-' + sheet.date + '.html'), html);
     console.log('  Email HTML saved');
   } else {
-    console.log('Public Sector Tenders — Contracts Finder Scraper & Delivery Engine');
+    console.log('Public Sector Tenders - Contracts Finder Scraper & Delivery Engine');
     console.log('');
     console.log('Usage:');
     console.log('  --add-customer <id> <company> <email> <keywords>     Add customer (comma-sep keywords)');
