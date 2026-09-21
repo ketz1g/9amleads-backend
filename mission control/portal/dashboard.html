@@ -2122,6 +2122,14 @@ document.querySelectorAll('.modal').forEach(function(m){
               if (_pc && _full && _full.toLowerCase().indexOf(String(_pc).toLowerCase()) === -1) _full += (_full ? ', ' : '') + _pc;
               _addr = _biz ? (_biz + (_full ? ' \u00b7 ' + _full : '')) : _full;
             }
+            // Probate: show the deceased NAME plus the full address.
+            if (l.product === 'probate' || d.deceasedName) {
+              var _pn = d.deceasedName || d.name || '';
+              var _ppc = d.postcode || '';
+              var _pfull = String(d.fullAddress || d.deceasedAddress || d.address || '').trim();
+              if (_ppc && _pfull && _pfull.toLowerCase().indexOf(String(_ppc).toLowerCase()) === -1) _pfull += (_pfull ? ', ' : '') + _ppc;
+              _addr = _pn ? (_pn + (_pfull ? ' \u00b7 ' + _pfull : '')) : _pfull;
+            }
             // Show the day each lead was delivered so the customer can see when it arrived.
             var _when = l.delivered_at ? new Date(l.delivered_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '';
             return { addr: _addr, when: _when };
