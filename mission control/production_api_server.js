@@ -18403,6 +18403,7 @@ async function runFulfilmentGuarantee(label) {
       return true;
     });
     var gShort = [];
+    var gShortProds = {};
     for (var gi = 0; gi < gCusts.length; gi++) {
       try {
         var gc = gCusts[gi];
@@ -18410,24 +18411,36 @@ async function runFulfilmentGuarantee(label) {
         var gpromised = parseInt(gc.leads_per_day, 10) > 0 ? parseInt(gc.leads_per_day, 10) : (getPlanLimit(gc.product, gc.plan, gc.coverage) || 5);
         if (!gp || gp.count < gpromised) {
           gShort.push(gc.email + ' (' + gc.product + '): ' + (gp ? gp.count : 0) + '/' + gpromised + ' in ' + ((gp && gp.areas) || []).join(','));
+          gShortProds[gc.product] = (gShortProds[gc.product] || 0) + 1;
         }
       } catch(ge2) { console.log('[GUARANTEE] preview error ' + gc.email + ': ' + ge2.message); }
     }
     if (gShort.length) {
-      // AUTO-REMEDIATE FIRST (no action needed from the founder): immediately run the
-      // pre-9am top-up so a detected shortfall is FILLED before 9am, instead of just
-      // alerting. Idempotent — keeps existing leads and only adds new ones — so the
-      // later 08:40 top-up simply finds less to do.
+      // AUTO-REMEDIATE FIRST (no action needed from the founder): fill a detected
+      // shortfall BEFORE 9am instead of just alerting. Two mechanisms:
+      //   - moving/probate: run the pre-9am top-up (fills each customer's mailable queue;
+      //     idempotent, so the later 08:40 pass simply finds less to do).
+      //   - planning/newbusiness/tenders: these have no mailable queue, so force a fresh
+      //     scrape of that product so the pool holds enough supply for the short areas.
       try {
-        await new Promise(function(resolve) {
-          var _h = require('http');
-          var _b = JSON.stringify({});
-          var _rq = _h.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/top-up-all', headers: { 'Authorization': 'Bearer ' + (ADMIN_PASSWORD || ''), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(_b) } }, function(_rs) { _rs.on('data', function() {}); _rs.on('end', function() { resolve(); }); });
-          _rq.on('error', function() { resolve(); });
-          _rq.setTimeout(180000, function() { try { _rq.destroy(); } catch(e) {} resolve(); });
-          _rq.write(_b); _rq.end();
-        });
-        console.log('[GUARANTEE] ' + label + ': auto-remediation (top-up-all) triggered for ' + gShort.length + ' shortfall(s)');
+        function _postLocal(path2, body2) {
+          return new Promise(function(resolve) {
+            try {
+              var _h2 = require('http');
+              var _b2 = JSON.stringify(body2 || {});
+              var _r2 = _h2.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: path2, headers: { 'Authorization': 'Bearer ' + (ADMIN_PASSWORD || ''), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(_b2) } }, function(_rs2) { _rs2.on('data', function() {}); _rs2.on('end', function() { resolve(); }); });
+              _r2.on('error', function() { resolve(); });
+              _r2.setTimeout(180000, function() { try { _r2.destroy(); } catch(e) {} resolve(); });
+              _r2.write(_b2); _r2.end();
+            } catch(e) { resolve(); }
+          });
+        }
+        await _postLocal('/api/admin/top-up-all', {});
+        var _dProds = Object.keys(gShortProds).filter(function(p) { return p && p !== 'moving' && p !== 'probate'; });
+        for (var _di = 0; _di < _dProds.length; _di++) {
+          await _postLocal('/api/admin/run-scrapers', { product: _dProds[_di], force: true });
+        }
+        console.log('[GUARANTEE] ' + label + ': auto-remediation triggered (top-up-all + force-scrape [' + (_dProds.join(',') || 'none') + ']) for ' + gShort.length + ' shortfall(s)');
       } catch(grErr) { console.log('[GUARANTEE] auto-remediation error:', grErr.message); }
       // OWNER-EMAIL DIGEST MODE: email the shortfall ONCE per day (the first check
       // that finds it — usually 07:15) rather than at BOTH 07:15 and 07:45 for the
