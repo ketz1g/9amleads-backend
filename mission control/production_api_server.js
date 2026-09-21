@@ -28903,6 +28903,57 @@ app.post('/api/admin/tracking/test-stannp', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/tracking/e2e-test - TRUE end-to-end test of the live tracking loop.
+// Creates a temporary campaign + recipient linked to a REAL Stannp mailpiece id, runs
+// the SAME poll + mapping + storage the 30-minute cron uses, reads back exactly what the
+// customer/admin tracking view would show, then cleans up. No new mail, no cost.
+app.post('/api/admin/tracking/e2e-test', adminAuth, async (req, res) => {
+  try {
+    var provider = getDirectMailProvider();
+    var dbE = getDb();
+    var mid = String((req.query && req.query.mailpiece_id) || '').trim();
+    if (!mid) {
+      var camps = (dbE.direct_mail_campaigns || []).filter(function(c) { return /^\d/.test(String(c.provider_campaign_id || '')); });
+      if (camps.length) mid = String(String(camps[camps.length - 1].provider_campaign_id).split(',')[0]).trim();
+    }
+    if (!mid) return res.json({ success: false, error: 'No real mailpiece id available to test with' });
+    var custId = 'e2e_test_customer';
+    var campId = 'e2e_test_' + uuidv4();
+    var rcptId = 'e2e_test_rcpt_' + uuidv4();
+    var now = new Date().toISOString();
+    if (!Array.isArray(dbE.direct_mail_campaigns)) dbE.direct_mail_campaigns = [];
+    if (!Array.isArray(dbE.direct_mail_recipients)) dbE.direct_mail_recipients = [];
+    dbE.direct_mail_campaigns.push({ id: campId, customer_id: custId, name: 'E2E TRACKING TEST', description: 'e2e', status: 'sent', template_id: '', material_id: '', target_count: 1, sent_count: 1, delivery_date: now.split('T')[0], budget: 0, notes: 'E2E_TRACKING_TEST', provider: 'stannp', provider_campaign_id: mid, provider_status: '', provider_status_label: '', stripe_session_id: '', stripe_payment_id: '', stripe_payment_status: '', created_at: now, updated_at: now });
+    dbE.direct_mail_recipients.push({ id: rcptId, customer_id: custId, campaign_id: campId, name: 'E2E Test', company: '', address_line1: '1 Test Street', address_line2: '', city: 'London', postcode: 'EC2A 4NA', country: 'United Kingdom', lead_id: '', status: 'sent', provider_mailpiece_id: mid, mailpiece_type: 'letter', provider_status: 'queued', created_at: now, updated_at: now });
+    saveDb();
+    // Poll Stannp through the SAME provider call the cron uses, then record it.
+    var st = await provider.getCampaignStatus(mid);
+    var mapped = mapStannpStatus(st && st.status);
+    if (st && st.success) recordMailpieceTracking(custId, campId, rcptId, mid, st.status, now);
+    var db2 = getDb();
+    var rc2 = (db2.direct_mail_recipients || []).find(function(r) { return r.id === rcptId; });
+    var cp2 = (db2.direct_mail_campaigns || []).find(function(c) { return c.id === campId; });
+    var out = {
+      mailpiece_id: mid,
+      stannp_success: !!(st && st.success),
+      stannp_status: (st && st.status) || '',
+      stannp_error: (st && st.error) || '',
+      mapped: { status: mapped.status, label: mapped.label, step: mapped.step },
+      stored_recipient: rc2 ? { provider_status: rc2.provider_status || '', label: rc2.provider_status_label || '', step: rc2.tracking_step || 0, timeline_events: (rc2.tracking_history || []).length } : null,
+      stored_campaign: cp2 ? { provider_status: cp2.provider_status || '', label: cp2.provider_status_label || '', summary: cp2.tracking_summary || null } : null
+    };
+    out.success = !!(st && st.success && rc2 && rc2.provider_status);
+    out.note = out.success ? ('PASS - mailpiece polled, mapped and stored; the tracking view would show "' + (rc2.provider_status_label || rc2.provider_status) + '".') : 'FAIL - see stannp_error.';
+    if (!(req.query && req.query.keep)) {
+      db2.direct_mail_campaigns = (db2.direct_mail_campaigns || []).filter(function(c) { return c.id !== campId; });
+      db2.direct_mail_recipients = (db2.direct_mail_recipients || []).filter(function(r) { return r.id !== rcptId; });
+      saveDb();
+      out.cleaned_up = true;
+    }
+    res.json(out);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/tracking/sync-all — force refresh of ALL in-flight mailpieces from Stannp.
 app.post('/api/admin/tracking/sync-all', adminAuth, async (req, res) => {
   try {
