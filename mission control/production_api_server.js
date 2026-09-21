@@ -4193,6 +4193,25 @@ function affiliateNurtureEmail(aff, day) {
     '<p style="color:#8a94a8;font-size:12px;text-align:center;margin:0">Your code: <b style="color:#c9d1de">' + code + '</b> - share it anywhere.</p>';
   return top + body + cta + '<p style="color:#888;font-size:13px;margin-top:22px;border-top:1px solid #1e2030;padding-top:14px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>';
 }
+// Affiliate welcome (on register).
+function affiliateWelcomeEmail(name, code, rate, autoActivate) {
+  return '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto">' +
+    '<h1 style="font-family:Outfit,sans-serif;color:#0ea5e9;margin:0 0 10px">Welcome to the 9amLeads Affiliate Programme</h1>' +
+    '<p style="color:#ccc;line-height:1.7">Hi ' + escHtml(String(name || '').trim()) + ',</p>' +
+    '<p style="color:#ccc;line-height:1.7">Your affiliate application has been received' + (autoActivate ? ' and your account is now <strong style="color:#fff">active</strong>' : ' and is being reviewed') + '.</p>' +
+    '<p style="color:#ccc;line-height:1.7">Your unique referral code is <strong style="color:#0ea5e9">' + escHtml(String(code || '')) + '</strong>. Customers enter this at signup and you earn <strong style="color:#fff">&pound;' + (rate || 25) + '</strong> for every qualifying referral, once they pay their second invoice. We review and pay out weekly, so your money usually lands within a few weeks of them signing up.</p>' +
+    '<p style="color:#ccc;line-height:1.7">Log in to your dashboard to track referrals and earnings: <a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">9amleads.com/portal/affiliate.html</a></p>' +
+    '<p style="color:#888;font-size:13px;margin-top:24px">Questions? Reply to this email or contact hello@9amleads.com.</p>' +
+    '</div>';
+}
+// Affiliate inactive warning (day 30, no referrals).
+function affiliateInactiveWarningEmail(aff) {
+  return '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="font-family:Outfit,sans-serif;color:#0ea5e9;margin:0 0 10px">Your affiliate account is about to close</h1><p style="color:#ccc;line-height:1.7">Hi ' + escHtml(String(aff.name || 'there')).trim() + ',</p><p style="color:#ccc;line-height:1.7">Your 9amLeads affiliate account has been active for over 30 days but we have not yet seen a single referral from your code <strong style="color:#0ea5e9">' + escHtml(String(aff.code || '')) + '</strong>.</p><p style="color:#ccc;line-height:1.7">Per our <a href="https://9amleads.com/affiliate-terms.html" style="color:#0ea5e9">Affiliate Terms</a>, accounts with no referrals within 30 days are closed. <strong style="color:#fff">Make one referral in the next 7 days to keep your account.</strong> Your dashboard has ready-made posts, scripts and a 14-day-free-trial code to make it easy.</p><p style="color:#ccc;line-height:1.7">If you cannot promote right now, reply to this email and we will pause your deadline - no problem.</p><p style="color:#ccc;line-height:1.7">Log in: <a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">9amleads.com/portal/affiliate.html</a></p><p style="color:#888;font-size:13px;margin-top:24px">- The 9amLeads team &middot; hello@9amleads.com</p></div>';
+}
+// Affiliate account closed (day 37, still no referrals).
+function affiliateClosedEmail(aff) {
+  return '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="font-family:Outfit,sans-serif;color:#f87171;margin:0 0 10px">Your affiliate account has been closed</h1><p style="color:#ccc;line-height:1.7">Hi ' + escHtml(String(aff.name || 'there')).trim() + ',</p><p style="color:#ccc;line-height:1.7">As set out in our <a href="https://9amleads.com/affiliate-terms.html" style="color:#0ea5e9">Affiliate Terms</a>, your account has been closed because no referrals were made within 30 days of joining, and no referral was made after our 7-day warning.</p><p style="color:#ccc;line-height:1.7">You are very welcome to <a href="https://9amleads.com/portal/affiliate.html#register" style="color:#0ea5e9">re-apply any time</a> when you are ready to promote.</p><p style="color:#888;font-size:13px;margin-top:24px">- The 9amLeads team &middot; hello@9amleads.com</p></div>';
+}
 function processAffiliateNurture() {
   try {
     var sent = 0;
@@ -4363,7 +4382,7 @@ function processInactiveAffiliateDeletion() {
         if (!warnedAt || isNaN(warnedAt.getTime())) {
           aff[warnedKey] = now.toISOString();
           try {
-            sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' }, '9amLeads Affiliate - action needed to keep your account', '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="font-family:Outfit,sans-serif;color:#0ea5e9;margin:0 0 10px">Your affiliate account is about to close</h1><p style="color:#ccc;line-height:1.7">Hi ' + escHtml(String(aff.name || 'there')).trim() + ',</p><p style="color:#ccc;line-height:1.7">Your 9amLeads affiliate account has been active for over 30 days but we have not yet seen a single referral from your code <strong style="color:#0ea5e9">' + escHtml(String(aff.code || '')) + '</strong>.</p><p style="color:#ccc;line-height:1.7">Per our <a href="https://9amleads.com/affiliate-terms.html" style="color:#0ea5e9">Affiliate Terms</a>, accounts with no referrals within 30 days are closed. <strong style="color:#fff">Make one referral in the next 7 days to keep your account.</strong> Your dashboard has ready-made posts, scripts and a 14-day-free-trial code to make it easy.</p><p style="color:#ccc;line-height:1.7">If you cannot promote right now, reply to this email and we will pause your deadline - no problem.</p><p style="color:#ccc;line-height:1.7">Log in: <a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">9amleads.com/portal/affiliate.html</a></p><p style="color:#888;font-size:13px;margin-top:24px">- The 9amLeads team · hello@9amleads.com</p></div>').catch(function() {});
+            sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' }, '9amLeads Affiliate - action needed to keep your account', affiliateInactiveWarningEmail(aff)).catch(function() {});
             warned.push(aff.email);
           } catch(eW) { errored.push(aff.email); }
           return;
@@ -4374,7 +4393,7 @@ function processInactiveAffiliateDeletion() {
         aff.status = 'deleted';
         aff.deleted_at = now.toISOString();
         aff.deleted_reason = 'no referrals within 30 days (inactive account deletion)';
-        try { sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' }, 'Your 9amLeads affiliate account has been closed', '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="font-family:Outfit,sans-serif;color:#f87171;margin:0 0 10px">Your affiliate account has been closed</h1><p style="color:#ccc;line-height:1.7">Hi ' + escHtml(String(aff.name || 'there')).trim() + ',</p><p style="color:#ccc;line-height:1.7">As set out in our <a href="https://9amleads.com/affiliate-terms.html" style="color:#0ea5e9">Affiliate Terms</a>, your account has been closed because no referrals were made within 30 days of joining, and no referral was made after our 7-day warning.</p><p style="color:#ccc;line-height:1.7">You are very welcome to <a href="https://9amleads.com/portal/affiliate.html#register" style="color:#0ea5e9">re-apply any time</a> when you are ready to promote.</p><p style="color:#888;font-size:13px;margin-top:24px">- The 9amLeads team · hello@9amleads.com</p></div>').catch(function() {}); } catch(eD) {}
+        try { sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' }, 'Your 9amLeads affiliate account has been closed', affiliateClosedEmail(aff)).catch(function() {}); } catch(eD) {}
         deleted.push(aff.email);
       } catch(e) { errored.push(aff.email); }
     });
@@ -6249,14 +6268,7 @@ app.post('/api/affiliate/register', async (req, res) => {
     saveDb();
     // Confirmation email to the affiliate (so they know their application arrived).
     try {
-      var welcomeHtml = '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto">' +
-        '<h1 style="font-family:Outfit,sans-serif;color:#0ea5e9;margin:0 0 10px">Welcome to the 9amLeads Affiliate Programme</h1>' +
-        '<p style="color:#ccc;line-height:1.7">Hi ' + escHtml(String(name).trim()) + ',</p>' +
-        '<p style="color:#ccc;line-height:1.7">Your affiliate application has been received' + (AFFILIATE_AUTO_ACTIVATE ? ' and your account is now <strong style="color:#fff">active</strong>' : ' and is being reviewed') + '.</p>' +
-        '<p style="color:#ccc;line-height:1.7">Your unique referral code is <strong style="color:#0ea5e9">' + escHtml(code2) + '</strong>. Customers enter this at signup and you earn <strong style="color:#fff">&pound;' + (aff.payout_rate || 25) + '</strong> for every qualifying referral, once they pay their second invoice. We review and pay out weekly, so your money usually lands within a few weeks of them signing up.</p>' +
-        '<p style="color:#ccc;line-height:1.7">Log in to your dashboard to track referrals and earnings: <a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">9amleads.com/portal/affiliate.html</a></p>' +
-        '<p style="color:#888;font-size:13px;margin-top:24px">Questions? Reply to this email or contact hello@9amleads.com.</p>' +
-        '</div>';
+      var welcomeHtml = affiliateWelcomeEmail(name, code2, aff.payout_rate, AFFILIATE_AUTO_ACTIVATE);
       sendBrevoEmail({ email: em, name: String(name).trim() }, 'Welcome to the 9amLeads Affiliate Programme', welcomeHtml).catch(function() {});
     } catch(eW) {}
     // Alert the owner so they know a new affiliate joined.
@@ -19344,6 +19356,17 @@ app.get('/api/admin/email-library', adminAuth, (req, res) => {
       });
     });
     groups.push({ key: 'winback', label: 'Win-back (expired trials)', icon: '\u267B\uFE0F', sends: 'To expired trials - day 0, 3 and 7 after the trial ends', emails: winback });
+    // 9) AFFILIATE PROGRAMME (affiliates only, not customers)
+    var affSample = { name: 'Sarah', email: 'affiliate@example.com', code: 'SARAH25', payout_rate: AFFILIATE_PAYOUT_RATE };
+    var affiliateEmails = [];
+    try { affiliateEmails.push({ id: 'aff_welcome', name: 'Affiliate welcome (on application)', subject: 'Welcome to the 9amLeads Affiliate Programme', when: 'The moment they apply to join', html: affiliateWelcomeEmail('Sarah', 'SARAH25', AFFILIATE_PAYOUT_RATE, AFFILIATE_AUTO_ACTIVATE) }); } catch(e) {}
+    try { affiliateEmails.push({ id: 'aff_nurture_3', name: 'Nurture - day 3 (your kit is ready)', subject: '9amLeads Affiliate - your kit is ready', when: 'Day 3 after joining (if approved)', html: affiliateNurtureEmail(affSample, 3) }); } catch(e) {}
+    try { affiliateEmails.push({ id: 'aff_nurture_7', name: 'Nurture - day 7 (keep referrals converting)', subject: '9amLeads Affiliate - keep your referrals converting', when: 'Day 7 after joining', html: affiliateNurtureEmail(affSample, 7) }); } catch(e) {}
+    try { affiliateEmails.push({ id: 'aff_nurture_14', name: 'Nurture - day 14 (2 weeks in)', subject: '9amLeads Affiliate - 2 weeks in, keep the momentum', when: 'Day 14 after joining', html: affiliateNurtureEmail(affSample, 14) }); } catch(e) {}
+    try { affiliateEmails.push({ id: 'aff_reactivation', name: 'Reactivation (code still live)', subject: '9amLeads Affiliate - your code is still live', when: '21+ days in with no earnings and no recent login', html: affiliateReactivationEmail(affSample) }); } catch(e) {}
+    try { affiliateEmails.push({ id: 'aff_inactive_warning', name: 'Inactive warning - account about to close', subject: '9amLeads Affiliate - action needed to keep your account', when: 'Day 30 with no referrals (7-day deadline)', html: affiliateInactiveWarningEmail(affSample) }); } catch(e) {}
+    try { affiliateEmails.push({ id: 'aff_closed', name: 'Account closed (no referrals)', subject: 'Your 9amLeads affiliate account has been closed', when: 'Day 37 - still no referrals after the warning', html: affiliateClosedEmail(affSample) }); } catch(e) {}
+    groups.push({ key: 'affiliate', label: 'Affiliate programme (affiliates only)', icon: '\uD83E\uDD1D', sends: 'Only to affiliates - from application through to inactivity', emails: affiliateEmails });
     res.json({ success: true, groups: groups });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
