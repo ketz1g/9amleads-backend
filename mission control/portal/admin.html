@@ -2120,7 +2120,11 @@ async function loadRejectedLeads() {
     items.forEach(function(x) {
       var addr = x.address || (x.data && (x.data.fullAddress || x.data.address)) || '-';
       var pc = x.postcode || (x.data && x.data.postcode) || '-';
-      var cust = x.customer || x.company || x.lead_id || '-';
+      // The API returns customer_company / customer_email (not `customer`/`company`),
+      // so the old lookup fell back to the LEAD ID and the customer was invisible.
+      var custName = x.customer_company || x.customer_email || x.customer || x.company || '-';
+      var custEmail = x.customer_email || '';
+      var cust = '<b>' + esc(custName) + '</b>' + (custEmail && custEmail !== custName ? '<div style="font-size:11px;color:#64748b">' + esc(custEmail) + '</div>' : '');
       var prod = x.product || '';
       var prodClass = 'prod-moving';
       if (prod === 'probate') prodClass = 'prod-probate';
