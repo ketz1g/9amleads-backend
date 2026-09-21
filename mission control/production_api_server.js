@@ -39569,19 +39569,42 @@ app.listen(PORT, () => {
     // crash, so it must not count toward the crash-loop alert. Only abrupt exits do.
     var _prevCleanExit = dbB.__cleanExitAt && (nowB - dbB.__cleanExitAt) < 180000;
     if (dbB.__cleanExitAt) delete dbB.__cleanExitAt;
-    if (!_prevCleanExit) dbB.__boots.push(nowB);
-    if (dbB.__boots.length > 100) dbB.__boots = dbB.__boots.slice(-100);
-    // CRASH-LOOP ALERT ONLY: routine restarts (deploys / sleep-wake) are now counted and
-    // reported in the daily summary instead of emailed one-by-one. We only email if the
-    // service is restarting repeatedly (>= 4 boots in 15 min = a real crash loop), and
-    // at most once per 2h, so a genuine problem still reaches the owner.
-    var recentBoots = dbB.__boots.filter(function(t) { return nowB - t < 15 * 60000; });
-    if (recentBoots.length >= 4 && (nowB - (dbB.__last_bootalert || 0)) > 2 * 3600000) {
-      sendBrevoEmail({ email: bootEmail, name: '9amLeads Owner' }, '⚠ 9amLeads is crash-looping',
-        '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="font-family:Outfit,sans-serif;color:#f87171;margin:0 0 8px">Crash loop detected</h1><p style="color:#ccc;line-height:1.7">The 9amLeads backend has restarted ' + recentBoots.length + ' times in the last 15 minutes — this is a crash loop, not a normal deploy.</p><p style="color:#ccc;line-height:1.7">Check the Render logs immediately. Routine single restarts are no longer emailed.</p></div>').catch(function(){});
-      dbB.__last_bootalert = nowB;
+    function _recordBoot(isDeploy) {
+      try {
+        if (!_prevCleanExit && !isDeploy) dbB.__boots.push(nowB);
+        if (dbB.__boots.length > 100) dbB.__boots = dbB.__boots.slice(-100);
+        // CRASH-LOOP ALERT ONLY: routine restarts (deploys / sleep-wake) are counted but
+        // not emailed individually. Only a real crash loop (>= 4 abrupt boots in 15 min)
+        // emails, at most once per 2h.
+        var recentBoots = dbB.__boots.filter(function(t) { return nowB - t < 15 * 60000; });
+        if (recentBoots.length >= 4 && (nowB - (dbB.__last_bootalert || 0)) > 2 * 3600000) {
+          sendBrevoEmail({ email: bootEmail, name: '9amLeads Owner' }, '⚠ 9amLeads is crash-looping',
+            '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="font-family:Outfit,sans-serif;color:#f87171;margin:0 0 8px">Crash loop detected</h1><p style="color:#ccc;line-height:1.7">The 9amLeads backend has restarted ' + recentBoots.length + ' times in the last 15 minutes — this is a crash loop, not a normal deploy.</p><p style="color:#ccc;line-height:1.7">Check the Render logs immediately. Routine single restarts are no longer emailed.</p></div>').catch(function(){});
+          dbB.__last_bootalert = nowB;
+        }
+        saveDb();
+      } catch(e) {}
     }
-    saveDb();
+    // DEPLOY-AWARE: ask Render when the last deploy finished. If it was within 5 minutes
+    // this boot is a DEPLOY (Render restarts the service on every deploy), so it must not
+    // count as a crash - a burst of legitimate deploys used to look like a crash loop.
+    var _rK = process.env.RENDER_API_KEY || '', _rS = process.env.RENDER_SERVICE_ID || '';
+    if (!_rK || !_rS) { _recordBoot(false); }
+    else {
+      try {
+        var _rq = require('https').request({ hostname: 'api.render.com', path: '/v1/services/' + _rS + '/deploys?limit=1', method: 'GET', headers: { 'Authorization': 'Bearer ' + _rK, 'Accept': 'application/json' }, timeout: 8000 }, function(_rs) {
+          var _b = ''; _rs.on('data', function(c) { _b += c; });
+          _rs.on('end', function() {
+            var _isDeploy = false;
+            try { var _arr = JSON.parse(_b); var _latest = _arr && _arr[0] && _arr[0].deploy; if (_latest && _latest.finishedAt) { var _fin = new Date(_latest.finishedAt).getTime(); if (_fin && (nowB - _fin) < 300000) _isDeploy = true; } } catch(e) {}
+            _recordBoot(_isDeploy);
+          });
+        });
+        _rq.on('error', function() { _recordBoot(false); });
+        _rq.setTimeout(8000, function() { try { _rq.destroy(); } catch(e) {} _recordBoot(false); });
+        _rq.end();
+      } catch(e) { _recordBoot(false); }
+    }
   } catch(e) {}
   // DELIVERY SELF-CHECK ON BOOT: if the service restarted during/after the 9am window
   // (deploy, crash, OOM, sleep-wake) and today's delivery is NOT complete, recover
