@@ -2111,7 +2111,14 @@ document.querySelectorAll('.modal').forEach(function(m){
         try {
           var _items = tl.slice(0, 5).map(function(l){
             var d=(typeof l.data==='string')?{}:l.data; try{ if(typeof l.data==='string') d=JSON.parse(l.data); }catch(e){}
-            var _addr = String(d.fullAddress || d.address || '').trim();
+            var _addr = String(d.fullAddress || '').trim();
+            if (!_addr) {
+              _addr = String(d.address || '').trim();
+              var _town0 = (d.town || d.city || '').trim();
+              var _pc0 = String(d.postcode || '').trim();
+              if (_town0 && _addr && _addr.toLowerCase().indexOf(_town0.toLowerCase()) === -1) _addr += (_addr ? ', ' : '') + _town0;
+              if (_pc0 && _addr && _addr.toLowerCase().indexOf(_pc0.toLowerCase()) === -1) _addr += (_addr ? ', ' : '') + _pc0;
+            }
             // New business: show the company NAME plus the full address.
             if (l.product === 'newbusiness' || d.companyName || d.companyNumber) {
               var _biz = d.companyName || d.company || d.name || '';
