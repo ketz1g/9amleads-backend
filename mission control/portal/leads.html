@@ -355,13 +355,21 @@ function renderLeadList(dayLeads, noGroup) {
     if (product === 'newbusiness') {
       // Match email: business name first, then address, SIC, companies house link
       var biz = d.company || d.companyName || d.name || 'New Company';
+      // FULL registered address (number + street + town + full postcode) - the customer
+      // needs the exact postal address, not just the street/town.
+      var nbAddr = d.address || d.fullAddress || '';
+      var nbTown = d.town || d.city || '';
+      var nbPc = d.postcode || '';
+      var nbFull = String(nbAddr || '').trim();
+      if (nbTown && nbFull && nbFull.toLowerCase().indexOf(String(nbTown).toLowerCase()) === -1) nbFull += (nbFull ? ', ' : '') + nbTown;
+      if (nbPc && nbFull && nbFull.toLowerCase().indexOf(String(nbPc).toLowerCase()) === -1) nbFull += (nbFull ? ', ' : '') + nbPc;
       var incDate = d.incorporationDate || d.dateOfCreation || '';
       var incStr = incDate ? 'Incorporated ' + new Date(incDate).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '';
       var metaParts = [incStr, d.sicCode ? 'SIC: ' + d.sicCode : ''].filter(Boolean);
       var chLink = d.companyNumber ? '<a href="https://find-and-update.company-information.service.gov.uk/company/' + d.companyNumber + '" target="_blank" style="color:var(--accent);text-decoration:underline;font-size:11px">View on Companies House</a>' : '';
       html += '<div class="lead' + selClass + '">' + chk + '<div style="flex:1"><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' + scoreBadge + replacedBadge +
         '<div class="addr">' + biz + '</div>' +
-        '<div class="meta">' + (d.address||'') + '</div>' +
+        '<div class="meta">' + nbFull + '</div>' +
         '<div class="meta">' + metaParts.join(' \u00b7 ') + (chLink ? ' \u00b7 ' + chLink : '') + '</div></div>' +
         '<div class="right"><span class="badge">' + status + '</span>' + postBadge(d, l.id) + sentOnHtml + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:4px">' + mailBtn(l.id, d) + rejectBtn(l.id, d) + '</div>' + outcomeBtn(l.id, d) + '</div></div>';
     } else if (product === 'probate') {
