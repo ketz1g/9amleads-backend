@@ -13399,19 +13399,21 @@ app.post('/api/admin/cleanup-unmailable-leads', adminAuth, (req, res) => {
       var prod = l.product || 'moving';
       if (prod === 'tenders') return;
       var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) { return; }
-      if (d.not_mailable) return;
-      if (isLeadMailableForSend(d, prod)) return;
-      d.not_mailable = true;
-      l.data = JSON.stringify(d);
-      flagged++;
+      if (isLeadMailableForSend(d, prod)) return;   // already fine
       var c = custById[l.customer_id];
       var key = c ? c.email : l.customer_id;
-      byCustomer[key] = (byCustomer[key] || 0) + 1;
-      if (!doReplace || !c) return;
+      if (!d.not_mailable) {
+        d.not_mailable = true;
+        flagged++;
+        byCustomer[key] = (byCustomer[key] || 0) + 1;
+      }
+      // Already flagged in a previous run? Don't re-flag, but DO still replace it.
+      if (!doReplace || d.replaced_at) { l.data = JSON.stringify(d); return; }
       // Find a mailable, in-area, never-sent replacement from the pool.
       var areas = []; try { areas = JSON.parse(c.target_areas || '[]'); } catch(e) {}
       var ukwide = /all.?uk|uk.?wide|nationwide|whole.?uk/i.test((areas || []).join(' '));
       var pool = pools[prod] || [];
+      var got = false;
       for (var i = 0; i < pool.length; i++) {
         var pl = pool[i];
         if (!isLeadMailableForSend(pl, prod)) continue;
@@ -13429,14 +13431,17 @@ app.post('/api/admin/cleanup-unmailable-leads', adminAuth, (req, res) => {
         var best = bestMailableAddress(nd); if (best) { nd.fullAddress = best; nd.address = best; }
         nd.replacement_for = d.url || d.address || '';
         nd.scrapedAt = nd.scrapedAt || new Date().toISOString();
-        dbU.leads.push({ id: uuidv4(), customer_id: c.id, product: prod, data: JSON.stringify(nd), status: 'delivered', delivered: 1, created_at: new Date().toISOString(), delivered_at: new Date().toISOString(), release_at: new Date().toISOString() });
+        dbU.leads.push({ id: uuidv4(), customer_id: l.customer_id, product: prod, data: JSON.stringify(nd), status: 'delivered', delivered: 1, created_at: new Date().toISOString(), delivered_at: new Date().toISOString(), release_at: new Date().toISOString() });
         replaced++;
+        got = true;
         break;
       }
-      if (doReplace && replaced === 0) { /* nothing */ }
+      if (!got) noStock[key] = (noStock[key] || 0) + 1;
+      if (got) d.replaced_at = new Date().toISOString();
+      l.data = JSON.stringify(d);
     });
     saveDb();
-    res.json({ success: true, flagged: flagged, replaced: replaced, by_customer: byCustomer });
+    res.json({ success: true, flagged: flagged, replaced: replaced, by_customer: byCustomer, no_stock: noStock });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
   // POST /api/admin/backfill-lead-details - repair leads whose product-specific fields
