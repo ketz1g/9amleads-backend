@@ -13368,11 +13368,82 @@ app.post('/api/admin/top-up-today', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/backfill-lead-details - repair leads whose product-specific fields
-// were dropped by the older top-up path (company name / deceased name / proposal /
-// tender details), by matching each lead back to the pool on url or address+postcode.
-// Idempotent - only touches leads that are actually missing the field.
-app.post('/api/admin/backfill-lead-details', adminAuth, (req, res) => {
+// POST /api/admin/cleanup-unmailable-leads - one-off repair of HISTORICAL delivered
+// leads that are not actually mailable (missing door/flat number, street or full
+// postcode). Flags them (data.not_mailable = true) so no path can ever print & post
+// them, and reports the count per customer. Pass { replace: true } to ALSO assign a
+// mailable in-area replacement lead from the pool for each one flagged.
+app.post('/api/admin/cleanup-unmailable-leads', adminAuth, (req, res) => {
+  try {
+    var doReplace = !!(req.body && req.body.replace);
+    var dbU = getDb();
+    var custById = {};
+    (dbU.customers || []).forEach(function(c) { custById[c.id] = c; });
+    var pools = {};
+    if (doReplace) {
+      Object.keys(PRODUCT_LEAD_FILES).forEach(function(p) {
+        try { pools[p] = JSON.parse(fs.readFileSync(path.join(DATA_DIR, PRODUCT_LEAD_FILES[p].file), 'utf-8')) || []; } catch(e) { pools[p] = []; }
+        if (!Array.isArray(pools[p])) pools[p] = [];
+      });
+    }
+    var flagged = 0, replaced = 0, byCustomer = {}, noStock = {};
+    var usedUrls = {}, usedAddrs = {};
+    (dbU.leads || []).forEach(function(l) {
+      try {
+        var d0 = JSON.parse(l.data || '{}'); var u0 = String(d0.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase();
+        if (u0) usedUrls[u0] = 1;
+      } catch(e) {}
+    });
+    (dbU.leads || []).forEach(function(l) {
+      if (!l.delivered) return;
+      var prod = l.product || 'moving';
+      if (prod === 'tenders') return;
+      var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) { return; }
+      if (d.not_mailable) return;
+      if (isLeadMailableForSend(d, prod)) return;
+      d.not_mailable = true;
+      l.data = JSON.stringify(d);
+      flagged++;
+      var c = custById[l.customer_id];
+      var key = c ? c.email : l.customer_id;
+      byCustomer[key] = (byCustomer[key] || 0) + 1;
+      if (!doReplace || !c) return;
+      // Find a mailable, in-area, never-sent replacement from the pool.
+      var areas = []; try { areas = JSON.parse(c.target_areas || '[]'); } catch(e) {}
+      var ukwide = /all.?uk|uk.?wide|nationwide|whole.?uk/i.test((areas || []).join(' '));
+      var pool = pools[prod] || [];
+      for (var i = 0; i < pool.length; i++) {
+        var pl = pool[i];
+        if (!isLeadMailableForSend(pl, prod)) continue;
+        var pArea = extractPostcodeArea(pl.postcode || '');
+        var inArea = ukwide || areas.indexOf(pArea) !== -1;
+        if (!inArea) continue;
+        var u = String(pl.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase();
+        if (u && usedUrls[u]) continue;
+        var ak = String(bestMailableAddress(pl)).toLowerCase().replace(/[^a-z0-9]/g, '') + '|' + String(pl.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (usedAddrs[ak]) continue;
+        if (u) usedUrls[u] = 1;
+        usedAddrs[ak] = 1;
+        var nd = Object.assign({}, pl);
+        delete nd.id;
+        var best = bestMailableAddress(nd); if (best) { nd.fullAddress = best; nd.address = best; }
+        nd.replacement_for = d.url || d.address || '';
+        nd.scrapedAt = nd.scrapedAt || new Date().toISOString();
+        dbU.leads.push({ id: uuidv4(), customer_id: c.id, product: prod, data: JSON.stringify(nd), status: 'delivered', delivered: 1, created_at: new Date().toISOString(), delivered_at: new Date().toISOString(), release_at: new Date().toISOString() });
+        replaced++;
+        break;
+      }
+      if (doReplace && replaced === 0) { /* nothing */ }
+    });
+    saveDb();
+    res.json({ success: true, flagged: flagged, replaced: replaced, by_customer: byCustomer });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+  // POST /api/admin/backfill-lead-details - repair leads whose product-specific fields
+  // were dropped by the older top-up path (company name / deceased name / proposal /
+  // tender details), by matching each lead back to the pool on url or address+postcode.
+  // Idempotent - only touches leads that are actually missing the field.
+  app.post('/api/admin/backfill-lead-details', adminAuth, (req, res) => {
   try {
     var dbB = getDb();
     var pools = {};
