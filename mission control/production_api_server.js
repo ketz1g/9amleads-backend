@@ -17523,6 +17523,75 @@ async function preDeliveryReadinessCheck() {
 }
 cron.schedule('45 8 * * 1-5', function() { try { preDeliveryReadinessCheck(); } catch(e) {} }, { timezone: 'Europe/London' });
 
+// ===== HARD PRE-FLIGHT: verify EVERYTHING the 9am delivery needs, before 9am =====
+// Runs at 07:30 and 08:40 UK (Mon-Fri) and is available on demand at
+// GET /api/admin/delivery-preflight. Alerts the founder if ANY check fails so we
+// catch problems BEFORE the promise is broken, not on the day.
+async function runDeliveryPreflight(opts) {
+  opts = opts || {};
+  var checks = [];
+  function add(name, ok, detail) { checks.push({ check: name, ok: !!ok, detail: detail || '' }); }
+  // 1) EMAIL provider: account reachable, and (if asked) a REAL test send.
+  var brevoOk = false, brevoDetail = '';
+  try {
+    var acct = await new Promise(function(resolve) {
+      var r = https.request({ hostname: 'api.brevo.com', path: '/v3/account', method: 'GET', headers: { 'api-key': BREVO_API_KEY, 'Accept': 'application/json' }, timeout: 15000 }, function(resp) { var d = ''; resp.on('data', function(c) { d += c; }); resp.on('end', function() { resolve({ code: resp.statusCode, body: d }); }); });
+      r.on('error', function(e) { resolve({ code: 0, body: e.message }); });
+      r.on('timeout', function() { try { r.destroy(); } catch(e) {} resolve({ code: 0, body: 'timeout' }); });
+      r.end();
+    });
+    brevoOk = acct.code === 200;
+    brevoDetail = 'account HTTP ' + acct.code;
+    if (brevoOk && opts.send) {
+      try { await sendBrevoEmail({ email: 'hello@9amleads.com', name: 'Preflight' }, '9amLeads pre-flight test', '<p>Pre-flight test email - delivery path OK.</p>'); brevoDetail += ', test send OK'; }
+      catch(se) { brevoOk = false; brevoDetail += ', test send FAILED: ' + se.message; }
+    }
+  } catch(e) { brevoDetail = e.message; }
+  add('Email provider (Brevo)', brevoOk, brevoDetail);
+  // 2) Delivery hold inactive.
+  var holdActive = false; try { holdActive = isDeliveryHoldActive(); } catch(e) {}
+  add('No delivery hold', !holdActive, holdActive ? 'A delivery hold is ACTIVE' : 'inactive');
+  // 3) Delivery lock not stale.
+  var lockHeld = false; try { lockHeld = !!(_deliveryLock && (Date.now() - (_deliveryLockAt || 0)) < 6 * 60 * 1000); } catch(e) {}
+  add('No stale delivery lock', !lockHeld, lockHeld ? 'held ' + Math.round((Date.now() - (_deliveryLockAt || 0)) / 1000) + 's' : 'free');
+  // 4) Postcoder budget remaining.
+  var pcRem = 0; try { var _pb = require('./postcoder_budget'); pcRem = _pb.getDailyBudget() - _pb.usage(); } catch(e) {}
+  add('Postcoder budget', pcRem > 0, pcRem + ' credits left');
+  // 5) Disk + memory.
+  try { var fsd = require('fs'); var st = fsd.statfsSync(DATA_DIR); var freePct = Math.round((st.bfree / st.blocks) * 100); add('Disk free', freePct > 10, freePct + '% free'); } catch(e) { add('Disk free', true, 'n/a'); }
+  var peak = Math.max.apply(null, (global.__memHistory || []).map(function(h) { return h.rssMB || 0; })) || 0;
+  add('Memory', peak < 1300, Math.round(peak) + 'MB peak');
+  // 6) No errors in the last hour.
+  var errs = (global.__lastErrors || []).filter(function(e) { return e && e.at && (Date.now() - new Date(e.at).getTime()) < 3600000; });
+  add('No recent errors', errs.length === 0, errs.length ? errs.slice(-3).map(function(e) { return e.source + ': ' + e.message; }).join(' | ') : 'none');
+  // 7) PER-CUSTOMER readiness: every active customer will actually get their count.
+  var seen = {}, short = [], total = 0;
+  var custs = (getDb().customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && !isInternalAccount(c) && isEntitledForDelivery(c); });
+  for (var i = 0; i < custs.length; i++) {
+    total++;
+    try {
+      var pv = await deliveryPreviewForCustomer(custs[i], seen);
+      if (pv && pv.promised > 0 && pv.preview_count < pv.promised) short.push(pv.email + ' (' + pv.preview_count + '/' + pv.promised + ')');
+    } catch(pe) { short.push(custs[i].email + ' (preview error)'); }
+  }
+  add('All customers covered', short.length === 0, short.length ? 'SHORT: ' + short.join(', ') : 'all ' + total + ' covered');
+  var failed = checks.filter(function(c) { return !c.ok; });
+  return { pass: failed.length === 0, passed: checks.length - failed.length, total: checks.length, checks: checks };
+}
+app.get('/api/admin/delivery-preflight', adminAuth, async (req, res) => {
+  try { res.json(await runDeliveryPreflight({ send: req.query.send === '1' })); } catch(e) { res.status(500).json({ error: e.message }); }
+});
+function deliveryPreflightAlert(label, r) {
+  try {
+    if (!r || r.pass) { console.log('[PREFLIGHT ' + label + '] PASS (' + r.passed + '/' + r.total + ')'); return; }
+    var bad = r.checks.filter(function(c) { return !c.ok; });
+    console.log('[PREFLIGHT ' + label + '] FAIL: ' + bad.map(function(c) { return c.check + ' -> ' + c.detail; }).join(' | '));
+    sendAdminAlert('Pre-flight FAILED before 9am (' + label + ') - fix now', '<div style="font-family:Inter,sans-serif;color:#e2e8f0"><b style="color:#f87171">These will break the 9am delivery:</b><ul>' + bad.map(function(c) { return '<li><b>' + c.check + '</b>: ' + c.detail + '</li>'; }).join('') + '</ul></div>');
+  } catch(e) {}
+}
+cron.schedule('30 7 * * 1-5', async function() { try { deliveryPreflightAlert('07:30', await runDeliveryPreflight({ send: true })); } catch(e) {} }, { timezone: 'Europe/London' });
+cron.schedule('40 8 * * 1-5', async function() { try { deliveryPreflightAlert('08:40', await runDeliveryPreflight({ send: false })); } catch(e) {} }, { timezone: 'Europe/London' });
+
 // ===== PRE-9AM SUPPLY WARNING =====
 // 07:45 UK Mon-Fri: check each entitled customer's mailable IN-AREA supply BEFORE the
 // 9am run. If anyone is likely to fall short, alert the founder early so they can top
