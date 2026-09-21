@@ -18197,6 +18197,12 @@ cron.schedule('10 9 * * 1-5', async () => {
         var gotEmail = (sc.last_email_date === todayS);
         var gotLeads = (sDb.leads || []).some(function(l) { return l.customer_id === sc.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(todayS) === 0; });
         if (gotEmail && gotLeads) { sNotified[sKey] = 'sorted'; continue; }
+        // NEVER warn a customer who already has their full promised count today: they
+        // HAVE their leads (and the daily email did go out) even if the last_email_date
+        // flag was lost to a mid-delivery cache reset. Warning them is a false alarm.
+        var sPromised = (typeof getPlanLimit === 'function' ? getPlanLimit(sc.product, sc.plan, sc.coverage) : 0) || 0;
+        var sDelivered = (sDb.leads || []).filter(function(l) { return l.customer_id === sc.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(todayS) === 0; }).length;
+        if (sPromised > 0 && sDelivered >= sPromised) { sNotified[sKey] = 'sorted'; continue; }
         if (!gotEmail) {
           // customer is missing their daily email right now — reassure them.
           await sendBrevoEmail({ email: sc.email, name: sc.company || 'Customer' },
@@ -25514,6 +25520,18 @@ _deliverDiag[cust.email].products = products;
       var finalBatch = emailQueue.splice(0, emailQueue.length);
       await Promise.all(finalBatch.map(function(m) { return sendBrevoEmail({ email: m.email, name: m.name }, m.subject, m.html).catch(function(e) { console.log('[DELIVERY] Email failed ' + m.email + ': ' + e.message); }); }));
       console.log('[DELIVERY] Flushed final email batch: ' + finalBatch.length);
+      // RE-ATTACH + PERSIST: the in-memory cache can be invalidated mid-run (auto-heal
+      // cron / 09:05 backstop re-run), which detaches the customer objects the loop
+      // mutated and silently loses last_email_date. Re-fetch each queued customer from
+      // the CURRENT cache and set the flag again, so the 09:10 monitor sees it. Without
+      // this, a customer who WAS emailed can get a false "leads on their way" notice.
+      try {
+        var _persistDb = getDb();
+        finalBatch.forEach(function(m) {
+          var _pc = (_persistDb.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === String(m.email || '').toLowerCase(); });
+          if (_pc) _pc.last_email_date = today;
+        });
+      } catch(pErr) {}
     }
     saveDb();
     // DELIVERY AUDIT LOG: persist a daily record so we can always verify that
