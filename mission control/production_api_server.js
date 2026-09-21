@@ -10273,6 +10273,23 @@ app.post('/api/crm/push', authMiddleware, async (req, res) => {
   }
 });
 
+// POST /api/admin/customers/restore { customer } - re-insert a customer record recovered
+// from a backup (used when an account was lost by a bad restore). Safe: it never
+// overwrites an existing account (matched by id or email).
+app.post('/api/admin/customers/restore', adminAuth, (req, res) => {
+  try {
+    var c = req.body && req.body.customer;
+    if (!c || !c.id || !c.email) return res.status(400).json({ error: 'customer object with id + email required' });
+    var dbR = getDb();
+    if (!Array.isArray(dbR.customers)) dbR.customers = [];
+    var exists = dbR.customers.some(function(x) { return String(x.id) === String(c.id) || String(x.email || '').toLowerCase() === String(c.email).toLowerCase(); });
+    if (exists) return res.json({ success: true, restored: false, reason: 'already exists' });
+    dbR.customers.push(c);
+    saveDb();
+    res.json({ success: true, restored: true, id: c.id, email: c.email });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/admin/crm-status - which customers have a CRM connected, and the result of
 // their most recent push (status + when + lead count + response snippet).
 app.get('/api/admin/crm-status', adminAuth, (req, res) => {
