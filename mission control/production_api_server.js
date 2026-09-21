@@ -13418,7 +13418,14 @@ app.post('/api/admin/cleanup-unmailable-leads', adminAuth, (req, res) => {
         var pl = pool[i];
         if (!isLeadMailableForSend(pl, prod)) continue;
         var pArea = extractPostcodeArea(pl.postcode || '');
-        var inArea = ukwide || areas.indexOf(pArea) !== -1;
+        // Area match mirrors the delivery: MOVING matches by postcode area; the other
+        // products match by county (their pool carries `county`, not postcodes).
+        var inArea;
+        if (prod === 'moving') inArea = ukwide || areas.indexOf(pArea) !== -1;
+        else {
+          var _pCounty = String(pl.county || '').toLowerCase().replace(/[\s-]+/g, '-');
+          inArea = ukwide || areas.indexOf(pArea) !== -1 || (_pCounty && areas.some(function(a) { return String(a).toLowerCase().replace(/[\s-]+/g, '-') === _pCounty; }));
+        }
         if (!inArea) continue;
         var u = String(pl.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase();
         if (u && usedUrls[u]) continue;
