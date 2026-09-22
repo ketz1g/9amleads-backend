@@ -41,6 +41,7 @@ jobs:
             "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys")
           echo "Render API HTTP $code"
           cat /tmp/resp.json
-          if [ "$code" != "201" ] && [ "$code" != "200" ]; then
+          # Render returns 202 (Accepted) for a successful deploy trigger, so accept ANY 2xx.
+          if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
             echo "Deploy trigger failed"; exit 1
           fi
