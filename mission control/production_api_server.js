@@ -17922,6 +17922,12 @@ cron.schedule('2 9 * * 1-5', async () => {
     if (__lastDeliveryDate === todayS2) return;      // already COMPLETED
     if (__deliveryStartedDate === todayS2) return;   // already RUNNING
     console.log('[09:02 CHECK] delivery has NOT started - triggering now');
+    try {
+      if (typeof _deliveryLock !== 'undefined' && _deliveryLock) {
+        console.log('[09:02 CHECK] clearing held delivery lock so the run can proceed');
+        _deliveryLock = false; _deliveryLockAt = 0;
+      }
+    } catch(bl2) {}
     var _h2 = require('http');
     var _b2 = JSON.stringify({});
     var _r2 = _h2.request({ hostname: '127.0.0.1', port: PORT, method: 'POST', path: '/api/admin/deliver', headers: { 'Authorization': 'Bearer ' + (ADMIN_PASSWORD), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(_b2) } }, function(s) { s.resume(); });
@@ -17962,6 +17968,14 @@ cron.schedule('5 9 * * 1-5', async () => {
     var todayStr = new Date().toISOString().split('T')[0];
     if (__lastDeliveryDate === todayStr) { try { deliveryCompletionWatchdog('09:05-verify'); } catch(eV) {} return; } // marked done - but VERIFY the real shortfall
     console.log('[BACKSTOP] 09:05 delivery not complete - re-triggering now (safety)');
+    // The backstop only fires when delivery has NOT completed, so clear any held lock -
+    // otherwise the delivery endpoint would skip the re-run and customers miss out.
+    try {
+      if (typeof _deliveryLock !== 'undefined' && _deliveryLock) {
+        console.log('[BACKSTOP] clearing held delivery lock so the re-run can proceed');
+        _deliveryLock = false; _deliveryLockAt = 0;
+      }
+    } catch(bl) {}
     try {
       const http = require('http');
       var bsBody = JSON.stringify({});
@@ -18269,9 +18283,10 @@ function isEntitledForDelivery(c) {
 }
 function autoFillDeliveryShortfalls(cbDone) {
   try {
-    // NEVER run while a delivery is in progress: both would top up from the same
-    // stale count and over-deliver.
-    if (typeof _deliveryLock !== 'undefined' && _deliveryLock && (Date.now() - (_deliveryLockAt || 0)) < 6 * 60 * 1000) {
+    // NEVER run while a delivery is genuinely in progress: both would top up from the
+    // same stale count and over-deliver. 2 minutes is long enough that a live run has
+    // progressed, short enough that a hung one frees quickly.
+    if (typeof _deliveryLock !== 'undefined' && _deliveryLock && (Date.now() - (_deliveryLockAt || 0)) < 2 * 60 * 1000) {
       console.log('[AUTOFILL] skipped - delivery in progress');
       if (typeof cbDone === 'function') { try { cbDone(); } catch(e) {} }
       return;
@@ -18369,11 +18384,14 @@ function deliveryCompletionWatchdog(label) {
     });
     if (!short.length) { console.log('[COMPLETION-WATCHDOG ' + label + '] all customers fulfilled ✓'); return { label: label, short: [], triggered: false }; }
     console.log('[COMPLETION-WATCHDOG ' + label + '] SHORT: ' + short.map(function(s){ return s.email + '(' + s.have + '/' + s.promised + ')'; }).join(', '));
-    // Free a stalled lock so the re-trigger can actually run.
+    // GUARANTEE: this watchdog only runs when a customer is genuinely SHORT, so the
+    // 9am promise is already at risk. A held lock must never block the recovery run -
+    // so it is cleared unconditionally here. The delivery itself is idempotent per
+    // customer (it only sends the missing count), so a re-run cannot double-deliver.
     try {
-      if (typeof _deliveryLock !== 'undefined' && _deliveryLock && (Date.now() - (_deliveryLockAt || 0)) > 6 * 60 * 1000) {
-        _deliveryLock = false;
-        console.log('[COMPLETION-WATCHDOG ' + label + '] released stale delivery lock');
+      if (typeof _deliveryLock !== 'undefined' && _deliveryLock) {
+        console.log('[COMPLETION-WATCHDOG ' + label + '] clearing held delivery lock (age ' + Math.round((Date.now() - (_deliveryLockAt || 0)) / 1000) + 's) so recovery can run');
+        _deliveryLock = false; _deliveryLockAt = 0;
       }
     } catch(le) {}
     // Recover. TWO paths, because they cover different cases:
@@ -24056,9 +24074,10 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
   } catch(tzErr) { console.log('[DELIVERY] timezone guard error:', tzErr.message); }
   if (_deliveryLock) {
     var _lockAge = Date.now() - (_deliveryLockAt || 0);
-    // 6 min (was 15): a stalled run must free the lock quickly so the 09:08/09:15/09:25
-    // recovery watchdogs can re-run and still hit the 9am promise.
-    if (_lockAge > 6 * 60 * 1000) {
+    // 2 min (was 6): a stalled run must free the lock fast so the recovery watchdogs
+    // (09:05/09:20/09:35/09:50) can re-run and still hit the 9am promise. Combined
+    // with the 4-minute hard auto-release below, a hung run can never block delivery.
+    if (_lockAge > 2 * 60 * 1000) {
       console.log('[DELIVERY] Stale delivery lock (' + Math.round(_lockAge / 1000) + 's) - releasing and continuing');
       _deliveryLock = false;
     } else {
