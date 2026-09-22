@@ -18214,9 +18214,20 @@ var __deliveryStartedDate = '';
 //                                   added leads immediately so inbox == dashboard == promise.
 //   purgeAllPendingRows()         - 09:12 UK daily: delete every undelivered row so stale
 //                                   pending junk can never inflate a dashboard again.
+// Internal / test / demo accounts must NEVER receive real leads, appear in delivery
+// previews, or be counted in stats. This is the single filter used by the delivery
+// engine, so anything seeded for demos has to be caught here.
 function isInternalAccount(c) {
-  var e = String((c && c.email) || '').toLowerCase();
-  return e.indexOf('@9amleads.com') !== -1 || e === 'ketzman1g@gmail.com';
+  if (!c) return true;
+  var e = String(c.email || '').toLowerCase();
+  if (!e) return true;
+  if (e.indexOf('@9amleads.com') !== -1) return true;   // our own inboxes
+  if (e === 'ketzman1g@gmail.com') return true;          // owner
+  if (e.indexOf('@example.com') !== -1) return true;     // reserved for examples
+  if (/^demo/.test(e)) return true;                      // demo-* accounts
+  if (/^test\./.test(e)) return true;                    // test.* accounts
+  if (c.demo === true) return true;                      // explicitly flagged demo
+  return false;
 }
 // An account is "trial-expired" (and therefore NOT owed leads) when its 7-day trial
 // has passed and it is not paying - i.e. no Stripe subscription. This applies to
