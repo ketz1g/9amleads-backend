@@ -16,22 +16,33 @@ jobs:
       - name: Check backend health (Render)
         id: health
         run: |
-          HTTP_CODE=$(curl -s -o /tmp/backend_body.txt -w "%{http_code}" --max-time 30 "https://nineamleads-backend.onrender.com/api/health")
+          HTTP_CODE=$(curl -s -o /tmp/backend_body.txt -w "%{http_code}" --max-time 30 "https://nineamleads-backend.onrender.com/api/health" || echo "000")
           echo "HTTP_CODE=$HTTP_CODE" >> $GITHUB_ENV
-          echo "BODY=$(cat /tmp/backend_body.txt)" >> $GITHUB_ENV
+          # Collapse the body to ONE line. Writing a multi-line value to $GITHUB_ENV
+          # fails the step, and during a deploy restart the error page is multi-line
+          # HTML - which made this monitor cry outage when nothing was actually wrong.
+          BODY=$(tr '\n\r' '  ' < /tmp/backend_body.txt | cut -c1-200)
+          echo "BODY=$BODY" >> $GITHUB_ENV
           echo "Backend HTTP $HTTP_CODE"
 
       - name: Check public site (Netlify)
         id: site
         run: |
-          SITE_CODE=$(curl -s -o /tmp/site_body.txt -w "%{http_code}" --max-time 30 "https://9amleads.com/")
+          SITE_CODE=$(curl -s -o /tmp/site_body.txt -w "%{http_code}" --max-time 30 "https://9amleads.com/" || echo "000")
           echo "SITE_CODE=$SITE_CODE" >> $GITHUB_ENV
+          SITE_BODY=$(tr '\n\r' '  ' < /tmp/site_body.txt | cut -c1-200)
+          echo "SITE_BODY=$SITE_BODY" >> $GITHUB_ENV
           echo "Site HTTP $SITE_CODE"
 
       - name: Determine outage
         id: status
         run: |
-          if [ "$HTTP_CODE" != "200" ] || [ "$SITE_CODE" != "200" ]; then
+          # A deploy restart returns 502/503 for a short window. Treat those as
+          # "deploying" rather than an outage, so a normal deploy does not page.
+          if [ "$HTTP_CODE" = "502" ] || [ "$HTTP_CODE" = "503" ]; then
+            echo "OUTAGE=deploying" >> $GITHUB_ENV
+            echo "Backend briefly unavailable (HTTP $HTTP_CODE) - likely a deploy restart"
+          elif [ "$HTTP_CODE" != "200" ] || [ "$SITE_CODE" != "200" ]; then
             echo "OUTAGE=yes" >> $GITHUB_ENV
             echo "Outage detected (backend=$HTTP_CODE, site=$SITE_CODE)"
           else
