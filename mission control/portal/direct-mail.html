@@ -42,6 +42,38 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 .hidden{display:none}
 #toast{position:fixed;bottom:24px;right:24px;background:#1e293b;color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;z-index:999;display:none;box-shadow:0 4px 20px rgba(0,0,0,.2)}
 @media(max-width:768px){.grid-2,.grid-3{grid-template-columns:1fr}.container{padding:20px 16px}.top{flex-wrap:wrap}.top .nav{overflow-x:auto;-webkit-overflow-scrolling:touch;padding:2px 0 4px;max-width:100%;flex-wrap:nowrap}.top .nav a{padding:7px 11px;font-size:12px;white-space:nowrap;flex-shrink:0}}
+
+/* ===== Print & Post wizard ===== */
+.wizbar{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0 0 24px}
+.wizbar .w{background:#fff;border:2px solid var(--border);border-radius:14px;padding:16px 18px;cursor:pointer;transition:.2s;display:flex;align-items:center;gap:14px;text-align:left}
+.wizbar .w:hover{border-color:#93c5fd}
+.wizbar .w.active{border-color:var(--accent);box-shadow:0 0 0 4px rgba(14,165,233,.12)}
+.wizbar .w.done{border-color:#86efac;background:#f0fdf4}
+.wizbar .n{width:42px;height:42px;border-radius:50%;background:#e2e8f0;color:#64748b;display:flex;align-items:center;justify-content:center;font-family:var(--ff-h);font-weight:900;font-size:19px;flex-shrink:0}
+.wizbar .w.active .n{background:var(--accent);color:#fff}
+.wizbar .w.done .n{background:var(--success);color:#fff}
+.wizbar .t{font-family:var(--ff-h);font-weight:800;font-size:17px;color:var(--text);line-height:1.2}
+.wizbar .s{font-size:13px;color:var(--text2);margin-top:2px}
+.wiz-step{display:none}
+.wiz-step.active{display:block}
+.wiz-nav{display:flex;align-items:center;gap:12px;margin:6px 0 20px}
+.wiz-nav .btn{padding:15px 30px;font-size:16px;font-weight:800;font-family:var(--ff-h)}
+.wiz-nav .spacer{flex:1}
+.wiz-hint{font-size:13px;color:var(--text2)}
+details.wiz-more{background:#fff;border:2px solid var(--border);border-radius:14px;padding:18px 20px;margin-bottom:16px}
+details.wiz-more summary{font-family:var(--ff-h);font-weight:800;font-size:17px;cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px;color:var(--text)}
+details.wiz-more summary::-webkit-details-marker{display:none}
+details.wiz-more summary:before{content:"+";font-family:var(--ff-h);font-weight:900;color:var(--accent);font-size:22px;width:22px;text-align:center}
+details.wiz-more[open] summary:before{content:"-" }
+details.wiz-more[open] summary{margin-bottom:16px}
+/* Bigger, easier to read throughout */
+.sect-title{font-size:22px !important;margin-bottom:16px !important}
+.label{font-size:13.5px !important}
+.input,select.input,textarea.input{font-size:15.5px !important;padding:14px 15px !important}
+.card{padding:28px !important}
+.btn{padding:12px 24px;font-size:14.5px}
+.page-header h1{font-size:30px !important}
+@media(max-width:768px){.wizbar{grid-template-columns:1fr}.wizbar .w{padding:13px 14px}.wizbar .t{font-size:15px}.wiz-nav .btn{flex:1;justify-content:center;padding:15px 16px}}
 </style></head><body>
 <div class="top">
 <div class="logo">9am<span>Leads</span></div>
@@ -58,10 +90,16 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 💡 <strong>Quick tips:</strong> Save your leaflet + cover letter once and reuse them for every mailing · <strong>Auto-Send</strong> posts new leads automatically after each 9am delivery · Follow up leads a couple of weeks later with <strong>Post Again</strong> - most jobs are won on the second letter.
 </div>
 
+<div class="wizbar" id="wizBar">
+<div class="w" data-step="1" onclick="wizShow(1)"><div class="n">1</div><div><div class="t">Your details</div><div class="s">The name and address we print</div></div></div>
+<div class="w" data-step="2" onclick="wizShow(2)"><div class="n">2</div><div><div class="t">Your leaflet &amp; letter</div><div class="s">Choose a format and upload</div></div></div>
+<div class="w" data-step="3" onclick="wizShow(3)"><div class="n">3</div><div><div class="t">Who to send to</div><div class="s">Pick leads and post them</div></div></div>
+</div>
+
 <div id="toast"></div>
 
 <!-- Step 1: Business Profile -->
-<div class="card">
+<div class="card wiz-step active" data-step="1">
 <div class="sect-title"><i class="fas fa-building" style="color:var(--accent)"></i> Step 1 · Your Business Profile</div>
 <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Your sender name &amp; address printed on every mailing. Fill it in once - it's saved and reused.</p>
 <div class="grid-2">
@@ -76,7 +114,7 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 </div>
 
 <!-- Step 2: Template / Cover Letter -->
-<div class="card">
+<div class="card wiz-step" data-step="2">
 <div class="sect-title"><i class="fas fa-file-alt" style="color:var(--accent)"></i> Step 2 · Choose Format &amp; Your Cover Letter</div>
 <p style="font-size:12px;color:var(--text2);margin-bottom:12px">1. <b>Pick your format</b> (A5 Portrait / A5 Landscape / A5 in Envelope / A4 Letter) · 2. <b>Upload or Edit</b> your leaflet front &amp; back · 3. <b>Write your cover letter</b> (letters only). Then <b style="color:var(--success)">save your leaflet and letter, and review the Print-Ready preview below</b> before sending.</p>
 
@@ -206,7 +244,7 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 </div>
 
 <!-- Step 3: Select Recipients -->
-<div class="card">
+<div class="card wiz-step" data-step="3">
 <div class="sect-title"><i class="fas fa-users" style="color:var(--accent)"></i> Step 3 · Who to send to</div>
 <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Click <b>Load My Leads</b>, tick the leads to mail, choose your saved cover letter + delivery date, then <b>Create &amp; Send Campaign</b>. You pay per item sent (A5 leaflet £2.99 · letter £2.49 · leaflet + letter £4.49).</p>
 <div class="grid-2">
@@ -231,8 +269,17 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 </div>
 
 
+<div class="wiz-nav" id="wizNav">
+<button class="btn btn-outline" id="wizBack" onclick="wizBack()" style="display:none"><i class="fas fa-arrow-left"></i> Back</button>
+<span class="wiz-hint" id="wizHint"></span>
+<span class="spacer"></span>
+<button class="btn btn-primary" id="wizNext" onclick="wizNext()">Continue <i class="fas fa-arrow-right"></i></button>
+</div>
+
 <!-- SAMPLE TO SELF (free trial users can test delivery to their own address) -->
-<div class="card" style="border:2px solid #0ea5e9;background:linear-gradient(135deg,#f0f9ff,#eff6ff)">
+<details class="wiz-more">
+<summary>Optional - send a printed sample to yourself first</summary>
+<div class="card" style="border:2px solid #0ea5e9;background:linear-gradient(135deg,#f0f9ff,#eff6ff);margin-bottom:0">
 <div class="sect-title"><i class="fas fa-envelope-open-text" style="color:var(--accent)"></i> Try It. Send a Sample To Yourself</div>
 <p style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:12px">Send a real printed sample to <b>your own address</b> to check it looks right before mailing to customers, and follow the live tracking. Costs the normal per-item price (A5 leaflet £2.99 · letter £2.49 · leaflet + letter £4.49).</p>
 <div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px">
@@ -256,6 +303,8 @@ body{font-family:var(--ff-b);color:var(--text);background:#fff;min-height:100vh;
 <button class="btn btn-primary" onclick="sendSample()" style="width:100%;justify-content:center"><i class="fas fa-paper-plane"></i> Send Me A Sample</button>
 <div id="sample-status" style="font-size:11px;color:var(--text2);margin-top:8px"></div>
 </div>
+
+</details>
 
 <!-- FAQ -->
 <div class="card">
@@ -1613,7 +1662,40 @@ function saveFlyerEditor(){
   loadMaterials();
   loadLeads();
   loadLetterPreview();
-})();</script>
+})();
+// ===== Print & Post wizard =====
+var WIZ = { step: 1, total: 3 };
+function wizShow(n) {
+  WIZ.step = Math.max(1, Math.min(WIZ.total, parseInt(n, 10) || 1));
+  var steps = document.querySelectorAll(".wiz-step");
+  for (var i = 0; i < steps.length; i++) {
+    steps[i].classList.toggle("active", parseInt(steps[i].getAttribute("data-step"), 10) === WIZ.step);
+  }
+  var tabs = document.querySelectorAll("#wizBar .w");
+  for (var j = 0; j < tabs.length; j++) {
+    var k = parseInt(tabs[j].getAttribute("data-step"), 10);
+    tabs[j].classList.toggle("active", k === WIZ.step);
+    tabs[j].classList.toggle("done", k < WIZ.step);
+  }
+  var back = document.getElementById("wizBack");
+  var next = document.getElementById("wizNext");
+  var hint = document.getElementById("wizHint");
+  if (back) back.style.display = (WIZ.step === 1) ? "none" : "";
+  if (next) next.innerHTML = (WIZ.step === WIZ.total)
+    ? '<i class="fas fa-paper-plane"></i> Review &amp; send'
+    : 'Continue <i class="fas fa-arrow-right"></i>';
+  if (hint) hint.textContent = "Step " + WIZ.step + " of " + WIZ.total;
+  try { localStorage.setItem("pp_wiz_step", String(WIZ.step)); } catch (e) {}
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+function wizNext() {
+  if (WIZ.step < WIZ.total) { wizShow(WIZ.step + 1); return; }
+  var b = document.getElementById("create-campaign-btn");
+  if (b) b.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+function wizBack() { wizShow(WIZ.step - 1); }
+document.addEventListener("DOMContentLoaded", function () { wizShow(1); });
+</script>
 
 <!-- Flyer position/crop editor modal (Vistaprint-style) -->
 <div id="flyer-editor-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,0.85);z-index:9999;align-items:center;justify-content:center;padding:16px">
