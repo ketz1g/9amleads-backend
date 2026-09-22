@@ -90,7 +90,7 @@ h1 span{color:#0ea5e9}
 <div style="font-size:14px;font-weight:700"><i class="fas fa-paper-plane" style="color:#0ea5e9;margin-right:6px"></i> Push to Search Engines <span style="font-size:10px;color:#5c6480;font-weight:500">(submit every page to Google &amp; Bing)</span></div>
 <button class="btn btn-primary btn-sm" onclick="pushIndexing()" id="pushIndexingBtn"><i class="fas fa-bolt"></i> Push Now</button>
 </div>
-<div style="font-size:11px;color:#8890a8;line-height:1.6;margin-bottom:10px">Sends every URL in your sitemap to <strong>IndexNow</strong> (Bing, Yandex, Seznam, Naver - instant, no account verification needed) and re-submits your sitemap to <strong>Google Search Console</strong>. Google has no API to force-index a normal page, so re-submitting the sitemap is the strongest automated signal available.</div>
+<div style="font-size:11px;color:#8890a8;line-height:1.6;margin-bottom:10px">Sends every URL to <strong>IndexNow</strong> (Bing, Yandex, Seznam, Naver - instant, unlimited), submits priority pages to the <strong>Bing URL Submission API</strong> (quota limited to roughly 100/day on a new site), and re-submits your sitemap to <strong>Google Search Console</strong>. Google has no API to force-index a normal page, so the sitemap re-submission is the strongest automated signal available.</div>
 <div id="pushIndexingResult"><div class="empty">Not run yet.</div></div>
 </div>
 
@@ -393,7 +393,7 @@ async function pushIndexing() {
     var html = '';
     var parts = [];
     parts.push(d.indexnow_ok ? '<span style="color:#22c55e;font-weight:700"><i class="fas fa-check-circle"></i> IndexNow: ' + d.urls + ' URLs</span>' : '<span style="color:#f59e0b;font-weight:700"><i class="fas fa-exclamation-triangle"></i> IndexNow: error</span>');
-    if (d.bing && d.bing.length) parts.push(d.bing_ok ? '<span style="color:#22c55e;font-weight:700"><i class="fas fa-check-circle"></i> Bing: ' + d.urls + ' URLs</span>' : '<span style="color:#f59e0b;font-weight:700"><i class="fas fa-exclamation-triangle"></i> Bing: error</span>');
+    if (d.bing && d.bing.length) parts.push(d.bing_quota_hit ? '<span style="color:#f59e0b;font-weight:700"><i class="fas fa-exclamation-triangle"></i> Bing: ' + d.bing_sent + ' submitted, daily quota reached</span>' : (d.bing_ok ? '<span style="color:#22c55e;font-weight:700"><i class="fas fa-check-circle"></i> Bing: ' + d.bing_sent + ' URLs</span>' : '<span style="color:#f59e0b;font-weight:700"><i class="fas fa-exclamation-triangle"></i> Bing: error</span>'));
     html += '<div style="font-size:12px;margin-bottom:8px;display:flex;gap:14px;flex-wrap:wrap">' + parts.join('') + '</div>';
     (d.indexnow || []).forEach(function(x) { html += '<div style="font-size:11px;color:#8890a8">IndexNow: HTTP ' + x.status + ' (' + x.sent + ' URLs)' + (x.error ? ' - ' + esc(x.error) : '') + '</div>'; });
     (d.bing || []).forEach(function(x) { html += '<div style="font-size:11px;' + (x.ok ? 'color:#22c55e' : 'color:#f59e0b') + '">Bing URL Submission: ' + (x.ok ? 'accepted ' + x.sent + ' URLs' : 'failed - ' + esc(x.error)) + '</div>'; });
@@ -406,6 +406,7 @@ async function pushIndexing() {
       });
     }
     html += '<div style="font-size:11px;color:#5c6480;margin-top:8px;line-height:1.6">' + esc(d.note || '') + '</div>';
+    if (d.bing_quota_hit) html += '<div style="font-size:11px;color:#5c6480;margin-top:4px;line-height:1.6">Bing limits URL submission to roughly 100/day on a new site. It resets daily, so press Push again tomorrow for the next batch. IndexNow already covered every URL for Bing without a quota.</div>';
     el.innerHTML = html;
   } catch(e) { el.innerHTML = '<div class="empty" style="color:#ef4444">Failed: ' + esc(e.message) + '</div>'; }
   finally { if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-bolt"></i> Push Now'; } }

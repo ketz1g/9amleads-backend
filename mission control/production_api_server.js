@@ -34998,9 +34998,34 @@ app.post('/api/admin/seo/push-indexing', adminAuth, async function(req, res) {
       indexnow.push(await submitIndexNowAsync(urls.slice(i, i + 10000)));
     }
 
+    // Bing quota is small and resets daily, so send the most important pages first
+    // and stop as soon as the quota error comes back instead of wasting the batch.
+    var bingPriority = [
+      'https://9amleads.com/',
+      'https://9amleads.com/pricing/',
+      'https://9amleads.com/movingleadsdaily/',
+      'https://9amleads.com/probateleads/',
+      'https://9amleads.com/planningleads/',
+      'https://9amleads.com/newbusinessalert/',
+      'https://9amleads.com/tenders/',
+      'https://9amleads.com/bulk.html',
+      'https://9amleads.com/blog/'
+    ];
+    var bingQueue = [];
+    var inUrls = {};
+    urls.forEach(function(u) { inUrls[u] = 1; });
+    bingPriority.forEach(function(u) { if (inUrls[u]) bingQueue.push(u); });
+    urls.forEach(function(u) { if (bingPriority.indexOf(u) === -1) bingQueue.push(u); });
+
     var bing = [];
-    for (var bi = 0; bi < urls.length; bi += 500) {
-      bing.push(await submitBingUrlsAsync(urls.slice(bi, bi + 500)));
+    var bingSent = 0, bingQuotaHit = false;
+    var BING_CHUNK = 40;
+    for (var bi = 0; bi < bingQueue.length && !bingQuotaHit; bi += BING_CHUNK) {
+      var br = await submitBingUrlsAsync(bingQueue.slice(bi, bi + BING_CHUNK));
+      bing.push(br);
+      if (br.ok) { bingSent += br.sent; }
+      else if (/ErrorCode\D*8\b|Quota/i.test(br.error || '')) { bingQuotaHit = true; }
+      else { break; }
     }
 
     var gscSubmit = null, gscSitemaps = null, gscError = '';
@@ -35013,7 +35038,7 @@ app.post('/api/admin/seo/push-indexing', adminAuth, async function(req, res) {
     } catch(e) { gscError = e.message; }
 
     var okNow = indexnow.filter(function(r) { return r.status >= 200 && r.status < 300; }).length;
-    var bingOk = bing.length > 0 && bing.every(function(r) { return r.ok; });
+    var bingOk = bingSent > 0 && !bingQuotaHit;
     res.json({
       success: true,
       urls: urls.length,
@@ -35021,6 +35046,8 @@ app.post('/api/admin/seo/push-indexing', adminAuth, async function(req, res) {
       indexnow_ok: okNow === indexnow.length,
       bing: bing,
       bing_ok: bingOk,
+      bing_sent: bingSent,
+      bing_quota_hit: bingQuotaHit,
       gsc_submit: gscSubmit,
       gsc_sitemaps: gscSitemaps,
       gsc_error: gscError,
