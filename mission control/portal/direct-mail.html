@@ -109,7 +109,19 @@ details.wiz-more[open] summary{margin-bottom:16px}
 <div><label class="label">City / Town</label><input class="input" id="p-city" placeholder="City"></div>
 <div><label class="label">Postcode</label><input class="input" id="p-postcode" placeholder="e.g. NW1 7LX"></div>
 <div><label class="label">Phone</label><input class="input" id="p-phone" placeholder="Phone number"></div>
+<div><label class="label">Email</label><input class="input" id="p-email" placeholder="you@company.com"></div>
+<div><label class="label">Business Type</label><select class="input" id="p-businesstype"><option>Removal Company</option><option>Estate Agent</option><option>Probate Solicitor</option><option>Will Writer</option><option>Accountant</option><option>Architect</option><option>Builder / Tradesperson</option><option>Cleaning Company</option><option>IT / Web Services</option><option>Marketing Agency</option><option>Other</option></select></div>
 </div>
+<details style="margin-top:14px;border:1px solid var(--border);border-radius:10px;padding:12px 14px;background:#faf5ff">
+<summary style="font-family:var(--ff-h);font-weight:800;font-size:14px;cursor:pointer;color:#6b21a8"><i class="fas fa-wand-magic-sparkles"></i> Optional - improve your AI-written letters</summary>
+<div style="font-size:12px;color:var(--text2);margin:10px 0 10px;line-height:1.6">The <b>AI letter writer</b> in Step 2 uses these to write a draft for you. Skip them if you would rather write your own.</div>
+<div class="grid-2">
+<div><label class="label">Services Offered</label><input class="input" id="p-services" placeholder="e.g. House removals, packing, storage"></div>
+<div><label class="label">Website</label><input class="input" id="p-website" placeholder="https://yourcompany.co.uk"></div>
+<div><label class="label">Special Offer</label><input class="input" id="p-offer" placeholder="e.g. Free no-obligation survey"></div>
+<div><label class="label">Call To Action</label><input class="input" id="p-cta" placeholder="e.g. Call today for a free quote"></div>
+</div>
+</details>
 <button class="btn btn-primary" onclick="saveProfile()" style="margin-top:12px"><i class="fas fa-save"></i> Save Profile</button>
 </div>
 
@@ -141,6 +153,19 @@ details.wiz-more[open] summary{margin-bottom:16px}
 <div class="grid-2">
 <div><label class="label">Cover Letter Name</label><input class="input" id="t-name" placeholder="e.g. My Introduction Letter"></div>
 <div><label class="label">Type</label><select class="input" id="t-type"><option value="letter">Letter</option><option value="flyer">Leaflet (A5)</option><option value="postcard">Postcard</option></select></div>
+</div>
+
+<div style="margin-top:16px;padding:16px;background:linear-gradient(135deg,#faf5ff,#eff6ff);border:1px solid #ddd6fe;border-radius:12px">
+<div style="font-family:var(--ff-h);font-size:16px;font-weight:800;color:#6b21a8;margin-bottom:4px"><i class="fas fa-wand-magic-sparkles"></i> Write it for me with AI</div>
+<div style="font-size:13px;color:var(--text2);margin-bottom:12px;line-height:1.6">We use your details from Step 1 to draft the letter. Pick a style, then edit it however you like.</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<button type="button" class="btn btn-outline ai-btn" onclick="aiWriteLetter('PROFESSIONAL',this)"><i class="fas fa-briefcase"></i> Professional</button>
+<button type="button" class="btn btn-outline ai-btn" onclick="aiWriteLetter('SHORT',this)"><i class="fas fa-bolt"></i> Short &amp; direct</button>
+<button type="button" class="btn btn-outline ai-btn" onclick="aiWriteLetter('FRIENDLY',this)"><i class="fas fa-smile"></i> Friendly</button>
+<button type="button" class="btn btn-outline ai-btn" onclick="aiWriteLetter('PREMIUM',this)"><i class="fas fa-gem"></i> Premium</button>
+<button type="button" class="btn btn-outline ai-btn" onclick="aiWriteLetter('CALL TO ACTION',this)"><i class="fas fa-bullhorn"></i> Strong call to action</button>
+</div>
+<div id="ai-letter-status" style="font-size:13px;margin-top:10px;color:var(--text2)"></div>
 </div>
 <div style="margin-top:12px">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
@@ -400,7 +425,9 @@ function saveProfile(){
     postcode:document.getElementById('p-postcode').value,
     services_offered:document.getElementById('p-services')?document.getElementById('p-services').value:'',
     service_areas:document.getElementById('p-city').value,
-    call_to_action:'Get in touch today'
+    website:document.getElementById('p-website')?document.getElementById('p-website').value:'',
+    special_offer:document.getElementById('p-offer')?document.getElementById('p-offer').value:'',
+    call_to_action:(document.getElementById('p-cta')&&document.getElementById('p-cta').value)||'Get in touch today'
   };
   api('POST','/api/direct-mail/profile',body,function(err,d){toast(d&&d.success?'Profile saved':'Profile error: '+((d&&d.error)||'check fields'));if(d&&d.success)loadProfile();});
 }
@@ -414,10 +441,41 @@ function loadProfile(){
       document.getElementById('p-city').value=p.city||'';
       document.getElementById('p-postcode').value=p.postcode||'';
       document.getElementById('p-phone').value=p.phone||'';
+      var setV=function(id,v){var el=document.getElementById(id);if(el&&v!==undefined&&v!==null)el.value=v;};
+      setV('p-email',p.email);setV('p-businesstype',p.business_type);setV('p-services',p.services_offered);
+      setV('p-website',p.website);setV('p-offer',p.special_offer);setV('p-cta',p.call_to_action);
     }
   });
 }
 
+
+// AI letter writer - drafts a cover letter from the Step 1 business details.
+// Uses the existing /api/ai/generate-letter endpoint (one version per click, ~5s).
+function aiWriteLetter(version, btn) {
+  var st = document.getElementById("ai-letter-status");
+  var btns = document.querySelectorAll(".ai-btn");
+  for (var i = 0; i < btns.length; i++) btns[i].disabled = true;
+  if (btn) btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Writing...';
+  if (st) { st.style.color = "var(--text2)"; st.textContent = "Writing your draft, this takes about 5 seconds..."; }
+  api("POST", "/api/ai/generate-letter", { version: version }, function (err, d) {
+    for (var j = 0; j < btns.length; j++) btns[j].disabled = false;
+    if (btn) {
+      var labels = { PROFESSIONAL: '<i class="fas fa-briefcase"></i> Professional', SHORT: '<i class="fas fa-bolt"></i> Short &amp; direct', FRIENDLY: '<i class="fas fa-smile"></i> Friendly', PREMIUM: '<i class="fas fa-gem"></i> Premium', "CALL TO ACTION": '<i class="fas fa-bullhorn"></i> Strong call to action' };
+      btn.innerHTML = labels[version] || "Try again";
+    }
+    var key = version === "PROFESSIONAL" ? "professional" : version === "SHORT" ? "short" : version === "FRIENDLY" ? "friendly" : version === "PREMIUM" ? "premium" : "call_to_action";
+    var text = (d && d[key]) ? d[key] : "";
+    if (!text) {
+      var msg = (d && d.error) || "Could not write a draft just now. Please try again.";
+      if (st) { st.style.color = "#dc2626"; st.textContent = msg; }
+      return;
+    }
+    var ta = document.getElementById("t-content");
+    if (ta) { ta.value = text; if (typeof updateLetterPreviewLive === "function") updateLetterPreviewLive(); }
+    if (st) { st.style.color = "#15803d"; st.innerHTML = '<i class="fas fa-check-circle"></i> Draft added below. Edit it, then click <b>Save Cover Letter</b>.'; }
+    toast("AI draft added");
+  });
+}
 function saveTemplate(){
   var name=document.getElementById('t-name').value||('Cover Letter '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}));
   var body={name:name,type:document.getElementById('t-type').value,ai_generated_text:document.getElementById('t-content').value};
