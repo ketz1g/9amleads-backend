@@ -1664,8 +1664,11 @@ function pushBackupToGitHub() {
       // contents-API size limit and pushes quickly.
       var pushCopy = { __stripped: 'material file_data omitted (regenerable) - full local backup has everything', _src: '9amleads-backend', saved_at: stamp };
       try {
-        var src = _dbData;
-        var cp = JSON.parse(JSON.stringify(src, function(k, v) { return (k === 'file_data') ? undefined : v; }));
+        // Use the SAME offloading as saveDb so artwork, proof PDFs and KYC images are
+        // all excluded from the uploaded copy. Previously only file_data was stripped, so
+        // the 42MB of proof PDFs was re-uploaded to GitHub on every push (6x/day).
+        var cp = _stripMaterialData(_dbData);
+        cp = JSON.parse(JSON.stringify(cp, function(k, v) { return (k === 'file_data' || k === 'proof_pdf') ? undefined : v; }));
         pushCopy = cp;
         pushCopy.__meta = { customers: (cp.customers || []).length, leads: (cp.leads || []).length, materials: (cp.direct_mail_materials || []).length, saved_at: stamp };
       } catch(e) {}
