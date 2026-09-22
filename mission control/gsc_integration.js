@@ -199,6 +199,42 @@ async function inspectUrl(url, siteUrl) {
   };
 }
 
+// Re-submit a sitemap to Google Search Console for the connected property.
+// This is the only legitimate "tell Google about these URLs" API available:
+// Google's Indexing API only accepts JobPosting/BroadcastEvent pages, and the
+// old /ping?sitemap= endpoint was retired in 2023 (returns 404).
+async function submitSitemap(siteUrl, feedPath) {
+  var cfg = loadConfig();
+  var prop = siteUrl || cfg.property || '';
+  if (!prop) throw new Error('No Search Console property set.');
+  var feed = feedPath || (prop.replace(/\/+$/, '') + '/sitemap.xml');
+  var encSite = encodeURIComponent(prop);
+  var encFeed = encodeURIComponent(feed);
+  var r = await gscRequest('PUT', '/webmasters/v3/sites/' + encSite + '/sitemaps/' + encFeed);
+  return { status: r.status, feed: feed, error: (r.json && r.json.error && r.json.error.message) || '' };
+}
+
+// List the sitemaps Google currently knows about for the property (incl. last
+// download time + any errors) so we can prove the submission was accepted.
+async function listSitemaps(siteUrl) {
+  var cfg = loadConfig();
+  var prop = siteUrl || cfg.property || '';
+  if (!prop) throw new Error('No Search Console property set.');
+  var encSite = encodeURIComponent(prop);
+  var r = await gscRequest('GET', '/webmasters/v3/sites/' + encSite + '/sitemaps');
+  var list = (r.json && r.json.sitemap) || [];
+  return list.map(function (s) {
+    return {
+      path: s.path,
+      lastSubmitted: s.lastSubmitted || '',
+      lastDownloaded: s.lastDownloaded || '',
+      isPending: !!s.isPending,
+      errors: s.errors || 0,
+      warnings: s.warnings || 0
+    };
+  });
+}
+
 function isoDaysAgo(n) {
   var d = new Date(Date.now() - n * 86400000);
   return d.toISOString().slice(0, 10);
@@ -296,6 +332,8 @@ module.exports = {
   fetchDashboard: fetchDashboard,
   fetchOpportunities: fetchOpportunities,
   inspectUrl: inspectUrl,
+  submitSitemap: submitSitemap,
+  listSitemaps: listSitemaps,
   PUBLIC_BASE: PUBLIC_BASE,
   REDIRECT_URI: REDIRECT_URI,
   SCOPE: SCOPE,

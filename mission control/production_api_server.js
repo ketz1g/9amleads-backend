@@ -33655,9 +33655,8 @@ function promoteDueScheduledPosts() {
     fs.writeFileSync(DB_FILE, JSON.stringify(dbD, null, 2));
     try { writeSitemap(); } catch(eS) {}
     console.log('[SEO] Published ' + due.length + ' scheduled posts: ' + due.map(function(p) { return p.slug; }).join(', '));
-    try { var hP = require('http'); hP.get('http://www.google.com/ping?sitemap=' + encodeURIComponent('https://9amleads.com/sitemap.xml'), function(g) { g.resume(); }); } catch(e1) {}
-    try { var sP = require('https'); sP.get('https://www.bing.com/ping?sitemap=' + encodeURIComponent('https://9amleads.com/sitemap.xml'), function(b) { b.resume(); }).on('error', function(){}); } catch(e2) {}
     submitIndexNow(due.map(function(p) { return 'https://9amleads.com/blog/' + p.slug; }));
+    gscResubmitSitemap();
     return due.length;
   } catch(e) { return 0; }
 }
@@ -34894,8 +34893,102 @@ app.post('/api/admin/seo/refresh-sitemap', adminAuth, function(req, res) {
     fs.writeFileSync(pathMod.join(__dirname, '..', 'publish', 'sitemap.xml'), xml);
     fs.writeFileSync(pathMod.join(__dirname, '..', 'sitemap.xml'), xml);
     try { fs.writeFileSync(pathMod.join(__dirname, '..', '9amleads', 'sitemap.xml'), xml); } catch(e2) {}
-    try { var http = require('http'); http.get('http://www.google.com/ping?sitemap=' + encodeURIComponent('https://9amleads.com/sitemap.xml'), function(gres) { gres.resume(); }); } catch(e3) {}
+    gscResubmitSitemap();
     res.json({ success: true, urls: urls.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== PUSH-TO-INDEX (Google + Bing) =====
+// Reality check on what is actually possible:
+//   * Google retired the /ping?sitemap= endpoint in 2023 (it now returns 404) and its
+//     Indexing API only accepts JobPosting/BroadcastEvent pages, so there is NO API to
+//     force a normal page into the index. Re-submitting the sitemap to Search Console
+//     is the strongest automated signal Google offers.
+//   * IndexNow (Bing, Yandex, Seznam, Naver) IS a real instant-submission API and needs
+//     no account verification - the key file at /9amleads-indexnow.txt proves ownership.
+function fetchPublicSitemapUrls() {
+  return new Promise(function(resolve, reject) {
+    var https = require('https');
+    var req = https.get('https://9amleads.com/sitemap.xml', { timeout: 20000 }, function(r) {
+      var b = '';
+      r.on('data', function(c) { b += c; });
+      r.on('end', function() {
+        var locs = [], re = /<loc>([^<]+)<\/loc>/g, m;
+        while ((m = re.exec(b)) !== null) { var u = m[1].trim(); if (u) locs.push(u); }
+        resolve(locs);
+      });
+    });
+    req.on('error', reject);
+    req.setTimeout(20000, function() { req.destroy(new Error('sitemap fetch timeout')); });
+  });
+}
+
+// Submit a batch of URLs to IndexNow, resolving with the real HTTP status so the
+// caller reports an outcome instead of a fire-and-forget guess.
+function submitIndexNowAsync(urls) {
+  return new Promise(function(resolve) {
+    try {
+      if (!urls || !urls.length) return resolve({ status: 0, sent: 0, error: 'no urls' });
+      var https = require('https');
+      var body = JSON.stringify({ host: '9amleads.com', key: INDEXNOW_KEY, keyLocation: 'https://9amleads.com/9amleads-indexnow.txt', urlList: urls });
+      var req = https.request({ hostname: 'api.indexnow.org', path: '/indexnow', method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': Buffer.byteLength(body) }, timeout: 30000 }, function(r) {
+        r.resume();
+        resolve({ status: r.statusCode, sent: urls.length, error: r.statusCode >= 300 ? ('HTTP ' + r.statusCode) : '' });
+      });
+      req.on('error', function(e) { resolve({ status: 0, sent: 0, error: e.message }); });
+      req.setTimeout(30000, function() { req.destroy(new Error('IndexNow timeout')); });
+      req.write(body); req.end();
+    } catch(e) { resolve({ status: 0, sent: 0, error: e.message }); }
+  });
+}
+
+// Fire-and-forget GSC sitemap re-submission (used whenever the sitemap changes).
+function gscResubmitSitemap() {
+  try {
+    var g = getGsc();
+    if (!g || !g.isConnected || !g.isConnected()) return;
+    g.submitSitemap().then(function(r) {
+      console.log('[SEO] GSC sitemap re-submit -> HTTP ' + (r && r.status));
+    }).catch(function(e) { console.log('[SEO] GSC sitemap re-submit failed: ' + e.message); });
+  } catch(e) {}
+}
+
+// POST /api/admin/seo/push-indexing - push every URL in the public sitemap to the
+// search engines. Returns the IndexNow status, the GSC sitemap state, and the URL
+// count, so the admin UI can report a real result.
+app.post('/api/admin/seo/push-indexing', adminAuth, async function(req, res) {
+  try {
+    var urls = [];
+    try { urls = await fetchPublicSitemapUrls(); } catch(e) {}
+    if (!urls.length) return res.status(500).json({ error: 'Could not read the public sitemap at https://9amleads.com/sitemap.xml' });
+    var seen = {};
+    urls = urls.filter(function(u) { if (seen[u]) return false; seen[u] = 1; return true; });
+
+    var indexnow = [];
+    for (var i = 0; i < urls.length; i += 10000) {
+      indexnow.push(await submitIndexNowAsync(urls.slice(i, i + 10000)));
+    }
+
+    var gscSubmit = null, gscSitemaps = null, gscError = '';
+    try {
+      var g = getGsc();
+      if (g && g.isConnected && g.isConnected()) {
+        gscSubmit = await g.submitSitemap();
+        gscSitemaps = await g.listSitemaps();
+      } else { gscError = 'Search Console not connected'; }
+    } catch(e) { gscError = e.message; }
+
+    var okNow = indexnow.filter(function(r) { return r.status >= 200 && r.status < 300; }).length;
+    res.json({
+      success: true,
+      urls: urls.length,
+      indexnow: indexnow,
+      indexnow_ok: okNow === indexnow.length,
+      gsc_submit: gscSubmit,
+      gsc_sitemaps: gscSitemaps,
+      gsc_error: gscError,
+      note: 'IndexNow submits instantly to Bing/Yandex/Seznam/Naver. Google has no API to force indexing of normal pages, so the sitemap re-submission is the strongest signal available.'
+    });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 

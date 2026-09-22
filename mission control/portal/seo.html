@@ -87,6 +87,15 @@ h1 span{color:#0ea5e9}
 
 <div class="card">
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+<div style="font-size:14px;font-weight:700"><i class="fas fa-paper-plane" style="color:#0ea5e9;margin-right:6px"></i> Push to Search Engines <span style="font-size:10px;color:#5c6480;font-weight:500">(submit every page to Google &amp; Bing)</span></div>
+<button class="btn btn-primary btn-sm" onclick="pushIndexing()" id="pushIndexingBtn"><i class="fas fa-bolt"></i> Push Now</button>
+</div>
+<div style="font-size:11px;color:#8890a8;line-height:1.6;margin-bottom:10px">Sends every URL in your sitemap to <strong>IndexNow</strong> (Bing, Yandex, Seznam, Naver - instant, no account verification needed) and re-submits your sitemap to <strong>Google Search Console</strong>. Google has no API to force-index a normal page, so re-submitting the sitemap is the strongest automated signal available.</div>
+<div id="pushIndexingResult"><div class="empty">Not run yet.</div></div>
+</div>
+
+<div class="card">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
 <div style="font-size:14px;font-weight:700"><i class="fas fa-bullseye" style="color:#f59e0b;margin-right:6px"></i> Keywords Closest to Page 1 <span style="font-size:10px;color:#5c6480;font-weight:500">(best SEO ROI - 90 day view)</span></div>
 <button class="btn btn-outline btn-sm" onclick="loadGscOpportunities()"><i class="fas fa-sync"></i> Refresh</button>
 </div>
@@ -333,6 +342,34 @@ async function loadGscOpportunities() {
     html += tableRows(dt.emerging, false);
     el.innerHTML = html;
   } catch(e) { var el2 = document.getElementById('gscOppBody'); if (el2) el2.innerHTML = '<div class="empty" style="color:#ef4444">Failed: ' + esc(e.message) + '</div>'; }
+}
+
+// Push every sitemap URL to IndexNow + re-submit the sitemap to Google Search Console.
+async function pushIndexing() {
+  var btn = document.getElementById('pushIndexingBtn');
+  var el = document.getElementById('pushIndexingResult');
+  if (!el) return;
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Pushing...'; }
+  el.innerHTML = '<div class="empty">Submitting every URL to IndexNow and re-submitting the sitemap to Google...</div>';
+  try {
+    var r = await fetch(API + '/api/admin/seo/push-indexing', { method: 'POST', headers: adminHeaders(), body: '{}' });
+    var d = await r.json();
+    if (!r.ok || d.error) { el.innerHTML = '<div class="empty" style="color:#ef4444">Failed: ' + esc(d.error || ('HTTP ' + r.status)) + '</div>'; return; }
+    var html = '';
+    html += '<div style="font-size:12px;margin-bottom:8px">' + (d.indexnow_ok ? '<span style="color:#22c55e;font-weight:700"><i class="fas fa-check-circle"></i> IndexNow accepted ' + d.urls + ' URLs</span>' : '<span style="color:#f59e0b;font-weight:700"><i class="fas fa-exclamation-triangle"></i> IndexNow returned an error</span>') + '</div>';
+    (d.indexnow || []).forEach(function(x) { html += '<div style="font-size:11px;color:#8890a8">IndexNow: HTTP ' + x.status + ' (' + x.sent + ' URLs)' + (x.error ? ' - ' + esc(x.error) : '') + '</div>'; });
+    if (d.gsc_error) html += '<div style="font-size:11px;color:#f59e0b">Google Search Console: ' + esc(d.gsc_error) + '</div>';
+    else if (d.gsc_submit) html += '<div style="font-size:11px;color:#22c55e">Google Search Console: sitemap re-submitted (HTTP ' + d.gsc_submit.status + ')</div>';
+    if (d.gsc_sitemaps && d.gsc_sitemaps.length) {
+      html += '<div style="font-size:11px;color:#8890a8;margin-top:6px">Google knows ' + d.gsc_sitemaps.length + ' sitemap(s):</div>';
+      d.gsc_sitemaps.forEach(function(s) {
+        html += '<div style="font-size:11px;color:#64748b">' + esc(s.path) + ' - last downloaded ' + (s.lastDownloaded ? new Date(s.lastDownloaded).toLocaleDateString('en-GB') : 'never') + (s.isPending ? ' (pending)' : '') + '</div>';
+      });
+    }
+    html += '<div style="font-size:11px;color:#5c6480;margin-top:8px;line-height:1.6">' + esc(d.note || '') + '</div>';
+    el.innerHTML = html;
+  } catch(e) { el.innerHTML = '<div class="empty" style="color:#ef4444">Failed: ' + esc(e.message) + '</div>'; }
+  finally { if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-bolt"></i> Push Now'; } }
 }
 
 // ---- Backlink & Directory Tracker ----
