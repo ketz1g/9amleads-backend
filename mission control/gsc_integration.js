@@ -19,7 +19,7 @@ var crypto = require('crypto');
 var TOKEN_HOST = 'oauth2.googleapis.com';
 var AUTH_HOST = 'accounts.google.com';
 var SITE_LIST_HOST = 'searchconsole.googleapis.com';
-var SCOPE = 'https://www.googleapis.com/auth/webmasters.readonly';
+var SCOPE = 'https://www.googleapis.com/auth/webmasters';
 
 // The persistent data dir is resolved the same way production_api_server.js does.
 function resolveDataDir() {

@@ -358,7 +358,7 @@ async function pushIndexing() {
     var html = '';
     html += '<div style="font-size:12px;margin-bottom:8px">' + (d.indexnow_ok ? '<span style="color:#22c55e;font-weight:700"><i class="fas fa-check-circle"></i> IndexNow accepted ' + d.urls + ' URLs</span>' : '<span style="color:#f59e0b;font-weight:700"><i class="fas fa-exclamation-triangle"></i> IndexNow returned an error</span>') + '</div>';
     (d.indexnow || []).forEach(function(x) { html += '<div style="font-size:11px;color:#8890a8">IndexNow: HTTP ' + x.status + ' (' + x.sent + ' URLs)' + (x.error ? ' - ' + esc(x.error) : '') + '</div>'; });
-    if (d.gsc_error) html += '<div style="font-size:11px;color:#f59e0b">Google Search Console: ' + esc(d.gsc_error) + '</div>';
+    if (d.gsc_error) { var ge = /insufficient|scope/i.test(d.gsc_error) ? 'reconnect needed - click Connect above to grant sitemap-submission access' : d.gsc_error; html += '<div style="font-size:11px;color:#f59e0b">Google Search Console: ' + esc(ge) + '</div>'; }
     else if (d.gsc_submit) html += '<div style="font-size:11px;color:#22c55e">Google Search Console: sitemap re-submitted (HTTP ' + d.gsc_submit.status + ')</div>';
     if (d.gsc_sitemaps && d.gsc_sitemaps.length) {
       html += '<div style="font-size:11px;color:#8890a8;margin-top:6px">Google knows ' + d.gsc_sitemaps.length + ' sitemap(s):</div>';
