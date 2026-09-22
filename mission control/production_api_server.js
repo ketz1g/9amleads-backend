@@ -1489,33 +1489,98 @@ function loadDb() {
 // file and save only a tiny reference in the DB, so the on-disk DB is ~1MB and saves
 // are instant. Payloads are re-hydrated on load.
 var MATERIALS_DIR = path.join(DATA_DIR, 'materials');
+// ===== BULKY BLOB OFFLOADING =====
+// Base64 payloads (artwork, proof PDFs, KYC ID images) must never sit inline in
+// database.json. A 60MB DB is rewritten on every save and every backup, so keeping
+// these on disk instead of in the JSON is the single biggest bandwidth/IO saving.
+// Values are transparently rehydrated into memory on load, so every existing reader
+// keeps working unchanged.
+function _blobPath(pfx, id) { return path.join(MATERIALS_DIR, pfx + "-" + String(id || "x") + ".b64"); }
+function _putBlob(file, value) {
+  try {
+    fs.mkdirSync(MATERIALS_DIR, { recursive: true });
+    var need = true;
+    try { need = fs.statSync(file).size !== String(value).length; } catch(e) {}
+    if (need) fs.writeFileSync(file, String(value));
+    return true;
+  } catch(e) { return false; }
+}
+function _getBlob(file) { try { return fs.readFileSync(file, "utf-8"); } catch(e) { return ""; } }
+
 function _stripMaterialData(db) {
   try {
     var out = Object.assign({}, db);
-    var t = 'direct_mail_materials';
-    if (!Array.isArray(db[t])) return out;
-    out[t] = db[t].map(function(m) {
-      if (!m || !m.file_data) return m;
-      try {
-        fs.mkdirSync(MATERIALS_DIR, { recursive: true });
-        var f = path.join(MATERIALS_DIR, String(m.id || m.material_id || 'material') + '.b64');
-        var need = true;
-        try { need = fs.statSync(f).size !== String(m.file_data).length; } catch(e) {}
-        if (need) fs.writeFileSync(f, String(m.file_data));
+    var t;
+
+    // Customer artwork (direct_mail_materials.file_data)
+    t = "direct_mail_materials";
+    if (Array.isArray(db[t])) {
+      out[t] = db[t].map(function(m) {
+        if (!m || !m.file_data) return m;
+        var f = _blobPath("material", m.id || m.material_id);
+        if (!_putBlob(f, m.file_data)) return m;
         var c = Object.assign({}, m); delete c.file_data; c.__file_ref = f; return c;
-      } catch(e) { return m; }
-    });
+      });
+    }
+
+    // Campaign proof-of-posting PDFs (direct_mail_campaigns.proof_pdf)
+    t = "direct_mail_campaigns";
+    if (Array.isArray(db[t])) {
+      out[t] = db[t].map(function(m) {
+        if (!m || !m.proof_pdf) return m;
+        var f = _blobPath("campaign-proof", m.id);
+        if (!_putBlob(f, m.proof_pdf)) return m;
+        var c = Object.assign({}, m); delete c.proof_pdf; c.__proof_ref = f; return c;
+      });
+    }
+
+    // Affiliate KYC ID image (affiliates.kyc.id_uploaded)
+    t = "affiliates";
+    if (Array.isArray(db[t])) {
+      out[t] = db[t].map(function(a) {
+        if (!a || !a.kyc || !a.kyc.id_uploaded) return a;
+        var f = _blobPath("affiliate-kyc", a.id);
+        if (!_putBlob(f, a.kyc.id_uploaded)) return a;
+        var c = Object.assign({}, a);
+        c.kyc = Object.assign({}, a.kyc);
+        delete c.kyc.id_uploaded;
+        c.__kyc_ref = f;
+        return c;
+      });
+    }
+
     return out;
   } catch(e) { return db; }
 }
+
 function _rehydrateMaterialData(db) {
   try {
-    var t = 'direct_mail_materials';
-    if (!db || !Array.isArray(db[t])) return db;
-    db[t].forEach(function(m) { if (m && m.__file_ref && !m.file_data) { try { m.file_data = fs.readFileSync(m.__file_ref, 'utf-8'); } catch(e) {} } });
+    if (!db) return db;
+
+    if (Array.isArray(db.direct_mail_materials)) {
+      db.direct_mail_materials.forEach(function(m) {
+        if (!m) return;
+        if (!m.file_data && m.__file_ref) m.file_data = _getBlob(m.__file_ref);
+      });
+    }
+
+    if (Array.isArray(db.direct_mail_campaigns)) {
+      db.direct_mail_campaigns.forEach(function(c) {
+        if (!c) return;
+        if (!c.proof_pdf && c.__proof_ref) c.proof_pdf = _getBlob(c.__proof_ref);
+      });
+    }
+
+    if (Array.isArray(db.affiliates)) {
+      db.affiliates.forEach(function(a) {
+        if (!a) return;
+        if (a.kyc && !a.kyc.id_uploaded && a.__kyc_ref) a.kyc.id_uploaded = _getBlob(a.__kyc_ref);
+      });
+    }
   } catch(e) {}
   return db;
 }
+
 function saveDb() {
   try {
     // ATOMIC WRITE: write to a temp file then rename over database.json so a
