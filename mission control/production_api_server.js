@@ -15262,7 +15262,7 @@ function sendBrevoEmail(to, subject, htmlContent) {
   // BULK SEND PITCH: Print & Post and Bulk Send go hand in hand, so any email that
   // already talks about Print & Post gets a short Bulk Send mention too (added once).
   if (/print\s*&amp;\s*post|print\s*&\s*post|print\s*and\s*post/i.test(htmlContent) && htmlContent.indexOf('Bulk Send') === -1) {
-    htmlContent += '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td><div style="margin-top:18px;padding:14px 18px;border:1px solid #99f6e4;border-radius:12px;background:linear-gradient(135deg,rgba(16,185,129,0.07),rgba(14,165,233,0.06))"><p style="color:#0f172a;font-size:13px;line-height:1.7;margin:0">📦 <b>Bulk Send</b> goes hand in hand with Print &amp; Post: boost your business in slow times with 50-1000 archive leads (aimed never-sent), printed &amp; posted for you from &pound;1.99 per lead. <a href="https://9amleads.com/bulk.html" style="color:#0ea5e9;font-weight:700">See Bulk Send &rarr;</a></p></div></td></tr></table>';
+    htmlContent += '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td><div style="margin-top:18px;padding:14px 18px;border:1px solid #99f6e4;border-radius:12px;background:linear-gradient(135deg,rgba(16,185,129,0.07),rgba(14,165,233,0.06))"><p style="color:#0f172a;font-size:13px;line-height:1.7;margin:0">📦 <b>Bulk Send</b> goes hand in hand with Print &amp; Post: boost your business in slow times with 50&ndash;1000 archive leads (aimed never-sent), printed &amp; posted for you from &pound;1.99 per lead. <a href="https://9amleads.com/bulk.html" style="color:#0ea5e9;font-weight:700">See Bulk Send &rarr;</a></p></div></td></tr></table>';
   }
   const data = JSON.stringify({
     sender: { name: senderName, email: senderFrom },
@@ -16129,7 +16129,7 @@ function buildWeeklyTrialTemplate(customer, wk, productName, accent, product) {
     bodyHtml = '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 16px">We\u2019re not going to chase you forever. But your <strong>' + productName + '</strong> genuinely are still waiting. You can <strong>pause, restart or switch your package anytime</strong>; there\u2019s no lock-in and no obligation. When you\u2019re ready, your daily 9am leads are one click away:</p>' +
       '<div style="background:rgba(14,165,233,0.05);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="color:#1e293b;font-size:13px;line-height:1.9;margin:0">' + tips[1] + '<br><br>' + tips[0] + '</p></div>';
   }
-  var bulkBox = '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top:16px"><tr><td><div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.22);border-radius:12px;padding:14px 18px"><p style="color:#0f172a;font-size:13px;line-height:1.7;margin:0">📦 <b style="color:#047857">Boost your business in slow times, instantly.</b> Prefer volume? Bulk Send lets you buy 50-1000 archive leads (aimed never-sent), and we print &amp; post your leaflet or letter to every single one, from &pound;1.99 per lead. <a href="' + PUBLIC_URL + '/bulk.html" style="color:#0ea5e9;font-weight:700">See Bulk Send &rarr;</a></p></div></td></tr></table>';
+  var bulkBox = '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top:16px"><tr><td><div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.22);border-radius:12px;padding:14px 18px"><p style="color:#0f172a;font-size:13px;line-height:1.7;margin:0">📦 <b style="color:#047857">Boost your business in slow times, instantly.</b> Prefer volume? Bulk Send lets you buy 50&ndash;1000 archive leads (aimed never-sent), and we print &amp; post your leaflet or letter to every single one, from &pound;1.99 per lead. <a href="' + PUBLIC_URL + '/bulk.html" style="color:#0ea5e9;font-weight:700">See Bulk Send &rarr;</a></p></div></td></tr></table>';
   return '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#0f172a;margin:0 0 6px;text-align:center">Your ' + productName + ' are still waiting for you</h2>' +
     '<p style="color:#64748b;font-size:13px;text-align:center;margin:0 0 20px">Week ' + wk + ' of keeping your account ready for you</p>' +
     bodyHtml +
@@ -17562,7 +17562,7 @@ cron.schedule('10 9 * * 1-5', async () => {
 cron.schedule('5 9 * * 1-5', async () => {
   try {
     var todayStr = new Date().toISOString().split('T')[0];
-    if (__lastDeliveryDate === todayStr) return; // already COMPLETED today
+    if (__lastDeliveryDate === todayStr) { try { deliveryCompletionWatchdog('09:05-verify'); } catch(eV) {} return; } // marked done - but VERIFY the real shortfall
     console.log('[BACKSTOP] 09:05 delivery not complete - re-triggering now (safety)');
     try {
       const http = require('http');
@@ -19090,7 +19090,7 @@ cron.schedule('30 9 * * 1-5', async () => {
 cron.schedule('1 9 * * 1-5', async () => {
   try {
     var todayStr = new Date().toISOString().split('T')[0];
-    if (__lastDeliveryDate === todayStr) return; // already COMPLETED today (only skip when done)
+    if (__lastDeliveryDate === todayStr) { try { deliveryCompletionWatchdog('verify'); } catch(eV2) {} return; } // marked done - but VERIFY the real shortfall
     var __wStarted = (__deliveryStartedDate === todayStr);
     console.log('[WATCHDOG] 09:01 delivery not complete' + (__wStarted ? ' (run in progress/stalled)' : ' (never fired)') + ' - re-triggering now (safety)');
     if (!__wStarted) {
@@ -27403,7 +27403,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
           } catch(rcErr) { console.log('[WEBHOOK] Recipient rows error:', rcErr.message); }
           if (custRow && custRow.email) {
             var receiptBody =
-              '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">Great news - your Print &amp; Post order is confirmed and paid. Here\'s everything you need to know:</p>' +
+              '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">Great news &mdash; your Print &amp; Post order is confirmed and paid. Here\'s everything you need to know:</p>' +
               '<div style="background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.2);border-radius:12px;padding:16px 20px;margin:0 0 16px">' +
               '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:3px 0;font-size:13px;color:#8890b0;width:40%">Order</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">' + (campaignRecord.name || 'Print &amp; Post') + '</td></tr>' +
               '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Amount paid</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">' + paidAmount + '</td></tr>' +
@@ -29930,11 +29930,11 @@ function generateLeadEmailHTML(customer, leads) {  const brand = getProductBrand
     '<div style="font-size:13px;font-weight:800;color:#1e293b;font-family:Outfit,Arial,sans-serif;margin-bottom:8px">💡 Make the most of today\'s leads</div>' +
     '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="width:100%;max-width:100%;word-break:break-word">' +
     '<tr><td style="padding:6px 0;vertical-align:top;width:22px;color:#0ea5e9;font-weight:900;font-size:12px">1.</td>' +
-    '<td style="padding:6px 0;font-size:12px;color:#1e293b;line-height:1.6;vertical-align:top;word-break:break-word"><strong>Reject &amp; Replace</strong> - is a lead wrong or outside your area? Click <strong>Reject &amp; Replace</strong> on it in <a href="' + dashboardUrl + '" style="color:#2563eb">My Leads</a> and we\'ll instantly swap it for a fresh in-area lead.</td></tr>' +
+    '<td style="padding:6px 0;font-size:12px;color:#1e293b;line-height:1.6;vertical-align:top;word-break:break-word"><strong>Reject &amp; Replace</strong> &mdash; is a lead wrong or outside your area? Click <strong>Reject &amp; Replace</strong> on it in <a href="' + dashboardUrl + '" style="color:#2563eb">My Leads</a> and we\'ll instantly swap it for a fresh in-area lead.</td></tr>' +
     '<tr><td style="padding:6px 0;vertical-align:top;width:22px;color:#0ea5e9;font-weight:900;font-size:12px">2.</td>' +
-    '<td style="padding:6px 0;font-size:12px;color:#1e293b;line-height:1.6;vertical-align:top;word-break:break-word"><strong>Print &amp; Post</strong> - send this lead a physical letter through Royal Mail so your business reaches them in the post, not just their inbox. Use <strong>Print &amp; Post</strong> on the lead, or turn on <strong>Auto-Send</strong> and we mail every new lead for you automatically after the 9am delivery.</td></tr>' +
+    '<td style="padding:6px 0;font-size:12px;color:#1e293b;line-height:1.6;vertical-align:top;word-break:break-word"><strong>Print &amp; Post</strong> &mdash; send this lead a physical letter through Royal Mail so your business reaches them in the post, not just their inbox. Use <strong>Print &amp; Post</strong> on the lead, or turn on <strong>Auto-Send</strong> and we mail every new lead for you automatically after the 9am delivery.</td></tr>' +
     '<tr><td style="padding:6px 0;vertical-align:top;width:22px;color:#0ea5e9;font-weight:900;font-size:12px">3.</td>' +
-    '<td style="padding:6px 0;font-size:12px;color:#1e293b;line-height:1.6;vertical-align:top;word-break:break-word"><strong>Upload your flyer + intro letter</strong> - add your flyer (front &amp; back) and a short intro letter once in <strong>Print &amp; Post</strong> settings. They\'re used for every mailing, so your business always arrives looking professional.</td></tr>' +
+    '<td style="padding:6px 0;font-size:12px;color:#1e293b;line-height:1.6;vertical-align:top;word-break:break-word"><strong>Upload your flyer + intro letter</strong> &mdash; add your flyer (front &amp; back) and a short intro letter once in <strong>Print &amp; Post</strong> settings. They\'re used for every mailing, so your business always arrives looking professional.</td></tr>' +
     '</table>' +
     '<div style="margin-top:10px"><a href="' + _magicLeadsUrl + '" style="display:inline-block;margin-right:6px;margin-bottom:6px;padding:8px 18px;background-color:#0ea5e9;background-image:linear-gradient(135deg,#0ea5e9,#2563eb);color:#ffffff;text-decoration:none;border-radius:50px;font-size:12px;font-weight:700">Open My Leads</a>' +
     '<a href="' + _magicLeadsUrl + '" style="display:inline-block;padding:8px 18px;background:#ffffff;border:1px solid #2563eb;color:#2563eb;text-decoration:none;border-radius:50px;font-size:12px;font-weight:700">Print &amp; Post</a></div>' +
@@ -31595,7 +31595,7 @@ app.post('/api/admin/direct-mail/test-receipt', adminAuth, async (req, res) => {
     var orderRef = req.body.order_ref || '211936512';
     var mailType = req.body.mail_type || '';
     var sampleBody =
-      '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">Great news - your Print &amp; Post order is confirmed and paid. Here\'s everything you need to know:</p>' +
+      '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">Great news &mdash; your Print &amp; Post order is confirmed and paid. Here\'s everything you need to know:</p>' +
       '<div style="background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.2);border-radius:12px;padding:16px 20px;margin:0 0 16px">' +
       '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:3px 0;font-size:13px;color:#8890b0;width:40%">Order</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">Print &amp; Post: ' + name + (mailType ? ' (' + mailType + ')' : '') + '</td></tr>' +
       '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Amount paid</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">&pound;' + amount + '</td></tr>' +
