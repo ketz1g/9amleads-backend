@@ -428,8 +428,10 @@ async function loadBacklinkTracker() {
     var statuses = { pending: { c: '#f59e0b', l: 'Pending' }, submitted: { c: '#38bdf8', l: 'Submitted' }, live: { c: '#22c55e', l: 'Live' }, skip: { c: '#64748b', l: 'Skipped' } };
     var summary = '';
     Object.keys(statuses).forEach(function(k) { if (d.counts && d.counts[k]) summary += '<span style="margin-right:10px"><span style="color:' + statuses[k].c + ';font-weight:800">' + d.counts[k] + '</span> ' + statuses[k].l + '</span>'; });
-    el.innerHTML = '<div style="font-size:11px;color:#5c6480;margin-bottom:8px">' + summary + '</div>';
-    el.innerHTML += d.items.map(function(i) {
+    var tierLabels = { 1: 'Tier 1 - Entity footprint (free, fast, do these first)', 2: 'Tier 2 - Relevant authority (this is the real ranking fix)', 3: 'Tier 3 - Press and compounding assets', 0: 'Other' };
+    var groups = { 1: [], 2: [], 3: [], 0: [] };
+    (d.items || []).forEach(function(i) { var t = (i.tier === 1 || i.tier === 2 || i.tier === 3) ? i.tier : 0; groups[t].push(i); });
+    function rowHtml(i) {
       var s = statuses[i.status] || statuses.pending;
       return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #1a1a1a;font-size:12px;flex-wrap:wrap">' +
         '<div style="flex:1;min-width:200px"><strong style="color:#e2e8f0">' + esc(i.name) + '</strong>' +
@@ -442,7 +444,14 @@ async function loadBacklinkTracker() {
         '</select>' +
         '<button class="btn btn-sm" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);padding:3px 7px;font-size:10px" onclick="delBacklinkItem(\'' + i.id + '\')"><i class="fas fa-trash"></i></button>' +
         '</div></div>';
-    }).join('');
+    }
+    var out = '<div style="font-size:11px;color:#5c6480;margin-bottom:8px">' + summary + '</div>';
+    [1, 2, 3, 0].forEach(function(t) {
+      if (!groups[t].length) return;
+      out += '<div style="font-size:11px;font-weight:700;color:#7dd3fc;margin:14px 0 2px">' + tierLabels[t] + ' <span style="color:#5c6480;font-weight:500">(' + groups[t].length + ')</span></div>';
+      out += groups[t].map(rowHtml).join('');
+    });
+    el.innerHTML = out;
   } catch(e) { var el3 = document.getElementById('backlinkTrackerBody'); if (el3) el3.innerHTML = '<div class="empty" style="color:#ef4444">Failed: ' + esc(e.message) + '</div>'; }
 }
 

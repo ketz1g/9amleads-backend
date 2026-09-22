@@ -34766,22 +34766,55 @@ app.get('/api/admin/gsc/opportunities', adminAuth, async function(req, res) {
 // ===== ONLINE PRESENCE / BACKLINK TRACKER =====
 // A simple owner-managed checklist of free/paid directories + link opportunities to
 // build authority. Stored in the DB (seeded once). Status: pending/submitted/live/skip.
+// Tiers:
+//   1 = entity footprint. Free, fast, done in an afternoon each. AI models must be
+//       able to resolve 9amLeads as a real entity before they will ever cite it.
+//   2 = relevant authority. This is the actual ranking fix - trade bodies and
+//       communities where your buyers already are. Weeks of manual work.
+//   3 = press and compounding assets. Slowest, but these are the links AI and
+//       journalists cite as sources.
 var DEFAULT_DIRECTORY_LIST = [
-  { name: 'Google Business Profile', url: 'https://business.google.com', why: 'Local pack + maps visibility', status: 'pending' },
-  { name: 'Bing Places', url: 'https://www.bingplaces.com', why: 'Bing local + free backlink', status: 'pending' },
-  { name: 'Yell.com', url: 'https://www.yell.com', why: 'UK business directory', status: 'pending' },
-  { name: 'Crunchbase', url: 'https://www.crunchbase.com', why: 'Startup authority + brand signal', status: 'pending' },
-  { name: 'LinkedIn Company Page', url: 'https://www.linkedin.com', why: 'Brand SERP + E-E-A-T', status: 'pending' },
-  { name: 'Trustpilot', url: 'https://www.trustpilot.com', why: 'Reviews = CTR + trust', status: 'pending' },
-  { name: 'Cylex UK', url: 'https://www.cylex-uk.co.uk', why: 'UK directory backlink', status: 'pending' },
-  { name: 'Hotfrog UK', url: 'https://www.hotfrog.co.uk', why: 'UK directory backlink', status: 'pending' },
-  { name: 'FreeIndex', url: 'https://www.freeindex.co.uk', why: 'UK business directory', status: 'pending' },
-  { name: 'Thompson Local', url: 'https://www.thomsonlocal.com', why: 'UK directory (paid tier optional)', status: 'pending' },
-  { name: 'Product Hunt', url: 'https://www.producthunt.com', why: 'Launch traffic + authority', status: 'pending' },
-  { name: 'Startup Directories (BetaList, StartupRanking, etc)', url: 'https://www.betalist.com', why: 'SaaS authority links', status: 'pending' },
-  { name: 'HARO / Featured / Connectively', url: 'https://www.helpareporter.com', why: 'Digital PR - journalist quotes = high-authority links', status: 'pending' },
-  { name: 'UK Trade Roundups (mover/probate/lead-gen blogs)', url: '', why: 'Guest posts / expert quotes in your niche', status: 'pending' },
-  { name: 'Industry Associations (BAR, BVRLA-equivalents, RLA)', url: '', why: 'Member directory links + trust', status: 'pending' }
+  // ---------- Tier 1: entity footprint ----------
+  { tier: 1, name: 'Google Business Profile', url: 'https://business.google.com', why: 'Local pack + maps visibility. Biggest single lever for a UK local B2B.', status: 'pending' },
+  { tier: 1, name: 'Bing Places', url: 'https://www.bingplaces.com', why: 'Bing local + free backlink. Feeds ChatGPT and Copilot visibility.', status: 'pending' },
+  { tier: 1, name: 'LinkedIn Company Page', url: 'https://www.linkedin.com/company/setup/new/', why: 'Brand SERP + E-E-A-T. Creates a link and an entity anchor.', status: 'pending' },
+  { tier: 1, name: 'Crunchbase', url: 'https://www.crunchbase.com', why: 'Primary entity source for AI models. Do NOT skip this one.', status: 'pending' },
+  { tier: 1, name: 'Trustpilot', url: 'https://www.trustpilot.com', why: 'Reviews = CTR + trust signals.', status: 'pending' },
+  { tier: 1, name: 'Wikidata', url: 'https://www.wikidata.org', why: 'Structured entity record read by AI models and Google.', status: 'pending' },
+  { tier: 1, name: 'Capterra UK', url: 'https://www.capterra.co.uk', why: 'Relevant B2B software directory - you are a subscription data product.', status: 'pending' },
+  { tier: 1, name: 'GetApp UK', url: 'https://www.getapp.co.uk', why: 'Relevant B2B software directory.', status: 'pending' },
+  { tier: 1, name: 'Software Advice UK', url: 'https://www.softwareadvice.co.uk', why: 'Relevant B2B software directory.', status: 'pending' },
+  { tier: 1, name: 'G2', url: 'https://www.g2.com', why: 'B2B software reviews - strong entity signal.', status: 'pending' },
+  { tier: 1, name: 'Yell.com', url: 'https://www.yell.com', why: 'UK business directory.', status: 'pending' },
+  { tier: 1, name: 'Cylex UK', url: 'https://www.cylex-uk.co.uk', why: 'UK directory citation.', status: 'pending' },
+  { tier: 1, name: 'Hotfrog UK', url: 'https://www.hotfrog.co.uk', why: 'UK directory citation.', status: 'pending' },
+  { tier: 1, name: 'FreeIndex', url: 'https://www.freeindex.co.uk', why: 'UK directory citation.', status: 'pending' },
+  { tier: 1, name: 'Thompson Local', url: 'https://www.thomsonlocal.com', why: 'UK directory citation.', status: 'pending' },
+  { tier: 1, name: 'Product Hunt', url: 'https://www.producthunt.com', why: 'Launch visibility + a link.', status: 'pending' },
+  { tier: 1, name: 'Startup Directories (BetaList, StartupRanking, etc)', url: 'https://www.betalist.com', why: 'SaaS authority links.', status: 'pending' },
+  // ---------- Tier 2: relevant authority (the real fix) ----------
+  { tier: 2, name: 'Reddit r/ukbusiness', url: 'https://www.reddit.com/r/ukbusiness/', why: 'Answer real questions helpfully. Reddit feeds AI answers directly (OpenAI + Google licensing deals). Do NOT drop links.', status: 'pending' },
+  { tier: 2, name: 'Reddit r/smallbusiness', url: 'https://www.reddit.com/r/smallbusiness/', why: 'Large UK/US small-business community. Contribute genuinely.', status: 'pending' },
+  { tier: 2, name: 'Reddit r/HousingUK', url: 'https://www.reddit.com/r/HousingUK/', why: 'Direct audience overlap with moving leads buyers.', status: 'pending' },
+  { tier: 2, name: 'Reddit r/Entrepreneur', url: 'https://www.reddit.com/r/Entrepreneur/', why: 'Lead generation and growth discussions.', status: 'pending' },
+  { tier: 2, name: 'BAR - British Association of Removers', url: 'https://www.bar.co.uk', why: 'Member directory link + trust for your moving-leads buyers.', status: 'pending' },
+  { tier: 2, name: 'NRLA - National Residential Landlords Association', url: 'https://www.nrla.org.uk', why: 'Landlord audience, relevant to probate and planning.', status: 'pending' },
+  { tier: 2, name: 'FSB - Federation of Small Businesses', url: 'https://www.fsb.org.uk', why: 'Member directory + small-business authority.', status: 'pending' },
+  { tier: 2, name: 'FMB - Federation of Master Builders', url: 'https://www.fmb.org.uk', why: 'Builder audience for planning permission leads.', status: 'pending' },
+  { tier: 2, name: 'The Law Society', url: 'https://www.lawsociety.org.uk', why: 'Solicitor audience for probate leads.', status: 'pending' },
+  { tier: 2, name: 'ICAEW (accountants)', url: 'https://www.icaew.com', why: 'Accountant audience for new business leads.', status: 'pending' },
+  { tier: 2, name: 'RIBA (architects)', url: 'https://www.architecture.com', why: 'Architect audience for planning leads.', status: 'pending' },
+  { tier: 2, name: 'Checkatrade', url: 'https://www.checkatrade.com', why: 'Trade directory - relevant to builders and removals.', status: 'pending' },
+  { tier: 2, name: 'Which? Trusted Traders', url: 'https://trustedtraders.which.co.uk', why: 'High-trust UK trade directory.', status: 'pending' },
+  { tier: 2, name: 'Industry Associations (BAR, BVRLA-equivalents, RLA)', url: '', why: 'Member directory links + trust.', status: 'pending' },
+  { tier: 2, name: 'UK Trade Roundups (mover/probate/lead-gen blogs)', url: '', why: 'Guest posts / expert quotes in your niche.', status: 'pending' },
+  // ---------- Tier 3: press and compounding assets ----------
+  { tier: 3, name: 'HARO / Featured / Connectively', url: 'https://www.helpareporter.com', why: 'Digital PR - journalist quotes = high-authority links.', status: 'pending' },
+  { tier: 3, name: 'UKTN (UK Tech News)', url: 'https://www.uktech.news', why: 'UK startup press coverage.', status: 'pending' },
+  { tier: 3, name: 'TechRound', url: 'https://techround.co.uk', why: 'UK startup press coverage.', status: 'pending' },
+  { tier: 3, name: 'Startups.co.uk', url: 'https://startups.co.uk', why: 'UK small-business press.', status: 'pending' },
+  { tier: 3, name: 'Local press (Harrow Times / MyLondon)', url: 'https://www.mylondon.news', why: 'Local startup story - journalists actively look for these.', status: 'pending' },
+  { tier: 3, name: 'Original data report outreach', url: 'https://9amleads.com/benchmarks/', why: 'Pitch your own lead-supply data to trade press. This is what AI cites as a source.', status: 'pending' }
 ];
 
 function getDirectoryTracker() {
@@ -34790,8 +34823,81 @@ function getDirectoryTracker() {
     dbDt.backlink_tracker = { seeded_at: new Date().toISOString(), updated_at: null, items: DEFAULT_DIRECTORY_LIST.map(function(x){ return Object.assign({ id: 'dir_' + Math.random().toString(36).slice(2, 10) }, x); }) };
     saveDb();
   }
-  return dbDt.backlink_tracker;
+  // Merge in any targets added to DEFAULT_DIRECTORY_LIST since the tracker was first
+  // seeded (matched by name) and backfill the tier on older rows. The owner's own
+  // statuses are never overwritten.
+  var t = dbDt.backlink_tracker;
+  if (!Array.isArray(t.items)) t.items = [];
+  var byName = {};
+  t.items.forEach(function(i) { byName[String(i.name || '').toLowerCase()] = i; });
+  var changed = false;
+  DEFAULT_DIRECTORY_LIST.forEach(function(def) {
+    var key = String(def.name).toLowerCase();
+    var ex = byName[key];
+    if (ex) {
+      if (ex.tier === undefined && def.tier !== undefined) { ex.tier = def.tier; changed = true; }
+    } else {
+      t.items.push(Object.assign({ id: 'dir_' + Math.random().toString(36).slice(2, 10) }, def));
+      changed = true;
+    }
+  });
+  if (changed) { t.updated_at = new Date().toISOString(); saveDb(); }
+  return t;
 }
+
+// ===== PUBLIC: UK LEAD SUPPLY BENCHMARKS =====
+// Aggregate, non-sensitive figures derived from our own live lead pools, published
+// as original data. Deliberately excludes any customer, revenue or internal metric.
+// Cached for 10 minutes because it reads several large pool files.
+var _benchCache = { at: 0, data: null };
+function readPoolFileForBench(fn) {
+  var arr = [];
+  try {
+    var raw = JSON.parse(fs.readFileSync(fn, 'utf-8'));
+    if (Array.isArray(raw)) arr = raw;
+    else if (raw && typeof raw === 'object') Object.keys(raw).forEach(function(k){ if (k.indexOf('_') !== 0 && Array.isArray(raw[k])) arr = arr.concat(raw[k]); });
+  } catch(e) {}
+  return arr;
+}
+app.get('/api/public/benchmarks', function(req, res) {
+  try {
+    if (_benchCache.data && (Date.now() - _benchCache.at) < 600000) {
+      return res.json(_benchCache.data);
+    }
+    var cutoff = getFreshCutoffIso();
+    var products = ['moving', 'probate', 'newbusiness', 'planning', 'tenders'];
+    var out = [], allAreas = {};
+    products.forEach(function(prod) {
+      var file = PRODUCT_LEAD_FILES[prod] ? PRODUCT_LEAD_FILES[prod].file : (prod + '-leads.json');
+      var arr = readPoolFileForBench(path.join(DATA_DIR, file));
+      var count = 0, perArea = {};
+      arr.forEach(function(l) {
+        var d = pickFreshDate(l);
+        if (!d || d < cutoff) return;
+        count++;
+        var a = extractPostcodeArea(l.postcode || l.address || l.location || l.name || '');
+        if (a) perArea[a] = (perArea[a] || 0) + 1;
+      });
+      out.push({ product: prod, available: count, areas: Object.keys(perArea).length });
+      Object.keys(perArea).forEach(function(a) { allAreas[a] = (allAreas[a] || 0) + perArea[a]; });
+    });
+    var topAreas = Object.keys(allAreas).map(function(a) { return { area: a, leads: allAreas[a] }; })
+      .sort(function(x, y) { return y.leads - x.leads; }).slice(0, 20);
+    var total = out.reduce(function(s, p) { return s + p.available; }, 0);
+    var payload = {
+      success: true,
+      updated_at: new Date().toISOString(),
+      fresh_window_hours: (typeof FRESH_HOURS !== 'undefined' ? FRESH_HOURS : null),
+      total_available: total,
+      products: out,
+      top_areas: topAreas,
+      note: 'Live counts of UK business opportunities in the 9amLeads supply pool, refreshed continuously from official sources.'
+    };
+    _benchCache = { at: Date.now(), data: payload };
+    res.set('Cache-Control', 'public, max-age=600');
+    res.json(payload);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 
 // GET /api/admin/backlink-tracker - list all directory/backlink opportunities.
 app.get('/api/admin/backlink-tracker', adminAuth, function(req, res) {
