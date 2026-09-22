@@ -15083,7 +15083,16 @@ app.get("/api/admin/trial-onboarding-status", adminAuth, function(req, res) {
     var logs = (d.email_log || []).slice(-30).map(function(e) {
       return { at: e.at || e.ts || "", email: e.email || "", template: e.template || e.subject || "", status: e.status || "" };
     });
-    res.json({ success: true, customers: out, recent_email_log: logs, email_log_total: (d.email_log || []).length });
+    var scored = (d.customers || []).filter(function(c) {
+      var e = String(c.email || "").toLowerCase();
+      if (c.plan !== "free_trial" || !c.trial_ends) return false;
+      if (e.indexOf("@9amleads.com") !== -1 || /^test\./.test(e) || /^demo/.test(e)) return false;
+      return new Date(c.trial_ends).getTime() >= now;
+    }).map(function(c) {
+      var s = _trialIntentScore(c);
+      return { email: c.email, company: c.company, product: c.product, score: s.score, reasons: s.reasons, pricing_views: s.pricing, checkout_starts: s.checkout, leads_opened: s.leads };
+    }).sort(function(a, b) { return b.score - a.score; });
+    res.json({ success: true, customers: out, recent_email_log: logs, email_log_total: (d.email_log || []).length, active_trial_scores: scored });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -15109,14 +15118,13 @@ function _trialIntentScore(cust) {
   var checkout = count("checkout_started");
   var leads = count("lead_viewed");
   if (checkout > 0) { score += 40; reasons.push("started checkout (" + checkout + ")"); }
-  if (pricing > 0) { score += 25; reasons.push("viewed pricing (" + pricing + ")"); }
-  if (leads >= 10) { score += 20; reasons.push("opened " + leads + " leads"); }
-  else if (leads >= 3) { score += 10; reasons.push("opened " + leads + " leads"); }
+  if (pricing > 0) { score += 30; reasons.push("viewed pricing (" + pricing + ")"); }
+  if (leads >= 10) { score += 25; reasons.push("opened " + leads + " leads"); }
+  else if (leads >= 3) { score += 15; reasons.push("opened " + leads + " leads"); }
   try {
     var sent = JSON.parse(cust.campaign_sent || "[]");
-    if (sent.indexOf("trial_day3") !== -1) score += 5;
     if (sent.indexOf("trial_day5") !== -1) score += 5;
-    if (sent.indexOf("trial_day7") !== -1) score += 10;
+    if (sent.indexOf("trial_day7") !== -1) score += 10; reasons.push("near trial end");
   } catch(e) {}
   return { score: score, reasons: reasons, pricing: pricing, checkout: checkout, leads: leads };
 }
@@ -15133,7 +15141,7 @@ function runHighIntentAlerts() {
       if (new Date(c.trial_ends).getTime() < now) return;          // expired - handled by win-back
       if (c.high_intent_alerted) return;                            // already flagged
       var s = _trialIntentScore(c);
-      if (s.score < 40) return;
+      if (s.score < 25) return;
       out.push({ c: c, s: s });
     });
     if (!out.length) return { sent: 0 };
