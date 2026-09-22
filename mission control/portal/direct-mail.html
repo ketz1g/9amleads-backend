@@ -125,6 +125,19 @@ details.wiz-more[open] summary{margin-bottom:16px}
 <div id="fmt-detail" style="display:none;margin-top:10px;padding:10px 12px;border:1px solid #bfdbfe;background:#eff6ff;border-radius:8px;font-size:11px;color:#1e40af;line-height:1.6"></div>
 </div>
 
+<div id="upload-block" style="margin-top:16px;padding:16px 18px;background:#f8fafc;border:2px dashed #cbd5e1;border-radius:12px">
+<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px"><i class="fas fa-file-upload" style="color:var(--accent);margin-right:4px"></i> 2. Upload your design files</div>
+<div style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.6">Pick your design <b>front</b> and <b>back</b> (PNG/JPG/PDF). We check them against the print spec automatically, and you can fine-tune the position afterwards.</div>
+<div class="grid-3">
+<div><label class="label">Leaflet Front</label><input type="file" class="input" id="up-flyer-front" accept=".pdf,.png,.jpg,.jpeg" onchange="validateArtwork(this,'flyer_front')"></div>
+<div><label class="label">Leaflet Back</label><input type="file" class="input" id="up-flyer-back" accept=".pdf,.png,.jpg,.jpeg" onchange="validateArtwork(this,'flyer_back')"></div>
+<div><label class="label">Cover Letter PDF (optional)</label><input type="file" class="input" id="up-letter" accept=".pdf,.png,.jpg,.jpeg"></div>
+</div>
+<div id="artwork-validation" style="margin-top:10px;display:none"></div>
+<div style="margin-top:10px;padding:10px 12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;font-size:11.5px;color:#1e40af;line-height:1.6"><i class="fas fa-life-ring" style="margin-right:5px"></i><b>Having trouble uploading?</b> No problem - just email your leaflet (front and back) and cover letter to <a href="mailto:hello@9amleads.com" style="color:#0ea5e9;font-weight:700">hello@9amleads.com</a> and we&rsquo;ll upload them for you.</div>
+</div>
+
+<div id="cover-letter-block">
 <div class="grid-2">
 <div><label class="label">Cover Letter Name</label><input class="input" id="t-name" placeholder="e.g. My Introduction Letter"></div>
 <div><label class="label">Type</label><select class="input" id="t-type"><option value="letter">Letter</option><option value="flyer">Leaflet (A5)</option><option value="postcard">Postcard</option></select></div>
@@ -141,6 +154,7 @@ details.wiz-more[open] summary{margin-bottom:16px}
 <button class="btn btn-primary" onclick="saveTemplate()" style="flex:1"><i class="fas fa-save"></i> Save Cover Letter</button>
 <button class="btn btn-outline" onclick="downloadCoverLetter()" style="flex:1"><i class="fas fa-download"></i> Download Cover Letter</button>
 <button class="btn btn-outline" onclick="clearCoverLetter()" style="flex:0 0 auto"><i class="fas fa-eraser"></i> Clear Text</button>
+</div>
 </div>
 
 <!-- Letter preview + guidelines (shows when letter / leaflet+letter format selected) -->
@@ -214,17 +228,7 @@ details.wiz-more[open] summary{margin-bottom:16px}
   • After editing, <b>hard-refresh (Ctrl+F5)</b> if the preview looks old.
 </div>
 </div>
-<div style="margin-top:14px;padding:12px 14px;background:#f8fafc;border:1px dashed var(--border);border-radius:10px">
-<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px"><i class="fas fa-file-upload" style="color:var(--accent);margin-right:4px"></i> Upload or replace your files</div>
-<div style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.6">Pick your flyer <b>front</b> and <b>back</b> (PNG/JPG/PDF) - they're checked against the print spec automatically. Use <b>Edit / Position</b> to fine-tune, then <b>Save My Leaflet</b>.</div>
-<div class="grid-3">
-<div><label class="label">Leaflet Front</label><input type="file" class="input" id="up-flyer-front" accept=".pdf,.png,.jpg,.jpeg" onchange="validateArtwork(this,'flyer_front')"></div>
-<div><label class="label">Leaflet Back</label><input type="file" class="input" id="up-flyer-back" accept=".pdf,.png,.jpg,.jpeg" onchange="validateArtwork(this,'flyer_back')"></div>
-<div><label class="label">Cover Letter PDF (optional)</label><input type="file" class="input" id="up-letter" accept=".pdf,.png,.jpg,.jpeg"></div>
-</div>
-<div id="artwork-validation" style="margin-top:10px;display:none"></div>
-<div style="margin-top:10px;padding:10px 12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;font-size:11.5px;color:#1e40af;line-height:1.6"><i class="fas fa-life-ring" style="margin-right:5px"></i><b>Having trouble uploading?</b> No problem - just email your leaflet (front and back) and cover letter to <a href="mailto:hello@9amleads.com" style="color:#0ea5e9;font-weight:700">hello@9amleads.com</a> and we&rsquo;ll upload them for you.</div>
-</div>
+
 <div style="margin-top:8px;padding:9px 12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;font-size:11px;color:#0369a1">
 <i class="fas fa-info-circle" style="margin-right:4px"></i>The recipient's address is printed automatically in a reserved <b>clear zone</b>, kept white so Royal Mail can machine-read it. We print edge-to-edge with a 6mm bleed, and the safe-zone is handled for you.
 </div>
@@ -542,7 +546,24 @@ function loadFormats(){
     grid.innerHTML=html;
     renderFormatDetail();
     renderTemplateDownloads();
+    updateLetterFields();
   });
+}
+// The cover-letter fields and the optional letter PDF upload only apply to formats
+// that actually include a letter (A4 letter, or leaflet + letter). Leaflet-only
+// formats hide them entirely so the page stays simple.
+function formatNeedsLetter(){
+  return _selectedFormat === "letter_a4" || _selectedFormat === "flyer_plus_letter";
+}
+function updateLetterFields(){
+  var needs = formatNeedsLetter();
+  var block = document.getElementById("cover-letter-block");
+  if (block) block.style.display = needs ? "" : "none";
+  var letterInput = document.getElementById("up-letter");
+  if (letterInput) {
+    var wrap = letterInput.parentNode;
+    if (wrap) wrap.style.display = needs ? "" : "none";
+  }
 }
 function selectFormat(id){
   _selectedFormat=id;
@@ -552,6 +573,7 @@ function selectFormat(id){
   });
   renderFormatDetail();
   renderTemplateDownloads();
+  updateLetterFields();
 }
 function renderFormatDetail(){
   var f=_formats.find(function(x){return x.id===_selectedFormat;});
@@ -1694,7 +1716,7 @@ function wizNext() {
   if (b) b.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 function wizBack() { wizShow(WIZ.step - 1); }
-document.addEventListener("DOMContentLoaded", function () { wizShow(1); });
+document.addEventListener("DOMContentLoaded", function () { wizShow(1); if (typeof updateLetterFields === "function") updateLetterFields(); });
 </script>
 
 <!-- Flyer position/crop editor modal (Vistaprint-style) -->
