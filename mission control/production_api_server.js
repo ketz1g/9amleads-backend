@@ -99,6 +99,10 @@ const PUBLIC_URL = process.env.PUBLIC_URL || 'https://www.9amleads.com';
           if (isLocal) {
             req.setTimeout(300000, function() { try { req.destroy(new Error('internal request timeout')); } catch(e) {} });
           } else if (host) {
+            // DEFAULT TIMEOUT for EXTERNAL calls too: a stalled external request (Brevo,
+            // Postcoder, a scraper, Stripe) must never hang a cron or the 9am delivery
+            // forever. Callers that set their own timeout AFTER this still override it.
+            try { req.setTimeout(60000, function() { try { req.destroy(new Error('external request timeout')); } catch(e) {} }); } catch(e) {}
             // Track EXTERNAL outbound calls so an unhandled network rejection can name
             // the request that was in flight (otherwise ETIMEDOUT gives no source).
             try {
