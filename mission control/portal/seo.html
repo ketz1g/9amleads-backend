@@ -365,13 +365,17 @@ async function loadIndexStatus() {
     var d = await r.json();
     if (!r.ok || d.error) { el.innerHTML = '<div class="empty" style="color:#ef4444">' + esc(d.error || ('HTTP ' + r.status)) + '</div>'; return; }
     var html = '<div style="font-size:12px;margin-bottom:8px;color:#8890a8"><strong style="color:#22c55e">' + d.indexed + '</strong> of ' + d.total + ' key pages indexed</div>';
-    html += '<table style="width:100%;font-size:11px;border-collapse:collapse"><tr style="color:#64748b;text-align:left"><th style="padding:5px 6px">Page</th><th style="padding:5px 6px">Status</th><th style="padding:5px 6px">Last crawl</th><th style="padding:5px 6px"></th></tr>';
+    if (typeof d.bing_total_anchors === 'number') {
+      html += '<div style="font-size:11px;margin-bottom:8px;color:' + (d.bing_total_anchors > 0 ? '#22c55e' : '#ef4444') + '"><strong>Bing sees ' + d.bing_total_anchors + ' inbound link' + (d.bing_total_anchors === 1 ? '' : 's') + '</strong>' + (d.bing_total_anchors === 0 ? ' - no authority signals yet. Directory listings and third-party mentions are the fix, not more submissions.' : '') + '</div>';
+    }
+    html += '<table style="width:100%;font-size:11px;border-collapse:collapse"><tr style="color:#64748b;text-align:left"><th style="padding:5px 6px">Page</th><th style="padding:5px 6px">Google</th><th style="padding:5px 6px">Bing crawled</th><th style="padding:5px 6px">Links</th><th style="padding:5px 6px"></th></tr>';
     (d.pages || []).forEach(function(p) {
       var path = p.url.replace('https://9amleads.com', '') || '/';
       var badge = p.indexed ? '<span style="color:#22c55e;font-weight:700">Indexed</span>' : (p.error ? '<span style="color:#ef4444">error</span>' : '<span style="color:#f59e0b;font-weight:700">' + esc(p.coverageState || 'not indexed') + '</span>');
-      var crawl = p.lastCrawlTime ? new Date(p.lastCrawlTime).toLocaleDateString('en-GB') : 'never';
+      var crawl = p.bing_last_crawled ? new Date(p.bing_last_crawled).toLocaleDateString('en-GB') : 'never';
+      var links = (p.bing_anchors === null || p.bing_anchors === undefined) ? '-' : (p.bing_anchors > 0 ? '<span style="color:#22c55e;font-weight:700">' + p.bing_anchors + '</span>' : '<span style="color:#ef4444">0</span>');
       var link = '<a href="' + p.inspect_url + '" target="_blank" rel="noopener" class="btn btn-outline btn-sm" style="white-space:nowrap">Request Indexing</a>';
-      html += '<tr style="border-top:1px solid #1a1a1a"><td style="padding:5px 6px;color:#cbd5e1;font-weight:600">' + esc(path) + '</td><td style="padding:5px 6px">' + badge + '</td><td style="padding:5px 6px;color:#64748b">' + crawl + '</td><td style="padding:5px 6px;text-align:right">' + link + '</td></tr>';
+      html += '<tr style="border-top:1px solid #1a1a1a"><td style="padding:5px 6px;color:#cbd5e1;font-weight:600">' + esc(path) + '</td><td style="padding:5px 6px">' + badge + '</td><td style="padding:5px 6px;color:#64748b">' + crawl + '</td><td style="padding:5px 6px">' + links + '</td><td style="padding:5px 6px;text-align:right">' + link + '</td></tr>';
     });
     html += '</table>';
     el.innerHTML = html;

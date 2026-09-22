@@ -34942,6 +34942,41 @@ function submitIndexNowAsync(urls) {
   });
 }
 
+// Parse Bing's ASP.NET JSON date format (/Date(1234567890000)/) into ISO.
+function parseBingDate(s) {
+  var m = /\/Date\((\d+)\)\//.exec(String(s || ''));
+  return m ? new Date(parseInt(m[1], 10)).toISOString() : '';
+}
+
+// Ask Bing what it knows about a URL: last crawl, discovery date and anchor (backlink)
+// count. AnchorCount is the useful one - it is Bing's view of inbound links.
+function bingGetUrlInfoAsync(url) {
+  return new Promise(function(resolve) {
+    try {
+      var key = process.env.BING_API_KEY;
+      if (!key) return resolve({ ok: false, error: 'BING_API_KEY not set' });
+      var https = require('https');
+      var p = '/webmaster/api.svc/json/GetUrlInfo?apikey=' + encodeURIComponent(key) +
+        '&siteUrl=' + encodeURIComponent('https://9amleads.com/') +
+        '&url=' + encodeURIComponent(url);
+      var req = https.request({ hostname: 'ssl.bing.com', path: p, method: 'GET', timeout: 20000 }, function(r) {
+        var b = '';
+        r.on('data', function(c) { b += c; });
+        r.on('end', function() {
+          var j = null;
+          try { j = JSON.parse(b); } catch(e) {}
+          var d = j && j.d;
+          if (!d) return resolve({ ok: false, error: 'no data' });
+          resolve({ ok: true, lastCrawled: parseBingDate(d.LastCrawledDate), discovered: parseBingDate(d.DiscoveryDate), anchors: d.AnchorCount || 0, size: d.DocumentSize || 0 });
+        });
+      });
+      req.on('error', function(e) { resolve({ ok: false, error: e.message }); });
+      req.setTimeout(20000, function() { req.destroy(new Error('Bing timeout')); });
+      req.end();
+    } catch(e) { resolve({ ok: false, error: e.message }); }
+  });
+}
+
 // Submit URLs to Bing via the Webmaster URL Submission API. Requires the site to be
 // verified in Bing Webmaster Tools (siteUrl must match the verified property exactly).
 // Bing allows ~10,000 URLs/day for verified sites; the batch endpoint is called in
@@ -35093,8 +35128,21 @@ app.get('/api/admin/seo/index-status', adminAuth, async function(req, res) {
       } catch(e) { row.error = e.message; }
       out.push(row);
     }
+
+    // Bing's view (last crawl + anchor/backlink count), fetched in parallel.
+    var bingResults = await Promise.all(pages.map(function(u) { return bingGetUrlInfoAsync(u); }));
+    var totalAnchors = 0;
+    out.forEach(function(row, idx) {
+      var b = bingResults[idx] || {};
+      row.bing_ok = !!b.ok;
+      row.bing_last_crawled = b.lastCrawled || '';
+      row.bing_discovered = b.discovered || '';
+      row.bing_anchors = (typeof b.anchors === 'number') ? b.anchors : null;
+      if (row.bing_anchors) totalAnchors += row.bing_anchors;
+    });
+
     out.sort(function(a, b) { return (a.indexed ? 1 : 0) - (b.indexed ? 1 : 0); });
-    res.json({ success: true, property: prop, pages: out, indexed: out.filter(function(x) { return x.indexed; }).length, total: out.length });
+    res.json({ success: true, property: prop, pages: out, indexed: out.filter(function(x) { return x.indexed; }).length, total: out.length, bing_total_anchors: totalAnchors });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
