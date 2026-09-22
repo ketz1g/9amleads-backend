@@ -11429,6 +11429,9 @@ app.get('/api/admin/delivery-preview', adminAuth, async (req, res) => {
       // "short" customers that real 9am delivery actually skips.
       if (!c.plan || c.plan === 'cancelled' || isLeadsPaused(c)) return false;
       if (trialExpiredUnpaid(c)) return false;
+      // Same filter the real delivery engine uses - without this the preview listed
+      // demo/internal accounts that would never actually be delivered to.
+      if (isInternalAccount(c)) return false;
       if (emailFilter && String(c.email || '').toLowerCase() !== emailFilter) return false;
       return true;
     });
