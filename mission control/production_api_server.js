@@ -103,6 +103,16 @@ const PUBLIC_URL = process.env.PUBLIC_URL || 'https://www.9amleads.com';
             // Postcoder, a scraper, Stripe) must never hang a cron or the 9am delivery
             // forever. Callers that set their own timeout AFTER this still override it.
             try { req.setTimeout(60000, function() { try { req.destroy(new Error('external request timeout')); } catch(e) {} }); } catch(e) {}
+            // BANDWIDTH DIAGNOSTIC: accumulate inbound/outbound bytes per external host.
+            try {
+              var _hkey = String(host).replace(/^www\./, '');
+              global.__netBytes = global.__netBytes || {};
+              var _nb = global.__netBytes[_hkey] || (global.__netBytes[_hkey] = { in: 0, out: 0, calls: 0 });
+              _nb.calls++;
+              var _clh = options && options.headers && (options.headers['Content-Length'] || options.headers['content-length']);
+              if (_clh) _nb.out += parseInt(_clh, 10) || 0;
+              req.on('response', function(_r) { try { _r.on('data', function(_c) { try { _nb.in += _c.length; } catch(e2) {} }); } catch(e2) {} });
+            } catch(e) {}
             // Track EXTERNAL outbound calls so an unhandled network rejection can name
             // the request that was in flight (otherwise ETIMEDOUT gives no source).
             try {
@@ -1570,7 +1580,7 @@ function writeLocalBackup() {
     fs.renameSync(tmp, file);
     // Keep only the last 24 local backups (24h of hourly)
     var all = fs.readdirSync(BACKUP_DIR).filter(function(f) { return f.startsWith('database-') && f.endsWith('.json'); }).sort();
-    while (all.length > 24) { fs.unlinkSync(path.join(BACKUP_DIR, all.shift())); }
+    while (all.length > 8) { fs.unlinkSync(path.join(BACKUP_DIR, all.shift())); }
     console.log('[BACKUP] Local backup written: ' + file);
     return file;
   } catch(e) { console.error('[BACKUP] Local backup error:', e.message); return null; }
@@ -3785,6 +3795,25 @@ app.post('/api/direct-mail/tracking/sync', authMiddleware, async (req, res) => {
 // GET /api/direct-mail/tracking/calendar - group tracking by date for calendar/week views.
 
 app.use(cors({ origin: ['https://www.9amleads.com', 'https://9amleads.com', 'http://localhost:8012'], credentials: true }));
+// BANDWIDTH DIAGNOSTIC: accumulate response bytes per route prefix (cheap counters only).
+app.use(function(req, res, next) {
+  try {
+    var _n = 0;
+    var _ow = res.write, _oe = res.end;
+    res.write = function(c, e) { try { if (c) _n += Buffer.byteLength(c, e); } catch(e2) {} return _ow.apply(res, arguments); };
+    res.end = function(c, e) {
+      try { if (c && typeof c !== 'function') _n += Buffer.byteLength(c, e); } catch(e2) {}
+      try {
+        var _k = String(req.path || '/').split('/').slice(0, 3).join('/') || '/';
+        global.__egress = global.__egress || {};
+        var _g = global.__egress[_k] || (global.__egress[_k] = { bytes: 0, calls: 0 });
+        _g.bytes += _n; _g.calls++;
+      } catch(e2) {}
+      return _oe.apply(res, arguments);
+    };
+  } catch(e) {}
+  next();
+});
 // NEVER cache any /api response. Admin dashboards (customers/leads/stats) are live
 // data and Cloudflare/Netlify/browsers must not serve a stale snapshot (a cached
 // customers response made the admin page appear to show only one customer).
@@ -14911,6 +14940,29 @@ app.post('/api/admin/verify', (req, res) => {
   return res.status(401).json({ success: false, valid: false, error: 'Invalid admin password' });
 });
 
+// BANDWIDTH DIAGNOSTICS (admin only, read-only).
+app.get("/api/admin/net-bytes", adminAuth, function(req, res) {
+  try {
+    var net = global.__netBytes || {};
+    var eg = global.__egress || {};
+    var ni = Object.keys(net).map(function(k) { return { host: k, in_mb: Math.round(net[k].in / 10485.76) / 100, out_mb: Math.round(net[k].out / 10485.76) / 100, calls: net[k].calls }; }).sort(function(a, b) { return b.in_mb - a.in_mb; });
+    var ei = Object.keys(eg).map(function(k) { return { route: k, out_mb: Math.round(eg[k].bytes / 10485.76) / 100, calls: eg[k].calls }; }).sort(function(a, b) { return b.out_mb - a.out_mb; });
+    res.json({ success: true, since_boot_s: Math.round(process.uptime()), inbound_total_mb: Math.round(ni.reduce(function(s, x) { return s + x.in_mb; }, 0) * 100) / 100, egress_total_mb: Math.round(ei.reduce(function(s, x) { return s + x.out_mb; }, 0) * 100) / 100, inbound_by_host: ni.slice(0, 25), egress_by_route: ei.slice(0, 25) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+app.get("/api/admin/db-collections", adminAuth, function(req, res) {
+  try {
+    var d = getDb();
+    var out = Object.keys(d).map(function(k) {
+      var v = d[k], bytes = 0, count = 0;
+      try { count = Array.isArray(v) ? v.length : 1; bytes = Buffer.byteLength(JSON.stringify(v)); } catch(e) {}
+      return { collection: k, count: count, mb: Math.round(bytes / 10485.76) / 100 };
+    }).sort(function(a, b) { return b.mb - a.mb; });
+    var fileMb = 0; try { fileMb = Math.round(fs.statSync(path.join(DATA_DIR, "database.json")).size / 10485.76) / 100; } catch(e) {}
+    res.json({ success: true, db_file_mb: fileMb, top_collections: out.slice(0, 30) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 function adminAuth(req, res, next) {
   const auth = req.headers.authorization;
   if (!auth || auth !== 'Bearer ' + ADMIN_PASSWORD) {
@@ -19227,7 +19279,10 @@ cron.schedule('0 8 1 * *', function() {
 // DATABASE BACKUP - writes a local snapshot every hour (disk, cheap) but pushes the
 // off-server copy to GitHub every 4 hours only (the push is the bandwidth cost; 4h is
 // still plenty of recovery granularity and keeps Render bandwidth in check).
-cron.schedule('15 * * * *', async () => {
+// Every 4 hours (was hourly). The DB is ~60MB, so an hourly snapshot wrote ~1.5GB/day
+// to disk. The off-server GitHub push also runs on this cadence, so recovery
+// granularity is unchanged and the write volume drops by 75%.
+cron.schedule('15 */4 * * *', async () => {
   try {
     var local = writeLocalBackup();
     var hh = new Date().getUTCHours();
