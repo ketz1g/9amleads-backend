@@ -14963,6 +14963,28 @@ app.get("/api/admin/db-collections", adminAuth, function(req, res) {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// BANDWIDTH DIAGNOSTIC: which FIELDS inside a collection are large.
+app.get("/api/admin/db-field-sizes", adminAuth, function(req, res) {
+  try {
+    var d = getDb();
+    var col = String(req.query.collection || "direct_mail_campaigns");
+    var arr = Array.isArray(d[col]) ? d[col] : [];
+    var agg = {};
+    arr.forEach(function(row) {
+      if (!row || typeof row !== "object") return;
+      Object.keys(row).forEach(function(k) {
+        var b = 0; try { b = Buffer.byteLength(JSON.stringify(row[k])); } catch(e) {}
+        if (!agg[k]) agg[k] = { total: 0, max: 0, withval: 0 };
+        agg[k].total += b; if (b > agg[k].max) agg[k].max = b; if (b > 2) agg[k].withval++;
+      });
+    });
+    var out = Object.keys(agg).map(function(k) {
+      return { field: k, total_mb: Math.round(agg[k].total / 10485.76) / 100, max_kb: Math.round(agg[k].max / 1024), rows_with_value: agg[k].withval };
+    }).sort(function(a, b) { return b.total_mb - a.total_mb; });
+    res.json({ success: true, collection: col, rows: arr.length, fields: out.slice(0, 25) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 function adminAuth(req, res, next) {
   const auth = req.headers.authorization;
   if (!auth || auth !== 'Bearer ' + ADMIN_PASSWORD) {
