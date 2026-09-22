@@ -3596,6 +3596,13 @@ function affiliateAuth(req, res, next) {
       return res.status(403).json({ error: 'Your affiliate account is ' + aff.status + '.', status: aff.status });
     }
     req.affiliate = aff;
+    // DEMO / READ-ONLY: a demo token can view the whole dashboard but cannot act.
+    if (tok.demo) {
+      req.affiliateReadOnly = true;
+      if (['GET', 'HEAD', 'OPTIONS'].indexOf(req.method) === -1) {
+        return res.status(403).json({ error: 'Read-only demo - this action is disabled.', read_only: true });
+      }
+    }
     next();
   } catch(e) { return res.status(401).json({ error: 'Invalid token' }); }
 }
@@ -6469,6 +6476,77 @@ app.post('/api/affiliate/register', async (req, res) => {
     } catch(eA) {}
     res.status(201).json({ success: true, affiliate: { id: aff.id, name: aff.name, code: aff.code, email: aff.email, status: aff.status }, message: 'Application received' + (AFFILIATE_AUTO_ACTIVATE ? ' and your account is now active. You can sign in immediately.' : '. We\'ll activate your affiliate account shortly.') });
   } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== AFFILIATE DEMO (read-only) =====
+// Seeds a clearly-labelled demo affiliate with sample referrals and commissions so
+// investors can see a populated affiliate dashboard without signing up.
+var DEMO_AFFILIATE_EMAIL = 'demo-affiliate@9amleads.com';
+function seedDemoAffiliate() {
+  try {
+    var d = getDb();
+    if (!Array.isArray(d.affiliates)) d.affiliates = [];
+    var aff = d.affiliates.find(function(a) { return String(a.email || '').toLowerCase() === DEMO_AFFILIATE_EMAIL; });
+    if (!aff) {
+      aff = {
+        id: 'aff-demo-0001', name: 'Demo Affiliate', email: DEMO_AFFILIATE_EMAIL,
+        phone: '020 1234 5678', code: 'DEMO25', password_hash: '',
+        payout_rate: (typeof AFFILIATE_PAYOUT_RATE !== 'undefined' ? AFFILIATE_PAYOUT_RATE : 25),
+        status: 'active', created_at: new Date(Date.now() - 90 * 86400000).toISOString(),
+        payouts: [], association: 'Trade Association (demo)', recruited_by: '',
+        demo: true, application: {},
+        kyc: { status: 'approved', tc_accepted: true, tc_accepted_at: new Date().toISOString(), bank_name: 'Demo Bank', bank_sort_code: '00-00-00', bank_account_number: '00000000' }
+      };
+      d.affiliates.push(aff);
+    }
+    // sample referrals
+    var names = ['Demo Removals Ltd', 'Demo Legal Services', 'Demo Accountancy', 'Demo Builders', 'Demo Planning Consultancy'];
+    var prods = ['moving', 'probate', 'newbusiness', 'planning', 'tenders'];
+    if (!Array.isArray(d.customers)) d.customers = [];
+    var haveRefs = d.customers.filter(function(c) { return c.affiliate_id === aff.id; }).length;
+    if (haveRefs < 5) {
+      names.forEach(function(nm, i) {
+        var cid = 'cust-demo-aff-' + (i + 1);
+        if (d.customers.some(function(c) { return c.id === cid; })) return;
+        d.customers.push({
+          id: cid, company: nm, contact_name: 'Demo Contact', email: 'demo.ref' + (i + 1) + '@example.com',
+          phone: '020 0000 000' + i, password_hash: '', product: prods[i], lead_type: '',
+          plan: i < 3 ? 'starter' : 'free_trial', coverage: 'postcode', target_areas: '[]',
+          created_at: new Date(Date.now() - (60 - i * 8) * 86400000).toISOString(),
+          trial_ends: new Date(Date.now() + 7 * 86400000).toISOString(),
+          affiliate_id: aff.id, affiliate_code: aff.code, demo: true,
+          campaign_sent: '[]', products: JSON.stringify([prods[i]])
+        });
+      });
+    }
+    // sample commissions
+    if (!Array.isArray(d.partner_commissions)) d.partner_commissions = [];
+    var haveComm = d.partner_commissions.filter(function(cm) { return cm.partner_id === aff.id; }).length;
+    if (haveComm < 6) {
+      ['paid', 'paid', 'paid', 'approved', 'pending', 'pending'].forEach(function(st, i) {
+        var cmid = 'comm-demo-' + (i + 1);
+        if (d.partner_commissions.some(function(cm) { return cm.id === cmid; })) return;
+        d.partner_commissions.push({
+          id: cmid, partner_id: aff.id, customer_id: 'cust-demo-aff-' + (Math.min(i + 1, 5)),
+          commission_amount: (typeof AFFILIATE_PAYOUT_RATE !== 'undefined' ? AFFILIATE_PAYOUT_RATE : 25),
+          status: st, created_at: new Date(Date.now() - i * 11 * 86400000).toISOString(),
+          period: new Date().toISOString().substring(0, 7), demo: true
+        });
+      });
+    }
+    saveDb();
+    return aff;
+  } catch(e) { console.log('[DEMO-AFF] seed error: ' + e.message); return null; }
+}
+
+// GET /api/affiliate/demo-login - mint a short-lived READ-ONLY affiliate token.
+app.get('/api/affiliate/demo-login', function(req, res) {
+  try {
+    var aff = seedDemoAffiliate();
+    if (!aff) return res.status(500).json({ error: 'demo unavailable' });
+    var token = jwt.sign({ id: aff.id, email: aff.email, role: 'affiliate', demo: true }, JWT_SECRET, { expiresIn: '2h' });
+    res.json({ success: true, token: token, demo: true, email: aff.email });
+  } catch(e) { res.status(500).json({ error: 'demo unavailable' }); }
 });
 
 // POST /api/affiliate/login - affiliate signs in to their earnings dashboard.
@@ -40708,6 +40786,7 @@ cron.schedule('0 6 * * *', function() { try { seedDemoAccount(); } catch(e) {} }
 
 app.listen(PORT, () => {
   try { seedDemoAccount(); } catch(e) { console.log('[DEMO] boot seed error: ' + (e && e.message)); }
+  try { seedDemoAffiliate(); } catch(e) { console.log('[DEMO-AFF] boot seed error: ' + (e && e.message)); }
   seedDefaultCampaignPacks();
   seedMarketplaceTemplates();
   seedSeasonalCampaigns();

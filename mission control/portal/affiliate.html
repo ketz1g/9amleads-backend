@@ -877,9 +877,15 @@ tr:last-child td{border-bottom:none}
 
 <script>
 var API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:8012' : '';
+var IS_AFF_DEMO = false;
 (function(){
   var q = new URLSearchParams(window.location.search).get('token');
   if (q) { sessionStorage.setItem('mld_affiliate_session', q); }
+  // DEMO MODE: ?demo=1 opens a read-only, fully populated affiliate dashboard.
+  if (new URLSearchParams(window.location.search).get('demo') === '1') {
+    try { sessionStorage.removeItem('mld_affiliate_session'); localStorage.removeItem('mld_affiliate_token'); } catch(e) {}
+    IS_AFF_DEMO = true;
+  }
 })();
 var TOKEN = sessionStorage.getItem('mld_affiliate_session') || localStorage.getItem('mld_affiliate_token') || '';
 var D = null, RES = null, LEADS = null, curType = 'moving';
@@ -890,6 +896,38 @@ function money(v){
 }
 
 function showLogin(){document.getElementById('login-view').style.display='block';document.getElementById('register-view').style.display='none';}
+
+// Read-only demo: mint a token from the server, show a banner, then load the dashboard.
+function showAffDemoBanner(){
+  if (document.getElementById('affDemoBanner')) return;
+  var host = document.querySelector('#dash-view') || document.body;
+  var b = document.createElement('div');
+  b.id = 'affDemoBanner';
+  b.style.cssText = 'background:linear-gradient(135deg,#fef3c7,#fefce8);border:1px solid #fcd34d;border-left:5px solid #f59e0b;border-radius:10px;padding:15px 20px;margin:0 0 18px;font-size:14px;color:#78350f;line-height:1.6';
+  b.innerHTML = '<b>Read-only demo.</b> This is a sample affiliate account. You can explore every panel; actions that change data are disabled.';
+  host.insertBefore(b, host.firstChild);
+}
+function startAffDemo(){
+  fetch(API + '/api/affiliate/demo-login').then(function(r){ return r.json(); }).then(function(d){
+    if (d && d.token) { TOKEN = d.token; init(); showAffDemoBanner(); }
+    else { showLogin(); }
+  }).catch(function(){ showLogin(); });
+}
+// Block any write the UI attempts while in demo mode.
+(function(){
+  var _f = window.fetch;
+  window.fetch = function(url, opts){
+    try {
+      opts = opts || {};
+      var m = String(opts.method || 'GET').toUpperCase();
+      if (IS_AFF_DEMO && m !== 'GET' && m !== 'HEAD') {
+        try { alert('Read-only demo - changes are disabled.'); } catch(e) {}
+        return Promise.resolve(new Response(JSON.stringify({ error: 'read-only', read_only: true }), { status: 403, headers: { 'Content-Type': 'application/json' } }));
+      }
+    } catch(e) {}
+    return _f.apply(this, arguments);
+  };
+})();
 function showRegister(){
   document.getElementById('login-view').style.display='none';
   document.getElementById('register-view').style.display='block';
@@ -2229,7 +2267,9 @@ function delLead(){
   });
 }
 document.getElementById('logout').onclick=function(){sessionStorage.removeItem('mld_affiliate_session');localStorage.removeItem('mld_affiliate_token');location.reload();};
-if(TOKEN){init();}else if(location.hash==='#register'){showRegister();}
+if(IS_AFF_DEMO){startAffDemo();}
+else if(TOKEN){init();}
+else if(location.hash==='#register'){showRegister();}
 </script>
 <script src="/portal/assistant.js" defer></script>
 </body>
