@@ -47,7 +47,7 @@ h3{font-size:15px;font-weight:700;margin-bottom:10px}
 <body>
 <div class="wrap">
   <div class="topbar">
-    <div class="brand">9am<small>Leads</small> <span style="font-size:11px;color:#0ea5e9;font-weight:700">Â· Boost Your Business</span></div>
+    <div class="brand">9am<small>Leads</small> <span style="font-size:11px;color:#0ea5e9;font-weight:700">· Boost Your Business</span></div>
     <a class="back" href="/portal/my-bulk.html">My Bulk Leads</a>
     <a class="back" href="/portal/dashboard.html">&larr; Back to Dashboard</a>
   </div>
@@ -167,7 +167,7 @@ function render(){
   }).join('');
 }
 function buy(count){
-  if(!confirm('Buy '+count+' '+ageName(ST.age)+' '+ST.product+' archive leads ('+ST.mail+') printed & posted for Â£'+(Math.round(count*(ST.DATA.mail_rates[ST.mail])/100)/1).toFixed(2)+'?'))return;
+  if(!confirm('Buy '+count+' '+ageName(ST.age)+' '+ST.product+' archive leads ('+ST.mail+') printed & posted for £'+(Math.round(count*(ST.DATA.mail_rates[ST.mail])/100)/1).toFixed(2)+'?'))return;
   fetch(API+'/api/boost/checkout',{method:'POST',headers:ah(),body:JSON.stringify({product:ST.product,age:ST.age,count:count,mail_type:ST.mail})})
   .then(function(r){return r.json();}).then(function(d){ if(d.checkout_url)window.location.href=d.checkout_url; else alert(d.error||'Could not start checkout.'); })
   .catch(function(){alert('Could not start checkout.');});
