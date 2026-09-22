@@ -168,4 +168,23 @@ function resolveFullAddress(street, postcode) {
   return out;
 }
 
-module.exports = { buildIndex: null, buildSqlite, loadIndex, resolveFullAddress, isLoaded, meta, pcKey, norm };
+// Diagnostic: how many addresses does the index hold for a postcode, and a sample?
+// Used to verify EPC coverage by region without spending any Postcoder credits.
+function sampleForPostcode(postcode, limit) {
+  try {
+    var pc = pcKey(postcode);
+    if (!pc) return { pc: '', count: 0, sample: [] };
+    var list = null;
+    if (DB) { try { var r1 = DB.prepare('SELECT addr FROM addresses WHERE pc = ? LIMIT ?').all(pc, limit || 8); if (r1 && r1.length) list = r1.map(function (r) { return r.addr; }); } catch (e) {} }
+    var total = 0;
+    if (DB) { try { var c1 = DB.prepare('SELECT COUNT(*) AS n FROM addresses WHERE pc = ?').get(pc); total = (c1 && c1.n) || 0; } catch (e) {} }
+    if (!list || !list.length) {
+      if (DB2) { try { var r2 = DB2.prepare('SELECT addr FROM addresses WHERE pc = ? LIMIT ?').all(pc, limit || 8); if (r2 && r2.length) list = r2.map(function (r) { return r.addr; }); } catch (e) {} }
+      if (DB2) { try { var c2 = DB2.prepare('SELECT COUNT(*) AS n FROM addresses WHERE pc = ?').get(pc); total += (c2 && c2.n) || 0; } catch (e) {} }
+    }
+    if ((!list || !list.length) && INDEX && INDEX[pc]) { list = INDEX[pc].slice(0, limit || 8); total += INDEX[pc].length; }
+    return { pc: pc, count: total, sample: list || [] };
+  } catch (err) { return { pc: String(postcode || ''), count: 0, sample: [], error: err.message }; }
+}
+
+module.exports = { buildIndex: null, buildSqlite, loadIndex, resolveFullAddress, isLoaded, meta, pcKey, norm, sampleForPostcode };

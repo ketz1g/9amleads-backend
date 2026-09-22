@@ -11803,6 +11803,18 @@ app.post('/api/admin/upload-epc-index', adminAuth, express.json({ limit: '80mb' 
 });
 
 // GET /api/admin/epc-status - is the EPC index loaded, and does a sample resolve?
+// GET /api/admin/epc-check?postcode=XX1+1AA - how many EPC addresses exist for a
+// postcode, with a sample. Lets us verify regional coverage with zero Postcoder spend.
+app.get('/api/admin/epc-check', adminAuth, (req, res) => {
+  try {
+    var pcs = String(req.query.postcode || req.query.postcodes || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+    if (!pcs.length) return res.status(400).json({ error: 'postcode required' });
+    var out = pcs.map(function (pc) { return EPC_INDEX.sampleForPostcode(pc, parseInt(req.query.limit || '5', 10)); });
+    var covered = out.filter(function (x) { return x.count > 0; }).length;
+    res.json({ success: true, checked: out.length, covered: covered, missing: out.length - covered, results: out });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/admin/epc-status', adminAuth, (req, res) => {
   try {
     var loaded = EPC_INDEX.isLoaded();
