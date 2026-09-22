@@ -1634,6 +1634,22 @@ var BACKUP_DIR = path.join(DATA_DIR, 'backups');
 var BACKUP_GITHUB_REPO = process.env.BACKUP_REPO || 'ketz1g/9amleads-backup';
 var BACKUP_TOKEN = process.env.GITHUB_TOKEN || process.env.REPO_TOKEN || process.env.GH_PUSH_TOKEN || '';
 
+// One-off tidy: remove the preserved pre-restore corrupt copies. They are truncated
+// and unparseable, they were blocking new backups from being retained, and the DB
+// they came from was already restored successfully on 25 Aug.
+function purgeCorruptBackups() {
+  try {
+    var removed = 0;
+    fs.readdirSync(BACKUP_DIR).forEach(function(f) {
+      if (f.indexOf('CORRUPT') !== -1 && f.slice(-5) === '.json') {
+        try { fs.unlinkSync(path.join(BACKUP_DIR, f)); removed++; } catch(e) {}
+      }
+    });
+    if (removed) console.log('[BACKUP] purged ' + removed + ' corrupt pre-restore backup(s)');
+    return removed;
+  } catch(e) { return 0; }
+}
+
 function writeLocalBackup() {
   try {
     fs.mkdirSync(BACKUP_DIR, { recursive: true });
@@ -1643,8 +1659,12 @@ function writeLocalBackup() {
     var tmp = file + '.tmp';
     fs.writeFileSync(tmp, JSON.stringify(_stripMaterialData(_dbData), null, 2));
     fs.renameSync(tmp, file);
-    // Keep only the last 24 local backups (24h of hourly)
-    var all = fs.readdirSync(BACKUP_DIR).filter(function(f) { return f.startsWith('database-') && f.endsWith('.json'); }).sort();
+    // Keep only the newest 8 good backups. CORRUPT-* files are deliberately
+    // EXCLUDED: they sort after real backups alphabetically, so including them made
+    // this loop delete the new backups and keep the corrupt ones.
+    var all = fs.readdirSync(BACKUP_DIR).filter(function(f) {
+      return f.indexOf('database-') === 0 && f.slice(-5) === '.json' && f.indexOf('CORRUPT') === -1;
+    }).sort();
     while (all.length > 8) { fs.unlinkSync(path.join(BACKUP_DIR, all.shift())); }
     console.log('[BACKUP] Local backup written: ' + file);
     return file;
@@ -18150,7 +18170,9 @@ function autoResendFailedEmails() {
 function verifyBackupRestorable() {
   try {
     var bDir = path.join(DATA_DIR, 'backups');
-    var bFiles = fs.readdirSync(bDir).filter(function(f){ return f.indexOf('.json') !== -1; });
+    // Ignore preserved CORRUPT-* copies - they are pre-restore snapshots kept for
+    // forensics, not usable backups, and including them made this check fail.
+    var bFiles = fs.readdirSync(bDir).filter(function(f){ return f.indexOf('.json') !== -1 && f.indexOf('CORRUPT') === -1; });
     if (!bFiles.length) return { ok: false, reason: 'no backup file' };
     var newest = bFiles.map(function(f){ return { name: f, mtime: fs.statSync(path.join(bDir, f)).mtimeMs }; }).sort(function(a,b){ return b.mtime - a.mtime; })[0];
     var content = fs.readFileSync(path.join(bDir, newest.name), 'utf-8');
@@ -40832,6 +40854,10 @@ cron.schedule('0 6 * * *', function() { try { seedDemoAccount(); } catch(e) {} }
 app.listen(PORT, () => {
   try { seedDemoAccount(); } catch(e) { console.log('[DEMO] boot seed error: ' + (e && e.message)); }
   try { seedDemoAffiliate(); } catch(e) { console.log('[DEMO-AFF] boot seed error: ' + (e && e.message)); }
+  try {
+    purgeCorruptBackups();
+    writeLocalBackup();   // write a good backup immediately so one always exists
+  } catch(e) { console.log('[BACKUP] boot backup error: ' + (e && e.message)); }
   seedDefaultCampaignPacks();
   seedMarketplaceTemplates();
   seedSeasonalCampaigns();
