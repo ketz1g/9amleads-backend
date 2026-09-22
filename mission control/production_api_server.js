@@ -6186,8 +6186,14 @@ app.post('/api/auth/signup', async (req, res) => {
       }
       var _aid = String(req.body.analytics_id || req.body.uid || '').substring(0, 80) || '';
       if (_aid) { try { var dbm = getDb(); if (!dbm.uidMap) dbm.uidMap = {}; dbm.uidMap[customer.id] = _aid; saveDb(); } catch(umErr) {} }
-      trackAnalytics('signup_completed', { product: customer.product, plan: customer.plan, _uid: _aid, customer_id: customer.id });
-      trackAnalytics('trial_activated', { product: customer.product, _uid: _aid, customer_id: customer.id });
+      // One event per customer, ever - a repeated signup call must not inflate the funnel.
+      var _dbA = getDb();
+      if (!Array.isArray(_dbA.analytics)) _dbA.analytics = [];
+      var _already = _dbA.analytics.some(function(e) { return e.event === 'signup_completed' && e.props && e.props.customer_id === customer.id; });
+      if (!_already) {
+        trackAnalytics('signup_completed', { product: customer.product, plan: customer.plan, _uid: _aid, customer_id: customer.id });
+        trackAnalytics('trial_activated', { product: customer.product, _uid: _aid, customer_id: customer.id });
+      }
     } catch (welcomeErr) {
       console.log('[SIGNUP] Welcome email failed:', welcomeErr.message);
     }
@@ -15050,6 +15056,34 @@ app.get("/api/admin/db-field-sizes", adminAuth, function(req, res) {
       return { field: k, total_mb: Math.round(agg[k].total / 10485.76) / 100, max_kb: Math.round(agg[k].max / 1024), rows_with_value: agg[k].withval };
     }).sort(function(a, b) { return b.total_mb - a.total_mb; });
     res.json({ success: true, collection: col, rows: arr.length, fields: out.slice(0, 25) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// DIAGNOSTIC: what the trial onboarding sequence has actually sent to each customer.
+app.get("/api/admin/trial-onboarding-status", adminAuth, function(req, res) {
+  try {
+    var d = getDb();
+    var custs = (d.customers || []).filter(function(c) {
+      var e = String(c.email || "").toLowerCase();
+      return !(e.indexOf("@9amleads.com") !== -1 || /^test\./.test(e) || /^demo/.test(e));
+    });
+    var now = Date.now();
+    var out = custs.map(function(c) {
+      var sent = []; try { sent = JSON.parse(c.campaign_sent || "[]"); } catch(e) {}
+      var te = c.trial_ends ? new Date(c.trial_ends) : null;
+      var age = c.created_at ? Math.floor((now - new Date(c.created_at).getTime()) / 86400000) : 0;
+      return {
+        email: c.email, company: c.company, plan: c.plan, product: c.product,
+        age_days: age, trial_ends: c.trial_ends || "",
+        trial_expired: te ? te.getTime() < now : false,
+        emails_sent: sent, email_count: sent.length
+      };
+    });
+    out.sort(function(a, b) { return b.age_days - a.age_days; });
+    var logs = (d.email_log || []).slice(-30).map(function(e) {
+      return { at: e.at || e.ts || "", email: e.email || "", template: e.template || e.subject || "", status: e.status || "" };
+    });
+    res.json({ success: true, customers: out, recent_email_log: logs, email_log_total: (d.email_log || []).length });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -37896,6 +37930,12 @@ function trackAnalytics(event, props) {
 app.post('/api/analytics/event', async (req, res) => {
   try {
     var ev = String(req.body.event || '').substring(0, 60);
+    // Only accept the pre-signup behaviour events from the browser. Account-level
+    // events (signup_completed / trial_activated / subscription_started) are recorded
+    // server-side from the real database record, so they can never be spoofed, replayed
+    // or fired by a bot hitting this public endpoint.
+    var CLIENT_EVENTS = ['homepage_viewed','trial_cta_clicked','pricing_viewed','lead_viewed','print_post_cta_clicked','exit_intent_submitted','partner_ref_click','checkout_started','signup_started'];
+    if (CLIENT_EVENTS.indexOf(ev) === -1) return res.json({ ok: true, ignored: true });
     var props = req.body.props || {};
     var uid = String(req.body.uid || '').substring(0, 80) || '';
     // Never accept PII; strip anything that looks like contact data.
@@ -37963,13 +38003,26 @@ app.get('/api/admin/analytics', adminAuth, (req, res) => {
     });
     var uniqueCount = function(ev) { return unique[ev] ? Object.keys(unique[ev]).length : 0; };
 
+    // GROUND TRUTH: account-level stages are counted from the customers table, not from
+    // events. Events can be replayed or fired by bots, which previously made
+    // signup_completed read ~6x higher than accounts actually created.
+    var _gtCustomers = [];
+    try { _gtCustomers = (db.prepare('SELECT * FROM customers').all() || []).filter(function(c) { var e = String(c.email || '').toLowerCase(); return !(e.indexOf('@9amleads.com') !== -1 || /^test\./.test(e) || /^demo/.test(e)); }); } catch(e) {}
+    var _paidPlans = ['starter','pro','enterprise'];
+    var _inWindow = function(c) { return !cutoff || (c.created_at ? new Date(c.created_at).getTime() >= cutoff : false); };
+    var GT = {
+      signup_completed: _gtCustomers.filter(_inWindow).length,
+      trial_activated: _gtCustomers.filter(function(c) { return _inWindow(c) && (c.plan === 'free_trial' || _paidPlans.indexOf(c.plan) !== -1); }).length,
+      subscription_started: _gtCustomers.filter(function(c) { return _paidPlans.indexOf(c.plan) !== -1; }).length
+    };
     var funnelOrder = ['homepage_viewed','trial_cta_clicked','signup_started','signup_completed','trial_activated','lead_viewed','lead_contacted','pricing_viewed','checkout_started','subscription_started'];
     var funnel = [];
     var prevCount = null;
     funnelOrder.forEach(function(ev) {
-      var u = uniqueCount(ev);
+      var isGt = Object.prototype.hasOwnProperty.call(GT, ev);
+      var u = isGt ? GT[ev] : uniqueCount(ev);
       var pct = (prevCount !== null && prevCount > 0) ? Math.round((u / prevCount) * 1000) / 10 : null;
-      funnel.push({ event: ev, unique: u, raw: rawCount[ev] || 0, fromPrevPct: pct });
+      funnel.push({ event: ev, unique: u, raw: isGt ? GT[ev] : (rawCount[ev] || 0), ground_truth: isGt, fromPrevPct: pct });
       if (u > 0) prevCount = u;
     });
     var overallPct = null;
