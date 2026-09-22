@@ -1111,7 +1111,7 @@ function sweepPoolCache(maxAgeMs) {
   try {
     var now = Date.now(), removed = 0;
     Object.keys(_poolCache).forEach(function(k) {
-      if (!_poolCache[k] || (now - _poolCache[k].at) > (maxAgeMs || 120000)) { delete _poolCache[k]; removed++; }
+      if (!_poolCache[k] || (now - _poolCache[k].at) > (maxAgeMs || 900000)) { delete _poolCache[k]; removed++; }
     });
     if (removed) console.log('[POOL-CACHE] swept ' + removed + ' stale entr' + (removed === 1 ? 'y' : 'ies'));
   } catch(e) {}
@@ -10351,6 +10351,26 @@ app.post('/api/admin/customers/set-stripe', adminAuth, (req, res) => {
     if (ssid) c2.stripe_subscription_id = ssid;
     saveDb();
     res.json({ success: true, email: c2.email, stripe_customer_id: c2.stripe_customer_id, stripe_subscription_id: c2.stripe_subscription_id || '' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// 08:50 PRE-WARM (weekdays): load every product's pool into memory BEFORE the 9am run
+// so the run itself is short and far less likely to stall. Combined with the 08:40
+// top-up (which resolves the queued leads' addresses), the 9am run should be quick.
+cron.schedule('50 8 * * 1-5', function() {
+  try {
+    ['moving','probate','newbusiness','planning','tenders'].forEach(function(pp) { try { getDeliveryPool(pp); } catch(e) {} });
+    console.log('[PREWARM] product pools loaded into cache before the 9am run');
+  } catch(e) { console.log('[PREWARM] error:', e.message); }
+}, { timezone: 'Europe/London' });
+
+// GET /api/admin/delivery-runs - the last 90 delivery runs with duration + slowest
+// customers, so any future stall is pinpointed in seconds.
+app.get('/api/admin/delivery-runs', adminAuth, (req, res) => {
+  try {
+    var dbDR = getDb();
+    var runs = (dbDR.delivery_audit || []).slice(-90).reverse();
+    res.json({ success: true, count: runs.length, runs: runs });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -23690,6 +23710,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
   try {
     var delivered = 0, errors = 0, lastErr = '';
     var _deliverDiag = {};
+    var _deliveryRunStart = Date.now();
     var emailQueue = [];
     // Premise-identifier gate shared by the whole delivery flow (pool fallback,
     // Postcoder enrich, door-number gate, final PAF pass). Defined at route scope
@@ -26179,7 +26200,8 @@ pushToCrm(cust, crmPayload2, 'daily delivery');
     try {
       var auditDb = getDb();
       if (!auditDb.delivery_audit) auditDb.delivery_audit = [];
-      auditDb.delivery_audit.push({ date: today, at: new Date().toISOString(), customers: customers.length, leads_delivered: delivered, errors: errors, last_error: lastErr, fire_count: __deliveryFireCount });
+      var _slow = Object.keys(_deliverDiag || {}).map(function(k) { return { email: k, ms: (_deliverDiag[k] && _deliverDiag[k].ms) || 0 }; }).sort(function(x, y) { return y.ms - x.ms; }).slice(0, 5);
+      auditDb.delivery_audit.push({ date: today, at: new Date().toISOString(), customers: customers.length, leads_delivered: delivered, errors: errors, last_error: lastErr, fire_count: __deliveryFireCount, duration_ms: Date.now() - (_deliveryRunStart || Date.now()), slowest: _slow, per_customer: Object.keys(_deliverDiag || {}).reduce(function(acc, ek) { acc[ek] = { ms: (_deliverDiag[ek] && _deliverDiag[ek].ms) || 0, stage: (_deliverDiag[ek] && _deliverDiag[ek].stage) || '', final_len: (_deliverDiag[ek] && _deliverDiag[ek].final_len) || '' }; return acc; }, {}) });
       if (auditDb.delivery_audit.length > 90) auditDb.delivery_audit = auditDb.delivery_audit.slice(-90);
       // PERSIST completion for FULL runs only (not test/single-customer runs) so the
       // boot/periodic catch-up knows the day is done and never re-runs the delivery
