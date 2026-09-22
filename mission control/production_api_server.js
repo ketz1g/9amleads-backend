@@ -26914,7 +26914,7 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
         // Also email the customer so they know to update their card
         try {
           var failEmailBody = '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">We could not take your weekly subscription payment. To keep your leads and Print &amp; Post running, please update your payment method.</p><div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="font-size:13px;color:#e2e8f0;margin:0"><strong>Payment failed</strong>. your card could not be charged. If this continues, your account will be paused.</p></div><p style="color:#94a3b8;font-size:12px;line-height:1.7;margin:0">You can update your card any time from the Billing section of your dashboard.</p>';
-          await sendDMNotification(fCustomer.id, 'payment_failed_email', 'Action Needed: Payment Failed', '⚠️ Payment failed', failEmailBody, 'Update Payment Method', PUBLIC_URL + '/portal/dashboard.html?page=settings&tab=subscription');
+          await sendDMNotification(fCustomer.id, 'payment_failed_email', 'Action Needed: Payment Failed', '⚠️ Payment failed', failEmailBody, 'Pay now or update your card', ((invF && invF.hosted_invoice_url) ? invF.hosted_invoice_url : (PUBLIC_URL + '/portal/dashboard.html?page=settings&tab=subscription')));
         } catch(ne2) { console.log('[STRIPE] Payment-failed email error:', ne2.message); }
         console.log('[STRIPE] Payment failed for ' + (fCustomer.email || fCustomer.id));
       }
