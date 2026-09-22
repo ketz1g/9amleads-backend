@@ -10350,6 +10350,17 @@ app.post('/api/admin/customers/set-stripe', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/admin/payment-events - recent Stripe money events (paid / failed) so the
+// admin can see payments and failures without opening Stripe.
+app.get('/api/admin/payment-events', adminAuth, (req, res) => {
+  try {
+    var dbPE = getDb();
+    var evs = (dbPE.payment_events || []).slice(-300).reverse();
+    var failed = (dbPE.payment_events || []).filter(function(e) { return e.type === 'failed'; });
+    res.json({ success: true, count: evs.length, failed_count: failed.length, events: evs });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/admin/crm-status - which customers have a CRM connected, and the result of
 // their most recent push (status + when + lead count + response snippet).
 app.get('/api/admin/crm-status', adminAuth, (req, res) => {
@@ -26610,7 +26621,31 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
       }
     } catch(e) {}
 
-    if (evType === 'checkout.session.completed') {
+    // PAYMENT EVENT LOG: record every money event so the admin can see pays and failures
+  // without opening Stripe. Visible at GET /api/admin/payment-events.
+  try {
+    var _pe = (event.data && event.data.object) ? event.data.object : {};
+    var _peType = '';
+    if (evType === 'checkout.session.completed' || evType === 'invoice.payment_succeeded' || evType === 'payment_intent.succeeded') _peType = 'paid';
+    else if (evType === 'invoice.payment_failed' || evType === 'payment_intent.payment_failed' || evType === 'charge.failed') _peType = 'failed';
+    if (_peType) {
+      var _peDb = getDb();
+      if (!Array.isArray(_peDb.payment_events)) _peDb.payment_events = [];
+      var _peEmail = _pe.customer_email || _pe.receipt_email || (_pe.customer_details && _pe.customer_details.email) || (_pe.billing_details && _pe.billing_details.email) || '';
+      var _peAmt = 0;
+      if (typeof _pe.amount_paid === 'number') _peAmt = _pe.amount_paid / 100;
+      else if (typeof _pe.amount_due === 'number') _peAmt = _pe.amount_due / 100;
+      else if (typeof _pe.amount === 'number') _peAmt = _pe.amount / 100;
+      else if (typeof _pe.amount_total === 'number') _peAmt = _pe.amount_total / 100;
+      var _peErr = (_pe.last_payment_error && _pe.last_payment_error.message) || '';
+      _peDb.payment_events.push({ at: new Date().toISOString(), type: _peType, event: evType, email: _peEmail, customer: _pe.customer || '', amount: _peAmt, currency: (_pe.currency || 'gbp'), error: _peErr, event_id: (event.id || '') });
+      if (_peDb.payment_events.length > 1000) _peDb.payment_events = _peDb.payment_events.slice(-1000);
+      saveDb();
+      console.log('[PAYMENT-EVENT] ' + _peType + ' ' + evType + ' ' + _peEmail + ' ' + _peAmt.toFixed(2) + (_peErr ? ' err=' + _peErr : ''));
+    }
+  } catch(ePe) {}
+
+  if (evType === 'checkout.session.completed') {
       var session = event.data.object;
       var customerEmail = session.customer_email || (session.customer_details && session.customer_details.email);
       var plan = session.metadata && session.metadata.plan;
