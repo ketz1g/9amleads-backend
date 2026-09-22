@@ -19050,7 +19050,7 @@ cron.schedule('30 9 * * 1-5', async () => {
   try {
     var ddDb = getDb();
     var todayD = new Date().toISOString().substring(0, 10);
-    var activeC = (ddDb.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled'; }).length;
+    var activeC = (ddDb.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && !(typeof isInternalAccount === 'function' && isInternalAccount(c)); }).length;
     var delToday = (ddDb.leads || []).filter(function(l) { return l.delivered && l.delivered_at && String(l.delivered_at).startsWith(todayD); }).length;
     var sup = {};
     try { sup = getPoolSupply(); } catch(e) {}
@@ -19061,7 +19061,7 @@ cron.schedule('30 9 * * 1-5', async () => {
     }
     var cap = { postcoder: 0, stannp: 0 };
     try { var _pb = require('./postcoder_budget'); cap.postcoder = Math.max(0, _pb.getDailyBudget() - _pb.usage()); } catch(e) {}
-    try { var _dm = getDirectMailProvider(); cap.stannp = _dm.getBalance ? await _dm.getBalance() : 'n/a'; } catch(e) {}
+    try { var _dm = getDirectMailProvider(); var _bal = _dm.getBalance ? await _dm.getBalance() : null; cap.stannp = (_bal && typeof _bal === 'object') ? (typeof _bal.balance === 'number' ? _bal.balance : 'n/a') : (typeof _bal === 'number' ? _bal : 'n/a'); } catch(e) {}
     var errs = (global.__lastErrors || []).slice(-3).map(function(e){ return e.message || e.kind || ''; }).filter(Boolean);
     var pcLow = (typeof cap.postcoder === 'number' && cap.postcoder < 50);
     var stLow = (typeof cap.stannp === 'number' && cap.stannp < 20);
@@ -19088,7 +19088,7 @@ cron.schedule('30 9 * * 1-5', async () => {
       '<b style="color:#38bdf8">Leads delivered today:</b> ' + delToday + '<br>' +
       '<b style="color:#38bdf8">Customers below promise:</b> ' + (shortCount > 0 ? ('<b style="color:#f87171">' + shortCount + ' ⚠</b>') : '0') + '<br>' +
       '<b style="color:#38bdf8">Postcoder budget:</b> ' + (cap.postcoder || 'n/a') + (pcLow ? ' ⚠ LOW' : '') + '<br>' +
-      '<b style="color:#38bdf8">Stannp balance:</b> ' + (cap.stannp || 'n/a') + (stLow ? ' ⚠ LOW' : '') + '<br><br>' +
+      '<b style="color:#38bdf8">Stannp balance:</b> ' + (typeof cap.stannp === 'number' ? ('&pound;' + cap.stannp.toFixed(2)) : cap.stannp) + (stLow ? ' ⚠ LOW' : '') + '<br><br>' +
       '<b style="color:#38bdf8">Recent errors:</b><ul style="margin:4px 0;padding-left:18px">' + errHtml + '</ul><br>' +
       '<div style="font-size:12px;color:#94a3b8">Only issues needing a manual decision are emailed. Healthy days are silent.</div></div>');
   } catch(e) { console.log('[DIGEST] error:', e.message); }
