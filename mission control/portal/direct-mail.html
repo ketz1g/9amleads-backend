@@ -127,7 +127,7 @@ details.wiz-more[open] summary{margin-bottom:16px}
 
 <div id="upload-block" style="margin-top:16px;padding:16px 18px;background:#f8fafc;border:2px dashed #cbd5e1;border-radius:12px">
 <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px"><i class="fas fa-file-upload" style="color:var(--accent);margin-right:4px"></i> 2. Upload your design files</div>
-<div style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.6">Pick your design <b>front</b> and <b>back</b> (PNG/JPG/PDF). We check them against the print spec automatically, and you can fine-tune the position afterwards.</div>
+<div id="upload-help" style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.6">Pick your design <b>front</b> and <b>back</b> (PNG/JPG/PDF). We check them against the print spec automatically, and you can fine-tune the position afterwards.</div>
 <div class="grid-3">
 <div><label class="label">Leaflet Front</label><input type="file" class="input" id="up-flyer-front" accept=".pdf,.png,.jpg,.jpeg" onchange="validateArtwork(this,'flyer_front')"></div>
 <div><label class="label">Leaflet Back</label><input type="file" class="input" id="up-flyer-back" accept=".pdf,.png,.jpg,.jpeg" onchange="validateArtwork(this,'flyer_back')"></div>
@@ -555,14 +555,37 @@ function loadFormats(){
 function formatNeedsLetter(){
   return _selectedFormat === "letter_a4" || _selectedFormat === "flyer_plus_letter";
 }
+function formatNeedsLeaflet(){
+  return _selectedFormat !== "letter_a4";
+}
 function updateLetterFields(){
-  var needs = formatNeedsLetter();
+  var needsLetter = formatNeedsLetter();
+  var needsLeaflet = formatNeedsLeaflet();
+
+  // Cover letter fields (name / type / text / buttons)
   var block = document.getElementById("cover-letter-block");
-  if (block) block.style.display = needs ? "" : "none";
+  if (block) block.style.display = needsLetter ? "" : "none";
+
+  // Optional letter PDF upload
   var letterInput = document.getElementById("up-letter");
-  if (letterInput) {
-    var wrap = letterInput.parentNode;
-    if (wrap) wrap.style.display = needs ? "" : "none";
+  if (letterInput && letterInput.parentNode) letterInput.parentNode.style.display = needsLetter ? "" : "none";
+
+  // Leaflet front / back uploads - not applicable to the letter-only format
+  ["up-flyer-front", "up-flyer-back"].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el && el.parentNode) el.parentNode.style.display = needsLeaflet ? "" : "none";
+  });
+
+  // Keep the remaining upload box full width when the leaflet fields are gone
+  var grid = document.querySelector("#upload-block .grid-3");
+  if (grid) grid.style.gridTemplateColumns = needsLeaflet ? "" : "1fr";
+
+  // Explain what this box is for in each case
+  var help = document.getElementById("upload-help");
+  if (help) {
+    help.innerHTML = needsLeaflet
+      ? "Pick your design <b>front</b> and <b>back</b> (PNG/JPG/PDF). We check them against the print spec automatically, and you can fine-tune the position afterwards."
+      : "Your A4 letter is written in the editor below. If you already have a finished letter as a PDF you can upload it here instead.";
   }
 }
 function selectFormat(id){
