@@ -106,6 +106,7 @@ tbody tr:hover td{background:#f8fafc}
 <button onclick="switchTab('partners')"><i class="fas fa-handshake"></i> Partners</button>
 <button onclick="switchTab('affiliates')"><i class="fas fa-handshake"></i> Affiliates</button>
 <button onclick="switchTab('crm')"><i class="fas fa-plug"></i> CRM <span id="crmBadge" style="display:none;background:#0ea5e9;color:#fff;font-size:10px;font-weight:700;border-radius:20px;padding:1px 7px;margin-left:2px"></span></button>
+<button onclick="switchTab('payments')"><i class="fas fa-credit-card"></i> Payments <span id="payBadge" style="display:none;background:#ef4444;color:#fff;font-size:10px;font-weight:700;border-radius:20px;padding:1px 7px;margin-left:2px"></span></button>
 
 <button onclick="switchTab('emails')"><i class="fas fa-envelope-open-text"></i> Emails <span id="emailCountBadge" style="display:none;background:#eff6ff;color:#0ea5e9;font-size:10px;font-weight:700;border-radius:20px;padding:1px 7px;margin-left:2px"></span></button>
 <button onclick="switchTab('activity')"><i class="fas fa-bolt"></i> Activity</button>
@@ -121,6 +122,13 @@ tbody tr:hover td{background:#f8fafc}
 </div>
 
 <div class="container">
+
+<!-- ============ PAYMENTS ============ -->
+<div class="tab-panel" id="tab-payments">
+<div class="hero"><div class="hero-text"><h1>&#128179; Payment Events</h1><p>Every Stripe money event - payments and failures - so you can see what happened without opening Stripe. Failed payments also email the customer and pause Auto Send if enabled.</p></div>
+<div class="hero-actions"><button class="btn btn-outline" onclick="loadPayments()"><i class="fas fa-rotate"></i> Refresh</button></div></div>
+<div id="payBody"><div class="loading">Loading payment events...</div></div>
+</div>
 
 <!-- ============ CRM ============ -->
 <div class="tab-panel" id="tab-crm">
@@ -565,10 +573,38 @@ function switchTab(name) {
   if (name === 'emails') loadEmailLibrary();
   if (name === 'activity') loadActivity();
   if (name === 'crm') loadCrm();
+  if (name === 'payments') loadPayments();
   window.scrollTo(0, 0);
 }
 
 // ===== CRM CONNECTIONS =====
+function loadPayments() {
+  var b = document.getElementById('payBody');
+  if (!b) return;
+  b.innerHTML = '<div class="loading">Loading payment events...</div>';
+  fetch(API + '/api/admin/payment-events?t=' + Date.now(), { headers: adminHeaders() })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var evs = (d && d.events) || [];
+      var badge = document.getElementById('payBadge');
+      if (badge) { badge.style.display = d.failed_count ? 'inline-block' : 'none'; badge.textContent = d.failed_count || 0; }
+      var h = '<div style="margin-bottom:10px;font-size:13px"><b>' + evs.length + '</b> recent events &middot; <b style="color:#ef4444">' + (d.failed_count || 0) + '</b> failed</div>';
+      h += '<table class="table"><tr><th>When (UK)</th><th>Result</th><th>Customer</th><th>Amount</th><th>Event</th><th>Error</th></tr>';
+      if (!evs.length) h += '<tr><td colspan="6" class="empty">No payment events yet.</td></tr>';
+      evs.forEach(function(e) {
+        var col = e.type === 'failed' ? '#ef4444' : '#16a34a';
+        var uk = '-'; try { uk = new Date(e.at).toLocaleString('en-GB', { timeZone: 'Europe/London' }); } catch(x) {}
+        h += '<tr><td style="font-size:11px;white-space:nowrap">' + uk + '</td>' +
+          '<td style="color:' + col + ';font-weight:700">' + (e.type === 'failed' ? 'FAILED' : 'PAID') + '</td>' +
+          '<td>' + esc(e.email || '-') + '</td>' +
+          '<td>&pound;' + (Number(e.amount) || 0).toFixed(2) + '</td>' +
+          '<td style="font-size:11px;color:#64748b">' + esc(e.event || '') + '</td>' +
+          '<td style="font-size:11px;color:#ef4444">' + esc(e.error || '') + '</td></tr>';
+      });
+      b.innerHTML = h + '</table>';
+    })
+    .catch(function() { b.innerHTML = '<div class="loading">Could not load payment events.</div>'; });
+}
 function loadCrm() {
   var body = document.getElementById('crmBody');
   if (!body) return;
