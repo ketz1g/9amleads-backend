@@ -15001,18 +15001,17 @@ app.post('/api/admin/lead/mark-delivered', adminAuth, (req, res) => {
 // POST /api/admin/verify - validate the admin password (used by the admin login form)
 // Accept GET too: the browser's fetch() defaults to GET; a GET here previously
 // returned 404 which made the login show "Cannot reach server".
-app.get('/api/admin/verify', (req, res) => {
+function _adminVerify(req, res) {
   const auth = req.headers.authorization;
-  const ok = !!auth && auth === 'Bearer ' + ADMIN_PASSWORD;
-  if (ok) return res.json({ success: true, valid: true, admin: true });
+  const RO_PASS = process.env.ADMIN_READONLY_PASSWORD || '';
+  const isFull = !!auth && auth === 'Bearer ' + ADMIN_PASSWORD;
+  const isReadOnly = !!RO_PASS && !!auth && auth === 'Bearer ' + RO_PASS;
+  if (isFull) return res.json({ success: true, valid: true, admin: true, read_only: false });
+  if (isReadOnly) return res.json({ success: true, valid: true, admin: true, read_only: true });
   return res.status(401).json({ success: false, valid: false, error: 'Invalid admin password' });
-});
-app.post('/api/admin/verify', (req, res) => {
-  const auth = req.headers.authorization;
-  const ok = !!auth && auth === 'Bearer ' + ADMIN_PASSWORD;
-  if (ok) return res.json({ success: true, valid: true, admin: true });
-  return res.status(401).json({ success: false, valid: false, error: 'Invalid admin password' });
-});
+}
+app.get('/api/admin/verify', _adminVerify);
+app.post('/api/admin/verify', _adminVerify);
 
 // BANDWIDTH DIAGNOSTICS (admin only, read-only).
 app.get("/api/admin/net-bytes", adminAuth, function(req, res) {
@@ -15171,10 +15170,21 @@ app.post("/api/admin/high-intent", adminAuth, function(req, res) {
   try { res.json({ success: true, result: runHighIntentAlerts() }); } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// Admin auth. Accepts either the full admin password or a separate READ-ONLY
+// password (ADMIN_READONLY_PASSWORD) used for investor / demo access. Read-only
+// sessions can view every panel but can never mutate anything: any non-GET request
+// is rejected here, so a shared read-only credential cannot change state.
 function adminAuth(req, res, next) {
   const auth = req.headers.authorization;
-  if (!auth || auth !== 'Bearer ' + ADMIN_PASSWORD) {
+  const RO_PASS = process.env.ADMIN_READONLY_PASSWORD || '';
+  const isFull = !!auth && auth === 'Bearer ' + ADMIN_PASSWORD;
+  const isReadOnly = !!RO_PASS && !!auth && auth === 'Bearer ' + RO_PASS;
+  if (!isFull && !isReadOnly) {
     return res.status(401).json({ error: 'Unauthorized' });
+  }
+  req.adminReadOnly = !isFull && isReadOnly;
+  if (req.adminReadOnly && ['GET', 'HEAD', 'OPTIONS'].indexOf(req.method) === -1) {
+    return res.status(403).json({ error: 'Read-only access - this action is disabled.', read_only: true });
   }
   next();
 }

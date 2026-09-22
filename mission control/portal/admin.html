@@ -1323,6 +1323,37 @@ function getAdminAuth() { return sessionStorage.getItem('9amAdminAuth') === 'tru
 function getAdminPass() { return sessionStorage.getItem('9amAdminPass') || localStorage.getItem('9amAdminPass') || ''; }
 function adminHeaders() { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getAdminPass() }; }
 
+// ===== READ-ONLY MODE =====
+// Investors and demos can be given a separate read-only admin password. The server
+// rejects every write from such a session; this makes the UI honest about it too.
+window.IS_READONLY = false;
+function applyReadOnlyMode(isRO) {
+  window.IS_READONLY = !!isRO;
+  if (!isRO) return;
+  var ap = document.getElementById('adminPage');
+  if (!ap || document.getElementById('roBanner')) return;
+  var b = document.createElement('div');
+  b.id = 'roBanner';
+  b.style.cssText = 'background:linear-gradient(135deg,#fef3c7,#fefce8);border:1px solid #fcd34d;border-left:5px solid #f59e0b;border-radius:10px;padding:15px 20px;margin:0 0 20px;font-size:14px;color:#78350f;line-height:1.6';
+  b.innerHTML = '<b><i class="fas fa-eye"></i> Read-only access.</b> You can view every panel, metric and report in the console. Actions that change data are disabled.';
+  ap.insertBefore(b, ap.firstChild);
+}
+(function () {
+  var _f = window.fetch;
+  window.fetch = function (url, opts) {
+    try {
+      opts = opts || {};
+      var m = String(opts.method || 'GET').toUpperCase();
+      var u = String(typeof url === 'string' ? url : (url && url.url) || '');
+      if (window.IS_READONLY && u.indexOf('/api/admin') !== -1 && m !== 'GET' && m !== 'HEAD') {
+        try { if (typeof toast === 'function') toast('Read-only access - changes are disabled'); } catch (e) {}
+        return Promise.resolve(new Response(JSON.stringify({ error: 'read-only', read_only: true }), { status: 403, headers: { 'Content-Type': 'application/json' } }));
+      }
+    } catch (e) {}
+    return _f.apply(this, arguments);
+  };
+})();
+
 async function verifyPass(pass) {
   // Retry up to 3 times with short backoff. the backend may be waking from a cold start
   for (var attempt = 1; attempt <= 3; attempt++) {
@@ -1355,6 +1386,7 @@ async function adminLogin() {
   // impersonation) inherit the admin credentials instantly without re-login.
   try { localStorage.setItem('9amAdminPass', pass); } catch(e) {}
   saveAdminAuth();
+  applyReadOnlyMode(d.read_only);
   document.getElementById('loginPage').style.display = 'none';
   document.getElementById('adminPage').style.display = 'block';
   loadData();
@@ -1375,6 +1407,7 @@ if (getAdminAuth()) {
       return r.json();
     }).then(function(d) {
       if (d && d.valid) {
+        applyReadOnlyMode(d.read_only);
         document.getElementById('loginPage').style.display = 'none';
         document.getElementById('adminPage').style.display = 'block';
         loadData();
