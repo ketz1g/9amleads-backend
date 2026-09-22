@@ -96,6 +96,15 @@ h1 span{color:#0ea5e9}
 
 <div class="card">
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+<div style="font-size:14px;font-weight:700"><i class="fas fa-clipboard-check" style="color:#22c55e;margin-right:6px"></i> Google Index Status <span style="font-size:10px;color:#5c6480;font-weight:500">(which pages Google has indexed)</span></div>
+<button class="btn btn-outline btn-sm" onclick="loadIndexStatus()" id="indexStatusBtn"><i class="fas fa-sync"></i> Check</button>
+</div>
+<div style="font-size:11px;color:#8890a8;line-height:1.6;margin-bottom:10px">Google has no API to request indexing, so the <strong>Request Indexing</strong> link opens Google's URL Inspection tool for that page - click "Request Indexing" there. Google rate-limits this to roughly 10-15 URLs a day.</div>
+<div id="indexStatusBody"><div class="empty">Click Check to load.</div></div>
+</div>
+
+<div class="card">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
 <div style="font-size:14px;font-weight:700"><i class="fas fa-bullseye" style="color:#f59e0b;margin-right:6px"></i> Keywords Closest to Page 1 <span style="font-size:10px;color:#5c6480;font-weight:500">(best SEO ROI - 90 day view)</span></div>
 <button class="btn btn-outline btn-sm" onclick="loadGscOpportunities()"><i class="fas fa-sync"></i> Refresh</button>
 </div>
@@ -342,6 +351,32 @@ async function loadGscOpportunities() {
     html += tableRows(dt.emerging, false);
     el.innerHTML = html;
   } catch(e) { var el2 = document.getElementById('gscOppBody'); if (el2) el2.innerHTML = '<div class="empty" style="color:#ef4444">Failed: ' + esc(e.message) + '</div>'; }
+}
+
+// Load Google index status for the key pages + one-click Request Indexing links.
+async function loadIndexStatus() {
+  var btn = document.getElementById('indexStatusBtn');
+  var el = document.getElementById('indexStatusBody');
+  if (!el) return;
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...'; }
+  el.innerHTML = '<div class="empty">Asking Google about each page (this takes ~15 seconds)...</div>';
+  try {
+    var r = await fetch(API + '/api/admin/seo/index-status?t=' + Date.now(), { headers: adminHeaders() });
+    var d = await r.json();
+    if (!r.ok || d.error) { el.innerHTML = '<div class="empty" style="color:#ef4444">' + esc(d.error || ('HTTP ' + r.status)) + '</div>'; return; }
+    var html = '<div style="font-size:12px;margin-bottom:8px;color:#8890a8"><strong style="color:#22c55e">' + d.indexed + '</strong> of ' + d.total + ' key pages indexed</div>';
+    html += '<table style="width:100%;font-size:11px;border-collapse:collapse"><tr style="color:#64748b;text-align:left"><th style="padding:5px 6px">Page</th><th style="padding:5px 6px">Status</th><th style="padding:5px 6px">Last crawl</th><th style="padding:5px 6px"></th></tr>';
+    (d.pages || []).forEach(function(p) {
+      var path = p.url.replace('https://9amleads.com', '') || '/';
+      var badge = p.indexed ? '<span style="color:#22c55e;font-weight:700">Indexed</span>' : (p.error ? '<span style="color:#ef4444">error</span>' : '<span style="color:#f59e0b;font-weight:700">' + esc(p.coverageState || 'not indexed') + '</span>');
+      var crawl = p.lastCrawlTime ? new Date(p.lastCrawlTime).toLocaleDateString('en-GB') : 'never';
+      var link = '<a href="' + p.inspect_url + '" target="_blank" rel="noopener" class="btn btn-outline btn-sm" style="white-space:nowrap">Request Indexing</a>';
+      html += '<tr style="border-top:1px solid #1a1a1a"><td style="padding:5px 6px;color:#cbd5e1;font-weight:600">' + esc(path) + '</td><td style="padding:5px 6px">' + badge + '</td><td style="padding:5px 6px;color:#64748b">' + crawl + '</td><td style="padding:5px 6px;text-align:right">' + link + '</td></tr>';
+    });
+    html += '</table>';
+    el.innerHTML = html;
+  } catch(e) { el.innerHTML = '<div class="empty" style="color:#ef4444">Failed: ' + esc(e.message) + '</div>'; }
+  finally { if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync"></i> Check'; } }
 }
 
 // Push every sitemap URL to IndexNow + re-submit the sitemap to Google Search Console.

@@ -34992,6 +34992,48 @@ app.post('/api/admin/seo/push-indexing', adminAuth, async function(req, res) {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/admin/seo/index-status - inspect the key pages in Google's index and
+// return a one-click "Request Indexing" deep link for each. Google exposes no API
+// to request indexing (the Indexing API is JobPosting/BroadcastEvent only), so the
+// link opens the URL Inspection tool where the final click is manual.
+app.get('/api/admin/seo/index-status', adminAuth, async function(req, res) {
+  try {
+    var g = getGsc();
+    if (!g || !g.isConnected || !g.isConnected()) return res.status(400).json({ error: 'Search Console not connected' });
+    var cfg = g.loadConfig();
+    var prop = cfg.property || 'https://9amleads.com/';
+    var pages = [
+      'https://9amleads.com/',
+      'https://9amleads.com/pricing/',
+      'https://9amleads.com/movingleadsdaily/',
+      'https://9amleads.com/probateleads/',
+      'https://9amleads.com/planningleads/',
+      'https://9amleads.com/newbusinessalert/',
+      'https://9amleads.com/tenders/',
+      'https://9amleads.com/bulk.html',
+      'https://9amleads.com/blog/'
+    ];
+    var out = [];
+    for (var i = 0; i < pages.length; i++) {
+      var u = pages[i];
+      var row = {
+        url: u, verdict: '', coverageState: '', lastCrawlTime: '', indexed: false, error: '',
+        inspect_url: 'https://search.google.com/search-console/inspect?resource_id=' + encodeURIComponent(prop) + '&id=' + encodeURIComponent(u)
+      };
+      try {
+        var r = await g.inspectUrl(u, prop);
+        row.verdict = r.verdict;
+        row.coverageState = r.coverageState;
+        row.lastCrawlTime = r.lastCrawlTime;
+        row.indexed = /indexed/i.test(r.coverageState) && !/not indexed/i.test(r.coverageState) && !/unknown/i.test(r.coverageState);
+      } catch(e) { row.error = e.message; }
+      out.push(row);
+    }
+    out.sort(function(a, b) { return (a.indexed ? 1 : 0) - (b.indexed ? 1 : 0); });
+    res.json({ success: true, property: prop, pages: out, indexed: out.filter(function(x) { return x.indexed; }).length, total: out.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/admin/blog/generate - Generate next batch of blog posts (up to 5)
 app.post('/api/admin/blog/generate', adminAuth, function(req, res) {
   try {
