@@ -570,7 +570,7 @@ function mailBtn(leadId, d){
    // If already posted, show a "Post Again" button (for a follow-up letter after a
   // few weeks). keeps the posted date visible via the badge above.
   if (d && d.post_status === 'posted') {
-    return '<button onclick="sendPrintPost(\''+leadId+'\')" title="Send a follow-up letter or flyer to this lead" class="mail-btn"><i class="fas fa-redo-alt"></i> Post Again</button>' + helpTip('This lead was already posted. Click "Post Again" to send a follow-up letter or flyer. Track it on Live Post Tracking.');
+    return '<button onclick="sendPrintPost(\''+leadId+'\')" title="Send a follow-up letter or flyer to this lead" class="mail-btn"><i class="fas fa-redo-alt"></i> Post Again</button>' + helpTip('This lead was already posted. Click "Post Again" to send a follow-up letter or flyer. Track it on Live Tracking.');
   }
   return '<button onclick="sendPrintPost(\''+leadId+'\')" title="Print &amp; post a letter or flyer to this lead" class="mail-btn"><i class="fas fa-mail-bulk"></i> Print &amp; Post</button>' + helpTip('We print your flyer or letter, address it and post it to this lead for you. Pick a template or upload your own on the Print & Post page. You\u2019ll get proof of posting + live status.');
 }
