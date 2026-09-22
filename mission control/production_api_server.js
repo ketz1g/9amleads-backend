@@ -40445,7 +40445,10 @@ app.listen(PORT, () => {
     if (dbB.__cleanExitAt) delete dbB.__cleanExitAt;
     function _recordBoot(isDeploy) {
       try {
-        if (!_prevCleanExit && !isDeploy) dbB.__boots.push(nowB);
+        // Only count when we POSITIVELY know this was not a deploy (isDeploy === false).
+        // A null/unknown result (Render API unreachable) must NOT count - a false
+        // crash-loop alarm is worse than a missed one.
+        if (!_prevCleanExit && isDeploy === false) dbB.__boots.push(nowB);
         if (dbB.__boots.length > 100) dbB.__boots = dbB.__boots.slice(-100);
         // CRASH-LOOP ALERT ONLY: routine restarts (deploys / sleep-wake) are counted but
         // not emailed individually. Only a real crash loop (>= 4 abrupt boots in 15 min)
@@ -40463,21 +40466,36 @@ app.listen(PORT, () => {
     // this boot is a DEPLOY (Render restarts the service on every deploy), so it must not
     // count as a crash - a burst of legitimate deploys used to look like a crash loop.
     var _rK = process.env.RENDER_API_KEY || '', _rS = process.env.RENDER_SERVICE_ID || '';
-    if (!_rK || !_rS) { _recordBoot(false); }
+    if (!_rK || !_rS) { _recordBoot(null); }
     else {
       try {
         var _rq = require('https').request({ hostname: 'api.render.com', path: '/v1/services/' + _rS + '/deploys?limit=1', method: 'GET', headers: { 'Authorization': 'Bearer ' + _rK, 'Accept': 'application/json' }, timeout: 8000 }, function(_rs) {
           var _b = ''; _rs.on('data', function(c) { _b += c; });
           _rs.on('end', function() {
-            var _isDeploy = false;
-            try { var _arr = JSON.parse(_b); var _latest = _arr && _arr[0] && _arr[0].deploy; if (_latest && _latest.finishedAt) { var _fin = new Date(_latest.finishedAt).getTime(); if (_fin && (nowB - _fin) < 900000) _isDeploy = true; } } catch(e) {}
+            var _isDeploy = null;
+            try {
+              var _arr = JSON.parse(_b);
+              var _latest = _arr && _arr[0] && _arr[0].deploy;
+              if (_latest) {
+                _isDeploy = false;
+                var _st = String(_latest.status || "");
+                var _started = _latest.createdAt ? new Date(_latest.createdAt).getTime() : 0;
+                var _fin = _latest.finishedAt ? new Date(_latest.finishedAt).getTime() : 0;
+                // Still building or deploying right now => this boot IS the deploy.
+                if (_st === "build_in_progress" || _st === "update_in_progress" || _st === "created") _isDeploy = true;
+                // Started or finished within 30 min => treat as a deploy. Generous on
+                // purpose: a burst of pushes is still just deploys, not a crash loop.
+                if (_started && (nowB - _started) < 1800000) _isDeploy = true;
+                if (_fin && (nowB - _fin) < 1800000) _isDeploy = true;
+              }
+            } catch(e) {}
             _recordBoot(_isDeploy);
           });
         });
-        _rq.on('error', function() { _recordBoot(false); });
-        _rq.setTimeout(8000, function() { try { _rq.destroy(); } catch(e) {} _recordBoot(false); });
+        _rq.on('error', function() { _recordBoot(null); });
+        _rq.setTimeout(8000, function() { try { _rq.destroy(); } catch(e) {} _recordBoot(null); });
         _rq.end();
-      } catch(e) { _recordBoot(false); }
+      } catch(e) { _recordBoot(null); }
     }
   } catch(e) {}
   // DELIVERY SELF-CHECK ON BOOT: if the service restarted during/after the 9am window
