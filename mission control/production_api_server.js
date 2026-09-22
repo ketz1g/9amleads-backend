@@ -15087,6 +15087,82 @@ app.get("/api/admin/trial-onboarding-status", adminAuth, function(req, res) {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ===== HIGH-INTENT ALERTS =====
+// The onboarding email sequence runs automatically, but the thing that actually
+// converts a trial is a human conversation at the right moment. This scores every
+// active trial for buying intent and emails the owner a short "call these people"
+// list, once per customer. It is the human follow-up step, made actionable.
+function _trialIntentScore(cust) {
+  var d = getDb();
+  var events = d.analytics || [];
+  var score = 0, reasons = [];
+  var since = cust.created_at ? new Date(cust.created_at).getTime() : 0;
+  var mine = events.filter(function(e) {
+    if (!e.props) return false;
+    if (e.props.customer_id && e.props.customer_id === cust.id) return true;
+    var m = d.uidMap && d.uidMap[cust.id];
+    if (m && (e.props._uid === m || e.props.uid === m)) return true;
+    return false;
+  });
+  var count = function(ev) { return mine.filter(function(e) { return e.event === ev; }).length; };
+  var pricing = count("pricing_viewed");
+  var checkout = count("checkout_started");
+  var leads = count("lead_viewed");
+  if (checkout > 0) { score += 40; reasons.push("started checkout (" + checkout + ")"); }
+  if (pricing > 0) { score += 25; reasons.push("viewed pricing (" + pricing + ")"); }
+  if (leads >= 10) { score += 20; reasons.push("opened " + leads + " leads"); }
+  else if (leads >= 3) { score += 10; reasons.push("opened " + leads + " leads"); }
+  try {
+    var sent = JSON.parse(cust.campaign_sent || "[]");
+    if (sent.indexOf("trial_day3") !== -1) score += 5;
+    if (sent.indexOf("trial_day5") !== -1) score += 5;
+    if (sent.indexOf("trial_day7") !== -1) score += 10;
+  } catch(e) {}
+  return { score: score, reasons: reasons, pricing: pricing, checkout: checkout, leads: leads };
+}
+function runHighIntentAlerts() {
+  try {
+    var d = getDb();
+    var now = Date.now();
+    var out = [];
+    (d.customers || []).forEach(function(c) {
+      if (!c || c.plan !== "free_trial") return;
+      var e = String(c.email || "").toLowerCase();
+      if (e.indexOf("@9amleads.com") !== -1 || /^test\./.test(e) || /^demo/.test(e)) return;
+      if (!c.trial_ends) return;
+      if (new Date(c.trial_ends).getTime() < now) return;          // expired - handled by win-back
+      if (c.high_intent_alerted) return;                            // already flagged
+      var s = _trialIntentScore(c);
+      if (s.score < 40) return;
+      out.push({ c: c, s: s });
+    });
+    if (!out.length) return { sent: 0 };
+    out.sort(function(a, b) { return b.s.score - a.s.score; });
+    var rows = out.map(function(x) {
+      return "<tr><td style=\"padding:8px 10px;border-bottom:1px solid #e2e8f0\"><b>" + (x.c.company || x.c.email) + "</b><br><span style=\"color:#64748b;font-size:12px\">" + x.c.email + "</span></td>" +
+        "<td style=\"padding:8px 10px;border-bottom:1px solid #e2e8f0;font-size:12px\">" + (x.c.product || "") + " · " + (x.c.plan || "") + "</td>" +
+        "<td style=\"padding:8px 10px;border-bottom:1px solid #e2e8f0;font-size:12px\">score <b>" + x.s.score + "</b><br>" + x.s.reasons.join(", ") + "</td>" +
+        "<td style=\"padding:8px 10px;border-bottom:1px solid #e2e8f0;font-size:12px\">" + (x.c.phone || "no phone") + "</td></tr>";
+    }).join("");
+    var html = "<div style=\"font-family:Inter,Arial,sans-serif;background:#f8fafc;padding:24px\"><h2 style=\"font-family:Outfit,Arial,sans-serif;color:#0f172a;margin:0 0 6px\">" + out.length + " trial" + (out.length === 1 ? "" : "s") + " worth a call today</h2>" +
+      "<p style=\"color:#475569;font-size:13px;line-height:1.7\">These trials have shown buying signals. A short personal call is the highest-leverage thing you can do for conversion.</p>" +
+      "<table style=\"width:100%;border-collapse:collapse;background:#fff;border:1px solid #e2e8f0;border-radius:8px\"><tr style=\"background:#f1f5f9;text-align:left\"><th style=\"padding:8px 10px;font-size:12px\">Business</th><th style=\"padding:8px 10px;font-size:12px\">Product</th><th style=\"padding:8px 10px;font-size:12px\">Signal</th><th style=\"padding:8px 10px;font-size:12px\">Phone</th></tr>" + rows + "</table></div>";
+    var owner = process.env.ADMIN_ALERT_EMAIL || "ketzman1g@gmail.com";
+    sendBrevoEmail({ email: owner, name: "9amLeads Owner" }, "[CALL LIST] " + out.length + " high-intent trial" + (out.length === 1 ? "" : "s") + " today", html).catch(function(){});
+    out.forEach(function(x) { try { x.c.high_intent_alerted = new Date().toISOString(); } catch(e) {} });
+    saveDb();
+    console.log("[HIGH-INTENT] alerted on " + out.length + " trial(s)");
+    return { sent: out.length, emails: out.map(function(x) { return x.c.email; }) };
+  } catch(e) { console.log("[HIGH-INTENT] error: " + e.message); return { sent: 0, error: e.message }; }
+}
+// Weekday mornings, after the 9am delivery so intent data is fresh.
+cron.schedule("30 9 * * 1-5", function() { try { runHighIntentAlerts(); } catch(e) {} }, { timezone: "Europe/London" });
+
+// POST /api/admin/high-intent - run the scan now (admin).
+app.post("/api/admin/high-intent", adminAuth, function(req, res) {
+  try { res.json({ success: true, result: runHighIntentAlerts() }); } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 function adminAuth(req, res, next) {
   const auth = req.headers.authorization;
   if (!auth || auth !== 'Bearer ' + ADMIN_PASSWORD) {
