@@ -34942,6 +34942,35 @@ function submitIndexNowAsync(urls) {
   });
 }
 
+// Submit URLs to Bing via the Webmaster URL Submission API. Requires the site to be
+// verified in Bing Webmaster Tools (siteUrl must match the verified property exactly).
+// Bing allows ~10,000 URLs/day for verified sites; the batch endpoint is called in
+// chunks of 500 and reports a real per-batch outcome.
+function submitBingUrlsAsync(urls) {
+  return new Promise(function(resolve) {
+    try {
+      if (!urls || !urls.length) return resolve({ status: 0, sent: 0, error: 'no urls', ok: false });
+      var key = process.env.BING_API_KEY;
+      if (!key) return resolve({ status: 0, sent: 0, error: 'BING_API_KEY not set', ok: false });
+      var https = require('https');
+      var body = JSON.stringify({ siteUrl: 'https://9amleads.com/', urlList: urls });
+      var req = https.request({ hostname: 'ssl.bing.com', path: '/webmaster/api.svc/json/SubmitUrlbatch?apikey=' + encodeURIComponent(key), method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': Buffer.byteLength(body) }, timeout: 30000 }, function(r) {
+        var b = '';
+        r.on('data', function(c) { b += c; });
+        r.on('end', function() {
+          var ok = r.statusCode >= 200 && r.statusCode < 300;
+          var err = ok ? '' : ('HTTP ' + r.statusCode + ' ' + b.substring(0, 120));
+          if (ok && /"ErrorCode"/.test(b)) { ok = false; err = b.substring(0, 160); }
+          resolve({ status: r.statusCode, sent: urls.length, error: err, ok: ok });
+        });
+      });
+      req.on('error', function(e) { resolve({ status: 0, sent: 0, error: e.message, ok: false }); });
+      req.setTimeout(30000, function() { req.destroy(new Error('Bing timeout')); });
+      req.write(body); req.end();
+    } catch(e) { resolve({ status: 0, sent: 0, error: e.message, ok: false }); }
+  });
+}
+
 // Fire-and-forget GSC sitemap re-submission (used whenever the sitemap changes).
 function gscResubmitSitemap() {
   try {
@@ -34969,6 +34998,11 @@ app.post('/api/admin/seo/push-indexing', adminAuth, async function(req, res) {
       indexnow.push(await submitIndexNowAsync(urls.slice(i, i + 10000)));
     }
 
+    var bing = [];
+    for (var bi = 0; bi < urls.length; bi += 500) {
+      bing.push(await submitBingUrlsAsync(urls.slice(bi, bi + 500)));
+    }
+
     var gscSubmit = null, gscSitemaps = null, gscError = '';
     try {
       var g = getGsc();
@@ -34979,11 +35013,14 @@ app.post('/api/admin/seo/push-indexing', adminAuth, async function(req, res) {
     } catch(e) { gscError = e.message; }
 
     var okNow = indexnow.filter(function(r) { return r.status >= 200 && r.status < 300; }).length;
+    var bingOk = bing.length > 0 && bing.every(function(r) { return r.ok; });
     res.json({
       success: true,
       urls: urls.length,
       indexnow: indexnow,
       indexnow_ok: okNow === indexnow.length,
+      bing: bing,
+      bing_ok: bingOk,
       gsc_submit: gscSubmit,
       gsc_sitemaps: gscSitemaps,
       gsc_error: gscError,
