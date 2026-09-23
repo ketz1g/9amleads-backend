@@ -24623,6 +24623,12 @@ _deliverDiag[cust.email].products = products;
         if (primCfg.target_areas) { custAreas = JSON.parse(primCfg.target_areas); }
         else { custAreas = JSON.parse(cust.target_areas || '[]'); }
       } catch(e) { custAreas = []; }
+      // DEFENSIVE: target_areas can be double-encoded (a JSON string of a JSON string)
+      // or otherwise not an array. Coerce it here so ONE malformed record can never
+      // throw `.some is not a function` and 500 the ENTIRE 9am run for every customer.
+      if (!Array.isArray(custAreas)) {
+        try { var _ca2 = JSON.parse(custAreas); custAreas = Array.isArray(_ca2) ? _ca2 : []; } catch(e2) { custAreas = []; }
+      }
       var totalDailyLimit = getPlanLimit(cust.product, cust.plan, primCoverage) || 5;
       // MULTI-PRODUCT: a customer subscribed to several lead types gets the full
       // promised quota for EACH product (e.g. moving 15 + probate 15 = 30 total),
