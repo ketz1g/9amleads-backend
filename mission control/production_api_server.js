@@ -18556,21 +18556,36 @@ async function runDeliveryPreflight(opts) {
   var checks = [];
   function add(name, ok, detail) { checks.push({ check: name, ok: !!ok, detail: detail || '' }); }
   // 1) EMAIL provider: account reachable, and (if asked) a REAL test send.
+  // The /v3/account probe is only a reachability/key HINT: Brevo returns a transient
+  // 500 on it from time to time that has nothing to do with the transactional send
+  // path. So retry the probe on 5xx, and when a real test send is requested let the
+  // SEND be authoritative - if it succeeds the provider is healthy even if the
+  // account probe was flaky. A single 500 used to page "will break the 9am delivery"
+  // when delivery was actually fine.
   var brevoOk = false, brevoDetail = '';
-  try {
-    var acct = await new Promise(function(resolve) {
-      var r = https.request({ hostname: 'api.brevo.com', path: '/v3/account', method: 'GET', headers: { 'api-key': BREVO_API_KEY, 'Accept': 'application/json' }, timeout: 15000 }, function(resp) { var d = ''; resp.on('data', function(c) { d += c; }); resp.on('end', function() { resolve({ code: resp.statusCode, body: d }); }); });
-      r.on('error', function(e) { resolve({ code: 0, body: e.message }); });
-      r.on('timeout', function() { try { r.destroy(); } catch(e) {} resolve({ code: 0, body: 'timeout' }); });
-      r.end();
-    });
+  if (!BREVO_API_KEY) {
+    brevoDetail = 'BREVO_API_KEY not configured';
+  } else {
+    var acct = { code: 0, body: '' };
+    for (var _ba = 1; _ba <= 3; _ba++) {
+      acct = await new Promise(function(resolve) {
+        var r = https.request({ hostname: 'api.brevo.com', path: '/v3/account', method: 'GET', headers: { 'api-key': BREVO_API_KEY, 'Accept': 'application/json' }, timeout: 15000 }, function(resp) { var d = ''; resp.on('data', function(c) { d += c; }); resp.on('end', function() { resolve({ code: resp.statusCode, body: d }); }); });
+        r.on('error', function(e) { resolve({ code: 0, body: e.message }); });
+        r.on('timeout', function() { try { r.destroy(); } catch(e) {} resolve({ code: 0, body: 'timeout' }); });
+        r.end();
+      });
+      // 2xx/4xx are conclusive (4xx usually means a bad key/config - a real problem).
+      // Only a 5xx/no-response is worth retrying.
+      if (acct.code === 200 || (acct.code > 0 && acct.code < 500)) break;
+      if (_ba < 3) await new Promise(function(r) { setTimeout(r, 1000 * _ba); });
+    }
     brevoOk = acct.code === 200;
     brevoDetail = 'account HTTP ' + acct.code;
-    if (brevoOk && opts.send) {
-      try { await sendBrevoEmail({ email: 'hello@9amleads.com', name: 'Preflight' }, '9amLeads pre-flight test', '<p>Pre-flight test email - delivery path OK.</p>'); brevoDetail += ', test send OK'; }
+    if (opts.send) {
+      try { await sendBrevoEmail({ email: 'hello@9amleads.com', name: 'Preflight' }, '9amLeads pre-flight test', '<p>Pre-flight test email - delivery path OK.</p>'); brevoOk = true; brevoDetail += ', test send OK'; }
       catch(se) { brevoOk = false; brevoDetail += ', test send FAILED: ' + se.message; }
     }
-  } catch(e) { brevoDetail = e.message; }
+  }
   add('Email provider (Brevo)', brevoOk, brevoDetail);
   // 2) Delivery hold inactive.
   var holdActive = false; try { holdActive = isDeliveryHoldActive(); } catch(e) {}
@@ -18936,7 +18951,9 @@ async function sendDeliveryCompleteReport() {
   try {
     var rDb = getDb();
     var todayS = new Date().toISOString().split('T')[0];
-    var custs = (rDb.customers || []).filter(function(c2) { return c2.plan && c2.plan !== 'cancelled' && String(c2.email || '').indexOf('test.') !== 0; });
+    // Same filters the delivery engine uses: never count internal/test/demo accounts
+    // (they get no leads, so they'd always show as "short" and send phantom alerts).
+    var custs = (rDb.customers || []).filter(function(c2) { return !isInternalAccount(c2) && isEntitledForDelivery(c2); });
     var rows = [];
     var totalDelivered = 0, totalPromised = 0, fulfilled = 0, shortList = [];
     custs.forEach(function(c2) {
@@ -19003,7 +19020,11 @@ async function runDailyDeliveryReport() {
       }
     });
     // ---- 2) PER-CUSTOMER PREVIEW: check what each real customer would receive at 9am.
-    var rCusts = (rDb.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && !isLeadsPaused(c) && String(c.email || '').indexOf('test.') !== 0 && !(String(c.plan) === 'free_trial' && c.trial_ends && new Date(c.trial_ends) < new Date()); });
+    // Use the SAME filters the real 9am delivery uses: internal/test/demo accounts (and
+    // the affiliate demo customers) are never delivered to, so they must never appear
+    // here. The old ad-hoc email check let demo.ref*@example.com and the @9amleads.com
+    // demo inboxes through, producing phantom "needs attention" rows every morning.
+    var rCusts = (rDb.customers || []).filter(function(c) { return !isInternalAccount(c) && isEntitledForDelivery(c); });
     var rRows = [];
     var rShort = [];
     for (var ri = 0; ri < rCusts.length; ri++) {
