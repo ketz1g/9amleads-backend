@@ -34538,7 +34538,16 @@ function _ensureRehearsalAccounts() {
     return created;
   } catch(e) { console.log('[REHEARSAL] ensure accounts error:', e.message); return 0; }
 }
-async function runDeliveryRehearsal(trigger) {
+var _rehearsalLock = false, _rehearsalLockAt = 0;
+async function runDeliveryRehearsal(trigger, opts) {
+  opts = opts || {};
+  // Only one rehearsal at a time (e.g. the 08:05 cron and the post-deploy smoke test
+  // can coincide). A concurrent attempt is not a failure - return skipped, no alert.
+  if (_rehearsalLock && (Date.now() - _rehearsalLockAt) < 180000) {
+    console.log('[REHEARSAL] another rehearsal is already running - skipped (no alert)');
+    return { ok: true, skipped: true, reason: 'rehearsal already running', accounts: [] };
+  }
+  _rehearsalLock = true; _rehearsalLockAt = Date.now();
   var started = Date.now();
   var out = { ok: false, trigger: trigger || 'manual', duration_ms: 0, problems: [], accounts: [] };
   try {
@@ -34555,9 +34564,23 @@ async function runDeliveryRehearsal(trigger) {
     saveDb();
     // Run the REAL engine, test accounts only (force bypasses the before-9am guard;
     // sendBrevoEmail skips test addresses so no email actually leaves).
-    var res = await httpCallLocal('POST', '/api/admin/deliver', { test_only: true, force: true });
+    // The deliver endpoint refuses to run while another run holds the lock (e.g. the
+    // post-deploy smoke test firing at the same time). WAIT for it rather than
+    // reporting a false failure - a busy lock is not a delivery failure.
+    var res = null;
+    for (var _ra = 0; _ra < 8; _ra++) {
+      res = await httpCallLocal('POST', '/api/admin/deliver', { test_only: true, force: true });
+      if (res && res.json && res.json.skipped === true) { await new Promise(function(r) { setTimeout(r, 15000); }); continue; }
+      break;
+    }
     out.duration_ms = Date.now() - started;
-    if (res.status !== 200 || !res.json || res.json.success !== true) out.problems.push('deliver call failed: ' + String(JSON.stringify(res)).slice(0, 200));
+    if (res && res.json && res.json.skipped === true) {
+      out.ok = true; out.skipped = true; out.reason = 'delivery run busy - not a failure';
+      console.log('[REHEARSAL] delivery run busy - skipped without alert');
+      _rehearsalLock = false; _rehearsalLockAt = 0;
+      return out;
+    }
+    if (!res || res.status !== 200 || !res.json || res.json.success !== true) out.problems.push('deliver call failed: ' + String(JSON.stringify(res)).slice(0, 200));
     if (out.duration_ms > 90000) out.problems.push('run took ' + Math.round(out.duration_ms / 1000) + 's (>90s) - too slow for the 9am window');
     var today = new Date().toISOString().split('T')[0];
     var d2 = getDb();
@@ -34572,23 +34595,26 @@ async function runDeliveryRehearsal(trigger) {
     });
     out.ok = out.problems.length === 0;
     if (!out.ok) {
-      sendAdminAlert('\u26a0 9am rehearsal FAILED (' + out.trigger + ')', '<p style="color:#ccc;line-height:1.7">The pre-9am delivery rehearsal failed. <b>The real 9am run may fail the same way - fix before 9am.</b></p><ul style="color:#fca5a5;line-height:1.9">' + out.problems.map(function(p){ return '<li>' + p + '</li>'; }).join('') + '</ul><p style="color:#94a3b8;font-size:12px">Run ' + out.duration_ms + 'ms. ' + out.accounts.map(function(a){ return a.email + ' ' + a.delivered + '/' + a.expected; }).join(' | ') + '</p>');
+      if (!opts.quiet) sendAdminAlert('\u26a0 9am rehearsal FAILED (' + out.trigger + ')', '<p style="color:#ccc;line-height:1.7">The pre-9am delivery rehearsal failed. <b>The real 9am run may fail the same way - fix before 9am.</b></p><ul style="color:#fca5a5;line-height:1.9">' + out.problems.map(function(p){ return '<li>' + p + '</li>'; }).join('') + '</ul><p style="color:#94a3b8;font-size:12px">Run ' + out.duration_ms + 'ms. ' + out.accounts.map(function(a){ return a.email + ' ' + a.delivered + '/' + a.expected; }).join(' | ') + '</p>');
       console.log('[REHEARSAL] FAILED: ' + out.problems.join(' | '));
     } else {
       console.log('[REHEARSAL] PASS in ' + out.duration_ms + 'ms: ' + out.accounts.map(function(a){ return a.email + ' ' + a.delivered + '/' + a.expected; }).join(' | '));
     }
+    _rehearsalLock = false; _rehearsalLockAt = 0;
     return out;
   } catch(e) {
     out.problems.push('exception: ' + e.message);
-    try { sendAdminAlert('\u26a0 9am rehearsal ERROR', '<p style="color:#ccc">' + e.message + '</p>'); } catch(x) {}
+    if (!opts.quiet) { try { sendAdminAlert('\u26a0 9am rehearsal ERROR', '<p style="color:#ccc">' + e.message + '</p>'); } catch(x) {} }
     console.log('[REHEARSAL] ERROR: ' + e.message);
+    _rehearsalLock = false; _rehearsalLockAt = 0;
     return out;
   }
 }
 // POST /api/admin/run-rehearsal - run the pre-9am rehearsal now (also used by the
-// post-deploy smoke test). Returns { ok, duration_ms, problems, accounts }.
+// post-deploy smoke test). Body { trigger, quiet } - quiet suppresses the alert for
+// ad-hoc manual runs. Returns { ok, duration_ms, problems, accounts }.
 app.post('/api/admin/run-rehearsal', adminAuth, async (req, res) => {
-  try { res.json(await runDeliveryRehearsal((req.body && req.body.trigger) || 'manual')); } catch(e) { res.status(500).json({ ok: false, error: e.message }); }
+  try { res.json(await runDeliveryRehearsal((req.body && req.body.trigger) || 'manual', { quiet: !!(req.body && req.body.quiet) })); } catch(e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 // 08:05 UK weekdays - well before the 08:30-09:45 delivery/deploy window, so a
 // regression is caught (and can still be fixed) before the real 9am run.
