@@ -6,6 +6,11 @@ name: Deploy (gated out of the 9am window)
 on:
   push:
     branches: [ master ]
+    # Only redeploy the backend when backend files change. Marketing-site pushes
+    # (9amwebsite/**) are handled by the separate Netlify workflow and must NOT
+    # restart the delivery server.
+    paths:
+      - 'mission control/**'
   workflow_dispatch:
 
 concurrency:
