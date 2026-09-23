@@ -25264,20 +25264,11 @@ _deliverDiag[cust.email].products = products;
                           } catch(epcMoveErr) {}
                         }
                       }
-                      // STILL no confirmed number? PAF-verify via Postcoder (budget-capped fallback).
-                      var fCurrPc2 = poolLeadData.postcode || '';
-                      if (!(hasPremiseNumber(poolLeadData.address || '', fCurrPc2) && /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(fCurrPc2).trim()))) {
-                        try {
-                          var fenrArr = await pcDeliver.enrichMovingLeadsPostcoder([poolLeadData]);
-                          if (fenrArr && fenrArr[0]) {
-                            var fe = fenrArr[0];
-                            if (fe.fullAddress || fe.address) poolLeadData.address = fe.fullAddress || fe.address;
-                            if (fe.postcode) poolLeadData.postcode = fe.postcode;
-                            if (fe.buildingNumber) poolLeadData.buildingNumber = fe.buildingNumber;
-                            if (fe.street) poolLeadData.street = fe.street;
-                          }
-                        } catch(fe2) {}
-                      }
+                      // NO Postcoder during the pool scan. A door-less lead that EPC could
+                      // not resolve is kept as a PAF candidate and queued; the PAID lookup
+                      // then happens ONLY in the final per-customer pass, which runs on the
+                      // handful of leads actually selected to be sent (EPC first, Postcoder
+                      // last). This keeps Postcoder credits spent strictly on delivered leads.
                       // COMPLETENESS CHECK: must have number + street + full postcode + url.
                       // STRIP UNCONFIRMED FLAT NUMBER FIRST: portals default flat
                       // displayAddress to "Flat 1, <building>" - never mail to a guessed
@@ -25294,10 +25285,19 @@ _deliverDiag[cust.email].products = products;
                       var finAddr = poolLeadData.address || '';
                       var finPc = poolLeadData.postcode || '';
                       var finNum = hasPremiseNumber(finAddr, finPc);
-                      var finFullPc = /[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(finPc).trim());
+                      var finFullPc = /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(finPc).trim());
+                      var finStreet = hasStreetName(finAddr);
+                      var finBad = hasBadUnitCode(finAddr);
+                      // Mailable now (number + full postcode + street) OR a PAF candidate:
+                      // EPC already had its free shot, the lead has a full postcode + street,
+                      // so keep it and let the final paid pass number it only if it is sent.
+                      var finMailable = finNum && finFullPc && finStreet && !finBad;
+                      var finPafCandidate = !finNum && finFullPc && finStreet && !finBad;
                       // NOTE: no per-lead console.log here - thousands of synchronous
                       // stdout writes blocked the event loop and tripped the health check.
-                      if (!finNum || !finFullPc || !hasStreetName(finAddr) || hasBadUnitCode(finAddr)) { _poolSkip = (_poolSkip || 0) + 1; continue; }
+                      // Only MOVING defers paid numbering to the final pass; every other
+                      // product must be mailable at this point (unchanged behaviour).
+                      if (!finMailable && !(r2prod === 'moving' && finPafCandidate)) { _poolSkip = (_poolSkip || 0) + 1; continue; }
                       // Listing link is required too.
                       if (!rl.url && !poolLeadData.url) { _poolSkip = (_poolSkip || 0) + 1; continue; }
                     }
