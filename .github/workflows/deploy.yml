@@ -45,3 +45,39 @@ jobs:
           if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
             echo "Deploy trigger failed"; exit 1
           fi
+
+      # SMOKE TEST: after the new build is live, run the delivery engine end-to-end in
+      # test_only mode (internal test accounts, no real customers, no emails). If the
+      # engine does not deliver the exact quota, fail the workflow - so "fix A breaks B"
+      # is caught at deploy time, not at 9am.
+      - name: Post-deploy smoke test (delivery rehearsal)
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: |
+          set -e
+          echo "Waiting for the new deploy to go live..."
+          for i in $(seq 1 40); do
+            status=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" -H "Accept: application/json" \
+              "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys?limit=1" \
+              | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4 || true)
+            echo "  deploy status: ${status:-unknown}"
+            if [ "$status" = "live" ]; then break; fi
+            sleep 15
+          done
+          echo "Waiting for health endpoint..."
+          for i in $(seq 1 25); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "https://nineamleads-backend.onrender.com/api/health" || true)
+            echo "  health HTTP ${code:-none}"
+            if [ "$code" = "200" ]; then break; fi
+            sleep 6
+          done
+          echo "Running delivery rehearsal..."
+          resp=$(curl -s -X POST "https://nineamleads-backend.onrender.com/api/admin/run-rehearsal" \
+            -H "Authorization: Bearer $ADMIN_PASSWORD" \
+            -H "Content-Type: application/json" -d '{"trigger":"post-deploy"}')
+          echo "$resp"
+          echo "$resp" | grep -q '"ok":true' \
+            || { echo "SMOKE TEST FAILED - the delivery engine did not pass the rehearsal"; exit 1; }
+          echo "Smoke test passed - delivery engine delivers the exact quota."

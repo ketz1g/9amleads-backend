@@ -1,0 +1,68 @@
+// Delivery invariants test - the safety net for "fix A breaks B".
+//
+// The delivery engine is a large monolith run once a day against live data, so a
+// change can silently drop one of the hard-won guarantees. This suite locks the
+// critical invariants in two ways:
+//   1) behaviour tests for the extracted pure modules (address_premise, freshness);
+//   2) structural guards that assert the server source still contains the exact
+//      filters/gates that make the 9am promise hold. If someone removes one, this
+//      test fails and the change can be caught before it reaches production.
+//
+// Run: node test/delivery_invariants.test.js   (exit code 1 on any failure)
+const fs = require('fs');
+const path = require('path');
+
+let passed = 0, failed = 0;
+function ok(name, cond, detail) {
+  if (cond) { passed++; console.log('  \u2713 ' + name); }
+  else { failed++; console.log('  \u2717 FAIL: ' + name + (detail ? ' :: ' + detail : '')); }
+}
+
+const ap = require('../address_premise.js');
+const fr = require('../freshness.js');
+const SRC = fs.readFileSync(path.join(__dirname, '..', 'production_api_server.js'), 'utf8');
+function has(s) { return SRC.indexOf(s) !== -1; }
+
+console.log('\n=== Address premise gate ===');
+ok('door number accepted', ap.hasUsablePremiseAddress('12 High Street, London', 'SW1A 1AA') === true);
+ok('flat number accepted', ap.hasUsablePremiseAddress('Flat 2, Eaton Mansions', 'SW1W 8HF') === true);
+ok('bare street rejected', ap.hasUsablePremiseAddress('Park Road', 'N11 2JD') === false);
+ok('named building without number rejected', ap.hasUsablePremiseAddress('The Old Rectory', 'GU21 4PU') === false);
+ok('tower block without flat number rejected', ap.hasUsablePremiseAddress('Landmark East Tower, 24 Marsh Wall', 'E14 9EG') === false);
+
+console.log('\n=== Freshness floor ===');
+ok('Monday floor = Friday 09:00 UK', fr.getFreshCutoffIso(new Date('2026-08-17T08:00:00Z').getTime()) === '2026-08-14T08:00:00.000Z');
+ok('Wednesday floor = 48h', fr.getFreshCutoffIso(new Date('2026-08-19T08:00:00Z').getTime()) === new Date(new Date('2026-08-19T08:00:00Z').getTime() - 48 * 3600000).toISOString());
+
+console.log('\n=== Delivery engine structural invariants ===');
+ok('engine excludes internal/test/demo accounts in a real run',
+  has('isInternalAccount(c) && !(testOnly && _isTest)'));
+ok('engine keeps test.* only in test_only mode',
+  has('if (testOnly && !_isTest) return false;'));
+ok('reports use the same internal + entitlement filter',
+  (SRC.split('!isInternalAccount(c) && isEntitledForDelivery(c)').length - 1) >= 3);
+ok('EPC is resolved before Postcoder in the pool scan',
+  has('EPC FIRST (FREE, local, in-memory)'));
+ok('door numbers come from EPC (free) before the paid fallback',
+  SRC.indexOf('EPC_INDEX.resolveFullAddress') !== -1 && has('enrichMovingLeadsPostcoder'));
+ok('paid door-number top-up is gated on remaining Postcoder budget',
+  has('shortBy > 0 && _pcBudgetNow > 0') && has('finalShort > 0 && _pcBudgetNow > 0'));
+ok('delivery has a per-run deadline (not a shared global)',
+  has('function _registerDeliveryDeadline') && has('function _releaseDeliveryDeadline'));
+ok('pool scan stops at the per-run deadline',
+  (SRC.split('_deliveryDeadline && Date.now() > _deliveryDeadline').length - 1) >= 3);
+ok('over-delivery is auto-trimmed by the guarantee audit',
+  has('over_trimmed = trimOverdeliveredLeads()') && has('function trimOverdeliveredLeads'));
+ok('hard cap never exceeds the promised quota',
+  has('custLeads.length > totalDailyLimit') && has('hard-capped'));
+ok('exact-count fill cannot exceed the promise',
+  has('FILL_CAP') || has('EXACT_COUNT_FILL_CAP'));
+ok('pre-9am rehearsal exists and is scheduled',
+  has('function runDeliveryRehearsal') && has("cron.schedule('5 8 * * 1-5'"));
+ok('test/internal accounts never get real emails',
+  has('Skipped un-deliverable test address'));
+ok('internal deliveries never block real customers',
+  has('_internalCustIds'));
+
+console.log('\n' + (failed === 0 ? 'ALL PASSED' : 'FAILURES: ' + failed) + '  (' + passed + ' passed, ' + failed + ' failed)');
+process.exit(failed === 0 ? 0 : 1);

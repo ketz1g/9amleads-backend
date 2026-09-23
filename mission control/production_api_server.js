@@ -13219,7 +13219,13 @@ async function sendEarlyReadinessReport(label) {
         }).join('')
       + '</table>'
       + '<div style="margin-top:8px;color:#94a3b8">Green = already numbered. Amber = relies on the 9am PAF pass. Red = genuine gap, act now.</div></div>';
-    sendAdminAlert((shorts.length ? '\u26A0 ' : '\u2705 ') + 'Pre-9am readiness ' + label + ' - ' + (rows.length - shorts.length) + '/' + rows.length + ' ready', html);
+    // DIGEST MODE: only email when something needs attention. An all-green day is
+    // logged, not emailed, so the founder isn't spammed with "all good" reports.
+    if (shorts.length) {
+      sendAdminAlert('\u26A0 Pre-9am readiness ' + label + ' - ' + (rows.length - shorts.length) + '/' + rows.length + ' ready', html);
+    } else {
+      console.log('[EARLY-READINESS ' + label + '] all ' + rows.length + ' ready (no email - digest mode)');
+    }
     console.log('[EARLY-READINESS ' + label + '] ' + (rows.length - shorts.length) + '/' + rows.length + ' ready' + (shorts.length ? '; short: ' + shorts.map(function(s){ return s.email; }).join(', ') : ''));
   } catch(e) { console.log('[EARLY-READINESS] error:', e.message); }
 }
@@ -19501,12 +19507,9 @@ async function runFulfilmentGuarantee(label) {
       }
       console.log('[GUARANTEE] ' + label + ': ⚠ ' + gShort.length + ' would shortfall: ' + gShort.join(' | '));
     } else {
-      console.log('[GUARANTEE] ' + label + ': All ' + gCusts.length + ' customers guaranteed their full count for 9am');
-      // ALL-GOOD CONFIRMATION: let the founder know the check ran and everyone is covered.
-      try {
-        var _okHtml = '<div style="font-family:Inter,Arial,sans-serif;max-width:540px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px"><h2 style="color:#4ade80;margin:0 0 10px;font-size:18px">&#9989; Fulfilment check (' + label + '): all good</h2><p style="font-size:14px;line-height:1.6;color:#cbd5e1">All <b>' + gCusts.length + '</b> active customers are guaranteed their full promised count for the 9am delivery. Nothing to do.</p></div>';
-        await sendBrevoEmail({ email: process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com', name: '9amLeads Admin' }, 'Fulfilment check (' + label + '): all ' + gCusts.length + ' customers covered', _okHtml);
-      } catch(okErr) { console.log('[GUARANTEE] all-good email error:', okErr.message); }
+      // DIGEST MODE: on a good day the founder gets NO email (log only). Only genuine
+      // problems page: shortfall, over-delivery, preflight/rehearsal/deploy failure.
+      console.log('[GUARANTEE] ' + label + ': all ' + gCusts.length + ' customers guaranteed their full count for 9am (no email - digest mode)');
     }
     // STORE the latest guarantee result so the admin delivery-preview shows the final,
     // post-check state the moment the founder opens it (no waiting / re-guessing).
@@ -19848,7 +19851,11 @@ function sendDailyDeliveryPreview(when) {
     } catch(e) { console.log('[PRE-CHECK] error:', e.message); resolve([]); }
   });
 }
-cron.schedule('30 6 * * 1-5', function() { try { sendDailyDeliveryPreview('pre'); } catch(e) {} }, { timezone: 'Europe/London' });
+// DISABLED (digest mode): the 06:30 pre-check duplicated the 07:00 morning report,
+// the 07:25 fulfilment guarantee and the 07:45 readiness email. Only one pre-9am
+// problem alert should ever fire; keeping the 07:25 guarantee (which also auto-tops-up)
+// and the 07:45 final readiness.
+// cron.schedule('30 6 * * 1-5', function() { try { sendDailyDeliveryPreview('pre'); } catch(e) {} }, { timezone: 'Europe/London' });
 // 09:10 post-preview removed - the 09:12 daily delivery summary is the single post-9am email.
 // EXPECTED-BATCH REPORT (08:30 UK, weekdays): emails the founder the EXACT list that
 // will go out at 9am - per customer, the promised vs expected count and the FULL
@@ -34504,6 +34511,89 @@ function runDeliveryTestReport() {
     })();
   });
 }
+// ===== PRE-9AM DELIVERY REHEARSAL (08:05 UK weekdays) =====
+// Runs the FULL 9am engine in test_only mode against INTERNAL test accounts - never
+// real customers, never emails (sendBrevoEmail hard-skips test addresses). It proves
+// ~55 minutes before the real run that the engine delivers each product's EXACT quota
+// with mail-ready addresses, quickly and without errors, and alerts the founder ONLY
+// on failure. This is the safety net that catches a regression BEFORE 9am.
+var REHEARSAL_ACCOUNTS = [
+  { email: 'test.rehearsal@9amleads.com',    product: 'moving',      plan: 'starter', coverage: 'postcode', areas: ['AL','EN','N','MK','SW','KT','CR','HA','RM'] },
+  { email: 'test.rehearsal.nb@9amleads.com', product: 'newbusiness', plan: 'starter', coverage: 'county',   areas: ['Kent','London'] }
+];
+function _ensureRehearsalAccounts() {
+  try {
+    var d = getDb();
+    var created = 0;
+    REHEARSAL_ACCOUNTS.forEach(function(a) {
+      var exists = (d.customers || []).some(function(c) { return String(c.email || '').toLowerCase() === a.email; });
+      if (exists) return;
+      var cid = uuidv4();
+      var cfg = {}; cfg[a.product] = { target_areas: JSON.stringify(a.areas), coverage: a.coverage };
+      db.prepare('INSERT INTO customers (id, email, company, name, plan, product, coverage, target_areas, product_config, password_hash, created_at, signup_ip) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)')
+        .run(cid, a.email, 'Rehearsal ' + a.product, 'Rehearsal', a.plan, a.product, a.coverage, JSON.stringify(a.areas), JSON.stringify(cfg), 'testhash', new Date().toISOString(), 'rehearsal');
+      created++;
+    });
+    if (created) saveDb();
+    return created;
+  } catch(e) { console.log('[REHEARSAL] ensure accounts error:', e.message); return 0; }
+}
+async function runDeliveryRehearsal(trigger) {
+  var started = Date.now();
+  var out = { ok: false, trigger: trigger || 'manual', duration_ms: 0, problems: [], accounts: [] };
+  try {
+    _ensureRehearsalAccounts();
+    var d = getDb();
+    var emails = REHEARSAL_ACCOUNTS.map(function(a) { return a.email; });
+    var accounts = (d.customers || []).filter(function(c) { return emails.indexOf(String(c.email || '').toLowerCase()) !== -1; });
+    if (accounts.length !== REHEARSAL_ACCOUNTS.length) out.problems.push('could not create all rehearsal accounts (' + accounts.length + '/' + REHEARSAL_ACCOUNTS.length + ')');
+    // Clean slate so the run MUST deliver fresh (otherwise 'already emailed today'
+    // would discard the batch and the test would pass trivially).
+    var ids = {}; accounts.forEach(function(c) { ids[c.id] = 1; });
+    d.leads = (d.leads || []).filter(function(l) { return !ids[l.customer_id]; });
+    accounts.forEach(function(c) { c.last_email_date = ''; });
+    saveDb();
+    // Run the REAL engine, test accounts only (force bypasses the before-9am guard;
+    // sendBrevoEmail skips test addresses so no email actually leaves).
+    var res = await httpCallLocal('POST', '/api/admin/deliver', { test_only: true, force: true });
+    out.duration_ms = Date.now() - started;
+    if (res.status !== 200 || !res.json || res.json.success !== true) out.problems.push('deliver call failed: ' + String(JSON.stringify(res)).slice(0, 200));
+    if (out.duration_ms > 90000) out.problems.push('run took ' + Math.round(out.duration_ms / 1000) + 's (>90s) - too slow for the 9am window');
+    var today = new Date().toISOString().split('T')[0];
+    var d2 = getDb();
+    accounts.forEach(function(c) {
+      var expected = getPlanLimit(c.product, c.plan, c.coverage) || 5;
+      var leads = (d2.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && String(l.delivered_at).split('T')[0] === today; });
+      var badAddr = 0;
+      leads.forEach(function(l) { var ld = {}; try { ld = JSON.parse(l.data || '{}'); } catch(e) {} if (!leadMailableForDelivery(ld, l.product || c.product)) badAddr++; });
+      out.accounts.push({ email: c.email, product: c.product, expected: expected, delivered: leads.length, unmailable: badAddr });
+      if (leads.length !== expected) out.problems.push(c.email + ': ' + leads.length + '/' + expected + ' (must be exactly ' + expected + ')');
+      if (badAddr > 0) out.problems.push(c.email + ': ' + badAddr + ' delivered lead(s) not mail-ready');
+    });
+    out.ok = out.problems.length === 0;
+    if (!out.ok) {
+      sendAdminAlert('\u26a0 9am rehearsal FAILED (' + out.trigger + ')', '<p style="color:#ccc;line-height:1.7">The pre-9am delivery rehearsal failed. <b>The real 9am run may fail the same way - fix before 9am.</b></p><ul style="color:#fca5a5;line-height:1.9">' + out.problems.map(function(p){ return '<li>' + p + '</li>'; }).join('') + '</ul><p style="color:#94a3b8;font-size:12px">Run ' + out.duration_ms + 'ms. ' + out.accounts.map(function(a){ return a.email + ' ' + a.delivered + '/' + a.expected; }).join(' | ') + '</p>');
+      console.log('[REHEARSAL] FAILED: ' + out.problems.join(' | '));
+    } else {
+      console.log('[REHEARSAL] PASS in ' + out.duration_ms + 'ms: ' + out.accounts.map(function(a){ return a.email + ' ' + a.delivered + '/' + a.expected; }).join(' | '));
+    }
+    return out;
+  } catch(e) {
+    out.problems.push('exception: ' + e.message);
+    try { sendAdminAlert('\u26a0 9am rehearsal ERROR', '<p style="color:#ccc">' + e.message + '</p>'); } catch(x) {}
+    console.log('[REHEARSAL] ERROR: ' + e.message);
+    return out;
+  }
+}
+// POST /api/admin/run-rehearsal - run the pre-9am rehearsal now (also used by the
+// post-deploy smoke test). Returns { ok, duration_ms, problems, accounts }.
+app.post('/api/admin/run-rehearsal', adminAuth, async (req, res) => {
+  try { res.json(await runDeliveryRehearsal((req.body && req.body.trigger) || 'manual')); } catch(e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+// 08:05 UK weekdays - well before the 08:30-09:45 delivery/deploy window, so a
+// regression is caught (and can still be fixed) before the real 9am run.
+cron.schedule('5 8 * * 1-5', function() { try { runDeliveryRehearsal('08:05 schedule'); } catch(e) { console.log('[REHEARSAL] cron error:', e.message); } }, { timezone: 'Europe/London' });
+
 // Every 15 minutes - automated delivery test + report (TEST ONLY). Gated by
 // TEST_DELIVERY_CRON=true (off by default). Each run delivers EXACTLY the
 // promised quota to every test.* account ONLY (never real customers - the deliver
