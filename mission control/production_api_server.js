@@ -40918,16 +40918,20 @@ function seedDemoAccount() {
 app.get('/api/demo/login', (req, res) => {
   try {
     var product = String(req.query.product || 'moving').toLowerCase();
+    // Create/refresh the demo account ONLY when the public demo is actually opened.
+    try { seedDemoAccount(); } catch(eSeed) {}
     var acct = DEMO_ACCOUNTS[product] || DEMO_ACCOUNTS.moving;
     var token = jwt.sign({ id: acct.id, email: acct.email, product: product, demo: true }, JWT_SECRET, { expiresIn: '2h' });
     res.json({ token: token, demo: true, email: acct.email, product: DEMO_ACCOUNTS[product] ? product : 'moving' });
   } catch(e) { res.status(500).json({ error: 'demo unavailable' }); }
 });
-// Keep the demo looking current: refresh the demo account's sample leads each morning.
-cron.schedule('0 6 * * *', function() { try { seedDemoAccount(); } catch(e) {} }, { timezone: 'Europe/London' });
+// NOTE: the public product demo accounts are NOT seeded on a schedule or at boot any
+// more. They are created ON DEMAND by /api/demo/login only (see below), so they never
+// linger in the customer list, get refreshed daily, or show up in reports/delivery.
+// The investor affiliate demo (demo-affiliate + demo.ref*@example.com) is unchanged.
 
 app.listen(PORT, () => {
-  try { seedDemoAccount(); } catch(e) { console.log('[DEMO] boot seed error: ' + (e && e.message)); }
+  // Product demo accounts are seeded on demand by /api/demo/login, not at boot.
   try { seedDemoAffiliate(); } catch(e) { console.log('[DEMO-AFF] boot seed error: ' + (e && e.message)); }
   try {
     purgeCorruptBackups();
