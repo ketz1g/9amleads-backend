@@ -855,198 +855,83 @@ footer a:hover{color:var(--text)}
 </div>
 </section>
 
-<!-- BROWSE BY BUSINESS TYPE -->
-<section class="section" id="biztypes" style="position:relative;overflow:hidden;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+<!-- MORE TRADES WE SERVE -->
+<section class="section" id="business-types" style="position:relative;overflow:hidden;background:var(--bg-card);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
 <style>
-#biztypes .bt-chip{display:inline-block;padding:7px 13px;border-radius:50px;border:1px solid var(--border);background:var(--bg-card);color:var(--text);font-size:12.5px;font-weight:600;text-decoration:none;margin:0 6px 6px 0;transition:.2s}
-#biztypes .bt-chip:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
-#biztypes .bt-group{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:22px 20px}
-#biztypes .bt-h{display:flex;align-items:center;gap:9px;font-weight:800;font-family:var(--ff-h);font-size:15px;margin-bottom:12px}
-#biztypes .bt-h a{color:inherit;text-decoration:none}
-#biztypes .bt-h a:hover{color:var(--accent)}
-#biztypes .bt-dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto}
+#business-types .mt-row{border:1px solid var(--border);border-left:4px solid var(--tc,var(--accent));background:var(--bg);border-radius:14px;padding:22px 24px;margin-bottom:16px}
+#business-types .mt-head{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:15px}
+#business-types .mt-title{display:flex;align-items:center;gap:12px;font-family:var(--ff-h);font-weight:800;font-size:18px;letter-spacing:-.3px}
+#business-types .mt-ic{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex:0 0 auto;background:color-mix(in srgb,var(--tc) 15%,transparent);color:var(--tc);border:1px solid color-mix(in srgb,var(--tc) 30%,transparent)}
+#business-types .mt-count{font-size:11.5px;font-weight:800;letter-spacing:.4px;padding:4px 10px;border-radius:50px;background:color-mix(in srgb,var(--tc) 14%,transparent);color:var(--tc);border:1px solid color-mix(in srgb,var(--tc) 28%,transparent)}
+#business-types .mt-more{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:800;color:var(--tc);text-decoration:none;white-space:nowrap}
+#business-types .mt-more:hover{text-decoration:underline}
+#business-types .mt-chips{display:flex;flex-wrap:wrap;gap:8px}
+#business-types .mt-chips a{display:inline-block;padding:7px 14px;border-radius:50px;border:1px solid var(--border);background:var(--bg-card);color:var(--text2);font-size:12.5px;font-weight:600;text-decoration:none;transition:.18s}
+#business-types .mt-chips a:hover{border-color:var(--tc);color:var(--text);transform:translateY(-1px)}
 </style>
 <div class="container">
 <div style="text-align:center;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:12px">More Trades</div>
 <h2 class="section-title">Hundreds of Trades. <span class="gradient">Five Lead Types.</span></h2>
 <p class="section-sub" style="max-width:760px">Whatever your trade, one of our five streams can feed it. Here are just some of the professions that use 9amLeads - find yours and see the leads. Don't see it? The five streams cover hundreds more.</p>
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;max-width:1040px;margin:0 auto">
-<div class="bt-group">
-<div class="bt-h"><span class="bt-dot" style="background:#ff6b35"></span><a href="/movingleadsdaily/">Moving &amp; Logistics</a></div>
-<a class="bt-chip" href="/movingleadsdaily/?b=removal-companies">Removal Companies</a>
-<a class="bt-chip" href="/movingleadsdaily/?b=man-and-van-companies">Man &amp; Van</a>
-<a class="bt-chip" href="/movingleadsdaily/?b=storage-companies">Storage Companies</a>
-<a class="bt-chip" href="/movingleadsdaily/?b=packing-services">Packing &amp; Relocation</a>
-<a class="bt-chip" href="/movingleadsdaily/?b=house-clearance">House Clearance</a>
-<a class="bt-chip" href="/movingleadsdaily/?b=skip-hire">Skip &amp; Waste</a>
-<a class="bt-chip" href="/movingleadsdaily/">International Removals</a>
-<a class="bt-chip" href="/movingleadsdaily/">Office Relocation</a>
-<a class="bt-chip" href="/movingleadsdaily/">Furniture Assembly</a>
-<a class="bt-chip" href="/movingleadsdaily/">Van &amp; Truck Hire</a>
-<a class="bt-chip" href="/movingleadsdaily/">Same-Day Courier</a>
-<a class="bt-chip" href="/movingleadsdaily/">Self-Storage</a>
-<a class="bt-chip" href="/movingleadsdaily/">Container Storage</a>
-<a class="bt-chip" href="/movingleadsdaily/">End-of-Tenancy Clearance</a>
-<a class="bt-chip" href="/movingleadsdaily/">Rubbish Removal</a>
-<a class="bt-chip" href="/movingleadsdaily/">Removals Brokers</a>
-<div style="margin-top:14px"><a href="/movingleadsdaily/" style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:var(--accent);text-decoration:none">See Moving Leads <i class="fas fa-arrow-right"></i></a></div>
+
+<div class="mt-row" style="--tc:#ff6b35">
+<div class="mt-head">
+<div class="mt-title"><span class="mt-ic"><i class="fas fa-truck"></i></span> Moving &amp; Logistics <span class="mt-count">16 trades</span></div>
+<a class="mt-more" href="/movingleadsdaily/">See Moving Leads <i class="fas fa-arrow-right"></i></a>
 </div>
-<div class="bt-group">
-<div class="bt-h"><span class="bt-dot" style="background:#a855f7"></span><a href="/probateleads/">Probate &amp; Estate</a></div>
-<a class="bt-chip" href="/probateleads/?b=probate-solicitors">Probate Solicitors</a>
-<a class="bt-chip" href="/probateleads/?b=probate-practitioners">Probate Practitioners</a>
-<a class="bt-chip" href="/probateleads/?b=private-client-solicitors">Private Client Solicitors</a>
-<a class="bt-chip" href="/probateleads/?b=will-writers">Will Writers</a>
-<a class="bt-chip" href="/probateleads/?b=estate-administration">Estate Administration</a>
-<a class="bt-chip" href="/probateleads/?b=financial-advisers">Financial Advisers</a>
-<a class="bt-chip" href="/probateleads/?b=funeral-directors">Funeral Directors</a>
-<a class="bt-chip" href="/probateleads/?b=estate-agents">Estate Agents</a>
-<a class="bt-chip" href="/probateleads/">Inheritance Tax Advisers</a>
-<a class="bt-chip" href="/probateleads/">Equity Release</a>
-<a class="bt-chip" href="/probateleads/">Memorial Masons</a>
-<a class="bt-chip" href="/probateleads/">Property Valuers</a>
-<a class="bt-chip" href="/probateleads/">Auctioneers</a>
-<a class="bt-chip" href="/probateleads/">Antique &amp; Art Valuers</a>
-<a class="bt-chip" href="/probateleads/">Probate Genealogy</a>
-<a class="bt-chip" href="/probateleads/">Domiciliary Care</a>
-<a class="bt-chip" href="/probateleads/">Care Homes</a>
-<a class="bt-chip" href="/probateleads/">Bereavement Support</a>
-<div style="margin-top:14px"><a href="/probateleads/" style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:var(--accent);text-decoration:none">See Probate Leads <i class="fas fa-arrow-right"></i></a></div>
-</div>
-<div class="bt-group">
-<div class="bt-h"><span class="bt-dot" style="background:#06b6d4"></span><a href="/newbusinessalert/">New Business &amp; B2B</a></div>
-<a class="bt-chip" href="/newbusinessalert/?b=accountants">Accountants</a>
-<a class="bt-chip" href="/newbusinessalert/">Bookkeepers</a>
-<a class="bt-chip" href="/newbusinessalert/">Payroll Services</a>
-<a class="bt-chip" href="/newbusinessalert/?b=web-designers">Web Designers</a>
-<a class="bt-chip" href="/newbusinessalert/">Web Developers</a>
-<a class="bt-chip" href="/newbusinessalert/?b=marketing-agencies">Marketing &amp; SEO</a>
-<a class="bt-chip" href="/newbusinessalert/">Social Media Management</a>
-<a class="bt-chip" href="/newbusinessalert/">Branding &amp; Design</a>
-<a class="bt-chip" href="/newbusinessalert/">Copywriters</a>
-<a class="bt-chip" href="/newbusinessalert/">PR Agencies</a>
-<a class="bt-chip" href="/newbusinessalert/">Videographers</a>
-<a class="bt-chip" href="/newbusinessalert/">Photographers</a>
-<a class="bt-chip" href="/newbusinessalert/?b=it-support">IT &amp; Support</a>
-<a class="bt-chip" href="/newbusinessalert/">Managed IT</a>
-<a class="bt-chip" href="/newbusinessalert/">Cybersecurity</a>
-<a class="bt-chip" href="/newbusinessalert/">Telecoms &amp; VoIP</a>
-<a class="bt-chip" href="/newbusinessalert/?b=insurance-brokers">Insurance Brokers</a>
-<a class="bt-chip" href="/newbusinessalert/?b=recruitment-agencies">Recruitment Agencies</a>
-<a class="bt-chip" href="/newbusinessalert/?b=business-consultants">Business Consultants</a>
-<a class="bt-chip" href="/newbusinessalert/">HR Consultants</a>
-<a class="bt-chip" href="/newbusinessalert/">Virtual Assistants</a>
-<a class="bt-chip" href="/newbusinessalert/">CRM &amp; Software</a>
-<a class="bt-chip" href="/newbusinessalert/">Payment Services</a>
-<a class="bt-chip" href="/newbusinessalert/">Utilities Brokers</a>
-<a class="bt-chip" href="/newbusinessalert/">Office Fit-Out</a>
-<a class="bt-chip" href="/newbusinessalert/">Signage &amp; Print</a>
-<a class="bt-chip" href="/newbusinessalert/">Business Coaches</a>
-<a class="bt-chip" href="/newbusinessalert/">Company Formation</a>
-<a class="bt-chip" href="/newbusinessalert/">Email Marketing</a>
-<a class="bt-chip" href="/newbusinessalert/">Paid Ads (PPC)</a>
-<a class="bt-chip" href="/newbusinessalert/">E-commerce Agencies</a>
-<a class="bt-chip" href="/newbusinessalert/">App Developers</a>
-<a class="bt-chip" href="/newbusinessalert/">Commercial Legal</a>
-<a class="bt-chip" href="/newbusinessalert/">Trademark &amp; IP</a>
-<a class="bt-chip" href="/newbusinessalert/">Call Answering</a>
-<a class="bt-chip" href="/newbusinessalert/">Commercial Cleaning</a>
-<div style="margin-top:14px"><a href="/newbusinessalert/" style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:var(--accent);text-decoration:none">See New Business Leads <i class="fas fa-arrow-right"></i></a></div>
-</div>
-<div class="bt-group">
-<div class="bt-h"><span class="bt-dot" style="background:#10b981"></span><a href="/planningleads/">Planning Permission &amp; Construction</a></div>
-<a class="bt-chip" href="/planningleads/?b=general-builders">General Builders</a>
-<a class="bt-chip" href="/planningleads/?b=building-contractors">Building Contractors</a>
-<a class="bt-chip" href="/planningleads/?b=construction-companies">Construction Companies</a>
-<a class="bt-chip" href="/planningleads/?b=architects">Architects</a>
-<a class="bt-chip" href="/planningleads/?b=architectural-designers">Architectural Designers</a>
-<a class="bt-chip" href="/planningleads/?b=chartered-surveyors">Chartered Surveyors</a>
-<a class="bt-chip" href="/planningleads/?b=roofers">Roofers</a>
-<a class="bt-chip" href="/planningleads/?b=roofing-contractors">Roofing Contractors</a>
-<a class="bt-chip" href="/planningleads/?b=loft-conversion-companies">Loft Conversions</a>
-<a class="bt-chip" href="/planningleads/?b=extensions-and-conversions">Extensions &amp; Conversions</a>
-<a class="bt-chip" href="/planningleads/?b=groundworks">Groundworks</a>
-<a class="bt-chip" href="/planningleads/?b=landscapers">Landscapers &amp; Gardeners</a>
-<a class="bt-chip" href="/planningleads/">Structural Engineers</a>
-<a class="bt-chip" href="/planningleads/">Party Wall Surveyors</a>
-<a class="bt-chip" href="/planningleads/">Planning Consultants</a>
-<a class="bt-chip" href="/planningleads/">Electricians</a>
-<a class="bt-chip" href="/planningleads/">Plumbers &amp; Heating</a>
-<a class="bt-chip" href="/planningleads/">Gas Engineers</a>
-<a class="bt-chip" href="/planningleads/">Window &amp; Door Fitters</a>
-<a class="bt-chip" href="/planningleads/">Conservatory Companies</a>
-<a class="bt-chip" href="/planningleads/">Basement &amp; Damp Specialists</a>
-<a class="bt-chip" href="/planningleads/">Tree Surgeons</a>
-<a class="bt-chip" href="/planningleads/">Driveways &amp; Paving</a>
-<a class="bt-chip" href="/planningleads/">Fencing Contractors</a>
-<a class="bt-chip" href="/planningleads/">Decking Specialists</a>
-<a class="bt-chip" href="/planningleads/">Garden Rooms &amp; Annexes</a>
-<a class="bt-chip" href="/planningleads/">Swimming Pools</a>
-<a class="bt-chip" href="/planningleads/">Solar &amp; Battery</a>
-<a class="bt-chip" href="/planningleads/">Heat Pump Installers</a>
-<a class="bt-chip" href="/planningleads/">Air Conditioning</a>
-<a class="bt-chip" href="/planningleads/">Scaffolding</a>
-<a class="bt-chip" href="/planningleads/">Quantity Surveyors</a>
-<a class="bt-chip" href="/planningleads/">Interior Designers</a>
-<a class="bt-chip" href="/planningleads/">Kitchen Fitters</a>
-<a class="bt-chip" href="/planningleads/">Bathroom Fitters</a>
-<a class="bt-chip" href="/planningleads/">Plasterers</a>
-<a class="bt-chip" href="/planningleads/">Joiners &amp; Carpenters</a>
-<a class="bt-chip" href="/planningleads/">Bricklayers</a>
-<a class="bt-chip" href="/planningleads/">Glaziers</a>
-<a class="bt-chip" href="/planningleads/">Demolition</a>
-<a class="bt-chip" href="/planningleads/">Asbestos Removal</a>
-<a class="bt-chip" href="/planningleads/">Drainage</a>
-<div style="margin-top:14px"><a href="/planningleads/" style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:var(--accent);text-decoration:none">See Planning Leads <i class="fas fa-arrow-right"></i></a></div>
-</div>
-<div class="bt-group">
-<div class="bt-h"><span class="bt-dot" style="background:#6366f1"></span><a href="/tenders/">Public Sector &amp; Government Tenders</a></div>
-<a class="bt-chip" href="/tenders/?b=it-services">IT &amp; Digital</a>
-<a class="bt-chip" href="/tenders/?b=transport">Transport &amp; Logistics</a>
-<a class="bt-chip" href="/tenders/?b=healthcare">Healthcare &amp; Social Care</a>
-<a class="bt-chip" href="/tenders/?b=construction">Construction</a>
-<a class="bt-chip" href="/tenders/">Software Companies</a>
-<a class="bt-chip" href="/tenders/">Telecoms</a>
-<a class="bt-chip" href="/tenders/">Cloud &amp; Hosting</a>
-<a class="bt-chip" href="/tenders/">Cybersecurity</a>
-<a class="bt-chip" href="/tenders/">Courier &amp; Fleet</a>
-<a class="bt-chip" href="/tenders/">Domiciliary Care</a>
-<a class="bt-chip" href="/tenders/">Nursing Agencies</a>
-<a class="bt-chip" href="/tenders/">Building Maintenance</a>
-<a class="bt-chip" href="/tenders/">Commercial Cleaning</a>
-<a class="bt-chip" href="/tenders/">Security &amp; Guarding</a>
-<a class="bt-chip" href="/tenders/">CCTV &amp; Monitoring</a>
-<a class="bt-chip" href="/tenders/">Facilities Management</a>
-<a class="bt-chip" href="/tenders/">Catering &amp; School Meals</a>
-<a class="bt-chip" href="/tenders/">Waste Management</a>
-<a class="bt-chip" href="/tenders/">Grounds Maintenance</a>
-<a class="bt-chip" href="/tenders/">Pest Control</a>
-<a class="bt-chip" href="/tenders/">Translation &amp; Interpreting</a>
-<a class="bt-chip" href="/tenders/">Public Sector Recruitment</a>
-<a class="bt-chip" href="/tenders/">Training Providers</a>
-<a class="bt-chip" href="/tenders/">Consultancy</a>
-<a class="bt-chip" href="/tenders/">Marketing &amp; Comms</a>
-<a class="bt-chip" href="/tenders/">Print &amp; Workwear</a>
-<a class="bt-chip" href="/tenders/">Medical Supplies &amp; PPE</a>
-<a class="bt-chip" href="/tenders/">Plumbing &amp; Heating</a>
-<a class="bt-chip" href="/tenders/">Electrical Services</a>
-<a class="bt-chip" href="/tenders/">Renewable Energy</a>
-<a class="bt-chip" href="/tenders/">Vehicle Maintenance</a>
-<a class="bt-chip" href="/tenders/">Fire Safety</a>
-<a class="bt-chip" href="/tenders/">Lift Maintenance</a>
-<a class="bt-chip" href="/tenders/">HVAC</a>
-<a class="bt-chip" href="/tenders/">Water Treatment</a>
-<a class="bt-chip" href="/tenders/">Legal Services</a>
-<a class="bt-chip" href="/tenders/">HR Services</a>
-<div style="margin-top:14px"><a href="/tenders/" style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:var(--accent);text-decoration:none">See Public Tenders <i class="fas fa-arrow-right"></i></a></div>
+<div class="mt-chips">
+<a href="/movingleadsdaily/?b=removal-companies">Removal Companies</a><a href="/movingleadsdaily/?b=man-and-van-companies">Man &amp; Van</a><a href="/movingleadsdaily/?b=storage-companies">Storage Companies</a><a href="/movingleadsdaily/?b=packing-services">Packing &amp; Relocation</a><a href="/movingleadsdaily/?b=house-clearance">House Clearance</a><a href="/movingleadsdaily/?b=skip-hire">Skip &amp; Waste</a><a href="/movingleadsdaily/">International Removals</a><a href="/movingleadsdaily/">Office Relocation</a><a href="/movingleadsdaily/">Furniture Assembly</a><a href="/movingleadsdaily/">Van &amp; Truck Hire</a><a href="/movingleadsdaily/">Same-Day Courier</a><a href="/movingleadsdaily/">Self-Storage</a><a href="/movingleadsdaily/">Container Storage</a><a href="/movingleadsdaily/">End-of-Tenancy Clearance</a><a href="/movingleadsdaily/">Rubbish Removal</a><a href="/movingleadsdaily/">Removals Brokers</a>
 </div>
 </div>
-<div style="text-align:center;margin-top:28px">
+
+<div class="mt-row" style="--tc:#a855f7">
+<div class="mt-head">
+<div class="mt-title"><span class="mt-ic"><i class="fas fa-scale-balanced"></i></span> Probate &amp; Estate <span class="mt-count">18 trades</span></div>
+<a class="mt-more" href="/probateleads/">See Probate Leads <i class="fas fa-arrow-right"></i></a>
+</div>
+<div class="mt-chips">
+<a href="/probateleads/?b=probate-solicitors">Probate Solicitors</a><a href="/probateleads/?b=private-client-solicitors">Private Client Solicitors</a><a href="/probateleads/?b=will-writers">Will Writers</a><a href="/probateleads/?b=probate-practitioners">Probate Practitioners</a><a href="/probateleads/?b=estate-administration">Estate Administration</a><a href="/probateleads/?b=financial-advisers">Financial Advisers</a><a href="/probateleads/">Inheritance Tax Advisers</a><a href="/probateleads/">Equity Release</a><a href="/probateleads/?b=funeral-directors">Funeral Directors</a><a href="/probateleads/">Memorial Masons</a><a href="/probateleads/?b=estate-agents">Estate Agents</a><a href="/probateleads/">Property Valuers</a><a href="/probateleads/">Auctioneers</a><a href="/probateleads/">Antique &amp; Art Valuers</a><a href="/probateleads/">Probate Genealogy</a><a href="/probateleads/">Domiciliary Care</a><a href="/probateleads/">Care Homes</a><a href="/probateleads/">Bereavement Support</a>
+</div>
+</div>
+
+<div class="mt-row" style="--tc:#06b6d4">
+<div class="mt-head">
+<div class="mt-title"><span class="mt-ic"><i class="fas fa-building-columns"></i></span> New Business &amp; B2B <span class="mt-count">36 trades</span></div>
+<a class="mt-more" href="/newbusinessalert/">See New Business Leads <i class="fas fa-arrow-right"></i></a>
+</div>
+<div class="mt-chips">
+<a href="/newbusinessalert/?b=accountants">Accountants</a><a href="/newbusinessalert/">Bookkeepers</a><a href="/newbusinessalert/">Payroll Services</a><a href="/newbusinessalert/?b=web-designers">Web Designers</a><a href="/newbusinessalert/">Web Developers</a><a href="/newbusinessalert/?b=marketing-agencies">Marketing &amp; SEO</a><a href="/newbusinessalert/">Social Media Management</a><a href="/newbusinessalert/">Branding &amp; Design</a><a href="/newbusinessalert/">Copywriters</a><a href="/newbusinessalert/">PR Agencies</a><a href="/newbusinessalert/">Videographers</a><a href="/newbusinessalert/">Photographers</a><a href="/newbusinessalert/?b=it-support">IT &amp; Support</a><a href="/newbusinessalert/">Managed IT</a><a href="/newbusinessalert/">Cybersecurity</a><a href="/newbusinessalert/">Telecoms &amp; VoIP</a><a href="/newbusinessalert/?b=insurance-brokers">Insurance Brokers</a><a href="/newbusinessalert/?b=recruitment-agencies">Recruitment Agencies</a><a href="/newbusinessalert/?b=business-consultants">Business Consultants</a><a href="/newbusinessalert/">HR Consultants</a><a href="/newbusinessalert/">Virtual Assistants</a><a href="/newbusinessalert/">CRM &amp; Software</a><a href="/newbusinessalert/">Payment Services</a><a href="/newbusinessalert/">Utilities Brokers</a><a href="/newbusinessalert/">Office Fit-Out</a><a href="/newbusinessalert/">Signage &amp; Print</a><a href="/newbusinessalert/">Business Coaches</a><a href="/newbusinessalert/">Company Formation</a><a href="/newbusinessalert/">Email Marketing</a><a href="/newbusinessalert/">Paid Ads (PPC)</a><a href="/newbusinessalert/">E-commerce Agencies</a><a href="/newbusinessalert/">App Developers</a><a href="/newbusinessalert/">Commercial Legal</a><a href="/newbusinessalert/">Trademark &amp; IP</a><a href="/newbusinessalert/">Call Answering</a><a href="/newbusinessalert/">Commercial Cleaning</a>
+</div>
+</div>
+
+<div class="mt-row" style="--tc:#10b981">
+<div class="mt-head">
+<div class="mt-title"><span class="mt-ic"><i class="fas fa-helmet-safety"></i></span> Planning Permission &amp; Construction <span class="mt-count">42 trades</span></div>
+<a class="mt-more" href="/planningleads/">See Planning Leads <i class="fas fa-arrow-right"></i></a>
+</div>
+<div class="mt-chips">
+<a href="/planningleads/?b=general-builders">General Builders</a><a href="/planningleads/?b=building-contractors">Building Contractors</a><a href="/planningleads/?b=construction-companies">Construction Companies</a><a href="/planningleads/?b=architects">Architects</a><a href="/planningleads/?b=architectural-designers">Architectural Designers</a><a href="/planningleads/?b=chartered-surveyors">Chartered Surveyors</a><a href="/planningleads/?b=roofers">Roofers</a><a href="/planningleads/?b=roofing-contractors">Roofing Contractors</a><a href="/planningleads/?b=loft-conversion-companies">Loft Conversions</a><a href="/planningleads/?b=extensions-and-conversions">Extensions &amp; Conversions</a><a href="/planningleads/?b=groundworks">Groundworks</a><a href="/planningleads/?b=landscapers">Landscapers &amp; Gardeners</a><a href="/planningleads/">Structural Engineers</a><a href="/planningleads/">Party Wall Surveyors</a><a href="/planningleads/">Planning Consultants</a><a href="/planningleads/">Electricians</a><a href="/planningleads/">Plumbers &amp; Heating</a><a href="/planningleads/">Gas Engineers</a><a href="/planningleads/">Window &amp; Door Fitters</a><a href="/planningleads/">Conservatory Companies</a><a href="/planningleads/">Basement &amp; Damp Specialists</a><a href="/planningleads/">Tree Surgeons</a><a href="/planningleads/">Driveways &amp; Paving</a><a href="/planningleads/">Fencing Contractors</a><a href="/planningleads/">Decking Specialists</a><a href="/planningleads/">Garden Rooms &amp; Annexes</a><a href="/planningleads/">Swimming Pools</a><a href="/planningleads/">Solar &amp; Battery</a><a href="/planningleads/">Heat Pump Installers</a><a href="/planningleads/">Air Conditioning</a><a href="/planningleads/">Scaffolding</a><a href="/planningleads/">Quantity Surveyors</a><a href="/planningleads/">Interior Designers</a><a href="/planningleads/">Kitchen Fitters</a><a href="/planningleads/">Bathroom Fitters</a><a href="/planningleads/">Plasterers</a><a href="/planningleads/">Joiners &amp; Carpenters</a><a href="/planningleads/">Bricklayers</a><a href="/planningleads/">Glaziers</a><a href="/planningleads/">Demolition</a><a href="/planningleads/">Asbestos Removal</a><a href="/planningleads/">Drainage</a>
+</div>
+</div>
+
+<div class="mt-row" style="--tc:#6366f1">
+<div class="mt-head">
+<div class="mt-title"><span class="mt-ic"><i class="fas fa-gavel"></i></span> Public Sector &amp; Tenders <span class="mt-count">37 trades</span></div>
+<a class="mt-more" href="/tenders/">See Public Tenders <i class="fas fa-arrow-right"></i></a>
+</div>
+<div class="mt-chips">
+<a href="/tenders/?b=it-services">IT &amp; Digital</a><a href="/tenders/?b=transport">Transport &amp; Logistics</a><a href="/tenders/?b=healthcare">Healthcare &amp; Social Care</a><a href="/tenders/?b=construction">Construction</a><a href="/tenders/">Software Companies</a><a href="/tenders/">Telecoms</a><a href="/tenders/">Cloud &amp; Hosting</a><a href="/tenders/">Cybersecurity</a><a href="/tenders/">Courier &amp; Fleet</a><a href="/tenders/">Domiciliary Care</a><a href="/tenders/">Nursing Agencies</a><a href="/tenders/">Building Maintenance</a><a href="/tenders/">Commercial Cleaning</a><a href="/tenders/">Security &amp; Guarding</a><a href="/tenders/">CCTV &amp; Monitoring</a><a href="/tenders/">Facilities Management</a><a href="/tenders/">Catering &amp; School Meals</a><a href="/tenders/">Waste Management</a><a href="/tenders/">Grounds Maintenance</a><a href="/tenders/">Pest Control</a><a href="/tenders/">Translation &amp; Interpreting</a><a href="/tenders/">Public Sector Recruitment</a><a href="/tenders/">Training Providers</a><a href="/tenders/">Consultancy</a><a href="/tenders/">Marketing &amp; Comms</a><a href="/tenders/">Print &amp; Workwear</a><a href="/tenders/">Medical Supplies &amp; PPE</a><a href="/tenders/">Plumbing &amp; Heating</a><a href="/tenders/">Electrical Services</a><a href="/tenders/">Renewable Energy</a><a href="/tenders/">Vehicle Maintenance</a><a href="/tenders/">Fire Safety</a><a href="/tenders/">Lift Maintenance</a><a href="/tenders/">HVAC</a><a href="/tenders/">Water Treatment</a><a href="/tenders/">Legal Services</a><a href="/tenders/">HR Services</a>
+</div>
+</div>
+
+<div style="text-align:center;margin-top:30px;display:flex;justify-content:center;gap:12px;flex-wrap:wrap">
 <a href="/portal/#signup" class="btn-pill"><i class="fas fa-gift"></i> Try It Free - 1 Week of Leads</a>
 <a href="/who-we-serve/" class="btn-pill btn-pill-outline">See Lead Types</a>
 </div>
 </div>
 </section>
+
+
 
 <section class="section" style="position:relative;overflow:hidden">
 <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=1400&q=80')"></div>
