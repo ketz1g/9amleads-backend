@@ -11473,11 +11473,9 @@ app.get('/api/admin/delivery-status', adminAuth, (req, res) => {
   try {
     var dbS = getDb();
     var today = new Date().toISOString().split('T')[0];
-    var custs = (dbS.customers || []).filter(function(c) {
-      if (!c.plan || c.plan === 'cancelled' || isLeadsPaused(c)) return false;
-      if (typeof trialExpiredUnpaid === 'function' && trialExpiredUnpaid(c)) return false;
-      return true;
-    });
+    // Real customers only: internal/test/demo accounts are never delivered to, so
+    // counting them here made 'delivery_completed_today' false forever.
+    var custs = (dbS.customers || []).filter(function(c) { return !isInternalAccount(c) && isEntitledForDelivery(c); });
     var rows = custs.map(function(c) {
       var promised = getPlanLimit(c.product, c.plan, c.coverage) || 0;
       var delivered = (dbS.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0; }).length;
