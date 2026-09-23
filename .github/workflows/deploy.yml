@@ -81,7 +81,7 @@ jobs:
           echo "Running delivery rehearsal..."
           resp=$(curl -s -X POST "https://nineamleads-backend.onrender.com/api/admin/run-rehearsal" \
             -H "Authorization: Bearer $ADMIN_PASSWORD" \
-            -H "Content-Type: application/json" -d '{"trigger":"post-deploy"}')
+            -H "Content-Type: application/json" -d '{"trigger":"post-deploy","quiet":true}')
           echo "$resp"
           echo "$resp" | grep -q '"ok":true' \
             || { echo "SMOKE TEST FAILED - the delivery engine did not pass the rehearsal"; exit 1; }
