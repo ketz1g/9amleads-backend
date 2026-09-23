@@ -2,10 +2,10 @@
   <link rel="icon" type="image/png" href="/favicon.png"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta charset="UTF-8">
 <meta name="msvalidate.01" content="722F0474C4A2E6D3BCF479C7A4B8C3CD"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Trades We Serve - Which Leads Help Your Trade | 9amLeads</title>
-<meta name="description" content="Find your trade and see exactly which 9amLeads lead types help you win more work - man &amp; van, removals, builders, roofers, architects, solicitors, accountants, IT and more.">
+<title>Trades We Serve - Which Leads Help Your Trade &amp; Why | 9amLeads</title>
+<meta name="description" content="Find your trade and see exactly which 9amLeads lead types fit, the customer need behind each one, and why the leads help you win more work - man &amp; van, removals, builders, roofers, architects, solicitors, accountants, IT and more.">
 <meta property="og:title" content="Trades We Serve - 9amLeads">
-<meta property="og:description" content="Pick your trade and see which lead types help you win more work, and why - delivered fresh at 9am every morning.">
+<meta property="og:description" content="Pick your trade and see which lead types fit, the customer need behind them, and why they help you win more work - delivered fresh at 9am every morning.">
 <meta property="og:url" content="https://9amleads.com/trades/">
 <meta property="og:type" content="website">
 <meta property="og:image" content="https://9amleads.com/og-image.png">
@@ -42,7 +42,7 @@ nav{position:fixed;top:0;left:0;right:0;height:68px;z-index:200;background:rgba(
 @media(max-width:768px){.hamburger{display:flex}.nav-links a{display:none}}
 .hero{min-height:44vh;display:flex;align-items:center;padding:120px 0 40px;position:relative;overflow:hidden;text-align:center}
 .hero h1{font-size:clamp(30px,4vw,52px);font-weight:900;font-family:var(--ff-h);letter-spacing:-1.5px;line-height:1.1;margin-bottom:16px}
-.hero p{color:var(--text2);font-size:16px;max-width:720px;margin:0 auto 24px;line-height:1.7}
+.hero p{color:var(--text2);font-size:16px;max-width:740px;margin:0 auto 24px;line-height:1.7}
 .gradient{background:linear-gradient(135deg,var(--accent),#22d3ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .btn-pill{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;border-radius:50px;background:var(--accent);color:#fff!important;font-weight:700;font-size:15px;border:none;cursor:pointer;transition:.25s;font-family:var(--ff-b);text-decoration:none}
 .btn-pill:hover{transform:translateY(-2px);box-shadow:0 8px 30px var(--accent-glow)}
@@ -54,26 +54,29 @@ nav{position:fixed;top:0;left:0;right:0;height:68px;z-index:200;background:rgba(
 .s-grid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(14,165,233,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(14,165,233,0.06) 1px,transparent 1px);background-size:60px 60px}
 .s-orb{position:absolute;pointer-events:none;border-radius:50%;filter:blur(100px);opacity:.12}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-30px)}}
-/* trade index chips */
 .chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:960px;margin:0 auto 8px}
 .chip{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:50px;border:1px solid var(--border);background:var(--bg-card);color:var(--text2);font-size:13px;font-weight:600;text-decoration:none;transition:.2s}
 .chip:hover{border-color:var(--accent);color:var(--text)}
 .chip i{color:var(--tc,var(--accent))}
-/* trade blocks */
 .trade{padding:44px 0;border-top:1px solid var(--border)}
-.trade-head{display:flex;gap:18px;align-items:center;margin-bottom:22px;flex-wrap:wrap}
+.trade-head{display:flex;gap:18px;align-items:center;margin-bottom:20px;flex-wrap:wrap}
 .trade-ic{width:60px;height:60px;border-radius:16px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:26px;background:color-mix(in srgb,var(--tc) 14%,transparent);color:var(--tc);border:1px solid color-mix(in srgb,var(--tc) 30%,transparent)}
-.trade-head h2{font-size:clamp(22px,2.6vw,30px);font-weight:900;font-family:var(--ff-h);letter-spacing:-.5px}
-.trade-head p{color:var(--text2);font-size:14.5px;line-height:1.7;max-width:720px;margin-top:4px}
-.leads{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.trade-head h2{font-size:clamp(22px,2.6vw,30px);font-weight:900;font-family:var(--ff-h);letter-spacing:-.5px;color:var(--tc)}
+.trade-head p{color:var(--text2);font-size:14.5px;line-height:1.7;max-width:760px;margin-top:4px}
+.trade-why{background:var(--bg-card);border:1px solid var(--border);border-left:3px solid var(--tc,var(--accent));border-radius:12px;padding:18px 20px;margin:0 0 22px}
+.trade-why h4{font-size:11.5px;text-transform:uppercase;letter-spacing:1.5px;color:var(--tc,var(--accent));margin-bottom:8px;font-weight:800}
+.trade-why p{font-size:14px;color:var(--text2);line-height:1.78}
+.leads{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
 .lead-card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:22px 20px;display:flex;flex-direction:column;transition:.25s}
 .lead-card:hover{border-color:color-mix(in srgb,var(--tc) 45%,var(--border));transform:translateY(-2px)}
 .lead-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .lead-badge{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:50px;font-size:11.5px;font-weight:800;letter-spacing:.3px;background:color-mix(in srgb,var(--tc) 14%,transparent);color:var(--tc);border:1px solid color-mix(in srgb,var(--tc) 30%,transparent)}
 .lead-top .fa-arrow-trend-up{color:var(--tc);opacity:.5}
-.lead-card h3{font-size:15px;font-weight:800;font-family:var(--ff-h);margin-bottom:7px}
-.lead-card p{font-size:13.5px;color:var(--text2);line-height:1.7;flex:1}
-.lead-cta{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.lead-card h3{font-size:15px;font-weight:800;font-family:var(--ff-h);margin-bottom:9px;line-height:1.4}
+.lead-card p{font-size:13.5px;color:var(--text2);line-height:1.72;margin-bottom:9px}
+.lead-card p b{color:var(--text);font-weight:800}
+.lead-card p:last-of-type{margin-bottom:0}
+.lead-cta{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)}
 .mini-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 15px;border-radius:9px;font-size:12.5px;font-weight:700;text-decoration:none;border:1px solid var(--border);color:var(--text);transition:.2s}
 .mini-btn:hover{border-color:var(--tc,var(--accent));color:var(--tc,var(--accent))}
 .mini-primary{background:var(--accent);border-color:var(--accent);color:#fff!important}
@@ -129,8 +132,8 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 <div class="s-orb" style="width:400px;height:400px;background:#06b6d4;bottom:-150px;left:-100px;animation:float 10s ease-in-out infinite reverse"></div>
 <div class="container">
 <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(14,165,233,0.1);border:1px solid var(--accent);border-radius:100px;padding:7px 18px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);margin-bottom:16px"><i class="fas fa-helmet-safety"></i> Trades We Serve</div>
-<h1>Find Your Trade. <span class="gradient">See the Leads That Win You Work.</span></h1>
-<p>Pick your trade below and we'll show you exactly which of the five 9amLeads streams fits, where the leads come from, and why they help you win more work. Fresh opportunities, scored and delivered at 9am every morning.</p>
+<h1>Find Your Trade. <span class="gradient">See the Leads - and the Need Behind Them.</span></h1>
+<p>Every lead you get from 9amLeads exists because a real person or business needs your services right now. Pick your trade below to see which stream fits, what's actually happening for that customer, and why reaching them early wins you the work.</p>
 <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap">
 <a href="/portal/#signup" class="btn-pill"><i class="fas fa-gift"></i> Try It Free - 1 Week of Leads</a>
 <a href="/pricing/" class="btn-pill btn-pill-outline">View Pricing</a>
@@ -164,23 +167,29 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 </section>
 
 <!-- ============ MAN & VAN ============ -->
-<section class="trade" id="man-and-van">
+<section class="trade" id="man-and-van" style="--tc:#ff6b35">
 <div class="container">
 <div class="trade-head">
-<div class="trade-ic" style="--tc:#ff6b35"><i class="fas fa-truck"></i></div>
-<div><h2 style="color:#ff6b35">Man &amp; Van</h2><p>You win when a household is about to move. Get there first, with a price in their hand before they've even opened the comparison sites.</p></div>
+<div class="trade-ic"><i class="fas fa-truck"></i></div>
+<div><h2>Man &amp; Van</h2><p>You win when a household is about to move. Get there first, with a price in their hand before they've opened the comparison sites.</p></div>
+</div>
+<div class="trade-why">
+<h4>The need</h4>
+<p>When a property goes Sold Subject to Contract, a family suddenly has a deadline: they have to be out by completion, and they can't do it without a van. It's a forced, dated, high-intent purchase - they're comparing prices that same week, under pressure, with no loyalty to any firm. Miss that window and someone else gets the job.</p>
 </div>
 <div class="leads">
-<div class="lead-card" style="--tc:#ff6b35">
+<div class="lead-card">
 <div class="lead-top"><span class="lead-badge"><i class="fas fa-truck"></i> Moving Leads</span><i class="fas fa-arrow-trend-up"></i></div>
-<h3>Every Sold Subject to Contract is a move in the making</h3>
-<p>We watch Rightmove &amp; Zoopla for properties that have just gone SSTC - the moment a moving date starts to exist. You get the fresh ones in your postcodes at 9am, before the seller has booked anyone.</p>
+<h3>What's happening: the property has just gone Sold Subject to Contract</h3>
+<p><b>Why they need you:</b> the sale is agreed, so a moving date is coming. They must physically move their belongings by completion - a van isn't optional, it's the difference between completing and losing the sale.</p>
+<p><b>Your edge:</b> contact them in the first 48 hours, while they're compiling quotes, before they've shortlisted anyone.</p>
 <div class="lead-cta"><a class="mini-btn" href="/movingleadsdaily/?b=man-and-van-companies">See Man &amp; Van leads <i class="fas fa-arrow-right"></i></a><a class="mini-btn mini-primary" href="/portal/#signup">Start free</a></div>
 </div>
-<div class="lead-card" style="--tc:#ff6b35">
+<div class="lead-card">
 <div class="lead-top"><span class="lead-badge"><i class="fas fa-dumpster"></i> House Clearance</span><i class="fas fa-arrow-trend-up"></i></div>
-<h3>Bundle the clearance with the move</h3>
-<p>Most moves involve getting rid of something. Pair a clearance quote with your van price and you win more per job from the same lead.</p>
+<h3>What's happening: a move nearly always involves a clear-out</h3>
+<p><b>Why they need you:</b> lofts, garages and whole houses get emptied during a move. Offering clearance alongside the van turns one lead into a bigger, higher-margin job.</p>
+<p><b>Your edge:</b> bundle it in your first quote and you win more per customer from the same contact.</p>
 <div class="lead-cta"><a class="mini-btn" href="/movingleadsdaily/?b=house-clearance">See Clearance leads <i class="fas fa-arrow-right"></i></a><a class="mini-btn mini-primary" href="/portal/#signup">Start free</a></div>
 </div>
 </div>
@@ -189,23 +198,28 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 </section>
 
 <!-- ============ REMOVALS ============ -->
-<section class="trade" id="removals">
+<section class="trade" id="removals" style="--tc:#ff6b35">
 <div class="container">
 <div class="trade-head">
-<div class="trade-ic" style="--tc:#ff6b35"><i class="fas fa-truck-moving"></i></div>
-<div><h2 style="color:#ff6b35">Removal Companies</h2><p>Volume and timing are everything. Fresh SSTC alerts, filtered to the areas you actually cover, so your estimator's day is spent on real jobs.</p></div>
+<div class="trade-ic"><i class="fas fa-truck-moving"></i></div>
+<div><h2>Removal Companies</h2><p>Volume and timing are everything. Fresh SSTC alerts, filtered to the areas you actually cover, so your estimator only quotes real jobs.</p></div>
+</div>
+<div class="trade-why">
+<h4>The need</h4>
+<p>Removals is a timing business: the customer's need is genuine but short-lived. Most sellers are stressed and want the move ticked off, so the first professional quote that lands often wins. You need a steady stream of fresh, in-area moves - not a stale list - so your team spends its day quoting homes you can actually win.</p>
 </div>
 <div class="leads">
-<div class="lead-card" style="--tc:#ff6b35">
+<div class="lead-card">
 <div class="lead-top"><span class="lead-badge"><i class="fas fa-truck"></i> Moving Leads</span><i class="fas fa-arrow-trend-up"></i></div>
-<h3>Rightmove &amp; Zoopla SSTC, filtered to you</h3>
-<p>Filter by postcode area, property type, bedrooms, price band and even move distance - so you only ever see homes worth quoting for.</p>
+<h3>What's happening: Rightmove &amp; Zoopla SSTC alerts</h3>
+<p><b>Why they need you:</b> an agreed sale means a household that must move - and can't without a removal firm. The date is set by completion, so their need has a deadline attached.</p>
+<p><b>Your edge:</b> filter by postcode area, property type, bedrooms, price band and move distance, and reach them before the national firms do.</p>
 <div class="lead-cta"><a class="mini-btn" href="/movingleadsdaily/?b=removal-companies">See Removal leads <i class="fas fa-arrow-right"></i></a><a class="mini-btn mini-primary" href="/portal/#signup">Start free</a></div>
 </div>
-<div class="lead-card" style="--tc:#ff6b35">
+<div class="lead-card">
 <div class="lead-top"><span class="lead-badge"><i class="fas fa-boxes-stacked"></i> Storage</span><i class="fas fa-arrow-trend-up"></i></div>
-<h3>Sell storage alongside the move</h3>
-<p>A move in progress is the easiest time to sell a container or short-term storage. Reach them while they're planning.</p>
+<h3>What's happening: chains create gaps between exchange and completion</h3>
+<p><b>Why they need you:</b> families often need somewhere to put things for days or weeks. Selling storage alongside the move is an easy add-on at the moment they're already talking to you.</p>
 <div class="lead-cta"><a class="mini-btn" href="/movingleadsdaily/?b=storage-companies">See Storage leads <i class="fas fa-arrow-right"></i></a><a class="mini-btn mini-primary" href="/portal/#signup">Start free</a></div>
 </div>
 </div>
@@ -214,23 +228,29 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 </section>
 
 <!-- ============ HOUSE CLEARANCE ============ -->
-<section class="trade" id="house-clearance">
+<section class="trade" id="house-clearance" style="--tc:#ff6b35">
 <div class="container">
 <div class="trade-head">
-<div class="trade-ic" style="--tc:#ff6b35"><i class="fas fa-dumpster"></i></div>
-<div><h2 style="color:#ff6b35">House Clearance</h2><p>Clearances come from two places: houses being sold, and estates being wound up. We track both.</p></div>
+<div class="trade-ic"><i class="fas fa-dumpster"></i></div>
+<div><h2>House Clearance</h2><p>Clearances come from two events: a property being sold, and an estate being wound up. We track both.</p></div>
+</div>
+<div class="trade-why">
+<h4>The need</h4>
+<p>A clearance is almost never planned - it's triggered. Either a house has sold and must be emptied before completion, or someone has died and their home has to be cleared for sale. In both cases the family is under time pressure and emotionally stretched, and they want one trusted, insured company to handle the whole thing. Reach them at the trigger, not months later.</p>
 </div>
 <div class="leads">
-<div class="lead-card" style="--tc:#ff6b35">
+<div class="lead-card">
 <div class="lead-top"><span class="lead-badge"><i class="fas fa-truck"></i> Moving Leads</span><i class="fas fa-arrow-trend-up"></i></div>
-<h3>SSTC is the #1 screen for clearance</h3>
-<p>A property that has just sold is about to be emptied. Contact the owner early with a clearance price while they're still sorting the move.</p>
+<h3>What's happening: the property has sold and must be emptied</h3>
+<p><b>Why they need you:</b> a sold house has to be cleared of what the owners aren't taking. Completion creates a hard deadline, so they need a clearance firm they can book quickly.</p>
+<p><b>Your edge:</b> move leads are the #1 screen for clearance - contact the owner early with a fixed price while they're still organising the move.</p>
 <div class="lead-cta"><a class="mini-btn" href="/movingleadsdaily/?b=house-clearance">See Clearance leads <i class="fas fa-arrow-right"></i></a><a class="mini-btn mini-primary" href="/portal/#signup">Start free</a></div>
 </div>
-<div class="lead-card" style="--tc:#a855f7">
+<div class="lead-card">
 <div class="lead-top"><span class="lead-badge"><i class="fas fa-scale-balanced"></i> Probate Leads</span><i class="fas fa-arrow-trend-up"></i></div>
-<h3>Estates need clearing before sale</h3>
-<p>A grant of probate means a property full of possessions needs clearing. Reach the executor at the front of the queue.</p>
+<h3>What's happening: a grant of probate means a full property to clear</h3>
+<p><b>Why they need you:</b> an estate has to be emptied before the house can be sold or handed on, and the executor - often a grieving relative - needs a sensitive, reliable clearance service.</p>
+<p><b>Your edge:</b> approach the family directly and early; being respectful and first in line wins the instruction.</p>
 <div class="lead-cta"><a class="mini-btn" href="/probateleads/?b=estate-administration">See Probate leads <i class="fas fa-arrow-right"></i></a><a class="mini-btn mini-primary" href="/portal/#signup">Start free</a></div>
 </div>
 </div>
@@ -239,17 +259,22 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 </section>
 
 <!-- ============ STORAGE & PACKING ============ -->
-<section class="trade" id="storage-packing">
+<section class="trade" id="storage-packing" style="--tc:#ff6b35">
 <div class="container">
 <div class="trade-head">
-<div class="trade-ic" style="--tc:#ff6b35"><i class="fas fa-boxes-stacked"></i></div>
-<div><h2 style="color:#ff6b35">Storage &amp; Packing</h2><p>A move is a packing and storage decision. Be there when it's being made.</p></div>
+<div class="trade-ic"><i class="fas fa-boxes-stacked"></i></div>
+<div><h2>Storage &amp; Packing</h2><p>A move is a packing and storage decision. Be there when it's being made.</p></div>
+</div>
+<div class="trade-why">
+<h4>The need</h4>
+<p>Moving forces two immediate purchases: boxes/packing and somewhere to put belongings. Storage and packing are rarely shopped for on their own - they're decided at the moment of the move. If you're not visible then, the removal firm or a national brand takes the add-on instead.</p>
 </div>
 <div class="leads">
-<div class="lead-card" style="--tc:#ff6b35">
+<div class="lead-card">
 <div class="lead-top"><span class="lead-badge"><i class="fas fa-truck"></i> Moving Leads</span><i class="fas fa-arrow-trend-up"></i></div>
-<h3>Fresh movers in your postcodes</h3>
-<p>Every SSTC alert is a household that will need boxes, packing and short-term storage. Offer a bundle and win the whole job.</p>
+<h3>What's happening: a household is about to move</h3>
+<p><b>Why they need you:</b> every move needs boxes, packing and often short-term storage. It's the single easiest moment to sell those services because the need is immediate and unavoidable.</p>
+<p><b>Your edge:</b> offer a packing-and-storage bundle in your first message and you convert one lead into a larger job.</p>
 <div class="lead-cta"><a class="mini-btn" href="/movingleadsdaily/?b=packing-services">See Packing &amp; Storage leads <i class="fas fa-arrow-right"></i></a><a class="mini-btn mini-primary" href="/portal/#signup">Start free</a></div>
 </div>
 </div>
@@ -258,23 +283,29 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 </section>
 
 <!-- ============ BUILDERS ============ -->
-<section class="trade" id="builders">
+<section class="trade" id="builders" style="--tc:#10b981">
 <div class="container">
 <div class="trade-head">
-<div class="trade-ic" style="--tc:#10b981"><i class="fas fa-helmet-safety"></i></div>
-<div><h2 style="color:#10b981">Builders &amp; Construction</h2><p>Two ways to fill your order book: private planning applications and public construction contracts.</p></div>
+<div class="trade-ic"><i class="fas fa-helmet-safety"></i></div>
+<div><h2>Builders &amp; Construction</h2><p>Two ways to fill your order book: private planning applications and public construction contracts.</p></div>
+</div>
+<div class="trade-why">
+<h4>The need</h4>
+<p>Building work starts with intent - and intent leaves a paper trail. Before anyone lifts a spade, an owner submits a planning application (extension, new build, conversion): a signed signal that there's a project, a budget and a timeline. Public construction is the same story - the buyer has money ring-fenced and a deadline to award. Reach the project at application or procurement stage and you're quoting before the rest of the market has even heard about it.</p>
 </div>
 <div class="leads">
-<div class="lead-card" style="--tc:#10b981">
+<div class="lead-card">
 <div class="lead-top"><span class="lead-badge"><i class="fas fa-draw-polygon"></i> Planning Leads</span><i class="fas fa-arrow-trend-up"></i></div>
-<h3>Every application is a project about to be built</h3>
-<p>Extensions, new builds, conversions and change-of-use from 350+ council portals. Quote while the homeowner is still deciding who to hire - get in before the drawings are even done.</p>
+<h3>What's happening: a homeowner has applied for planning permission</h3>
+<p><b>Why they need you:</b> they can't build without a builder. An application means they're serious and funded, and they'll need someone to price and deliver the job - often before the plans are finalised.</p>
+<p><b>Your edge:</b> quote at design stage, shape the build, and win before competitors even know the project exists.</p>
 <div class="lead-cta"><a class="mini-btn" href="/planningleads/?b=general-builders">See Planning leads <i class="fas fa-arrow-right"></i></a><a class="mini-btn mini-primary" href="/portal/#signup">Start free</a></div>
 </div>
-<div class="lead-card" style="--tc:#6366f1">
+<div class="lead-card">
 <div class="lead-top"><span class="lead-badge"><i class="fas fa-gavel"></i> Tenders</span><i class="fas fa-arrow-trend-up"></i></div>
-<h3>Public construction contracts, matched</h3>
-<p>Councils, NHS and government construction work from Contracts Finder - delivered early so you have time to bid well.</p>
+<h3>What's happening: a public body must procure construction work</h3>
+<p><b>Why they need you:</b> councils, NHS trusts and government must publish contracts before they award them. The budget is already approved and the deadline is fixed - it's guaranteed, funded demand.</p>
+<p><b>Your edge:</b> get the notice early and you have time to prepare a proper bid instead of scrambling.</p>
 <div class="lead-cta"><a class="mini-btn" href="/tenders/?b=construction">See Construction tenders <i class="fas fa-arrow-right"></i></a><a class="mini-btn mini-primary" href="/portal/#signup">Start free</a></div>
 </div>
 </div>
@@ -283,17 +314,22 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 </section>
 
 <!-- ============ ROOFERS ============ -->
-<section class="trade" id="roofers">
+<section class="trade" id="roofers" style="--tc:#10b981">
 <div class="container">
 <div class="trade-head">
-<div class="trade-ic" style="--tc:#10b981"><i class="fas fa-house-chimney"></i></div>
-<div><h2 style="color:#10b981">Roofers</h2><p>Roof work rides on extensions, conversions and new builds - all of which start with a planning application.</p></div>
+<div class="trade-ic"><i class="fas fa-house-chimney"></i></div>
+<div><h2>Roofers</h2><p>Roof work rides on extensions, conversions and new builds - all of which start with a planning application.</p></div>
+</div>
+<div class="trade-why">
+<h4>The need</h4>
+<p>Very few roofs are replaced in isolation. Most roofing work is one package inside a bigger project - an extension, a loft conversion or a new build - and those projects are visible in planning data long before they start. Reaching the homeowner while the project is being planned means you're quoting the roof at the right moment, instead of turning up after the main contractor has already appointed a roofer.</p>
 </div>
 <div class="leads">
-<div class="lead-card" style="--tc:#10b981">
+<div class="lead-card">
 <div class="lead-top"><span class="lead-badge"><i class="fas fa-draw-polygon"></i> Planning Leads</span><i class="fas fa-arrow-trend-up"></i></div>
-<h3>Quote the roof before the build starts</h3>
-<p>Extensions, loft conversions and new builds all need a roof. Contact the applicant early and price the roof while the project is being planned.</p>
+<h3>What's happening: a project with a roof has been applied for</h3>
+<p><b>Why they need you:</b> every extension, conversion or new build needs a roof. The owner will appoint a roofer at some point - your job is to be in the conversation before that decision is made.</p>
+<p><b>Your edge:</b> target extension, loft and new-build applications in your council areas and quote early.</p>
 <div class="lead-cta"><a class="mini-btn" href="/planningleads/?b=roofers">See Roofing planning leads <i class="fas fa-arrow-right"></i></a><a class="mini-btn mini-primary" href="/portal/#signup">Start free</a></div>
 </div>
 </div>
@@ -302,17 +338,22 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 </section>
 
 <!-- ============ LOFT & EXTENSIONS ============ -->
-<section class="trade" id="loft-extensions">
+<section class="trade" id="loft-extensions" style="--tc:#10b981">
 <div class="container">
 <div class="trade-head">
-<div class="trade-ic" style="--tc:#10b981"><i class="fas fa-house"></i></div>
-<div><h2 style="color:#10b981">Loft Conversions &amp; Extensions</h2><p>This trade lives and dies on planning applications. Get them the day they're filed.</p></div>
+<div class="trade-ic"><i class="fas fa-house"></i></div>
+<div><h2>Loft Conversions &amp; Extensions</h2><p>This trade lives and dies on planning applications. Get them the day they're filed.</p></div>
+</div>
+<div class="trade-why">
+<h4>The need</h4>
+<p>Loft conversion and extension firms only have work when homeowners decide to expand - and that decision shows up publicly as a planning application. By then the owner is committed, funded and thinking about who will build it. It's the earliest point at which you can reach them, and it's before the 'recommended a builder' word-of-mouth stage that usually wins the job.</p>
 </div>
 <div class="leads">
-<div class="lead-card" style="--tc:#10b981">
+<div class="lead-card">
 <div class="lead-top"><span class="lead-badge"><i class="fas fa-draw-polygon"></i> Planning Leads</span><i class="fas fa-arrow-trend-up"></i></div>
-<h3>Applications are your pipeline</h3>
-<p>Filter planning by extension, loft and conversion types in your council areas. Speak to the homeowner while they're gathering quotes.</p>
+<h3>What's happening: a homeowner wants to extend or convert</h3>
+<p><b>Why they need you:</b> they've applied to build, so they need a company to design and deliver it. They'll be gathering quotes in the coming weeks - often clueless about who to use.</p>
+<p><b>Your edge:</b> get in first with a helpful, specific quote for their exact project type and you become the benchmark they judge others against.</p>
 <div class="lead-cta"><a class="mini-btn" href="/planningleads/?b=loft-conversion-companies">See Loft &amp; Extension leads <i class="fas fa-arrow-right"></i></a><a class="mini-btn mini-primary" href="/portal/#signup">Start free</a></div>
 </div>
 </div>
@@ -321,17 +362,22 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 </section>
 
 <!-- ============ ARCHITECTS & SURVEYORS ============ -->
-<section class="trade" id="architects-surveyors">
+<section class="trade" id="architects-surveyors" style="--tc:#10b981">
 <div class="container">
 <div class="trade-head">
-<div class="trade-ic" style="--tc:#10b981"><i class="fas fa-ruler-combined"></i></div>
-<div><h2 style="color:#10b981">Architects &amp; Surveyors</h2><p>Win the instruction at the very start - most planning applications need drawings and professional input.</p></div>
+<div class="trade-ic"><i class="fas fa-ruler-combined"></i></div>
+<div><h2>Architects &amp; Surveyors</h2><p>Win the instruction at the very start - most planning applications need drawings and professional input.</p></div>
+</div>
+<div class="trade-why">
+<h4>The need</h4>
+<p>Most planning applications can't proceed without drawings, plans or a professional assessment - so applicants are actively looking for an architect or surveyor. Many haven't appointed anyone yet when they apply. Monitoring new applications puts you in front of the project before a designer has been chosen, and lets you shape the scheme from day one.</p>
 </div>
 <div class="leads">
-<div class="lead-card" style="--tc:#10b981">
+<div class="lead-card">
 <div class="lead-top"><span class="lead-badge"><i class="fas fa-draw-polygon"></i> Planning Leads</span><i class="fas fa-arrow-trend-up"></i></div>
-<h3>New applications need designs</h3>
-<p>Reach applicants early - from full plans and new builds to extensions and listed buildings - before they've appointed a designer.</p>
+<h3>What's happening: a new planning application needs professional input</h3>
+<p><b>Why they need you:</b> from full plans and new builds to extensions and listed buildings, applicants need design and surveying expertise to get approval and to build.</p>
+<p><b>Your edge:</b> approach applicants early, offer a clear scope, and you can win the design instruction - and often the project management that follows.</p>
 <div class="lead-cta"><a class="mini-btn" href="/planningleads/?b=architects">See Architect &amp; Surveyor leads <i class="fas fa-arrow-right"></i></a><a class="mini-btn mini-primary" href="/portal/#signup">Start free</a></div>
 </div>
 </div>
@@ -340,17 +386,22 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 </section>
 
 <!-- ============ LANDSCAPERS ============ -->
-<section class="trade" id="landscapers">
+<section class="trade" id="landscapers" style="--tc:#10b981">
 <div class="container">
 <div class="trade-head">
-<div class="trade-ic" style="--tc:#10b981"><i class="fas fa-tree"></i></div>
-<div><h2 style="color:#10b981">Landscapers &amp; Gardeners</h2><p>New builds and extensions leave gardens to landscape. Planning tells you where.</p></div>
+<div class="trade-ic"><i class="fas fa-tree"></i></div>
+<div><h2>Landscapers &amp; Gardeners</h2><p>New builds and extensions leave gardens to design. Planning tells you where.</p></div>
+</div>
+<div class="trade-why">
+<h4>The need</h4>
+<p>Landscaping usually follows someone else's project: a new build finishes, an extension opens onto a wrecked garden, or tree works are applied for. Owners need a garden designed, planted and maintained once the building work is done - and tree and landscaping works also appear directly in planning data. It's a second contract from the same event.</p>
 </div>
 <div class="leads">
-<div class="lead-card" style="--tc:#10b981">
+<div class="lead-card">
 <div class="lead-top"><span class="lead-badge"><i class="fas fa-draw-polygon"></i> Planning Leads</span><i class="fas fa-arrow-trend-up"></i></div>
-<h3>Landscaping and tree works show up in planning</h3>
-<p>Tree works, landscaping and new-build schemes appear in council planning data. Land the garden contract from the same project.</p>
+<h3>What's happening: building work that leaves a garden to sort</h3>
+<p><b>Why they need you:</b> new builds and extensions create fresh outdoor space that needs designing, planting and maintaining, and tree works need a qualified contractor.</p>
+<p><b>Your edge:</b> time your approach to just after the build completes and offer a full landscape + maintenance package.</p>
 <div class="lead-cta"><a class="mini-btn" href="/planningleads/?b=landscapers">See Landscaping leads <i class="fas fa-arrow-right"></i></a><a class="mini-btn mini-primary" href="/portal/#signup">Start free</a></div>
 </div>
 </div>
@@ -359,17 +410,22 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 </section>
 
 <!-- ============ PROBATE SOLICITORS ============ -->
-<section class="trade" id="probate-solicitors">
+<section class="trade" id="probate-solicitors" style="--tc:#a855f7">
 <div class="container">
 <div class="trade-head">
-<div class="trade-ic" style="--tc:#a855f7"><i class="fas fa-scale-balanced"></i></div>
-<div><h2 style="color:#a855f7">Probate &amp; Wills Solicitors</h2><p>When a grant of probate is applied for, the family is choosing who to instruct. Be first.</p></div>
+<div class="trade-ic"><i class="fas fa-scale-balanced"></i></div>
+<div><h2>Probate &amp; Wills Solicitors</h2><p>When a grant of probate is applied for, the family is choosing who to instruct. Be first.</p></div>
+</div>
+<div class="trade-why">
+<h4>The need</h4>
+<p>When someone dies, the estate has to be dealt with legally: probate, inheritance tax, the will, the property. It's a professional instruction, and families under stress almost always choose the first firm that approaches them with clarity and empathy. Most people have no solicitor lined up, so whoever reaches them first and demonstrates competence usually wins.</p>
 </div>
 <div class="leads">
-<div class="lead-card" style="--tc:#a855f7">
+<div class="lead-card">
 <div class="lead-top"><span class="lead-badge"><i class="fas fa-scale-balanced"></i> Probate Leads</span><i class="fas fa-arrow-trend-up"></i></div>
-<h3>Official Gov.uk Probate Register, daily</h3>
-<p>Every new probate application, filtered by county and estate value. Contact the executor or family early to win the estate administration and will instructions.</p>
+<h3>What's happening: a grant of probate has just been applied for</h3>
+<p><b>Why they need you:</b> someone has died and their family must administer the estate. Many have never done it before and need guidance - from probate itself to IHT, wills and the sale of the property.</p>
+<p><b>Your edge:</b> the official Gov.uk Probate Register tells you the moment an application is filed, so you can reach the executor early with a sensitive, professional approach.</p>
 <div class="lead-cta"><a class="mini-btn" href="/probateleads/?b=probate-solicitors">See Probate leads <i class="fas fa-arrow-right"></i></a><a class="mini-btn mini-primary" href="/portal/#signup">Start free</a></div>
 </div>
 </div>
@@ -378,17 +434,22 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 </section>
 
 <!-- ============ ESTATE & FUNERAL ============ -->
-<section class="trade" id="estate-services">
+<section class="trade" id="estate-services" style="--tc:#a855f7">
 <div class="container">
 <div class="trade-head">
-<div class="trade-ic" style="--tc:#a855f7"><i class="fas fa-file-signature"></i></div>
-<div><h2 style="color:#a855f7">Estate Administration &amp; Funeral Directors</h2><p>Families need practical and professional help the moment probate begins.</p></div>
+<div class="trade-ic"><i class="fas fa-file-signature"></i></div>
+<div><h2>Estate Administration &amp; Funeral Directors</h2><p>Families need practical and professional help the moment probate begins.</p></div>
+</div>
+<div class="trade-why">
+<h4>The need</h4>
+<p>Probate is the trigger for a wave of practical needs: the estate must be administered, the home cleared and maintained, finances and investments sorted, and arrangements made. A probate application signals a family in the middle of one of life's hardest moments who needs sensitive, trusted suppliers. Trust and timing - not price - win here.</p>
 </div>
 <div class="leads">
-<div class="lead-card" style="--tc:#a855f7">
+<div class="lead-card">
 <div class="lead-top"><span class="lead-badge"><i class="fas fa-scale-balanced"></i> Probate Leads</span><i class="fas fa-arrow-trend-up"></i></div>
-<h3>Estate administration and funeral services</h3>
-<p>Reach families managing an estate early with sensitive, timely outreach - from administration and financial advice to funeral arrangements.</p>
+<h3>What's happening: an estate has entered probate</h3>
+<p><b>Why they need you:</b> someone must administer the estate, and families often need professional help with estate administration, financial affairs, funeral arrangements and the property.</p>
+<p><b>Your edge:</b> reach the family quickly and gently; being the most human, responsive firm wins the work.</p>
 <div class="lead-cta"><a class="mini-btn" href="/probateleads/?b=estate-administration">See Estate leads <i class="fas fa-arrow-right"></i></a><a class="mini-btn mini-primary" href="/portal/#signup">Start free</a></div>
 </div>
 </div>
@@ -397,17 +458,22 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 </section>
 
 <!-- ============ ESTATE AGENTS ============ -->
-<section class="trade" id="estate-agents">
+<section class="trade" id="estate-agents" style="--tc:#a855f7">
 <div class="container">
 <div class="trade-head">
-<div class="trade-ic" style="--tc:#a855f7"><i class="fas fa-house-user"></i></div>
-<div><h2 style="color:#a855f7">Estate Agents</h2><p>A probate property is a listing waiting to happen. Reach the executor before another agent does.</p></div>
+<div class="trade-ic"><i class="fas fa-house-user"></i></div>
+<div><h2>Estate Agents</h2><p>A probate property is a listing waiting to happen. Reach the executor before another agent does.</p></div>
+</div>
+<div class="trade-why">
+<h4>The need</h4>
+<p>Probate almost always ends with a property being sold. The family - usually an executor with no agency relationship - needs to value and market the home, often while grieving. Agents who make a warm, professional approach early win the instruction before any competitor is even on the family's radar.</p>
 </div>
 <div class="leads">
-<div class="lead-card" style="--tc:#a855f7">
+<div class="lead-card">
 <div class="lead-top"><span class="lead-badge"><i class="fas fa-scale-balanced"></i> Probate Leads</span><i class="fas fa-arrow-trend-up"></i></div>
-<h3>Estate sales start with probate</h3>
-<p>Properties in probate will need valuing and selling. Approach the family early to win the instruction.</p>
+<h3>What's happening: a property will need to be valued and sold</h3>
+<p><b>Why they need you:</b> an estate property must be sold. The executor will choose an agent - and often just picks the first credible one to call.</p>
+<p><b>Your edge:</b> contact the family early with a no-pressure valuation offer and you can secure the instruction before the house is even ready.</p>
 <div class="lead-cta"><a class="mini-btn" href="/probateleads/?b=estate-agents">See Estate Agent leads <i class="fas fa-arrow-right"></i></a><a class="mini-btn mini-primary" href="/portal/#signup">Start free</a></div>
 </div>
 </div>
@@ -416,17 +482,22 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 </section>
 
 <!-- ============ ACCOUNTANTS ============ -->
-<section class="trade" id="accountants">
+<section class="trade" id="accountants" style="--tc:#06b6d4">
 <div class="container">
 <div class="trade-head">
-<div class="trade-ic" style="--tc:#06b6d4"><i class="fas fa-calculator"></i></div>
-<div><h2 style="color:#06b6d4">Accountants &amp; Bookkeepers</h2><p>Newly incorporated companies choose an accountant in their first weeks - often before they've made a sale.</p></div>
+<div class="trade-ic"><i class="fas fa-calculator"></i></div>
+<div><h2>Accountants &amp; Bookkeepers</h2><p>Newly incorporated companies choose an accountant in their first weeks - often before their first sale.</p></div>
+</div>
+<div class="trade-why">
+<h4>The need</h4>
+<p>Every new company must deal with accounts, payroll, VAT and tax from day one - it's a legal requirement, not a nice-to-have. Directors are usually first-timers who don't have an accountant yet and are actively looking. That makes incorporation the single best moment to win a long-term client, because there's no incumbent to displace.</p>
 </div>
 <div class="leads">
-<div class="lead-card" style="--tc:#06b6d4">
+<div class="lead-card">
 <div class="lead-top"><span class="lead-badge"><i class="fas fa-building-columns"></i> New Business Leads</span><i class="fas fa-arrow-trend-up"></i></div>
-<h3>Companies House, every day</h3>
-<p>Every newly registered UK company, filterable by SIC code and location. They need bookkeeping, payroll and tax advice - get in while they're still choosing.</p>
+<h3>What's happening: a new company has just been incorporated</h3>
+<p><b>Why they need you:</b> they have legal filing, payroll, VAT and tax obligations and no accountant lined up. Most are choosing one in their first few weeks.</p>
+<p><b>Your edge:</b> target the industries you're strongest in and approach at incorporation - you become the obvious, easy choice.</p>
 <div class="lead-cta"><a class="mini-btn" href="/newbusinessalert/?b=accountants">See New Business leads <i class="fas fa-arrow-right"></i></a><a class="mini-btn mini-primary" href="/portal/#signup">Start free</a></div>
 </div>
 </div>
@@ -435,17 +506,22 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 </section>
 
 <!-- ============ WEB & MARKETING ============ -->
-<section class="trade" id="web-marketing">
+<section class="trade" id="web-marketing" style="--tc:#06b6d4">
 <div class="container">
 <div class="trade-head">
-<div class="trade-ic" style="--tc:#06b6d4"><i class="fas fa-code"></i></div>
-<div><h2 style="color:#06b6d4">Web, Marketing &amp; SEO</h2><p>New businesses need a website, branding and customers. Time your pitch to week one.</p></div>
+<div class="trade-ic"><i class="fas fa-code"></i></div>
+<div><h2>Web, Marketing &amp; SEO</h2><p>New businesses need a website, branding and customers. Time your pitch to week one.</p></div>
+</div>
+<div class="trade-why">
+<h4>The need</h4>
+<p>A brand-new business can't trade without a web presence and a way to get customers. Website, branding, SEO and ads are among the first purchases a start-up makes - and at that point they have no agency, no loyalty and no existing provider. It's the cleanest opportunity in B2B marketing.</p>
 </div>
 <div class="leads">
-<div class="lead-card" style="--tc:#06b6d4">
+<div class="lead-card">
 <div class="lead-top"><span class="lead-badge"><i class="fas fa-building-columns"></i> New Business Leads</span><i class="fas fa-arrow-trend-up"></i></div>
-<h3>Start-ups buy websites and marketing first</h3>
-<p>Fresh Companies House registrations filtered by industry - pitch web design, SEO and marketing while they're setting up.</p>
+<h3>What's happening: a start-up needs to be found</h3>
+<p><b>Why they need you:</b> they need a website and leads to grow, and they haven't been courted by anyone yet. Most haven't even chosen a domain strategy.</p>
+<p><b>Your edge:</b> pitch a clear, productised offer (site + launch marketing) to new companies filtered by industry - you'll reach them before any agency does.</p>
 <div class="lead-cta"><a class="mini-btn" href="/newbusinessalert/?b=web-designers">See Web &amp; Marketing leads <i class="fas fa-arrow-right"></i></a><a class="mini-btn mini-primary" href="/portal/#signup">Start free</a></div>
 </div>
 </div>
@@ -454,23 +530,29 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 </section>
 
 <!-- ============ IT & TECH ============ -->
-<section class="trade" id="it-technology">
+<section class="trade" id="it-technology" style="--tc:#06b6d4">
 <div class="container">
 <div class="trade-head">
-<div class="trade-ic" style="--tc:#06b6d4"><i class="fas fa-laptop-code"></i></div>
-<div><h2 style="color:#06b6d4">IT &amp; Technology</h2><p>New companies need IT from day one - and the public sector buys IT constantly.</p></div>
+<div class="trade-ic"><i class="fas fa-laptop-code"></i></div>
+<div><h2>IT &amp; Technology</h2><p>New companies need IT from day one - and the public sector buys IT constantly.</p></div>
+</div>
+<div class="trade-why">
+<h4>The need</h4>
+<p>Every new company needs email, devices, software and support immediately - often sorted in a panic during week one with no provider in place. On the other side, the public sector buys IT and digital services on long, published contracts with approved budgets. Both are strong, funded demand - one from start-ups, one from government.</p>
 </div>
 <div class="leads">
-<div class="lead-card" style="--tc:#06b6d4">
+<div class="lead-card">
 <div class="lead-top"><span class="lead-badge"><i class="fas fa-building-columns"></i> New Business Leads</span><i class="fas fa-arrow-trend-up"></i></div>
-<h3>New companies need IT and support</h3>
-<p>Companies House registrations filtered by sector - pitch managed IT, software and support before they've chosen a provider.</p>
+<h3>What's happening: a new company needs IT set up</h3>
+<p><b>Why they need you:</b> they need managed IT, software and support to operate, and they're choosing a provider now - usually with none in place.</p>
+<p><b>Your edge:</b> target the sectors you serve best and approach at incorporation with a simple onboarding offer.</p>
 <div class="lead-cta"><a class="mini-btn" href="/newbusinessalert/?b=it-support">See IT leads <i class="fas fa-arrow-right"></i></a><a class="mini-btn mini-primary" href="/portal/#signup">Start free</a></div>
 </div>
-<div class="lead-card" style="--tc:#6366f1">
+<div class="lead-card">
 <div class="lead-top"><span class="lead-badge"><i class="fas fa-gavel"></i> Tenders</span><i class="fas fa-arrow-trend-up"></i></div>
-<h3>Public sector IT contracts</h3>
-<p>Government, council and NHS IT and digital contracts from Contracts Finder - matched and delivered early so you can bid.</p>
+<h3>What's happening: a public body is procuring IT</h3>
+<p><b>Why they need you:</b> government, councils and the NHS must buy IT and digital services through published contracts - with the budget already approved.</p>
+<p><b>Your edge:</b> get the notice early and you have time to build a winning bid rather than racing the deadline.</p>
 <div class="lead-cta"><a class="mini-btn" href="/tenders/?b=it-services">See IT tenders <i class="fas fa-arrow-right"></i></a><a class="mini-btn mini-primary" href="/portal/#signup">Start free</a></div>
 </div>
 </div>
@@ -479,17 +561,22 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 </section>
 
 <!-- ============ INSURANCE & RECRUITMENT ============ -->
-<section class="trade" id="insurance-recruitment">
+<section class="trade" id="insurance-recruitment" style="--tc:#06b6d4">
 <div class="container">
 <div class="trade-head">
-<div class="trade-ic" style="--tc:#06b6d4"><i class="fas fa-shield-halved"></i></div>
-<div><h2 style="color:#06b6d4">Insurance &amp; Recruitment</h2><p>Every new business needs cover and staff. Reach them at incorporation.</p></div>
+<div class="trade-ic"><i class="fas fa-shield-halved"></i></div>
+<div><h2>Insurance &amp; Recruitment</h2><p>Every new business needs cover and staff. Reach them at incorporation.</p></div>
+</div>
+<div class="trade-why">
+<h4>The need</h4>
+<p>A new business often can't legally operate or take on work without insurance, and as soon as it grows it needs staff. Both needs arise at - or just after - incorporation, when the directors are setting everything up and have no broker or recruiter yet. It's the moment to build a relationship that can last for years.</p>
 </div>
 <div class="leads">
-<div class="lead-card" style="--tc:#06b6d4">
+<div class="lead-card">
 <div class="lead-top"><span class="lead-badge"><i class="fas fa-building-columns"></i> New Business Leads</span><i class="fas fa-arrow-trend-up"></i></div>
-<h3>New companies need insurance and hires</h3>
-<p>Freshly incorporated businesses filtered by sector and location - pitch commercial insurance or your first recruitment mandate early.</p>
+<h3>What's happening: a new company needs cover and hires</h3>
+<p><b>Why they need you:</b> commercial insurance is often a legal requirement, and growth creates hiring needs - both without an existing provider.</p>
+<p><b>Your edge:</b> approach early with a tailored quote or a first-hire plan and you can become their long-term partner.</p>
 <div class="lead-cta"><a class="mini-btn" href="/newbusinessalert/?b=insurance-brokers">See New Business leads <i class="fas fa-arrow-right"></i></a><a class="mini-btn mini-primary" href="/portal/#signup">Start free</a></div>
 </div>
 </div>
@@ -498,23 +585,29 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 </section>
 
 <!-- ============ CLEANING & SECURITY ============ -->
-<section class="trade" id="cleaning-security">
+<section class="trade" id="cleaning-security" style="--tc:#6366f1">
 <div class="container">
 <div class="trade-head">
-<div class="trade-ic" style="--tc:#6366f1"><i class="fas fa-broom"></i></div>
-<div><h2 style="color:#6366f1">Cleaning, Security &amp; Facilities</h2><p>Public bodies and growing companies buy these services on contract.</p></div>
+<div class="trade-ic"><i class="fas fa-broom"></i></div>
+<div><h2>Cleaning, Security &amp; Facilities</h2><p>Public bodies and growing companies buy these services on contract.</p></div>
+</div>
+<div class="trade-why">
+<h4>The need</h4>
+<p>Facilities services are bought on contract, not one-off. Public bodies must procure cleaning, security and maintenance through published tenders with approved budgets, and new companies setting up premises need a provider from week one. Both are recurring, contract-based work - exactly the kind of predictable revenue that grows a business.</p>
 </div>
 <div class="leads">
-<div class="lead-card" style="--tc:#6366f1">
+<div class="lead-card">
 <div class="lead-top"><span class="lead-badge"><i class="fas fa-gavel"></i> Tenders</span><i class="fas fa-arrow-trend-up"></i></div>
-<h3>Public contracts for services</h3>
-<p>Councils, schools, NHS and government facilities contracts - cleaning, security and maintenance - from Contracts Finder, delivered early.</p>
+<h3>What's happening: a public body is buying facilities services</h3>
+<p><b>Why they need you:</b> councils, schools, the NHS and government must contract cleaning, security and maintenance services - the budget is already committed.</p>
+<p><b>Your edge:</b> bids are won on early preparation; getting the notice the day it's published gives you the edge.</p>
 <div class="lead-cta"><a class="mini-btn" href="/tenders/">See Public Tenders <i class="fas fa-arrow-right"></i></a><a class="mini-btn mini-primary" href="/portal/#signup">Start free</a></div>
 </div>
-<div class="lead-card" style="--tc:#06b6d4">
+<div class="lead-card">
 <div class="lead-top"><span class="lead-badge"><i class="fas fa-building-columns"></i> New Business Leads</span><i class="fas fa-arrow-trend-up"></i></div>
-<h3>New premises mean new contracts</h3>
-<p>Newly formed businesses setting up premises need cleaning and security. Reach them at the start.</p>
+<h3>What's happening: a new company is setting up premises</h3>
+<p><b>Why they need you:</b> new businesses need cleaning and security from the moment they open, usually with no provider in place.</p>
+<p><b>Your edge:</b> approach at incorporation and offer a simple monthly contract - recurring revenue from a brand-new client.</p>
 <div class="lead-cta"><a class="mini-btn" href="/newbusinessalert/?b=business-consultants">See New Business leads <i class="fas fa-arrow-right"></i></a><a class="mini-btn mini-primary" href="/portal/#signup">Start free</a></div>
 </div>
 </div>
@@ -523,17 +616,22 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 </section>
 
 <!-- ============ HEALTHCARE & TRANSPORT ============ -->
-<section class="trade" id="healthcare-transport">
+<section class="trade" id="healthcare-transport" style="--tc:#6366f1">
 <div class="container">
 <div class="trade-head">
-<div class="trade-ic" style="--tc:#6366f1"><i class="fas fa-truck-medical"></i></div>
-<div><h2 style="color:#6366f1">Healthcare, Care &amp; Transport</h2><p>NHS, councils and government buy care and transport services on public contracts.</p></div>
+<div class="trade-ic"><i class="fas fa-truck-medical"></i></div>
+<div><h2>Healthcare, Care &amp; Transport</h2><p>NHS, councils and government buy care and transport services on public contracts.</p></div>
+</div>
+<div class="trade-why">
+<h4>The need</h4>
+<p>Health, social care and patient/transport services are commissioned by the public sector, which is legally obliged to publish contracts before awarding them. That means the demand is guaranteed and the money is already ring-fenced - you're not persuading someone to spend, you're competing for work that must be given out.</p>
 </div>
 <div class="leads">
-<div class="lead-card" style="--tc:#6366f1">
+<div class="lead-card">
 <div class="lead-top"><span class="lead-badge"><i class="fas fa-gavel"></i> Tenders</span><i class="fas fa-arrow-trend-up"></i></div>
-<h3>Healthcare, social care and transport contracts</h3>
-<p>Public care and transport contracts from Contracts Finder, filtered to your services and areas - early enough to bid properly.</p>
+<h3>What's happening: the public sector is commissioning care and transport</h3>
+<p><b>Why they need you:</b> NHS trusts, councils and government must procure these services - the need is real and the budget is committed.</p>
+<p><b>Your edge:</b> Contracts Finder shows the opportunity the day it's published; early notice means a properly prepared bid.</p>
 <div class="lead-cta"><a class="mini-btn" href="/tenders/?b=healthcare">See Care &amp; Transport tenders <i class="fas fa-arrow-right"></i></a><a class="mini-btn mini-primary" href="/portal/#signup">Start free</a></div>
 </div>
 </div>
