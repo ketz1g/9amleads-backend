@@ -8929,7 +8929,7 @@ app.get('/api/public-stats', async (req, res) => {
     const thisMonth = today.substring(0, 7);
     const leads = (db.leads || []);
     const leadsThisMonth = leads.filter(l => l.created_at && l.created_at.startsWith(thisMonth));
-    const customers = (db.customers || []).filter(c => c.plan && c.plan !== 'cancelled');
+    const customers = (db.customers || []).filter(c => c.plan && c.plan !== 'cancelled' && !isInternalAccount(c));
     const delivered = leads.filter(l => l.delivered);
     const totalValue = delivered.reduce(function(sum, l) { return sum + (parseInt(l.estimated_value) || parseInt(l.deal_value) || 0); }, 0);
 
@@ -12740,7 +12740,7 @@ async function preVerifyMovingLeads() {
   global.__POSTCODER_EARLY_CTX__ = true;
   setTimeout(function() { try { global.__POSTCODER_EARLY_CTX__ = false; } catch(e) {} }, 15 * 60 * 1000);
   var dbv = getDb();
-  var movingCusts = (dbv.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && !isLeadsPaused(c) && c.product === 'moving'; });
+  var movingCusts = (dbv.customers || []).filter(function(c) { return !isInternalAccount(c) && c.plan && c.plan !== 'cancelled' && !isLeadsPaused(c) && c.product === 'moving'; });
   var poolFile = path.join(DATA_DIR, PRODUCT_LEAD_FILES.moving ? PRODUCT_LEAD_FILES.moving.file : 'moving-leads.json');
   var raw = null;
   try { raw = JSON.parse(fs.readFileSync(poolFile, 'utf-8')); } catch(e) { console.log('[PREVERIFY] pool unreadable'); return { ok: false }; }
@@ -16139,6 +16139,7 @@ app.get('/api/signup/competition-areas', (req, res) => {
     var dbA = getDb();
     var now = new Date();
     var custs = (dbA.customers || []).filter(function(c) {
+      if (isInternalAccount(c)) return false;
       if (String(c.product || '').toLowerCase() !== product) return false;
       if (c.plan === 'cancelled') return false;
       if (isLeadsPaused(c)) return false;
@@ -16206,6 +16207,7 @@ app.get('/api/signup/competition', (req, res) => {
     var dbC = getDb();
     var now = new Date();
     var custs = (dbC.customers || []).filter(function(c) {
+      if (isInternalAccount(c)) return false;
       if (String(c.product || '').toLowerCase() !== product) return false;
       if (c.plan === 'cancelled') return false;
       if (isLeadsPaused(c)) return false;
@@ -18074,9 +18076,9 @@ function clearStuckPausedFlags() {
     var cleared = 0;
     var todayStr = new Date().toISOString().split('T')[0];
     (dbj.customers || []).forEach(function(c) {
-      // NEVER auto-unpause test/seed accounts - they stay paused so the real
-      // customer pools aren't drained by the test fleet.
-      if (/test\.|@9amleads\.com|\.1788\d*@/i.test(String(c.email || ''))) return;
+      // NEVER auto-unpause internal/test/demo/seed accounts - they stay paused so the
+      // real customer pools aren't drained by the test fleet.
+      if (isInternalAccount(c)) return;
       // Intentional holiday pause (customer set a resume date): resume only on/after
       // that date; never auto-clear it early.
       if (c.pause_resume_at) {
@@ -19133,9 +19135,9 @@ cron.schedule('0 10 * * 2', async () => {
     var cutoff7 = new Date(now - 7 * 86400000).toISOString();
     var cutoff14 = new Date(now - 14 * 86400000).toISOString();
     var custs = (ahDb.customers || []).filter(function(c) {
+      if (isInternalAccount(c)) return false;
       if (c.plan === 'cancelled' || isLeadsPaused(c)) return false;
       if (!c.created_at || c.created_at > cutoff14) return false; // only customers 2+ weeks in
-      if (String(c.email || '').indexOf('test.') === 0) return false;
       return true;
     });
     var sent = 0;
@@ -19198,6 +19200,7 @@ cron.schedule('10 9 * * 1-5', async () => {
     // A free trial that has ENDED no longer receives daily leads - promising them
     // "your leads are on the way" would be wrong (their trial is over, not delayed).
     var sCusts = (sDb.customers || []).filter(function(c) {
+      if (isInternalAccount(c)) return false;
       if (!c.plan || c.plan === 'cancelled' || isLeadsPaused(c)) return false;
       if (c.plan === 'free_trial' && c.trial_ends && new Date(c.trial_ends) <= new Date()) return false;
       return true;
@@ -19241,7 +19244,7 @@ cron.schedule('20 9 * * 1-5', async () => {
     var todayC = new Date().toISOString().split('T')[0];
     var cNotified = {};
     try { if (cDb.notify_status && cDb.notify_status[todayC]) cNotified = cDb.notify_status[todayC]; } catch(e) {}
-    var cCusts = (cDb.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && !isLeadsPaused(c) && !trialExpiredUnpaid(c); });
+    var cCusts = (cDb.customers || []).filter(function(c) { return !isInternalAccount(c) && c.plan && c.plan !== 'cancelled' && !isLeadsPaused(c) && !trialExpiredUnpaid(c); });
     for (var cci = 0; cci < cCusts.length; cci++) {
       var cc = cCusts[cci];
       var cKey = cc.id || cc.email;
@@ -19405,14 +19408,10 @@ cron.schedule('30 6 * * 1-5', async () => {
 async function runFulfilmentGuarantee(label) {
   try {
     var gDb = getDb();
-    var gCusts = (gDb.customers || []).filter(function(c) {
-      if (!c.plan || c.plan === 'cancelled' || isLeadsPaused(c)) return false;
-      if (c.plan === 'free_trial' && c.trial_ends && new Date(c.trial_ends) <= new Date()) return false;
-      // skip test/seed accounts
-      var ge = String(c.email || '').toLowerCase();
-      if (ge.indexOf('@9amleads.com') !== -1 || ge.indexOf('test.') === 0 || /\.1788\d*@/.test(ge)) return false;
-      return true;
-    });
+    // Same filters the delivery engine uses. The old ad-hoc list skipped @9amleads.com
+    // and test.* accounts but NOT the affiliate demo customers (demo.ref*@example.com),
+    // so those were reported as real 9am shortfalls every morning.
+    var gCusts = (gDb.customers || []).filter(function(c) { return !isInternalAccount(c) && isEntitledForDelivery(c); });
     var gShort = [];
     var gShortProds = {};
     for (var gi = 0; gi < gCusts.length; gi++) {
@@ -19574,7 +19573,7 @@ cron.schedule('1 9 * * 1-5', async () => {
       // EXCLUDE expired trials: they are not owed leads, so a "your leads are on
       // the way" delay notice must never reach them (that belongs to the re-join
       // campaign, not delivery ops). Paused/cancelled/bounced also excluded.
-      var wCustomers = (wDb.customers || []).filter(function(c){ return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3) && !isLeadsPaused(c) && !trialExpiredUnpaid(c); });
+      var wCustomers = (wDb.customers || []).filter(function(c){ return !isInternalAccount(c) && c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3) && !isLeadsPaused(c) && !trialExpiredUnpaid(c); });
       var wSubject = '🦥 Your leads had a lie-in - but they\'re on the way!';
       var wBody = '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:16px">'
         + '<h2 style="color:#fbbf24;margin:0 0 8px">Oops, the 9am alarm was a bit sleepy today 😴</h2>'
@@ -19711,6 +19710,7 @@ function runHealthAlerts() {
       var dbA2 = getDb();
       var need = { moving: 0, probate: 0, newbusiness: 0, planning: 0, tenders: 0 };
       (dbA2.customers || []).forEach(function(c) {
+        if (isInternalAccount(c)) return;
         if (!c.plan || c.plan === 'cancelled' || isLeadsPaused(c)) return;
         if (c.trial_ends && new Date(c.trial_ends) <= new Date()) return;
         var p = c.product || 'moving';
@@ -19783,7 +19783,7 @@ function sendDailyDeliveryPreview(when) {
   return new Promise(function(resolve) {
     try {
       var dbD2 = getDb();
-      var customers = (dbD2.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && !isLeadsPaused(c) && !trialExpiredUnpaid(c) && !/test\.|@9amleads\.com|\.1788\d*@/i.test(String(c.email || '')); });
+      var customers = (dbD2.customers || []).filter(function(c) { return !isInternalAccount(c) && isEntitledForDelivery(c); });
       var rows = [];
       var _seen = {};
       var processIdx = 0;
@@ -19828,9 +19828,9 @@ async function sendExpectedBatchReport(mode) {
   try {
     var dbB = getDb();
     var customers = (dbB.customers || []).filter(function(c) {
-      // Mirror the REAL 9am delivery exactly: expired unpaid trials and paused/test
-      // accounts get no leads, so they must never appear here.
-      return c.plan && c.plan !== 'cancelled' && !isLeadsPaused(c) && !trialExpiredUnpaid(c) && !/test\.|@9amleads\.com|\.1788\d*@/i.test(String(c.email || ''));
+      // Mirror the REAL 9am delivery exactly: internal/test/demo accounts and expired
+      // unpaid trials get no leads, so they must never appear here.
+      return !isInternalAccount(c) && isEntitledForDelivery(c);
     });
     var FONT = "-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
     var seen = {};
@@ -19950,7 +19950,7 @@ async function warmUpDeliveryPaf() {
   setTimeout(function() { try { global.__POSTCODER_EARLY_CTX__ = false; } catch(e) {} }, 15 * 60 * 1000);
   var dbW = getDb();
   var custs = (dbW.customers || []).filter(function(c) {
-    return c.product === 'moving' && c.plan && c.plan !== 'cancelled' && !isLeadsPaused(c) && !trialExpiredUnpaid(c) && !/test\.|@9amleads\.com|\.1788\d*@/i.test(String(c.email || ''));
+    return c.product === 'moving' && !isInternalAccount(c) && isEntitledForDelivery(c);
   });
   if (!custs.length) return { customers: 0, enriched: 0 };
   var targetUrls = {};
@@ -20932,7 +20932,7 @@ async function runAutoSend() {
   var dbJSON = getDb();
   var db = db_shim;
   var today = new Date().toISOString().split('T')[0];
-  var customers = (dbJSON.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3) && !isLeadsPaused(c) && !trialExpiredUnpaid(c); });
+  var customers = (dbJSON.customers || []).filter(function(c) { return !isInternalAccount(c) && c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3) && !isLeadsPaused(c) && !trialExpiredUnpaid(c); });
   var results = { checked: 0, enabled: 0, skipped: 0, sent: 0, failed: 0, total_spend: 0, details: [] };
   // Per-customer outcome recorder so the run result explains WHY each account was
   // skipped/failed (previously only totals were returned, so a skip was undiagnosable).
