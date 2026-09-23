@@ -34613,6 +34613,30 @@ async function runDeliveryRehearsal(trigger, opts) {
       if (leads.length !== expected) out.problems.push(c.email + ': ' + leads.length + '/' + expected + ' (must be exactly ' + expected + ')');
       if (badAddr > 0) out.problems.push(c.email + ': ' + badAddr + ' delivered lead(s) not mail-ready');
     });
+    // NEW-CUSTOMER READINESS: new signups are the most likely to be misconfigured
+    // (missing areas, wrong product) and get a silent 0 on their first morning. On
+    // the 08:05 rehearsal, preview every customer created in the last 48h and flag
+    // any that would not get their promised count - so it's caught before 9am.
+    try {
+      var _ncCut = Date.now() - 48 * 3600 * 1000;
+      var _newCusts = (d2.customers || []).filter(function(c) {
+        if (typeof isInternalAccount === 'function' && isInternalAccount(c)) return false;
+        if (typeof isEntitledForDelivery === 'function' && !isEntitledForDelivery(c)) return false;
+        var t = c.created_at ? Date.parse(c.created_at) : 0;
+        return t && t >= _ncCut;
+      });
+      out.new_customers = [];
+      for (var _n = 0; _n < _newCusts.length; _n++) {
+        var nc = _newCusts[_n];
+        var ncExpected = (typeof getPlanLimit === 'function' ? getPlanLimit(nc.product, nc.plan, nc.coverage) : 0) || nc.leads_per_day || 5;
+        var ncPreview = 0;
+        try { var _np = await deliveryPreviewForCustomer(nc); ncPreview = (_np && _np.count) || 0; if (_np && _np.promised) ncExpected = _np.promised; } catch(ncErr) { ncPreview = -1; }
+        out.new_customers.push({ email: nc.email, product: nc.product, expected: ncExpected, preview: ncPreview, areas: (_np && _np.areas) || [] });
+        if (ncPreview < ncExpected) out.problems.push('NEW SIGNUP ' + nc.email + ' (' + nc.product + ') would get ' + (ncPreview < 0 ? '?' : ncPreview) + '/' + ncExpected + ' - check their areas/product');
+      }
+      console.log('[REHEARSAL] new signups (48h): ' + (out.new_customers.length ? out.new_customers.map(function(a){ return a.email + ' ' + a.preview + '/' + a.expected; }).join(' | ') : 'none'));
+    } catch(ncOuter) { console.log('[REHEARSAL] new-customer check error: ' + ncOuter.message); }
+
     out.ok = out.problems.length === 0;
     if (!out.ok) {
       if (!opts.quiet) sendAdminAlert('\u26a0 9am rehearsal FAILED (' + out.trigger + ')', '<p style="color:#ccc;line-height:1.7">The pre-9am delivery rehearsal failed. <b>The real 9am run may fail the same way - fix before 9am.</b></p><ul style="color:#fca5a5;line-height:1.9">' + out.problems.map(function(p){ return '<li>' + p + '</li>'; }).join('') + '</ul><p style="color:#94a3b8;font-size:12px">Run ' + out.duration_ms + 'ms. ' + out.accounts.map(function(a){ return a.email + ' ' + a.delivered + '/' + a.expected; }).join(' | ') + '</p>');
