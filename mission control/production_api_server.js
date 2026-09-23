@@ -25604,7 +25604,10 @@ _deliverDiag[cust.email].products = products;
           var _alertDb = getDb();
           if (!_alertDb.__delivery_alerted) _alertDb.__delivery_alerted = {};
           var _cnt = _alertDb.__delivery_alerted[_alertK] || 0;
-          if (_cnt < 2) {
+          // Never alert for internal/test/demo accounts, during a test_only run, or on a
+          // no_email dry run - otherwise a harmless test spams the founder (and test
+          // accounts are never real delivery failures).
+          if (_cnt < 2 && !testOnly && !_noEmailSkip && !(typeof isInternalAccount === 'function' && isInternalAccount(cust))) {
             _alertDb.__delivery_alerted[_alertK] = _cnt + 1;
             saveDb();
             sendAdminAlert('⚠ Delivery shortfall: ' + cust.email, '<div style="font-size:13px;color:#e2e8f0;line-height:1.7">' +
@@ -26684,7 +26687,11 @@ pushToCrm(cust, crmPayload2, 'daily delivery');
           });
           if (shortfallList.length > 0) {
             console.log('[DELIVER-GUARANTEE] WARNING: ' + cust.email + ' shortfall ' + shortfallList.join(', '));
-            try { dmDashboardNotify(cust.id, 'delivery_shortfall', '⚠️ Fewer leads than promised today', 'You received fewer than your promised daily leads (' + shortfallList.join(', ') + '). Supply was low in your areas today. We\'re working to fill it.', ''); } catch(notifyErr) {}
+            // Don't touch a customer's dashboard on a test_only/no_email run, and never
+            // for an internal/test/demo account.
+            if (!testOnly && !_noEmail && !(typeof isInternalAccount === 'function' && isInternalAccount(cust))) {
+              try { dmDashboardNotify(cust.id, 'delivery_shortfall', '⚠️ Fewer leads than promised today', 'You received fewer than your promised daily leads (' + shortfallList.join(', ') + '). Supply was low in your areas today. We\'re working to fill it.', ''); } catch(notifyErr) {}
+            }
           }
           // Persist per-customer+lead-type fulfilment rows to the daily fulfilment
           // ledger (surfaced via /api/admin/fulfilment-report). Exact-count and
