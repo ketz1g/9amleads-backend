@@ -173,14 +173,14 @@ var CURATED_POSTS = [
     keywords: ['probate leads', 'probate leads for solicitors', 'win probate instructions', 'executor outreach', 'UK probate register'],
     date: '2026-08-19', reading_time: '8 min read',
     faqs: [
-      { q: 'What are probate leads and where do they come from?', a: 'Probate leads are notifications of newly granted probate from the official Gov.uk probate register. Each entry names the deceased and the executor, which tells you a family is actively dealing with an estate and very likely needs legal help, property sale support or tax advice.' },
+      { q: 'What are probate leads and where do they come from?', a: 'Probate leads are notifications of newly granted probate from the official probate register. Each entry names the deceased and the executor, which tells you a family is actively dealing with an estate and very likely needs legal help, property sale support or tax advice.' },
       { q: 'How fast do I need to contact the executor?', a: 'Within 24 to 48 hours of the grant being published. The data consistently shows the first firms to make contact win instruction at far higher rates, while waiting a week means the opportunity has usually gone to someone else.' },
       { q: 'Is cold contacting executors ethical and compliant?', a: 'The probate register is public data. You must follow your firm\'s compliance rules and treat the contact with empathy - a brief, respectful first touch rather than a hard sales pitch. Always honour opt-outs and stop immediately if asked.' },
       { q: 'Can probate leads lead to other work?', a: 'Yes. An executor contact frequently leads to estate administration, conveyancing for the property sale, wills, trusts and tax work. It is one of the highest-value first-touch points in private client law.' }
     ],
     sections: [
       { h: 'Why the first 48 hours decide the instruction', body: [
-        'Every day the Gov.uk probate register publishes new grants. Each one represents a family who has just lost someone and now needs to deal with the estate. The firms that win these instructions are not usually the cheapest or the best known - they are simply the ones who make a respectful first contact first.',
+        'Every day the probate register publishes new grants. Each one represents a family who has just lost someone and now needs to deal with the estate. The firms that win these instructions are not usually the cheapest or the best known - they are simply the ones who make a respectful first contact first.',
         'The data is blunt: contacting an executor within 24 hours wins instructions at a much higher rate than waiting 72 hours, and waiting a week effectively hands the opportunity to a competitor.',
         { cta: 'Get probate leads from the official register delivered at 9am every morning - start your free 7-day trial.' }
       ]},
@@ -207,22 +207,22 @@ var CURATED_POSTS = [
   },
   {
     slug: 'new-business-leads-companies-house-b2b-guide',
-    title: 'New Business Leads From Companies House: A B2B Outreach Guide',
-    description: 'How accountants, web designers, IT firms and other B2B service providers can turn new Companies House registrations into clients - with a practical outreach cadence.',
+    title: 'New Business Leads From company register: A B2B Outreach Guide',
+    description: 'How accountants, web designers, IT firms and other B2B service providers can turn new new company registrations into clients - with a practical outreach cadence.',
     category: 'newbusiness', product_name: 'New Business Leads', categoryLabel: 'New Business Leads',
-    keywords: ['new business leads', 'Companies House leads', 'new company registrations', 'B2B lead generation', 'new business outreach'],
+    keywords: ['new business leads', 'new company leads', 'new company registrations', 'B2B lead generation', 'new business outreach'],
     date: '2026-08-18', reading_time: '7 min read',
     faqs: [
-      { q: 'What is a new business lead?', a: 'It is a newly registered company from the official Companies House register. A new registration means a director has just taken the biggest step of their professional life - and now needs everything from accounts and insurance to websites and IT, often within the first few weeks.' },
+      { q: 'What is a new business lead?', a: 'It is a newly registered company from the official company register. A new registration means a director has just taken the biggest step of their professional life - and now needs everything from accounts and insurance to websites and IT, often within the first few weeks.' },
       { q: 'Why target newly registered companies?', a: 'New companies are actively shopping for services. They have no incumbent supplier yet, which makes them far easier to win than established firms with loyal providers. First-mover advantage matters enormously in the first 30 days.' },
       { q: 'Which businesses should use new business leads?', a: 'Accountants, bookkeepers, web designers, marketing agencies, IT and telecoms providers, insurers, recruiters, solicitors and virtual offices all sell something every new company needs. The register even tells you the company\'s industry via its SIC code.' },
       { q: 'How do I choose which new businesses to contact?', a: 'Filter by SIC code, location and company type to match your ideal client. A small agency might target limited companies in their home region; an accountant might target companies over a certain registered capital or in high-growth sectors.' }
     ],
     sections: [
-      { h: 'The Companies House advantage', body: [
+      { h: 'The company register advantage', body: [
         'Every limited company in the UK appears on the public register the moment it incorporates. That public moment is a commercial opportunity: the new director has made a decision to start trading, and a list of services is needed in the next few weeks.',
         'For B2B providers the timing is the entire game. Contact a director in the first fortnight and you are the only provider they have spoken to. Contact them three months later and they have already chosen their accountant, their bank and their website builder.',
-        { cta: 'Receive new business leads from Companies House every morning at 9am - start your free trial.' }
+        { cta: 'Receive new business leads from company register every morning at 9am - start your free trial.' }
       ]},
       { h: 'Who to target (and how to prioritise)', body: [
         'The register tells you the company type, registered office location and the industry SIC code. That is enough to build a tightly-matched prospect list instead of cold-calling everyone.',
@@ -252,7 +252,7 @@ var CURATED_POSTS = [
     keywords: ['planning permission leads', 'planning application leads', 'planning leads for builders', 'extension leads', 'construction lead generation'],
     date: '2026-08-17', reading_time: '7 min read',
     faqs: [
-      { q: 'What are planning permission leads?', a: 'They are newly submitted planning applications from UK local authority planning portals. Each application names the applicant and the project - a rear extension, loft conversion, new build or kitchen upgrade - which tells you a homeowner is ready to spend money on construction.' },
+      { q: 'What are planning permission leads?', a: 'They are newly submitted planning applications from UK local authority planning data. Each application names the applicant and the project - a rear extension, loft conversion, new build or kitchen upgrade - which tells you a homeowner is ready to spend money on construction.' },
       { q: 'Why should tradespeople target planning applicants?', a: 'Applying for planning permission is a strong buying signal. The applicant has already invested time and money in design work, which means a real project with a budget. Reaching them early means you can quote before they have lined up a builder.' },
       { q: 'How quickly should I respond to a planning lead?', a: 'Fast. Homeowners often collect quotes while their application is being decided, so contacting them within hours of the application being published puts you first in the queue. Speed plus a sensible quote wins most projects.' },
       { q: 'Do I need to wait for planning approval?', a: 'No. You can build a relationship during the decision period - offering advice, cost guidance and design-build services - so that when approval lands you are the builder they already trust.' }
@@ -288,10 +288,10 @@ var CURATED_POSTS = [
     title: 'Public Sector Tenders for Small Businesses: How to Win Your First Contract',
     description: 'A clear guide to public sector tender opportunities for UK SMEs - where they come from, how the evaluation process works, and how to write responses that actually win.',
     category: 'tenders', product_name: 'Tender Opportunities', categoryLabel: 'Tender Opportunities',
-    keywords: ['public sector tenders', 'UK government tenders', 'tenders for small business', 'bid writing', 'Contracts Finder opportunities'],
+    keywords: ['public sector tenders', 'UK government tenders', 'tenders for small business', 'bid writing', 'public procurement portals opportunities'],
     date: '2026-08-16', reading_time: '8 min read',
     faqs: [
-      { q: 'What are public sector tender opportunities?', a: 'They are contract opportunities published by UK public bodies - councils, NHS trusts, schools, government departments - for goods, works and services. Small businesses can win them via platforms such as Contracts Finder and PCS (Public Contracts Scotland).' },
+      { q: 'What are public sector tender opportunities?', a: 'They are contract opportunities published by UK public bodies - councils, NHS trusts, schools, government departments - for goods, works and services. Small businesses can win them via platforms such as public procurement portals and PCS (Public Contracts Scotland).' },
       { q: 'Can small businesses really win tenders?', a: 'Yes. Many contracts are reserved or weighted to favour SMEs, and buyers often prefer local, specialist suppliers. Winning your first contract is mostly about picking the right opportunities and answering the questions completely.' },
       { q: 'How long does the tendering process take?', a: 'From spotting a relevant contract to winning it usually takes four to twelve weeks, depending on the tender value and whether there is a selection (SQ) stage before the full bid. Build in time for the quality questions.' },
       { q: 'Do I need specialist bid writing help?', a: 'Not for your first contracts. A structured response that directly answers every question, provides evidence, and reflects the evaluation scoring will outperform a polished but generic one. Add specialist help once you scale.' }
@@ -303,9 +303,9 @@ var CURATED_POSTS = [
         { cta: 'Get public sector tender opportunities matched to your sector delivered at 9am - start your free trial.' }
       ]},
       { h: 'Where tender opportunities come from', body: [
-        'In England and Wales, the main platform is Contracts Finder, backed by Find a Tender for higher-value work. Scotland uses Public Contracts Scotland and Northern Ireland uses eTendersNI. NHS and local-authority portals publish many opportunities too.',
+        'In England and Wales, the main platform is public procurement portals, backed by public procurement portals for higher-value work. Scotland uses Public Contracts Scotland and Northern Ireland uses eTendersNI. NHS and local-authority portals publish many opportunities too.',
         'A daily tender feed saves hours of scanning these portals. You receive the ones that match your sector, region and contract value - so you spend your time bidding, not searching.',
-        { table: [['Platform', 'Covers', 'Best for'], ['Contracts Finder', 'England & Wales', 'Most SME contracts'], ['Find a Tender', 'UK (higher value)', 'Larger frameworks'], ['Public Contracts Scotland', 'Scotland', 'Scottish buyers'], ['eTendersNI', 'Northern Ireland', 'NI public bodies']] }
+        { table: [['Platform', 'Covers', 'Best for'], ['public procurement portals', 'England & Wales', 'Most SME contracts'], ['public procurement portals', 'UK (higher value)', 'Larger frameworks'], ['Public Contracts Scotland', 'Scotland', 'Scottish buyers'], ['eTendersNI', 'Northern Ireland', 'NI public bodies']] }
       ]},
       { h: 'How tender evaluation actually works', body: [
         'Tenders are scored against published criteria - usually price (weighted 20-40%) and quality (weighted 60-80%). The quality mark is won by answering every question precisely and evidencing your claims, not by writing more words.',
@@ -330,7 +330,7 @@ var CURATED_POSTS = [
     keywords: ['UK business leads', 'daily lead generation', 'buy business leads', 'lead generation guide', '9amLeads how it works'],
     date: '2026-08-15', reading_time: '9 min read',
     faqs: [
-      { q: 'How does 9amLeads deliver leads?', a: 'Every morning at 9am UK time you receive your matched leads in your dashboard and email. We scrape and process official public sources overnight - property portals, the probate register, Companies House, council planning portals and public tender platforms - then match the results to your trade and chosen postcode areas.' },
+      { q: 'How does 9amLeads deliver leads?', a: 'Every morning at 9am UK time you receive your matched leads in your dashboard and email. We scrape and process official public sources overnight - property portals, the probate register, company register, council planning portals and public tender platforms - then match the results to your trade and chosen postcode areas.' },
       { q: 'Is 9amLeads better than PPC?', a: 'They solve different problems. PPC captures people actively searching; 9amLeads puts you in front of fresh public opportunities your competitors haven\'t seen. Many customers run both, but daily data feeds give you a predictable pipeline at a fixed price with no auction dynamics.' },
       { q: 'Which lead type should I choose?', a: 'Choose the one that matches how you win work today. Removal companies and estate agents use moving leads; solicitors use probate leads; accountants and web designers use new business leads; builders use planning leads; and services businesses use tender opportunities. You can change or add types at any time.' },
       { q: 'Do I need a marketing team to use these leads?', a: 'No. A simple workflow - review your leads at 9am, contact the strongest ones within the hour, log your follow-ups - is enough to see results. Our platform gives you the data; you bring your phone and your expertise.' }
@@ -338,7 +338,7 @@ var CURATED_POSTS = [
     sections: [
       { h: 'The five lead types explained', body: [
         '9amLeads covers five categories of UK business opportunity, each sourced from official public data:',
-        { table: [['Lead type', 'Source', 'Best for'], ['Moving leads', 'Rightmove & property listings', 'Removal companies, estate agents'], ['Probate leads', 'Gov.uk probate register', 'Solicitors, estate administrators'], ['New business leads', 'Companies House register', 'Accountants, web designers, B2B'], ['Planning leads', 'Council planning portals', 'Builders, architects, tradespeople'], ['Tender opportunities', 'Contracts Finder & public portals', 'Cleaning, IT, construction, FM']] }
+        { table: [['Lead type', 'Source', 'Best for'], ['Moving leads', 'leading property portals & property listings', 'Removal companies, estate agents'], ['Probate leads', 'probate register', 'Solicitors, estate administrators'], ['New business leads', 'company register', 'Accountants, web designers, B2B'], ['Planning leads', 'Council planning portals', 'Builders, architects, tradespeople'], ['Tender opportunities', 'public procurement portals & public portals', 'Cleaning, IT, construction, FM']] }
       ]},
       { h: 'How daily delivery creates a winning habit', body: [
         'Daily beats weekly for a simple reason: consistency builds a routine. When leads arrive at the same time every morning, reviewing them becomes part of the day\'s start, and prospects are contacted while they are freshest - often before competitors have seen the same public listing.',
@@ -489,7 +489,7 @@ var CURATED_POSTS = [
     title: '10 Services You Can Sell to New Business Leads (and How to Offer Them)',
     description: 'Newly registered companies need a long list of services in their first few months. Here are ten profitable services you can sell to new business leads, and the right way to offer each one.',
     category: 'newbusiness', product_name: 'New Business Leads', categoryLabel: 'New Business Leads',
-    keywords: ['services for new businesses', 'sell to new business leads', 'Companies House leads services', 'new company cross-sell', 'new business leads opportunities'],
+    keywords: ['services for new businesses', 'sell to new business leads', 'new company leads services', 'new company cross-sell', 'new business leads opportunities'],
     date: '2026-08-19', reading_time: '9 min read',
     faqs: [
       { q: 'Which service should I lead with?', a: 'Lead with the service the new business needs first and that you deliver best. For most providers that is the one with a natural deadline - accounting and tax registration, or a website and domain. Solve the urgent problem and the wider relationship follows.' },
@@ -501,7 +501,7 @@ var CURATED_POSTS = [
       { h: 'Why new companies are the perfect buyers', body: [
         'Every new limited company makes a predictable set of purchases in its first few months, and when you contact them early there is no incumbent supplier to displace. For B2B providers, a fresh incorporation is the closest thing to a guaranteed customer at the start of their journey.',
         'The skill is not finding the companies - the register is public. It is knowing which service to offer first and making the approach feel helpful rather than opportunistic.',
-        { cta: 'Get new business leads from Companies House every morning - start your free trial.' }
+        { cta: 'Get new business leads from company register every morning - start your free trial.' }
       ]},
       { h: 'The ten services every new company buys', body: [
         'Here are the services that newly registered UK companies most commonly need, roughly in the order they buy them:',
@@ -721,7 +721,7 @@ var CURATED_POSTS = [
     title: 'How to Automate Your New Business Lead Follow-Ups (Without Sounding Like a Robot)',
     description: 'A practical automation system for new business leads - triggered email sequences, a simple CRM, and the human touches that keep automation from killing the relationship.',
     category: 'newbusiness', product_name: 'New Business Leads', categoryLabel: 'New Business Leads',
-    keywords: ['automate lead follow-up', 'new business leads email automation', 'Companies House leads follow-up', 'lead nurturing automation', 'B2B follow-up sequences'],
+    keywords: ['automate lead follow-up', 'new business leads email automation', 'new company leads follow-up', 'lead nurturing automation', 'B2B follow-up sequences'],
     date: '2026-08-26', reading_time: '7 min read',
     faqs: [
       { q: 'Is automated follow-up off-putting for new business owners?', a: 'Only when it reads like a robot. Short, personal, value-first messages spaced a few days apart are welcomed by busy directors - most new companies never receive a follow-up at all, so a well-timed one stands out.' },
@@ -733,7 +733,7 @@ var CURATED_POSTS = [
       { h: 'Why new business leads need a follow-up system', body: [
         'Newly registered companies are deciding who to work with in the first weeks, and most providers contact them once and then go quiet. The firm that follows up systematically is the one that stays in front of the director when the decision gets made.',
         'A simple, triggered follow-up sequence means no lead slips through because someone got busy - and the director gets the impression of a provider who is organised and genuinely interested.',
-        { cta: 'Get new business leads from Companies House daily and test your follow-up system - start your free trial.' }
+        { cta: 'Get new business leads from company register daily and test your follow-up system - start your free trial.' }
       ]},
       { h: 'Design the sequence before you automate', body: [
         'Map the touches on paper first. A sequence that works for new business leads looks like this:',
@@ -947,8 +947,8 @@ var CURATED_POSTS = [
         { cta: 'Fresh probate grants delivered daily - start your free trial.' }
       ] },
       { h: 'State disbursements separately', body: [
-        'Executors are often surprised by disbursements - court fees, Land Registry, searches, insurance, and valuation costs. If these are buried, the client feels misled later. List them separately so the total is transparent and defensible.',
-        { ul: ['Court application fee', 'Land Registry fees', 'Copies of the grant', 'Property valuation', 'Bankruptcy search', 'Insurance premium', 'Postage and administration'] },
+        'Executors are often surprised by disbursements - court fees, land records, searches, insurance, and valuation costs. If these are buried, the client feels misled later. List them separately so the total is transparent and defensible.',
+        { ul: ['Court application fee', 'land records fees', 'Copies of the grant', 'Property valuation', 'Bankruptcy search', 'Insurance premium', 'Postage and administration'] },
         'A transparent fee breakdown builds trust - and trust wins probate instructions.',
         { cta: 'Start your free week of probate leads.' }
       ] },
@@ -961,26 +961,26 @@ var CURATED_POSTS = [
   },
   {
     slug: 'companies-house-search-new-companies',
-    title: 'Companies House Search: How to Find New Companies to Sell To',
-    description: 'How to use Companies House search and free tools to find newly registered companies in your target sector and location - a step-by-step guide for accountants, web designers and B2B providers.',
+    title: 'company register Search: How to Find New Companies to Sell To',
+    description: 'How to use company register search and free tools to find newly registered companies in your target sector and location - a step-by-step guide for accountants, web designers and B2B providers.',
     category: 'newbusiness', product_name: 'New Business Leads', categoryLabel: 'New Business Leads',
     keywords: ['companies house search', 'find new companies', 'companies house newly incorporated', 'new company list UK', 'B2B company data'],
     date: '2026-09-03', reading_time: '7 min read',
     faqs: [
-      { q: 'Can I search Companies House for new companies?', a: 'Yes. The Companies House service offers a public search, and the register includes the date of incorporation, company type, registered office and industry SIC codes. You can also use filters like the advanced search on the GOV.UK website.' },
-      { q: 'Is Companies House data free?', a: 'The core register is free to search. Bulk and API access is available via Companies House, and third-party services (including 9amLeads) package the data with SIC, location and contact filters for faster targeting.' },
-      { q: 'How do I find new companies in my sector?', a: 'Use the advanced search on the GOV.UK Companies House service, filter by SIC code and incorporation date (e.g. the last 7 or 30 days), and export or shortlist the results by location and company type.' },
+      { q: 'Can I search company register for new companies?', a: 'Yes. The company register service offers a public search, and the register includes the date of incorporation, company type, registered office and industry SIC codes. You can also use filters like the advanced search on the GOV.UK website.' },
+      { q: 'Is new company data free?', a: 'The core register is free to search. Bulk and API access is available via company register, and third-party services (including 9amLeads) package the data with SIC, location and contact filters for faster targeting.' },
+      { q: 'How do I find new companies in my sector?', a: 'Use the advanced search on the GOV.UK company register service, filter by SIC code and incorporation date (e.g. the last 7 or 30 days), and export or shortlist the results by location and company type.' },
       { q: 'How do I know which new companies are worth contacting?', a: 'Look for companies with an active-looking profile: a real registered office, a relevant SIC code, and multiple directors or a credible capital figure. Skip dormant or obviously shell companies and focus on businesses set up to trade.' }
     ],
     sections: [
       { h: 'Why newly incorporated companies are gold for B2B', body: [
         'A newly registered company has no incumbent suppliers. In its first weeks the director must choose an accountant, a bank, a website provider, insurance, IT and more - and whoever makes first contact usually gets the business. The register is public, free and updated daily, which makes it the best B2B lead source many providers never use.',
         'The skill is not finding the companies - the search is easy. It is filtering them to the ones that will actually trade and need your service.',
-        { cta: 'Get Companies House new company data matched to your sector - start your free trial.' }
+        { cta: 'Get company register new company data matched to your sector - start your free trial.' }
       ]},
       { h: 'Step by step: find new companies on the register', body: [
-        'The Companies House advanced search makes this straightforward:',
-        { ul: ['Go to the Companies House service and open the advanced company search', 'Set incorporation date to the last 7 or 30 days', 'Add the SIC codes for the sectors you serve', 'Filter by location if you only work locally', 'Review the list and shortlist companies that look set up to trade', 'Use the registered office and any public director info to build your prospect list'] },
+        'The company register advanced search makes this straightforward:',
+        { ul: ['Go to the company register service and open the advanced company search', 'Set incorporation date to the last 7 or 30 days', 'Add the SIC codes for the sectors you serve', 'Filter by location if you only work locally', 'Review the list and shortlist companies that look set up to trade', 'Use the registered office and any public director info to build your prospect list'] },
         'The SIC code filter is the most powerful lever - it turns a generic list of new companies into a list of your ideal clients.'
       ]},
       { h: 'Use SIC codes to find your ideal client', body: [
@@ -1050,7 +1050,7 @@ var CURATED_POSTS = [
     keywords: ['cleaning tenders UK', 'cleaning contracts public sector', 'FM cleaning tenders', 'cleaning company government contracts', 'find cleaning tenders'],
     date: '2026-09-01', reading_time: '7 min read',
     faqs: [
-      { q: 'Where are cleaning tenders published?', a: 'Public sector cleaning and FM contracts are published on Contracts Finder, Find a Tender, PCS and eTendersNI, plus local authority and NHS portals. Many are also advertised on procurement frameworks like CCS (Crown Commercial Service).' },
+      { q: 'Where are cleaning tenders published?', a: 'Public sector cleaning and FM contracts are published on public procurement portals, public procurement portals, PCS and eTendersNI, plus local authority and NHS portals. Many are also advertised on procurement frameworks like CCS (Crown Commercial Service).' },
       { q: 'Are cleaning contracts realistic for small companies?', a: 'Yes. Many cleaning and FM tenders are deliberately sized and weighted for SMEs - local authority and school contracts often suit small teams, and buyers value local, specialist suppliers. Winning your first contract is mostly about picking the right one and answering the questions fully.' },
       { q: 'What do cleaning tenders ask for?', a: 'Expect questions on your cleaning schedules and methodology, staffing and supervision, training and security checks (DBS), insurances and compliance, health and safety, and evidence of similar contracts. Compliance documents like insurance and disclosure forms are mandatory.' },
       { q: 'How do I get onto cleaning frameworks?', a: 'Frameworks like CCS RM6316 (or the current FM equivalents) and local authority framework agreements let you be invited to future work. Getting listed is an application in itself - complete the capability and compliance questions thoroughly.' }
@@ -1062,9 +1062,9 @@ var CURATED_POSTS = [
         { cta: 'Get cleaning tenders matched to your sector delivered at 9am - start your free trial.' }
       ]},
       { h: 'Where to find cleaning and FM tenders', body: [
-        'The main sources are: Contracts Finder and Find a Tender for England and Wales, Public Contracts Scotland for Scotland, and eTendersNI for Northern Ireland. Local authority portals and the NHS Supply Chain advertise FM opportunities too.',
+        'The main sources are: public procurement portals and public procurement portals for England and Wales, Public Contracts Scotland for Scotland, and eTendersNI for Northern Ireland. Local authority portals and the NHS Supply Chain advertise FM opportunities too.',
         'Use keyword filters like "cleaning", "catering cleaning", "facilities management" and "window cleaning", combined with your region and contract value. A daily tender feed does this filtering for you, so you only see contracts worth bidding on.',
-        { table: [['Platform', 'What it covers', 'Search tip'], ['Contracts Finder', 'England & Wales', 'Filter "cleaning" + your region'], ['Find a Tender', 'Higher value UK', 'Set value threshold'], ['PCS', 'Scotland', 'Filter FM & cleaning'], ['eTendersNI', 'Northern Ireland', 'Filter cleaning']] }
+        { table: [['Platform', 'What it covers', 'Search tip'], ['public procurement portals', 'England & Wales', 'Filter "cleaning" + your region'], ['public procurement portals', 'Higher value UK', 'Set value threshold'], ['PCS', 'Scotland', 'Filter FM & cleaning'], ['eTendersNI', 'Northern Ireland', 'Filter cleaning']] }
       ]},
       { h: 'Choosing the cleaning contract to win', body: [
         'Your first public sector cleaning contract should be one you are almost certain to deliver well - a school, a small council building or a local authority site near your existing teams. Small, local contracts are exactly where SMEs win.',
@@ -1394,7 +1394,7 @@ var CURATED_POSTS = [
         { ul: ['State your purpose clearly', 'Confirm the processing is necessary for it', 'Weigh the individual\'s interests and privacy expectations', 'Balance in favour of your purpose, or adjust the approach'] }
       ]},
       { h: 'Where your data comes from matters', body: [
-        'The data source determines how you may use it. Public registers like Companies House, official probate and planning data, and records the prospect gave you directly are different from third-party lists. Make sure any lead supplier has the right to provide the data and that the data was collected lawfully.',
+        'The data source determines how you may use it. Public registers like company register, official probate and planning data, and records the prospect gave you directly are different from third-party lists. Make sure any lead supplier has the right to provide the data and that the data was collected lawfully.',
         'Keep a record of the source for every lead. If you can show where the data came from and that it was lawfully obtained, you are in a far stronger position than a business that cannot explain its list.'
       ]},
       { h: 'PECR and the cold-email rules', body: [

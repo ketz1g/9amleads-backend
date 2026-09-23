@@ -2,10 +2,13 @@
 <html lang="en-GB">
 <head>
 <meta charset="UTF-8">
+<meta name="msvalidate.01" content="722F0474C4A2E6D3BCF479C7A4B8C3CD">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bulk Lead Packs – Printed &amp; Posted | 9amLeads</title>
-<meta name="description" content="Buy 50–1000 exclusive moving, probate or new business leads in one go. We print and post your leaflet or letter to every single one. From £1.99 per lead.">
+<meta name="description" content="Buy 50–1000 exclusive moving, probate, planning or new business leads in one go. We print and post your leaflet or letter to every single one. From £1.99 per lead.">
 <link rel="canonical" href="https://9amleads.com/bulk.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
   :root{--sky:#0ea5e9;--ink:#0a0f1e;--panel:#0f172a;--line:#1e293b;--text:#f1f5f9;--txt2:#94a3b8;--muted:#64748b}
@@ -25,6 +28,12 @@
   .hero h1 .g{background:linear-gradient(90deg,#38bdf8,#818cf8);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
   .hero p{max-width:660px;margin:0 auto 24px;color:var(--txt2);font-size:16px}
   .pill{display:inline-block;background:rgba(14,165,233,.12);border:1px solid rgba(14,165,233,.45);color:#7dd3fc;font-weight:700;font-size:12px;padding:6px 14px;border-radius:99px;margin-bottom:18px}
+  .hero .lead{color:var(--txt2);font-size:16px}
+  .hero .fresh{color:#7dd3fc;font-size:14.5px;margin:0 auto 10px}
+  .hero .boost{color:#e2e8f0;font-size:14.5px;font-weight:600;margin:0 auto 16px}
+  .why{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:0 auto 28px;max-width:780px}
+  .why span{background:rgba(15,23,42,.65);border:1px solid var(--line);color:#cbd5e1;font-size:12.5px;padding:7px 14px;border-radius:99px}
+  .hero-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
   section{padding:48px 0}
   h2{font-size:clamp(22px,3.4vw,30px);letter-spacing:-.3px;margin-bottom:8px}
   .sub{color:var(--txt2);max-width:660px;margin-bottom:24px}
@@ -33,6 +42,20 @@
   .card h3{font-size:16px;margin-bottom:6px}
   .card p{color:var(--txt2);font-size:13.5px}
   .ico{font-size:26px;margin-bottom:8px}
+  /* Audience showcase */
+  section.aud{background:linear-gradient(180deg,transparent,rgba(14,165,233,.06))}
+  section.aud .eyebrow{display:block;text-align:center;color:#7dd3fc;font-weight:800;font-size:12px;letter-spacing:1.4px;text-transform:uppercase;margin-bottom:10px}
+  section.aud h2{text-align:center}
+  section.aud .sub{text-align:center;margin-left:auto;margin-right:auto}
+  .aud-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(225px,1fr));gap:16px;margin-top:6px}
+  .acard{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px 20px;display:flex;flex-direction:column;transition:border-color .2s,transform .2s,box-shadow .2s;overflow:hidden}
+  .acard::before{content:'';position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--acc),transparent)}
+  .acard:hover{border-color:rgba(255,255,255,.22);transform:translateY(-3px);box-shadow:0 14px 34px rgba(0,0,0,.35)}
+  .acard .ico{width:46px;height:46px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid var(--acc);border-color:color-mix(in srgb,var(--acc) 45%,transparent);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:14px}
+  .acard h3{font-size:16.5px;margin-bottom:6px;color:#fff}
+  .acard p{color:var(--txt2);font-size:13px;line-height:1.65;margin-bottom:16px;flex:1}
+  .acard a{color:var(--acc);font-size:13px;font-weight:800;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+  .acard a:hover{text-decoration:underline}
   #moving,#probate,#newbusiness{scroll-margin-top:20px}
   .packs{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
   .pack{border:1px solid var(--line);border-radius:14px;padding:20px;text-align:center;background:var(--panel)}
@@ -70,6 +93,7 @@
 </style>
 <!-- 9amLeads site polish -->
 <link rel="stylesheet" href="/site-polish.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://9amleads.com/#organization","name":"9amLeads","url":"https://9amleads.com/","email":"hello@9amleads.com"},{"@type":"WebPage","name":"Bulk Lead Packs – Printed &amp; Posted | 9amLeads","url":"https://9amleads.com/bulk.html","isPartOf":{"@id":"https://9amleads.com/#organization"}}]}</script>
 </head>
 <body>
 <nav>
@@ -95,25 +119,36 @@
 <div class="hero">
   <div class="wrap">
     <span class="pill">🚀 Bulk lead packs, printed &amp; posted for you</span>
-    <h1>Fill your pipeline fast.<br>Send to <span class="g">100&ndash;1000 leads in one go</span>.</h1>
-    <p>Buy an exclusive pack of moving, probate or new business leads, review them, and we print and post your leaflet or letter to every single door. You just run the follow-ups that win the work.</p>
-    <p style="margin:-4px 0 24px;color:#7dd3fc;font-size:14px">Pick how fresh: <b>this month, 1 month or 2 months old</b>. Once paid, your full list appears in your dashboard to review every lead, with live Print &amp; Post tracking.</p>
-    <p style="margin:-10px 0 24px;color:#cbd5e1;font-size:13px">Boost your business in slow times, instantly. Why choose Bulk Send: instant volume when you need it, cheaper than a stamp, hands-free print &amp; post, never-sent archive leads, and live tracking.</p>
-    <a class="btn" href="/portal/#signup">Start free, get daily leads</a> &nbsp;
-    <a class="btn ghost" href="/pricing/">See pricing</a>
+    <h1>Fill your pipeline fast.<br>Send to <span class="g">100-1000 leads in one go</span>.</h1>
+    <p class="lead">Buy an exclusive pack of moving, probate, planning or new business leads, review them, and we print and post your leaflet or letter to every single door. You just run the follow-ups that win the work.</p>
+    <p class="fresh">Pick how fresh: <b>this month, 1 month or 2 months old</b>. Once paid, your full list appears in your dashboard to review every lead, with live Print &amp; Post tracking.</p>
+    <p class="boost">Boost your business in slow times, instantly.</p>
+    <div class="why">
+      <span>&#9889; Instant volume when you need it</span>
+      <span>&#128184; Cheaper than a stamp</span>
+      <span>&#9993; Hands-free print &amp; post</span>
+      <span>&#128203; Never-sent archive leads</span>
+      <span>&#128200; Live tracking</span>
+    </div>
+    <div class="hero-cta">
+      <a class="btn" href="/portal/#signup">Start free, get daily leads</a>
+      <a class="btn ghost" href="/pricing/">See pricing</a>
+    </div>
   </div>
 </div>
 
-<section>
+<section class="aud">
   <div class="wrap">
+    <span class="eyebrow">Who it&rsquo;s for</span>
     <h2 id="moving">Bulk packs for the businesses that hunt in volume</h2>
     <p class="sub">One pack, every lead printed &amp; posted. The cheapest marketing you'll run, with none of the printing or postage admin.</p>
-    <div class="grid">
-      <div class="card" id="probate"><div class="ico">🏠</div><h3>Moving / Estate Agents</h3><p>New homeowners moving near you. Post a "welcome to the area" leaflet; they need an agent's advice the day they move in, not in six weeks.</p></div>
-      <div class="card"><div class="ico">⚖️</div><h3>Probate Practitioners</h3><p>Recent probate grants in your county. A compassionate, timely letter to executors when they're ready to sell, before any competitor has made contact.</p></div>
-      <div class="card" id="newbusiness"><div class="ico">🏢</div><h3>New Business / B2B</h3><p>Newly incorporated companies near you. Freshly registered, reachable and needing your services; accountants, solicitors, IT and more.</p></div>
+    <div class="aud-grid">
+      <div class="acard" style="--acc:#ff6b35"><span class="ico">🏠</span><h3>Moving / Estate Agents</h3><p>New homeowners moving near you. Post a "welcome to the area" leaflet; they need an agent's advice the day they move in, not in six weeks.</p><a href="/portal/boost.html">Order moving leads &rarr;</a></div>
+      <div class="acard" style="--acc:#a855f7"><span class="ico">�-️</span><h3>Probate Practitioners</h3><p>Recent probate grants in your county. A compassionate, timely letter to executors when they're ready to sell, before any competitor has made contact.</p><a href="/portal/boost.html">Order probate leads &rarr;</a></div>
+      <div class="acard" style="--acc:#10b981"><span class="ico">�-️</span><h3>Planning / Builders &amp; Trades</h3><p>Property owners with live planning applications near you - extensions, conversions and new builds. Reach builders, architects and landscapers before the job goes out to tender.</p><a href="/portal/boost.html">Order planning leads &rarr;</a></div>
+      <div class="acard" style="--acc:#06b6d4"><span class="ico">🏢</span><h3>New Business / B2B</h3><p>Newly incorporated companies near you. Freshly registered, reachable and needing your services; accountants, solicitors, IT and more.</p><a href="/portal/bulk.html">Order new business leads &rarr;</a></div>
     </div>
-    <p class="note" style="margin-top:14px">Boost packs (moving &amp; probate) are shared archive leads that have <b style="color:#e2e8f0">never been sent to any customer</b>, so be first to respond. New Business bulk packs are <b style="color:#e2e8f0">exclusive</b>: never sold to any customer before.</p>
+    <p class="note" style="margin-top:18px;text-align:center">Archive boost packs (moving, probate, planning &amp; new business) are shared archive leads that have <b style="color:#e2e8f0">never been sent to any customer</b>, so be first to respond. New Business bulk packs are <b style="color:#e2e8f0">exclusive</b>: never sold to any customer before.</p>
   </div>
 </section>
 
@@ -128,10 +163,10 @@
     </div>
     <div style="height:20px"></div>
     <div class="packs">
-      <div class="pack"><div class="n">50</div><div class="l">moving or probate leads,<br>printed &amp; posted</div><div class="p">&pound;99.50</div><div class="per">boost pack, leaflet rate</div><a class="btn" href="/portal/boost.html">Order 50</a></div>
-      <div class="pack feat"><div class="n">100</div><div class="l">new business archive leads,<br>printed &amp; posted</div><div class="p">&pound;249</div><div class="per">one-time, &pound;2.49 / lead</div><a class="btn" href="/portal/bulk.html">Buy 100 leads</a></div>
-      <div class="pack"><div class="n">250</div><div class="l">new business archive leads,<br>printed &amp; posted</div><div class="p">&pound;622.50</div><div class="per">one-time, &pound;2.49 / lead</div><a class="btn" href="/portal/bulk.html">Buy 250 leads</a></div>
-      <div class="pack"><div class="n">500</div><div class="l">new business archive leads,<br>printed &amp; posted</div><div class="p">&pound;1,245</div><div class="per">one-time, &pound;2.49 / lead</div><a class="btn" href="/portal/bulk.html">Buy 500 leads</a></div>
+      <div class="pack"><div class="n">50</div><div class="l">leads,<br>printed &amp; posted</div><div class="p">&pound;99.50</div><div class="per">boost pack, leaflet rate</div><a class="btn" href="/portal/boost.html">Order 50</a></div>
+      <div class="pack feat"><div class="n">100</div><div class="l">leads,<br>printed &amp; posted</div><div class="p">&pound;249</div><div class="per">one-time, &pound;2.49 / lead</div><a class="btn" href="/portal/bulk.html">Buy 100 leads</a></div>
+      <div class="pack"><div class="n">250</div><div class="l">leads,<br>printed &amp; posted</div><div class="p">&pound;622.50</div><div class="per">one-time, &pound;2.49 / lead</div><a class="btn" href="/portal/bulk.html">Buy 250 leads</a></div>
+      <div class="pack"><div class="n">500</div><div class="l">leads,<br>printed &amp; posted</div><div class="p">&pound;1,245</div><div class="per">one-time, &pound;2.49 / lead</div><a class="btn" href="/portal/bulk.html">Buy 500 leads</a></div>
     </div>
     <div class="warn">Bulk packs are a <b>Pro &amp; Enterprise</b> feature. Existing free trial and Starter customers can upgrade any time from their dashboard.</div>
   </div>
@@ -142,7 +177,7 @@
     <h2>How it works</h2>
     <p class="sub">From purchase to doorstep in three steps. No printer, no stamps.</p>
     <div class="steps">
-      <div class="step"><div class="num">1</div><h3>Buy a pack</h3><p class="note">Choose 50&ndash;1000 moving, probate or new business leads. Load your leaflet front/back or letter in Print &amp; Post.</p></div>
+      <div class="step"><div class="num">1</div><h3>Buy a pack</h3><p class="note">Choose 50-1000 moving, probate, planning or new business leads. Load your leaflet front/back or letter in Print &amp; Post.</p></div>
       <div class="step"><div class="num">2</div><h3>We print &amp; post</h3><p class="note">Your full-colour materials are printed, addressed and posted to every single lead, proof of posting included.</p></div>
       <div class="step"><div class="num">3</div><h3>You win the work</h3><p class="note">The door-to-door follow-up, call or visit on top of your posted pack is what turns a mailbox leaflet into a signed job.</p></div>
     </div>
@@ -158,6 +193,8 @@
   </div>
 </div>
 
+<!-- WHY 9amLEADS IS DIFFERENT -->
+<section id="why-different" style="position:relative;padding:56px 20px;background:#0b0f19;border-top:1px solid rgba(255,255,255,.08)"><div style="max-width:1100px;margin:0 auto"><div style="text-align:center;margin-bottom:28px"><div style="font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#0ea5e9;margin-bottom:10px">Why 9amLeads is different</div><h2 style="font-size:clamp(24px,3vw,34px);font-weight:800;color:#f5f5f5;margin:0 0 12px;line-height:1.2;font-family:inherit">Not just a list of addresses</h2><p style="max-width:680px;margin:0 auto;color:#94a3b8;font-size:15px;line-height:1.7">With traditional address and leaflet providers you get addresses to post to, but little transparency behind the data. With 9amLeads you can:</p></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px"><div style="background:#111827;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:20px"><div style="width:42px;height:42px;border-radius:10px;background:rgba(14,165,233,.12);color:#38bdf8;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:12px"><i class="fas fa-link"></i></div><h3 style="font-size:15px;font-weight:800;color:#fff;margin:0 0 6px;font-family:inherit">See the source of each lead</h3><p style="font-size:13px;color:#94a3b8;line-height:1.65;margin:0">Every individual opportunity shows where it originated, so you're never just handed a list and asked to trust it.</p></div><div style="background:#111827;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:20px"><div style="width:42px;height:42px;border-radius:10px;background:rgba(14,165,233,.12);color:#38bdf8;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:12px"><i class="fas fa-circle-check"></i></div><h3 style="font-size:15px;font-weight:800;color:#fff;margin:0 0 6px;font-family:inherit">Verify it's genuine</h3><p style="font-size:13px;color:#94a3b8;line-height:1.65;margin:0">Open the source information yourself and confirm the opportunity is real and current before you spend a penny.</p></div><div style="background:#111827;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:20px"><div style="width:42px;height:42px;border-radius:10px;background:rgba(14,165,233,.12);color:#38bdf8;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:12px"><i class="fas fa-sun"></i></div><h3 style="font-size:15px;font-weight:800;color:#fff;margin:0 0 6px;font-family:inherit">Fresh opportunities daily</h3><p style="font-size:13px;color:#94a3b8;line-height:1.65;margin:0">New, current opportunities land in your dashboard every working day - not a stale list bought months ago.</p></div><div style="background:#111827;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:20px"><div style="width:42px;height:42px;border-radius:10px;background:rgba(14,165,233,.12);color:#38bdf8;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:12px"><i class="fas fa-paper-plane"></i></div><h3 style="font-size:15px;font-weight:800;color:#fff;margin:0 0 6px;font-family:inherit">Track every Print &amp; Post lead</h3><p style="font-size:13px;color:#94a3b8;line-height:1.65;margin:0">Every individual lead you send through Print &amp; Post can be tracked from your own dashboard.</p></div><div style="background:#111827;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:20px"><div style="width:42px;height:42px;border-radius:10px;background:rgba(14,165,233,.12);color:#38bdf8;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:12px"><i class="fas fa-clock-rotate-left"></i></div><h3 style="font-size:15px;font-weight:800;color:#fff;margin:0 0 6px;font-family:inherit">See who you've already mailed</h3><p style="font-size:13px;color:#94a3b8;line-height:1.65;margin:0">Know exactly which prospects you've already marketed to, so you never double-post or waste budget.</p></div><div style="background:#111827;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:20px"><div style="width:42px;height:42px;border-radius:10px;background:rgba(14,165,233,.12);color:#38bdf8;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:12px"><i class="fas fa-gauge-high"></i></div><h3 style="font-size:15px;font-weight:800;color:#fff;margin:0 0 6px;font-family:inherit">Manage your own dashboard</h3><p style="font-size:13px;color:#94a3b8;line-height:1.65;margin:0">Manage everything through one interactive dashboard - no spreadsheets, no scattered notes.</p></div><div style="background:#111827;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:20px"><div style="width:42px;height:42px;border-radius:10px;background:rgba(14,165,233,.12);color:#38bdf8;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:12px"><i class="fas fa-note-sticky"></i></div><h3 style="font-size:15px;font-weight:800;color:#fff;margin:0 0 6px;font-family:inherit">Notes &amp; status tracking</h3><p style="font-size:13px;color:#94a3b8;line-height:1.65;margin:0">Add notes and move leads through contacted, quoted, won or lost so nothing falls through the cracks.</p></div><div style="background:#111827;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:20px"><div style="width:42px;height:42px;border-radius:10px;background:rgba(14,165,233,.12);color:#38bdf8;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:12px"><i class="fas fa-cart-plus"></i></div><h3 style="font-size:15px;font-weight:800;color:#fff;margin:0 0 6px;font-family:inherit">Auto Send &amp; bulk buy</h3><p style="font-size:13px;color:#94a3b8;line-height:1.65;margin:0">Automate your Print &amp; Post campaigns with Auto Send, and bulk buy more opportunities whenever you want to grow.</p></div></div><div style="max-width:820px;margin:26px auto 0;text-align:center;background:#111827;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:24px"><p style="font-size:15px;font-weight:800;color:#fff;margin:0 0 6px">Both services send marketing through the post. The difference is the data, transparency, freshness and tracking behind it.</p><p style="font-size:13px;color:#94a3b8;margin:0 0 16px">You don't have to take our word for it - see the source information and dashboard for yourself and compare it with what you're currently receiving.</p><a href="/portal/#signup" style="display:inline-flex;align-items:center;gap:8px;padding:13px 26px;border-radius:50px;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;font-weight:800;font-size:14px;text-decoration:none"><i class="fas fa-gift"></i> Start my free week</a><a href="/portal/demo.html" target="_blank" style="display:inline-flex;align-items:center;gap:8px;padding:13px 24px;border-radius:50px;border:1.5px solid rgba(255,255,255,.35);color:#fff;font-weight:800;font-size:14px;text-decoration:none;margin-left:10px"><i class="fas fa-desktop"></i> View our dashboard</a><a href="/compare/" style="display:inline-block;margin-left:12px;font-size:13px;font-weight:700;color:#38bdf8;text-decoration:none">See the full comparison &rarr;</a></div></div></section>
 <footer>
   <div class="wrap">&copy; 9amLeads. Exclusive daily leads and print &amp; post marketing for estate agents, probate practitioners and B2B.</div>
 </footer>

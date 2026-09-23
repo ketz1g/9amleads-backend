@@ -1,7 +1,11 @@
 <!DOCTYPE html><html lang="en"><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title id="pageTitle">9amLeads — Dashboard</title>
+<meta charset="UTF-8">
+<meta name="msvalidate.01" content="722F0474C4A2E6D3BCF479C7A4B8C3CD"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title id="pageTitle">9amLeads - Dashboard</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕘</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
@@ -159,6 +163,7 @@ table tr:hover td{background:rgba(255,255,255,.02)}
   .sidebar{width:60px;overflow:hidden}.sidebar:hover{width:260px;position:fixed;height:100vh;z-index:200;box-shadow:0 0 60px rgba(0,0,0,.8)}.sidebar .brand{font-size:0}.sidebar:hover .brand{font-size:18px}.sidebar .brand small,.sidebar a span{display:none}.sidebar:hover a span{display:inline}.sidebar .user-section .user-email,.sidebar .user-section .user-plan{display:none}.sidebar:hover .user-section .user-email,.sidebar:hover .user-section .user-plan{display:block}.main{margin-left:60px;padding:16px}.stats-grid{grid-template-columns:1fr 1fr}.two-col{grid-template-columns:1fr}.sub-grid{grid-template-columns:1fr}.form-row{grid-template-columns:1fr}
 }
 </style>
+<meta name="robots" content="noindex,nofollow">
 </head><body>
 
 <!-- LOGIN PAGE -->
@@ -211,7 +216,7 @@ table tr:hover td{background:rgba(255,255,255,.02)}
             I agree to receive daily lead emails at 9am and accept the <a href="http://localhost:8006/terms.html" target="_blank" style="color:var(--accent);text-decoration:underline">Terms of Service</a> and <a href="http://localhost:8006/privacy.html" target="_blank" style="color:var(--accent);text-decoration:underline">Privacy Policy</a>. I understand I can unsubscribe at any time.
           </label>
         </div>
-        <button class="btn btn-primary" onclick="handleSignup()"><i class="fas fa-gift"></i> Claim Your Free Week — Start Trial</button>
+        <button class="btn btn-primary" onclick="handleSignup()"><i class="fas fa-gift"></i> Claim Your Free Week - Start Trial</button>
         <div style="margin-top:10px;font-size:11px;color:var(--muted2);text-align:center;line-height:1.5">
           <i class="fas fa-lock" style="color:var(--accent)"></i> Your data is secure. No spam. Unsubscribe with one click.
         </div>
@@ -411,7 +416,7 @@ const PRODUCTS = {
   probate: { name: 'Solicitor & Estate Agent', accent: '#a855f7', icon: 'fa-scale-balanced', leadLabel: 'Deceased Name', detailLabel: 'County', valueLabel: 'Estate Value', leadType: 'Probate Leads', subtitle: 'Your daily probate grants at 9am' },
   newbusiness: { name: 'Accountant & B2B Service', accent: '#06b6d4', icon: 'fa-building', leadLabel: 'Company Name', detailLabel: 'Location', valueLabel: 'Type', leadType: 'New Business Alerts', subtitle: 'Your daily new business leads at 9am' },
   planning: { name: 'Architect & Builder', accent: '#10b981', icon: 'fa-draw-polygon', leadLabel: 'Address', detailLabel: 'Type', valueLabel: 'Value', leadType: 'Planning Permissions', subtitle: 'Your daily planning leads at 9am' },
-  tenders: { name: 'IT, Construction, Cleaning & More', accent: '#6366f1', icon: 'fa-gavel', leadLabel: 'Tender Title', detailLabel: 'Authority', valueLabel: 'Value', leadType: 'Public Tenders', subtitle: 'Your daily tender alerts at 9am' }
+  tenders: { name: 'IT, Transport, Healthcare & Construction', accent: '#6366f1', icon: 'fa-gavel', leadLabel: 'Tender Title', detailLabel: 'Authority', valueLabel: 'Value', leadType: 'Public Tenders', subtitle: 'Your daily tender alerts at 9am' }
 };
 
 // Detect product from page path
@@ -632,7 +637,7 @@ var BIZ_FIELDS = {
   probate: '<div class="form-group"><label>Target Counties</label><input type="text" id="regBiz1" placeholder="e.g. London, Surrey, Kent"></div><div class="form-row"><div class="form-group"><label>Practice Type</label><select id="regBiz2" style="width:100%;padding:12px 14px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:\'Inter\',sans-serif"><option value="">Select...</option><option value="solicitor">Solicitor</option><option value="estate-agent">Estate Agent</option><option value="financial-advisor">Financial Advisor</option><option value="house-clearer">House Clearer</option><option value="other">Other</option></select></div><div class="form-group"><label>Years in Business</label><select id="regBiz3" style="width:100%;padding:12px 14px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:\'Inter\',sans-serif"><option value="">Select...</option><option value="0-1">Less than 1 year</option><option value="1-3">1-3 years</option><option value="3-10">3-10 years</option><option value="10+">10+ years</option></select></div></div>',
   newbusiness: '<div class="form-row"><div class="form-group"><label>Target Cities</label><input type="text" id="regBiz1" placeholder="e.g. London, Manchester, Birmingham"></div><div class="form-group"><label>Target Industries</label><select id="regBiz2" style="width:100%;padding:12px 14px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:\'Inter\',sans-serif"><option value="">Select...</option><option value="tech">Tech & Software</option><option value="construction">Construction</option><option value="retail">Retail & Ecommerce</option><option value="hospitality">Hospitality</option><option value="healthcare">Healthcare</option><option value="professional">Professional Services</option><option value="transport">Transport & Logistics</option><option value="creative">Creative & Media</option><option value="finance">Finance & Insurance</option></select></div></div><div class="form-group"><label>Your Service</label><select id="regBiz3" style="width:100%;padding:12px 14px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:\'Inter\',sans-serif"><option value="">Select...</option><option value="accounting">Accounting / Bookkeeping</option><option value="web-design">Web Design / Development</option><option value="insurance">Insurance Broker</option><option value="it-services">IT Services</option><option value="marketing">Marketing / SEO</option><option value="recruitment">Recruitment</option><option value="consulting">Consulting</option><option value="other">Other B2B Service</option></select></div>',
   planning: '<div class="form-group"><label>Target Councils</label><input type="text" id="regBiz1" placeholder="e.g. Westminster, Camden, Kensington"></div><div class="form-row"><div class="form-group"><label>Your Profession</label><select id="regBiz2" style="width:100%;padding:12px 14px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:\'Inter\',sans-serif"><option value="">Select...</option><option value="architect">Architect</option><option value="builder">Builder / Contractor</option><option value="surveyor">Surveyor</option><option value="estate-agent">Estate Agent</option><option value="developer">Property Developer</option><option value="engineer">Structural Engineer</option><option value="other">Other</option></select></div><div class="form-group"><label>Project Types</label><select id="regBiz3" style="width:100%;padding:12px 14px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:\'Inter\',sans-serif"><option value="">Select...</option><option value="residential">Residential Extensions</option><option value="commercial">Commercial Developments</option><option value="new-build">New Builds</option><option value="renovation">Renovations</option><option value="all">All Types</option></select></div></div>',
-  tenders: '<div class="form-row"><div class="form-group"><label>Target Keywords</label><input type="text" id="regBiz1" placeholder="e.g. IT, Construction, Cleaning"></div><div class="form-group"><label>Your Industry</label><select id="regBiz2" style="width:100%;padding:12px 14px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:\'Inter\',sans-serif"><option value="">Select...</option><option value="it">IT & Technology</option><option value="construction">Construction</option><option value="cleaning">Cleaning & Janitorial</option><option value="catering">Catering</option><option value="consulting">Consultancy</option><option value="security">Security</option><option value="facilities">Facilities Management</option><option value="healthcare">Healthcare</option><option value="training">Training & Education</option><option value="other">Other</option></select></div></div><div class="form-group"><label>Contract Value Range</label><select id="regBiz3" style="width:100%;padding:12px 14px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:\'Inter\',sans-serif"><option value="">Select...</option><option value="small">£10k - £100k</option><option value="medium">£100k - £500k</option><option value="large">£500k - £1M</option><option value="enterprise">£1M+</option><option value="all">All Values</option></select></div>'
+  tenders: '<div class="form-row"><div class="form-group"><label>Target Keywords</label><input type="text" id="regBiz1" placeholder="e.g. IT, Transport, Healthcare"></div><div class="form-group"><label>Your Industry</label><select id="regBiz2" style="width:100%;padding:12px 14px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:\'Inter\',sans-serif"><option value="">Select...</option><option value="it">IT & Digital</option><option value="transport">Transport & Logistics</option><option value="healthcare">Healthcare & Social Care</option><option value="construction">Construction</option><option value="other">Other</option></select></div></div><div class="form-group"><label>Contract Value Range</label><select id="regBiz3" style="width:100%;padding:12px 14px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:\'Inter\',sans-serif"><option value="">Select...</option><option value="small">£10k - £100k</option><option value="medium">£100k - £500k</option><option value="large">£500k - £1M</option><option value="enterprise">£1M+</option><option value="all">All Values</option></select></div>'
 };
 
 // Show business-specific fields on signup
@@ -672,7 +677,7 @@ function enterDashboard() {
   const initials = currentUser.company.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
   document.getElementById('dashAvatar').textContent = initials;
   document.getElementById('dashProduct').textContent = PRODUCT.leadType;
-  document.getElementById('pageTitle').textContent = PRODUCT.name + ' — 9amLeads Dashboard';
+  document.getElementById('pageTitle').textContent = PRODUCT.name + ' - 9amLeads Dashboard';
   loadDashboardData();
 }
 
@@ -720,7 +725,7 @@ function loadDashboardData() {
         renderActivity(mapped);
         document.getElementById('deliveryTitle').textContent = 'Today\'s ' + PRODUCT.leadType + ' delivered';
         document.getElementById('deliveryDesc').textContent = data.today + ' new ' + PRODUCT.leadType.toLowerCase() + ' arrived at 9:02am. Ready to start calling.';
-        document.getElementById('leadsSubtitle').textContent = data.today + ' new leads today — ' + data.total + ' total';
+        document.getElementById('leadsSubtitle').textContent = data.today + ' new leads today - ' + data.total + ' total';
       } else {
         useSampleData();
       }
@@ -823,7 +828,7 @@ function renderTopAreas() {
     productKey === 'probate' ? ['London', 'Surrey', 'Kent', 'Essex', 'Sussex'] :
     productKey === 'newbusiness' ? ['London', 'Manchester', 'Birmingham', 'Leeds', 'Bristol'] :
     productKey === 'planning' ? ['Westminster', 'Camden', 'Kensington', 'Tower Hamlets', 'Islington'] :
-    ['IT Services', 'Construction', 'Cleaning', 'Consultancy', 'Catering'];
+    ['IT & Digital', 'Transport & Logistics', 'Healthcare & Social Care', 'Construction'];
   const el = document.getElementById('topAreas');
   el.innerHTML = areas.map(a => {
     const pct = Math.floor(Math.random() * 40) + 10;
@@ -850,7 +855,7 @@ function renderSubscription() {
   var isTrial = currentUser.plan === 'Free Trial';
   document.getElementById('subPlanName').textContent = isTrial ? 'Free Trial' : 'Pro Plan';
   document.getElementById('subPlanPrice').innerHTML = isTrial ? '\u00a30<span>/mo</span>' : '\u00a3' + p + '<span>/mo</span>';
-  document.getElementById('subPlanDesc').textContent = isTrial ? '7-day free trial — ' + daysLeft + ' days remaining' : 'Up to ' + l + ' leads per day';
+  document.getElementById('subPlanDesc').textContent = isTrial ? '7-day free trial - ' + daysLeft + ' days remaining' : 'Up to ' + l + ' leads per day';
   document.getElementById('subUsage').style.width = isTrial ? '35%' : '65%';
   document.getElementById('subUsed').textContent = isTrial ? 'Trial: ' + daysLeft + ' days left' : Math.floor(l * 0.65) + ' used today';
   document.getElementById('subLimit').textContent = isTrial ? '7 day trial' : l + ' limit';
@@ -883,7 +888,7 @@ function renderAccountSettings() {
       <div class="form-group"><label>Contact Name</label><input type="text" value="${currentUser.name || ''}" style="width:100%;padding:10px 12px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px"></div>
       <div class="form-group"><label>Email</label><input type="email" value="${currentUser.email || ''}" style="width:100%;padding:10px 12px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px"></div>
       <div class="form-group"><label>Phone</label><input type="tel" value="${currentUser.phone || ''}" placeholder="020 1234 5678" style="width:100%;padding:10px 12px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px"></div>
-      <div class="form-group"><label>${PRODUCT.leadType} — Target Areas</label><input type="text" value="${currentUser.targetAreas || ''}" style="width:100%;padding:10px 12px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px"></div>
+      <div class="form-group"><label>${PRODUCT.leadType} - Target Areas</label><input type="text" value="${currentUser.targetAreas || ''}" style="width:100%;padding:10px 12px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px"></div>
       <div class="form-group"><label>${biz2Label[productKey] || 'Field'}</label><input type="text" value="${currentUser.bizField2 || ''}" style="width:100%;padding:10px 12px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px"></div>
       <div class="form-group"><label>${biz3Label[productKey] || 'Field'}</label><input type="text" value="${currentUser.bizField3 || ''}" style="width:100%;padding:10px 12px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px"></div>
       <div class="form-group"><label>How you found us</label><input type="text" value="${currentUser.source || 'Direct'}" style="width:100%;padding:10px 12px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px"></div>
@@ -965,7 +970,7 @@ function generateSampleData() {
     tenders: [
       { col1: 'IT Support Services', col2: 'London Borough', col3: '\u00a3500,000', status: 'new', statusLabel: 'New' },
       { col1: 'Building Maintenance', col2: 'Manchester CC', col3: '\u00a31,200,000', status: 'new', statusLabel: 'New' },
-      { col1: 'Cleaning Services', col2: 'NHS Trust', col3: '\u00a3750,000', status: 'contacted', statusLabel: 'Contacted' }
+      { col1: 'Healthcare Services', col2: 'NHS Trust', col3: '\u00a3750,000', status: 'contacted', statusLabel: 'Contacted' }
     ]
   };
   return data[productKey] || data.moving;

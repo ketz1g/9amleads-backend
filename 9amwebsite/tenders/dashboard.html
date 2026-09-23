@@ -1,7 +1,11 @@
 <!DOCTYPE html><html lang="en"><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title id="pageTitle">9amLeads — Dashboard</title>
+<meta charset="UTF-8">
+<meta name="msvalidate.01" content="722F0474C4A2E6D3BCF479C7A4B8C3CD"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title id="pageTitle">9amLeads - Dashboard</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕘</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
@@ -159,6 +163,7 @@ table tr:hover td{background:rgba(255,255,255,.02)}
   .sidebar{width:60px;overflow:hidden}.sidebar:hover{width:260px;position:fixed;height:100vh;z-index:200;box-shadow:0 0 60px rgba(0,0,0,.8)}.sidebar .brand{font-size:0}.sidebar:hover .brand{font-size:18px}.sidebar .brand small,.sidebar a span{display:none}.sidebar:hover a span{display:inline}.sidebar .user-section .user-email,.sidebar .user-section .user-plan{display:none}.sidebar:hover .user-section .user-email,.sidebar:hover .user-section .user-plan{display:block}.main{margin-left:60px;padding:16px}.stats-grid{grid-template-columns:1fr 1fr}.two-col{grid-template-columns:1fr}.sub-grid{grid-template-columns:1fr}.form-row{grid-template-columns:1fr}
 }
 </style>
+<meta name="robots" content="noindex,nofollow">
 </head><body>
 
 <!-- LOGIN PAGE -->
@@ -211,7 +216,7 @@ table tr:hover td{background:rgba(255,255,255,.02)}
             I agree to receive daily lead emails at 9am and accept the <a href="http://localhost:8006/terms.html" target="_blank" style="color:var(--accent);text-decoration:underline">Terms of Service</a> and <a href="http://localhost:8006/privacy.html" target="_blank" style="color:var(--accent);text-decoration:underline">Privacy Policy</a>. I understand I can unsubscribe at any time.
           </label>
         </div>
-        <button class="btn btn-primary" onclick="handleSignup()"><i class="fas fa-gift"></i> Claim Your Free Week — Start Trial</button>
+        <button class="btn btn-primary" onclick="handleSignup()"><i class="fas fa-gift"></i> Claim Your Free Week - Start Trial</button>
         <div style="margin-top:10px;font-size:11px;color:var(--muted2);text-align:center;line-height:1.5">
           <i class="fas fa-lock" style="color:var(--accent)"></i> Your data is secure. No spam. Unsubscribe with one click.
         </div>
@@ -672,7 +677,7 @@ function enterDashboard() {
   const initials = currentUser.company.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
   document.getElementById('dashAvatar').textContent = initials;
   document.getElementById('dashProduct').textContent = PRODUCT.leadType;
-  document.getElementById('pageTitle').textContent = PRODUCT.name + ' — 9amLeads Dashboard';
+  document.getElementById('pageTitle').textContent = PRODUCT.name + ' - 9amLeads Dashboard';
   loadDashboardData();
 }
 
@@ -720,7 +725,7 @@ function loadDashboardData() {
         renderActivity(mapped);
         document.getElementById('deliveryTitle').textContent = 'Today\'s ' + PRODUCT.leadType + ' delivered';
         document.getElementById('deliveryDesc').textContent = data.today + ' new ' + PRODUCT.leadType.toLowerCase() + ' arrived at 9:02am. Ready to start calling.';
-        document.getElementById('leadsSubtitle').textContent = data.today + ' new leads today — ' + data.total + ' total';
+        document.getElementById('leadsSubtitle').textContent = data.today + ' new leads today - ' + data.total + ' total';
       } else {
         useSampleData();
       }
@@ -850,7 +855,7 @@ function renderSubscription() {
   var isTrial = currentUser.plan === 'Free Trial';
   document.getElementById('subPlanName').textContent = isTrial ? 'Free Trial' : 'Pro Plan';
   document.getElementById('subPlanPrice').innerHTML = isTrial ? '\u00a30<span>/mo</span>' : '\u00a3' + p + '<span>/mo</span>';
-  document.getElementById('subPlanDesc').textContent = isTrial ? '7-day free trial — ' + daysLeft + ' days remaining' : 'Up to ' + l + ' leads per day';
+  document.getElementById('subPlanDesc').textContent = isTrial ? '7-day free trial - ' + daysLeft + ' days remaining' : 'Up to ' + l + ' leads per day';
   document.getElementById('subUsage').style.width = isTrial ? '35%' : '65%';
   document.getElementById('subUsed').textContent = isTrial ? 'Trial: ' + daysLeft + ' days left' : Math.floor(l * 0.65) + ' used today';
   document.getElementById('subLimit').textContent = isTrial ? '7 day trial' : l + ' limit';
@@ -883,7 +888,7 @@ function renderAccountSettings() {
       <div class="form-group"><label>Contact Name</label><input type="text" value="${currentUser.name || ''}" style="width:100%;padding:10px 12px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px"></div>
       <div class="form-group"><label>Email</label><input type="email" value="${currentUser.email || ''}" style="width:100%;padding:10px 12px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px"></div>
       <div class="form-group"><label>Phone</label><input type="tel" value="${currentUser.phone || ''}" placeholder="020 1234 5678" style="width:100%;padding:10px 12px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px"></div>
-      <div class="form-group"><label>${PRODUCT.leadType} — Target Areas</label><input type="text" value="${currentUser.targetAreas || ''}" style="width:100%;padding:10px 12px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px"></div>
+      <div class="form-group"><label>${PRODUCT.leadType} - Target Areas</label><input type="text" value="${currentUser.targetAreas || ''}" style="width:100%;padding:10px 12px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px"></div>
       <div class="form-group"><label>${biz2Label[productKey] || 'Field'}</label><input type="text" value="${currentUser.bizField2 || ''}" style="width:100%;padding:10px 12px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px"></div>
       <div class="form-group"><label>${biz3Label[productKey] || 'Field'}</label><input type="text" value="${currentUser.bizField3 || ''}" style="width:100%;padding:10px 12px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px"></div>
       <div class="form-group"><label>How you found us</label><input type="text" value="${currentUser.source || 'Direct'}" style="width:100%;padding:10px 12px;background:#000;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px"></div>
