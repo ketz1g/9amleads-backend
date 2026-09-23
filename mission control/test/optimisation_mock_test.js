@@ -150,10 +150,11 @@ console.log('\n=== Premise-identifier gate (no bare street/place names in emails
   ok('Landmark East Tower, 24 Marsh Wall rejected (tower block needs a flat number)', f('Landmark East Tower, 24 Marsh Wall, E area', 'E14 9EG') === false);
   ok('Flat 1, Landmark East Tower, 24 Marsh Wall accepted (has flat number)', f('Flat 1, Landmark East Tower, 24 Marsh Wall', 'E14 9EG') === true);
   ok('1 St. Gabriel Walk accepted', f('1 St. Gabriel Walk, E area', 'SE1 6FA') === true);
-  // Named houses/buildings (house name) -> ACCEPT
-  ok('Blandford House accepted (house name)', f('Blandford House, Chiswick, E area', 'W4 1SY') === true);
-  ok('Hazelwood House accepted (house name)', f('Hazelwood House, Deptford, E area', 'SE8 5RP') === true);
-  ok('The Old Rectory accepted', f('The Old Rectory', 'GU21 4PU') === true);
+  // Named houses/buildings with NO number -> REJECT (business rule 2026-08-21:
+  // a named building still needs a door/flat/apartment number to be mailable).
+  ok('Blandford House rejected (named building, no number)', f('Blandford House, Chiswick, E area', 'W4 1SY') === false);
+  ok('Hazelwood House rejected (named building, no number)', f('Hazelwood House, Deptford, E area', 'SE8 5RP') === false);
+  ok('The Old Rectory rejected (named house, no number)', f('The Old Rectory', 'GU21 4PU') === false);
   ok('Eaton Mansions rejected (mansion block, no flat number)', f('Eaton Mansions', 'SW1W 8HF') === false);
   ok('Foxglove Apartments rejected (apartment block, no flat number)', f('Foxglove Apartments', 'NW7 1TG') === false);
   ok('Charrington Tower rejected (tower block, no flat number)', f('Charrington Tower, Biscayne Avenue', 'E14 9BQ') === false);

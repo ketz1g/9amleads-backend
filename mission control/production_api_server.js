@@ -24112,6 +24112,27 @@ app.get('/api/admin/moving-leads-log', adminAuth, (req, res) => {
     res.json({ success: true, generated_at: new Date().toISOString(), count: out.length, leads: out });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+// PER-RUN DELIVERY DEADLINE REGISTRY. Concurrent delivery runs (the 9am run plus a
+// watchdog/recovery run) used to share a single global deadline: when one run
+// finished it reset the global to 0, removing the OTHER run's budget so a stalled
+// run could scan forever. Now each run registers its own deadline; the global (read
+// by rightmove_scraper_v2) is always the EARLIEST active deadline, so no run can ever
+// extend another's budget, and a run only removes its own entry on exit.
+function _refreshDeliveryDeadlineGlobal() {
+  try {
+    var runs = global.__DELIVERY_RUNS__ || {};
+    var vals = Object.keys(runs).map(function(k) { return runs[k]; }).filter(function(v) { return v > 0; });
+    global.__DELIVERY_DEADLINE__ = vals.length ? Math.min.apply(null, vals) : 0;
+  } catch(e) { global.__DELIVERY_DEADLINE__ = 0; }
+}
+function _registerDeliveryDeadline(runId, deadline) {
+  try { global.__DELIVERY_RUNS__ = global.__DELIVERY_RUNS__ || {}; global.__DELIVERY_RUNS__[runId] = deadline; } catch(e) {}
+  _refreshDeliveryDeadlineGlobal();
+}
+function _releaseDeliveryDeadline(runId) {
+  try { if (global.__DELIVERY_RUNS__) delete global.__DELIVERY_RUNS__[runId]; } catch(e) {}
+  _refreshDeliveryDeadlineGlobal();
+}
 app.post('/api/admin/deliver', adminAuth, async (req, res) => {
   // POSTCODER DELIVERY-ONLY: paid lookups are permitted ONLY during a delivery run.
   // Scrape-time pool pre-enrichment is blocked by postcoder_budget (unless
@@ -24170,10 +24191,12 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
     if (t.unref) t.unref();
   })(_deliveryLockAt);
   // DELIVERY TIME BUDGET: bound the run so a slow/hanging PAF/Propalt lookup can
-  // never stall the 9am promise. The per-lead enrichment (rightmove_scraper_v2
-  // enrichMovingLeadsPostcoder) checks this deadline and stops enriching once it
-  // passes, so the run always finishes and the daily emails go out.
-  global.__DELIVERY_DEADLINE__ = Date.now() + (parseInt(process.env.DELIVERY_BUDGET_MS || '180000', 10));
+  // never stall the 9am promise. The handler's pool-scan checks use this run's OWN
+  // _deliveryDeadline; the scraper module reads the global, which is the earliest
+  // active run's deadline (see _registerDeliveryDeadline).
+  var _deliveryRunId = 'dr_' + Date.now() + '_' + Math.floor(Math.random() * 1e9);
+  var _deliveryDeadline = Date.now() + (parseInt(process.env.DELIVERY_BUDGET_MS || '180000', 10));
+  _registerDeliveryDeadline(_deliveryRunId, _deliveryDeadline);
   try {
     var delivered = 0, errors = 0, lastErr = '';
     var _deliverDiag = {};
@@ -24332,7 +24355,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       // RELEASE THE LOCK before returning: this early exit sits AFTER the lock is set,
       // so without this the lock stayed held and skipped every later run until the
       // 6-minute stale-release kicked in (which is why test/single runs skipped).
-      _deliveryLock = false; _deliveryLockAt = 0; global.__DELIVERY_DEADLINE__ = 0;
+      _deliveryLock = false; _deliveryLockAt = 0; _releaseDeliveryDeadline(_deliveryRunId);
       return res.json({ success: true, skipped: 'weekend', message: 'Leads are delivered Monday-Friday only. No leads were sent.' });
     }
     // PURGE ORPHAN LEADS: leads whose customer_id no longer exists (deleted
@@ -25010,7 +25033,7 @@ _deliverDiag[cust.email].products = products;
       custAreas.forEach(function(a) { usedAreas[a] = {}; });
       var areaCycle = 0;
                 for (var r1p = 0; r1p < products.length && custLeads.length < totalNeeded; r1p++) {
-                  if (global.__DELIVERY_DEADLINE__ && Date.now() > global.__DELIVERY_DEADLINE__) break;
+                  if (_deliveryDeadline && Date.now() > _deliveryDeadline) break;
         var r1prod = products[r1p];
         if (prodTaken[r1prod] >= prodDailyCap(r1prod)) continue;
         if (!canTakeProduct(r1prod, cust.plan, weekStart2, today, custLeads)) continue;
@@ -25064,7 +25087,7 @@ _deliverDiag[cust.email].products = products;
       if (custLeads.length < totalNeeded) {
         var maxRounds = Math.min(50, Math.ceil(totalNeeded * 2));
                 for (var r2 = 0; r2 < maxRounds && custLeads.length < totalNeeded; r2++) {
-                  if (global.__DELIVERY_DEADLINE__ && Date.now() > global.__DELIVERY_DEADLINE__) break;
+                  if (_deliveryDeadline && Date.now() > _deliveryDeadline) break;
           for (var r2p = 0; r2p < products.length && custLeads.length < totalNeeded; r2p++) {
             var r2prod = products[r2p];
             if (prodTaken[r2prod] >= prodDailyCap(r2prod)) continue;
@@ -25133,7 +25156,8 @@ _deliverDiag[cust.email].products = products;
                       // exceeded its budget. Each candidate can trigger a slow Rightmove
                       // detail fetch + PAF lookup, so without this a large pool stalls
                       // the whole 9am send. Whatever has been assigned is still emailed.
-                      if (global.__DELIVERY_DEADLINE__ && Date.now() > global.__DELIVERY_DEADLINE__) { console.log('[DELIVERY] ' + cust.email + ': time budget reached - stopping pool scan'); break; }
+                      if (_deliveryDeadline && Date.now() > _deliveryDeadline) {
+                        console.log('[DELIVERY] ' + cust.email + ': time budget reached - stopping pool scan'); break; }
                       var rl = poolArr[pf];
                       var rlD = pickFreshDate(rl);
                       if (!rlD || rlD < _cut2) continue;
@@ -26705,9 +26729,9 @@ pushToCrm(cust, crmPayload2, 'daily delivery');
     } catch(auditErr) { console.log('[DELIVERY-AUDIT] error:', auditErr.message); }
     _deliveryLock = false;
     _deliveryLockAt = 0;
-    global.__DELIVERY_DEADLINE__ = 0;
+    _releaseDeliveryDeadline(_deliveryRunId);
     res.json({ success: true, customers_processed: customers.length, leads_delivered: delivered, errors: errors, lastError: lastErr, diag: _deliverDiag || null, per_customer: Object.keys(_deliverDiag || {}).reduce(function(acc, ek) { var dv = _deliverDiag[ek]; var m = String((dv && dv.final_len) || '').match(/^(\d+)/); acc[ek] = { delivered: m ? parseInt(m[1], 10) : -1, totalDailyLimit: dv && dv.totalDailyLimit, products: (dv && dv.products) || [] }; return acc; }, {}) });
-  } catch(e) { _deliveryLock = false; _deliveryLockAt = 0; global.__DELIVERY_DEADLINE__ = 0; res.status(500).json({ error: e.message }); }
+  } catch(e) { _deliveryLock = false; _deliveryLockAt = 0; _releaseDeliveryDeadline(_deliveryRunId); res.status(500).json({ error: e.message }); }
 });
 
 // ===== STRIPE PAYMENTS =====

@@ -2,12 +2,11 @@
 //
 // Used by the delivery gate, the dashboard/leads filter and the email builder to
 // guarantee a delivered moving/probate lead ALWAYS carries a real premise
-// identifier: a door number ("12 High St", "39-47 Wedmore St"), a flat/apartment
-// number ("Flat 12, Eaton Mansions"), or a named house/building ("The Old
-// Rectory", "Blandford House"). A bare street/place name with no identifier
-// ("St. Davids Square", "Lamb Court", "Park Road") is rejected so it is either
-// resolved to an exact number by PAF or dropped - never emailed as an address
-// without a door number, flat number, street number or house name.
+// identifier: a door number ("12 High St", "39-47 Wedmore St") or a flat/apartment
+// number ("Flat 12, Eaton Mansions"). A bare street/place name OR a named building
+// with no number ("St. Davids Square", "Lamb Court", "The Old Rectory",
+// "Blandford House") is rejected (business rule 2026-08-21) so it is either resolved
+// to an exact number by PAF or dropped - never emailed without a door/flat number.
 
 // Comprehensive UK street-suffix words (Royal Mail / AMU standard set). Without
 // these, bare names like "St. Davids Square" or "Lamb Court" slipped through the
