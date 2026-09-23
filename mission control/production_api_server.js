@@ -25991,7 +25991,11 @@ _deliverDiag[cust.email].products = products;
       // confirmed number - so every sent lead is correctly addressed.
       try {
         var shortBy = Math.max(0, totalDailyLimit - custLeads.length);
-        if (shortBy > 0 && (process.env.POSTCODER_ENABLED === 'true' || process.env.POSTCODER_ENABLED === '1')) {
+        // Remaining paid Postcoder budget. Once it is spent EPC has already had its free
+        // pass, so skip the PAID top-up entirely - otherwise a no-supply customer spins
+        // through retries and makes the whole 9am run take ~10 minutes (seen in testing).
+        var _pcBudgetNow = 0; try { var _pbNow = require('./postcoder_budget'); _pcBudgetNow = Math.max(0, _pbNow.getDailyBudget() - _pbNow.usage()); } catch(eB) { _pcBudgetNow = 0; }
+        if (shortBy > 0 && _pcBudgetNow > 0 && (process.env.POSTCODER_ENABLED === 'true' || process.env.POSTCODER_ENABLED === '1')) {
           var topUpPool = [];
           products.forEach(function(p) {
             (availByProd[p] || []).forEach(function(pl) { if (pickedIds.indexOf(pl.id) === -1) topUpPool.push(pl); });
@@ -26029,7 +26033,7 @@ _deliverDiag[cust.email].products = products;
             custLeads.push(al); pickedIds.push(al.id); added++;
           }
           // 2) Enrich remaining door-less candidates via PAF, keep only confirmed.
-          if (added < shortBy && needPcTop.length > 0) {
+          if (added < shortBy && needPcTop.length > 0 && _pcBudgetNow > 0) {
             var topNorm = needPcTop.slice(0, shortBy).map(function(pl) {
               var ld = {}; try { ld = JSON.parse(pl.data || '{}'); } catch(e) {}
               return Object.assign({}, ld, { id: pl.id, address: ld.fullAddress || ld.address || ld.deceasedAddress || '' });
@@ -26079,7 +26083,8 @@ _deliverDiag[cust.email].products = products;
       try {
         var _fillLookupsC = 0; // per-customer fill PAF cap (prevents delivery stalls)
         var finalShort = Math.max(0, totalDailyLimit - custLeads.length);
-        if (finalShort > 0 && (process.env.POSTCODER_ENABLED === 'true' || process.env.POSTCODER_ENABLED === '1')) {
+        // Same budget gate: never spin the paid exact-count fill once Postcoder is spent.
+        if (finalShort > 0 && _pcBudgetNow > 0 && (process.env.POSTCODER_ENABLED === 'true' || process.env.POSTCODER_ENABLED === '1')) {
           for (var fp = 0; fp < products.length && custLeads.length < totalDailyLimit; fp++) {
             var fprod = products[fp];
             if (prodTaken[fprod] >= prodDailyCap(fprod)) continue;
@@ -26090,6 +26095,7 @@ _deliverDiag[cust.email].products = products;
               var fcreated = [];
               for (var fc=0; fc<fpoolArr.length && fcreated.length < finalShort && custLeads.length < totalDailyLimit; fc++) {
                 var fl = fpoolArr[fc];
+                if (_deliveryDeadline && Date.now() > _deliveryDeadline) { console.log('[DELIVERY] ' + cust.email + ': time budget reached during exact-count fill - stopping'); break; }
                 if (fl.commercial) continue;
                 if (alreadyDeliveredLead(fl)) continue;
                 var flD = pickFreshDate(fl);
