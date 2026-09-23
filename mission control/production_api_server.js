@@ -11935,11 +11935,24 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
   var freshCutoff = getFreshCutoffIso();
   var freshCutoff48p = new Date(Date.now() - 48 * 3600000).toISOString();
   var movingFallback48 = true;
+  // DELIVERED-LEAD EXCLUSION (matches the 9am run's GLOBAL exclusivity): a lead
+  // already delivered to ANY real customer is not available to this one, ever.
+  // Deliveries to internal/test/demo accounts never block real customers.
+  // Previously this only looked at THIS customer's leads and keyed URLs as
+  // 'u:'+url (which never matched the candidate key), so the preview over-counted
+  // and promised leads the delivery could not actually send.
   var deliveredKeys = {};
+  var _pvInternalIds = {};
+  (dbV.customers || []).forEach(function(c2) { try { if (typeof isInternalAccount === 'function' && isInternalAccount(c2)) _pvInternalIds[c2.id] = 1; } catch(e) {} });
   (dbV.leads || []).forEach(function(l) {
-    if (l.customer_id === cust.id && l.delivered) {
-      try { var dd = JSON.parse(l.data || '{}'); var u = dd.url || ''; if (u) deliveredKeys['u:' + u] = 1; var a = String(dd.fullAddress || dd.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30); if (a) deliveredKeys['a:' + a] = 1; } catch(e) {}
-    }
+    if (!l.delivered) return;
+    if (_pvInternalIds[l.customer_id]) return;
+    try {
+      var dd = JSON.parse(l.data || '{}');
+      var u = dd.url || ''; if (u) deliveredKeys[u] = 1;
+      var a = String(dd.fullAddress || dd.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30); if (a) deliveredKeys['a:' + a] = 1;
+      var _idk = 'aa:' + propertyIdentityKey(dd.fullAddress || dd.deceasedAddress || dd.address || '', dd.postcode || ''); if (_idk.length > 5) deliveredKeys[_idk] = 1;
+    } catch(e) {}
   });
   var pool = loadProductPool(cust.product);
   var maxBedsF = 99;
@@ -12030,7 +12043,22 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
   function pafEligible(lead, addr, pc) {
     if (!lead || lead.paf_failed) return false;
     if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(pc || '').trim())) return false;
-    return hasStreetName(addr);
+    if (!hasStreetName(addr)) return false;
+    // EPC can resolve the door number for FREE -> the 9am run will definitely deliver it.
+    try {
+      if (typeof EPC_INDEX !== 'undefined' && EPC_INDEX.isLoaded && EPC_INDEX.isLoaded()) {
+        var _ev = EPC_INDEX.resolveFullAddress(addr, pc);
+        if (_ev && hasUsablePremiseAddress(_ev, pc)) return true;
+      }
+    } catch(e) {}
+    // Otherwise the run needs a Postcoder credit to number it. If the daily budget is
+    // spent it CANNOT be numbered -> never count it. This is what made the preview say
+    // "9am will be fine" and the delivery then come up short.
+    try {
+      var _pb = require('./postcoder_budget');
+      if ((_pb.getDailyBudget() - _pb.usage()) <= 0) return false;
+    } catch(e) {}
+    return true;
   }
   var leadFilters = {};
   try { leadFilters = JSON.parse(cust.biz_field2 || '{}'); } catch(e) { leadFilters = {}; }
@@ -12082,7 +12110,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
     if (!previewLeadPassesFilters(l)) continue;
     var key = l.url || ('a:' + String(l.address || l.fullAddress || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30));
     var addrKeyP = 'aa:' + propertyIdentityKey(l.fullAddress || l.address || '', l.postcode || '');
-    if (deliveredKeys[key] || seen[key] || _sharedSeen[key]) continue;
+    if (deliveredKeys[key] || deliveredKeys[addrKeyP] || seen[key] || _sharedSeen[key]) continue;
     if (addrKeyP.length > 5 && (seen[addrKeyP] || _sharedSeen[addrKeyP])) continue;
     seen[key] = 1; seen[addrKeyP] = 1;
     if (_sharedSeen !== seen) { _sharedSeen[key] = 1; if (addrKeyP.length > 5) _sharedSeen[addrKeyP] = 1; }
@@ -19027,10 +19055,11 @@ async function runDailyDeliveryReport() {
     var rCusts = (rDb.customers || []).filter(function(c) { return !isInternalAccount(c) && isEntitledForDelivery(c); });
     var rRows = [];
     var rShort = [];
+    var rSeen = {};
     for (var ri = 0; ri < rCusts.length; ri++) {
       try {
         var rc = rCusts[ri];
-        var rp = await deliveryPreviewForCustomer(rc);
+        var rp = await deliveryPreviewForCustomer(rc, rSeen);
         var rPromised = parseInt(rc.leads_per_day, 10) > 0 ? parseInt(rc.leads_per_day, 10) : (getPlanLimit(rc.product, rc.plan, rc.coverage) || 5);
         // ACCOUNT FOR ALREADY-DELIVERED-TODAY: if a customer has already received
         // their full quota earlier today (e.g. a re-run/test), the preview shows 0
@@ -19412,10 +19441,11 @@ async function runFulfilmentGuarantee(label) {
     var gCusts = (gDb.customers || []).filter(function(c) { return !isInternalAccount(c) && isEntitledForDelivery(c); });
     var gShort = [];
     var gShortProds = {};
+    var gSeen = {};
     for (var gi = 0; gi < gCusts.length; gi++) {
       try {
         var gc = gCusts[gi];
-        var gp = await deliveryPreviewForCustomer(gc);
+        var gp = await deliveryPreviewForCustomer(gc, gSeen);
         var gpromised = parseInt(gc.leads_per_day, 10) > 0 ? parseInt(gc.leads_per_day, 10) : (getPlanLimit(gc.product, gc.plan, gc.coverage) || 5);
         if (!gp || gp.count < gpromised) {
           gShort.push(gc.email + ' (' + gc.product + '): ' + (gp ? gp.count : 0) + '/' + gpromised + ' in ' + ((gp && gp.areas) || []).join(','));
@@ -25219,9 +25249,24 @@ _deliverDiag[cust.email].products = products;
                           }
                         } catch(fde) {}
                       }
-                      // If we still don't have a numbered full address, PAF-verify.
+                      // EPC FIRST (FREE, local, in-memory): resolve the door number from the
+                      // local EPC index before spending any Postcoder credit. Postcoder is
+                      // only the fallback when the free index can't resolve the premise.
                       var fCurrPc = poolLeadData.postcode || '';
-                      if (!(hasPremiseNumber(poolLeadData.address || '', fCurrPc) && /[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(fCurrPc).trim()))) {
+                      if (!(hasPremiseNumber(poolLeadData.address || '', fCurrPc) && /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(fCurrPc).trim()))) {
+                        if (typeof EPC_INDEX !== 'undefined' && EPC_INDEX.isLoaded && EPC_INDEX.isLoaded()) {
+                          try {
+                            var _epcMove = EPC_INDEX.resolveFullAddress(poolLeadData.address || '', fCurrPc);
+                            if (_epcMove && hasPremiseNumber(_epcMove, fCurrPc) && hasUsablePremiseAddress(_epcMove, fCurrPc)) {
+                              poolLeadData.address = _epcMove;
+                              poolLeadData.fullAddress = _epcMove;
+                            }
+                          } catch(epcMoveErr) {}
+                        }
+                      }
+                      // STILL no confirmed number? PAF-verify via Postcoder (budget-capped fallback).
+                      var fCurrPc2 = poolLeadData.postcode || '';
+                      if (!(hasPremiseNumber(poolLeadData.address || '', fCurrPc2) && /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(fCurrPc2).trim()))) {
                         try {
                           var fenrArr = await pcDeliver.enrichMovingLeadsPostcoder([poolLeadData]);
                           if (fenrArr && fenrArr[0]) {
