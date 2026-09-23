@@ -24325,14 +24325,17 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
     var customers = (db.customers || []).filter(function(c) {
       if (!c.plan || c.plan === 'cancelled' || (c.bounced && c.bounced >= 3)) return false;
       if (onlyEmail && String(c.email || '').toLowerCase() !== onlyEmail) return false;
-      // TEST-ACCOUNT ISOLATION: test.* accounts ONLY ever receive leads in test_only
-      // mode (the 15-min delivery-test cron / manual run-test). The real 09:00
-      // delivery NEVER sends to test accounts - only real paying customers. This
-      // keeps test data out of the live email + dashboard + Print & Post pipeline.
       var _isTest = /^test\./.test(String(c.email || '').toLowerCase());
-      // test.* accounts now receive the REAL 9am Mon-Fri delivery like any other
-      // customer (the 15-min test cron is disabled). test_only mode still limits to
-      // test accounts for manual testing.
+      // INTERNAL / TEST / DEMO ISOLATION - the root cause of the recurring "leads
+      // not at 9am" outages. isInternalAccount() covers demo-*, @example.com,
+      // @9amleads.com, the owner address and test.* accounts. They were NEVER
+      // filtered out of the run, so the seeded demo fleet was delivered to FIRST
+      // and consumed the 3-minute delivery budget before the real customers were
+      // reached - they then got 0 leads and the founder had to rescue them by hand.
+      // demo/@example.com/@9amleads.com must never receive real leads at all; test.*
+      // accounts are still allowed but ONLY in test_only mode (monitoring run).
+      if (typeof isInternalAccount === 'function' && isInternalAccount(c) && !(testOnly && _isTest)) return false;
+      // TEST-ACCOUNT ISOLATION: in test_only mode, deliver to test accounts only.
       if (testOnly && !_isTest) return false;
       // GLOBAL DELIVERY HOLD (weekend testing): when db.delivery_hold is set, ONLY
       // test.* accounts may receive leads - every real customer is blocked from BOTH
@@ -24341,6 +24344,14 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       // block a Monday 9am delivery. Toggle with POST /api/admin/delivery-hold.
       if (isDeliveryHoldActive() && !_isTest) return false;
       return true;
+    });
+    // REAL CUSTOMERS FIRST (defensive): if any test account is ever present in a
+    // full run, process the real customers before it so the delivery budget is
+    // always spent on paying customers first.
+    customers.sort(function(a, b) {
+      var at = /^test\./.test(String(a.email || '').toLowerCase()) ? 1 : 0;
+      var bt = /^test\./.test(String(b.email || '').toLowerCase()) ? 1 : 0;
+      return at - bt;
     });
     console.log('[DELIVERY] Running for ' + customers.length + ' customer(s)' + (onlyEmail ? ' (filtered to ' + onlyEmail + ')' : '') + (getDb().delivery_hold ? ' [DELIVERY HOLD: test accounts only]' : ''));
     // GLOBAL EXCLUSIVITY: a lead delivered to ANY customer is never delivered to a
