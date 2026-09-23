@@ -128,14 +128,14 @@ var CURATED_POSTS = [
     keywords: ['moving leads', 'moving leads for removal companies', 'convert moving leads', 'removal company lead generation', 'UK moving leads'],
     date: '2026-08-20', reading_time: '8 min read',
     faqs: [
-      { q: 'How quickly should I contact a moving lead?', a: 'Aim for under 30 minutes, and absolutely inside 2 hours. When a property goes under offer or SSTC, the homeowner is actively comparing removal companies. The business that calls first wins a disproportionate share of the job, and a polite phone call builds far more trust than an email alone.' },
+      { q: 'How quickly should I contact a moving lead?', a: 'Aim for under 30 minutes, and absolutely inside 2 hours. When a property is newly listed, the homeowner is planning a move and starting to compare removal companies. The business that makes contact first wins a disproportionate share of the job, and a polite phone call builds far more trust than an email alone.' },
       { q: 'Are moving leads shared with other removal companies?', a: '9amLeads is a subscription data feed, not a marketplace. You receive your own daily allocation and we never send you the same opportunity twice. Because the underlying property listings are public, a competitor may spot the same move independently - which is exactly why speed of first contact matters.' },
       { q: 'How much do moving leads cost?', a: 'Moving leads start at £25 per week with a 7-day free trial and no card required. There are no auction dynamics or per-lead bidding - the price is fixed, so you can predict your monthly marketing cost precisely.' },
       { q: 'What postcode areas should I choose?', a: 'Start with the postcode districts you already work in most and where your crews run regularly. Expanding into adjacent districts with high listing volume grows your pipeline without spreading your response time too thin.' }
     ],
     sections: [
       { h: 'Why speed decides who wins the move', body: [
-        'When a property goes on the market, appears as Sold Subject to Contract (SSTC), or exchanges contracts, a removal decision is already forming. The homeowner is comparing quotes, often within a two-to-four week window. Every hour of delay means another removal company gets their quote in first.',
+        'When a property is newly listed for sale, a removal decision is already forming. The homeowner is planning their move and comparing quotes, often within a few weeks. Every hour of delay means another removal company gets their quote in first.',
         'In practice this means the first removal firm to make a warm, helpful phone call usually controls the conversation. Later callers end up competing on price. Earlier callers compete on service, personality and trust.',
         { cta: 'Get fresh moving leads in your postcode delivered every morning at 9am - start your free 7-day trial at 9amLeads.' }
       ]},
@@ -1157,7 +1157,7 @@ var CURATED_POSTS = [
         { ul: ['Identify the top 5-10 local agents by volume', 'Meet them personally with a simple offer', 'Give them cards and a reliable named contact', 'Follow up after every move they refer'] }
       ]},
       { h: 'The 9am daily-lead routine', body: [
-        'Advertising shows you to people who may be moving someday. A daily moving lead feed shows you to people who are moving right now. When a property goes SSTC or under offer, contact matters more than brand.',
+        'Advertising shows you to people who may be moving someday. A daily moving lead feed shows you to people who are moving right now. When a property is newly listed for sale, contact matters more than brand.',
         'Build the habit: review leads at 9am, call the strongest within the hour, quote on the day, follow up after 48 hours. A removal company that runs this routine reliably converts a steady stream of fresh leads into bookings - without a single ad pound.'
       ]}
     ]
