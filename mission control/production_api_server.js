@@ -18794,6 +18794,10 @@ function runFinalGuaranteeAudit() {
   var out = { ok: true, checked: 0, short: [], over: [], emails_resent: 0, duplicates_removed: 0, ran_at: new Date().toISOString(), rows: [] };
   try {
     try { autoFillDeliveryShortfalls(); } catch(e1) { console.log('[GUARANTEE] autofill error:', e1.message); }
+    // SELF-HEAL OVER-DELIVERY: trim any customer above their daily count BEFORE we
+    // count/report, so nobody is ever left over-served and the founder doesn't get an
+    // over-delivery email that needs manual fixing.
+    try { out.over_trimmed = trimOverdeliveredLeads(); } catch(et) { out.over_trimmed = []; }
     out.duplicates_removed = dedupeDailyDelivered();
     out.emails_resent = reconcileTodayEmails();
     purgeAllPendingRows();
@@ -18819,7 +18823,7 @@ function runFinalGuaranteeAudit() {
     if (out.over.length) {
       try { sendAdminAlert('⚠ GUARANTEE: ' + out.over.length + ' customer(s) OVER promised count', '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="color:#fbbf24;margin:0 0 8px">Over-delivery detected</h1><p style="color:#ccc;line-height:1.7">These customers received MORE than their promised daily count (check for duplicate rows):</p><ul style="color:#ccc;line-height:1.9">' + out.over.map(function(s){ return '<li>' + s + '</li>'; }).join('') + '</ul></div>'); } catch(al2) {}
     }
-    console.log('[GUARANTEE] audit: ok=' + out.ok + ' checked=' + out.checked + ' short=' + out.short.length + ' over=' + out.over.length + ' dupes=' + out.duplicates_removed + ' resent=' + out.emails_resent);
+    console.log('[GUARANTEE] audit: ok=' + out.ok + ' checked=' + out.checked + ' short=' + out.short.length + ' over=' + out.over.length + ' trimmed=' + ((out.over_trimmed || []).length) + ' dupes=' + out.duplicates_removed + ' resent=' + out.emails_resent);
     return out;
   } catch(e) { console.log('[GUARANTEE] audit error:', e.message); out.ok = false; return out; }
 }
@@ -22077,30 +22081,37 @@ app.post('/api/admin/reset-winback', adminAuth, (req, res) => {
     res.json({ success: true, reset: n });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+// Remove any leads delivered TODAY beyond a customer's daily target (fixes accidental
+// over-delivery). Newest excess first. Shared by the admin endpoint and the AUTOMATIC
+// guarantee audit so over-delivery self-corrects with no founder action - the promise
+// is "no more, no less", and a duplicate/over-delivery is always a bug.
+function trimOverdeliveredLeads() {
+  var d = getDb();
+  var today = new Date().toISOString().split('T')[0];
+  var trimmed = [];
+  (d.customers || []).forEach(function(c) {
+    if (!c.plan || c.plan === 'cancelled') return;
+    if (typeof isInternalAccount === 'function' && isInternalAccount(c)) return;
+    var target = 0; try { target = getPlanLimit(c.product, c.plan, c.coverage || 'postcode'); } catch(x) { target = 0; }
+    if (!target) target = c.leads_per_day || 5;
+    var todayLeads = (d.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && String(l.delivered_at).split('T')[0] === today; });
+    if (todayLeads.length <= target) return;
+    todayLeads.sort(function(a, b) { return String(b.delivered_at).localeCompare(String(a.delivered_at)); });
+    var excess = todayLeads.slice(0, todayLeads.length - target);
+    var excessIds = {};
+    excess.forEach(function(l) { excessIds[l.id] = 1; });
+    d.leads = (d.leads || []).filter(function(l) { return !excessIds[l.id]; });
+    try { excess.forEach(function(l) { db.prepare('DELETE FROM leads WHERE id = ?').run(l.id); }); } catch(x) {}
+    trimmed.push({ email: c.email, had: todayLeads.length, target: target, removed: excess.length });
+  });
+  if (trimmed.length) saveDb();
+  return trimmed;
+}
 // POST /api/admin/trim-overdelivered - remove any leads delivered TODAY beyond a
 // customer's daily target (fixes accidental over-delivery). Newest excess first.
 app.post('/api/admin/trim-overdelivered', adminAuth, (req, res) => {
   try {
-    var d = getDb();
-    var today = new Date().toISOString().split('T')[0];
-    var trimmed = [];
-    (d.customers || []).forEach(function(c) {
-      if (!c.plan || c.plan === 'cancelled') return;
-      var e = String(c.email || '').toLowerCase();
-      if (e.indexOf('@9amleads.com') !== -1 || e === 'ketzman1g@gmail.com' || /^test\./.test(e) || /^demo/.test(e)) return;
-      var target = 0; try { target = getPlanLimit(c.product, c.plan, c.coverage || 'postcode'); } catch(x) { target = 0; }
-      if (!target) target = c.leads_per_day || 5;
-      var todayLeads = (d.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && String(l.delivered_at).split('T')[0] === today; });
-      if (todayLeads.length <= target) return;
-      todayLeads.sort(function(a, b) { return String(b.delivered_at).localeCompare(String(a.delivered_at)); });
-      var excess = todayLeads.slice(0, todayLeads.length - target);
-      var excessIds = {};
-      excess.forEach(function(l) { excessIds[l.id] = 1; });
-      d.leads = (d.leads || []).filter(function(l) { return !excessIds[l.id]; });
-      try { excess.forEach(function(l) { db.prepare('DELETE FROM leads WHERE id = ?').run(l.id); }); } catch(x) {}
-      trimmed.push({ email: c.email, had: todayLeads.length, target: target, removed: excess.length });
-    });
-    saveDb();
+    var trimmed = trimOverdeliveredLeads();
     console.log('[ADMIN] trim-overdelivered: ' + JSON.stringify(trimmed));
     res.json({ success: true, trimmed: trimmed });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -24166,10 +24177,12 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
   } catch(tzErr) { console.log('[DELIVERY] timezone guard error:', tzErr.message); }
   if (_deliveryLock) {
     var _lockAge = Date.now() - (_deliveryLockAt || 0);
-    // 2 min (was 6): a stalled run must free the lock fast so the recovery watchdogs
-    // (09:05/09:20/09:35/09:50) can re-run and still hit the 9am promise. Combined
-    // with the 4-minute hard auto-release below, a hung run can never block delivery.
-    if (_lockAge > 2 * 60 * 1000) {
+    // 4 min (was 2): overlapping runs are the root cause of duplicate/over-delivery -
+    // two runs both pass the per-customer exact-count check and then both write the
+    // extra lead. Runs now have a 3-min per-run budget and skip internal/demo accounts,
+    // so a healthy run finishes in well under 4 min; only a genuinely hung run is
+    // preempted (by the hard auto-release below), keeping watchdog recovery fast.
+    if (_lockAge > 4 * 60 * 1000) {
       console.log('[DELIVERY] Stale delivery lock (' + Math.round(_lockAge / 1000) + 's) - releasing and continuing');
       _deliveryLock = false;
     } else {
