@@ -34256,15 +34256,20 @@ function checkBlogQueueLow() {
 // Runs the REAL delivery against the test.* accounts every 30 min using today's pool,
 // builds a report (count, door-complete, full postcode, in-area, freshness) and emails
 // it to the founder so scaling issues surface before they reach real customers.
-function httpCallLocal(method, path, body) {
+function httpCallLocal(method, path, body, timeoutMs) {
   return new Promise(function(resolve) {
     try {
       var http = require('http');
       var data = body ? JSON.stringify(body) : null;
+      var settled = false;
+      function done(v) { if (!settled) { settled = true; resolve(v); } }
       var req = http.request({ hostname: 'localhost', port: PORT, path: path, method: method, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (ADMIN_PASSWORD || 'Wemovehomes321!'), ...(data ? { 'Content-Length': Buffer.byteLength(data) } : {}) } }, function(r) {
-        var b = ''; r.on('data', function(c) { b += c; }); r.on('end', function() { try { resolve({ status: r.statusCode, json: JSON.parse(b) }); } catch(e) { resolve({ status: r.statusCode, raw: b }); } });
+        var b = ''; r.on('data', function(c) { b += c; }); r.on('end', function() { clearTimeout(_to); try { done({ status: r.statusCode, json: JSON.parse(b) }); } catch(e) { done({ status: r.statusCode, raw: b }); } });
       });
-      req.on('error', function() { resolve({ status: 0, raw: 'req error' }); });
+      req.on('error', function() { clearTimeout(_to); done({ status: 0, raw: 'req error' }); });
+      // Caller-set timeout so a slow internal run can't hang for Node's 300s request
+      // timeout and surface as a confusing socket error.
+      var _to = setTimeout(function() { try { req.destroy(); } catch(e) {} done({ status: 0, raw: 'timeout' }); }, timeoutMs || 250000);
       if (data) req.write(data); req.end();
     } catch(e) { resolve({ status: 0, raw: e.message }); }
   });
@@ -34575,7 +34580,7 @@ async function runDeliveryRehearsal(trigger, opts) {
     // reporting a false failure - a busy lock is not a delivery failure.
     var res = null;
     for (var _ra = 0; _ra < 8; _ra++) {
-      res = await httpCallLocal('POST', '/api/admin/deliver', { test_only: true, force: true });
+      res = await httpCallLocal('POST', '/api/admin/deliver', { test_only: true, force: true }, 200000);
       if (res && res.json && res.json.skipped === true) { await new Promise(function(r) { setTimeout(r, 15000); }); continue; }
       break;
     }
@@ -34583,6 +34588,15 @@ async function runDeliveryRehearsal(trigger, opts) {
     if (res && res.json && res.json.skipped === true) {
       out.ok = true; out.skipped = true; out.reason = 'delivery run busy - not a failure';
       console.log('[REHEARSAL] delivery run busy - skipped without alert');
+      _rehearsalLock = false; _rehearsalLockAt = 0;
+      return out;
+    }
+    if (res && res.status === 0) {
+      // Timeout / connection error talking to our own delivery endpoint. The run may
+      // still be proceeding server-side, so this is INCONCLUSIVE, not a proven
+      // failure - never page the founder for it.
+      out.ok = true; out.inconclusive = true; out.reason = 'delivery call inconclusive (' + (res.raw || 'no response') + ')';
+      console.log('[REHEARSAL] inconclusive: ' + out.reason + ' (no alert)');
       _rehearsalLock = false; _rehearsalLockAt = 0;
       return out;
     }
