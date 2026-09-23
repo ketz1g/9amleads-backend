@@ -34626,15 +34626,22 @@ async function runDeliveryRehearsal(trigger, opts) {
         return t && t >= _ncCut;
       });
       out.new_customers = [];
-      for (var _n = 0; _n < _newCusts.length; _n++) {
-        var nc = _newCusts[_n];
-        var ncExpected = (typeof getPlanLimit === 'function' ? getPlanLimit(nc.product, nc.plan, nc.coverage) : 0) || nc.leads_per_day || 5;
-        var ncPreview = 0;
-        try { var _np = await deliveryPreviewForCustomer(nc); ncPreview = (_np && _np.count) || 0; if (_np && _np.promised) ncExpected = _np.promised; } catch(ncErr) { ncPreview = -1; }
-        out.new_customers.push({ email: nc.email, product: nc.product, expected: ncExpected, preview: ncPreview, areas: (_np && _np.areas) || [] });
-        if (ncPreview < ncExpected) out.problems.push('NEW SIGNUP ' + nc.email + ' (' + nc.product + ') would get ' + (ncPreview < 0 ? '?' : ncPreview) + '/' + ncExpected + ' - check their areas/product');
+      if (_newCusts.length) {
+        // Use the SAME preview the morning reports use, so the numbers always agree.
+        var _pv = await httpCallLocal('GET', '/api/admin/delivery-preview', null, 180000);
+        var _byEmail = {};
+        if (_pv && _pv.json && _pv.json.customers) _pv.json.customers.forEach(function(r) { if (r && r.email) _byEmail[r.email] = r; });
+        _newCusts.forEach(function(nc) {
+          var row = _byEmail[nc.email] || {};
+          var expected = row.promised || (typeof getPlanLimit === 'function' ? getPlanLimit(nc.product, nc.plan, nc.coverage) : 0) || nc.leads_per_day || 5;
+          var preview = (row.preview_count === undefined) ? -1 : row.preview_count;
+          out.new_customers.push({ email: nc.email, product: nc.product, expected: expected, preview: preview, areas: row.areas || [] });
+          if (preview < expected) out.problems.push('NEW SIGNUP ' + nc.email + ' (' + nc.product + ') would get ' + (preview < 0 ? '?' : preview) + '/' + expected + ' - check their areas/product');
+        });
+        console.log('[REHEARSAL] new signups (48h): ' + out.new_customers.map(function(a){ return a.email + ' ' + a.preview + '/' + a.expected; }).join(' | '));
+      } else {
+        console.log('[REHEARSAL] new signups (48h): none');
       }
-      console.log('[REHEARSAL] new signups (48h): ' + (out.new_customers.length ? out.new_customers.map(function(a){ return a.email + ' ' + a.preview + '/' + a.expected; }).join(' | ') : 'none'));
     } catch(ncOuter) { console.log('[REHEARSAL] new-customer check error: ' + ncOuter.message); }
 
     out.ok = out.problems.length === 0;
