@@ -18474,6 +18474,40 @@ function autoFillDeliveryShortfalls(cbDone) {
   } catch(e) { console.log('[AUTOFILL] error:', e.message); if (typeof cbDone === 'function') { try { cbDone(); } catch(e2) {} } }
 }
 
+// ===== SCRAPER HEALTH WATCHDOG (auto-scrape + alert) =====
+// A stale/empty scrape pool must never silently stop deliveries. This checks each
+// product's freshest pool lead for products that actually have live customers, and if
+// a pool is stale/empty it AUTO-SCRAPES (moving + newbusiness), then alerts the founder
+// so it can be investigated. Runs 06:15 and 08:15 UK weekdays.
+function scraperHealthWatchdog(label) {
+  try {
+    var prods = ['moving', 'probate', 'newbusiness', 'planning', 'tenders'];
+    var stale = [];
+    prods.forEach(function(p) {
+      var hasCust = (getDb().customers || []).some(function(c) { return c.product === p && !isInternalAccount(c) && isEntitledForDelivery(c); });
+      if (!hasCust) return;
+      var pool = [];
+      try { pool = getDeliveryPool(p) || []; } catch(e) { pool = []; }
+      if (!pool.length) { stale.push(p + ' (empty pool)'); return; }
+      var newest = 0;
+      for (var i = 0; i < pool.length; i++) { var d = pickFreshDate(pool[i]); if (d) { var t = Date.parse(d); if (t > newest) newest = t; } }
+      var ageH = newest ? (Date.now() - newest) / 3600000 : 9999;
+      if (ageH > 36) stale.push(p + ' stale (' + Math.round(ageH) + 'h)');
+    });
+    if (!stale.length) { console.log('[SCRAPER-HEALTH ' + label + '] pools healthy'); return Promise.resolve(); }
+    console.log('[SCRAPER-HEALTH ' + label + '] ' + stale.join('; ') + ' - auto-scraping');
+    var jobs = [];
+    jobs.push(Promise.resolve(scrapeShortfallAreas()).catch(function(e) { console.log('[SCRAPER-HEALTH] moving scrape error: ' + (e && e.message)); }));
+    if (typeof runNewBusinessRestScrape === 'function') jobs.push(Promise.resolve(runNewBusinessRestScrape()).catch(function(e) { console.log('[SCRAPER-HEALTH] newbusiness scrape error: ' + (e && e.message)); }));
+    return Promise.all(jobs).then(function() {
+      try { sendAdminAlert('\u26a0 Scraper auto-recovery (' + label + ')', '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="color:#fbbf24;margin:0 0 8px">Scrape pools were stale - auto-scraped</h1><p style="color:#ccc;line-height:1.7">Detected: ' + stale.join('; ') + '. An automatic scrape was triggered to protect the 9am delivery. If this repeats, check the scraper API keys/limits.</p></div>'); } catch(al) {}
+    });
+  } catch(e) { console.log('[SCRAPER-HEALTH] error: ' + e.message); return Promise.resolve(); }
+}
+cron.schedule('15 6 * * 1-5', function() { try { scraperHealthWatchdog('06:15'); } catch(e) {} }, { timezone: 'Europe/London' });
+cron.schedule('15 8 * * 1-5', function() { try { scraperHealthWatchdog('08:15'); } catch(e) {} }, { timezone: 'Europe/London' });
+app.post('/api/admin/scraper-health', adminAuth, async (req, res) => { try { await scraperHealthWatchdog('manual'); res.json({ success: true }); } catch(e) { res.status(500).json({ error: e.message }); } });
+
 // ===== PRE-ALLOCATION (08:30 UK weekdays) =====
 // Queue each real customer's promised count of mail-ready leads BEFORE 9am, so the
 // 9am run is a fast, deterministic "deliver the queue" and can never stall scanning
@@ -18545,6 +18579,11 @@ function preallocateDeliveryQueues() {
       return Promise.all(jobs).then(function() { return runFill(); }).then(function(short2) {
         var _n2 = _shortNames(short2);
         console.log('[PREALLOC] ' + (short2.length ? ('still short after scrape: ' + _n2.join(', ')) : 'all customers queued after scrape'));
+        // ALERT: if a customer STILL can't be filled after the deep-scrape, page the
+        // founder now (before 9am) so they can widen areas/add supply - never discover it at 9am.
+        if (short2.length) {
+          try { sendAdminAlert('\u26a0 Pre-9am allocation short after scrape', '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="color:#f87171;margin:0 0 8px">Some customers are still short</h1><p style="color:#ccc;line-height:1.7">Even after deep-scraping their areas, these could not be queued to their promised count - they may be short at 9am unless areas/supply change:</p><ul style="color:#fca5a5;line-height:1.9">' + short2.map(function(s) { return '<li>' + s.email + ' (' + s.have + '/' + s.promised + ') - ' + s.product + '</li>'; }).join('') + '</ul></div>'); } catch(al) {}
+        }
         return _n2;
       });
     });
