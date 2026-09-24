@@ -15913,14 +15913,54 @@ function sendSmsViaBrevo(phone, text) {
 // Email the founder (ketzman1g@gmail.com) when something needs attention so issues
 // are caught BEFORE they affect customers. Used for delivery errors, readiness
 // shortfalls, low budgets, low Stannp balance and server restarts.
+// Forward a backend alert to an AGENT (GitHub repository_dispatch -> agent-triage
+// workflow that investigates and opens a draft PR) and/or a generic webhook
+// (Slack/Discord/Zapier). Config via env (all optional):
+//   GH_ALERT_TOKEN  - GitHub token with repo dispatch scope
+//   GH_ALERT_REPO   - defaults to ketz1g/9amleads-backend
+//   ALERT_WEBHOOK_URL - any https webhook to also notify
+// Rate-limited per subject so one incident can't spam the agent.
+function _notifyAgent(subject, text) {
+  try {
+    var now = Date.now();
+    if (!global.__agentNotifyAt) global.__agentNotifyAt = {};
+    if (global.__agentNotifyAt[subject] && (now - global.__agentNotifyAt[subject]) < 10 * 60 * 1000) return;
+    global.__agentNotifyAt[subject] = now;
+    var https = require('https');
+    var tok = process.env.GH_ALERT_TOKEN || process.env.GITHUB_DISPATCH_TOKEN || '';
+    var repo = process.env.GH_ALERT_REPO || 'ketz1g/9amleads-backend';
+    if (tok && repo) {
+      var data = JSON.stringify({ event_type: 'backend-alert', client_payload: { subject: String(subject || '').slice(0, 200), text: String(text || '').slice(0, 4000), at: new Date().toISOString() } });
+      var r = https.request({ hostname: 'api.github.com', path: '/repos/' + repo + '/dispatches', method: 'POST', headers: { 'Authorization': 'Bearer ' + tok, 'User-Agent': '9amleads', 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) } }, function(resp) { try { resp.resume(); } catch(e) {} });
+      r.on('error', function() {});
+      r.write(data); r.end();
+      console.log('[ALERT->AGENT] dispatched "' + subject + '"');
+    }
+    var wh = process.env.ALERT_WEBHOOK_URL || '';
+    if (wh && /^https:\/\//.test(wh)) {
+      try {
+        var u = new URL(wh);
+        var wd = JSON.stringify({ text: '9amLeads Alert: ' + subject + '\n' + String(text || '').slice(0, 1500) });
+        var r2 = https.request({ hostname: u.hostname, path: u.pathname + (u.search || ''), method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(wd) } }, function(resp) { try { resp.resume(); } catch(e) {} });
+        r2.on('error', function() {});
+        r2.write(wd); r2.end();
+      } catch(e) {}
+    }
+  } catch(e) { console.log('[ALERT->AGENT] error:', e.message); }
+}
 function sendAdminAlert(subject, bodyHtml) {
   try {
     var to = { email: process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com', name: 'Admin' };
     var html = '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:16px">' +
-      '<div style="font-size:17px;font-weight:800;color:#fbbf24;margin-bottom:12px">⚠ 9amLeads Alert</div>' +
+      '<div style="font-size:17px;font-weight:800;color:#fbbf24;margin-bottom:12px">�s 9amLeads Alert</div>' +
       bodyHtml +
-      '<div style="margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.1);font-size:11px;color:#94a3b8">Sent automatically by the 9amLeads system at ' + new Date().toISOString() + '</div></div>';
+      '<div style="margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.1);font-size:11px;color:#94a3b8">Sent automatically by the 9amLeads system</div></div>';
     sendBrevoEmail(to, subject, html);
+    // Also notify the auto-triage agent + any webhook (plain-text version of the alert).
+    try {
+      var plain = String(bodyHtml || '').replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
+      _notifyAgent(subject, plain);
+    } catch(e2) {}
   } catch(e) { console.log('[ALERT] send error:', e.message); }
 }
 

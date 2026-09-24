@@ -1,0 +1,96 @@
+name: Agent triage (backend alert)
+
+# Fired by the backend via a GitHub repository_dispatch when a 9amLeads alert goes
+# out (sendAdminAlert -> _notifyAgent). The agent investigates, makes the smallest
+# safe fix, runs checks, and opens a DRAFT pull request for a human to review/merge.
+# It NEVER merges and never touches secrets.
+on:
+  repository_dispatch:
+    types: [backend-alert]
+  workflow_dispatch:
+    inputs:
+      subject:
+        description: Alert subject
+        required: false
+      text:
+        description: Alert details
+        required: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install opencode
+        run: npm i -g opencode-ai
+
+      - name: Investigate + fix (agent)
+        env:
+          # Provider auth for opencode (add ONE of these as a repo secret):
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          SUBJECT: ${{ github.event.client_payload.subject || github.event.inputs.subject }}
+          TEXT: ${{ github.event.client_payload.text || github.event.inputs.text }}
+        run: |
+          set -e
+          MSG=$(cat <<EOF
+          A 9amLeads backend alert just fired.
+
+          SUBJECT: $SUBJECT
+          DETAILS: $TEXT
+
+          Task:
+          1. Investigate the code in "mission control/" (and 9amwebsite/ if relevant) and
+             find the ROOT CAUSE - do not guess.
+          2. Make the smallest, safest fix.
+          3. Run: node --check on any changed .js, and node test/*.js.
+          4. Do NOT merge anything, do NOT touch secrets or credentials.
+          5. If the fix is unclear or risky, open an ISSUE instead with your findings.
+          6. Keep the change focused and explain it.
+          EOF
+          )
+          opencode run "$MSG" --auto --format json > /tmp/agent-out.json 2>/tmp/agent-err.txt || true
+          echo "--- agent output (tail) ---"
+          tail -c 4000 /tmp/agent-out.json || true
+
+      - name: Open a draft PR with the fix
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SUBJECT: ${{ github.event.client_payload.subject || github.event.inputs.subject }}
+          TEXT: ${{ github.event.client_payload.text || github.event.inputs.text }}
+        run: |
+          set -e
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "No code changes produced by the agent - nothing to PR."
+            exit 0
+          fi
+          BR="agent/auto-triage-$(date +%s)"
+          git config user.name "9amleads-agent"
+          git config user.email "agent@9amleads.com"
+          git checkout -b "$BR"
+          git add -A
+          git commit -m "fix(auto-triage): ${SUBJECT:-backend alert}"
+          git push -u origin "$BR"
+          gh pr create \
+            --title "Auto-triage: ${SUBJECT:-backend alert}" \
+            --body "Triggered by a 9amLeads backend alert.
+
+          **Alert:** ${SUBJECT}
+
+          **Details:** ${TEXT}
+
+          The agent investigated and produced this change. Review before merging - it is opened as a DRAFT on purpose." \
+            --head "$BR" --base master --draft
