@@ -18486,22 +18486,41 @@ function preallocateDeliveryQueues() {
       var dbA = getDb();
       var real = (dbA.customers || []).filter(function(c) { return !isInternalAccount(c) && isEntitledForDelivery(c); });
       var stillShort = [];
+      var seen = {}; // shared across customers so the same lead is never queued twice
       var chain = Promise.resolve();
       real.forEach(function(c) {
         chain = chain.then(function() {
           var promised = getPlanLimit(c.product, c.plan, c.coverage) || c.leads_per_day || 5;
-          var queued = (getDb().leads || []).filter(function(l) { return l.customer_id === c.id && !l.delivered && l.status !== 'removed'; }).length;
-          var need = promised - queued;
-          var attempts = 0;
-          function step() {
-            if (need <= 0 || attempts >= promised + 5) return Promise.resolve();
-            attempts++;
-            return httpCallLocal('POST', '/api/admin/top-up-today', { email: c.email, allow_older: true, queue_only: true }, 60000).then(function(r) {
-              if (r && r.json && r.json.added === 1) { need--; return step(); }
-              return Promise.resolve();
-            });
+          // Queue EXACTLY the leads the engine's own preview selects (identical area
+          // matching, freshness and mailable gate), so pre-allocation and the admin
+          // preview always agree - this is what was broken for county/region customers.
+          function queueFromPreview() {
+            return Promise.resolve(deliveryPreviewForCustomer(c, seen)).then(function(pv) {
+              var leads = (pv && pv.leads) || [];
+              var db = getDb();
+              var have = {};
+              (db.leads || []).forEach(function(l) {
+                if (l.customer_id !== c.id) return;
+                try { var d = JSON.parse(l.data || '{}'); var u = String(d.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase(); if (u) have['u:' + u] = 1; var a = String(d.fullAddress || d.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30); if (a) have['a:' + a] = 1; } catch(e) {}
+              });
+              var today = new Date().toISOString().split('T')[0];
+              var nowIso = new Date().toISOString();
+              var queuedNow = (db.leads || []).filter(function(l) { return l.customer_id === c.id && !l.delivered && l.status !== 'removed'; }).length;
+              var need = promised - queuedNow;
+              var added = 0;
+              leads.forEach(function(pl) {
+                if (added >= need) return;
+                var u = String(pl.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase();
+                var a = String(pl.fullAddress || pl.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30);
+                var k1 = u ? 'u:' + u : ''; var k2 = a ? 'a:' + a : '';
+                if ((k1 && (have[k1] || seen[k1])) || (k2 && (have[k2] || seen[k2]))) return;
+                db.leads.push({ id: uuidv4(), customer_id: c.id, product: c.product, data: JSON.stringify(pl), status: 'new', delivered: 0, created_at: nowIso, delivered_at: null, release_at: today + 'T09:00:00.000Z' });
+                if (k1) seen[k1] = 1; if (k2) seen[k2] = 1; added++;
+              });
+              if (added) saveDb();
+            }).catch(function(e) { console.log('[PREALLOC] preview error ' + c.email + ': ' + (e && e.message)); });
           }
-          return step().then(function() {
+          return queueFromPreview().then(function() {
             var q2 = (getDb().leads || []).filter(function(l) { return l.customer_id === c.id && !l.delivered && l.status !== 'removed'; }).length;
             if (q2 < promised) stillShort.push({ email: c.email, product: c.product, have: q2, promised: promised });
             console.log('[PREALLOC] ' + c.email + ': queued ' + q2 + '/' + promised);
