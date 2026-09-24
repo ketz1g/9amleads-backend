@@ -34718,16 +34718,19 @@ async function runDeliveryRehearsal(trigger, opts) {
       });
       out.new_customers = [];
       if (_newCusts.length) {
-        // Use the SAME preview the morning reports use, so the numbers always agree.
-        var _pv = await httpCallLocal('GET', '/api/admin/delivery-preview', null, 180000);
+        // Use readiness (queued + preview) so it accounts for the 08:30 pre-allocation
+        // that has already reserved each customer's leads - otherwise a shared-seen pool
+        // preview under-counts and raises a false alarm.
+        var _rd = await httpCallLocal('GET', '/api/admin/readiness', null, 180000);
         var _byEmail = {};
-        if (_pv && _pv.json && _pv.json.customers) _pv.json.customers.forEach(function(r) { if (r && r.email) _byEmail[r.email] = r; });
+        if (_rd && _rd.json && _rd.json.customers) _rd.json.customers.forEach(function(r) { if (r && r.email) _byEmail[r.email] = r; });
         _newCusts.forEach(function(nc) {
           var row = _byEmail[nc.email] || {};
           var expected = row.promised || (typeof getPlanLimit === 'function' ? getPlanLimit(nc.product, nc.plan, nc.coverage) : 0) || nc.leads_per_day || 5;
-          var preview = (row.preview_count === undefined) ? -1 : row.preview_count;
-          out.new_customers.push({ email: nc.email, product: nc.product, expected: expected, preview: preview, areas: row.areas || [] });
-          if (preview < expected) out.problems.push('NEW SIGNUP ' + nc.email + ' (' + nc.product + ') would get ' + (preview < 0 ? '?' : preview) + '/' + expected + ' - check their areas/product');
+          var have = (row.queued_mailable || 0) + (row.preview_count || 0);
+          var status = row.status || (have >= expected ? 'OK' : 'SHORT');
+          out.new_customers.push({ email: nc.email, product: nc.product, expected: expected, preview: have, status: status, areas: row.areas || [] });
+          if (status !== 'OK') out.problems.push('NEW SIGNUP ' + nc.email + ' (' + nc.product + ') would get ' + have + '/' + expected + ' - check their areas/product');
         });
         console.log('[REHEARSAL] new signups (48h): ' + out.new_customers.map(function(a){ return a.email + ' ' + a.preview + '/' + a.expected; }).join(' | '));
       } else {
