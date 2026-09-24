@@ -18486,23 +18486,30 @@ function preallocateDeliveryQueues() {
           }
           return step().then(function() {
             var q2 = (getDb().leads || []).filter(function(l) { return l.customer_id === c.id && !l.delivered && l.status !== 'removed'; }).length;
-            if (q2 < promised) stillShort.push(c.email + ' (' + q2 + '/' + promised + ')');
+            if (q2 < promised) stillShort.push({ email: c.email, product: c.product, have: q2, promised: promised });
             console.log('[PREALLOC] ' + c.email + ': queued ' + q2 + '/' + promised);
           });
         });
       });
       return chain.then(function() { return stillShort; });
     }
+    function _shortNames(arr) { return arr.map(function(s) { return s.email + ' (' + s.have + '/' + s.promised + ')'; }); }
     return runFill().then(function(short1) {
       if (!short1.length) { console.log('[PREALLOC] all customers queued to promise'); return []; }
-      // INCREASE SCRAPING ON DEMAND: deep-scrape ONLY the shortfall areas, then refill
-      // the queues, so every customer gets their exact count from their own areas.
-      console.log('[PREALLOC] short after first pass: ' + short1.join(', ') + ' - deep-scraping their areas then refilling');
-      return Promise.resolve(scrapeShortfallAreas()).catch(function(e) { console.log('[PREALLOC] deep-scrape error: ' + (e && e.message)); }).then(function() {
-        return runFill();
-      }).then(function(short2) {
-        console.log('[PREALLOC] ' + (short2.length ? ('still short after scrape: ' + short2.join(', ')) : 'all customers queued after scrape'));
-        return short2;
+      // INCREASE SCRAPING ON DEMAND: deep-scrape ONLY the shortfall areas (per product),
+      // then refill, so every customer gets their exact count from their own areas.
+      console.log('[PREALLOC] short after first pass: ' + _shortNames(short1).join(', ') + ' - deep-scraping their areas then refilling');
+      var prods = {}; short1.forEach(function(s) { prods[s.product] = 1; });
+      var jobs = [];
+      if (prods.moving) jobs.push(Promise.resolve(scrapeShortfallAreas()).catch(function(e) { console.log('[PREALLOC] moving scrape error: ' + (e && e.message)); }));
+      if (prods.newbusiness && typeof runNewBusinessRestScrape === 'function') jobs.push(Promise.resolve(runNewBusinessRestScrape()).catch(function(e) { console.log('[PREALLOC] newbusiness scrape error: ' + (e && e.message)); }));
+      if (prods.probate && typeof runProbateScrape === 'function') jobs.push(Promise.resolve(runProbateScrape()).catch(function(e) { console.log('[PREALLOC] probate scrape error: ' + (e && e.message)); }));
+      if (prods.planning && typeof runPlanningScrape === 'function') jobs.push(Promise.resolve(runPlanningScrape()).catch(function(e) { console.log('[PREALLOC] planning scrape error: ' + (e && e.message)); }));
+      if (prods.tenders && typeof runTendersScrape === 'function') jobs.push(Promise.resolve(runTendersScrape()).catch(function(e) { console.log('[PREALLOC] tenders scrape error: ' + (e && e.message)); }));
+      return Promise.all(jobs).then(function() { return runFill(); }).then(function(short2) {
+        var _n2 = _shortNames(short2);
+        console.log('[PREALLOC] ' + (short2.length ? ('still short after scrape: ' + _n2.join(', ')) : 'all customers queued after scrape'));
+        return _n2;
       });
     });
   } catch(e) { console.log('[PREALLOC] error:', e.message); return []; }
