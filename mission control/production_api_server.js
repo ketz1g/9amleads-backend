@@ -15947,8 +15947,20 @@ function _notifyAgent(subject, text) {
     if (/auto[-\s]?fix|no change needed|agent (found|error)|areas auto-widened|scraper auto|^test alert|rollback/i.test(_subj)) return;
     var now = Date.now();
     if (!global.__agentNotifyAt) global.__agentNotifyAt = {};
-    if (global.__agentNotifyAt[subject] && (now - global.__agentNotifyAt[subject]) < 10 * 60 * 1000) return;
+    // RATE LIMIT 1 - per issue: at most one agent dispatch per subject per 30 minutes.
+    if (global.__agentNotifyAt[subject] && (now - global.__agentNotifyAt[subject]) < 30 * 60 * 1000) {
+      console.log('[ALERT->AGENT] suppressed (same issue within 30m): ' + String(subject).slice(0, 80));
+      return;
+    }
+    // RATE LIMIT 2 - global burst cap: at most one agent dispatch every 15 minutes,
+    // so a genuinely recurring problem can never spawn a storm. The alert still emails.
+    if (global.__agentLastDispatchAt && (now - global.__agentLastDispatchAt) < 15 * 60 * 1000) {
+      console.log('[ALERT->AGENT] suppressed (global 15m cooldown): ' + String(subject).slice(0, 80));
+      global.__agentNotifyAt[subject] = now;
+      return;
+    }
     global.__agentNotifyAt[subject] = now;
+    global.__agentLastDispatchAt = now;
     var https = require('https');
     var tok = process.env.GH_ALERT_TOKEN || process.env.GITHUB_DISPATCH_TOKEN || '';
     var repo = process.env.GH_ALERT_REPO || 'ketz1g/9amleads-backend';

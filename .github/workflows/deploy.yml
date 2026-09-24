@@ -116,6 +116,13 @@ jobs:
           GH_ALERT_TOKEN: ${{ secrets.GH_ALERT_TOKEN }}
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
         run: |
+          # COOLDOWN: never dispatch if an agent run started in the last 15 min.
+          LAST=$(curl -s -H "Authorization: Bearer $GH_ALERT_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/ketz1g/9amleads-backend/actions/workflows/365906054/runs?per_page=1" | jq -r '.workflow_runs[0].created_at // empty')
+          if [ -n "$LAST" ]; then
+            LAST_EPOCH=$(date -d "$LAST" +%s 2>/dev/null || echo 0)
+            if [ $(( $(date +%s) - LAST_EPOCH )) -lt 900 ]; then echo "Agent ran within 15m - skipping dispatch."; exit 0; fi
+          fi
           code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "https://api.github.com/repos/ketz1g/9amleads-backend/dispatches" \
             -H "Authorization: Bearer $GH_ALERT_TOKEN" -H "Accept: application/vnd.github+json" -H "Content-Type: application/json" \
             -d "{\"event_type\":\"backend-alert\",\"client_payload\":{\"subject\":\"Deploy/smoke-test workflow FAILED\",\"text\":\"Run ${{ github.run_id }} failed. URL: https://github.com/ketz1g/9amleads-backend/actions/runs/${{ github.run_id }}\"}}" || echo 000)
