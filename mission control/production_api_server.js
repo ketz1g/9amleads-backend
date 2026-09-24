@@ -24478,6 +24478,12 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
     for (var ci = 0; ci < customers.length; ci++) {
       var cust = customers[ci];
       var _custT0 = Date.now();
+      // HARD PER-CUSTOMER TIME CAP: one low-supply customer (whose pool scan falls
+      // back over the whole 5975-lead pool) must NEVER stall the run and starve every
+      // customer behind it - the exact cause of the 24 Sep outage where the 9am run
+      // looped on enquiry@great-moving.com and the rest got 0. After this cap we stop
+      // filling this customer and move on; the auto-fill/watchdog tops them up.
+      var _custDeadline = _custT0 + 15000;
       // TEST ACCOUNTS get a DEDICATED pool: they skip the global exclusivity checks so
       // they can never be starved by real customers taking the same leads. This makes
       // the monitoring/test suite a reliable pass/fail for the pipeline itself.
@@ -25070,7 +25076,7 @@ _deliverDiag[cust.email].products = products;
       custAreas.forEach(function(a) { usedAreas[a] = {}; });
       var areaCycle = 0;
                 for (var r1p = 0; r1p < products.length && custLeads.length < totalNeeded; r1p++) {
-                  if (_deliveryDeadline && Date.now() > _deliveryDeadline) break;
+                  if ((_deliveryDeadline && Date.now() > _deliveryDeadline) || (_custDeadline && Date.now() > _custDeadline)) break;
         var r1prod = products[r1p];
         if (prodTaken[r1prod] >= prodDailyCap(r1prod)) continue;
         if (!canTakeProduct(r1prod, cust.plan, weekStart2, today, custLeads)) continue;
@@ -25124,7 +25130,7 @@ _deliverDiag[cust.email].products = products;
       if (custLeads.length < totalNeeded) {
         var maxRounds = Math.min(50, Math.ceil(totalNeeded * 2));
                 for (var r2 = 0; r2 < maxRounds && custLeads.length < totalNeeded; r2++) {
-                  if (_deliveryDeadline && Date.now() > _deliveryDeadline) break;
+                  if ((_deliveryDeadline && Date.now() > _deliveryDeadline) || (_custDeadline && Date.now() > _custDeadline)) break;
           for (var r2p = 0; r2p < products.length && custLeads.length < totalNeeded; r2p++) {
             var r2prod = products[r2p];
             if (prodTaken[r2prod] >= prodDailyCap(r2prod)) continue;
@@ -25193,7 +25199,7 @@ _deliverDiag[cust.email].products = products;
                       // exceeded its budget. Each candidate can trigger a slow Rightmove
                       // detail fetch + PAF lookup, so without this a large pool stalls
                       // the whole 9am send. Whatever has been assigned is still emailed.
-                      if (_deliveryDeadline && Date.now() > _deliveryDeadline) {
+                      if ((_deliveryDeadline && Date.now() > _deliveryDeadline) || (_custDeadline && Date.now() > _custDeadline)) {
                         console.log('[DELIVERY] ' + cust.email + ': time budget reached - stopping pool scan'); break; }
                       var rl = poolArr[pf];
                       var rlD = pickFreshDate(rl);
@@ -26119,7 +26125,7 @@ _deliverDiag[cust.email].products = products;
               var fcreated = [];
               for (var fc=0; fc<fpoolArr.length && fcreated.length < finalShort && custLeads.length < totalDailyLimit; fc++) {
                 var fl = fpoolArr[fc];
-                if (_deliveryDeadline && Date.now() > _deliveryDeadline) { console.log('[DELIVERY] ' + cust.email + ': time budget reached during exact-count fill - stopping'); break; }
+                if ((_deliveryDeadline && Date.now() > _deliveryDeadline) || (_custDeadline && Date.now() > _custDeadline)) { console.log('[DELIVERY] ' + cust.email + ': time budget reached during exact-count fill - stopping'); break; }
                 if (fl.commercial) continue;
                 if (alreadyDeliveredLead(fl)) continue;
                 var flD = pickFreshDate(fl);
