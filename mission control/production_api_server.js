@@ -15941,6 +15941,10 @@ function sendSmsViaBrevo(phone, text) {
 // Rate-limited per subject so one incident can't spam the agent.
 function _notifyAgent(subject, text) {
   try {
+    // NEVER re-dispatch the agent for its own outcome / informational messages. Doing
+    // so caused an infinite loop: agent -> "Auto-fixed" alert -> dispatch -> agent ...
+    var _subj = String(subject || '');
+    if (/auto[-\s]?fix|no change needed|agent (found|error)|areas auto-widened|scraper auto|^test alert|rollback/i.test(_subj)) return;
     var now = Date.now();
     if (!global.__agentNotifyAt) global.__agentNotifyAt = {};
     if (global.__agentNotifyAt[subject] && (now - global.__agentNotifyAt[subject]) < 10 * 60 * 1000) return;
@@ -18674,7 +18678,7 @@ function preallocateDeliveryQueues() {
     }
     function _shortNames(arr) { return arr.map(function(s) { return s.email + ' (' + s.have + '/' + s.promised + ')'; }); }
     return runFill().then(function(short1) {
-      if (!short1.length) { console.log('[PREALOC] all customers queued to promise'); return []; }
+      if (!short1.length) { console.log('[PREALLOC] all customers queued to promise'); return []; }
       // INCREASE SCRAPING ON DEMAND: deep-scrape ONLY the shortfall areas (per product),
       // then refill, so every customer gets their exact count from their own areas.
       console.log('[PREALLOC] short after first pass: ' + _shortNames(short1).join(', ') + ' - deep-scraping their areas then refilling');

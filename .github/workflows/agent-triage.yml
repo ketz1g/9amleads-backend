@@ -16,6 +16,11 @@ on:
         description: Alert details
         required: false
 
+# Only ONE agent run at a time (queue the rest). Prevents pile-ups / loops.
+concurrency:
+  group: agent-triage
+  cancel-in-progress: false
+
 permissions:
   contents: write
   pull-requests: write
