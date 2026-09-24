@@ -451,6 +451,10 @@ function openDeliveryPreview() {
         if (cx.areas && cx.areas.length) {
           html += '<div style="font-size:11px;color:#475569;margin:0 0 6px"><b style="color:#0f172a">Chosen areas:</b> ' + cx.areas.join(', ') + '</div>';
         }
+        var _res = cx.queued_mailable || 0;
+        var _have = _res + (cx.preview_count || 0);
+        var _prom = cx.promised || 0;
+        html += '<div style="font-size:11px;margin:0 0 6px;color:' + (_have >= _prom ? '#15803d' : '#b91c1c') + '"><b>Reserved for 9am:</b> ' + _res + '/' + _prom + ' queued' + (_have >= _prom ? ' &#10003; will deliver' : ' &#9888; at risk - will deep-scrape') + '</div>';
         if (cx.product === 'moving') {
           var guar = (cx.door_now || 0) + ' have door numbers';
           if (cx.door_paf) guar += ' · <b>' + cx.door_paf + ' get door number added at delivery</b>';

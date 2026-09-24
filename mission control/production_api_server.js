@@ -11462,7 +11462,19 @@ app.get('/api/admin/delivery-preview', adminAuth, async (req, res) => {
       var dNow = (pv.leads || []).filter(function(l) { return l.has_door_number; }).length;
       var dPaf = (pv.leads || []).filter(function(l) { return l.paf_candidate; }).length;
       var dFail = (pv.leads || []).filter(function(l) { return l.paf_failed; }).length;
-      out.push({ email: pv.email, company: pv.company, product: pv.product, plan: pv.plan, areas: pv.areas, promised: pv.promised, preview_count: pv.count, fallback_count: pv.fallback_count, fallback_note: pv.fallback_note, door_now: dNow, door_paf: dPaf, door_fail: dFail, leads: pv.leads, error: pv.error || '', debug: pv.debug });
+      // RESERVED: leads already queued (undelivered, mailable) for this customer by the
+      // 08:30 pre-allocation. This is the GUARANTEED part of the 9am delivery, so the
+      // admin preview can show the truth instead of an optimistic pool projection.
+      var _qReserved = 0;
+      try {
+        _qReserved = (dbP.leads || []).filter(function(l) {
+          if (l.customer_id !== customers[pi].id || l.delivered || l.status === 'removed') return false;
+          var _dd = {}; try { _dd = JSON.parse(l.data || '{}'); } catch(e) { _dd = {}; }
+          if (_dd.rejected || _dd.blocked || _dd.blocked_by_admin) return false;
+          return true;
+        }).length;
+      } catch(e) {}
+      out.push({ email: pv.email, company: pv.company, product: pv.product, plan: pv.plan, areas: pv.areas, promised: pv.promised, preview_count: pv.count, queued_mailable: _qReserved, fallback_count: pv.fallback_count, fallback_note: pv.fallback_note, door_now: dNow, door_paf: dPaf, door_fail: dFail, leads: pv.leads, error: pv.error || '', debug: pv.debug });
     }
     res.json({ success: true, generated_at: new Date().toISOString(), note: 'Preview based on the current pool - run after the 6am scrape for the most accurate 9am preview.', last_preverify: dbP.seo_last_preverify || null, guarantee: dbP.fulfilment_guarantee || null, customers: out });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -18446,34 +18458,46 @@ function autoFillDeliveryShortfalls(cbDone) {
 // as delivery; it NEVER emails and NEVER marks leads delivered - the 9am run does.
 function preallocateDeliveryQueues() {
   try {
-    var dbA = getDb();
-    var real = (dbA.customers || []).filter(function(c) { return !isInternalAccount(c) && isEntitledForDelivery(c); });
-    var stillShort = [];
-    var chain = Promise.resolve();
-    real.forEach(function(c) {
-      chain = chain.then(function() {
-        var promised = getPlanLimit(c.product, c.plan, c.coverage) || c.leads_per_day || 5;
-        var queued = (getDb().leads || []).filter(function(l) { return l.customer_id === c.id && !l.delivered && l.status !== 'removed'; }).length;
-        var need = promised - queued;
-        var attempts = 0;
-        function step() {
-          if (need <= 0 || attempts >= promised + 5) return Promise.resolve();
-          attempts++;
-          return httpCallLocal('POST', '/api/admin/top-up-today', { email: c.email, allow_older: true, queue_only: true }, 60000).then(function(r) {
-            if (r && r.json && r.json.added === 1) { need--; return step(); }
-            return Promise.resolve();
+    // One fill pass: queue every real customer to their promised count from the pool.
+    function runFill() {
+      var dbA = getDb();
+      var real = (dbA.customers || []).filter(function(c) { return !isInternalAccount(c) && isEntitledForDelivery(c); });
+      var stillShort = [];
+      var chain = Promise.resolve();
+      real.forEach(function(c) {
+        chain = chain.then(function() {
+          var promised = getPlanLimit(c.product, c.plan, c.coverage) || c.leads_per_day || 5;
+          var queued = (getDb().leads || []).filter(function(l) { return l.customer_id === c.id && !l.delivered && l.status !== 'removed'; }).length;
+          var need = promised - queued;
+          var attempts = 0;
+          function step() {
+            if (need <= 0 || attempts >= promised + 5) return Promise.resolve();
+            attempts++;
+            return httpCallLocal('POST', '/api/admin/top-up-today', { email: c.email, allow_older: true, queue_only: true }, 60000).then(function(r) {
+              if (r && r.json && r.json.added === 1) { need--; return step(); }
+              return Promise.resolve();
+            });
+          }
+          return step().then(function() {
+            var q2 = (getDb().leads || []).filter(function(l) { return l.customer_id === c.id && !l.delivered && l.status !== 'removed'; }).length;
+            if (q2 < promised) stillShort.push(c.email + ' (' + q2 + '/' + promised + ')');
+            console.log('[PREALLOC] ' + c.email + ': queued ' + q2 + '/' + promised);
           });
-        }
-        return step().then(function() {
-          var q2 = (getDb().leads || []).filter(function(l) { return l.customer_id === c.id && !l.delivered && l.status !== 'removed'; }).length;
-          if (q2 < promised) stillShort.push(c.email + ' (' + q2 + '/' + promised + ')');
-          console.log('[PREALLOC] ' + c.email + ': queued ' + q2 + '/' + promised);
         });
       });
-    });
-    return chain.then(function() {
-      console.log('[PREALLOC] ' + (stillShort.length ? ('still short: ' + stillShort.join(', ')) : 'all customers queued to promise'));
-      return stillShort;
+      return chain.then(function() { return stillShort; });
+    }
+    return runFill().then(function(short1) {
+      if (!short1.length) { console.log('[PREALLOC] all customers queued to promise'); return []; }
+      // INCREASE SCRAPING ON DEMAND: deep-scrape ONLY the shortfall areas, then refill
+      // the queues, so every customer gets their exact count from their own areas.
+      console.log('[PREALLOC] short after first pass: ' + short1.join(', ') + ' - deep-scraping their areas then refilling');
+      return Promise.resolve(scrapeShortfallAreas()).catch(function(e) { console.log('[PREALLOC] deep-scrape error: ' + (e && e.message)); }).then(function() {
+        return runFill();
+      }).then(function(short2) {
+        console.log('[PREALLOC] ' + (short2.length ? ('still short after scrape: ' + short2.join(', ')) : 'all customers queued after scrape'));
+        return short2;
+      });
     });
   } catch(e) { console.log('[PREALLOC] error:', e.message); return []; }
 }
