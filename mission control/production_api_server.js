@@ -18554,6 +18554,50 @@ app.post('/api/admin/test-agent-alert', adminAuth, function(req, res) {
   catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ===== AUTO-WIDEN AREAS =====
+// When a customer cannot be filled from their chosen areas even after scraping,
+// automatically add their NEAREST postcode areas (by geo distance) so they still get
+// their exact daily count. Persists the widened areas and reports what was added.
+function _autoWidenAreas(c) {
+  try {
+    var areas = [];
+    try { areas = JSON.parse(c.target_areas || '[]'); } catch(e) { areas = []; }
+    if (!Array.isArray(areas)) areas = [];
+    if (!areas.length || /all.?uk|uk.?wide|nationwide|whole.?uk/i.test(areas.join(' '))) return [];
+    // Expand current selections into postcode-area space (handles county/region names).
+    var cur = {};
+    areas.forEach(function(a) {
+      var up = String(a || '').toUpperCase().trim();
+      if (/^[A-Z]{1,3}$/.test(up)) { cur[up] = 1; return; }
+      var key = String(a || '').toLowerCase().replace(/[\s-]+/g, '-');
+      var cps = null; try { cps = (typeof COUNTY_POSTCODE_MAP !== 'undefined' && COUNTY_POSTCODE_MAP[key]) || (typeof REGION_TO_POSTCODE_AREAS !== 'undefined' && REGION_TO_POSTCODE_AREAS[key]) || null; } catch(e) {}
+      if (cps) cps.forEach(function(p) { cur[p] = 1; });
+    });
+    var curArr = Object.keys(cur);
+    if (!curArr.length) return [];
+    if (typeof POSTCODE_AREA_GEO === 'undefined') return [];
+    // Nearest postcode areas by squared geo distance to the customer's current areas.
+    var cand = [];
+    Object.keys(POSTCODE_AREA_GEO).forEach(function(p) {
+      if (cur[p]) return;
+      var g = POSTCODE_AREA_GEO[p]; if (!g) return;
+      var best = Infinity;
+      curArr.forEach(function(cp) { var cg = POSTCODE_AREA_GEO[cp]; if (!cg) return; var d = Math.pow(g[0] - cg[0], 2) + Math.pow(g[1] - cg[1], 2); if (d < best) best = d; });
+      cand.push({ area: p, d: best });
+    });
+    cand.sort(function(a, b) { return a.d - b.d; });
+    var add = cand.slice(0, 6).map(function(x) { return x.area; });
+    if (!add.length) return [];
+    var combined = curArr.concat(add);
+    c.target_areas = JSON.stringify(combined);
+    c.coverage = 'postcode';
+    try { var cfg = JSON.parse(c.product_config || '{}'); if (cfg[c.product]) cfg[c.product].target_areas = c.target_areas; if (cfg[c.product]) cfg[c.product].coverage = 'postcode'; c.product_config = JSON.stringify(cfg); } catch(e) {}
+    try { db.prepare('UPDATE customers SET target_areas = ?, coverage = ?, product_config = ? WHERE id = ?').run(c.target_areas, c.coverage, c.product_config, c.id); } catch(e) {}
+    saveDb();
+    return add;
+  } catch(e) { console.log('[PREALLOC] widen error: ' + e.message); return []; }
+}
+
 // ===== PRE-ALLOCATION (08:30 UK weekdays) =====
 // Queue each real customer's promised count of mail-ready leads BEFORE 9am, so the
 // 9am run is a fast, deterministic "deliver the queue" and can never stall scanning
@@ -18623,12 +18667,31 @@ function preallocateDeliveryQueues() {
       if (prods.planning && typeof runPlanningScrape === 'function') jobs.push(Promise.resolve(runPlanningScrape()).catch(function(e) { console.log('[PREALLOC] planning scrape error: ' + (e && e.message)); }));
       if (prods.tenders && typeof runTendersScrape === 'function') jobs.push(Promise.resolve(runTendersScrape()).catch(function(e) { console.log('[PREALLOC] tenders scrape error: ' + (e && e.message)); }));
       return Promise.all(jobs).then(function() { return runFill(); }).then(function(short2) {
+        // AUTO-WIDEN: any customer still short after scraping gets their NEAREST
+        // postcode areas added automatically, then we refill - so we auto-expand to
+        // meet the promise instead of leaving anyone short.
+        if (short2.length) {
+          var widened = [];
+          short2.forEach(function(s) {
+            var c = (getDb().customers || []).find(function(x) { return String(x.email || '').toLowerCase() === String(s.email || '').toLowerCase(); });
+            if (!c) return;
+            var add = _autoWidenAreas(c);
+            if (add && add.length) widened.push(c.email + ' (added ' + add.join(', ') + ')');
+          });
+          if (widened.length) {
+            console.log('[PREALLOC] auto-widened areas: ' + widened.join('; ') + ' - refilling');
+            return runFill().then(function(short3) {
+              var _n3 = _shortNames(short3);
+              try { sendAdminAlert('\u2139\ufe0f Areas auto-widened to protect the 9am delivery', '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="color:#fbbf24;margin:0 0 8px">Areas auto-widened</h1><p style="color:#ccc;line-height:1.7">To keep the 9am promise, these customers\' areas were automatically widened to their nearest postcode areas and refilled:</p><ul style="color:#e2e8f0;line-height:1.9">' + widened.map(function(w) { return '<li>' + w + '</li>'; }).join('') + '</ul><p style="color:#94a3b8;font-size:13px">Still short after widening: ' + (short3.length ? _n3.join(', ') : 'none') + '</p></div>'); } catch(al) {}
+              return _n3;
+            });
+          }
+        }
         var _n2 = _shortNames(short2);
         console.log('[PREALLOC] ' + (short2.length ? ('still short after scrape: ' + _n2.join(', ')) : 'all customers queued after scrape'));
-        // ALERT: if a customer STILL can't be filled after the deep-scrape, page the
-        // founder now (before 9am) so they can widen areas/add supply - never discover it at 9am.
+        // Only alert if someone is STILL short after scraping AND auto-widening.
         if (short2.length) {
-          try { sendAdminAlert('\u26a0 Pre-9am allocation short after scrape', '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="color:#f87171;margin:0 0 8px">Some customers are still short</h1><p style="color:#ccc;line-height:1.7">Even after deep-scraping their areas, these could not be queued to their promised count - they may be short at 9am unless areas/supply change:</p><ul style="color:#fca5a5;line-height:1.9">' + short2.map(function(s) { return '<li>' + s.email + ' (' + s.have + '/' + s.promised + ') - ' + s.product + '</li>'; }).join('') + '</ul></div>'); } catch(al) {}
+          try { sendAdminAlert('\u26a0 Pre-9am allocation short after scrape + widen', '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="color:#f87171;margin:0 0 8px">Some customers are still short</h1><p style="color:#ccc;line-height:1.7">Even after deep-scraping and auto-widening their areas, these could not be queued to their promised count:</p><ul style="color:#fca5a5;line-height:1.9">' + short2.map(function(s) { return '<li>' + s.email + ' (' + s.have + '/' + s.promised + ') - ' + s.product + '</li>'; }).join('') + '</ul></div>'); } catch(al) {}
         }
         return _n2;
       });

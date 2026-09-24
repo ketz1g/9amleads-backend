@@ -69,48 +69,68 @@ jobs:
           echo "--- agent output (tail) ---"
           tail -c 4000 /tmp/agent-out.json || true
 
-      - name: Open PR with the fix (auto-merge tests-only)
+      - name: Auto-fix (merge) + notify
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
           SUBJECT: ${{ github.event.client_payload.subject || github.event.inputs.subject }}
           TEXT: ${{ github.event.client_payload.text || github.event.inputs.text }}
         run: |
           set -e
+          BODY="Triggered automatically by a 9amLeads backend alert.
+
+          **Alert:** ${SUBJECT}
+          **Details:** ${TEXT}
+
+          The agent investigated, fixed it, and (if safe) merged it automatically."
+
+          notify() {
+            curl -sS -X POST "https://nineamleads-backend.onrender.com/api/admin/alert" \
+              -H "Authorization: Bearer $ADMIN_PASSWORD" -H "Content-Type: application/json" \
+              -d "{\"subject\":\"$1\",\"message\":\"$2\"}" || true
+          }
+
           if [ -z "$(git status --porcelain)" ]; then
-            echo "No code changes produced by the agent - nothing to PR."
+            echo "No code changes produced by the agent."
+            notify "Auto-fix: no change needed (${SUBJECT})" "The agent investigated and found no code change was needed."
             exit 0
           fi
-          BR="agent/auto-triage-$(date +%s)"
+
+          FILES=$(git diff --name-only)
+          echo "changed files:"; echo "$FILES"
+
+          # SAFETY GATES before auto-merge (never deploy something reckless):
+          #  1) only our two folders may change
+          #  2) every changed .js must parse (never deploy a syntax error)
+          #  3) small diff only (<=8 files, <=200 lines); bigger -> draft PR for review
+          OPEN_DRAFT=0
+          if echo "$FILES" | grep -qvE '^(mission control/|9amwebsite/)'; then
+            echo "Out-of-scope path changed -> draft PR only."; OPEN_DRAFT=1
+          fi
+          for f in $(echo "$FILES" | grep '\.js$' || true); do
+            node --check "$f" || { echo "Syntax error in $f -> draft PR only."; OPEN_DRAFT=1; break; }
+          done
+          NFILES=$(echo "$FILES" | grep -c . || true)
+          LINES=$(git diff --numstat | awk '{s+=$1+$2} END {print s+0}')
+          echo "files=$NFILES lines=$LINES"
+          if [ "$NFILES" -gt 8 ] || [ "$LINES" -gt 200 ]; then echo "Diff too large -> draft PR only."; OPEN_DRAFT=1; fi
+
+          BR="agent/auto-fix-$(date +%s)"
           git config user.name "9amleads-agent"
           git config user.email "agent@9amleads.com"
           git checkout -b "$BR"
           git add -A
-          git commit -m "fix(auto-triage): ${SUBJECT:-backend alert}"
-
-          # Auto-merge ONLY when the change is confined to tests (safe, non-production).
-          # Everything else stays a DRAFT PR for a human to review and merge.
-          FILES=$(git diff --name-only origin/master..HEAD)
-          TESTS_ONLY=0
-          if [ -n "$FILES" ] && ! echo "$FILES" | grep -qv '^mission control/test/'; then TESTS_ONLY=1; fi
-          echo "changed files:"; echo "$FILES"; echo "tests_only=$TESTS_ONLY"
-
+          git commit -m "fix(auto): ${SUBJECT:-backend alert}"
           git push -u origin "$BR"
-          BODY="Triggered by a 9amLeads backend alert.
 
-          **Alert:** ${SUBJECT}
+          if [ "$OPEN_DRAFT" = "1" ]; then
+            gh pr create --title "Auto-fix (review): ${SUBJECT:-backend alert}" --body "$BODY
 
-          **Details:** ${TEXT}
-
-          The agent investigated and produced this change."
-
-          if [ "$TESTS_ONLY" = "1" ]; then
-            echo "Tests-only change -> creating a normal PR and auto-merging (squash)."
-            gh pr create --title "Auto-triage (tests): ${SUBJECT:-backend alert}" --body "$BODY" --head "$BR" --base master
-            gh pr merge "$BR" --squash --delete-branch
-            echo "Auto-merged tests-only change."
+          _Held as a DRAFT because it failed a safety gate (scope/syntax/size)._ Safely merge after review." --head "$BR" --base master --draft
+            notify "Auto-fix needs review (${SUBJECT})" "A bug was found; the fix failed a safety gate and was left as a DRAFT PR for review."
           else
-            echo "Production change -> opening a DRAFT PR for review."
-            gh pr create --title "Auto-triage: ${SUBJECT:-backend alert}" --body "$BODY
-
-          _Opened as a DRAFT on purpose - review before merging._" --head "$BR" --base master --draft
+            gh pr create --title "Auto-fix: ${SUBJECT:-backend alert}" --body "$BODY" --head "$BR" --base master
+            gh pr merge "$BR" --squash --delete-branch
+            echo "Auto-fixed and merged."
+            notify "Auto-fixed: ${SUBJECT}" "A bug/error was found and fixed automatically, and the fix was merged to master (branch: ${BR}). No action needed."
           fi
