@@ -1,0 +1,32 @@
+name: Rollback (manual)
+
+# One-click manual rollback of the backend to a previous live deploy.
+# Actions tab -> Rollback (manual) -> Run workflow.
+on:
+  workflow_dispatch:
+    inputs:
+      steps_back:
+        description: 'How many live deploys to go back (1 = previous, 2 = two ago)'
+        required: false
+        default: '1'
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Roll back Render service
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+        run: |
+          set -e
+          N='${{ github.event.inputs.steps_back }}'
+          DEFS=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" -H "Accept: application/json" \
+            "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys?limit=30")
+          TARGET=$(echo "$DEFS" | jq -r --argjson n "${N:-1}" '[.[] | .deploy | select(.status=="live")] | .[$n].id // empty')
+          if [ -z "$TARGET" ]; then echo "No suitable previous live deploy found"; exit 1; fi
+          echo "Rolling back to $TARGET"
+          curl -sS -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/rollback" \
+            -H "Authorization: Bearer $RENDER_API_KEY" -H "Content-Type: application/json" \
+            -d "{\"deployId\":\"$TARGET\"}"
+          echo "Rollback requested."

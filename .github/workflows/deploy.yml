@@ -89,6 +89,27 @@ jobs:
 
       # Route deploy/smoke failures into the auto-fix agent (via the app's alert
       # endpoint, which then dispatches the agent). Works while the backend is up.
+      # AUTO-ROLLBACK: if the new deploy fails its smoke test, immediately roll the
+      # Render service back to the previous live deploy so the site/delivery keeps
+      # working, then (below) the agent investigates and fixes master.
+      - name: Auto-rollback on failure
+        if: failure()
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+        run: |
+          DEFS=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" -H "Accept: application/json" \
+            "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys?limit=30" || echo '[]')
+          PREV=$(echo "$DEFS" | jq -r '[.[] | .deploy | select(.status=="live")] | .[1].id // empty')
+          if [ -n "$PREV" ]; then
+            echo "Rolling back to previous live deploy: $PREV"
+            curl -sS -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/rollback" \
+              -H "Authorization: Bearer $RENDER_API_KEY" -H "Content-Type: application/json" \
+              -d "{\"deployId\":\"$PREV\"}" || true
+          else
+            echo "No previous live deploy found to roll back to."
+          fi
+
       - name: Dispatch agent on failure
         if: failure()
         env:
