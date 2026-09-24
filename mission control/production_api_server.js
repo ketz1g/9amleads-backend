@@ -11946,6 +11946,10 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
   var dbV = getDb();
   var freshCutoff = getFreshCutoffIso();
   var freshCutoff48p = new Date(Date.now() - 48 * 3600000).toISOString();
+  // 48h fallback bound = the EARLIER of (24h/weekend-grace cutoff, 48h ago). On a
+  // Monday freshCutoff is Friday 9am (weekend grace), earlier than 48h ago, so the
+  // fallback tier never rejects a lead the 24h tier would accept.
+  var _cut48 = (freshCutoff48p < freshCutoff) ? freshCutoff48p : freshCutoff;
   var movingFallback48 = true;
   // DELIVERED-LEAD EXCLUSION (matches the 9am run's GLOBAL exclusivity): a lead
   // already delivered to ANY real customer is not available to this one, ever.
@@ -12041,6 +12045,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
     } catch(e) { return true; }
   }
   var candidates = [];
+  var candTier = [];
   var seen = {};
   var _sharedSeen = sharedSeen || {};
   var candidateErrors = (cust.email === 'info@afsremovals.com') ? [] : null;
@@ -12111,10 +12116,12 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
     if (!matched) continue;
     var fv = pickFreshDate(l);
     if (!fv) continue;
-    // 24h PRIMARY, 48h FALLBACK (uniform, ALL products): the customer promise is
-    // "fresh leads 24-48h max old". Primary pass = 24h in chosen areas; the
-    // fallback pass below relaxes to 48h (moving: closest-postcode). Nothing older.
-    if (fv < freshCutoff) continue;
+    // 4-TIER PRIORITY: accept CHOSEN-AREA leads up to 48h here and tag them so 24h
+    // (tier 0) sorts ahead of 48h (tier 1). Nearest-area 24h then 48h are added by
+    // the fallback pass below. Order:
+    //   chosen area 24h -> chosen area 48h -> nearest area 24h -> nearest area 48h.
+    var _pvFresh24 = (fv >= freshCutoff);
+    if (fv < _cut48) continue;
     if (cust.product === 'moving' && maxBedsF < 99 && (parseInt(l.bedrooms, 10) || 99) > maxBedsF) continue;
     // APPLY THE CUSTOMER'S SIGNUP FILTERS in the preview too (mirrors the 9am
     // delivery exactly): planning app-type, newbusiness industry, tenders
@@ -12127,7 +12134,15 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
     seen[key] = 1; seen[addrKeyP] = 1;
     if (_sharedSeen !== seen) { _sharedSeen[key] = 1; if (addrKeyP.length > 5) _sharedSeen[addrKeyP] = 1; }
     candidates.push(l);
+    candTier.push(_pvFresh24 ? 0 : 1);
   }
+  // ORDER BY TIER: chosen-area 24h (tier 0) before chosen-area 48h (tier 1), so the
+  // freshest in-area leads win the quota. Stable sort preserves pool order within a tier.
+  try {
+    var _ord = candidates.map(function(_, i) { return i; }).sort(function(a, b) { return (candTier[a] || 0) - (candTier[b] || 0); });
+    candidates = _ord.map(function(i) { return candidates[i]; });
+    candTier = _ord.map(function(i) { return candTier[i]; });
+  } catch(e) {}
   // SELECTION: maximise postcode variety so a customer never gets the same
   // postcode repeated across their daily batch when supply allows. Only falls
   // back to same-postcode leads to honour the promised quota (never below it).
@@ -12161,24 +12176,28 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
       return da - db;
     });
     console.log('[PREVIEW-FB] ' + cust.email + ' selected=' + selected.length + ' limit=' + limit + ' candidates=' + candidates.length + ' fallbackPool(after distance cap)=' + fallbackPool.length + ' interleaved=' + interleaved.length + ' areas=' + areas.join(','));
-    for (var fbi = 0; fbi < fallbackPool.length && selected.length < limit; fbi++) {
-      var fl = fallbackPool[fbi];
-      var fAddr = fl.fullAddress || fl.address || fl.deceasedAddress || '';
-      var fPc = fl.postcode || '';
-      // 48h FALLBACK FRESHNESS: the primary pass was 24h; this fallback tier may
-      // take leads up to 48h old (never older) to fill a short promised count.
-      var fFv = pickFreshDate(fl);
-      if (!fFv || fFv < freshCutoff48p) continue;
-      if (mailOK(fAddr, fPc) || pafEligible(fl, fAddr, fPc)) {
-        var pk2 = String(fPc).toUpperCase().replace(/[^A-Z0-9]/g, '');
-        if (usedPostcode[pk2] || pcSeen2[pk2]) continue;
-        var fKey = fl.url || ('a:' + String(fAddr).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30));
-        var fAKey = 'aa:' + propertyIdentityKey(fAddr, fPc);
-        // Respect global exclusivity: never take a lead another customer already has.
-        if (_sharedSeen[fKey] || (fAKey.length > 5 && _sharedSeen[fAKey])) continue;
-        usedPostcode[pk2] = 1;
-        _sharedSeen[fKey] = 1; if (fAKey.length > 5) _sharedSeen[fAKey] = 1;
-        selected.push(fl);
+    // NEAREST-AREA TIERS: 24h first, then 48h (never older) - tiers 2 and 3 in the
+    // overall priority, after chosen-area 24h/48h.
+    for (var _tierPass = 0; _tierPass < 2 && selected.length < limit; _tierPass++) {
+      for (var fbi = 0; fbi < fallbackPool.length && selected.length < limit; fbi++) {
+        var fl = fallbackPool[fbi];
+        var fAddr = fl.fullAddress || fl.address || fl.deceasedAddress || '';
+        var fPc = fl.postcode || '';
+        var fFv = pickFreshDate(fl);
+        if (!fFv) continue;
+        if (_tierPass === 0) { if (fFv < freshCutoff) continue; }            // nearest area 24h
+        else { if (fFv < _cut48 || fFv >= freshCutoff) continue; }           // nearest area 48h only
+        if (mailOK(fAddr, fPc) || pafEligible(fl, fAddr, fPc)) {
+          var pk2 = String(fPc).toUpperCase().replace(/[^A-Z0-9]/g, '');
+          if (usedPostcode[pk2] || pcSeen2[pk2]) continue;
+          var fKey = fl.url || ('a:' + String(fAddr).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30));
+          var fAKey = 'aa:' + propertyIdentityKey(fAddr, fPc);
+          // Respect global exclusivity: never take a lead another customer already has.
+          if (_sharedSeen[fKey] || (fAKey.length > 5 && _sharedSeen[fAKey])) continue;
+          usedPostcode[pk2] = 1;
+          _sharedSeen[fKey] = 1; if (fAKey.length > 5) _sharedSeen[fAKey] = 1;
+          selected.push(fl);
+        }
       }
     }
   }
