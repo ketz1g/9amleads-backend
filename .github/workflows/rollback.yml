@@ -23,7 +23,7 @@ jobs:
           N='${{ github.event.inputs.steps_back }}'
           DEFS=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" -H "Accept: application/json" \
             "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys?limit=30")
-          TARGET=$(echo "$DEFS" | jq -r --argjson n "${N:-1}" '[.[] | .deploy | select(.status=="live")] | .[$n].id // empty')
+          TARGET=$(echo "$DEFS" | jq -r --argjson n "${N:-1}" '[.[] | .deploy | select(.status=="deactivated" or .status=="live")] | .[$n].id // empty')
           if [ -z "$TARGET" ]; then echo "No suitable previous live deploy found"; exit 1; fi
           echo "Rolling back to $TARGET"
           curl -sS -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/rollback" \

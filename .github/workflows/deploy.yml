@@ -104,7 +104,10 @@ jobs:
         run: |
           DEFS=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" -H "Accept: application/json" \
             "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys?limit=30" || echo '[]')
-          PREV=$(echo "$DEFS" | jq -r '[.[] | .deploy | select(.status=="live")] | .[1].id // empty')
+          # Previous deploy is the most recent SUCCESSFUL one - Render marks it
+          # 'deactivated' once a newer deploy goes live (so filtering on 'live' alone
+          # found only the current deploy and did nothing).
+          PREV=$(echo "$DEFS" | jq -r '[.[] | .deploy | select(.status=="deactivated" or .status=="live")] | .[1].id // empty')
           if [ -n "$PREV" ]; then
             echo "Rolling back to previous live deploy: $PREV"
             curl -sS -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/rollback" \
