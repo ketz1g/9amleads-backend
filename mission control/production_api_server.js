@@ -13689,7 +13689,22 @@ app.post('/api/admin/top-up-today', adminAuth, (req, res) => {
       var matchedT = false;
       if (/all.?uk|uk.?wide|nationwide|whole.?uk/i.test((areas || []).join(' '))) matchedT = true;
       else if (cust.product === 'moving') matchedT = areas.indexOf(pcAreaT) !== -1;
-      else matchedT = areas.some(function(a) { return String(a).toLowerCase().replace(/[\s-]+/g,'-') === String(pl.county || '').toLowerCase().replace(/[\s-]+/g,'-'); });
+      else {
+        // Mirror the delivery engine's county/region matcher (county name, region ->
+        // postcode areas, county -> postcode areas) so pre-allocation fills region/
+        // county customers (e.g. newbusiness "Cumbria"/"Lancashire"/"North England")
+        // exactly as the 9am run does.
+        var _leadCountyT = String(pl.county || '').toLowerCase().replace(/[\s-]+/g, '-');
+        matchedT = areas.some(function(a) {
+          var al = String(a || '').toLowerCase().replace(/[\s-]+/g, '-');
+          if (!al) return false;
+          if (al === _leadCountyT) return true;
+          try { var reg = (typeof REGION_TO_POSTCODE_AREAS !== 'undefined') ? REGION_TO_POSTCODE_AREAS[al] : null; if (reg && reg.indexOf(pcAreaT) !== -1) return true; } catch(e) {}
+          try { var cps = (typeof COUNTY_POSTCODE_MAP !== 'undefined') ? COUNTY_POSTCODE_MAP[al] : null; if (cps && cps.indexOf(pcAreaT) !== -1) return true; } catch(e) {}
+          if (al.length >= 4 && _leadCountyT && _leadCountyT.indexOf(al) !== -1) return true;
+          return false;
+        });
+      }
       if (!matchedT) continue;
       var fvT = pickFreshDate(pl); if (!fvT) continue;
       // Normal daily top-ups only take FRESH (within the 24/48h window) leads. With
