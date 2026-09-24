@@ -78,13 +78,17 @@ jobs:
             if [ "$code" = "200" ]; then break; fi
             sleep 6
           done
-          echo "Running delivery rehearsal..."
-          resp=$(curl -s -X POST "https://nineamleads-backend.onrender.com/api/admin/run-rehearsal" \
-            -H "Authorization: Bearer $ADMIN_PASSWORD" \
-            -H "Content-Type: application/json" -d '{"trigger":"post-deploy","quiet":true}')
-          echo "$resp"
-          echo "$resp" | grep -q '"ok":true' \
-            || { echo "SMOKE TEST FAILED - the delivery engine did not pass the rehearsal"; exit 1; }
+          echo "Running delivery rehearsal (with retries for server warm-up)..."
+          ok=0
+          for attempt in 1 2 3; do
+            resp=$(curl -s -X POST "https://nineamleads-backend.onrender.com/api/admin/run-rehearsal" \
+              -H "Authorization: Bearer $ADMIN_PASSWORD" \
+              -H "Content-Type: application/json" -d '{"trigger":"post-deploy","quiet":true}')
+            echo "attempt $attempt: $resp"
+            if echo "$resp" | grep -q '"ok":true'; then ok=1; break; fi
+            sleep 25
+          done
+          if [ "$ok" != "1" ]; then echo "SMOKE TEST FAILED - the delivery engine did not pass the rehearsal"; exit 1; fi
           echo "Smoke test passed - delivery engine delivers the exact quota."
 
       # Route deploy/smoke failures into the auto-fix agent (via the app's alert
