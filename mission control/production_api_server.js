@@ -15516,6 +15516,8 @@ function emailSeriesReceived(c) {
   return sent.map(function(t) { return { key: t, label: labels[t] || ('Email ' + String(t).replace('trial_', '')) }; });
 }
 function customerTrialExpired(c) {
+  // Internal/test/demo accounts are never customers - never count them as expired.
+  if (typeof isInternalAccount === 'function' && isInternalAccount(c)) return false;
   if (String(c.plan || '') !== 'free_trial') return false;
   if (!c.trial_ends) return false;
   return new Date(c.trial_ends) < new Date();
@@ -15541,7 +15543,8 @@ app.get('/api/admin/customers', adminAuth, (req, res) => {
     });
   const total = { count: allCustomers.length };
   const customers = allCustomers.slice((page - 1) * limit, page * limit);
-  const totalExpiredTrials = (getDb().customers || []).filter(customerTrialExpired).length;
+  // Count on the already internal-filtered list so test/demo accounts can't inflate it.
+  const totalExpiredTrials = allCustomers.filter(customerTrialExpired).length;
 
   // Get lead counts for each customer
   const result = customers.map(c => {

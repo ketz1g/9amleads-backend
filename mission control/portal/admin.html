@@ -1528,7 +1528,8 @@ async function loadData() {
       '<div class="stat-card"><div class="num">' + (stats.deliveries_today||0) + '</div><div class="label">Deliveries Today</div></div>' +
       '<div class="stat-card"><div class="num" style="color:#ef4444">' + (stats.rejected_leads||0) + '</div><div class="label">Rejected Leads</div></div>';
 
-    const custResp = await fetch(API + '/api/admin/customers?t=' + Date.now(), { headers: adminHeaders() });
+    // limit high so the admin counts (active/expired) are never capped at the default 50.
+    const custResp = await fetch(API + '/api/admin/customers?limit=1000&t=' + Date.now(), { headers: adminHeaders() });
     const custData = custResp.ok ? await custResp.json() : { customers: [] };
     allCustomers = (custData.customers || []).filter(c => !c.trial_expired);   // active only - expired trials live in their own section
     expiredCustomers = (custData.customers || []).filter(c => c.trial_expired === true);
