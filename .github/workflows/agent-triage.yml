@@ -113,8 +113,11 @@ jobs:
           #  2) every changed .js must parse (never deploy a syntax error)
           #  3) small diff only (<=8 files, <=200 lines); bigger -> draft PR for review
           OPEN_DRAFT=0
-          if echo "$FILES" | grep -qvE '^(mission control/|9amwebsite/)'; then
-            echo "Out-of-scope path changed -> draft PR only."; OPEN_DRAFT=1
+          # STRICT SAFE-SET: only marketing-site content and tests may AUTO-MERGE.
+          # ANY change to the backend / delivery engine is held as a DRAFT PR for human
+          # review, so an agent fix can never automatically ship into the 9am delivery.
+          if echo "$FILES" | grep -qvE '^(9amwebsite/|mission control/test/)'; then
+            echo "Change touches backend/delivery code -> DRAFT PR only (no auto-merge)."; OPEN_DRAFT=1
           fi
           for f in $(echo "$FILES" | grep '\.js$' || true); do
             node --check "$f" || { echo "Syntax error in $f -> draft PR only."; OPEN_DRAFT=1; break; }

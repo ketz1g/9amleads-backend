@@ -11,6 +11,8 @@ on:
     # restart the delivery server.
     paths:
       - 'mission control/**'
+      # Test-only changes must never restart the backend/delivery server.
+      - '!mission control/test/**'
   workflow_dispatch:
 
 concurrency:
