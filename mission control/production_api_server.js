@@ -34661,7 +34661,8 @@ async function runDeliveryRehearsal(trigger, opts) {
     // would discard the batch and the test would pass trivially).
     var ids = {}; accounts.forEach(function(c) { ids[c.id] = 1; });
     d.leads = (d.leads || []).filter(function(l) { return !ids[l.customer_id]; });
-    accounts.forEach(function(c) { c.last_email_date = ''; });
+    var _rtoday = new Date().toISOString().split('T')[0];
+    accounts.forEach(function(c) { c.last_email_date = ''; try { c.extra_lead_emailed_date = ''; _releaseDailyEmail(c.id, _rtoday); } catch(e) {} });
     saveDb();
     // Run the REAL engine, test accounts only (force bypasses the before-9am guard;
     // sendBrevoEmail skips test addresses so no email actually leaves).
