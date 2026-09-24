@@ -36,6 +36,7 @@ jobs:
         run: npm i -g opencode-ai
 
       - name: Investigate + fix (agent)
+        timeout-minutes: 12
         env:
           # Provider auth for opencode (add ONE of these as a repo secret):
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
@@ -65,9 +66,12 @@ jobs:
           6. Keep the change focused and explain it in the PR body.
           EOF
           )
-          opencode run "$MSG" --auto --format json > /tmp/agent-out.json 2>/tmp/agent-err.txt || true
+          # HARD TIME LIMIT: never let the agent hang the workflow. 10 min max.
+          timeout 600 opencode run "$MSG" --auto --format json > /tmp/agent-out.json 2>/tmp/agent-err.txt || echo "agent run ended (timeout or error)"
           echo "--- agent output (tail) ---"
           tail -c 4000 /tmp/agent-out.json || true
+          echo "--- agent stderr (tail) ---"
+          tail -c 1500 /tmp/agent-err.txt || true
 
       - name: Auto-fix (merge) + notify
         env:
