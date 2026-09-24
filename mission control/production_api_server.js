@@ -15426,7 +15426,8 @@ app.get('/api/admin/stats', adminAuth, (req, res) => {
   }
   var allCusts = (getDb().customers || []).filter(function(c) { return !_isInternalStat(c); });
   const totalCustomers = { count: allCusts.length };
-  const freeTrials = { count: allCusts.filter(function(c) { return c.plan === 'free_trial'; }).length };
+  // Active free trials only (expired ones live in the Expired Trials section).
+  const freeTrials = { count: allCusts.filter(function(c) { return c.plan === 'free_trial' && !customerTrialExpired(c); }).length };
   // A customer is "paid" if their plan is not a free trial, OR they have an active
   // Stripe subscription / non-trial selected plan (trial_ends passed and paid).
   var paidCustomers = allCusts.filter(function(c) {
