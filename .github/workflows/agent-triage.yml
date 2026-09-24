@@ -52,14 +52,17 @@ jobs:
           SUBJECT: $SUBJECT
           DETAILS: $TEXT
 
+          SCOPE: you may ONLY modify files under "mission control/" or "9amwebsite/".
+          Never modify .github/, package files, secrets, or anything outside those two
+          folders. Always leave a DRAFT PR for human review - never merge.
+
           Task:
-          1. Investigate the code in "mission control/" (and 9amwebsite/ if relevant) and
-             find the ROOT CAUSE - do not guess.
-          2. Make the smallest, safest fix.
+          1. Investigate the code and find the ROOT CAUSE - do not guess.
+          2. Make the smallest, safest fix (within the scope above).
           3. Run: node --check on any changed .js, and node test/*.js.
           4. Do NOT merge anything, do NOT touch secrets or credentials.
           5. If the fix is unclear or risky, open an ISSUE instead with your findings.
-          6. Keep the change focused and explain it.
+          6. Keep the change focused and explain it in the PR body.
           EOF
           )
           opencode run "$MSG" --auto --format json > /tmp/agent-out.json 2>/tmp/agent-err.txt || true

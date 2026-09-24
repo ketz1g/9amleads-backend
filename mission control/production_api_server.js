@@ -18547,6 +18547,12 @@ function scraperHealthWatchdog(label) {
 cron.schedule('15 6 * * 1-5', function() { try { scraperHealthWatchdog('06:15'); } catch(e) {} }, { timezone: 'Europe/London' });
 cron.schedule('15 8 * * 1-5', function() { try { scraperHealthWatchdog('08:15'); } catch(e) {} }, { timezone: 'Europe/London' });
 app.post('/api/admin/scraper-health', adminAuth, async (req, res) => { try { await scraperHealthWatchdog('manual'); res.json({ success: true }); } catch(e) { res.status(500).json({ error: e.message }); } });
+// Fire a TEST alert through the full pipeline (email + agent dispatch) so the
+// auto-triage loop can be verified end-to-end on demand.
+app.post('/api/admin/test-agent-alert', adminAuth, function(req, res) {
+  try { sendAdminAlert('TEST alert - agent pipeline check ' + new Date().toISOString(), '<p>This is a test alert to verify the auto-triage agent dispatch + email work. No action needed.</p>'); res.json({ success: true }); }
+  catch(e) { res.status(500).json({ error: e.message }); }
+});
 
 // ===== PRE-ALLOCATION (08:30 UK weekdays) =====
 // Queue each real customer's promised count of mail-ready leads BEFORE 9am, so the
