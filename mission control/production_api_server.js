@@ -11474,9 +11474,25 @@ app.get('/api/admin/delivery-preview', adminAuth, async (req, res) => {
           return true;
         }).length;
       } catch(e) {}
-      out.push({ email: pv.email, company: pv.company, product: pv.product, plan: pv.plan, areas: pv.areas, promised: pv.promised, preview_count: pv.count, queued_mailable: _qReserved, fallback_count: pv.fallback_count, fallback_note: pv.fallback_note, door_now: dNow, door_paf: dPaf, door_fail: dFail, leads: pv.leads, error: pv.error || '', debug: pv.debug });
+      // TODAY state + a single clear STATUS per customer:
+      //   DELIVERED  - already has the full count today (inbox + dashboard)
+      //   READY      - full quota already queued for the 9am delivery
+      //   READY_POOL - not queued yet but the pool has enough to fill it
+      //   SHORT      - not enough leads to reach the promised count
+      var _todayP = new Date().toISOString().split('T')[0];
+      var _deliveredToday = (dbP.leads || []).filter(function(l) { return l.customer_id === customers[pi].id && l.delivered && l.delivered_at && l.delivered_at.indexOf(_todayP) === 0; }).length;
+      var _emailedToday = (String(customers[pi].last_email_date || '') === _todayP);
+      var _promised = pv.promised || getPlanLimit(customers[pi].product, customers[pi].plan, customers[pi].coverage) || 0;
+      var _status;
+      if (_deliveredToday >= _promised && _promised > 0) _status = 'DELIVERED';
+      else if (_qReserved >= _promised && _promised > 0) _status = 'READY';
+      else if ((_qReserved + pv.count) >= _promised && _promised > 0) _status = 'READY_POOL';
+      else _status = 'SHORT';
+      out.push({ email: pv.email, company: pv.company, product: pv.product, plan: pv.plan, areas: pv.areas, promised: _promised, preview_count: pv.count, queued_mailable: _qReserved, delivered_today: _deliveredToday, emailed_today: _emailedToday, status: _status, fallback_count: pv.fallback_count, fallback_note: pv.fallback_note, door_now: dNow, door_paf: dPaf, door_fail: dFail, leads: pv.leads, error: pv.error || '', debug: pv.debug });
     }
-    res.json({ success: true, generated_at: new Date().toISOString(), note: 'Preview based on the current pool - run after the 6am scrape for the most accurate 9am preview.', last_preverify: dbP.seo_last_preverify || null, guarantee: dbP.fulfilment_guarantee || null, customers: out });
+    var _ready = out.filter(function(x) { return x.status !== 'SHORT'; }).length;
+    var _delivered = out.filter(function(x) { return x.status === 'DELIVERED'; }).length;
+    res.json({ success: true, generated_at: new Date().toISOString(), all_ready: (out.length > 0 && _ready === out.length), ready_count: _ready, short_count: out.length - _ready, delivered_count: _delivered, customer_count: out.length, note: 'Preview based on the current pool - run after the 6am scrape for the most accurate 9am preview.', last_preverify: dbP.seo_last_preverify || null, guarantee: dbP.fulfilment_guarantee || null, customers: out });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
