@@ -18316,6 +18316,12 @@ var _deliveryLockAt = 0;
 var __dailyEmailClaimed = {};
 function _claimDailyEmail(custId, day) { var k = String(custId) + '|' + day; if (__dailyEmailClaimed[k]) return false; __dailyEmailClaimed[k] = 1; return true; }
 function _releaseDailyEmail(custId, day) { delete __dailyEmailClaimed[String(custId) + '|' + day]; }
+// SINGLE-FLIGHT: how many delivery runs are genuinely in progress, plus a heartbeat
+// updated as the run advances. A second run may only start when no run is active or
+// the heartbeat is stale (a truly hung run) - belt-and-braces on top of the email claim.
+var _deliveryActiveRuns = 0;
+var _deliveryHeartbeatAt = 0;
+function _deliveryHeartbeat() { _deliveryHeartbeatAt = Date.now(); }
 var _testReportLock = false;
 var _testReportLockAt = 0;
 var __lastDeliveryFire = '';
@@ -24279,29 +24285,32 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
     }
   } catch(tzErr) { console.log('[DELIVERY] timezone guard error:', tzErr.message); }
   if (_deliveryLock) {
-    var _lockAge = Date.now() - (_deliveryLockAt || 0);
-    // 4 min (was 2): overlapping runs are the root cause of duplicate/over-delivery -
-    // two runs both pass the per-customer exact-count check and then both write the
-    // extra lead. Runs now have a 3-min per-run budget and skip internal/demo accounts,
-    // so a healthy run finishes in well under 4 min; only a genuinely hung run is
-    // preempted (by the hard auto-release below), keeping watchdog recovery fast.
-    if (_lockAge > 4 * 60 * 1000) {
-      console.log('[DELIVERY] Stale delivery lock (' + Math.round(_lockAge / 1000) + 's) - releasing and continuing');
-      _deliveryLock = false;
-    } else {
-      console.log('[DELIVERY] Skipped: another delivery run already in progress');
+    // SINGLE-FLIGHT: if a run is genuinely in progress (active + fresh heartbeat), a
+    // second run MUST NOT start - that was the root cause of duplicate emails/leads.
+    // We only take the lock when no run is active or the heartbeat is stale (a hung run).
+    var _hbAge = _deliveryHeartbeatAt ? (Date.now() - _deliveryHeartbeatAt) : Infinity;
+    if (_deliveryActiveRuns > 0 && _hbAge < 90000) {
+      console.log('[DELIVERY] Skipped: a delivery run is actively in progress (heartbeat ' + Math.round(_hbAge / 1000) + 's old)');
       return res.status(200).json({ success: true, skipped: true, message: 'Another delivery run is already in progress' });
     }
+    console.log('[DELIVERY] Releasing stale lock (active=' + _deliveryActiveRuns + ', heartbeat=' + Math.round(_hbAge / 1000) + 's)');
+    _deliveryLock = false;
+    _deliveryActiveRuns = 0;
   }
   _deliveryLock = true;
   _deliveryLockAt = Date.now();
+  _deliveryActiveRuns++;
+  _deliveryHeartbeat();
   // HARD AUTO-RELEASE: never let a hung/overrunning run hold the lock for more than
   // 4 minutes. This guarantees the 9am run (and every watchdog) can always proceed.
   (function (_stamp) {
     var t = setTimeout(function () {
-      if (_deliveryLock && _deliveryLockAt === _stamp) {
-        _deliveryLock = false; _deliveryLockAt = 0;
-        console.log('[DELIVERY] lock auto-released after 4min (run overran)');
+      var _hb2 = _deliveryHeartbeatAt ? (Date.now() - _deliveryHeartbeatAt) : Infinity;
+      // Only release a genuinely stalled run - never preempt a run that is still
+      // advancing (fresh heartbeat), which would overlap and duplicate.
+      if (_deliveryLock && _deliveryLockAt === _stamp && !(_deliveryActiveRuns > 0 && _hb2 < 90000)) {
+        _deliveryLock = false; _deliveryLockAt = 0; _deliveryActiveRuns = 0;
+        console.log('[DELIVERY] lock auto-released after 4min (run stalled)');
       }
     }, 4 * 60 * 1000);
     if (t.unref) t.unref();
@@ -24471,6 +24480,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       // RELEASE THE LOCK before returning: this early exit sits AFTER the lock is set,
       // so without this the lock stayed held and skipped every later run until the
       // 6-minute stale-release kicked in (which is why test/single runs skipped).
+      _deliveryActiveRuns = Math.max(0, _deliveryActiveRuns - 1);
       _deliveryLock = false; _deliveryLockAt = 0; _releaseDeliveryDeadline(_deliveryRunId);
       return res.json({ success: true, skipped: 'weekend', message: 'Leads are delivered Monday-Friday only. No leads were sent.' });
     }
@@ -24562,6 +24572,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
     var _inRunSeen = {};
     for (var ci = 0; ci < customers.length; ci++) {
       var cust = customers[ci];
+      _deliveryHeartbeat();
       var _custT0 = Date.now();
       // HARD PER-CUSTOMER TIME CAP: one low-supply customer (whose pool scan falls
       // back over the whole 5975-lead pool) must NEVER stall the run and starve every
@@ -26869,11 +26880,13 @@ pushToCrm(cust, crmPayload2, 'daily delivery');
       saveDb();
       console.log('[DELIVERY-AUDIT] ' + today + ': ' + delivered + ' leads, ' + errors + ' errors');
     } catch(auditErr) { console.log('[DELIVERY-AUDIT] error:', auditErr.message); }
+    _deliveryActiveRuns = Math.max(0, _deliveryActiveRuns - 1);
     _deliveryLock = false;
     _deliveryLockAt = 0;
     _releaseDeliveryDeadline(_deliveryRunId);
     res.json({ success: true, customers_processed: customers.length, leads_delivered: delivered, errors: errors, lastError: lastErr, diag: _deliverDiag || null, per_customer: Object.keys(_deliverDiag || {}).reduce(function(acc, ek) { var dv = _deliverDiag[ek]; var m = String((dv && dv.final_len) || '').match(/^(\d+)/); acc[ek] = { delivered: m ? parseInt(m[1], 10) : -1, totalDailyLimit: dv && dv.totalDailyLimit, products: (dv && dv.products) || [] }; return acc; }, {}) });
   } catch(e) {
+    _deliveryActiveRuns = Math.max(0, _deliveryActiveRuns - 1);
     _deliveryLock = false; _deliveryLockAt = 0; _releaseDeliveryDeadline(_deliveryRunId);
     // Record the crash so /api/admin/system-status shows it (previously a failed run
     // aborted silently, leaving later customers at 0 with no diagnostic).
@@ -36507,6 +36520,16 @@ app.post('/api/admin/run-scrapers', adminAuth, (req, res) => {
   const startTime = new Date().toISOString();
   const forceScrape = req.body && req.body.force ? true : false;
   if (forceScrape) console.log('[SCRAPER] Force scrape requested - ignoring daily cache');
+  // SCRAPER/DELIVERY FENCE: never run a background scrape between 08:30 and 09:05 UK.
+  // Scraping competes for CPU/network/pool and slowed the 9am run. Manual force bypasses.
+  try {
+    var _ukNowS = new Date().toLocaleString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hour12: false });
+    var _hp = _ukNowS.split(':'); var _mins = (parseInt(_hp[0], 10) * 60) + parseInt(_hp[1], 10);
+    if (_mins >= 510 && _mins <= 545 && !forceScrape) {
+      console.log('[SCRAPER] Blocked: inside the 08:30-09:05 delivery window - not competing with the 9am run');
+      return res.status(200).json({ success: true, skipped: true, reason: 'Scrapers are paused 08:30-09:05 UK so they never compete with the 9am delivery.' });
+    }
+  } catch(e) {}
   const bgId = (require('uuid').v4)();
   console.log('[SCRAPER] Background scrape started (id=' + bgId + ')');
   res.json({ success: true, background: true, run_id: bgId, message: 'Scraping started in background' });
