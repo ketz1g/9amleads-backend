@@ -13620,8 +13620,16 @@ app.post('/api/admin/top-up-today', adminAuth, (req, res) => {
     if (!cust) return res.status(404).json({ error: 'Customer not found' });
     var dailyLimit = getPlanLimit(cust.product, cust.plan, cust.coverage) || 5;
     var today = new Date().toISOString().split('T')[0];
-    var todayCount = (dbT.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0 && !_leadIsRejected(l); }).length;
-    if (todayCount >= dailyLimit) return res.json({ success: true, email: email, note: 'Already at daily promise (' + todayCount + '/' + dailyLimit + ')', added: 0 });
+    // QUEUE-ONLY (pre-allocation): count/quota the customer's UNDELIVERED queued leads
+    // and add the lead as NOT delivered, so the 9am run simply delivers the queue.
+    var queueOnly = !!(req.body && req.body.queue_only);
+    var todayCount;
+    if (queueOnly) {
+      todayCount = (dbT.leads || []).filter(function(l) { return l.customer_id === cust.id && !l.delivered && l.status !== 'removed' && !_leadIsRejected(l); }).length;
+    } else {
+      todayCount = (dbT.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0 && !_leadIsRejected(l); }).length;
+    }
+    if (todayCount >= dailyLimit) return res.json({ success: true, email: email, note: 'Already at ' + (queueOnly ? 'queued' : 'daily') + ' promise (' + todayCount + '/' + dailyLimit + ')', added: 0 });
     var areas = [];
     try { areas = JSON.parse(cust.target_areas || '[]'); } catch(e) { areas = []; }
     if (!areas.length) { try { var cfgT = JSON.parse(cust.product_config || '{}'); areas = (cfgT[cust.product] && cfgT[cust.product].target_areas) ? JSON.parse(cfgT[cust.product].target_areas) : []; } catch(e2) { areas = []; } }
@@ -13649,6 +13657,8 @@ app.post('/api/admin/top-up-today', adminAuth, (req, res) => {
     (dbT.leads || []).forEach(function(l) { if (l.customer_id === cust.id) { try { var dd = JSON.parse(l.data || '{}'); var du = _tuNormUrl(dd.url || ''); if (du) usedKeys['u:' + du] = 1; usedKeys['a:' + _tuAddrKey(dd.fullAddress || dd.address || '', dd.postcode || '')] = 1; } catch(e) {} } });
     // Global exclusivity: never give a lead already delivered to ANOTHER customer.
     (dbT.leads || []).forEach(function(l) { if (l.customer_id !== cust.id && l.delivered) { try { var dd = JSON.parse(l.data || '{}'); var du = _tuNormUrl(dd.url || ''); if (du) usedKeys['u:' + du] = 1; } catch(e) {} } });
+    // Queue-only: also never queue a lead already queued to ANOTHER customer.
+    if (queueOnly) { (dbT.leads || []).forEach(function(l) { if (l.customer_id !== cust.id && !l.delivered && l.status !== 'removed') { try { var dd = JSON.parse(l.data || '{}'); var du = _tuNormUrl(dd.url || ''); if (du) usedKeys['u:' + du] = 1; usedKeys['a:' + _tuAddrKey(dd.fullAddress || dd.address || '', dd.postcode || '')] = 1; } catch(e) {} } }); }
     var picked = null;
     for (var ti = 0; ti < interleaved.length; ti++) {
       var pl = interleaved[ti];
@@ -13731,9 +13741,14 @@ app.post('/api/admin/top-up-today', adminAuth, (req, res) => {
       return res.status(400).json({ error: 'No mailable in-area lead available to top up today (the best candidate has no full postal address). Try again later.' });
     }
     var delivAt = today + 'T09:00:00.000Z';
-    dbT.leads.push({ id: uuidv4(), customer_id: cust.id, product: cust.product, data: JSON.stringify(dT), status: 'delivered', delivered: 1, created_at: nowIso, delivered_at: delivAt, release_at: delivAt });
+    if (queueOnly) {
+      // Pre-allocation: keep it UNDELIVERED so the 9am run delivers + emails it.
+      dbT.leads.push({ id: uuidv4(), customer_id: cust.id, product: cust.product, data: JSON.stringify(dT), status: 'new', delivered: 0, created_at: nowIso, delivered_at: null, release_at: delivAt });
+    } else {
+      dbT.leads.push({ id: uuidv4(), customer_id: cust.id, product: cust.product, data: JSON.stringify(dT), status: 'delivered', delivered: 1, created_at: nowIso, delivered_at: delivAt, release_at: delivAt });
+    }
     saveDb();
-    res.json({ success: true, email: email, added: 1, lead: (dT.fullAddress || dT.address || '') + ', ' + (dT.postcode || ''), today_count: todayCount + 1, daily_limit: dailyLimit });
+    res.json({ success: true, email: email, added: 1, queued: queueOnly ? 1 : 0, lead: (dT.fullAddress || dT.address || '') + ', ' + (dT.postcode || ''), today_count: todayCount + 1, daily_limit: dailyLimit });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -18423,6 +18438,52 @@ function autoFillDeliveryShortfalls(cbDone) {
     next();
   } catch(e) { console.log('[AUTOFILL] error:', e.message); if (typeof cbDone === 'function') { try { cbDone(); } catch(e2) {} } }
 }
+
+// ===== PRE-ALLOCATION (08:30 UK weekdays) =====
+// Queue each real customer's promised count of mail-ready leads BEFORE 9am, so the
+// 9am run is a fast, deterministic "deliver the queue" and can never stall scanning
+// the pool (the root cause of the 24 Sep outage). Uses the same pool + mailable gate
+// as delivery; it NEVER emails and NEVER marks leads delivered - the 9am run does.
+function preallocateDeliveryQueues() {
+  try {
+    var dbA = getDb();
+    var real = (dbA.customers || []).filter(function(c) { return !isInternalAccount(c) && isEntitledForDelivery(c); });
+    var stillShort = [];
+    var chain = Promise.resolve();
+    real.forEach(function(c) {
+      chain = chain.then(function() {
+        var promised = getPlanLimit(c.product, c.plan, c.coverage) || c.leads_per_day || 5;
+        var queued = (getDb().leads || []).filter(function(l) { return l.customer_id === c.id && !l.delivered && l.status !== 'removed'; }).length;
+        var need = promised - queued;
+        var attempts = 0;
+        function step() {
+          if (need <= 0 || attempts >= promised + 5) return Promise.resolve();
+          attempts++;
+          return httpCallLocal('POST', '/api/admin/top-up-today', { email: c.email, allow_older: true, queue_only: true }, 60000).then(function(r) {
+            if (r && r.json && r.json.added === 1) { need--; return step(); }
+            return Promise.resolve();
+          });
+        }
+        return step().then(function() {
+          var q2 = (getDb().leads || []).filter(function(l) { return l.customer_id === c.id && !l.delivered && l.status !== 'removed'; }).length;
+          if (q2 < promised) stillShort.push(c.email + ' (' + q2 + '/' + promised + ')');
+          console.log('[PREALLOC] ' + c.email + ': queued ' + q2 + '/' + promised);
+        });
+      });
+    });
+    return chain.then(function() {
+      console.log('[PREALLOC] ' + (stillShort.length ? ('still short: ' + stillShort.join(', ')) : 'all customers queued to promise'));
+      return stillShort;
+    });
+  } catch(e) { console.log('[PREALLOC] error:', e.message); return []; }
+}
+// 08:30 UK weekdays - after the 08:20 EPC enrich, well before the 09:00 run. Manual
+// trigger: POST /api/admin/preallocate.
+app.post('/api/admin/preallocate', adminAuth, async (req, res) => {
+  try { var short = await preallocateDeliveryQueues(); res.json({ success: true, still_short: short || [] }); }
+  catch(e) { res.status(500).json({ error: e.message }); }
+});
+cron.schedule('30 8 * * 1-5', function() { try { preallocateDeliveryQueues(); } catch(e) { console.log('[PREALLOC] cron error:', e.message); } }, { timezone: 'Europe/London' });
 
 // ===== DELIVERY COMPLETION WATCHDOG =====
 // The 09:01/09:05 backstops only fire when the 9am run never STARTED. This is the
