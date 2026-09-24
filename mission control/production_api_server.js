@@ -10558,9 +10558,9 @@ app.post('/api/admin/customers/set-stripe', adminAuth, (req, res) => {
 // 08:50 PRE-WARM (weekdays): load every product's pool into memory BEFORE the 9am run
 // so the run itself is short and far less likely to stall. Combined with the 08:40
 // top-up (which resolves the queued leads' addresses), the 9am run should be quick.
-cron.schedule('50 8 * * 1-5', function() {
-  try {
-    ['moving','probate','newbusiness','planning','tenders'].forEach(function(pp) { try { getDeliveryPool(pp); } catch(e) {} });
+cron.schedule('58 7 * * 1-5', function() {
+    try {
+      ['moving','probate','newbusiness','planning','tenders'].forEach(function(pp) { try { getDeliveryPool(pp); } catch(e) {} });
     console.log('[PREWARM] product pools loaded into cache before the 9am run');
   } catch(e) { console.log('[PREWARM] error:', e.message); }
 }, { timezone: 'Europe/London' });
@@ -17986,7 +17986,7 @@ function runEpcBulkEnrichAllPools(label) {
   });
 }
 cron.schedule('40 5 * * 1-5', function() { try { runEpcBulkEnrichAllPools('05:40'); } catch(e) {} }, { timezone: 'Europe/London' });
-cron.schedule('20 8 * * 1-5', function() { try { runEpcBulkEnrichAllPools('08:20'); } catch(e) {} }, { timezone: 'Europe/London' });
+cron.schedule('10 7 * * 1-5', function() { try { runEpcBulkEnrichAllPools('07:10'); } catch(e) {} }, { timezone: 'Europe/London' });
 cron.schedule('15 5 * * 1-5', async () => {
   try { await preVerifyMovingLeads(); } catch(e) { console.log('[PREVERIFY] 05:15 error: ' + e.message); }
 }, { timezone: 'Europe/London' });
@@ -17996,11 +17996,11 @@ cron.schedule('25 7 * * 1-5', async () => {
 // MID-MORNING TOP-UP (08:05 UK Mon-Fri): closes the 07:45 -> 08:40 gap. Fills queues
 // and PAF-verifies again so anything that landed after the 07:25 PAF is numbered and
 // queued ~55 min before 9am instead of 20. Idempotent with the 08:40 pass.
-cron.schedule('5 8 * * 1-5', async () => {
-  try {
-    await new Promise(function(resolve) {
-      try {
-        var bodyM = JSON.stringify({});
+cron.schedule('28 7 * * 1-5', async () => {
+    try {
+      await new Promise(function(resolve) {
+        try {
+          var bodyM = JSON.stringify({});
         var rqM = require('http').request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/top-up-all', headers: { 'Authorization': 'Bearer ' + (ADMIN_PASSWORD || ''), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyM) } }, function(rs) { rs.resume(); rs.on('end', resolve); });
         rqM.on('error', function() { resolve(); });
         rqM.write(bodyM); rqM.end();
@@ -18013,11 +18013,11 @@ cron.schedule('5 8 * * 1-5', async () => {
 // limit and PAF-enrich, right before the 9am run. With full mailable queues the
 // delivery has nothing slow to do (no per-lead PAF, no fallback), so every email goes
 // out within seconds of 09:00 instead of drifting as the run walks the customer list.
-cron.schedule('40 8 * * 1-5', async () => {
-  try {
-    await new Promise(function(resolve) {
-      try {
-        var body = JSON.stringify({});
+cron.schedule('30 7 * * 1-5', async () => {
+    try {
+      await new Promise(function(resolve) {
+        try {
+          var body = JSON.stringify({});
         var rq = require('http').request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, method: 'POST', path: '/api/admin/top-up-all', headers: { 'Authorization': 'Bearer ' + (ADMIN_PASSWORD || ''), 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, function(rs) { rs.resume(); rs.on('end', resolve); });
         rq.on('error', function() { resolve(); });
         rq.write(body); rq.end();
@@ -18600,7 +18600,7 @@ function scraperHealthWatchdog(label) {
   } catch(e) { console.log('[SCRAPER-HEALTH] error: ' + e.message); return Promise.resolve(); }
 }
 cron.schedule('15 6 * * 1-5', function() { try { scraperHealthWatchdog('06:15'); } catch(e) {} }, { timezone: 'Europe/London' });
-cron.schedule('15 8 * * 1-5', function() { try { scraperHealthWatchdog('08:15'); } catch(e) {} }, { timezone: 'Europe/London' });
+cron.schedule('5 7 * * 1-5', function() { try { scraperHealthWatchdog('07:05'); } catch(e) {} }, { timezone: 'Europe/London' });
 app.post('/api/admin/scraper-health', adminAuth, async (req, res) => { try { await scraperHealthWatchdog('manual'); res.json({ success: true }); } catch(e) { res.status(500).json({ error: e.message }); } });
 // Fire a TEST alert through the full pipeline (email + agent dispatch) so the
 // auto-triage loop can be verified end-to-end on demand.
@@ -18759,7 +18759,7 @@ app.post('/api/admin/preallocate', adminAuth, async (req, res) => {
   try { var short = await preallocateDeliveryQueues(); res.json({ success: true, still_short: short || [] }); }
   catch(e) { res.status(500).json({ error: e.message }); }
 });
-cron.schedule('30 8 * * 1-5', function() { try { preallocateDeliveryQueues(); } catch(e) { console.log('[PREALLOC] cron error:', e.message); } }, { timezone: 'Europe/London' });
+cron.schedule('35 7 * * 1-5', function() { try { preallocateDeliveryQueues(); } catch(e) { console.log('[PREALLOC] cron error:', e.message); } }, { timezone: 'Europe/London' });
 
 // ===== DELIVERY COMPLETION WATCHDOG =====
 // The 09:01/09:05 backstops only fire when the 9am run never STARTED. This is the
@@ -18925,7 +18925,7 @@ async function preDeliveryReadinessCheck() {
       + 'Live status: <a href="https://9amleads.com/portal/delivery-status.html" style="color:#38bdf8">delivery-status</a></div>');
   } catch(e) {}
 }
-cron.schedule('45 8 * * 1-5', function() { try { preDeliveryReadinessCheck(); } catch(e) {} }, { timezone: 'Europe/London' });
+cron.schedule('55 7 * * 1-5', function() { try { preDeliveryReadinessCheck(); } catch(e) {} }, { timezone: 'Europe/London' });
 
 // ===== HARD PRE-FLIGHT: verify EVERYTHING the 9am delivery needs, before 9am =====
 // Runs at 07:30 and 08:40 UK (Mon-Fri) and is available on demand at
@@ -19043,7 +19043,7 @@ cron.schedule('45 7 * * 1-5', async function() {
   } catch(e) { console.log('[07:45 EMAIL-CHECK] error:', e.message); }
 }, { timezone: 'Europe/London' });
 cron.schedule('30 7 * * 1-5', async function() { try { deliveryPreflightAlert('07:30', await runDeliveryPreflight({ send: true })); } catch(e) {} }, { timezone: 'Europe/London' });
-cron.schedule('40 8 * * 1-5', async function() { try { deliveryPreflightAlert('08:40', await runDeliveryPreflight({ send: false })); } catch(e) {} }, { timezone: 'Europe/London' });
+cron.schedule('50 7 * * 1-5', async function() { try { deliveryPreflightAlert('07:50', await runDeliveryPreflight({ send: false })); } catch(e) {} }, { timezone: 'Europe/London' });
 
 // ===== PRE-9AM SUPPLY WARNING =====
 // 07:45 UK Mon-Fri: check each entitled customer's mailable IN-AREA supply BEFORE the
@@ -35046,7 +35046,7 @@ app.post('/api/admin/run-rehearsal', adminAuth, async (req, res) => {
 });
 // 08:05 UK weekdays - well before the 08:30-09:45 delivery/deploy window, so a
 // regression is caught (and can still be fixed) before the real 9am run.
-cron.schedule('5 8 * * 1-5', function() { try { runDeliveryRehearsal('08:05 schedule'); } catch(e) { console.log('[REHEARSAL] cron error:', e.message); } }, { timezone: 'Europe/London' });
+cron.schedule('45 7 * * 1-5', function() { try { runDeliveryRehearsal('07:45 schedule'); } catch(e) { console.log('[REHEARSAL] cron error:', e.message); } }, { timezone: 'Europe/London' });
 
 // Every 15 minutes - automated delivery test + report (TEST ONLY). Gated by
 // TEST_DELIVERY_CRON=true (off by default). Each run delivers EXACTLY the
