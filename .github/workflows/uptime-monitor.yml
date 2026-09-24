@@ -68,6 +68,15 @@ jobs:
               console.log('Opened issue #' + issue.data.number);
             }
 
+      - name: Notify agent on outage
+        if: env.OUTAGE == 'yes'
+        env:
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: |
+          curl -sS -X POST "https://nineamleads-backend.onrender.com/api/admin/alert" \
+            -H "Authorization: Bearer $ADMIN_PASSWORD" -H "Content-Type: application/json" \
+            -d "{\"subject\":\"Outage detected (backend $HTTP_CODE, site $SITE_CODE)\",\"message\":\"The uptime monitor detected an outage. The agent will investigate and fix if possible.\"}" || true
+
       - name: Close alert issue if recovered
         if: env.OUTAGE == 'no'
         uses: actions/github-script@v7

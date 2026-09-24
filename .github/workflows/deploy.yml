@@ -86,3 +86,14 @@ jobs:
           echo "$resp" | grep -q '"ok":true' \
             || { echo "SMOKE TEST FAILED - the delivery engine did not pass the rehearsal"; exit 1; }
           echo "Smoke test passed - delivery engine delivers the exact quota."
+
+      # Route deploy/smoke failures into the auto-fix agent (via the app's alert
+      # endpoint, which then dispatches the agent). Works while the backend is up.
+      - name: Notify agent on failure
+        if: failure()
+        env:
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: |
+          curl -sS -X POST "https://nineamleads-backend.onrender.com/api/admin/alert" \
+            -H "Authorization: Bearer $ADMIN_PASSWORD" -H "Content-Type: application/json" \
+            -d "{\"subject\":\"Deploy/smoke-test workflow FAILED\",\"message\":\"The deploy workflow failed (run ${{ github.run_id }}). The agent will investigate and fix if possible.\"}" || true
