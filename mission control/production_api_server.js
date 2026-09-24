@@ -15068,7 +15068,9 @@ async function runNewBusinessRestScrape() {
       });
     }
     var leads = [];
-    for (var start = 0; start < 400; start += 100) {
+    // VOLUME: fetch up to 1,500 recent incorporations (was 400) so every customer's
+    // county has enough NEW-business supply for their daily count.
+    for (var start = 0; start < 1500; start += 100) {
       var res = await get('/advanced-search/companies?incorporated_from=' + since + '&size=100&start_index=' + start);
       if (!res || !res.items || !res.items.length) break;
       res.items.forEach(function (it) {
