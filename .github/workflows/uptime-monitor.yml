@@ -68,14 +68,23 @@ jobs:
               console.log('Opened issue #' + issue.data.number);
             }
 
-      - name: Notify agent on outage
+      - name: Dispatch agent on outage
         if: env.OUTAGE == 'yes'
         env:
+          GH_ALERT_TOKEN: ${{ secrets.GH_ALERT_TOKEN }}
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
         run: |
-          curl -sS -X POST "https://nineamleads-backend.onrender.com/api/admin/alert" \
-            -H "Authorization: Bearer $ADMIN_PASSWORD" -H "Content-Type: application/json" \
-            -d "{\"subject\":\"Outage detected (backend $HTTP_CODE, site $SITE_CODE)\",\"message\":\"The uptime monitor detected an outage. The agent will investigate and fix if possible.\"}" || true
+          # Direct GitHub dispatch works even if the BACKEND IS DOWN. Fall back to the
+          # app alert endpoint only if the dispatch token is missing/unusable.
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "https://api.github.com/repos/ketz1g/9amleads-backend/dispatches" \
+            -H "Authorization: Bearer $GH_ALERT_TOKEN" -H "Accept: application/vnd.github+json" -H "Content-Type: application/json" \
+            -d "{\"event_type\":\"backend-alert\",\"client_payload\":{\"subject\":\"Outage detected (backend $HTTP_CODE, site $SITE_CODE)\",\"text\":\"Uptime monitor outage detected at $(date -u).\"}}" || echo 000)
+          echo "dispatch HTTP $code"
+          if [ "$code" != "204" ]; then
+            curl -sS -X POST "https://nineamleads-backend.onrender.com/api/admin/alert" \
+              -H "Authorization: Bearer $ADMIN_PASSWORD" -H "Content-Type: application/json" \
+              -d "{\"subject\":\"Outage detected (backend $HTTP_CODE, site $SITE_CODE)\",\"message\":\"The uptime monitor detected an outage.\"}" || true
+          fi
 
       - name: Close alert issue if recovered
         if: env.OUTAGE == 'no'

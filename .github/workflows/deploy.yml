@@ -89,11 +89,18 @@ jobs:
 
       # Route deploy/smoke failures into the auto-fix agent (via the app's alert
       # endpoint, which then dispatches the agent). Works while the backend is up.
-      - name: Notify agent on failure
+      - name: Dispatch agent on failure
         if: failure()
         env:
+          GH_ALERT_TOKEN: ${{ secrets.GH_ALERT_TOKEN }}
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
         run: |
-          curl -sS -X POST "https://nineamleads-backend.onrender.com/api/admin/alert" \
-            -H "Authorization: Bearer $ADMIN_PASSWORD" -H "Content-Type: application/json" \
-            -d "{\"subject\":\"Deploy/smoke-test workflow FAILED\",\"message\":\"The deploy workflow failed (run ${{ github.run_id }}). The agent will investigate and fix if possible.\"}" || true
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "https://api.github.com/repos/ketz1g/9amleads-backend/dispatches" \
+            -H "Authorization: Bearer $GH_ALERT_TOKEN" -H "Accept: application/vnd.github+json" -H "Content-Type: application/json" \
+            -d "{\"event_type\":\"backend-alert\",\"client_payload\":{\"subject\":\"Deploy/smoke-test workflow FAILED\",\"text\":\"Run ${{ github.run_id }} failed. URL: https://github.com/ketz1g/9amleads-backend/actions/runs/${{ github.run_id }}\"}}" || echo 000)
+          echo "dispatch HTTP $code"
+          if [ "$code" != "204" ]; then
+            curl -sS -X POST "https://nineamleads-backend.onrender.com/api/admin/alert" \
+              -H "Authorization: Bearer $ADMIN_PASSWORD" -H "Content-Type: application/json" \
+              -d "{\"subject\":\"Deploy/smoke-test workflow FAILED\",\"message\":\"Run ${{ github.run_id }} failed.\"}" || true
+          fi
