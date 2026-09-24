@@ -18282,6 +18282,13 @@ cron.schedule('*/15 * * * *', function() {
 var __deliveryFireCount = 0;
 var _deliveryLock = false;
 var _deliveryLockAt = 0;
+// PER-CUSTOMER DAILY EMAIL CLAIM: a synchronous guard so two overlapping delivery
+// runs can never both email the same customer on the same day (the cause of the
+// duplicate 9am emails). Claimed BEFORE the send; released if the send fails so
+// the retry/queue still delivers it.
+var __dailyEmailClaimed = {};
+function _claimDailyEmail(custId, day) { var k = String(custId) + '|' + day; if (__dailyEmailClaimed[k]) return false; __dailyEmailClaimed[k] = 1; return true; }
+function _releaseDailyEmail(custId, day) { delete __dailyEmailClaimed[String(custId) + '|' + day]; }
 var _testReportLock = false;
 var _testReportLockAt = 0;
 var __lastDeliveryFire = '';
@@ -18784,6 +18791,7 @@ function reconcileTodayEmails() {
       var rows = (dbR.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0; });
       if (!rows.length) return;
       if (cust.last_email_date === today) return; // main daily email already sent today
+      if (!_claimDailyEmail(cust.id, today)) return; // another run already claimed/sent it
       // Delivered rows exist but NO email went out today -> send one now (same template
       // as the 9am email) so inbox == dashboard.
       try {
@@ -18791,7 +18799,7 @@ function reconcileTodayEmails() {
         var _html = generateLeadEmailHTML(cust, rows);
         sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, _subj, _html).then(function() {
           try { var dbS = getDb(); var cu = (dbS.customers || []).find(function(x){ return x.id === cust.id; }); if (cu) { cu.last_email_date = today; saveDb(); } } catch(e2) {}
-        }).catch(function(er) { console.log('[RECONCILE] email failed ' + cust.email + ': ' + (er && er.message || er)); });
+        }).catch(function(er) { _releaseDailyEmail(cust.id, today); console.log('[RECONCILE] email failed ' + cust.email + ': ' + (er && er.message || er)); });
         sent++;
         console.log('[RECONCILE] re-sent daily email to ' + cust.email + ' (' + rows.length + ' leads)');
       } catch(ee) { console.log('[RECONCILE] build error ' + cust.email + ': ' + ee.message); }
@@ -25005,7 +25013,7 @@ _deliverDiag[cust.email].products = products;
       // per day regardless of when the first lead arrived. (The delivered-lead check
       // was wrongly blocking the email: a single early lead made alreadyEmailedToday
       // true and the 9am email was skipped while leads were topped up silently.)
-      var alreadyEmailedToday = (cust.last_email_date === today);
+      var alreadyEmailedToday = (cust.last_email_date === today) || !!__dailyEmailClaimed[cust.id + '|' + today];
       // SILENT MODE (no_email): admin/test operations (15-min test cron founder
       // delivery, replace-leads resets, block-pool-lead) must NEVER email the
       // customer. Checked here so the skip-quota path below can't email either.
@@ -26619,7 +26627,7 @@ _deliverDiag[cust.email].products = products;
         // notified of internal lead corrections. The leads are updated in the
         // dashboard, but no email goes out.
         var _noEmail = !!(req.body && req.body.no_email);
-        if ((!alreadyEmailedToday || forceFull) && !_noEmail) {
+        if ((!alreadyEmailedToday || forceFull) && !_noEmail && _claimDailyEmail(cust.id, today)) {
           // EMAIL FIRST, THEN DASHBOARD: send this customer's email IMMEDIATELY
           // (before marking delivered / saveDb below) so the email hits the inbox
           // BEFORE the dashboard shows the leads - and both happen inside the same
@@ -26641,6 +26649,7 @@ _deliverDiag[cust.email].products = products;
             try { cust.last_email_date = today; } catch(leErr) {}
             console.log('[DELIVERY] Email sent to ' + cust.email + ' (' + custLeads.length + ' leads)');
           } catch(sendErr) {
+            _releaseDailyEmail(cust.id, today); // allow the retry queue to deliver it
             console.log('[DELIVERY] Email failed ' + cust.email + ': ' + sendErr.message);
             try {
               var _feDb = getDb();
@@ -26773,7 +26782,18 @@ pushToCrm(cust, crmPayload2, 'daily delivery');
     _deliveryLockAt = 0;
     _releaseDeliveryDeadline(_deliveryRunId);
     res.json({ success: true, customers_processed: customers.length, leads_delivered: delivered, errors: errors, lastError: lastErr, diag: _deliverDiag || null, per_customer: Object.keys(_deliverDiag || {}).reduce(function(acc, ek) { var dv = _deliverDiag[ek]; var m = String((dv && dv.final_len) || '').match(/^(\d+)/); acc[ek] = { delivered: m ? parseInt(m[1], 10) : -1, totalDailyLimit: dv && dv.totalDailyLimit, products: (dv && dv.products) || [] }; return acc; }, {}) });
-  } catch(e) { _deliveryLock = false; _deliveryLockAt = 0; _releaseDeliveryDeadline(_deliveryRunId); res.status(500).json({ error: e.message }); }
+  } catch(e) {
+    _deliveryLock = false; _deliveryLockAt = 0; _releaseDeliveryDeadline(_deliveryRunId);
+    // Record the crash so /api/admin/system-status shows it (previously a failed run
+    // aborted silently, leaving later customers at 0 with no diagnostic).
+    try {
+      console.log('[DELIVERY] RUN ERROR: ' + ((e && e.stack) || (e && e.message) || e));
+      global.__lastErrors = global.__lastErrors || [];
+      global.__lastErrors.push({ at: new Date().toISOString(), url: '/api/admin/deliver', message: (e && e.message) || String(e), stack: (e && e.stack) || '' });
+      if (global.__lastErrors.length > 20) global.__lastErrors.shift();
+    } catch(x) {}
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ===== STRIPE PAYMENTS =====
