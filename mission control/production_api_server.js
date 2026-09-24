@@ -13133,6 +13133,9 @@ app.get('/api/admin/readiness', adminAuth, async (req, res) => {
       if (c.plan === 'cancelled') return false;
       if (isLeadsPaused(c)) return false;
       if (trialExpiredUnpaid(c)) return false;
+      // Internal/test/demo accounts never receive real leads - keep them out of the
+      // readiness report too, so they don't show as phantom "SHORT" customers.
+      if (isInternalAccount(c)) return false;
       return true;
     });
     var rows = [];
