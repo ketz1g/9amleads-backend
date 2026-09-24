@@ -18761,6 +18761,47 @@ app.post('/api/admin/preallocate', adminAuth, async (req, res) => {
 });
 cron.schedule('35 7 * * 1-5', function() { try { preallocateDeliveryQueues(); } catch(e) { console.log('[PREALLOC] cron error:', e.message); } }, { timezone: 'Europe/London' });
 
+// ===== 08:00 MORNING READINESS SUMMARY =====
+// ONE concise email every weekday, BEFORE the 9am run, telling the founder plainly
+// whether every customer is ready - so they are TOLD, not left to discover issues.
+// Uses the reserved queue built by the 07:35 pre-allocation. Informational only (does
+// not dispatch the auto-fix agent, which only handles real problems).
+function sendMorningReadinessSummary() {
+  try {
+    var db = getDb();
+    var today = new Date().toISOString().split('T')[0];
+    var custs = (db.customers || []).filter(function(c) { return !isInternalAccount(c) && isEntitledForDelivery(c); });
+    var rows = custs.map(function(c) {
+      var promised = getPlanLimit(c.product, c.plan, c.coverage) || c.leads_per_day || 5;
+      var reserved = (db.leads || []).filter(function(l) { return l.customer_id === c.id && !l.delivered && l.status !== 'removed'; }).length;
+      var delivered = (db.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0; }).length;
+      return { email: c.email, product: c.product, promised: promised, reserved: reserved, delivered: delivered, ok: reserved >= promised };
+    });
+    var short = rows.filter(function(r) { return !r.ok; });
+    var allOk = short.length === 0 && rows.length > 0;
+    var subject = allOk
+      ? ('\u2705 9am readiness - all ' + rows.length + ' customers ready')
+      : ('\u26a0 9am readiness - ' + short.length + ' of ' + rows.length + ' short (fix before 9am)');
+    var html = '<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0a0a0a;color:#f5f5f5;border-radius:14px">' +
+      '<h2 style="margin:0 0 6px;color:' + (allOk ? '#4ade80' : '#f87171') + '">' + (allOk ? '&#10003; All customers ready for the 9am delivery' : '&#9888; Some customers are short') + '</h2>' +
+      '<p style="color:#94a3b8;font-size:12px;margin:0 0 14px">Checked ' + new Date().toLocaleString('en-GB', { timeZone: 'Europe/London' }) + ' UK - the 9am run just sends this prepared queue.</p>' +
+      '<table style="width:100%;border-collapse:collapse;font-size:13px">' +
+      '<tr style="color:#64748b;text-align:left"><th style="padding:4px 8px">Customer</th><th style="padding:4px 8px">Product</th><th style="padding:4px 8px">Reserved</th><th style="padding:4px 8px"></th></tr>' +
+      rows.map(function(r) {
+        return '<tr><td style="padding:5px 8px;border-top:1px solid #1a1a1a">' + r.email + '</td><td style="padding:5px 8px;border-top:1px solid #1a1a1a;color:#94a3b8">' + r.product + '</td><td style="padding:5px 8px;border-top:1px solid #1a1a1a">' + r.reserved + '/' + r.promised + '</td><td style="padding:5px 8px;border-top:1px solid #1a1a1a;color:' + (r.ok ? '#4ade80' : '#f87171') + '">' + (r.ok ? 'ready' : 'SHORT') + '</td></tr>';
+      }).join('') +
+      '</table>' +
+      (allOk ? '' : '<p style="color:#fca5a5;font-size:12px;margin-top:12px">Short customers will be auto-scraped/widened by the pre-allocation run; check Admin &gt; Delivery Preview.</p>') +
+      '</div>';
+    sendBrevoEmail({ email: process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com', name: '9amLeads Admin' }, subject, html);
+    console.log('[MORNING-SUMMARY] ' + rows.length + ' customers, ' + short.length + ' short');
+  } catch(e) { console.log('[MORNING-SUMMARY] error: ' + e.message); }
+}
+// 07:58 UK weekdays - after pre-allocation (07:35), rehearsal (07:45) and final
+// readiness (07:55), so it reflects the final prepared state by 08:00.
+cron.schedule('58 7 * * 1-5', function() { try { sendMorningReadinessSummary(); } catch(e) {} }, { timezone: 'Europe/London' });
+app.post('/api/admin/morning-summary', adminAuth, function(req, res) { try { sendMorningReadinessSummary(); res.json({ success: true }); } catch(e) { res.status(500).json({ error: e.message }); } });
+
 // ===== DELIVERY COMPLETION WATCHDOG =====
 // The 09:01/09:05 backstops only fire when the 9am run never STARTED. This is the
 // missing piece: it verifies, PER CUSTOMER, that everyone got their promised count
