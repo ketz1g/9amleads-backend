@@ -6,6 +6,21 @@ require('dotenv').config();
 const https = require('https');
 const sc = require('./tenders_scraper.js');
 
+// Soft, non-fatal alert (does not fail the workflow). Used when the source blocks us.
+async function softAlert(message) {
+  try {
+    const key = process.env.ADMIN_PASSWORD;
+    const host = process.env.RENDER_HOST || 'nineamleads-backend.onrender.com';
+    const body = JSON.stringify({ subject: 'Tenders scrape: source blocked/empty (non-fatal)', message: message });
+    await new Promise(function(resolve) {
+      const req = https.request({ hostname: host, path: '/api/admin/alert', method: 'POST', headers: { 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }, timeout: 30000 }, function(res) { res.resume(); res.on('end', resolve); });
+      req.on('error', function() { resolve(); });
+      req.setTimeout(30000, function() { try { req.destroy(); } catch(e) {} resolve(); });
+      req.write(body); req.end();
+    });
+  } catch(e) {}
+}
+
 async function main() {
   console.log('[TENDERS-DAILY] starting ' + new Date().toISOString());
   let leads = [];
@@ -19,7 +34,16 @@ async function main() {
     }
   }
   console.log('[TENDERS-DAILY] collected ' + (leads || []).length + ' tenders');
-  if (!leads || !leads.length) { console.log('[TENDERS-DAILY] nothing to import'); return; }
+  if (!leads || !leads.length) {
+    // SOURCE-BLOCKED / EMPTY is NOT a code failure: the Contracts Finder / Find a
+    // Tender sites intermittently block or challenge datacenter IPs. Failing the
+    // workflow just spams the founder. Instead: alert softly and exit 0 - the in-app
+    // scraper health watchdog (06:15/08:15) also auto-retries before the 9am run, so
+    // deliveries are never affected by a blocked scrape.
+    console.log('[TENDERS-DAILY] no tenders after retries - treating as source-blocked (non-fatal)');
+    await softAlert('Tenders scraped 0 after retries - source likely blocked/challenged. Pool unchanged; the in-app watchdog will auto-retry before 9am.');
+    return;
+  }
   // FRESHNESS = the notice's REAL publication date, NOT our scrape time. Contracts
   // Finder keeps months/years-old standing notices (DPS frameworks, renewals) in
   // its live results; stamping every lead's firstVisibleDate="now" made those old

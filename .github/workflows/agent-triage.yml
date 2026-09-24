@@ -69,7 +69,7 @@ jobs:
           echo "--- agent output (tail) ---"
           tail -c 4000 /tmp/agent-out.json || true
 
-      - name: Open a draft PR with the fix
+      - name: Open PR with the fix (auto-merge tests-only)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SUBJECT: ${{ github.event.client_payload.subject || github.event.inputs.subject }}
@@ -86,14 +86,31 @@ jobs:
           git checkout -b "$BR"
           git add -A
           git commit -m "fix(auto-triage): ${SUBJECT:-backend alert}"
+
+          # Auto-merge ONLY when the change is confined to tests (safe, non-production).
+          # Everything else stays a DRAFT PR for a human to review and merge.
+          FILES=$(git diff --name-only origin/master..HEAD)
+          TESTS_ONLY=0
+          if [ -n "$FILES" ] && ! echo "$FILES" | grep -qv '^mission control/test/'; then TESTS_ONLY=1; fi
+          echo "changed files:"; echo "$FILES"; echo "tests_only=$TESTS_ONLY"
+
           git push -u origin "$BR"
-          gh pr create \
-            --title "Auto-triage: ${SUBJECT:-backend alert}" \
-            --body "Triggered by a 9amLeads backend alert.
+          BODY="Triggered by a 9amLeads backend alert.
 
           **Alert:** ${SUBJECT}
 
           **Details:** ${TEXT}
 
-          The agent investigated and produced this change. Review before merging - it is opened as a DRAFT on purpose." \
-            --head "$BR" --base master --draft
+          The agent investigated and produced this change."
+
+          if [ "$TESTS_ONLY" = "1" ]; then
+            echo "Tests-only change -> creating a normal PR and auto-merging (squash)."
+            gh pr create --title "Auto-triage (tests): ${SUBJECT:-backend alert}" --body "$BODY" --head "$BR" --base master
+            gh pr merge "$BR" --squash --delete-branch
+            echo "Auto-merged tests-only change."
+          else
+            echo "Production change -> opening a DRAFT PR for review."
+            gh pr create --title "Auto-triage: ${SUBJECT:-backend alert}" --body "$BODY
+
+          _Opened as a DRAFT on purpose - review before merging._" --head "$BR" --base master --draft
+          fi
