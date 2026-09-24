@@ -15952,7 +15952,7 @@ function sendAdminAlert(subject, bodyHtml) {
   try {
     var to = { email: process.env.ADMIN_ALERT_EMAIL || 'ketzman1g@gmail.com', name: 'Admin' };
     var html = '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:16px">' +
-      '<div style="font-size:17px;font-weight:800;color:#fbbf24;margin-bottom:12px">�s 9amLeads Alert</div>' +
+      '<div style="font-size:17px;font-weight:800;color:#fbbf24;margin-bottom:12px">⚠ 9amLeads Alert</div>' +
       bodyHtml +
       '<div style="margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.1);font-size:11px;color:#94a3b8">Sent automatically by the 9amLeads system</div></div>';
     sendBrevoEmail(to, subject, html);
