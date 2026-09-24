@@ -253,6 +253,7 @@ document.addEventListener('DOMContentLoaded', function(){
 <a href="/portal/tracking.html" data-htip="See the status of every mailing: printing, dispatched, out for delivery, delivered. Download your proof of posting here." style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:#fff;border:1px solid var(--border);border-radius:10px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;transition:.15s"><span style="font-size:20px">📬</span> Live Tracking<span style="font-size:10px;color:var(--muted);font-weight:400">Track delivery in real time</span></a>
 <a href="/portal/success.html" data-htip="Step-by-step playbooks, winning tips and ready-to-use letter, email and phone templates for your exact lead type. Free on every plan." style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:#fff;border:1px solid var(--border);border-radius:10px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;transition:.15s"><span style="font-size:20px">🎓</span> Success Centre<span style="font-size:10px;color:var(--muted);font-weight:400">Conversion playbooks</span></a>
 <a href="#" onclick="showModal('settings-modal');switchTab('subscription');return false" data-htip="View your plan, update your card and download past invoices and receipts." style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:#fff;border:1px solid var(--border);border-radius:10px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;transition:.15s"><span style="font-size:20px">🧾</span> Billing &amp; invoices<span style="font-size:10px;color:var(--muted);font-weight:400">Plan, card &amp; receipts</span></a>
+<a href="#" onclick="showModal('settings-modal');switchTab('crm');return false" data-htip="Send every lead straight into your CRM automatically at 9am - HubSpot, Salesforce, Pipedrive, Brevo, Zapier, Make or any tool via webhook. Step-by-step setup inside." style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:#fff;border:1px solid var(--border);border-radius:10px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;transition:.15s"><span style="font-size:20px">🔗</span> Connect your CRM<span style="font-size:10px;color:var(--muted);font-weight:400">Automate into your CRM</span></a>
 </div>
 </div>
 
@@ -649,12 +650,16 @@ document.addEventListener('DOMContentLoaded', function(){
 </div>
 
 <details style="margin-bottom:12px;font-size:12px;color:var(--text2)">
-<summary style="cursor:pointer;font-weight:700">Using Make, HubSpot, Salesforce, TNL or another CRM?</summary>
-<div style="line-height:1.7;padding-top:8px">
-Create an <strong>inbound webhook</strong> (sometimes called a "custom webhook" or "incoming hook") in your CRM, then paste its URL below. It must:<br>
-&bull; accept a <strong>POST</strong> with <strong>Content-Type: application/json</strong><br>
-&bull; be a complete <strong>https://</strong> URL<br>
-&bull; be publicly reachable and not require a login
+<summary style="cursor:pointer;font-weight:700">Step-by-step setup for your CRM (HubSpot, Salesforce, Pipedrive, Brevo, Make, webhooks)</summary>
+<div style="line-height:1.75;padding-top:8px">
+<b>HubSpot</b> - in Zapier (or Make) add a <b>HubSpot → Create/Update Contact</b> and a <b>Create Deal</b> action, map the fields, and paste the Zapier webhook URL below. (Or use a HubSpot private app with <code>crm.objects.contacts.write</code> / <code>deals.write</code> and its inbound webhook.)<br>
+<b>Salesforce</b> - use Zapier's <b>Salesforce → Create Lead</b> action (URL below), or set up Web-to-Lead; map Name, Street, PostalCode, LeadSource.<br>
+<b>Pipedrive</b> - Zapier/Make <b>Pipedrive → Create Deal</b>, map address/postcode/lead type, paste the hook URL below.<br>
+<b>Brevo</b> - Zapier <b>Brevo → Create/Update Contact</b> (or a Brevo inbound event); paste the hook URL below.<br>
+<b>Zapier / Make</b> - trigger = <b>Webhooks → Catch Hook</b> (Zapier) or <b>Webhooks → Custom webhook</b> (Make); paste the URL below, then add your CRM as the action and map fields once.<br>
+<b>Any other CRM</b> - create an <b>inbound / custom webhook</b> that accepts a <b>POST</b> of <b>application/json</b>, is a full <b>https://</b> URL and needs no login; paste it below.<br>
+<b>No CRM?</b> - use <a href="/portal/leads.html" style="color:var(--accent)">Export</a> to download CSV/Excel any time.
+<div style="margin-top:8px"><a href="https://9amleads.com/integrations/" target="_blank" style="color:var(--accent);font-weight:700">See all integrations &amp; full setup guides &rarr;</a></div>
 </div>
 </details>
 
