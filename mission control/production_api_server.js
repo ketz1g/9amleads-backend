@@ -13522,6 +13522,51 @@ app.post('/api/admin/extend-trial', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/send-trial-extension-notice - SEND THE EXPLANATION for trials that
+// were auto-extended but never told (the 09:07 goodwill email was silently failing
+// because it passed a bare email string). Finds free-trial accounts whose trial is
+// longer than the standard 7 days and (by default) still active, and emails each the
+// "your free trial has been extended" note ONCE (tracked, so it never double-sends).
+// Body: { emails?: [..], active_only?: bool (default true), dry_run?: bool }
+app.post('/api/admin/send-trial-extension-notice', adminAuth, async (req, res) => {
+  try {
+    var body = req.body || {};
+    var only = Array.isArray(body.emails) && body.emails.length ? body.emails.map(function(e) { return String(e).toLowerCase().trim(); }) : null;
+    var activeOnly = body.active_only !== false;
+    var dry = !!body.dry_run;
+    var dbN = getDb();
+    var sent = [], skipped = [];
+    var custs = (dbN.customers || []).filter(function(c) { return c.plan === 'free_trial' && c.trial_ends && c.created_at && !isInternalAccount(c); });
+    for (var i = 0; i < custs.length; i++) {
+      var c = custs[i];
+      var em = String(c.email || '').toLowerCase();
+      if (only && only.indexOf(em) === -1) continue;
+      var len = Math.round((new Date(c.trial_ends).getTime() - new Date(c.created_at).getTime()) / 86400000);
+      if (len <= 7) continue; // only extended trials
+      var left = Math.ceil((new Date(c.trial_ends).getTime() - Date.now()) / 86400000);
+      if (activeOnly && left <= 0) { skipped.push({ email: c.email, reason: 'expired' }); continue; }
+      if (c.trial_extension_notified) { skipped.push({ email: c.email, reason: 'already notified' }); continue; }
+      var html = '<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px">'
+        + '<div style="font-size:20px;font-weight:800;color:#0f172a;margin-bottom:8px">Good news from 9amLeads</div>'
+        + '<p style="font-size:14px;color:#334155;line-height:1.7">Hi ' + String(c.contact_name || c.company || 'there').replace(/[<>&]/g, '') + ',</p>'
+        + '<p style="font-size:14px;color:#334155;line-height:1.7">We hit a small technical issue on a couple of recent deliveries, and as a <b>gesture of goodwill</b> we have <b>extended your free trial by 2 days</b> so there is no interruption to your leads.</p>'
+        + '<p style="font-size:14px;color:#334155;line-height:1.7">This was applied automatically - <b>no charge, and nothing to do</b>. Your fresh 9am delivery continues as normal' + (left > 0 ? ' (your trial now runs to ' + new Date(c.trial_ends).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }) + ')' : '') + '.</p>'
+        + '<p style="font-size:14px;color:#334155;line-height:1.7">If anything ever looks off, just reply to this email and we will sort it right away.</p>'
+        + '<p style="font-size:13px;color:#64748b;line-height:1.6;margin-top:16px">Kind regards,<br>The 9amLeads team<br><a href="https://9amleads.com" style="color:#0ea5e9">9amleads.com</a></p>'
+        + '</div>';
+      if (!dry) {
+        try {
+          await sendBrevoEmail({ email: c.email, name: c.contact_name || c.company || '' }, 'Your 9amLeads trial has been extended (no charge)', html);
+          c.trial_extension_notified = new Date().toISOString();
+        } catch(sendE) { skipped.push({ email: c.email, reason: 'send failed: ' + sendE.message }); continue; }
+      }
+      sent.push({ email: c.email, trial_days: len });
+    }
+    if (!dry) saveDb();
+    res.json({ success: true, dry_run: dry, sent_count: sent.length, sent: sent, skipped: skipped });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/clear-bounce - reset the bounce counter for all customers.
 app.post('/api/admin/clear-bounce', adminAuth, (req, res) => {
   try {
