@@ -13383,7 +13383,13 @@ function checkQuietAreas() {
     var since = new Date(Date.now() - days * 86400000).toISOString();
     var alerted = [];
     (dbq.customers || []).forEach(function(c) {
-      if (!c.plan || c.plan === 'cancelled' || isLeadsPaused(c)) return;
+      // Only customers ACTUALLY owed leads. isEntitledForDelivery() skips paused,
+      // cancelled AND EXPIRED TRIALS - an ended trial is not receiving leads, so
+      // "update your areas to keep your leads coming" is misleading. This email was
+      // being sent to ended-trial users because the old check only skipped paused.
+      if (!isEntitledForDelivery(c)) return;
+      if (typeof isInternalAccount === 'function' && isInternalAccount(c)) return;
+      if (c.bounced && parseInt(c.bounced, 10) >= 3) return;
       var areas = [];
       try { areas = JSON.parse(c.target_areas || '[]'); } catch(e) { areas = []; }
       if (!areas.length) { try { var pcq = JSON.parse(c.product_config || '{}'); areas = JSON.parse((pcq[c.product] || {}).target_areas || '[]'); } catch(e) { areas = []; } }
