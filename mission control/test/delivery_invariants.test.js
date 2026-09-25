@@ -113,6 +113,8 @@ ok('admin can email a materials-help offer (deduped)',
   has("app.post('/api/admin/print-post/help-nudge'") && has('pp_help_notified'));
 ok('card-capture: day-4/day-6 nudge + direct addcard link',
   has('trial_addcard6') && has('function buildAddCardEmail') && has('dashboard.html?addcard=1'));
+ok('card/help emails explain WHY Print & Post works + give it time',
+  has('Why Print &amp; Post works') && has('It works - but it needs a few weeks to show') && has('Give it 2-4 weeks.'));
 ok('day-6 add-card email is a distinct urgent "last chance" version',
   has('function buildAddCardFinalEmail') && has('Last chance - your ') && has("_cardTpl === 'trial_addcard6'"));
 ok('Print & Post proof (2-4 weeks, flyer through the post) referenced widely',
