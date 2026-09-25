@@ -103,6 +103,8 @@ ok('stripe subscription reconcile self-heals missed webhooks',
   has('async function reconcileStripeSubscriptions') && has('cleared_trial_ends') && has('/api/admin/reconcile-subscriptions'));
 ok('admin billing section (who paid + next due) exists',
   has("app.get('/api/admin/billing'") && has('weekly_value') && has('next_due'));
+ok('zero-value checkouts are logged as card-save, not PAID',
+  has("_peType = 'setup'") && has('no charge'));
 ok('morning readiness summary is digest-mode (silent when all ready)',
   has("all ' + rows.length + ' ready - no email (digest mode)"));
 ok('early readiness + guarantee do not send duplicate pre-9am emails',

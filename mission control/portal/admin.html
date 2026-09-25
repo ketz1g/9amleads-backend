@@ -622,12 +622,15 @@ function loadPayments() {
       h += '<table class="table"><tr><th>When (UK)</th><th>Result</th><th>Customer</th><th>Amount</th><th>Event</th><th>Error</th></tr>';
       if (!evs.length) h += '<tr><td colspan="6" class="empty">No payment events yet.</td></tr>';
       evs.forEach(function(e) {
-        var col = e.type === 'failed' ? '#ef4444' : '#16a34a';
+        var isSetup = e.type === 'setup';
+        var col = e.type === 'failed' ? '#ef4444' : (isSetup ? '#0ea5e9' : '#16a34a');
+        var label = e.type === 'failed' ? 'FAILED' : (isSetup ? 'CARD SAVED' : 'PAID');
+        var amt = isSetup ? '<span style="color:#94a3b8">no charge</span>' : ('&pound;' + (Number(e.amount) || 0).toFixed(2));
         var uk = '-'; try { uk = new Date(e.at).toLocaleString('en-GB', { timeZone: 'Europe/London' }); } catch(x) {}
         h += '<tr><td style="font-size:11px;white-space:nowrap">' + uk + '</td>' +
-          '<td style="color:' + col + ';font-weight:700">' + (e.type === 'failed' ? 'FAILED' : 'PAID') + '</td>' +
+          '<td style="color:' + col + ';font-weight:700">' + label + '</td>' +
           '<td>' + esc(e.email || '-') + '</td>' +
-          '<td>&pound;' + (Number(e.amount) || 0).toFixed(2) + '</td>' +
+          '<td>' + amt + '</td>' +
           '<td style="font-size:11px;color:#64748b">' + esc(e.event || '') + '</td>' +
           '<td style="font-size:11px;color:#ef4444">' + esc(e.error || '') + '</td></tr>';
       });

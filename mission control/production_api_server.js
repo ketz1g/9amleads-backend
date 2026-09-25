@@ -10599,6 +10599,14 @@ app.get('/api/admin/delivery-runs', adminAuth, (req, res) => {
 app.get('/api/admin/payment-events', adminAuth, (req, res) => {
   try {
     var dbPE = getDb();
+    // Normalise legacy rows: a £0 checkout.session.completed was a card-save / free
+    // session, not a payment. Reclassify (idempotent) so old bogus "PAID £0.00"
+    // entries (e.g. the free-trial card saves) now read correctly.
+    var _peChanged = false;
+    (dbPE.payment_events || []).forEach(function(e) {
+      if (e && e.type === 'paid' && e.event === 'checkout.session.completed' && !(Number(e.amount) > 0)) { e.type = 'setup'; _peChanged = true; }
+    });
+    if (_peChanged) saveDb();
     var evs = (dbPE.payment_events || []).slice(-300).reverse();
     var failed = (dbPE.payment_events || []).filter(function(e) { return e.type === 'failed'; });
     res.json({ success: true, count: evs.length, failed_count: failed.length, events: evs });
@@ -10697,7 +10705,7 @@ app.get('/api/admin/billing', adminAuth, (req, res) => {
     (dbb.subscriptions || []).forEach(function(s) { if (s && s.customer_id != null) subsByCust[String(s.customer_id)] = s; });
     var lastPay = {};
     (dbb.payment_events || []).forEach(function(ev) {
-      if (!ev || ev.type !== 'paid') return;
+      if (!ev || ev.type !== 'paid' || !(Number(ev.amount) > 0)) return; // real payments only, not £0 card saves
       var e = String(ev.email || '').toLowerCase(); if (!e) return;
       if (!lastPay[e] || String(ev.at || '') > String(lastPay[e].at || '')) lastPay[e] = ev;
     });
@@ -27913,7 +27921,16 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
   try {
     var _pe = (event.data && event.data.object) ? event.data.object : {};
     var _peType = '';
-    if (evType === 'checkout.session.completed' || evType === 'invoice.payment_succeeded' || evType === 'payment_intent.succeeded') _peType = 'paid';
+    if (evType === 'checkout.session.completed') {
+      // A checkout can COMPLETE with no charge at all: setup mode (save a card for
+      // the free trial via /api/setup-checkout) or a 0-value session. Only log an
+      // actual PAYMENT when money changed hands - otherwise it's a "card saved"
+      // event. (This is why "PAID £0.00" appeared for trial users who just saved a card.)
+      var _peZero = (typeof _pe.amount_total === 'number' && _pe.amount_total === 0);
+      if (_pe.mode === 'setup' || _pe.payment_status === 'no_payment_required' || (_peZero && _pe.payment_status !== 'paid')) _peType = 'setup';
+      else _peType = 'paid';
+    }
+    else if (evType === 'invoice.payment_succeeded' || evType === 'payment_intent.succeeded') _peType = 'paid';
     else if (evType === 'invoice.payment_failed' || evType === 'payment_intent.payment_failed' || evType === 'charge.failed') _peType = 'failed';
     if (_peType) {
       var _peDb = getDb();
