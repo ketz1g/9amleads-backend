@@ -13288,14 +13288,11 @@ async function sendEarlyReadinessReport(label) {
         }).join('')
       + '</table>'
       + '<div style="margin-top:8px;color:#94a3b8">Green = already numbered. Amber = relies on the 9am PAF pass. Red = genuine gap, act now.</div></div>';
-    // DIGEST MODE: only email when something needs attention. An all-green day is
-    // logged, not emailed, so the founder isn't spammed with "all good" reports.
-    if (shorts.length) {
-      sendAdminAlert('\u26A0 Pre-9am readiness ' + label + ' - ' + (rows.length - shorts.length) + '/' + rows.length + ' ready', html);
-    } else {
-      console.log('[EARLY-READINESS ' + label + '] all ' + rows.length + ' ready (no email - digest mode)');
-    }
-    console.log('[EARLY-READINESS ' + label + '] ' + (rows.length - shorts.length) + '/' + rows.length + ' ready' + (shorts.length ? '; short: ' + shorts.map(function(s){ return s.email; }).join(', ') : ''));
+    // LOG-ONLY (digest mode): the 07:58 morning readiness summary is the SINGLE
+    // pre-9am email, and the 07:56 guarantee auto-remediates before it. Emailing from
+    // this early pass (07:45) produced a duplicate premature alert on top of those, so
+    // it now just logs. Any genuine gap still surfaces in the 07:58 summary.
+    console.log('[EARLY-READINESS ' + label + '] ' + (rows.length - shorts.length) + '/' + rows.length + ' ready' + (shorts.length ? '; short: ' + shorts.map(function(s){ return s.email; }).join(', ') : ' (no email - digest mode)'));
   } catch(e) { console.log('[EARLY-READINESS] error:', e.message); }
 }
 // ONE consolidated pre-9am result email (07:45 UK Mon-Fri) - sent once, after the
@@ -18846,9 +18843,13 @@ function sendMorningReadinessSummary() {
     });
     var short = rows.filter(function(r) { return !r.ok; });
     var allOk = short.length === 0 && rows.length > 0;
-    var subject = allOk
-      ? ('\u2705 9am readiness - all ' + rows.length + ' customers ready')
-      : ('\u26a0 9am readiness - ' + short.length + ' of ' + rows.length + ' short (fix before 9am)');
+    // DIGEST MODE: this is the SINGLE pre-9am email and it only fires when a customer
+    // is genuinely short AFTER the 07:35 pre-allocation + 07:56 auto top-up. Healthy
+    // days are silent (no "all good" email every morning). It also reflects the true
+    // post-remediation state, so it can't false-alarm on a gap that was just filled.
+    if (rows.length === 0) { console.log('[MORNING-SUMMARY] no active customers - no email'); return; }
+    if (allOk) { console.log('[MORNING-SUMMARY] all ' + rows.length + ' ready - no email (digest mode)'); return; }
+    var subject = '\u26a0 9am readiness - ' + short.length + ' of ' + rows.length + ' short (fix before 9am)';
     var html = '<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0a0a0a;color:#f5f5f5;border-radius:14px">' +
       '<h2 style="margin:0 0 6px;color:' + (allOk ? '#4ade80' : '#f87171') + '">' + (allOk ? '&#10003; All customers ready for the 9am delivery' : '&#9888; Some customers are short') + '</h2>' +
       '<p style="color:#94a3b8;font-size:12px;margin:0 0 14px">Checked ' + new Date().toLocaleString('en-GB', { timeZone: 'Europe/London' }) + ' UK - the 9am run just sends this prepared queue.</p>' +
@@ -19958,10 +19959,12 @@ async function runFulfilmentGuarantee(label) {
       // same issue. Persisted so restarts don't re-spam. The 09:10 delivery summary
       // + 09:30 action digest cover anything still unresolved after 9am.
       var _todayGuar = new Date().toISOString().split('T')[0];
-      var _alreadySent = false;
-      try { var _gd2 = getDb(); if (!_gd2.fulfilment_guarantee) _gd2.fulfilment_guarantee = {}; if (_gd2.fulfilment_guarantee.shortfall_emailed === _todayGuar) _alreadySent = true; } catch(e) {}
+      // DIGEST MODE: do NOT email from here. The 07:58 morning readiness summary (two
+      // minutes later) is the single pre-9am email and it checks the queue AFTER the
+      // auto top-up triggered above - so a gap this pass just filled never reaches you.
+      var _alreadySent = true;
       if (_alreadySent) {
-        console.log('[GUARANTEE] ' + label + ': shortfall already emailed today (' + _todayGuar + ') - skipping duplicate alert');
+        console.log('[GUARANTEE] ' + label + ': shortfall detected + auto-remediated - email handled by the 07:58 morning summary');
       } else {
         // Alert the founder NOW (well before 9am) so they can act / top up in time.
         var _gHtml = '<div style="font-family:Inter,Arial,sans-serif;max-width:540px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px"><h2 style="color:#f87171;margin:0 0 10px;font-size:18px">⚠ Fulfilment check (' + label + '): a customer will be short at 9am</h2><p style="font-size:14px;line-height:1.6;color:#cbd5e1">These customers will NOT get their full promised count at 9am:<br><br><ul style="margin:0;padding-left:18px">' + gShort.map(function(s){ return '<li>' + s + '</li>'; }).join('') + '</ul><br><b style="color:#fbbf24">An automatic top-up has already been triggered.</b> If any customer is still short at 9am it is a genuine supply gap for those areas.</p></div>';
@@ -20005,8 +20008,21 @@ cron.schedule('30 9 * * 1-5', async () => {
   try {
     var ddDb = getDb();
     var todayD = new Date().toISOString().substring(0, 10);
-    var activeC = (ddDb.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && !(typeof isInternalAccount === 'function' && isInternalAccount(c)); }).length;
-    var delToday = (ddDb.leads || []).filter(function(l) { return l.delivered && l.delivered_at && String(l.delivered_at).startsWith(todayD); }).length;
+    // REAL, LEAD-OWING customers only. The old filter counted every non-cancelled
+    // account, so the EXPIRED TRIALS (plan label still set, trial ended, no active
+    // subscription) were counted as "active" and every one appeared as "below promise"
+    // (they correctly receive nothing by design) - that is what produced the false
+    // "12 below promise" alarm. Use the exact entitlement rule the delivery engine uses.
+    var activeCusts = (ddDb.customers || []).filter(function(c) {
+      if (!c.plan || c.plan === 'cancelled' || isLeadsPaused(c)) return false;
+      if (typeof isInternalAccount === 'function' && isInternalAccount(c)) return false;
+      if (typeof trialExpiredUnpaid === 'function' && trialExpiredUnpaid(c)) return false;
+      return true;
+    });
+    var activeC = activeCusts.length;
+    var activeIds = {};
+    activeCusts.forEach(function(c) { activeIds[c.id] = 1; });
+    var delToday = (ddDb.leads || []).filter(function(l) { return l.delivered && l.delivered_at && String(l.delivered_at).startsWith(todayD) && activeIds[l.customer_id]; }).length;
     var sup = {};
     try { sup = getPoolSupply(); } catch(e) {}
     var supplyHtml = '';
@@ -20017,18 +20033,26 @@ cron.schedule('30 9 * * 1-5', async () => {
     var cap = { postcoder: 0, stannp: 0 };
     try { var _pb = require('./postcoder_budget'); cap.postcoder = Math.max(0, _pb.getDailyBudget() - _pb.usage()); } catch(e) {}
     try { var _dm = getDirectMailProvider(); var _bal = _dm.getBalance ? await _dm.getBalance() : null; cap.stannp = (_bal && typeof _bal === 'object') ? (typeof _bal.balance === 'number' ? _bal.balance : 'n/a') : (typeof _bal === 'number' ? _bal : 'n/a'); } catch(e) {}
-    var errs = (global.__lastErrors || []).slice(-3).map(function(e){ return e.message || e.kind || ''; }).filter(Boolean);
+    // Only ACTIONABLE, recent errors. The pre-emptive 06:30 "readiness" notes are
+    // excluded (they auto-remediate before 9am and used to show as scary "only 4/5"
+    // lines even on a day where every customer got their full count), and anything
+    // older than 3 hours is ignored so yesterday's blips never page you today.
+    var _errCutoff = Date.now() - 3 * 3600000;
+    var errs = (global.__lastErrors || []).filter(function(e) {
+      if (!e || !e.at || e.kind === 'readiness') return false;
+      return new Date(e.at).getTime() >= _errCutoff;
+    }).slice(-3).map(function(e){ return e.message || e.kind || ''; }).filter(Boolean);
     var pcLow = (typeof cap.postcoder === 'number' && cap.postcoder < 50);
     var stLow = (typeof cap.stannp === 'number' && cap.stannp < 20);
-    // Per-customer shortfall count (any customer below their promised count today).
+    // Per-customer shortfall count - ONLY customers actually owed leads today (expired
+    // trials, paused, cancelled and internal accounts are excluded, and rejected/
+    // replaced rows don't count against them).
     var shortCount = 0;
     try {
-      (ddDb.customers || []).forEach(function(c) {
-        if (!c.plan || c.plan === 'cancelled') return;
-        if (typeof isInternalAccount === 'function' && isInternalAccount(c)) return;
+      activeCusts.forEach(function(c) {
         var promised = (typeof getCustomerDailyQuota === 'function' ? getCustomerDailyQuota(c) : 0) || 0;
         if (promised <= 0) return;
-        var have = (ddDb.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && String(l.delivered_at).startsWith(todayD); }).length;
+        var have = (ddDb.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && String(l.delivered_at).startsWith(todayD) && !(typeof _leadIsRejected === 'function' && _leadIsRejected(l)); }).length;
         if (have < promised) shortCount++;
       });
     } catch(sce) {}

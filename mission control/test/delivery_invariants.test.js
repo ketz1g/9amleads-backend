@@ -89,6 +89,14 @@ ok('dashboard address is synced from full address (door number shown)',
   has('DISPLAY SYNC (door-number fix)') && has('parsed.address = _faClean;'));
 ok('expired-trial classification is entitlement-based (not plan label)',
   has('if (typeof trialExpiredUnpaid === \'function\') return trialExpiredUnpaid(c);'));
+ok('daily digest counts only lead-owing customers (no expired-trial false shortfall)',
+  has('REAL, LEAD-OWING customers only') && has('activeCusts.forEach(function(c) {'));
+ok('daily digest ignores stale/pre-emptive readiness noise',
+  has("if (!e || !e.at || e.kind === 'readiness') return false;"));
+ok('morning readiness summary is digest-mode (silent when all ready)',
+  has("all ' + rows.length + ' ready - no email (digest mode)"));
+ok('early readiness + guarantee do not send duplicate pre-9am emails',
+  has('(no email - digest mode)') && has('email handled by the 07:58 morning summary'));
 ok('pre-9am rehearsal exists and is scheduled before 9am',
   has('function runDeliveryRehearsal') && has("runDeliveryRehearsal('07:45 schedule')"));
 ok('test/internal accounts never get real emails',
