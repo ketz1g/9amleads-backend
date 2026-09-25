@@ -6,264 +6,264 @@
 <title>9amLeads Affiliate Dashboard</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Inter',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:radial-gradient(1000px 600px at 85% -10%,rgba(14,165,233,.12),transparent 55%),radial-gradient(800px 500px at 8% 20%,rgba(99,102,241,.09),transparent 55%),radial-gradient(900px 600px at 50% 115%,rgba(6,182,212,.09),transparent 55%),#070a11;color:#e2e8f0;min-height:100vh}
-a{color:#0ea5e9;text-decoration:none}
+body{font-family:'Inter',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#f7f9fc;color:#0f172a;min-height:100vh}
+a{color:#0284c7;text-decoration:none}
 button{font-family:inherit}
-.topbar{display:flex;align-items:center;gap:12px;padding:14px 24px;background:#0f111a;border-bottom:1px solid #1e2030;position:sticky;top:0;z-index:20}
-.logo{font-size:17px;font-weight:800;color:#0ea5e9;letter-spacing:-.3px}
-.logo span{color:#f1f5f9}
+.topbar{display:flex;align-items:center;gap:12px;padding:14px 24px;background:#ffffff;border-bottom:1px solid #e5e7eb;position:sticky;top:0;z-index:20}
+.logo{font-size:17px;font-weight:800;color:#0284c7;letter-spacing:-.3px}
+.logo span{color:#0f172a}
 .topbar .spacer{flex:1}
-.topbar .who{font-size:12px;color:#94a3b8;text-align:right;line-height:1.4}
-.topbar .who b{display:block;color:#e2e8f0;font-size:13px}
+.topbar .who{font-size:12px;color:#64748b;text-align:right;line-height:1.4}
+.topbar .who b{display:block;color:#0f172a;font-size:13px}
 .wrap{max-width:1120px;margin:0 auto;padding:24px 20px 80px}
 .hero{background:linear-gradient(135deg,rgba(14,165,233,.14),rgba(14,165,233,.03));border:1px solid rgba(14,165,233,.28);border-radius:16px;padding:26px 28px;margin-bottom:22px;position:relative;overflow:hidden}
-.hero h1{font-size:24px;font-weight:800;color:#f1f5f9;margin-bottom:6px}
-.hero p{font-size:13px;color:#94a3b8;line-height:1.6;max-width:760px}
-.hero .code{display:inline-flex;align-items:center;gap:8px;margin-top:14px;background:#0b0d14;border:1px solid rgba(14,165,233,.35);border-radius:10px;padding:10px 14px}
-.hero .code .lbl{font-size:11px;color:#94a3b8;margin-right:2px}
-.hero .code b{color:#0ea5e9;font-size:16px;letter-spacing:1px}
-.hero .code button{background:#0ea5e9;color:#fff;border:none;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer}
+.hero h1{font-size:24px;font-weight:800;color:#0f172a;margin-bottom:6px}
+.hero p{font-size:13px;color:#64748b;line-height:1.6;max-width:760px}
+.hero .code{display:inline-flex;align-items:center;gap:8px;margin-top:14px;background:#0f172a;border:1px solid rgba(14,165,233,.35);border-radius:10px;padding:10px 14px}
+.hero .code .lbl{font-size:11px;color:#64748b;margin-right:2px}
+.hero .code b{color:#0284c7;font-size:16px;letter-spacing:1px}
+.hero .code button{background:#0284c7;color:#fff;border:none;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer}
 .tabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap}
-.tab{padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;background:#0f111a;border:1px solid #1e2030;color:#94a3b8;cursor:pointer;transition:.15s}
-.tab:hover{color:#e2e8f0;border-color:#2a2d42}
-.tab.on{background:rgba(14,165,233,.14);border-color:rgba(14,165,233,.45);color:#0ea5e9}
-.tab .n{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:9px;background:rgba(14,165,233,.2);color:#0ea5e9;font-size:10px;font-weight:800;margin-left:6px;padding:0 5px}
+.tab{padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;background:#ffffff;border:1px solid #e5e7eb;color:#64748b;cursor:pointer;transition:.15s}
+.tab:hover{color:#0f172a;border-color:#334155}
+.tab.on{background:rgba(14,165,233,.14);border-color:rgba(14,165,233,.45);color:#0284c7}
+.tab .n{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:9px;background:rgba(14,165,233,.2);color:#0284c7;font-size:10px;font-weight:800;margin-left:6px;padding:0 5px}
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:24px}
-.card{background:rgba(255,255,255,.045);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid #1e2030;border-radius:14px;padding:18px}
-.card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
-.card .val{font-size:26px;font-weight:800;color:#f1f5f9}
-.card .sub{font-size:11px;color:#6b7280;margin-top:4px}
-.card.blue .val{color:#0ea5e9}
-.card.green .val{color:#34d399}
-.card.amber .val{color:#fbbf24}
-.card.grey .val{color:#cbd5e1}
+.card{background:#ffffff;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid #e5e7eb;border-radius:14px;padding:18px}
+.card .lbl{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
+.card .val{font-size:26px;font-weight:800;color:#0f172a}
+.card .sub{font-size:11px;color:#64748b;margin-top:4px}
+.card.blue .val{color:#0284c7}
+.card.green .val{color:#059669}
+.card.amber .val{color:#d97706}
+.card.grey .val{color:#334155}
 .grid{display:grid;grid-template-columns:1fr;gap:20px}
 @media(min-width:900px){.grid.two{grid-template-columns:1.7fr 1fr}}
-.panel{background:rgba(255,255,255,.045);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid #1e2030;border-radius:14px;padding:20px}
-.panel h2{font-size:14px;font-weight:700;color:#f1f5f9;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
-.panel h2 .hint{font-size:11px;color:#6b7280;font-weight:500}
+.panel{background:#ffffff;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid #e5e7eb;border-radius:14px;padding:20px}
+.panel h2{font-size:14px;font-weight:700;color:#0f172a;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.panel h2 .hint{font-size:11px;color:#64748b;font-weight:500}
 table{width:100%;border-collapse:collapse;font-size:12.5px}
-th{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;text-align:left;padding:7px 8px;border-bottom:1px solid #1e2030}
-td{padding:9px 8px;border-bottom:1px solid rgba(30,32,48,.6);color:#cbd5e1;vertical-align:middle}
+th{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:#64748b;text-align:left;padding:7px 8px;border-bottom:1px solid #e5e7eb}
+td{padding:9px 8px;border-bottom:1px solid #eef2f7;color:#334155;vertical-align:middle}
 tr:last-child td{border-bottom:none}
 .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700}
-.b-pending{background:rgba(251,191,36,.12);color:#fbbf24}
-.b-due{background:rgba(52,211,153,.14);color:#34d399}
-.b-paid{background:rgba(14,165,233,.14);color:#0ea5e9}
-.b-ref{background:rgba(148,163,184,.12);color:#94a3b8}
-.b-ineligible{background:rgba(248,113,113,.12);color:#f87171}
-.b-trial{background:rgba(14,165,233,.10);color:#38bdf8}
-.b-new{background:rgba(52,211,153,.12);color:#34d399}
-.muted{color:#6b7280;font-size:11.5px}
-.login{max-width:400px;margin:60px auto;background:rgba(255,255,255,.045);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid #1e2030;border-radius:16px;padding:32px}
-.login h1{font-size:19px;font-weight:800;color:#f1f5f9;margin-bottom:4px}
-.login p{font-size:12px;color:#94a3b8;margin-bottom:20px}
+.b-pending{background:rgba(251,191,36,.12);color:#d97706}
+.b-due{background:rgba(52,211,153,.14);color:#059669}
+.b-paid{background:rgba(14,165,233,.14);color:#0284c7}
+.b-ref{background:rgba(148,163,184,.12);color:#64748b}
+.b-ineligible{background:rgba(248,113,113,.12);color:#dc2626}
+.b-trial{background:rgba(14,165,233,.10);color:#0284c7}
+.b-new{background:rgba(52,211,153,.12);color:#059669}
+.muted{color:#64748b;font-size:11.5px}
+.login{max-width:400px;margin:60px auto;background:#ffffff;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid #e5e7eb;border-radius:16px;padding:32px}
+.login h1{font-size:19px;font-weight:800;color:#0f172a;margin-bottom:4px}
+.login p{font-size:12px;color:#64748b;margin-bottom:20px}
 .fg{margin-bottom:14px}
-.fg label{display:block;font-size:11px;font-weight:600;color:#b0b8cc;margin-bottom:5px}
-.fg input{width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px}
-.fg input:focus{outline:none;border-color:#0ea5e9}
-.btn{width:100%;padding:12px;background:#0ea5e9;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer}
+.fg label{display:block;font-size:11px;font-weight:600;color:#475569;margin-bottom:5px}
+.fg input{width:100%;padding:11px 13px;background:#0f172a;border:1px solid #e5e7eb;border-radius:9px;color:#0f172a;font-size:13px}
+.fg input:focus{outline:none;border-color:#0284c7}
+.btn{width:100%;padding:12px;background:#0284c7;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer}
 .btn:hover{background:#0284c7}
-.btn-out{background:transparent;border:1px solid #1e2030;color:#94a3b8;padding:8px 14px;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer}
-.btn-out:hover{color:#e2e8f0;border-color:#2a2d42}
-.btn-mini{background:rgba(14,165,233,.14);border:1px solid rgba(14,165,233,.4);color:#0ea5e9;padding:5px 11px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
+.btn-out{background:transparent;border:1px solid #e5e7eb;color:#64748b;padding:8px 14px;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer}
+.btn-out:hover{color:#0f172a;border-color:#334155}
+.btn-mini{background:rgba(14,165,233,.14);border:1px solid rgba(14,165,233,.4);color:#0284c7;padding:5px 11px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
 .btn-mini:hover{background:rgba(14,165,233,.24)}
-.err{color:#f87171;font-size:12px;margin-top:10px;display:none}
-.howto{font-size:12.5px;color:#cbd5e1;line-height:1.8}
-.howto b{color:#f1f5f9}
+.err{color:#dc2626;font-size:12px;margin-top:10px;display:none}
+.howto{font-size:12.5px;color:#334155;line-height:1.8}
+.howto b{color:#0f172a}
 .howto li{margin-bottom:9px}
 /* type chips */
 .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
-.chip{padding:9px 16px;border-radius:50px;font-size:12.5px;font-weight:600;background:#0f111a;border:1px solid #1e2030;color:#94a3b8;cursor:pointer}
-.chip.on{background:rgba(14,165,233,.14);border-color:rgba(14,165,233,.5);color:#0ea5e9}
+.chip{padding:9px 16px;border-radius:50px;font-size:12.5px;font-weight:600;background:#ffffff;border:1px solid #e5e7eb;color:#64748b;cursor:pointer}
+.chip.on{background:rgba(14,165,233,.14);border-color:rgba(14,165,233,.5);color:#0284c7}
 /* tool sections */
-.tool-sec{background:rgba(255,255,255,.045);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid #1e2030;border-radius:14px;padding:18px 20px;margin-bottom:16px}
-.tool-sec h3{font-size:13px;font-weight:700;color:#f1f5f9;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:10px}
-.step{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.09);border-radius:10px;padding:11px 14px;margin-bottom:8px;font-size:12.5px;color:#cbd5e1;line-height:1.6}
-.step b{color:#0ea5e9;font-size:11px;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:3px}
-.tpl{background:rgba(255,255,255,.035);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid #1e2030;border-radius:10px;padding:13px 14px;margin-bottom:10px}
-.tpl .subj{font-weight:700;color:#f1f5f9;font-size:12.5px;margin-bottom:5px}
-.tpl pre{font-family:inherit;white-space:pre-wrap;font-size:12.5px;color:#a3adc2;line-height:1.65;margin:0}
-.post-card{background:rgba(255,255,255,.035);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid #1e2030;border-radius:10px;padding:12px 14px;margin-bottom:10px;font-size:12.5px;color:#cbd5e1;line-height:1.6}
+.tool-sec{background:#ffffff;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid #e5e7eb;border-radius:14px;padding:18px 20px;margin-bottom:16px}
+.tool-sec h3{font-size:13px;font-weight:700;color:#0f172a;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.step{background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;padding:11px 14px;margin-bottom:8px;font-size:12.5px;color:#334155;line-height:1.6}
+.step b{color:#0284c7;font-size:11px;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:3px}
+.tpl{background:#ffffff;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid #e5e7eb;border-radius:10px;padding:13px 14px;margin-bottom:10px}
+.tpl .subj{font-weight:700;color:#0f172a;font-size:12.5px;margin-bottom:5px}
+.tpl pre{font-family:inherit;white-space:pre-wrap;font-size:12.5px;color:#475569;line-height:1.65;margin:0}
+.post-card{background:#ffffff;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid #e5e7eb;border-radius:10px;padding:12px 14px;margin-bottom:10px;font-size:12.5px;color:#334155;line-height:1.6}
 /* leads inbox */
-.lead{display:flex;align-items:flex-start;gap:14px;background:rgba(255,255,255,.045);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid #1e2030;border-radius:14px;padding:16px;margin-bottom:12px}
+.lead{display:flex;align-items:flex-start;gap:14px;background:#ffffff;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid #e5e7eb;border-radius:14px;padding:16px;margin-bottom:12px}
 .lead .ico{width:44px;height:44px;border-radius:12px;background:rgba(14,165,233,.12);border:1px solid rgba(14,165,233,.3);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
 .lead .main{flex:1;min-width:0}
-.lead .main .co{font-weight:700;color:#f1f5f9;font-size:14px}
-.lead .main .em{font-size:12px;color:#94a3b8;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lead .main .co{font-weight:700;color:#0f172a;font-size:14px}
+.lead .main .em{font-size:12px;color:#64748b;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lead .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.lead .meta span{font-size:10.5px;color:#94a3b8;background:#0b0d14;border:1px solid #1e2030;padding:3px 9px;border-radius:20px}
+.lead .meta span{font-size:10.5px;color:#64748b;background:#0f172a;border:1px solid #e5e7eb;padding:3px 9px;border-radius:20px}
 .lead .act{display:flex;flex-direction:column;gap:8px;align-items:flex-end}
-.empty{background:#0f111a;border:1px dashed #2a2d42;border-radius:14px;padding:40px;text-align:center;color:#6b7280;font-size:13px;line-height:1.8}
-.empty b{color:#94a3b8}
+.empty{background:#ffffff;border:1px dashed #334155;border-radius:14px;padding:40px;text-align:center;color:#64748b;font-size:13px;line-height:1.8}
+.empty b{color:#64748b}
 @media(max-width:640px){.lead{flex-wrap:wrap}.lead .act{flex-direction:row;align-items:center;width:100%}}
 /* help modal */
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:100;display:none;align-items:center;justify-content:center;padding:20px}
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.5);backdrop-filter:blur(4px);z-index:100;display:none;align-items:center;justify-content:center;padding:20px}
 .modal.open{display:flex}
-.modal-box{background:rgba(15,17,26,.97);border:1px solid rgba(14,165,233,.35);border-radius:18px;max-width:560px;width:100%;max-height:88vh;overflow-y:auto;padding:26px}
-.modal-box h2{font-size:18px;font-weight:800;color:#f1f5f9;margin-bottom:4px}
-.modal-box .sub{font-size:12.5px;color:#94a3b8;margin-bottom:18px}
-.m-sec{background:rgba(255,255,255,.04);border:1px solid #1e2030;border-radius:12px;padding:16px;margin-bottom:12px}
-.m-sec h3{font-size:13px;font-weight:700;color:#f1f5f9;margin-bottom:8px;display:flex;align-items:center;gap:8px}
-.m-sec ol{font-size:12.5px;color:#a3adc2;line-height:1.7;padding-left:18px}
+.modal-box{background:#ffffff;border:1px solid rgba(14,165,233,.35);border-radius:18px;max-width:560px;width:100%;max-height:88vh;overflow-y:auto;padding:26px}
+.modal-box h2{font-size:18px;font-weight:800;color:#0f172a;margin-bottom:4px}
+.modal-box .sub{font-size:12.5px;color:#64748b;margin-bottom:18px}
+.m-sec{background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:12px}
+.m-sec h3{font-size:13px;font-weight:700;color:#0f172a;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.m-sec ol{font-size:12.5px;color:#475569;line-height:1.7;padding-left:18px}
 .m-sec ol li{margin-bottom:5px}
-.m-sec .q{font-size:13px;font-weight:600;color:#e2e8f0;margin:10px 0 3px}
-.m-sec .a{font-size:12.5px;color:#94a3b8;line-height:1.6}
+.m-sec .q{font-size:13px;font-weight:600;color:#0f172a;margin:10px 0 3px}
+.m-sec .a{font-size:12.5px;color:#64748b;line-height:1.6}
 .m-field{margin-bottom:12px}
-.m-field label{display:block;font-size:11px;font-weight:600;color:#b0b8cc;margin-bottom:5px}
-.m-field input,.m-field textarea{width:100%;padding:10px 12px;background:#0b0d14;border:1px solid #1e2030;border-radius:8px;color:#e2e8f0;font-size:13px;font-family:inherit}
+.m-field label{display:block;font-size:11px;font-weight:600;color:#475569;margin-bottom:5px}
+.m-field input,.m-field textarea{width:100%;padding:10px 12px;background:#0f172a;border:1px solid #e5e7eb;border-radius:8px;color:#0f172a;font-size:13px;font-family:inherit}
 .m-field textarea{min-height:90px;resize:vertical}
 .m-msg{font-size:12.5px;margin-top:8px;display:none;font-weight:600}
-.m-msg.ok{color:#34d399}.m-msg.bad{color:#f87171}
-.m-close{position:absolute;top:14px;right:16px;background:none;border:none;color:#94a3b8;font-size:22px;cursor:pointer;line-height:1}
+.m-msg.ok{color:#059669}.m-msg.bad{color:#dc2626}
+.m-close{position:absolute;top:14px;right:16px;background:none;border:none;color:#64748b;font-size:22px;cursor:pointer;line-height:1}
 .modal-box{position:relative}
 /* lead CRM */
 .leadhead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
-.leadhead h2{font-size:15px;font-weight:700;color:#f1f5f9}
-.lead-form{background:rgba(255,255,255,.04);border:1px solid #1e2030;border-radius:14px;padding:18px;margin-bottom:18px}
+.leadhead h2{font-size:15px;font-weight:700;color:#0f172a}
+.lead-form{background:#ffffff;border:1px solid #e5e7eb;border-radius:14px;padding:18px;margin-bottom:18px}
 .lf-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media(max-width:640px){.lf-row{grid-template-columns:1fr}}
 .lf-field{margin-bottom:10px}
-.lf-field label{display:block;font-size:11px;font-weight:600;color:#b0b8cc;margin-bottom:5px}
-.lf-field input,.lf-field select,.lf-field textarea{width:100%;padding:10px 12px;background:#0b0d14;border:1px solid #1e2030;border-radius:8px;color:#e2e8f0;font-size:13px;font-family:inherit}
+.lf-field label{display:block;font-size:11px;font-weight:600;color:#475569;margin-bottom:5px}
+.lf-field input,.lf-field select,.lf-field textarea{width:100%;padding:10px 12px;background:#0f172a;border:1px solid #e5e7eb;border-radius:8px;color:#0f172a;font-size:13px;font-family:inherit}
 .lf-field textarea{min-height:60px;resize:vertical}
 .ld-tabs{display:flex;gap:6px;margin:6px 0 14px;flex-wrap:wrap}
-.ld-tab{padding:7px 12px;border-radius:8px;font-size:12px;font-weight:600;background:rgba(255,255,255,.05);border:1px solid #1e2030;color:#94a3b8;cursor:pointer}
-.ld-tab.on{background:rgba(14,165,233,.14);border-color:rgba(14,165,233,.45);color:#0ea5e9}
+.ld-tab{padding:7px 12px;border-radius:8px;font-size:12px;font-weight:600;background:#f8fafc;border:1px solid #e5e7eb;color:#64748b;cursor:pointer}
+.ld-tab.on{background:rgba(14,165,233,.14);border-color:rgba(14,165,233,.45);color:#0284c7}
 .ld-pane{display:none}
 .ld-pane.on{display:block}
 .cm{display:flex;gap:10px;align-items:flex-start;margin-bottom:8px}
-.cm .av{width:28px;height:28px;border-radius:50%;background:rgba(14,165,233,.15);border:1px solid rgba(14,165,233,.35);color:#38bdf8;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.cm .b{flex:1;background:#0b0d14;border:1px solid #1e2030;border-radius:10px;padding:9px 12px}
-.cm .b .t{font-size:12.5px;color:#e2e8f0;line-height:1.5}
-.cm .b .d{font-size:10.5px;color:#6b7280;margin-top:4px}
-.rm{display:flex;align-items:center;gap:10px;background:#0b0d14;border:1px solid #1e2030;border-radius:10px;padding:9px 12px;margin-bottom:8px}
-.rm .n{font-size:12.5px;color:#e2e8f0;flex:1}
-.rm .w{font-size:11px;color:#fbbf24;white-space:nowrap}
+.cm .av{width:28px;height:28px;border-radius:50%;background:rgba(14,165,233,.15);border:1px solid rgba(14,165,233,.35);color:#0284c7;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cm .b{flex:1;background:#0f172a;border:1px solid #e5e7eb;border-radius:10px;padding:9px 12px}
+.cm .b .t{font-size:12.5px;color:#0f172a;line-height:1.5}
+.cm .b .d{font-size:10.5px;color:#64748b;margin-top:4px}
+.rm{display:flex;align-items:center;gap:10px;background:#0f172a;border:1px solid #e5e7eb;border-radius:10px;padding:9px 12px;margin-bottom:8px}
+.rm .n{font-size:12.5px;color:#0f172a;flex:1}
+.rm .w{font-size:11px;color:#d97706;white-space:nowrap}
 .rm.done{opacity:.5}
-.rm.done .n{text-decoration:line-through;color:#6b7280}
+.rm.done .n{text-decoration:line-through;color:#64748b}
 .rm .btn-mini{flex-shrink:0}
 .addline{display:flex;gap:8px;flex-wrap:wrap}
-.addline input{flex:1;min-width:150px;padding:9px 12px;background:#0b0d14;border:1px solid #1e2030;border-radius:8px;color:#e2e8f0;font-size:12.5px}
+.addline input{flex:1;min-width:150px;padding:9px 12px;background:#0f172a;border:1px solid #e5e7eb;border-radius:8px;color:#0f172a;font-size:12.5px}
 .addline input[type=datetime-local]{min-width:auto}
 .ld-save{display:flex;gap:8px;justify-content:flex-end;align-items:center}
-.ld-save .msg{font-size:12px;color:#34d399;display:none}
+.ld-save .msg{font-size:12px;color:#059669;display:none}
 /* tools v2 */
 .tool-hero{display:flex;gap:16px;align-items:flex-start;background:linear-gradient(135deg,rgba(14,165,233,.10),rgba(37,99,235,.04));border:1px solid rgba(14,165,233,.25);border-radius:14px;padding:20px;margin-bottom:18px}
 .tool-hero .em{width:52px;height:52px;border-radius:14px;background:rgba(14,165,233,.15);border:1px solid rgba(14,165,233,.35);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0}
-.tool-hero h3{font-size:18px;font-weight:800;color:#f1f5f9}
-.tool-hero .tg{font-size:12px;color:#94a3b8;margin-top:3px}
-.pc{background:rgba(255,255,255,.04);border:1px solid #1e2030;border-radius:14px;padding:18px 20px;margin-bottom:16px}
-.pc h3{font-size:13px;font-weight:700;color:#f1f5f9;margin-bottom:12px;display:flex;align-items:center;gap:8px}
-.pc li{list-style:none;display:flex;gap:10px;align-items:flex-start;font-size:12.5px;color:#c6cfdd;line-height:1.6;margin-bottom:8px}
+.tool-hero h3{font-size:18px;font-weight:800;color:#0f172a}
+.tool-hero .tg{font-size:12px;color:#64748b;margin-top:3px}
+.pc{background:#ffffff;border:1px solid #e5e7eb;border-radius:14px;padding:18px 20px;margin-bottom:16px}
+.pc h3{font-size:13px;font-weight:700;color:#0f172a;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.pc li{list-style:none;display:flex;gap:10px;align-items:flex-start;font-size:12.5px;color:#334155;line-height:1.6;margin-bottom:8px}
 .pc li:last-child{margin-bottom:0}
 .pc li .ck{width:16px;height:16px;border-radius:5px;border:1px solid rgba(14,165,233,.5);flex-shrink:0;margin-top:2px}
 .facts{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
-.fact{display:flex;gap:8px;align-items:center;background:rgba(255,255,255,.04);border:1px solid #1e2030;border-radius:10px;padding:9px 13px;font-size:12px;color:#c6cfdd;line-height:1.45;max-width:100%}
-.fact .fi{color:#34d399;font-weight:800;flex-shrink:0}
-.flow{background:rgba(255,255,255,.04);border:1px solid #1e2030;border-radius:14px;padding:18px 20px;margin-bottom:16px}
-.flow h3{font-size:13px;font-weight:700;color:#f1f5f9;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.fact{display:flex;gap:8px;align-items:center;background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;padding:9px 13px;font-size:12px;color:#334155;line-height:1.45;max-width:100%}
+.fact .fi{color:#059669;font-weight:800;flex-shrink:0}
+.flow{background:#ffffff;border:1px solid #e5e7eb;border-radius:14px;padding:18px 20px;margin-bottom:16px}
+.flow h3{font-size:13px;font-weight:700;color:#0f172a;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:10px}
 .step2{display:flex;gap:12px;margin-bottom:10px;position:relative}
 .step2:last-child{margin-bottom:0}
-.step2 .lab{flex:0 0 96px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:#0ea5e9;background:rgba(14,165,233,.10);border:1px solid rgba(14,165,233,.25);border-radius:7px;padding:7px 8px;height:fit-content;text-align:center}
-.step2 .txt{flex:1;background:#0b0d14;border:1px solid #1e2030;border-radius:10px;padding:11px 13px;font-size:12.5px;color:#cbd5e1;line-height:1.6}
+.step2 .lab{flex:0 0 96px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:#0284c7;background:rgba(14,165,233,.10);border:1px solid rgba(14,165,233,.25);border-radius:7px;padding:7px 8px;height:fit-content;text-align:center}
+.step2 .txt{flex:1;background:#0f172a;border:1px solid #e5e7eb;border-radius:10px;padding:11px 13px;font-size:12.5px;color:#334155;line-height:1.6}
 .tl{position:relative;padding-left:22px}
 .tl:before{content:'';position:absolute;left:6px;top:6px;bottom:6px;width:2px;background:rgba(14,165,233,.25)}
 .tl-item{position:relative;padding:0 0 14px 8px}
 .tl-item:last-child{padding-bottom:0}
-.tl-item:before{content:'';position:absolute;left:-22px;top:5px;width:12px;height:12px;border-radius:50%;background:#0ea5e9;border:2px solid #0b0d14}
-.tl-item .d{font-size:11px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:.4px}
-.tl-item .a{font-size:12.5px;color:#c6cfdd;line-height:1.55;margin-top:2px}
+.tl-item:before{content:'';position:absolute;left:-22px;top:5px;width:12px;height:12px;border-radius:50%;background:#0284c7;border:2px solid #0f172a}
+.tl-item .d{font-size:11px;font-weight:800;color:#0284c7;text-transform:uppercase;letter-spacing:.4px}
+.tl-item .a{font-size:12.5px;color:#334155;line-height:1.55;margin-top:2px}
 /* payout progress */
 .payout-card{background:linear-gradient(135deg,rgba(52,211,153,.10),rgba(14,165,233,.04));border:1px solid rgba(52,211,153,.3);border-radius:14px;padding:18px;margin-bottom:22px}
 .payout-card .p-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
-.payout-card .p-head .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px}
-.payout-card .p-head .val{font-size:20px;font-weight:800;color:#34d399}
-.payout-card .bar{height:12px;background:#0b0d14;border:1px solid #1e2030;border-radius:8px;overflow:hidden}
-.payout-card .bar .fill{height:100%;background:linear-gradient(90deg,#10b981,#0ea5e9);border-radius:8px;transition:width .5s ease}
-.payout-card .p-sub{font-size:12px;color:#94a3b8;margin-top:10px;line-height:1.5}
+.payout-card .p-head .lbl{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.6px}
+.payout-card .p-head .val{font-size:20px;font-weight:800;color:#059669}
+.payout-card .bar{height:12px;background:#0f172a;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden}
+.payout-card .bar .fill{height:100%;background:linear-gradient(90deg,#059669,#0284c7);border-radius:8px;transition:width .5s ease}
+.payout-card .p-sub{font-size:12px;color:#64748b;margin-top:10px;line-height:1.5}
 /* pipeline */
 .pipe{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px}
 @media(max-width:700px){.pipe{grid-template-columns:repeat(2,1fr)}}
-.pipe .step{background:rgba(255,255,255,.045);border:1px solid #1e2030;border-radius:12px;padding:14px;text-align:center}
-.pipe .step .n{font-size:24px;font-weight:800;color:#f1f5f9}
-.pipe .step .l{font-size:11px;color:#94a3b8;margin-top:4px;line-height:1.4}
-.pipe .step.s1{border-color:rgba(148,163,184,.3)}.pipe .step.s1 .n{color:#94a3b8}
-.pipe .step.s2{border-color:rgba(14,165,233,.4)}.pipe .step.s2 .n{color:#0ea5e9}
-.pipe .step.s3{border-color:rgba(251,191,36,.4)}.pipe .step.s3 .n{color:#fbbf24}
-.pipe .step.s4{border-color:rgba(52,211,153,.4)}.pipe .step.s4 .n{color:#34d399}
+.pipe .step{background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;padding:14px;text-align:center}
+.pipe .step .n{font-size:24px;font-weight:800;color:#0f172a}
+.pipe .step .l{font-size:11px;color:#64748b;margin-top:4px;line-height:1.4}
+.pipe .step.s1{border-color:rgba(148,163,184,.3)}.pipe .step.s1 .n{color:#64748b}
+.pipe .step.s2{border-color:rgba(14,165,233,.4)}.pipe .step.s2 .n{color:#0284c7}
+.pipe .step.s3{border-color:rgba(251,191,36,.4)}.pipe .step.s3 .n{color:#d97706}
+.pipe .step.s4{border-color:rgba(52,211,153,.4)}.pipe .step.s4 .n{color:#059669}
 /* product earnings */
 .prod-earn{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px}
-.prod-earn .pe{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border:1px solid #1e2030;border-radius:10px;padding:8px 12px;font-size:12px;color:#cbd5e1}
-.prod-earn .pe b{color:#34d399;font-weight:800}
+.prod-earn .pe{display:flex;align-items:center;gap:8px;background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;padding:8px 12px;font-size:12px;color:#334155}
+.prod-earn .pe b{color:#059669;font-weight:800}
 /* QR + refresh */
 .qr-wrap{display:flex;align-items:center;gap:14px;margin-top:12px;flex-wrap:wrap}
 .qr-wrap img{width:96px;height:96px;border-radius:10px;border:1px solid rgba(14,165,233,.3);background:#fff}
-.qr-wrap .qr-note{font-size:11.5px;color:#94a3b8;line-height:1.5;max-width:280px}
-.refresh-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#34d399;margin-right:5px;animation:pulse 1.6s infinite}
+.qr-wrap .qr-note{font-size:11.5px;color:#64748b;line-height:1.5;max-width:280px}
+.refresh-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#059669;margin-right:5px;animation:pulse 1.6s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 /* stat pill */
-.stat-pill{display:inline-flex;align-items:center;gap:8px;background:rgba(14,165,233,.10);border:1px solid rgba(14,165,233,.3);border-radius:50px;padding:6px 13px;font-size:11.5px;color:#38bdf8;font-weight:700}
+.stat-pill{display:inline-flex;align-items:center;gap:8px;background:rgba(14,165,233,.10);border:1px solid rgba(14,165,233,.3);border-radius:50px;padding:6px 13px;font-size:11.5px;color:#0284c7;font-weight:700}
 /* playbook checklist */
 .pb-track{background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.3);border-radius:14px;padding:16px 18px;margin-bottom:18px}
 .pb-track .pb-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
-.pb-track .pb-head b{font-size:13.5px;color:#f1f5f9}
-.pb-track .pb-head .pb-pct{font-size:12px;font-weight:800;color:#34d399}
-.pb-track .bar{height:8px;background:#0b0d14;border:1px solid #1e2030;border-radius:6px;overflow:hidden}
-.pb-track .bar .fill{height:100%;background:linear-gradient(90deg,#10b981,#34d399);border-radius:6px;transition:width .4s ease}
-.pb-ck{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.045);border:1px solid #1e2030;border-radius:10px;padding:11px 14px;margin-bottom:8px;cursor:pointer;transition:.15s}
+.pb-track .pb-head b{font-size:13.5px;color:#0f172a}
+.pb-track .pb-head .pb-pct{font-size:12px;font-weight:800;color:#059669}
+.pb-track .bar{height:8px;background:#0f172a;border:1px solid #e5e7eb;border-radius:6px;overflow:hidden}
+.pb-track .bar .fill{height:100%;background:linear-gradient(90deg,#059669,#059669);border-radius:6px;transition:width .4s ease}
+.pb-ck{display:flex;align-items:center;gap:10px;background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;padding:11px 14px;margin-bottom:8px;cursor:pointer;transition:.15s}
 .pb-ck:hover{border-color:rgba(52,211,153,.4)}
 .pb-ck .cb{width:18px;height:18px;border-radius:6px;border:2px solid #475569;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;transition:.15s}
-.pb-ck.done .cb{background:#10b981;border-color:#10b981}
-.pb-ck.done .pb-t{color:#6b7280;text-decoration:line-through}
-.pb-ck .pb-t{flex:1;font-size:12.5px;color:#e2e8f0;line-height:1.5}
-.pb-ck .pb-btn{font-size:10.5px;color:#0ea5e9;background:rgba(14,165,233,.12);border:1px solid rgba(14,165,233,.3);border-radius:6px;padding:4px 9px;font-weight:700;cursor:pointer}
+.pb-ck.done .cb{background:#059669;border-color:#059669}
+.pb-ck.done .pb-t{color:#64748b;text-decoration:line-through}
+.pb-ck .pb-t{flex:1;font-size:12.5px;color:#0f172a;line-height:1.5}
+.pb-ck .pb-btn{font-size:10.5px;color:#0284c7;background:rgba(14,165,233,.12);border:1px solid rgba(14,165,233,.3);border-radius:6px;padding:4px 9px;font-weight:700;cursor:pointer}
 .pb-ck .pb-btn:hover{background:rgba(14,165,233,.24)}
-.pb-tpl{background:#0b0d14;border:1px solid #1e2030;border-radius:10px;padding:11px 13px;margin-bottom:8px;font-size:12px;color:#c6cfdd;line-height:1.6;white-space:pre-wrap}
+.pb-tpl{background:#0f172a;border:1px solid #e5e7eb;border-radius:10px;padding:11px 13px;margin-bottom:8px;font-size:12px;color:#334155;line-height:1.6;white-space:pre-wrap}
 /* lead notes */
-.lead-note{background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.25);border-radius:8px;padding:8px 10px;margin-top:8px;font-size:12px;color:#fbbf24;line-height:1.5}
+.lead-note{background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.25);border-radius:8px;padding:8px 10px;margin-top:8px;font-size:12px;color:#d97706;line-height:1.5}
 @media(max-width:700px){.rw-tiers{grid-template-columns:1fr!important}}
 /* affiliate header CTAs */
-.aff-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:rgba(255,255,255,.04);border:1px solid #1e2030;border-radius:14px;padding:12px 16px;margin-bottom:16px}
-.aff-cta{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:#e2e8f0;background:rgba(255,255,255,.05);border:1px solid #1e2030;border-radius:9px;padding:8px 14px;text-decoration:none;transition:.15s}
-.aff-cta:hover{background:rgba(14,165,233,.15);border-color:rgba(14,165,233,.4);color:#fff;transform:translateY(-1px)}
+.aff-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#ffffff;border:1px solid #e5e7eb;border-radius:14px;padding:12px 16px;margin-bottom:16px}
+.aff-cta{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:#0f172a;background:#f8fafc;border:1px solid #e5e7eb;border-radius:9px;padding:8px 14px;text-decoration:none;transition:.15s}
+.aff-cta:hover{background:rgba(14,165,233,.15);border-color:rgba(14,165,233,.4);color:#0f172a;transform:translateY(-1px)}
 /* filter/search toolbars */
 .toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 14px}
 .toolbar .grow{flex:1;min-width:180px}
-.toolbar input[type=search],.toolbar input[type=text],.toolbar select{background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:12.5px;padding:8px 11px;outline:none}
-.toolbar input:focus,.toolbar select:focus{border-color:#0ea5e9}
+.toolbar input[type=search],.toolbar input[type=text],.toolbar select{background:#0f172a;border:1px solid #e5e7eb;border-radius:9px;color:#0f172a;font-size:12.5px;padding:8px 11px;outline:none}
+.toolbar input:focus,.toolbar select:focus{border-color:#0284c7}
 .fu-chips{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 10px}
-.fu-chip{padding:6px 12px;border-radius:50px;font-size:11.5px;font-weight:600;background:#0f111a;border:1px solid #1e2030;color:#94a3b8;cursor:pointer;transition:.15s;white-space:nowrap}
-.fu-chip:hover{color:#e2e8f0;border-color:#2a2d42}
-.fu-chip.on{background:rgba(14,165,233,.16);border-color:rgba(14,165,233,.5);color:#0ea5e9}
+.fu-chip{padding:6px 12px;border-radius:50px;font-size:11.5px;font-weight:600;background:#ffffff;border:1px solid #e5e7eb;color:#64748b;cursor:pointer;transition:.15s;white-space:nowrap}
+.fu-chip:hover{color:#0f172a;border-color:#334155}
+.fu-chip.on{background:rgba(14,165,233,.16);border-color:rgba(14,165,233,.5);color:#0284c7}
 .fu-chip .n{opacity:.8;font-weight:800}
 /* referral journey tracker */
 .jdots{display:inline-flex;align-items:center;gap:2px;vertical-align:middle}
-.jdots .jd{width:8px;height:8px;border-radius:50%;background:#262b3d;border:1px solid #2a2d42;flex-shrink:0}
-.jdots .jd.done{background:#10b981;border-color:#10b981}
-.jdots .jd.cur{background:#0ea5e9;border-color:#0ea5e9;box-shadow:0 0 0 3px rgba(14,165,233,.22)}
-.jbtn{background:none;border:none;color:#0ea5e9;font-size:11px;font-weight:700;cursor:pointer;padding:0;text-decoration:underline}
+.jdots .jd{width:8px;height:8px;border-radius:50%;background:#334155;border:1px solid #334155;flex-shrink:0}
+.jdots .jd.done{background:#059669;border-color:#059669}
+.jdots .jd.cur{background:#0284c7;border-color:#0284c7;box-shadow:0 0 0 3px rgba(14,165,233,.22)}
+.jbtn{background:none;border:none;color:#0284c7;font-size:11px;font-weight:700;cursor:pointer;padding:0;text-decoration:underline}
 .jtimeline{margin:4px 0 0}
 .jtl{display:flex;gap:12px;position:relative;padding:0 0 14px}
 .jtl:last-child{padding-bottom:0}
-.jtl:before{content:'';position:absolute;left:11px;top:20px;bottom:-2px;width:2px;background:rgba(255,255,255,.08)}
+.jtl:before{content:'';position:absolute;left:11px;top:20px;bottom:-2px;width:2px;background:#e5e7eb}
 .jtl:last-child:before{display:none}
-.jtl .jd-ico{width:24px;height:24px;border-radius:50%;background:#12151f;border:2px solid #2a2d42;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;z-index:1}
-.jtl.done .jd-ico{background:rgba(16,185,129,.15);border-color:#10b981;color:#34d399}
-.jtl.cur .jd-ico{background:rgba(14,165,233,.15);border-color:#0ea5e9;color:#38bdf8;box-shadow:0 0 0 3px rgba(14,165,233,.15)}
+.jtl .jd-ico{width:24px;height:24px;border-radius:50%;background:#0f172a;border:2px solid #334155;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;z-index:1}
+.jtl.done .jd-ico{background:rgba(16,185,129,.15);border-color:#059669;color:#059669}
+.jtl.cur .jd-ico{background:rgba(14,165,233,.15);border-color:#0284c7;color:#0284c7;box-shadow:0 0 0 3px rgba(14,165,233,.15)}
 .jtl .jt-t{flex:1;min-width:0}
-.jtl .jt-l{font-size:12.5px;font-weight:700;color:#e2e8f0}
-.jtl .jt-n{font-size:11.5px;color:#94a3b8;margin-top:1px}
-.jtl .jt-d{font-size:11px;color:#0ea5e9;margin-top:1px;font-weight:700;white-space:nowrap}
+.jtl .jt-l{font-size:12.5px;font-weight:700;color:#0f172a}
+.jtl .jt-n{font-size:11.5px;color:#64748b;margin-top:1px}
+.jtl .jt-d{font-size:11px;color:#0284c7;margin-top:1px;font-weight:700;white-space:nowrap}
 /* new-referral sign-up alerts banner */
 .ref-alert{background:linear-gradient(135deg,rgba(52,211,153,.16),rgba(14,165,233,.08));border:1px solid rgba(52,211,153,.5);border-radius:14px;padding:16px 18px;margin-bottom:18px;box-shadow:0 0 0 1px rgba(52,211,153,.14),0 10px 30px rgba(16,185,129,.14)}
-.ref-alert .ref-alert-head{font-size:15px;font-weight:800;color:#f1f5f9;display:flex;align-items:center;margin-bottom:10px}
-.ref-alert .ref-alert-head .n{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;border-radius:11px;background:rgba(52,211,153,.25);color:#34d399;font-size:11px;font-weight:800;margin-left:8px;padding:0 7px}
-.ref-alert .ref-alert-row{display:flex;align-items:center;gap:12px;background:rgba(11,13,20,.55);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 14px;margin-bottom:8px}
+.ref-alert .ref-alert-head{font-size:15px;font-weight:800;color:#0f172a;display:flex;align-items:center;margin-bottom:10px}
+.ref-alert .ref-alert-head .n{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;border-radius:11px;background:rgba(52,211,153,.25);color:#059669;font-size:11px;font-weight:800;margin-left:8px;padding:0 7px}
+.ref-alert .ref-alert-row{display:flex;align-items:center;gap:12px;background:rgba(241,245,249,.7);border:1px solid #e5e7eb;border-radius:10px;padding:10px 14px;margin-bottom:8px}
 .ref-alert .ref-alert-row .ico{width:38px;height:38px;border-radius:10px;background:rgba(52,211,153,.14);border:1px solid rgba(52,211,153,.35);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
 .ref-alert .ref-alert-row .who{flex:1;min-width:0}
-.ref-alert .ref-alert-row .who b{display:block;color:#f1f5f9;font-size:13.5px}
-.ref-alert .ref-alert-row .who span{display:block;color:#94a3b8;font-size:11.5px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ref-alert .ref-alert-row .who b{display:block;color:#0f172a;font-size:13.5px}
+.ref-alert .ref-alert-row .who span{display:block;color:#64748b;font-size:11.5px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ref-alert .ref-alert-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:6px}
 /* ---- responsive polish (mobile-first tweaks) ---- */
 @media(max-width:640px){
@@ -285,7 +285,7 @@ tr:last-child td{border-bottom:none}
 </head>
 <body>
 <div class="topbar">
-<div class="logo">9am<span>Leads</span> <span style="font-weight:500;font-size:12px;color:#94a3b8">Affiliate</span></div>
+<div class="logo">9am<span>Leads</span> <span style="font-weight:500;font-size:12px;color:#64748b">Affiliate</span></div>
 <div class="spacer"></div>
 <div class="who" id="who-box" style="display:none"><b id="tb-name"></b><span id="tb-code"></span></div>
 <button class="btn-out" id="help-btn" style="display:none;margin-right:6px" onclick="openHelp()">Help</button>
@@ -297,87 +297,87 @@ tr:last-child td{border-bottom:none}
 <h1>Affiliate sign in</h1>
 <p>Track your referrals, leads and earnings.</p>
 <div class="fg"><label>Email</label><input type="email" id="a-email" placeholder="you@partner.com"></div>
-<div class="fg"><label>Password</label><div style="position:relative"><input type="password" id="a-pass" placeholder="Your affiliate password" style="padding-right:34px"><span onclick="var p=document.getElementById('a-pass');p.type=p.type==='password'?'text':'password';this.textContent=p.type==='password'?'\uD83D\uDC41':'Hide'" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:11px;color:#8890a8;cursor:pointer;user-select:none;font-weight:600">&#128065;</span></div></div>
+<div class="fg"><label>Password</label><div style="position:relative"><input type="password" id="a-pass" placeholder="Your affiliate password" style="padding-right:34px"><span onclick="var p=document.getElementById('a-pass');p.type=p.type==='password'?'text':'password';this.textContent=p.type==='password'?'\uD83D\uDC41':'Hide'" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:11px;color:#64748b;cursor:pointer;user-select:none;font-weight:600">&#128065;</span></div></div>
 <button class="btn" onclick="login()">Sign in</button>
-<div style="text-align:right;margin-top:8px"><a href="/portal/affiliate-reset-password.html" style="color:#0ea5e9;font-size:12px;text-decoration:none">Forgot password?</a></div>
+<div style="text-align:right;margin-top:8px"><a href="/portal/affiliate-reset-password.html" style="color:#0284c7;font-size:12px;text-decoration:none">Forgot password?</a></div>
 <div class="err" id="login-err"></div>
-<p style="font-size:11px;color:#6b7280;margin-top:16px;text-align:center">Not an affiliate yet? <a href="#" onclick="showRegister();return false">Apply to become an affiliate</a></p>
+<p style="font-size:11px;color:#64748b;margin-top:16px;text-align:center">Not an affiliate yet? <a href="#" onclick="showRegister();return false">Apply to become an affiliate</a></p>
 </div>
 
 <!-- REGISTER -->
 <div class="login" id="register-view" style="display:none;max-width:560px">
 <h1>Become an affiliate</h1>
-<p>Earn <b style="color:#34d399">£25</b> for every customer who signs up with your code and pays their second invoice. Complete the application and we'll review it within 24 hours.</p>
+<p>Earn <b style="color:#059669">£25</b> for every customer who signs up with your code and pays their second invoice. Complete the application and we'll review it within 24 hours.</p>
 <div id="app-step-1">
-<p style="font-size:12px;font-weight:700;color:#0ea5e9;margin:0 0 12px">Step 1 of 3 · Your details</p>
+<p style="font-size:12px;font-weight:700;color:#0284c7;margin:0 0 12px">Step 1 of 3 · Your details</p>
 <div class="fg"><label>Full name</label><input type="text" id="r-name" placeholder="Your name"></div>
 <div class="fg"><label>Email</label><input type="email" id="r-email" placeholder="you@partner.com"></div>
 <div class="fg"><label>Phone number <span class="muted">(required - we may need to contact you)</span></label><input type="tel" id="r-phone" placeholder="e.g. 07700 900123"></div>
-<div class="fg"><label>Password</label><div style="position:relative"><input type="password" id="r-pass" placeholder="Min 8 characters" style="padding-right:34px"><span onclick="var p=document.getElementById('r-pass');p.type=p.type==='password'?'text':'password';this.textContent=p.type==='password'?'\uD83D\uDC41':'Hide'" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:11px;color:#8890a8;cursor:pointer;user-select:none;font-weight:600">&#128065;</span></div></div>
+<div class="fg"><label>Password</label><div style="position:relative"><input type="password" id="r-pass" placeholder="Min 8 characters" style="padding-right:34px"><span onclick="var p=document.getElementById('r-pass');p.type=p.type==='password'?'text':'password';this.textContent=p.type==='password'?'\uD83D\uDC41':'Hide'" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:11px;color:#64748b;cursor:pointer;user-select:none;font-weight:600">&#128065;</span></div></div>
 <div class="fg"><label>Your referral code <span class="muted">(optional. We'll make one for you)</span></label><input type="text" id="r-code" placeholder="e.g. JAMES24"></div>
 <button class="btn" onclick="appStep(2)">Continue</button>
 </div>
 <div id="app-step-2" style="display:none">
-<p style="font-size:12px;font-weight:700;color:#0ea5e9;margin:0 0 12px">Step 2 of 3 · A few quick questions</p>
+<p style="font-size:12px;font-weight:700;color:#0284c7;margin:0 0 12px">Step 2 of 3 · A few quick questions</p>
 <div class="fg"><label>1. Are you willing to find your own customers? We provide the marketing tools, scripts and templates - you do the outreach.</label>
-<select id="q1" style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px"><option value="">Choose...</option><option value="Yes">Yes</option><option value="No">No</option><option value="Unsure">Unsure</option></select></div>
+<select id="q1" style="width:100%;padding:11px 13px;background:#0f172a;border:1px solid #e5e7eb;border-radius:9px;color:#0f172a;font-size:13px"><option value="">Choose...</option><option value="Yes">Yes</option><option value="No">No</option><option value="Unsure">Unsure</option></select></div>
 <div class="fg"><label>2. Are you willing to use your own phone to call businesses?</label>
-<select id="q2" style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px"><option value="">Choose...</option><option value="Yes">Yes</option><option value="No">No</option><option value="Prefer text-only">Prefer text-only</option></select></div>
+<select id="q2" style="width:100%;padding:11px 13px;background:#0f172a;border:1px solid #e5e7eb;border-radius:9px;color:#0f172a;font-size:13px"><option value="">Choose...</option><option value="Yes">Yes</option><option value="No">No</option><option value="Prefer text-only">Prefer text-only</option></select></div>
 <div class="fg"><label>3. Are you willing to open a new dedicated email account for messaging your clients?</label>
-<select id="q3" style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px"><option value="">Choose...</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
+<select id="q3" style="width:100%;padding:11px 13px;background:#0f172a;border:1px solid #e5e7eb;border-radius:9px;color:#0f172a;font-size:13px"><option value="">Choose...</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
 <div class="fg"><label>4. How many hours per week can you realistically give to this?</label>
-<select id="q4" style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px"><option value="">Choose...</option><option value="0-2">0-2 hours</option><option value="2-5">2-5 hours</option><option value="5-10">5-10 hours</option><option value="10+">10+ hours</option></select></div>
+<select id="q4" style="width:100%;padding:11px 13px;background:#0f172a;border:1px solid #e5e7eb;border-radius:9px;color:#0f172a;font-size:13px"><option value="">Choose...</option><option value="0-2">0-2 hours</option><option value="2-5">2-5 hours</option><option value="5-10">5-10 hours</option><option value="10+">10+ hours</option></select></div>
 <div class="fg"><label>5. Which days and hours will you work?</label><input type="text" id="q5" placeholder="e.g. Mon-Fri 9am-12pm, Sun evenings"></div>
 <div class="fg"><label>6. Are you happy being paid 1 month after your client signs up (on their 2nd invoice)?</label>
-<select id="q6" style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px"><option value="">Choose...</option><option value="Yes">Yes</option><option value="No">No</option><option value="Unsure">Unsure</option></select></div>
+<select id="q6" style="width:100%;padding:11px 13px;background:#0f172a;border:1px solid #e5e7eb;border-radius:9px;color:#0f172a;font-size:13px"><option value="">Choose...</option><option value="Yes">Yes</option><option value="No">No</option><option value="Unsure">Unsure</option></select></div>
 <div class="fg"><label>7. Will you commit to following up with referrals during their free trial?</label>
-<select id="q7" style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px"><option value="">Choose...</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
-<div class="fg"><label>8. A business says "we already get enough work from referrals". How do you reply?</label><textarea id="q8" placeholder="Your reply..." style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px;min-height:70px;font-family:inherit"></textarea></div>
-<div class="fg"><label>9. How would you explain the £25 commission to a friend?</label><textarea id="q9" placeholder="Your answer..." style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px;min-height:70px;font-family:inherit"></textarea></div>
+<select id="q7" style="width:100%;padding:11px 13px;background:#0f172a;border:1px solid #e5e7eb;border-radius:9px;color:#0f172a;font-size:13px"><option value="">Choose...</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
+<div class="fg"><label>8. A business says "we already get enough work from referrals". How do you reply?</label><textarea id="q8" placeholder="Your reply..." style="width:100%;padding:11px 13px;background:#0f172a;border:1px solid #e5e7eb;border-radius:9px;color:#0f172a;font-size:13px;min-height:70px;font-family:inherit"></textarea></div>
+<div class="fg"><label>9. How would you explain the £25 commission to a friend?</label><textarea id="q9" placeholder="Your answer..." style="width:100%;padding:11px 13px;background:#0f172a;border:1px solid #e5e7eb;border-radius:9px;color:#0f172a;font-size:13px;min-height:70px;font-family:inherit"></textarea></div>
 <div class="fg"><label>10. Are you comfortable calling businesses you don't know?</label>
-<select id="q10" style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px"><option value="">Choose...</option><option value="Yes">Yes</option><option value="No">No</option><option value="Nervous but willing">Nervous but willing</option></select></div>
-<div class="fg"><label>11. A trial customer stops replying to you. What do you do?</label><textarea id="q11" placeholder="Your answer..." style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px;min-height:70px;font-family:inherit"></textarea></div>
+<select id="q10" style="width:100%;padding:11px 13px;background:#0f172a;border:1px solid #e5e7eb;border-radius:9px;color:#0f172a;font-size:13px"><option value="">Choose...</option><option value="Yes">Yes</option><option value="No">No</option><option value="Nervous but willing">Nervous but willing</option></select></div>
+<div class="fg"><label>11. A trial customer stops replying to you. What do you do?</label><textarea id="q11" placeholder="Your answer..." style="width:100%;padding:11px 13px;background:#0f172a;border:1px solid #e5e7eb;border-radius:9px;color:#0f172a;font-size:13px;min-height:70px;font-family:inherit"></textarea></div>
 <div class="fg"><label>12. Have you referred businesses to other services before?</label>
-<select id="q12" style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px"><option value="">Choose...</option><option value="Yes">Yes</option><option value="No">No</option><option value="Not yet">Not yet</option></select></div>
-<div class="fg"><label>13. Do you have any questions for us? <span class="muted">(optional)</span></label><textarea id="q13" placeholder="Any questions about the programme?" style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px;min-height:60px;font-family:inherit"></textarea></div>
+<select id="q12" style="width:100%;padding:11px 13px;background:#0f172a;border:1px solid #e5e7eb;border-radius:9px;color:#0f172a;font-size:13px"><option value="">Choose...</option><option value="Yes">Yes</option><option value="No">No</option><option value="Not yet">Not yet</option></select></div>
+<div class="fg"><label>13. Do you have any questions for us? <span class="muted">(optional)</span></label><textarea id="q13" placeholder="Any questions about the programme?" style="width:100%;padding:11px 13px;background:#0f172a;border:1px solid #e5e7eb;border-radius:9px;color:#0f172a;font-size:13px;min-height:60px;font-family:inherit"></textarea></div>
 <div style="display:flex;gap:8px"><button class="btn btn-out" style="width:auto" onclick="appStep(1)">Back</button><button class="btn" onclick="appStep(3)">Continue</button></div>
 </div>
 <div id="app-step-3" style="display:none">
-<p style="font-size:12px;font-weight:700;color:#0ea5e9;margin:0 0 12px">Step 3 of 3 · Voice test</p>
-<p style="font-size:12px;color:#94a3b8;margin-bottom:14px">Read the script below aloud and record it so we can hear how you'd sound calling businesses. <b style="color:#e2e8f0">Keep it under 30 seconds.</b></p>
-<div style="background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.3);border-radius:10px;padding:14px;font-size:13px;color:#e2e8f0;line-height:1.7;margin-bottom:14px">"Hi, this is <b>[your name]</b> from 9amLeads. We send removal companies fresh moving leads every morning at 9am - homes that have just gone under offer in their area. It's a 14-day free trial, no card needed. Would now be a good time to talk?"</div>
+<p style="font-size:12px;font-weight:700;color:#0284c7;margin:0 0 12px">Step 3 of 3 · Voice test</p>
+<p style="font-size:12px;color:#64748b;margin-bottom:14px">Read the script below aloud and record it so we can hear how you'd sound calling businesses. <b style="color:#0f172a">Keep it under 30 seconds.</b></p>
+<div style="background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.3);border-radius:10px;padding:14px;font-size:13px;color:#0f172a;line-height:1.7;margin-bottom:14px">"Hi, this is <b>[your name]</b> from 9amLeads. We send removal companies fresh moving leads every morning at 9am - homes that have just gone under offer in their area. It's a 14-day free trial, no card needed. Would now be a good time to talk?"</div>
 <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
 <button class="btn-mini" id="rec-btn" onclick="toggleRec()">🎙️ Record</button>
 <button class="btn-mini" id="rec-play" style="display:none" onclick="playRec()">▶ Play</button>
 <button class="btn-mini" id="rec-redo" style="display:none" onclick="resetRec()">↺ Re-record</button>
-<span id="rec-status" style="font-size:11px;color:#94a3b8"></span>
+<span id="rec-status" style="font-size:11px;color:#64748b"></span>
 </div>
 <audio id="rec-audio" controls style="display:none;width:100%;margin-bottom:10px"></audio>
-<div class="fg" style="margin-top:6px"><label style="display:flex;gap:8px;align-items:flex-start;font-size:11.5px;color:#c6cfdd;cursor:pointer"><input type="checkbox" id="r-tc" style="margin-top:2px"> I have read and agree to the <a href="/affiliate-terms.html" target="_blank" rel="noopener" style="color:#0ea5e9;text-decoration:underline">Affiliate Programme Terms &amp; Conditions</a>, including that my account may be deleted if I make no referrals within 30 days of joining.</label></div>
-<div class="fg" style="margin-top:6px"><label style="display:flex;gap:8px;align-items:flex-start;font-size:11.5px;color:#c6cfdd;cursor:pointer"><input type="checkbox" id="r-consent" style="margin-top:2px"> I agree to 9amLeads recording my voice for onboarding review, and to be contacted about my application.</label></div>
+<div class="fg" style="margin-top:6px"><label style="display:flex;gap:8px;align-items:flex-start;font-size:11.5px;color:#334155;cursor:pointer"><input type="checkbox" id="r-tc" style="margin-top:2px"> I have read and agree to the <a href="/affiliate-terms.html" target="_blank" rel="noopener" style="color:#0284c7;text-decoration:underline">Affiliate Programme Terms &amp; Conditions</a>, including that my account may be deleted if I make no referrals within 30 days of joining.</label></div>
+<div class="fg" style="margin-top:6px"><label style="display:flex;gap:8px;align-items:flex-start;font-size:11.5px;color:#334155;cursor:pointer"><input type="checkbox" id="r-consent" style="margin-top:2px"> I agree to 9amLeads recording my voice for onboarding review, and to be contacted about my application.</label></div>
 <div style="display:flex;gap:8px"><button class="btn btn-out" style="width:auto" onclick="appStep(2)">Back</button><button class="btn" onclick="submitApplication()">Submit application</button></div>
 </div>
 <div id="app-success" style="display:none;text-align:center;padding:30px 10px">
 <div style="font-size:46px;margin-bottom:12px">✅</div>
-<h2 style="font-family:Outfit,sans-serif;color:#34d399;margin:0 0 10px;font-size:24px">Application received</h2>
-<p style="font-size:14px;color:#c9d1de;line-height:1.8;max-width:420px;margin:0 auto 6px">Thanks for applying to the 9amLeads affiliate programme.</p>
-<p style="font-size:13px;color:#94a3b8;line-height:1.8;max-width:440px;margin:0 auto 8px">We'll review your application and your voice test, then email <b style="color:#e2e8f0" id="app-success-email">you</b> once your account is approved. You'll then be able to sign in to your affiliate dashboard.</p>
-<p style="font-size:13px;color:#94a3b8;line-height:1.8;max-width:440px;margin:0 auto 20px">This usually takes under 24 hours.</p>
+<h2 style="font-family:Outfit,sans-serif;color:#059669;margin:0 0 10px;font-size:24px">Application received</h2>
+<p style="font-size:14px;color:#334155;line-height:1.8;max-width:420px;margin:0 auto 6px">Thanks for applying to the 9amLeads affiliate programme.</p>
+<p style="font-size:13px;color:#64748b;line-height:1.8;max-width:440px;margin:0 auto 8px">We'll review your application and your voice test, then email <b style="color:#0f172a" id="app-success-email">you</b> once your account is approved. You'll then be able to sign in to your affiliate dashboard.</p>
+<p style="font-size:13px;color:#64748b;line-height:1.8;max-width:440px;margin:0 auto 20px">This usually takes under 24 hours.</p>
 <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
 <a href="https://9amleads.com/" class="btn btn-primary">Go to the 9amLeads website</a>
-<a href="#" onclick="showLogin();return false" style="font-size:13px;color:#0ea5e9;align-self:center">Back to sign in</a>
+<a href="#" onclick="showLogin();return false" style="font-size:13px;color:#0284c7;align-self:center">Back to sign in</a>
 </div>
 </div>
 
 <div class="err" id="register-err"></div>
-<p style="font-size:11px;color:#6b7280;margin-top:16px;text-align:center"><a href="#" onclick="showLogin();return false">Back to sign in</a></p>
+<p style="font-size:11px;color:#64748b;margin-top:16px;text-align:center"><a href="#" onclick="showLogin();return false">Back to sign in</a></p>
 </div>
 
 <!-- DASHBOARD -->
 <div class="wrap" id="dash-view" style="display:none">
 <div class="aff-header">
 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-<a href="#overview" onclick="go('overview');return false" class="aff-cta" style="background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff">🏠 Overview</a>
+<a href="#overview" onclick="go('overview');return false" class="aff-cta" style="background:linear-gradient(135deg,#0284c7,#2563eb);color:#fff">🏠 Overview</a>
 <a href="#leads" onclick="go('leads');return false" class="aff-cta">📥 My Leads</a>
 <a href="#followups" onclick="go('followups');return false" class="aff-cta">📞 Follow-ups</a>
 <a href="#tools" onclick="go('tools');return false" class="aff-cta">🧰 Tools</a>
@@ -385,16 +385,16 @@ tr:last-child td{border-bottom:none}
 <a href="#rewards" onclick="go('rewards');return false" class="aff-cta">🎡 Rewards</a>
 <a href="#compliance" onclick="go('compliance');return false" class="aff-cta">🪪 Compliance</a>
 <a href="#payouts" onclick="go('payouts');return false" class="aff-cta">💰 Payouts</a>
-<a href="#signup" onclick="window.open('https://9amleads.com/portal/#signup','_blank');return false" class="aff-cta" style="background:rgba(52,211,153,.15);border-color:rgba(52,211,153,.4);color:#34d399">➕ Refer a business</a>
-<a href="#" onclick="openAskQuestion();return false" class="aff-cta" style="background:rgba(14,165,233,.15);border-color:rgba(14,165,233,.4);color:#38bdf8">❓ Ask a question</a>
-<a href="#" onclick="openDemoCustomer();return false" class="aff-cta" style="background:rgba(52,211,153,.15);border-color:rgba(52,211,153,.4);color:#34d399">👀 See what a customer sees</a>
+<a href="#signup" onclick="window.open('https://9amleads.com/portal/#signup','_blank');return false" class="aff-cta" style="background:rgba(52,211,153,.15);border-color:rgba(52,211,153,.4);color:#059669">➕ Refer a business</a>
+<a href="#" onclick="openAskQuestion();return false" class="aff-cta" style="background:rgba(14,165,233,.15);border-color:rgba(14,165,233,.4);color:#0284c7">❓ Ask a question</a>
+<a href="#" onclick="openDemoCustomer();return false" class="aff-cta" style="background:rgba(52,211,153,.15);border-color:rgba(52,211,153,.4);color:#059669">👀 See what a customer sees</a>
 </div>
 </div>
 <div class="hero">
 <h1>Welcome back, <span id="a-name">Affiliate</span> 👋</h1>
 <p>Share your code below. Every customer who uses it for <b>any lead type</b> gets a <b>14-day free trial</b>. You earn <b>£25</b> for every customer who pays their second invoice, paid within about a week of it clearing. Use the <b>Tools</b> tab for ready-made phone scripts, emails, SMS and social posts to help your referrals start the free trial.</p>
 <div class="code"><span class="lbl">Your code:</span> <b id="a-code"></b> <button onclick="copyCode()">Copy</button></div>
-<div class="code" style="margin-top:10px"><span class="lbl">Your share link:</span> <b id="a-link" style="font-size:12px;color:#38bdf8"></b> <button onclick="copyLink()">Copy</button></div>
+<div class="code" style="margin-top:10px"><span class="lbl">Your share link:</span> <b id="a-link" style="font-size:12px;color:#0284c7"></b> <button onclick="copyLink()">Copy</button></div>
 <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
 <button class="btn-mini" onclick="share('wa')">WhatsApp</button>
 <button class="btn-mini" onclick="share('li')">LinkedIn</button>
@@ -426,29 +426,29 @@ tr:last-child td{border-bottom:none}
 <!-- OVERVIEW -->
 <section id="view-overview">
 <div class="payout-card" style="background:rgba(14,165,233,.06);border-color:rgba(14,165,233,.3)">
-<div class="p-head"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:18px">💡</span><b style="font-size:13.5px;color:#f1f5f9">Tip of the day</b></div><div class="lbl" id="aff-tip-pager">Tip 1 of 10</div></div>
-<div style="font-size:13px;color:#c6cfdd;line-height:1.7" id="aff-quick-tip">Loading...</div>
+<div class="p-head"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:18px">💡</span><b style="font-size:13.5px;color:#0f172a">Tip of the day</b></div><div class="lbl" id="aff-tip-pager">Tip 1 of 10</div></div>
+<div style="font-size:13px;color:#334155;line-height:1.7" id="aff-quick-tip">Loading...</div>
 </div>
 <div class="payout-card" style="background:linear-gradient(135deg,rgba(245,158,11,.12),rgba(234,88,12,.05));border-color:rgba(245,158,11,.35)">
-<div class="p-head"><div><div class="lbl" style="color:#f59e0b;font-weight:800">🎡 Reward Wheel</div><div class="val" id="ov-tier" style="font-size:18px;color:#f1f5f9">Tier 1</div></div><div class="lbl" id="ov-pct">0 / 50 retained</div></div>
+<div class="p-head"><div><div class="lbl" style="color:#d97706;font-weight:800">🎡 Reward Wheel</div><div class="val" id="ov-tier" style="font-size:18px;color:#0f172a">Tier 1</div></div><div class="lbl" id="ov-pct">0 / 50 retained</div></div>
 <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-top:8px">
 <div style="position:relative;width:150px;height:150px;flex-shrink:0;margin:0 auto">
 <canvas id="ov-canvas" width="150" height="150" style="width:150px;height:150px"></canvas>
-<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:9px;font-weight:800;color:#fff;background:rgba(0,0,0,.55);border-radius:50%;width:42px;height:42px;display:flex;align-items:center;justify-content:center;pointer-events:none">9amLeads</div>
-<div style="position:absolute;top:-5px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:14px solid #f59e0b;pointer-events:none"></div>
+<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:9px;font-weight:800;color:#fff;background:rgba(15,23,42,.45);border-radius:50%;width:42px;height:42px;display:flex;align-items:center;justify-content:center;pointer-events:none">9amLeads</div>
+<div style="position:absolute;top:-5px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:14px solid #d97706;pointer-events:none"></div>
 </div>
 <div style="flex:1;min-width:220px">
-<div class="bar" style="border-color:rgba(245,158,11,.3)"><div class="fill" id="ov-bar" style="width:0%;background:linear-gradient(90deg,#f59e0b,#f97316)"></div></div>
+<div class="bar" style="border-color:rgba(245,158,11,.3)"><div class="fill" id="ov-bar" style="width:0%;background:linear-gradient(90deg,#d97706,#ea580c)"></div></div>
 <div class="p-sub" id="ov-sub" style="margin-top:10px">Every 50 retained signups unlocks a spin for prizes up to £200.</div>
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
-<button class="btn-mini" id="ov-spin-btn" onclick="spinWheel()" style="font-size:13px;padding:10px 22px;background:linear-gradient(135deg,#f59e0b,#f97316);color:#fff;border:none;border-radius:10px">🎡 Spin</button>
-<a href="#" onclick="go('rewards');return false" style="font-size:12px;color:#0ea5e9;align-self:center">View history & tiers →</a>
+<button class="btn-mini" id="ov-spin-btn" onclick="spinWheel()" style="font-size:13px;padding:10px 22px;background:linear-gradient(135deg,#d97706,#ea580c);color:#fff;border:none;border-radius:10px">🎡 Spin</button>
+<a href="#" onclick="go('rewards');return false" style="font-size:12px;color:#0284c7;align-self:center">View history & tiers →</a>
 </div>
-<div id="ov-result" style="margin-top:8px;font-size:14px;font-weight:800;color:#34d399;min-height:20px"></div>
-<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:11px;color:#94a3b8">
-<span>50 → up to <b style="color:#f59e0b">£200</b></span>
-<span>100 → up to <b style="color:#0ea5e9">£500</b></span>
-<span>200+ → up to <b style="color:#34d399">£1000</b></span>
+<div id="ov-result" style="margin-top:8px;font-size:14px;font-weight:800;color:#059669;min-height:20px"></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:11px;color:#64748b">
+<span>50 → up to <b style="color:#d97706">£200</b></span>
+<span>100 → up to <b style="color:#0284c7">£500</b></span>
+<span>200+ → up to <b style="color:#059669">£1000</b></span>
 </div>
 </div>
 </div>
@@ -480,10 +480,10 @@ tr:last-child td{border-bottom:none}
 <li><b>You earn £25 per sign-up</b>. Paid within about a week of their second invoice clearing.</li>
 <li><b>Paid after qualifying</b>. Your £25 clears after the qualifying period and is paid out on the monthly cycle.</li>
 </ol>
-<p style="font-size:12px;color:#94a3b8;margin-top:14px">Tip: open the <a href="#" onclick="go('tools');return false" style="color:#0ea5e9">Tools tab</a> for phone scripts, emails, SMS and social posts for every lead type. Ready to copy and use.</p>
+<p style="font-size:12px;color:#64748b;margin-top:14px">Tip: open the <a href="#" onclick="go('tools');return false" style="color:#0284c7">Tools tab</a> for phone scripts, emails, SMS and social posts for every lead type. Ready to copy and use.</p>
 </div>
 <div class="panel"><h2>Recent leads <span class="hint">your inbox</span></h2><div id="recent-leads"></div>
-<p style="font-size:12px;color:#0ea5e9;margin-top:10px"><a href="#" onclick="go('leads');return false">View all leads →</a></p>
+<p style="font-size:12px;color:#0284c7;margin-top:10px"><a href="#" onclick="go('leads');return false">View all leads →</a></p>
 </div>
 </div>
 <div class="panel" style="margin-top:20px"><h2>Earnings by lead type <span class="hint">approved + paid</span></h2><div class="prod-earn" id="prod-earn"><div class="muted">No earnings yet.</div></div></div>
@@ -519,7 +519,7 @@ tr:last-child td{border-bottom:none}
 <section id="view-tools" style="display:none">
 <div class="panel" style="margin-bottom:16px">
 <h2>Find businesses to contact <span class="hint">build your list</span></h2>
-<p style="font-size:12px;color:#94a3b8;margin-bottom:14px">You need a list of businesses to reach out to. Here are the best free ways to find them, with exactly what to do. Then use the scripts below to contact them.</p>
+<p style="font-size:12px;color:#64748b;margin-bottom:14px">You need a list of businesses to reach out to. Here are the best free ways to find them, with exactly what to do. Then use the scripts below to contact them.</p>
 <div class="tool-sec">
 <div class="step"><b>🔍 Google Maps &amp; Google Search</b>The fastest way to build a list. Type what you're looking for into Google Maps, e.g. "removal companies London", "solicitors [your town]", "builders [your area]". You get the name, address and <b>phone number</b> for free. Make a shortlist of 10-20, then call or WhatsApp them using the scripts below.</div>
 <div class="step"><b>📱 Social media</b>Facebook groups for local businesses are gold. Search "[your town] business owners", "removals UK", "tradespeople UK" - join, read who's active, and message business owners directly. LinkedIn works too: search "[industry] + [town]", connect, and send a short message. Their phone is usually on their page.</div>
@@ -529,11 +529,11 @@ tr:last-child td{border-bottom:none}
 <div class="step"><b>🏆 Look for busy businesses</b>Target businesses with lots of reviews, an active social media page, or "we're fully booked" energy. A busy business is a business that will see the value in more leads. Quiet ones may not be a good fit.</div>
 <div class="step"><b>📌 Your weekly goal</b>Build a list of 10 new businesses to contact each week. 10 contacts = usually 2-3 free trials = £50-£75 in potential commission plus wheel progress. Consistency beats bursts.</div>
 </div>
-<p style="font-size:12px;color:#94a3b8;margin-top:14px">Tip: keep a note on each business in your <a href="#" onclick="go('leads');return false" style="color:#0ea5e9">Leads tab</a> once they're interested, so you never lose track.</p>
+<p style="font-size:12px;color:#64748b;margin-top:14px">Tip: keep a note on each business in your <a href="#" onclick="go('leads');return false" style="color:#0284c7">Leads tab</a> once they're interested, so you never lose track.</p>
 </div>
 <div class="panel" style="margin-bottom:16px">
 <h2>Sales toolkit</h2>
-<p style="font-size:12px;color:#94a3b8;margin-bottom:14px">Ready-made scripts to help your referrals start their free trial. Pick the business type, then copy any template. Placeholders like <b style="color:#cbd5e1">[name]</b> are where you fill in the lead's details.</p>
+<p style="font-size:12px;color:#64748b;margin-bottom:14px">Ready-made scripts to help your referrals start their free trial. Pick the business type, then copy any template. Placeholders like <b style="color:#334155">[name]</b> are where you fill in the lead's details.</p>
 <div class="chips" id="type-chips"></div>
 </div>
 <div id="tool-content"></div>
@@ -543,14 +543,14 @@ tr:last-child td{border-bottom:none}
 <section id="view-playbook" style="display:none">
 <div class="panel" style="margin-bottom:16px">
 <h2>Conversion playbook</h2>
-<p style="font-size:12.5px;color:#94a3b8;margin-bottom:6px">Proven steps to turn every referral into a paying customer. And get them to their first paid package so your <b style="color:#e2e8f0">£25 sign-up commission</b> clears. Everything here is tailored to how 9amLeads works.</p>
+<p style="font-size:12.5px;color:#64748b;margin-bottom:6px">Proven steps to turn every referral into a paying customer. And get them to their first paid package so your <b style="color:#0f172a">£25 sign-up commission</b> clears. Everything here is tailored to how 9amLeads works.</p>
 </div>
 <div class="payout-card" id="pb-today-card" style="background:linear-gradient(135deg,rgba(56,189,248,.10),rgba(37,99,235,.04));border-color:rgba(56,189,248,.3)">
-<div class="p-head"><div><div class="lbl">⚡ What to do today</div><div class="val" id="pb-today-title" style="font-size:17px;color:#7dd3fc">Checking your pipeline…</div></div></div>
-<div id="pb-today-body" style="font-size:13px;color:#cbd5e1;line-height:1.6">Loading your live referrals…</div>
+<div class="p-head"><div><div class="lbl">⚡ What to do today</div><div class="val" id="pb-today-title" style="font-size:17px;color:#0284c7">Checking your pipeline…</div></div></div>
+<div id="pb-today-body" style="font-size:13px;color:#334155;line-height:1.6">Loading your live referrals…</div>
 </div>
 <div class="pb-track">
-<div class="pb-head"><div><b>Your referral checklist</b> <span style="font-size:11px;color:#94a3b8">tick each step as you complete it</span></div><div class="pb-pct" id="pb-pct">0%</div></div>
+<div class="pb-head"><div><b>Your referral checklist</b> <span style="font-size:11px;color:#64748b">tick each step as you complete it</span></div><div class="pb-pct" id="pb-pct">0%</div></div>
 <div class="bar"><div class="fill" id="pb-bar" style="width:0%"></div></div>
 </div>
 <div class="panel" style="margin-bottom:16px">
@@ -630,26 +630,26 @@ tr:last-child td{border-bottom:none}
 <!-- REWARDS WHEEL -->
 <section id="view-rewards" style="display:none">
 <div class="payout-card" style="background:linear-gradient(135deg,rgba(245,158,11,.12),rgba(234,88,12,.05));border-color:rgba(245,158,11,.35)">
-<div class="p-head"><div><div class="lbl">Reward wheel</div><div class="val" id="rw-tier" style="color:#f59e0b">Tier 1</div></div><div class="lbl" id="rw-pct">0 / 50</div></div>
-<div class="bar" style="border-color:rgba(245,158,11,.3)"><div class="fill" id="rw-bar" style="width:0%;background:linear-gradient(90deg,#f59e0b,#f97316)"></div></div>
+<div class="p-head"><div><div class="lbl">Reward wheel</div><div class="val" id="rw-tier" style="color:#d97706">Tier 1</div></div><div class="lbl" id="rw-pct">0 / 50</div></div>
+<div class="bar" style="border-color:rgba(245,158,11,.3)"><div class="fill" id="rw-bar" style="width:0%;background:linear-gradient(90deg,#d97706,#ea580c)"></div></div>
 <div class="p-sub" id="rw-sub">Every 50 retained signups unlocks a spin with prizes up to £200. Retained = customers who reached their 2nd invoice and stayed.</div>
 </div>
 <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px">
-<div style="flex:1;min-width:300px;background:rgba(255,255,255,.045);border:1px solid #1e2030;border-radius:14px;padding:20px;text-align:center">
+<div style="flex:1;min-width:300px;background:#ffffff;border:1px solid #e5e7eb;border-radius:14px;padding:20px;text-align:center">
 <div style="position:relative;width:220px;height:220px;margin:0 auto">
 <canvas id="rw-canvas" width="220" height="220" style="width:220px;height:220px"></canvas>
-<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:12px;font-weight:800;color:#fff;background:rgba(0,0,0,.55);border-radius:50%;width:56px;height:56px;display:flex;align-items:center;justify-content:center;pointer-events:none">9amLeads</div>
-<div id="rw-pointer" style="position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-top:16px solid #f59e0b;pointer-events:none"></div>
+<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:12px;font-weight:800;color:#fff;background:rgba(15,23,42,.45);border-radius:50%;width:56px;height:56px;display:flex;align-items:center;justify-content:center;pointer-events:none">9amLeads</div>
+<div id="rw-pointer" style="position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-top:16px solid #d97706;pointer-events:none"></div>
 </div>
 <div style="margin-top:16px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-<button class="btn-mini" id="rw-spin-btn" onclick="spinWheel()" style="font-size:13px;padding:10px 22px;background:linear-gradient(135deg,#f59e0b,#f97316);color:#fff;border:none;border-radius:10px">🎡 Spin</button>
+<button class="btn-mini" id="rw-spin-btn" onclick="spinWheel()" style="font-size:13px;padding:10px 22px;background:linear-gradient(135deg,#d97706,#ea580c);color:#fff;border:none;border-radius:10px">🎡 Spin</button>
 </div>
-<div id="rw-result" style="margin-top:12px;font-size:15px;font-weight:800;color:#34d399;min-height:22px"></div>
-<div id="rw-odds" style="margin-top:8px;font-size:11px;color:#6b7280">Fair odds. Equal chance of each prize.</div>
+<div id="rw-result" style="margin-top:12px;font-size:15px;font-weight:800;color:#059669;min-height:22px"></div>
+<div id="rw-odds" style="margin-top:8px;font-size:11px;color:#64748b">Fair odds. Equal chance of each prize.</div>
 </div>
-<div style="flex:1;min-width:280px;background:rgba(255,255,255,.045);border:1px solid #1e2030;border-radius:14px;padding:20px">
-<h3 style="font-size:13px;font-weight:700;color:#f1f5f9;margin:0 0 12px">How the wheel works</h3>
-<ul style="font-size:12.5px;color:#c6cfdd;line-height:1.7;padding-left:18px;margin:0 0 14px">
+<div style="flex:1;min-width:280px;background:#ffffff;border:1px solid #e5e7eb;border-radius:14px;padding:20px">
+<h3 style="font-size:13px;font-weight:700;color:#0f172a;margin:0 0 12px">How the wheel works</h3>
+<ul style="font-size:12.5px;color:#334155;line-height:1.7;padding-left:18px;margin:0 0 14px">
 <li><b>Every 50 retained signups</b> = one spin.</li>
 <li>Retained = customers who paid their 2nd invoice and stayed (same as your £25 commission).</li>
 <li>Prizes are <b>paid straight to your balance</b> the moment you win.</li>
@@ -664,31 +664,31 @@ tr:last-child td{border-bottom:none}
 <h2>Prize tiers <span class="hint">how the wheel grows with you</span></h2>
 <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px" class="rw-tiers">
 <div style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.3);border-radius:12px;padding:16px;text-align:center">
-<div style="font-size:11px;font-weight:800;color:#f59e0b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">50 retained</div>
-<div style="font-size:13px;color:#e2e8f0;line-height:1.8">£50<br>£100<br>£150<br>£200</div>
+<div style="font-size:11px;font-weight:800;color:#d97706;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">50 retained</div>
+<div style="font-size:13px;color:#0f172a;line-height:1.8">£50<br>£100<br>£150<br>£200</div>
 </div>
 <div style="background:rgba(14,165,233,.06);border:1px solid rgba(14,165,233,.3);border-radius:12px;padding:16px;text-align:center">
-<div style="font-size:11px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">100 retained</div>
-<div style="font-size:13px;color:#e2e8f0;line-height:1.8">£100<br>£200<br>£300<br>£500</div>
+<div style="font-size:11px;font-weight:800;color:#0284c7;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">100 retained</div>
+<div style="font-size:13px;color:#0f172a;line-height:1.8">£100<br>£200<br>£300<br>£500</div>
 </div>
 <div style="background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.3);border-radius:12px;padding:16px;text-align:center">
-<div style="font-size:11px;font-weight:800;color:#34d399;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">200+ retained</div>
-<div style="font-size:13px;color:#e2e8f0;line-height:1.8">£200<br>£400<br>£600<br>£1000</div>
+<div style="font-size:11px;font-weight:800;color:#059669;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">200+ retained</div>
+<div style="font-size:13px;color:#0f172a;line-height:1.8">£200<br>£400<br>£600<br>£1000</div>
 </div>
 </div>
-<p style="font-size:11.5px;color:#6b7280;margin-top:10px">Fair odds: each prize on your tier has an equal chance. Tiers are based on your lifetime retained signups.</p>
+<p style="font-size:11.5px;color:#64748b;margin-top:10px">Fair odds: each prize on your tier has an equal chance. Tiers are based on your lifetime retained signups.</p>
 </div>
 </section>
 
 <!-- COMPLIANCE (KYC) -->
 <section id="view-compliance" style="display:none">
 <div class="payout-card" style="background:linear-gradient(135deg,rgba(14,165,233,.10),rgba(37,99,235,.04));border-color:rgba(14,165,233,.3)">
-<div class="p-head"><div><div class="lbl">Compliance status</div><div class="val" id="kyc-status" style="font-size:18px;color:#f1f5f9">Checking...</div></div><div class="lbl" id="kyc-sub">Verify your identity to unlock payouts</div></div>
+<div class="p-head"><div><div class="lbl">Compliance status</div><div class="val" id="kyc-status" style="font-size:18px;color:#0f172a">Checking...</div></div><div class="lbl" id="kyc-sub">Verify your identity to unlock payouts</div></div>
 </div>
 <div class="panel" style="margin-bottom:16px">
 <h2>Why we need this</h2>
-<p style="font-size:12.5px;color:#94a3b8;line-height:1.7">To pay you, we're required by law to verify your identity and your bank details. This is the same "know your customer" (KYC) check every legitimate payout service runs. It protects you, and it protects the programme from fraud.</p>
-<ul style="font-size:12.5px;color:#c6cfdd;line-height:1.8;padding-left:18px;margin:10px 0 0">
+<p style="font-size:12.5px;color:#64748b;line-height:1.7">To pay you, we're required by law to verify your identity and your bank details. This is the same "know your customer" (KYC) check every legitimate payout service runs. It protects you, and it protects the programme from fraud.</p>
+<ul style="font-size:12.5px;color:#334155;line-height:1.8;padding-left:18px;margin:10px 0 0">
 <li><b>ID must be your driving licence or passport</b> (a clear photo or scan).</li>
   <li><b>The legal name on your ID must match the bank account holder</b> name (same surname and a matching first name). Payments only go out to the verified person.</li>
 <li>Your details are stored securely and used only for payout verification.</li>
@@ -697,28 +697,28 @@ tr:last-child td{border-bottom:none}
 </div>
 <div class="panel" style="margin-bottom:16px">
 <h2>Verify your identity</h2>
-<div class="fg"><label>Legal name (exactly as it appears on your ID)</label><input type="text" id="kyc-legal" placeholder="e.g. John Michael Smith" style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px"></div>
+<div class="fg"><label>Legal name (exactly as it appears on your ID)</label><input type="text" id="kyc-legal" placeholder="e.g. John Michael Smith" style="width:100%;padding:11px 13px;background:#0f172a;border:1px solid #e5e7eb;border-radius:9px;color:#0f172a;font-size:13px"></div>
 <div class="fg"><label>ID type</label>
-<select id="kyc-idtype" style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px"><option value="">Choose...</option><option value="Driving licence">Driving licence</option><option value="Passport">Passport</option></select></div>
+<select id="kyc-idtype" style="width:100%;padding:11px 13px;background:#0f172a;border:1px solid #e5e7eb;border-radius:9px;color:#0f172a;font-size:13px"><option value="">Choose...</option><option value="Driving licence">Driving licence</option><option value="Passport">Passport</option></select></div>
 <div class="fg"><label>Upload a clear photo of your ID (front) <span class="muted">JPG or PNG</span></label>
-<input type="file" id="kyc-file" accept="image/jpeg,image/png,image/jpg" style="width:100%;padding:11px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:12px">
+<input type="file" id="kyc-file" accept="image/jpeg,image/png,image/jpg" style="width:100%;padding:11px;background:#0f172a;border:1px solid #e5e7eb;border-radius:9px;color:#0f172a;font-size:12px">
 <div id="kyc-preview" style="margin-top:8px"></div></div>
-<div class="fg"><label>Bank name</label><input type="text" id="kyc-bank" placeholder="e.g. Barclays" style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px"></div>
-<div class="fg"><label>Bank account holder name (exactly as on the account)</label><input type="text" id="kyc-bankholder" placeholder="Must match the legal name above" style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px"></div>
+<div class="fg"><label>Bank name</label><input type="text" id="kyc-bank" placeholder="e.g. Barclays" style="width:100%;padding:11px 13px;background:#0f172a;border:1px solid #e5e7eb;border-radius:9px;color:#0f172a;font-size:13px"></div>
+<div class="fg"><label>Bank account holder name (exactly as on the account)</label><input type="text" id="kyc-bankholder" placeholder="Must match the legal name above" style="width:100%;padding:11px 13px;background:#0f172a;border:1px solid #e5e7eb;border-radius:9px;color:#0f172a;font-size:13px"></div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
-<div class="fg" style="margin:0"><label>Sort code</label><input type="text" id="kyc-sortcode" placeholder="e.g. 20-00-00" maxlength="8" style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px"></div>
-<div class="fg" style="margin:0"><label>Account number</label><input type="text" id="kyc-accountno" placeholder="8 digits" maxlength="8" style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px"></div>
+<div class="fg" style="margin:0"><label>Sort code</label><input type="text" id="kyc-sortcode" placeholder="e.g. 20-00-00" maxlength="8" style="width:100%;padding:11px 13px;background:#0f172a;border:1px solid #e5e7eb;border-radius:9px;color:#0f172a;font-size:13px"></div>
+<div class="fg" style="margin:0"><label>Account number</label><input type="text" id="kyc-accountno" placeholder="8 digits" maxlength="8" style="width:100%;padding:11px 13px;background:#0f172a;border:1px solid #e5e7eb;border-radius:9px;color:#0f172a;font-size:13px"></div>
 </div>
-<div id="kyc-match" style="font-size:11.5px;margin-top:4px;color:#6b7280">Enter the same name in both fields so they match.</div>
-<div class="fg" style="margin-top:14px"><label style="display:flex;gap:8px;align-items:flex-start;font-size:11.5px;color:#c6cfdd;cursor:pointer"><input type="checkbox" id="kyc-tc" style="margin-top:2px"> I have read and accept the <a href="#" onclick="showKycTerms();return false" style="color:#0ea5e9">9amLeads Affiliate Agreement</a> (Terms &amp; Conditions). I confirm that the information I have provided is accurate, that my name on the ID matches my bank account, and that I will not engage in fraudulent or misleading referral activity.</label></div>
+<div id="kyc-match" style="font-size:11.5px;margin-top:4px;color:#64748b">Enter the same name in both fields so they match.</div>
+<div class="fg" style="margin-top:14px"><label style="display:flex;gap:8px;align-items:flex-start;font-size:11.5px;color:#334155;cursor:pointer"><input type="checkbox" id="kyc-tc" style="margin-top:2px"> I have read and accept the <a href="#" onclick="showKycTerms();return false" style="color:#0284c7">9amLeads Affiliate Agreement</a> (Terms &amp; Conditions). I confirm that the information I have provided is accurate, that my name on the ID matches my bank account, and that I will not engage in fraudulent or misleading referral activity.</label></div>
 <div style="display:flex;gap:8px;margin-top:14px"><button class="btn" id="kyc-submit-btn" onclick="submitKyc()">Submit for verification</button></div>
 <div class="err" id="kyc-err"></div>
-<div id="kyc-result" style="margin-top:10px;font-size:13px;color:#34d399;font-weight:700;display:none"></div>
+<div id="kyc-result" style="margin-top:10px;font-size:13px;color:#059669;font-weight:700;display:none"></div>
 </div>
 <div class="panel" style="border:1px solid rgba(239,68,68,.3);background:rgba(239,68,68,.04)">
-<h2 style="color:#f87171">Danger zone</h2>
-<p style="font-size:12.5px;color:#94a3b8;line-height:1.7">You have the right to delete your affiliate account and personal data (right to erasure under UK GDPR). This removes your account, your identity documents, your voice recording and your referral data. Verified commissions already paid are not affected. This cannot be undone.</p>
-<button class="btn-mini" onclick="deleteAffiliateAccount()" style="background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.4);padding:9px 18px;border-radius:9px;font-weight:700">Delete my account and data</button>
+<h2 style="color:#dc2626">Danger zone</h2>
+<p style="font-size:12.5px;color:#64748b;line-height:1.7">You have the right to delete your affiliate account and personal data (right to erasure under UK GDPR). This removes your account, your identity documents, your voice recording and your referral data. Verified commissions already paid are not affected. This cannot be undone.</p>
+<button class="btn-mini" onclick="deleteAffiliateAccount()" style="background:rgba(239,68,68,.15);color:#dc2626;border:1px solid rgba(239,68,68,.4);padding:9px 18px;border-radius:9px;font-weight:700">Delete my account and data</button>
 </div>
 </section>
 
@@ -740,19 +740,19 @@ tr:last-child td{border-bottom:none}
 <div class="panel">
 <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
 <h2 style="margin:0">My follow-up list</h2>
-<button class="btn-mini" onclick="toggleProspectForm()" style="font-size:13px;padding:9px 18px;background:linear-gradient(135deg,#f59e0b,#f97316);color:#fff;border:none;border-radius:9px">➕ Add a prospect</button>
+<button class="btn-mini" onclick="toggleProspectForm()" style="font-size:13px;padding:9px 18px;background:linear-gradient(135deg,#d97706,#ea580c);color:#fff;border:none;border-radius:9px">➕ Add a prospect</button>
 </div>
 <p class="muted" style="font-size:12px;margin-top:6px">Track the businesses you're chasing with notes and reminders, so no warm lead slips away. Customers who sign up with your code appear here automatically.</p>
 </div>
 <div id="prospect-form" style="display:none" class="panel">
 <h3 style="margin:0 0 12px;font-size:15px">New prospect</h3>
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px">
-<input id="fp-company" placeholder="Company" style="padding:9px 11px;background:#0b0d14;border:1px solid #1e2030;border-radius:8px;color:#e2e8f0;font-size:13px">
-<input id="fp-name" placeholder="Contact name (optional)" style="padding:9px 11px;background:#0b0d14;border:1px solid #1e2030;border-radius:8px;color:#e2e8f0;font-size:13px">
-<input id="fp-phone" placeholder="Phone" style="padding:9px 11px;background:#0b0d14;border:1px solid #1e2030;border-radius:8px;color:#e2e8f0;font-size:13px">
-<input id="fp-email" placeholder="Email (optional)" style="padding:9px 11px;background:#0b0d14;border:1px solid #1e2030;border-radius:8px;color:#e2e8f0;font-size:13px">
-<select id="fp-product" style="padding:9px 11px;background:#0b0d14;border:1px solid #1e2030;border-radius:8px;color:#e2e8f0;font-size:13px"><option value="">Lead type…</option><option value="moving">Moving</option><option value="newbusiness">New Business</option><option value="probate">Probate</option><option value="planning">Planning</option><option value="tenders">Tenders</option></select>
-<input type="datetime-local" id="fp-remind" style="padding:8px 10px;background:#0b0d14;border:1px solid #1e2030;border-radius:8px;color:#e2e8f0;font-size:13px">
+<input id="fp-company" placeholder="Company" style="padding:9px 11px;background:#0f172a;border:1px solid #e5e7eb;border-radius:8px;color:#0f172a;font-size:13px">
+<input id="fp-name" placeholder="Contact name (optional)" style="padding:9px 11px;background:#0f172a;border:1px solid #e5e7eb;border-radius:8px;color:#0f172a;font-size:13px">
+<input id="fp-phone" placeholder="Phone" style="padding:9px 11px;background:#0f172a;border:1px solid #e5e7eb;border-radius:8px;color:#0f172a;font-size:13px">
+<input id="fp-email" placeholder="Email (optional)" style="padding:9px 11px;background:#0f172a;border:1px solid #e5e7eb;border-radius:8px;color:#0f172a;font-size:13px">
+<select id="fp-product" style="padding:9px 11px;background:#0f172a;border:1px solid #e5e7eb;border-radius:8px;color:#0f172a;font-size:13px"><option value="">Lead type…</option><option value="moving">Moving</option><option value="newbusiness">New Business</option><option value="probate">Probate</option><option value="planning">Planning</option><option value="tenders">Tenders</option></select>
+<input type="datetime-local" id="fp-remind" style="padding:8px 10px;background:#0f172a;border:1px solid #e5e7eb;border-radius:8px;color:#0f172a;font-size:13px">
 </div>
 <div style="margin-top:10px;display:flex;gap:8px"><button class="btn" onclick="addProspect()">Save prospect</button><button class="btn-out" onclick="toggleProspectForm()">Cancel</button></div>
 <div class="err" id="fp-err"></div>
@@ -781,9 +781,9 @@ tr:last-child td{border-bottom:none}
 <div class="m-sec">
 <h3>📖 How it works</h3>
 <ol>
-<li>Share your code. Every customer who signs up with it gets a <b style="color:#e2e8f0">14-day free trial</b>.</li>
-<li>You earn <b style="color:#e2e8f0">£25</b> for every customer who pays their second invoice, paid within about a week-up.</li>
-<li>Track everyone in the <b style="color:#e2e8f0">Leads</b> tab and convert them with the <b style="color:#e2e8f0">Tools</b> and <b style="color:#e2e8f0">Playbook</b>.</li>
+<li>Share your code. Every customer who signs up with it gets a <b style="color:#0f172a">14-day free trial</b>.</li>
+<li>You earn <b style="color:#0f172a">£25</b> for every customer who pays their second invoice, paid within about a week-up.</li>
+<li>Track everyone in the <b style="color:#0f172a">Leads</b> tab and convert them with the <b style="color:#0f172a">Tools</b> and <b style="color:#0f172a">Playbook</b>.</li>
 <li>Commissions are paid out on a monthly cycle.</li>
 </ol>
 </div>
@@ -801,7 +801,7 @@ tr:last-child td{border-bottom:none}
 <div class="m-field"><label>Message</label><textarea id="h-msg" placeholder="How can we help? Sign-ups, commissions, dashboard. Anything."></textarea></div>
 <button class="btn" onclick="sendHelp()" id="h-btn">Send message</button>
 <div class="m-msg" id="h-msg-out"></div>
-<div class="a" style="margin-top:10px;text-align:center">Or email us directly: <a href="mailto:hello@9amleads.com" style="color:#0ea5e9">hello@9amleads.com</a></div>
+<div class="a" style="margin-top:10px;text-align:center">Or email us directly: <a href="mailto:hello@9amleads.com" style="color:#0284c7">hello@9amleads.com</a></div>
 </div>
 </div>
 </div>
@@ -814,7 +814,7 @@ tr:last-child td{border-bottom:none}
 <div class="sub">Stuck on anything? Ask us and we'll reply straight to your email. No ticket systems, no waiting.</div>
 <div class="m-sec">
 <div class="m-field"><label>Topic</label>
-<select id="aq-topic" style="width:100%;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px">
+<select id="aq-topic" style="width:100%;padding:11px 13px;background:#0f172a;border:1px solid #e5e7eb;border-radius:9px;color:#0f172a;font-size:13px">
 <option value="General">General</option>
 <option value="Sharing my code">Sharing my code</option>
 <option value="Commission & payouts">Commission &amp; payouts</option>
@@ -824,10 +824,10 @@ tr:last-child td{border-bottom:none}
 <option value="Tools & scripts">Tools &amp; scripts</option>
 <option value="Something else">Something else</option>
 </select></div>
-<div class="m-field"><label>Your question</label><textarea id="aq-msg" placeholder="Type your question here..." style="width:100%;min-height:100px;padding:11px 13px;background:#0b0d14;border:1px solid #1e2030;border-radius:9px;color:#e2e8f0;font-size:13px;font-family:inherit"></textarea></div>
+<div class="m-field"><label>Your question</label><textarea id="aq-msg" placeholder="Type your question here..." style="width:100%;min-height:100px;padding:11px 13px;background:#0f172a;border:1px solid #e5e7eb;border-radius:9px;color:#0f172a;font-size:13px;font-family:inherit"></textarea></div>
 <button class="btn" id="aq-btn" onclick="sendAskQuestion()">Send question</button>
 <div class="m-msg" id="aq-out"></div>
-<div class="a" style="margin-top:10px;text-align:center;font-size:12px;color:#94a3b8">We reply to your registered email (<span id="aq-email"></span>).</div>
+<div class="a" style="margin-top:10px;text-align:center;font-size:12px;color:#64748b">We reply to your registered email (<span id="aq-email"></span>).</div>
 </div>
 </div>
 </div>
@@ -840,8 +840,8 @@ tr:last-child td{border-bottom:none}
 <div class="sub" id="ld-sub"></div>
 <div class="ld-tabs">
 <div class="ld-tab on" data-p="details" onclick="ldTab('details')">Details</div>
-<div class="ld-tab" data-p="comments" onclick="ldTab('comments')">Comments <span id="ld-cm-count" style="color:#0ea5e9"></span></div>
-<div class="ld-tab" data-p="reminders" onclick="ldTab('reminders')">Reminders <span id="ld-rm-count" style="color:#fbbf24"></span></div>
+<div class="ld-tab" data-p="comments" onclick="ldTab('comments')">Comments <span id="ld-cm-count" style="color:#0284c7"></span></div>
+<div class="ld-tab" data-p="reminders" onclick="ldTab('reminders')">Reminders <span id="ld-rm-count" style="color:#d97706"></span></div>
 </div>
 <div class="ld-pane on" id="pane-details">
 <div id="ld-journey"></div>
@@ -903,7 +903,7 @@ function showAffDemoBanner(){
   var host = document.querySelector('#dash-view') || document.body;
   var b = document.createElement('div');
   b.id = 'affDemoBanner';
-  b.style.cssText = 'background:linear-gradient(135deg,#fef3c7,#fefce8);border:1px solid #fcd34d;border-left:5px solid #f59e0b;border-radius:10px;padding:15px 20px;margin:0 0 18px;font-size:14px;color:#78350f;line-height:1.6';
+  b.style.cssText = 'background:linear-gradient(135deg,#fef3c7,#fefce8);border:1px solid #d97706;border-left:5px solid #d97706;border-radius:10px;padding:15px 20px;margin:0 0 18px;font-size:14px;color:#78350f;line-height:1.6';
   b.innerHTML = '<b>Read-only demo.</b> This is a sample affiliate account. You can explore every panel; actions that change data are disabled.';
   host.insertBefore(b, host.firstChild);
 }
@@ -1038,14 +1038,14 @@ function toggleRec(){
       var au=document.getElementById('rec-audio'); if(au){au.src=_recUrl;au.style.display='block';}
       document.getElementById('rec-play').style.display='inline-block';
       document.getElementById('rec-redo').style.display='inline-block';
-      if(st){st.textContent='Recorded ('+(Math.round(blob.size/1024))+' KB). Listen back or re-record.';st.style.color='#34d399';}
+      if(st){st.textContent='Recorded ('+(Math.round(blob.size/1024))+' KB). Listen back or re-record.';st.style.color='#059669';}
       document.getElementById('rec-btn').textContent='🎙️ Record';
       _recActive=false;
       if(_recStream){_recStream.getTracks().forEach(function(t){t.stop();});_recStream=null;}
     };
     _recMedia.start();
     _recActive=true;
-    if(st){st.textContent='Recording... read the script aloud.';st.style.color='#fbbf24';}
+    if(st){st.textContent='Recording... read the script aloud.';st.style.color='#d97706';}
     document.getElementById('rec-btn').textContent='⏹ Stop';
     // Auto-stop after 30 seconds
     setTimeout(function(){ if(_recActive){ stopRec(); if(st)st.textContent='Stopped (30s max). Listen back or re-record.'; } },30000);
@@ -1067,7 +1067,7 @@ function submitApplication(){
   var q1=document.getElementById('q1').value,q2=document.getElementById('q2').value,q3=document.getElementById('q3').value,q4=document.getElementById('q4').value,q5=document.getElementById('q5').value.trim(),q6=document.getElementById('q6').value,q7=document.getElementById('q7').value,q8=document.getElementById('q8').value.trim(),q9=document.getElementById('q9').value.trim(),q10=document.getElementById('q10').value,q11=document.getElementById('q11').value.trim(),q12=document.getElementById('q12').value,q13=document.getElementById('q13').value.trim();
   var consent=document.getElementById('r-consent').checked;
   var tc=document.getElementById('r-tc').checked;
-  var errEl=document.getElementById('register-err'); errEl.style.color='#f87171'; errEl.style.display='none';
+  var errEl=document.getElementById('register-err'); errEl.style.color='#dc2626'; errEl.style.display='none';
   if(!name||!email||!pass){ errEl.textContent='Please fill in your name, email and password'; errEl.style.display='block'; return; }
   if(pass.length<8){ errEl.textContent='Password must be at least 8 characters'; errEl.style.display='block'; return; }
   var _pd=phone.replace(/[^0-9]/g,'');
@@ -1128,7 +1128,7 @@ function go(t){
 }
 
 // ===== FOLLOW-UP CRM =====
-var FU = null, FU_STATUS_COLORS = { prospect: '#f59e0b', trial: '#0ea5e9', referral_pending: '#94a3b8', earning: '#10b981', approved: '#34d399', paid: '#4ade80' };
+var FU = null, FU_STATUS_COLORS = { prospect: '#d97706', trial: '#0284c7', referral_pending: '#64748b', earning: '#059669', approved: '#059669', paid: '#16a34a' };
 var FU_STATUS_LABEL = { prospect: 'Prospect', trial: 'Trial', referral_pending: 'Referred', earning: 'Earning', approved: 'Commission', paid: 'Paid out' };
 var FU_FILTER_STATUS = 'all'; // active status chip ('all' = no filter)
 function toggleProspectForm(){var f=document.getElementById('prospect-form');f.style.display=f.style.display==='none'?'block':'none';document.getElementById('fp-err').style.display='none';}
@@ -1164,9 +1164,9 @@ function renderFuTable(){
   if(!FU.people.length){w.innerHTML='<div class="muted" style="padding:20px;text-align:center">No customers or prospects yet. Share your code and add prospects you\'re working here.</div>';return;}
   if(!people.length){w.innerHTML='<div class="muted" style="padding:20px;text-align:center">Nothing matches your search or filter.</div>';return;}
   w.innerHTML='<table><thead><tr><th>Business</th><th>Lead type</th><th>Status</th><th>Contact</th><th>Next reminder</th><th>Notes</th><th style="text-align:right">Actions</th></tr></thead><tbody>'+people.map(function(p){
-    var color=FU_STATUS_COLORS[p.status]||'#94a3b8',lab=FU_STATUS_LABEL[p.status]||p.status;
+    var color=FU_STATUS_COLORS[p.status]||'#64748b',lab=FU_STATUS_LABEL[p.status]||p.status;
     var notes=p.notes&&p.notes.length?('<span title="'+esc(p.notes.map(function(n){return n.text;}).join(' • '))+'">'+p.notes.length+'</span>'):'0';
-    return '<tr><td><b>'+esc(p.company||p.name||p.email||'Contact')+'</b></td><td style="font-size:11px;color:#94a3b8">'+(p.product||'-')+'</td><td><span style="color:'+color+';font-weight:700">● '+esc(lab)+'</span></td><td style="font-size:12px">'+esc(fuContact(p))+'</td><td style="font-size:11px;white-space:nowrap">'+(p.reminder_at?'<span style="color:#f59e0b">'+fuWhen(p.reminder_at)+'</span>':'<span class="muted">-</span>')+'</td><td style="text-align:center;font-size:12px">'+notes+'</td><td style="text-align:right;white-space:nowrap"><button class="btn-mini" onclick="openNote(\''+p.id+'\',\''+esc(p.company||p.name||'').replace(/'/g,'')+'\')">📝 Note</button> <button class="btn-mini" onclick="openRemind(\''+p.id+'\')">⏰</button>'+(p.source==='prospect'?' <button class="btn-mini" style="color:#f87171" onclick="delProspect(\''+p.id+'\')">🗑 Delete</button>':'')+'</td></tr>';
+    return '<tr><td><b>'+esc(p.company||p.name||p.email||'Contact')+'</b></td><td style="font-size:11px;color:#64748b">'+(p.product||'-')+'</td><td><span style="color:'+color+';font-weight:700">● '+esc(lab)+'</span></td><td style="font-size:12px">'+esc(fuContact(p))+'</td><td style="font-size:11px;white-space:nowrap">'+(p.reminder_at?'<span style="color:#d97706">'+fuWhen(p.reminder_at)+'</span>':'<span class="muted">-</span>')+'</td><td style="text-align:center;font-size:12px">'+notes+'</td><td style="text-align:right;white-space:nowrap"><button class="btn-mini" onclick="openNote(\''+p.id+'\',\''+esc(p.company||p.name||'').replace(/'/g,'')+'\')">📝 Note</button> <button class="btn-mini" onclick="openRemind(\''+p.id+'\')">⏰</button>'+(p.source==='prospect'?' <button class="btn-mini" style="color:#dc2626" onclick="delProspect(\''+p.id+'\')">🗑 Delete</button>':'')+'</td></tr>';
   }).join('')+'</tbody></table>';
 }
 function exportFuCSV(){
@@ -1192,8 +1192,8 @@ function loadFollowups(){
     var strip=document.getElementById('fu-reminder-strip');
     var html='';
     var ovArr=(d.reminders&&d.reminders.overdue)||[];
-    if(ovArr.length){html+='<div class="panel" style="background:rgba(248,113,113,.08);border-color:rgba(248,113,113,.35);padding:12px 16px"><b style="color:#f87171">⏰ Overdue ('+ovArr.length+')</b><div style="font-size:12.5px;color:#cbd5e1;margin-top:6px">'+ovArr.map(function(p){return '<div style="padding:3px 0">📞 <b>'+esc(p.company||p.name)+'</b> - '+esc(fuContact(p))+' <span style="color:#94a3b8">(due '+fuWhen(p.reminder_at)+')</span></div>';}).join('')+'</div></div>';}
-    if(d.reminders.today.length){html+='<div class="panel" style="background:rgba(74,222,128,.08);border-color:rgba(74,222,128,.3);padding:12px 16px"><b style="color:#4ade80">📞 Due today ('+d.reminders.today.length+')</b><div style="font-size:12.5px;color:#cbd5e1;margin-top:6px">'+d.reminders.today.map(function(p){return '<div style="padding:3px 0"><b>'+esc(p.company||p.name)+'</b> - '+esc(fuContact(p))+' <span style="color:#94a3b8">(due '+fuWhen(p.reminder_at)+')</span></div>';}).join('')+'</div></div>';}
+    if(ovArr.length){html+='<div class="panel" style="background:rgba(248,113,113,.08);border-color:rgba(248,113,113,.35);padding:12px 16px"><b style="color:#dc2626">⏰ Overdue ('+ovArr.length+')</b><div style="font-size:12.5px;color:#334155;margin-top:6px">'+ovArr.map(function(p){return '<div style="padding:3px 0">📞 <b>'+esc(p.company||p.name)+'</b> - '+esc(fuContact(p))+' <span style="color:#64748b">(due '+fuWhen(p.reminder_at)+')</span></div>';}).join('')+'</div></div>';}
+    if(d.reminders.today.length){html+='<div class="panel" style="background:rgba(74,222,128,.08);border-color:rgba(74,222,128,.3);padding:12px 16px"><b style="color:#16a34a">📞 Due today ('+d.reminders.today.length+')</b><div style="font-size:12.5px;color:#334155;margin-top:6px">'+d.reminders.today.map(function(p){return '<div style="padding:3px 0"><b>'+esc(p.company||p.name)+'</b> - '+esc(fuContact(p))+' <span style="color:#64748b">(due '+fuWhen(p.reminder_at)+')</span></div>';}).join('')+'</div></div>';}
     strip.innerHTML=html;
     // counts chips (now clickable status filters)
     renderFuChips();
@@ -1306,7 +1306,7 @@ function renderRecent(list){
   var w=document.getElementById('recent-leads');
   if(!list.length){w.innerHTML='<div class="muted">No leads yet. Share your code to get started!</div>';return;}
   var h='';
-  list.forEach(function(r){h+='<div style="padding:9px 0;border-bottom:1px solid rgba(30,32,48,.5)"><div style="font-size:12.5px;color:#f1f5f9;font-weight:600">'+(EMOJI[r.product]||'')+' '+esc(r.company||r.email)+'</div><div style="font-size:11px;color:#6b7280;margin-top:2px">'+esc(r.product)+', '+fmtDate(r.signed_up)+' '+badge(r.status)+'</div></div>';});
+  list.forEach(function(r){h+='<div style="padding:9px 0;border-bottom:1px solid #eef2f7"><div style="font-size:12.5px;color:#0f172a;font-weight:600">'+(EMOJI[r.product]||'')+' '+esc(r.company||r.email)+'</div><div style="font-size:11px;color:#64748b;margin-top:2px">'+esc(r.product)+', '+fmtDate(r.signed_up)+' '+badge(r.status)+'</div></div>';});
   w.innerHTML=h;
 }
 
@@ -1341,12 +1341,12 @@ function renderSignupAlerts(list,count){
       var sIdx=(j.stage_index!==undefined)?j.stage_index:0;
       var step=j.steps[sIdx]||null;
       jpart='<div style="display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap">'+journeyDots(j)+
-        '<span style="font-size:11px;color:#94a3b8">'+esc(step?step.label:'')+(j.trial_days_left!==null&&j.trial_days_left!==undefined&&j.trial_days_left>0?' · '+j.trial_days_left+'d left':'')+'</span>'+
+        '<span style="font-size:11px;color:#64748b">'+esc(step?step.label:'')+(j.trial_days_left!==null&&j.trial_days_left!==undefined&&j.trial_days_left>0?' · '+j.trial_days_left+'d left':'')+'</span>'+
         '<button class="jbtn" onclick="openJourneyFromAlert(\''+esc(String(a.customer_id))+'\')">View journey</button></div>';
     }
     return '<div class="ref-alert-row" data-id="'+esc(a.id)+'"><div class="ico">'+(EMOJI[a.product]||'🎉')+'</div><div class="who"><b>'+esc(a.company||'A new business')+'</b><span>'+(signupAlertLabel(a.product)?signupAlertLabel(a.product)+' · ':'')+'started a '+(a.trial_days||14)+'-day free trial '+timeAgoShort(a.created_at)+(contact?' · '+esc(contact):'')+'</span>'+jpart+'</div><button class="btn-mini" onclick="dismissSignupAlert(\''+esc(a.id)+'\',this)">Got it</button></div>';
   }).join('');
-  box.innerHTML='<div class="ref-alert"><div class="ref-alert-head">🎉 New referral sign-up'+(total>1?'s':'')+'<span class="n">'+total+'</span></div>'+rows+'<div class="ref-alert-foot"><a href="#" onclick="go(\'leads\');return false" style="font-weight:800;color:#34d399;font-size:12.5px">📥 Open My Leads &amp; follow up &rarr;</a><button class="btn-mini" style="background:transparent;border:1px solid rgba(148,163,184,.4);color:#94a3b8" onclick="dismissAllSignupAlerts()">Dismiss all</button></div></div>';
+  box.innerHTML='<div class="ref-alert"><div class="ref-alert-head">🎉 New referral sign-up'+(total>1?'s':'')+'<span class="n">'+total+'</span></div>'+rows+'<div class="ref-alert-foot"><a href="#" onclick="go(\'leads\');return false" style="font-weight:800;color:#059669;font-size:12.5px">📥 Open My Leads &amp; follow up &rarr;</a><button class="btn-mini" style="background:transparent;border:1px solid rgba(148,163,184,.4);color:#64748b" onclick="dismissAllSignupAlerts()">Dismiss all</button></div></div>';
   box.style.display='block';
 }
 function openJourneyFromAlert(custId){
@@ -1397,7 +1397,7 @@ function renderLeads(){
   list.forEach(function(r){
     var pendRms=(r.reminders||[]).filter(function(x){return !x.done;}).length;
     h+='<div class="lead"><div class="ico">'+(EMOJI[r.product]||'📈')+'</div><div class="main"><div class="co">'+esc(r.company||r.email)+'</div><div class="em">'+esc(r.email)+(r.phone?', '+esc(r.phone):'')+'</div>'+
-    '<div class="meta"><span>'+esc(r.product)+'</span>'+(r.plan?'<span>'+esc(r.plan)+'</span>':'')+(r.manual?'<span style="color:#38bdf8">my lead</span>':'<span>'+r.days_since+'d ago</span>')+(r.card_saved?'<span style="color:#34d399">💳 card saved</span>':'')+(pendRms?'<span style="color:#fbbf24">⏰ '+pendRms+' reminder'+(pendRms>1?'s':'')+'</span>':'')+'</div>'+
+    '<div class="meta"><span>'+esc(r.product)+'</span>'+(r.plan?'<span>'+esc(r.plan)+'</span>':'')+(r.manual?'<span style="color:#0284c7">my lead</span>':'<span>'+r.days_since+'d ago</span>')+(r.card_saved?'<span style="color:#059669">💳 card saved</span>':'')+(pendRms?'<span style="color:#d97706">⏰ '+pendRms+' reminder'+(pendRms>1?'s':'')+'</span>':'')+'</div>'+
     (r.notes?'<div class="lead-note" id="note-'+esc(r.id)+'">📝 '+esc(r.notes)+'</div>':'')+'</div>'+
     '<div class="act">'+stageBadge(r.stage)+'<button class="btn-mini" onclick="quickNote(\''+esc(r.id)+'\')" title="Add or edit a note">📝 Note</button><button class="btn-mini" onclick="openLeadModal(\''+esc(r.id)+'\')">View</button><button class="btn-mini" onclick="openTools(\''+esc(r.product)+'\')">Tools</button></div></div>';
   });
@@ -1557,7 +1557,7 @@ function renderRefsView(){
       if(r.journey.trial_days_left!==null&&r.journey.trial_days_left!==undefined)tld=r.journey.trial_days_left>0?(r.journey.trial_days_left+'d left'):(r.journey.paying?'converted':'ended');
       else if(r.trial_days)tld=r.trial_days+' days';
     } else if(r.trial_days){ tld=r.trial_days+' days'; }
-    h+='<tr><td>'+esc(r.company)+'<div class="muted">'+esc(r.email)+'</div></td><td>'+esc(r.product)+'</td><td>'+fmtDate(r.signed_up)+'</td><td style="white-space:nowrap">'+(r.journey&&r.journey.trial_days_left!==undefined?'<span style="color:#f59e0b">'+tld+'</span>':(tld||'-'))+'</td>'+
+    h+='<tr><td>'+esc(r.company)+'<div class="muted">'+esc(r.email)+'</div></td><td>'+esc(r.product)+'</td><td>'+fmtDate(r.signed_up)+'</td><td style="white-space:nowrap">'+(r.journey&&r.journey.trial_days_left!==undefined?'<span style="color:#d97706">'+tld+'</span>':(tld||'-'))+'</td>'+
       '<td>'+jd+(jd?' <button class="jbtn" onclick="openJourneyFromRef(\''+esc(r.id)+'\')">View journey</button>':'')+'</td>'+
       '<td>'+badge(r.status)+'</td></tr>';
   });
@@ -1592,16 +1592,16 @@ function renderPayouts(p, totals){
   var h='';
   if(totals){
     h+='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">'+
-      '<div style="background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.25);border-radius:10px;padding:10px 14px"><div style="font-size:11px;color:#94a3b8">Total paid out</div><div style="font-size:18px;font-weight:800;color:#34d399">'+money(totals.paid)+'</div></div>'+
-      '<div style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);border-radius:10px;padding:10px 14px"><div style="font-size:11px;color:#94a3b8">Pending / clearing</div><div style="font-size:18px;font-weight:800;color:#fbbf24">'+money(totals.pending)+'</div></div>'+
-      '<div style="background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.25);border-radius:10px;padding:10px 14px"><div style="font-size:11px;color:#94a3b8">Lifetime</div><div style="font-size:18px;font-weight:800;color:#0ea5e9">'+money(totals.lifetime)+'</div></div>'+
+      '<div style="background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.25);border-radius:10px;padding:10px 14px"><div style="font-size:11px;color:#64748b">Total paid out</div><div style="font-size:18px;font-weight:800;color:#059669">'+money(totals.paid)+'</div></div>'+
+      '<div style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);border-radius:10px;padding:10px 14px"><div style="font-size:11px;color:#64748b">Pending / clearing</div><div style="font-size:18px;font-weight:800;color:#d97706">'+money(totals.pending)+'</div></div>'+
+      '<div style="background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.25);border-radius:10px;padding:10px 14px"><div style="font-size:11px;color:#64748b">Lifetime</div><div style="font-size:18px;font-weight:800;color:#0284c7">'+money(totals.lifetime)+'</div></div>'+
       '</div>';
   }
   h+='<table><thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Status</th></tr></thead><tbody>';
   p.forEach(function(x){
     var kindIcon = x.kind==='wheel' ? '🎡' : x.kind==='commission' ? '£' : '💰';
     var kindLabel = x.kind==='wheel' ? 'Wheel win' : x.kind==='commission' ? 'Commission' : 'Payout';
-    h+='<tr><td>'+fmtDate(x.date)+'</td><td>'+kindIcon+' '+kindLabel+'<div class="muted">'+esc(x.note||'')+'</div></td><td><b style="color:#34d399">'+money(x.amount)+'</b></td><td>'+badge(x.status||'paid')+'</td></tr>';
+    h+='<tr><td>'+fmtDate(x.date)+'</td><td>'+kindIcon+' '+kindLabel+'<div class="muted">'+esc(x.note||'')+'</div></td><td><b style="color:#059669">'+money(x.amount)+'</b></td><td>'+badge(x.status||'paid')+'</td></tr>';
   });
   h+='</tbody></table>';w.innerHTML=h;
 }
@@ -1644,14 +1644,14 @@ function affTip(){
   var pg=document.getElementById('aff-tip-pager');
   if(!el)return;
   var t=AFF_TIPS[_affTipIdx%AFF_TIPS.length];
-  el.innerHTML='<b style="color:#0ea5e9">'+t.icon+' '+t.title+'</b><br>'+t.text;
+  el.innerHTML='<b style="color:#0284c7">'+t.icon+' '+t.title+'</b><br>'+t.text;
   if(pg)pg.textContent='Tip '+((_affTipIdx%AFF_TIPS.length)+1)+' of '+AFF_TIPS.length;
   _affTipIdx++;
   clearInterval(window._affTipInt);
   window._affTipInt=setInterval(function(){
     var el2=document.getElementById('aff-quick-tip'); if(!el2)return;
     var t2=AFF_TIPS[_affTipIdx%AFF_TIPS.length];
-    el2.innerHTML='<b style="color:#0ea5e9">'+t2.icon+' '+t2.title+'</b><br>'+t2.text;
+    el2.innerHTML='<b style="color:#0284c7">'+t2.icon+' '+t2.title+'</b><br>'+t2.text;
     var pg2=document.getElementById('aff-tip-pager');
     if(pg2)pg2.textContent='Tip '+((_affTipIdx%AFF_TIPS.length)+1)+' of '+AFF_TIPS.length;
     _affTipIdx++;
@@ -1665,11 +1665,11 @@ function loadKyc(){
     var k=d.kyc;
     var stEl=document.getElementById('kyc-status');
     var subEl=document.getElementById('kyc-sub');
-    var stText,stColor='#f1f5f9';
-    if(k.status==='approved'){stText='✅ Approved';stColor='#34d399';}
-    else if(k.status==='pending_review'){stText='Verification pending';stColor='#fbbf24';}
-    else if(k.status==='rejected'){stText='❌ Needs attention';stColor='#f87171';}
-    else {stText='⚠️ Not submitted';stColor='#f59e0b';}
+    var stText,stColor='#0f172a';
+    if(k.status==='approved'){stText='✅ Approved';stColor='#059669';}
+    else if(k.status==='pending_review'){stText='Verification pending';stColor='#d97706';}
+    else if(k.status==='rejected'){stText='❌ Needs attention';stColor='#dc2626';}
+    else {stText='⚠️ Not submitted';stColor='#d97706';}
     if(stEl)stEl.textContent=stText;
     if(stEl)stEl.style.color=stColor;
     if(subEl){
@@ -1702,7 +1702,7 @@ function renderKycBanner(k){
   b.id='kyc-banner';
   b.style.cssText='background:linear-gradient(135deg,rgba(245,158,11,.14),rgba(234,88,12,.06));border:1px solid rgba(245,158,11,.4);border-radius:14px;padding:16px 18px;margin:14px 0;display:flex;align-items:center;gap:14px;flex-wrap:wrap';
   var msg = k.status==='pending_review' ? 'Your ID is under review. Payouts unlock once it is approved.' : k.status==='rejected' ? 'Your ID needs attention. Re-submit in the Compliance tab to unlock payouts.' : 'Verify your ID in the Compliance tab to unlock payouts. It takes 2 minutes.';
-  b.innerHTML='<span style="font-size:22px">🪪</span><div style="flex:1;min-width:220px"><b style="font-size:13.5px;color:#f1f5f9">Complete your ID verification</b><div style="font-size:12px;color:#c6cfdd;margin-top:2px">'+msg+'</div></div><button class="btn-mini" onclick="go(\'compliance\')" style="background:linear-gradient(135deg,#f59e0b,#f97316);color:#fff;border:none;padding:9px 18px;border-radius:9px;font-weight:700">Verify now</button>';
+  b.innerHTML='<span style="font-size:22px">🪪</span><div style="flex:1;min-width:220px"><b style="font-size:13.5px;color:#0f172a">Complete your ID verification</b><div style="font-size:12px;color:#334155;margin-top:2px">'+msg+'</div></div><button class="btn-mini" onclick="go(\'compliance\')" style="background:linear-gradient(135deg,#d97706,#ea580c);color:#fff;border:none;padding:9px 18px;border-radius:9px;font-weight:700">Verify now</button>';
   wrap.insertBefore(b, wrap.firstChild);
 }
 function onKycFile(ev){
@@ -1713,7 +1713,7 @@ function onKycFile(ev){
   fr.onload=function(){
     _kycImageB64=String(fr.result||'').split(',')[1]||'';
     var pv=document.getElementById('kyc-preview');
-    if(pv)pv.innerHTML='<img src="'+fr.result+'" style="max-width:200px;max-height:140px;border-radius:8px;border:1px solid #1e2030">';
+    if(pv)pv.innerHTML='<img src="'+fr.result+'" style="max-width:200px;max-height:140px;border-radius:8px;border:1px solid #e5e7eb">';
     updateKycMatch();
   };
   fr.readAsDataURL(f);
@@ -1724,8 +1724,8 @@ function updateKycMatch(){
   var el=document.getElementById('kyc-match');
   if(!el)return;
   var norm=function(s){return String(s||'').toLowerCase().replace(/[^a-z ]/g,'').replace(/\s+/g,' ').trim();};
-  if(legal&&bh){ el.textContent = norm(legal)===norm(bh) ? '✓ Names match' : '⚠ Names must match exactly'; el.style.color = norm(legal)===norm(bh) ? '#34d399' : '#fbbf24'; }
-  else { el.textContent='Enter the same name in both fields so they match.'; el.style.color='#6b7280'; }
+  if(legal&&bh){ el.textContent = norm(legal)===norm(bh) ? '✓ Names match' : '⚠ Names must match exactly'; el.style.color = norm(legal)===norm(bh) ? '#059669' : '#d97706'; }
+  else { el.textContent='Enter the same name in both fields so they match.'; el.style.color='#64748b'; }
 }
 function submitKyc(){
   var errEl=document.getElementById('kyc-err'); errEl.style.display='none';
@@ -1771,7 +1771,7 @@ function deleteAffiliateAccount(){
   }).catch(function(){alert('Server error. Please try again.');});
 }
 function showKycTerms(){
-  var terms='<div style="font-size:13px;line-height:1.8;color:#c6cfdd;max-height:60vh;overflow-y:auto;padding:4px"><h3 style="color:#f1f5f9;margin:0 0 10px">9amLeads Affiliate Agreement (Summary)</h3>'+
+  var terms='<div style="font-size:13px;line-height:1.8;color:#334155;max-height:60vh;overflow-y:auto;padding:4px"><h3 style="color:#0f172a;margin:0 0 10px">9amLeads Affiliate Agreement (Summary)</h3>'+
   '<p><b>1. Referrals.</b> You earn a commission for customers who sign up with your code and meet the qualifying criteria set out in your dashboard. Commission is paid on a monthly cycle once the customer has paid their qualifying invoices.</p>'+
   '<p><b>2. Identity verification (KYC).</b> By law we must verify your identity before any payment. You agree to provide a genuine, clear photo of your driving licence or passport, your legal name, and accurate bank details. The legal name on your ID must match the bank account holder.</p>'+
   '<p><b>3. Your obligations.</b> You agree to refer genuine businesses in good faith, not to use fraudulent, deceptive or self-referral activity, and not to misrepresent 9amLeads to potential customers.</p>'+
@@ -1781,13 +1781,13 @@ function showKycTerms(){
   '<p><b>7. Termination.</b> We may terminate this agreement at any time. Earned and verified commissions are still paid.</p>'+
   '<p><b>8. Data.</b> Your data is handled under our Privacy Policy and used to run the programme and meet legal obligations.</p></div>';
   var ov=document.createElement('div');
-  ov.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
-  ov.innerHTML='<div style="background:#0b0d14;border:1px solid #1e2030;border-radius:14px;max-width:560px;width:100%;padding:22px">'+terms+'<div style="margin-top:14px;text-align:right"><button class="btn-mini" onclick="this.closest(\'div\').parentElement.remove()">Close</button></div></div>';
+  ov.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.innerHTML='<div style="background:#0f172a;border:1px solid #e5e7eb;border-radius:14px;max-width:560px;width:100%;padding:22px">'+terms+'<div style="margin-top:14px;text-align:right"><button class="btn-mini" onclick="this.closest(\'div\').parentElement.remove()">Close</button></div></div>';
   document.body.appendChild(ov);
 }
 /* ---- REWARD WHEEL ---- */
 var _wheel=null,_wheelSpinIdx=0,_wheelAnim=null;
-var WHEEL_COLORS=['#f59e0b','#0ea5e9','#f97316','#10b981'];
+var WHEEL_COLORS=['#d97706','#0284c7','#ea580c','#059669'];
 function loadWheel(){
   api('GET','/affiliate/wheel').then(function(d){
     if(!d.success)return;
@@ -1800,7 +1800,7 @@ function loadWheel(){
     document.getElementById('rw-bar').style.width=pct+'%';
     var btn=document.getElementById('rw-spin-btn');
     var sub=document.getElementById('rw-sub');
-    if(d.wheel.can_spin){btn.disabled=false;btn.style.opacity='1';sub.innerHTML='<b style="color:#f59e0b">Spin ready!</b> You have '+(d.wheel.since_last_spin||50)+' retained signups.';}
+    if(d.wheel.can_spin){btn.disabled=false;btn.style.opacity='1';sub.innerHTML='<b style="color:#d97706">Spin ready!</b> You have '+(d.wheel.since_last_spin||50)+' retained signups.';}
     else {btn.disabled=true;btn.style.opacity='.4';sub.textContent='Every 50 retained signups unlocks a spin. '+(50-(d.wheel.progress||0))+' more to go. Prizes up to £'+(d.wheel.prizes[d.wheel.prizes.length-1]||200)+'.';}
     renderWheelHistory(d.history||[]);
     // Overview widget (draw the actual wheel on the dashboard)
@@ -1834,7 +1834,7 @@ function drawWheelCanvas(canvasId, prizes, rotDeg){
     ctx.closePath();
     ctx.fillStyle=WHEEL_COLORS[i%WHEEL_COLORS.length];
     ctx.fill();
-    ctx.strokeStyle='#0b0d14';ctx.lineWidth=Math.max(1,size/110);ctx.stroke();
+    ctx.strokeStyle='#0f172a';ctx.lineWidth=Math.max(1,size/110);ctx.stroke();
     ctx.save();
     ctx.translate(cx,cy);
     ctx.rotate(a0+(a1-a0)/2);
@@ -1902,8 +1902,8 @@ function renderWheelHistory(h){
   var w=document.getElementById('rw-history-wrap');
   if(!w)return;
   if(!h||!h.length){w.innerHTML='<div class="muted">No spins yet. Hit 50 retained signups to unlock your first.</div>';return;}
-  var hh='<h3 style="font-size:13px;font-weight:700;color:#f1f5f9;margin:0 0 10px">Spin history</h3><table><thead><tr><th>Date</th><th>Tier</th><th>Prize</th></tr></thead><tbody>';
-  h.forEach(function(s){hh+='<tr><td>'+fmtDate(s.at)+'</td><td>Tier '+s.tier+'</td><td style="color:#34d399;font-weight:700">£'+s.prize+'</td></tr>';});
+  var hh='<h3 style="font-size:13px;font-weight:700;color:#0f172a;margin:0 0 10px">Spin history</h3><table><thead><tr><th>Date</th><th>Tier</th><th>Prize</th></tr></thead><tbody>';
+  h.forEach(function(s){hh+='<tr><td>'+fmtDate(s.at)+'</td><td>Tier '+s.tier+'</td><td style="color:#059669;font-weight:700">£'+s.prize+'</td></tr>';});
   hh+='</tbody></table>';w.innerHTML=hh;
 }
 function copyPb(id){
@@ -2023,7 +2023,7 @@ function loadPbToday(){
       else if(urgent)title.textContent=urgent+' follow-up'+(urgent>1?'s':'')+' waiting today';
       else title.textContent=finalRows.length+' action'+(finalRows.length>1?'s':'')+' worth doing today';
     }
-    if(!finalRows.length){ body.innerHTML='<div class="muted">No urgent actions right now. Keep sharing your code - every new referral shows up here the moment they sign up. Visit the <a href="#" onclick="go(\'followups\');return false" style="color:#7dd3fc">Follow-ups tab</a> to plan ahead.</div>'; return; }
+    if(!finalRows.length){ body.innerHTML='<div class="muted">No urgent actions right now. Keep sharing your code - every new referral shows up here the moment they sign up. Visit the <a href="#" onclick="go(\'followups\');return false" style="color:#0284c7">Follow-ups tab</a> to plan ahead.</div>'; return; }
     var out='';
     finalRows.forEach(function(r){
       var p=r.p||{};
@@ -2034,10 +2034,10 @@ function loadPbToday(){
           '<button class="btn-mini" onclick="pbWaQuick(\''+esc(p.id)+'\',0)" title="WhatsApp a welcome message">💬 WhatsApp</button>'+
           (p.email?('<a class="btn-mini" href="mailto:'+esc(p.email)+'" style="text-decoration:none">✉️ Email</a>'):'')+
           '<button class="btn-mini" onclick="pbQuickMsg(\''+esc(p.id)+'\',0)" title="Copy a ready-to-send message">📋 Copy msg</button>'+
-          '<button class="btn-mini" style="color:#7dd3fc" onclick="pbShowMsgs(this,\''+esc(p.id)+'\')">More messages ▾</button></div>'+
+          '<button class="btn-mini" style="color:#0284c7" onclick="pbShowMsgs(this,\''+esc(p.id)+'\')">More messages ▾</button></div>'+
           '<div id="pb-q-'+esc(p.id)+'" style="display:none;margin-top:6px"></div>';
       }
-      out+='<div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.07)"><div style="display:flex;gap:10px;align-items:flex-start"><span>'+r.ico+'</span><div style="flex:1;min-width:0"><div style="font-size:13px;color:#e2e8f0;line-height:1.55">'+r.txt+'</div>'+quick+'</div></div></div>';
+      out+='<div style="padding:10px 0;border-bottom:1px solid #f8fafc"><div style="display:flex;gap:10px;align-items:flex-start"><span>'+r.ico+'</span><div style="flex:1;min-width:0"><div style="font-size:13px;color:#0f172a;line-height:1.55">'+r.txt+'</div>'+quick+'</div></div></div>';
     });
     body.innerHTML=out;
   }).catch(function(){ body.innerHTML='<div class="muted">Could not load your pipeline. Please try again.</div>'; });
@@ -2051,7 +2051,7 @@ function pbShowMsgs(btn,id){
   if(visible)return;
   var p=pbFindPerson(id); if(!p)return;
   box.innerHTML=PB_MSGS.map(function(m,idx){
-    return '<div style="display:flex;gap:8px;align-items:flex-start;margin:6px 0;background:rgba(11,13,20,.5);border:1px solid rgba(255,255,255,.08);border-radius:9px;padding:8px 10px"><div style="flex:1;font-size:12px;color:#cbd5e1;line-height:1.5"><b style="color:#e2e8f0">'+esc(m.lab)+'</b><br>'+esc(pbFill(m.t,p.name||p.company||'there'))+'</div><div style="display:flex;flex-direction:column;gap:5px"><button class="btn-mini" onclick="pbQuickMsg(\''+esc(id)+'\','+idx+')">Copy</button><button class="btn-mini" onclick="pbWaQuick(\''+esc(id)+'\','+idx+')">WhatsApp</button></div></div>';
+    return '<div style="display:flex;gap:8px;align-items:flex-start;margin:6px 0;background:rgba(241,245,249,.7);border:1px solid #e5e7eb;border-radius:9px;padding:8px 10px"><div style="flex:1;font-size:12px;color:#334155;line-height:1.5"><b style="color:#0f172a">'+esc(m.lab)+'</b><br>'+esc(pbFill(m.t,p.name||p.company||'there'))+'</div><div style="display:flex;flex-direction:column;gap:5px"><button class="btn-mini" onclick="pbQuickMsg(\''+esc(id)+'\','+idx+')">Copy</button><button class="btn-mini" onclick="pbWaQuick(\''+esc(id)+'\','+idx+')">WhatsApp</button></div></div>';
   }).join('');
 }
 function renderPayoutProgress(payout, aff){
@@ -2063,7 +2063,7 @@ function renderPayoutProgress(payout, aff){
   var pct = Math.min(100, Math.round((tot / Math.max(25, rate)) * 100));
   document.getElementById('c-payout-bar').style.width=Math.max(4, pct)+'%';
   var sub=document.getElementById('c-payout-sub');
-  if(sub) sub.innerHTML='<b style="color:#34d399">Paid as commissions clear.</b> Each customer\'s 2nd invoice pays you \u00a3'+rate+' within about a week. No minimum.';
+  if(sub) sub.innerHTML='<b style="color:#059669">Paid as commissions clear.</b> Each customer\'s 2nd invoice pays you \u00a3'+rate+' within about a week. No minimum.';
 }
 function renderPipeline(pl){
   var order=['referral_pending','earning','approved','paid'];
@@ -2160,15 +2160,15 @@ function renderLeadExamples(){
   var h='<div class="empty" style="text-align:left"><b>📥 No leads in your inbox yet.</b><br>Share your code. Every customer who signs up with it appears here so you can follow up and monitor them.<br><br><b>Here is exactly what each stage looks like:</b></div>'+
   '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:12px">';
   ex.forEach(function(e){
-    h+='<div style="background:rgba(255,255,255,.04);border:1px solid #1e2030;border-radius:12px;padding:14px">'+
+    h+='<div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;padding:14px">'+
     '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:18px">'+e.icon+'</span><span class="badge '+e.badge+'">'+e.stage+'</span></div>'+
-    '<div style="font-size:13px;color:#f1f5f9;font-weight:700">'+e.emoji+' '+e.company+'</div>'+
-    '<div style="font-size:11.5px;color:#94a3b8;margin:3px 0">'+e.email+', '+e.phone+'</div>'+
-    '<div style="font-size:11px;color:#38bdf8;margin-bottom:8px">'+e.product+'</div>'+
-    '<div style="font-size:11.5px;color:#c6cfdd;line-height:1.6">'+e.extra+'</div>'+
+    '<div style="font-size:13px;color:#0f172a;font-weight:700">'+e.emoji+' '+e.company+'</div>'+
+    '<div style="font-size:11.5px;color:#64748b;margin:3px 0">'+e.email+', '+e.phone+'</div>'+
+    '<div style="font-size:11px;color:#0284c7;margin-bottom:8px">'+e.product+'</div>'+
+    '<div style="font-size:11.5px;color:#334155;line-height:1.6">'+e.extra+'</div>'+
     '</div>';
   });
-  h+='</div><p style="font-size:12px;color:#94a3b8;margin-top:14px">💡 These are examples. Your leads will show here the moment a customer signs up with your code, and you can add your own leads with the <b>+ Add lead</b> button above.</p>';
+  h+='</div><p style="font-size:12px;color:#64748b;margin-top:14px">💡 These are examples. Your leads will show here the moment a customer signs up with your code, and you can add your own leads with the <b>+ Add lead</b> button above.</p>';
   return h;
 }
 function quickNote(id){
@@ -2203,7 +2203,7 @@ function openLeadModal(id){
       var curStep=curLead.journey.steps[sIdx]||null;
       jbox.style.display='block';
       jbox.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.3);border-radius:10px;padding:10px 14px;margin-bottom:14px">'+
-        '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:16px">'+(curLead.journey.paid?'✅':curLead.journey.cleared?'💰':curLead.journey.earned?'🎉':curLead.journey.paying?'💳':'🚀')+'</span><div><div style="font-size:12.5px;font-weight:800;color:#e2e8f0">'+(curStep?esc(curStep.label):'Signed up')+'</div><div style="font-size:11px;color:#94a3b8">'+(curStep&&curStep.note?esc(curStep.note):'')+'</div></div></div>'+
+        '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:16px">'+(curLead.journey.paid?'✅':curLead.journey.cleared?'💰':curLead.journey.earned?'🎉':curLead.journey.paying?'💳':'🚀')+'</span><div><div style="font-size:12.5px;font-weight:800;color:#0f172a">'+(curStep?esc(curStep.label):'Signed up')+'</div><div style="font-size:11px;color:#64748b">'+(curStep&&curStep.note?esc(curStep.note):'')+'</div></div></div>'+
         '<div style="display:flex;align-items:center;gap:8px">'+journeyDots(curLead.journey)+'<button class="jbtn" id="ld-jview">View journey</button></div></div>';
       var _jb=document.getElementById('ld-jview');
       if(_jb)_jb.onclick=function(){openJourney(curLead.journey,(curLead.company||curLead.email||'Referral'));};
