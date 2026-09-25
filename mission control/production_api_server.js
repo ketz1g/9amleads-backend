@@ -16305,11 +16305,13 @@ app.get('/api/admin/print-post', adminAuth, (req, res) => {
     var summary = {
       ready: rows.filter(function(r) { return r.status === 'ready'; }).length,
       auto_send_on: rows.filter(function(r) { return r.status === 'auto_send_on'; }).length,
-      auto_send_paused: rows.filter(function(r) { return r.auto_paused; }).length,
+      auto_send_paused: rows.filter(function(r) { return r.auto_send && r.auto_paused; }).length,
       customers_sent: rows.filter(function(r) { return r.campaigns > 0; }).length,
       total_items_sent: rows.reduce(function(t, r) { return t + r.items_sent; }, 0)
     };
-    var recent = (d.direct_mail_campaigns || []).slice().sort(function(a, b) {
+    // Only real customers' campaigns (cemail holds non-internal customers only), so
+    // test/internal sends never clutter the founder's send log.
+    var recent = (d.direct_mail_campaigns || []).filter(function(c) { return c && cemail[String(c.customer_id)]; }).sort(function(a, b) {
       return String(b.updated_at || b.created_at || '').localeCompare(String(a.updated_at || a.created_at || ''));
     }).slice(0, 30).map(function(c) {
       return {
