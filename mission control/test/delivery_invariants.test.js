@@ -130,6 +130,8 @@ ok('dashboard reports conversion rate + why-lost',
   has('conversion_rate: contacted.length') && has('loss_reasons: (function()'));
 ok('admin booked/lost counts derived from lead_status',
   has("booked_count: (db.leads || []).filter") && has("lost_count: (db.leads || []).filter"));
+ok('trial nurture is self-healing (3 daily runs + boot catch-up)',
+  has("cron.schedule('0 10,14,18 * * *'") && has('CAMPAIGN CATCH-UP ON BOOT'));
 ok('morning readiness summary is digest-mode (silent when all ready)',
   has("all ' + rows.length + ' ready - no email (digest mode)"));
 ok('early readiness + guarantee do not send duplicate pre-9am emails',

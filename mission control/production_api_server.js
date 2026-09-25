@@ -22995,7 +22995,11 @@ async function runCampaignEmails(dry) {
   console.log('[CAMPAIGN] ' + (dry ? ('DRY RUN: would send ' + log.length + ' email(s)') : ('Sent ' + sent + ' campaign emails')));
   return { success: true, sent: dry ? 0 : sent, dry: !!dry, would_send: log.length, log: log };
 }
-cron.schedule('0 10 * * *', async () => {
+// Trial/nurture campaigns run THREE times a day (10:00, 14:00, 18:00 UK). Sending is
+// deduped by `campaign_sent`, so extra runs never double-send - they simply give the
+// sequence three chances to go out, self-healing a run missed by a restart/deploy
+// (which is why some trials only ever got trial_day1 and then went silent).
+cron.schedule('0 10,14,18 * * *', async () => {
   try { await runCampaignEmails(false); } catch (e) { console.log('[CAMPAIGN] cron error: ' + e.message); }
 }, { timezone: 'Europe/London' });
 app.post('/api/admin/run-campaigns', adminAuth, async (req, res) => {
@@ -42205,6 +42209,22 @@ app.listen(PORT, () => {
   } catch(e) {
     console.log('[SEO] Startup blog seed error: ' + (e && e.message || e));
   }
+
+  // CAMPAIGN CATCH-UP ON BOOT: the scheduled trial/nurture run can be missed when the
+  // service restarts around the run time (deploys/restarts). Sending is deduped by
+  // `campaign_sent`, so this can NEVER double-send - it only sends templates not yet
+  // sent. We run once ~90s after boot, only during the day (10:00-21:00 UK) so a night
+  // deploy doesn't email customers at 3am.
+  setTimeout(function() {
+    try {
+      var _ukH = parseInt(new Date().toLocaleString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', hour12: false }), 10);
+      if (_ukH >= 10 && _ukH <= 21) {
+        runCampaignEmails(false).then(function(r) {
+          if (r && r.sent) console.log('[CAMPAIGN] boot catch-up sent ' + r.sent + ' email(s)');
+        }).catch(function(e) { console.log('[CAMPAIGN] boot catch-up error: ' + e.message); });
+      }
+    } catch(e) {}
+  }, 90000);
 
   // CRASH / RESTART ALERT: if the server boots, email the owner. If this happens
   // outside a deploy, the process crashed and auto-restarted (Render restarts it).
