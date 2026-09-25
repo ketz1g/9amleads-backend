@@ -109,6 +109,8 @@ ok('admin Print & Post view + auto-send activity logging exist',
   has("app.get('/api/admin/print-post'") && has("logActivity(cust.id, 'auto_send_sent'"));
 ok('print-post view lists ALL customers + set-up counts',
   has('rows: rows, engaged_count') && has('needs_materials: rows.filter'));
+ok('admin can email a materials-help offer (deduped)',
+  has("app.post('/api/admin/print-post/help-nudge'") && has('pp_help_notified'));
 ok('admin can connect/edit/disconnect a customer CRM webhook',
   has("app.post('/api/admin/crm-connect'"));
 ok('sendBrevoEmail accepts a string recipient (goodwill alerts actually send)',

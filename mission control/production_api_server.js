@@ -16539,6 +16539,53 @@ app.get('/api/admin/print-post', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/print-post/help-nudge - email the customers who SAVED A CARD but
+// haven't uploaded their leaflet/letter, offering to add it for them (reply with the
+// artwork, or ask for a hand). Body: { emails?: [], force?: bool }.
+// Default target: card saved + no materials. Deduped (7 days) so nobody is pestered.
+app.post('/api/admin/print-post/help-nudge', adminAuth, async (req, res) => {
+  try {
+    var d = getDb();
+    var only = Array.isArray(req.body && req.body.emails) && req.body.emails.length ? req.body.emails.map(function(e) { return String(e).toLowerCase().trim(); }) : null;
+    var force = !!(req.body && req.body.force);
+    var tplByCust = {};
+    (d.direct_mail_templates || []).forEach(function(t) {
+      var cid = String(t && t.customer_id || ''); if (!cid) return;
+      var cur = tplByCust[cid];
+      if (!cur || String(t.created_at || '') > String(cur.created_at || '')) tplByCust[cid] = t;
+    });
+    var sent = [], skipped = [];
+    var custs = (d.customers || []).filter(function(c) { return !(typeof isInternalAccount === 'function' && isInternalAccount(c)); });
+    for (var i = 0; i < custs.length; i++) {
+      var c = custs[i];
+      var em = String(c.email || '').toLowerCase();
+      if (only && only.indexOf(em) === -1) continue;
+      var card = !!(c.stripe_payment_method_id || c.stripe_customer_id);
+      var tpl = tplByCust[String(c.id)];
+      var materials = !!(tpl && tpl.flyer_front_material_id && (tpl.letter_material_id || tpl.ai_generated_text));
+      if (!only) { if (!card || materials) continue; } // default targeting: card but no materials
+      if (!force && c.pp_help_notified && (Date.now() - new Date(c.pp_help_notified).getTime()) < 7 * 86400000) { skipped.push({ email: c.email, reason: 'recently notified' }); continue; }
+      var _name = String(c.contact_name || c.company || 'there').replace(/[<>&]/g, '');
+      var html = '<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:26px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px">'
+        + '<div style="font-size:20px;font-weight:800;color:#0f172a;margin-bottom:8px">Need a hand adding your leaflet?</div>'
+        + '<p style="font-size:14px;color:#334155;line-height:1.7">Hi ' + _name + ',</p>'
+        + '<p style="font-size:14px;color:#334155;line-height:1.7">We can see you\u2019ve added your card and are set up for <b>Print &amp; Post</b>, but we haven\u2019t received your leaflet/letter artwork yet - so nothing can be posted until it\u2019s on file.</p>'
+        + '<p style="font-size:14px;color:#334155;line-height:1.7"><b>Want us to do it for you?</b> Just reply to this email and attach your artwork (PDF, JPG or PNG) and we\u2019ll upload it and finish the setup for you.</p>'
+        + '<p style="font-size:14px;color:#334155;line-height:1.7">Not sure what to send, or stuck on the upload? Reply and we\u2019ll send a simple checklist - or a ready-made template you can use. No design skills needed.</p>'
+        + '<p style="font-size:14px;color:#334155;line-height:1.7">If you\u2019d rather do it yourself, open your dashboard &rarr; <b>Print &amp; Post</b> and use the <b>Need help?</b> button any time.</p>'
+        + '<p style="font-size:13px;color:#64748b;line-height:1.6;margin-top:16px">Kind regards,<br>The 9amLeads team<br><a href="https://9amleads.com/portal/direct-mail.html" style="color:#0284c7">Open Print &amp; Post</a></p>'
+        + '</div>';
+      try {
+        await sendBrevoEmail({ email: c.email, name: c.company || c.contact_name || 'Customer' }, 'Need a hand adding your leaflet to Print & Post?', html);
+        c.pp_help_notified = new Date().toISOString();
+        sent.push(c.email);
+      } catch(e2) { skipped.push({ email: c.email, reason: 'send failed' }); }
+    }
+    if (!req.body || !req.body.dry_run) saveDb();
+    res.json({ success: true, sent_count: sent.length, sent: sent, skipped: skipped });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== NEAREST-AREA FALLBACK =====
 // When a customer's exact areas are dry, the delivery broadens to the NEAREST
 // neighbouring areas first (geographically close) before the full pool. This keeps
