@@ -178,6 +178,21 @@ footer a{color:var(--accent);text-decoration:underline}
 <div id="res-nudge" style="display:none;font-size:12px;color:var(--text2);margin-top:10px;line-height:1.6">&#128073; Mark leads as <b>Contacted / Quoted / Won</b> in <a href="/portal/leads.html" style="color:var(--accent)">My Leads</a> and your pipeline, revenue and ROI appear here automatically.</div>
 </div>
 
+<!-- HOW TO TRACK YOUR LEADS (dismissible, shown until dismissed) -->
+<div class="card" id="track-tip-card" style="display:none;margin-bottom:16px;border:1px solid #bfdbfe;background:linear-gradient(135deg,#eff6ff,#f0f9ff)">
+<div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">
+<div style="flex:1;min-width:240px">
+<div style="font-size:12px;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px"><i class="fas fa-graduation-cap"></i> How to track your leads</div>
+<div style="font-size:13px;color:#0c4a6e;line-height:1.85">
+1. Open <a href="/portal/leads.html" style="color:#0284c7;font-weight:700">My Leads</a> and mark each lead <b>Contacted &rarr; Quoted &rarr; Won</b> (or Lost).<br>
+2. Set a <b>&#9200; follow-up</b> date and add <b>&#128221; notes</b> so nothing slips.<br>
+3. Your <b>results, revenue, ROI and best areas</b> then appear here automatically.
+</div>
+</div>
+<button onclick="dismissTrackTip()" style="flex-shrink:0;padding:7px 14px;border-radius:8px;background:#0284c7;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Got it</button>
+</div>
+</div>
+
 <!-- FOLLOW-UPS DUE -->
 <div class="card" id="followups-card" style="display:none;margin-bottom:16px">
 <div class="sect-title"><i class="fas fa-bell" style="color:#7c3aed"></i> Follow-ups due <span style="margin-left:auto;font-size:11px;color:var(--muted)">Set them in <a href="/portal/leads.html" style="color:var(--accent)">My Leads</a></span></div>
@@ -249,6 +264,7 @@ footer a{color:var(--accent);text-decoration:underline}
 <!-- QUICK TOOLS GRID. one-click links to each dedicated page -->
 <style>.htip{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;background:#e2e8f0;color:#475569;font-size:10px;font-weight:700;cursor:help;margin-left:4px;vertical-align:middle;flex-shrink:0}</style>
 <script>
+function dismissTrackTip() { try { localStorage.setItem('track_tip_dismissed', '1'); } catch(e) {} var el = document.getElementById('track-tip-card'); if (el) el.style.display = 'none'; }
 function helpTip(text){ return '<span class="htip" onclick="event.stopPropagation();showHelp(this,\'' + String(text).replace(/'/g,"\\'").replace(/"/g,'&quot;') + '\')" title="' + String(text).replace(/"/g,'&quot;') + '">?</span>'; }
 function showHelp(el, text){
   try { var e2 = document.getElementById('htip-pop'); if (e2) e2.remove(); } catch(e) {}
@@ -2232,6 +2248,13 @@ document.querySelectorAll('.modal').forEach(function(m){
             var el = document.getElementById('res-areas');
             if (el && rows.length) { el.innerHTML = '<b>Your areas:</b> ' + rows.map(function(a){ return _esc(a.area) + ' ' + a.won + '/' + a.total + ' won (' + _esc(a.conv) + ')'; }).join(' · '); el.style.display = 'block'; }
           }).catch(function(){});
+      } catch(e) {}
+      // "How to track your leads" tip - shown until the customer dismisses it.
+      try {
+        if (localStorage.getItem('track_tip_dismissed') !== '1') {
+          var _tt = document.getElementById('track-tip-card');
+          if (_tt) _tt.style.display = 'block';
+        }
       } catch(e) {}
       // Follow-ups due (today / overdue) from /api/follow-ups
       try {

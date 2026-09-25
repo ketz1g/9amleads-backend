@@ -390,6 +390,22 @@ tr:last-child td{border-bottom:none}
 <a href="#" onclick="openDemoCustomer();return false" class="aff-cta" style="background:rgba(52,211,153,.15);border-color:rgba(52,211,153,.4);color:#059669">👀 See what a customer sees</a>
 </div>
 </div>
+
+<!-- HOW TO TRACK YOUR REFERRALS (dismissible) -->
+<div id="aff-track-tip" style="background:linear-gradient(135deg,#eff6ff,#f0f9ff);border:1px solid #bfdbfe;border-radius:14px;padding:16px 18px;margin-bottom:16px">
+<div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">
+<div style="flex:1;min-width:240px">
+<div style="font-size:12px;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">&#128200; How to track your referrals &amp; earnings</div>
+<div style="font-size:13px;color:#0c4a6e;line-height:1.85">
+1. Share your code / link above, or add a business on the <b>Overview</b> tab.<br>
+2. Every sign-up appears under <b>Referrals</b> with their trial/paid status &mdash; set follow-ups so you chase at the right time.<br>
+3. When they pay their 2nd invoice, your <b>&pound;25</b> shows in <b>Payouts</b> (what's due and what's been paid).
+</div>
+</div>
+<button onclick="dismissAffTip()" style="flex-shrink:0;padding:7px 14px;border-radius:8px;background:#0284c7;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Got it</button>
+</div>
+</div>
+
 <div class="hero">
 <h1>Welcome back, <span id="a-name">Affiliate</span> 👋</h1>
 <p>Share your code below. Every customer who uses it for <b>any lead type</b> gets a <b>14-day free trial</b>. You earn <b>£25</b> for every customer who pays their second invoice, paid within about a week of it clearing. Use the <b>Tools</b> tab for ready-made phone scripts, emails, SMS and social posts to help your referrals start the free trial.</p>
@@ -890,6 +906,7 @@ var IS_AFF_DEMO = false;
 var TOKEN = sessionStorage.getItem('mld_affiliate_session') || localStorage.getItem('mld_affiliate_token') || '';
 var D = null, RES = null, LEADS = null, curType = 'moving';
 // Show a dash instead of "£0" until there's real money to display.
+function dismissAffTip(){ try { localStorage.setItem('aff_tip_dismissed','1'); } catch(e) {} var el=document.getElementById('aff-track-tip'); if(el) el.style.display='none'; }
 function money(v){
   var n=Number(v);
   return (isFinite(n)&&n>0)?('£'+(n%1===0?n:n.toFixed(2))):'-';
@@ -1233,6 +1250,7 @@ function addProspect(){
 }
 function init(){
   document.getElementById('dash-view').style.display='block';
+  try { if (localStorage.getItem('aff_tip_dismissed') === '1') { var _at = document.getElementById('aff-track-tip'); if (_at) _at.style.display = 'none'; } } catch(e) {}
   document.getElementById('login-view').style.display='none';
   document.getElementById('register-view').style.display='none';
   document.getElementById('logout').style.display='inline-block';
