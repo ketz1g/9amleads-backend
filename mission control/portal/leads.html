@@ -386,7 +386,7 @@ function renderLeadList(dayLeads, noGroup) {
         '<div class="addr">' + biz + '</div>' +
         '<div class="meta">' + nbFull + '</div>' +
         '<div class="meta">' + metaParts.join(' \u00b7 ') + (chLink ? ' \u00b7 ' + chLink : '') + '</div></div>' +
-        '<div class="right"><span class="badge">' + status + '</span>' + postBadge(d, l.id) + sentOnHtml + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:4px">' + mailBtn(l.id, d) + rejectBtn(l.id, d) + '</div>' + outcomeBtn(l.id, d) + '</div></div>';
+        '<div class="right"><span class="badge">' + status + '</span>' + postBadge(d, l.id) + sentOnHtml + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:4px">' + mailBtn(l.id, d) + rejectBtn(l.id, d) + '</div>' + outcomeBtn(l.id, l) + '</div></div>';
     } else if (product === 'probate') {
       var pName = d.deceasedName || d.name || 'Probate Estate';
       var pAddr = d.deceasedAddress || d.address || '';
@@ -406,7 +406,7 @@ function renderLeadList(dayLeads, noGroup) {
         '<div class="addr">' + pName + '</div>' +
         '<div class="meta">' + pFullAddr + '</div>' +
         '<div class="meta">' + pMeta.join(' \u00b7 ') + '</div></div>' +
-        '<div class="right"><span class="badge">' + status + '</span>' + postBadge(d, l.id) + (pSrcLink ? pSrcLink : '') + sentOnHtml + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:4px">' + mailBtn(l.id, d) + rejectBtn(l.id, d) + '</div>' + outcomeBtn(l.id, d) + '</div></div>';
+        '<div class="right"><span class="badge">' + status + '</span>' + postBadge(d, l.id) + (pSrcLink ? pSrcLink : '') + sentOnHtml + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:4px">' + mailBtn(l.id, d) + rejectBtn(l.id, d) + '</div>' + outcomeBtn(l.id, l) + '</div></div>';
     } else if (product === 'planning') {
       var planTitle = cleanPlanAddr(d.address) || (d.description||'').substring(0,40) || 'Planning Application';
       var planDate = d.dateSubmitted || d.receivedDate || d.date_received || l.created_at || '';
@@ -420,7 +420,7 @@ function renderLeadList(dayLeads, noGroup) {
       html += '<div class="lead' + selClass + '">' + chk + '<div style="flex:1"><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' + replacedBadge +
         '<div class="addr">' + planTitle + '</div>' +
         '<div class="meta">' + planMeta.join(' \u00b7 ') + (planLink ? ' \u00b7 ' + planLink : '') + '</div>' + planDesc + planApplicant + '</div>' +
-        '<div class="right"><span class="badge">' + status + '</span>' + sentOnHtml + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:4px">' + mailBtn(l.id) + rejectBtn(l.id, null) + '</div>' + '</div></div>';
+        '<div class="right"><span class="badge">' + status + '</span>' + sentOnHtml + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:4px">' + mailBtn(l.id) + rejectBtn(l.id, null) + '</div>' + outcomeBtn(l.id, l) + '</div></div>';
     } else if (product === 'tenders') {
       // Tenders are applied for ONLINE (portal/email), not via post, so show the
       // buyer contact + apply button instead of a Print & Post button.
@@ -437,7 +437,7 @@ function renderLeadList(dayLeads, noGroup) {
       html += '<div class="lead' + selClass + '">' + chk + '<div style="flex:1"><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' + replacedBadge +
         '<div class="addr">' + tendTitle + '</div>' +
         '<div class="meta">' + tendMeta.join(' \u00b7 ') + (tendLink ? ' \u00b7 ' + tendLink : '') + '</div>' + tendDesc + tendContactHtml + '</div>' +
-        '<div class="right"><span class="badge">' + status + '</span>' + sentOnHtml + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:4px">' + applyBtn + rejectBtn(l.id, d) + '</div>' + '</div></div>';
+        '<div class="right"><span class="badge">' + status + '</span>' + sentOnHtml + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:4px">' + applyBtn + rejectBtn(l.id, d) + '</div>' + outcomeBtn(l.id, l) + '</div></div>';
     } else {
       // moving / default
       var addr = d.address || d.title || 'Property';
@@ -458,7 +458,7 @@ function renderLeadList(dayLeads, noGroup) {
         '<div class="meta">' + moveMeta.join(' \u00b7 ') + '</div></div>' +
         '<div class="right"><div class="price">' + (d.price ? '\u00a3'+Number(d.price).toLocaleString() : '') + '</div><span class="badge ' + (status === 'newly listed' ? 'badge-new' : '') + '">' + status + '</span>' +
         sentOnHtml +
-        postBadge(d, l.id) + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:4px">' + mailBtn(l.id, d) + rejectBtn(l.id, d) + '</div>' + '</div></div>';
+        postBadge(d, l.id) + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:4px">' + mailBtn(l.id, d) + rejectBtn(l.id, d) + '</div>' + outcomeBtn(l.id, l) + '</div></div>';
     }
   }
   return html;
@@ -494,9 +494,9 @@ function rejectLead(leadId){
     .catch(function(e){ alert('Error: ' + e.message); });
 }
 // Track the outcome of a lead (Contacted / Quoted / Won).
-function outcomeBtn(leadId, d){
-  var cur = (d && d.lead_status) || 'new';
-  var lbls = { new: '#64748b', contacted: '#f59e0b', quoted: '#0ea5e9', won: '#16a34a' };
+function outcomeBtn(leadId, row){
+  var cur = (row && row.lead_status) || 'new';
+  var lbls = { new: '#64748b', contacted: '#f59e0b', quoted: '#0ea5e9', won: '#16a34a', lost: '#dc2626' };
   function btn(st, label){
     var active = cur === st;
     var col = lbls[st] || '#64748b';
@@ -504,7 +504,7 @@ function outcomeBtn(leadId, d){
   }
   return '<div style="margin-top:5px;display:flex;align-items:center;gap:2px;flex-wrap:wrap">' +
     '<span style="font-size:9px;color:var(--muted);margin-right:2px">Outcome:</span>' +
-    btn('contacted','Contacted') + btn('quoted','Quoted') + btn('won','Won') +
+    btn('contacted','Contacted') + btn('quoted','Quoted') + btn('won','Won') + btn('lost','Lost') +
     '</div>';
 }
 function maybeShowEngageNudge(leads) {
@@ -512,7 +512,7 @@ function maybeShowEngageNudge(leads) {
     var el = document.getElementById('engage-nudge');
     if (!el || !leads || !leads.length) return;
     try { if (localStorage.getItem('engage_nudge_dismissed') === '1') return; } catch(e) {}
-    var anyEngaged = leads.some(function(l){ return l.status && String(l.status).toLowerCase() !== 'new'; });
+    var anyEngaged = leads.some(function(l){ return l.lead_status && String(l.lead_status).toLowerCase() !== 'new'; });
     if (!anyEngaged) el.style.display = 'block';
   } catch(e) {}
 }
@@ -551,7 +551,14 @@ function populateNoLeads() {
 }
 function setLeadStatus(leadId, status){
   try { trackEvent('lead_' + status, {}); } catch(e) {}
-  fetch('/api/leads/' + leadId + '/status', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _token }, body: JSON.stringify({ status: status }) })
+  var body = { status: status };
+  try {
+    // Capture the useful extra detail so ROI + "why lost" actually record.
+    if (status === 'lost') { var why = prompt('Why was this lead lost? (optional - only you see this)', ''); if (why) body.outcome_reason = why; }
+    if (status === 'won') { var val = prompt('Deal value for this won job in £ (optional) - used for your ROI and revenue totals', ''); if (val !== null && val !== '' && !isNaN(parseFloat(val))) body.actual_revenue = parseFloat(val); }
+    if (status === 'quoted') { var qv = prompt('Quoted value in £ (optional)', ''); if (qv !== null && qv !== '' && !isNaN(parseFloat(qv))) body.quote_value = parseFloat(qv); }
+  } catch(e) {}
+  fetch('/api/leads/' + leadId + '/status', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _token }, body: JSON.stringify(body) })
     .then(function(r){ return r.json(); })
     .then(function(d){ if(d.success){ loadLeads(); } else { alert(d.error || 'Could not update status'); } })
     .catch(function(){ alert('Server error'); });

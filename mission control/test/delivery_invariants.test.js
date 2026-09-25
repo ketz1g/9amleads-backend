@@ -113,6 +113,15 @@ ok('sendBrevoEmail accepts a string recipient (goodwill alerts actually send)',
   has("if (typeof to === 'string') to = { email: to.trim(), name: '' };"));
 ok('trial extensions/emails are manual only (no auto goodwill extension)',
   has('MANUAL-ONLY POLICY') && has('no trial extension, no email - manual only'));
+console.log('\n=== Lead tracking invariants ===');
+ok('reject guardrail counts in JS (SQL json_extract was a no-op bypass)',
+  has('Counted in JS') && has('_rejCutoff'));
+ok('GET /api/leads/:id does not mutate the stored row (500 fix)',
+  has('Object.assign({}, lead, { data: parsed })'));
+ok('lead status is validated + accepts zero values',
+  has("const VALID_STATUS = ['new', 'contacted', 'quoted', 'won', 'lost']") && has('if (deal_value !== undefined)'));
+ok('PATCH + /api/stats unified on lead_status (no split-brain)',
+  has('Unified with PUT /api/leads/:id/status'));
 ok('morning readiness summary is digest-mode (silent when all ready)',
   has("all ' + rows.length + ' ready - no email (digest mode)"));
 ok('early readiness + guarantee do not send duplicate pre-9am emails',

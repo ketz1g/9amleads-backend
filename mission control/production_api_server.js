@@ -9292,13 +9292,18 @@ app.put('/api/leads/:id/status', authMiddleware, (req, res) => {
     const db = getDb();
     const lead = (db.leads || []).find(l => l.id === req.params.id && l.customer_id === req.user.id);
     if (!lead) return res.status(404).json({ error: 'Lead not found' });
-    const { status, deal_value, quote_value, actual_revenue, follow_up_date, outcome_reason } = req.body;
+    const { status, deal_value, quote_value, actual_revenue, estimated_value, follow_up_date, outcome_reason } = req.body;
+    const VALID_STATUS = ['new', 'contacted', 'quoted', 'won', 'lost'];
+    if (status !== undefined && VALID_STATUS.indexOf(status) === -1) return res.status(400).json({ error: 'Invalid status' });
     if (status) lead.lead_status = status;
-    if (deal_value) lead.deal_value = deal_value;
-    if (quote_value) lead.quote_value = quote_value;
-    if (actual_revenue) lead.actual_revenue = actual_revenue;
-    if (follow_up_date) lead.follow_up_date = follow_up_date;
-    if (outcome_reason) lead.outcome_reason = outcome_reason;
+    // Accept 0 / empty values too (0 was previously dropped, so a customer couldn't
+    // record "quoted £0" / "no revenue").
+    if (deal_value !== undefined) lead.deal_value = deal_value;
+    if (quote_value !== undefined) lead.quote_value = quote_value;
+    if (actual_revenue !== undefined) lead.actual_revenue = actual_revenue;
+    if (estimated_value !== undefined) lead.estimated_value = estimated_value;
+    if (follow_up_date !== undefined) lead.follow_up_date = follow_up_date;
+    if (outcome_reason !== undefined) lead.outcome_reason = outcome_reason;
     if (status === 'contacted' && !lead.contacted_at) lead.contacted_at = new Date().toISOString();
     if (status === 'quoted' && !lead.quoted_at) lead.quoted_at = new Date().toISOString();
     if (status === 'won' && !lead.won_at) lead.won_at = new Date().toISOString();
@@ -9349,9 +9354,10 @@ app.get('/api/leads/:id', authMiddleware, (req, res) => {
     const db = getDb();
     const lead = (db.leads || []).find(l => l.id === req.params.id && l.customer_id === req.user.id);
     if (!lead) return res.status(404).json({ error: 'Lead not found' });
-    // Parse data field
-    try { lead.data = JSON.parse(lead.data); } catch(e) {}
-    res.json(lead);
+    // Parse data on a COPY - mutating the stored row turns `data` into an object and
+    // makes a later GET /api/leads JSON.parse() throw (500) for that customer.
+    var parsed = {}; try { parsed = JSON.parse(lead.data || '{}'); } catch(e) {}
+    res.json(Object.assign({}, lead, { data: parsed }));
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -9763,10 +9769,19 @@ app.post('/api/leads/reject', authMiddleware, async (req, res) => {
     var customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
     if (!customer) return res.status(404).json({ error: 'Account not found' });
 
-    // GUARDRAIL 1: max 3 replacements per customer per rolling day.
-    var cutoffReject = new Date(Date.now() - 24 * 3600000).toISOString();
-    var recentRejects = db.prepare("SELECT COUNT(*) AS c FROM leads WHERE customer_id = ? AND status = 'rejected' AND (json_extract(data,'$.rejected_at') > ? OR json_extract(data,'$.rejected_at') IS NOT NULL)").get(customer.id, cutoffReject);
-    var rejCount = (recentRejects && recentRejects.c) || 0;
+    // GUARDRAIL 1: max 3 replacements per customer per rolling day. Counted in JS
+    // because this JSON store's SQL shim cannot json_extract() - the old SQL query
+    // always returned 0, so the 3/day limit NEVER applied (abuse vector). We count
+    // the customer's own leads whose data.rejected_at is within the last 24h.
+    var rejCount = 0;
+    try {
+      var _rejCutoff = Date.now() - 24 * 3600000;
+      (db.leads || []).forEach(function(l) {
+        if (l.customer_id !== customer.id) return;
+        var pd = {}; try { pd = JSON.parse(l.data || '{}'); } catch(e) { pd = {}; }
+        if (pd.rejected && pd.rejected_at && new Date(pd.rejected_at).getTime() > _rejCutoff) rejCount++;
+      });
+    } catch(e) { rejCount = 0; }
     if (rejCount >= 3) {
       return res.status(429).json({ success: false, error: 'You can only reject up to 3 leads per day so we can keep quality high. Your other leads stay valid - contact hello@9amleads.com if a lead is genuinely wrong.' });
     }
@@ -10108,17 +10123,25 @@ async function createReplacementLead(cust, product, deliveredNow, exclude) {
 
 // PATCH /api/leads/:id/status
 app.patch('/api/leads/:id/status', authMiddleware, (req, res) => {
-  const { status } = req.body;
-  const valid = ['new', 'contacted', 'booked', 'closed', 'lost'];
-  if (!valid.includes(status)) {
-    return res.status(400).json({ error: 'Invalid status' });
-  }
-
-  const lead = db.prepare('SELECT * FROM leads WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
-  if (!lead) return res.status(404).json({ error: 'Lead not found' });
-
-  db.prepare('UPDATE leads SET status = ? WHERE id = ?').run(status, req.params.id);
-  res.json({ success: true });
+  try {
+    // Unified with PUT /api/leads/:id/status: write `lead_status` (the field every
+    // aggregation + the UI read) with the SAME value set. It previously wrote a
+    // different column (`status`) with different values (booked/closed), i.e. a
+    // split-brain model where updates were invisible to the dashboard.
+    const status = req.body && req.body.status;
+    const valid = ['new', 'contacted', 'quoted', 'won', 'lost'];
+    if (valid.indexOf(status) === -1) return res.status(400).json({ error: 'Invalid status' });
+    const dbP = getDb();
+    const lead = (dbP.leads || []).find(l => l.id === req.params.id && l.customer_id === req.user.id);
+    if (!lead) return res.status(404).json({ error: 'Lead not found' });
+    lead.lead_status = status;
+    if (status === 'contacted' && !lead.contacted_at) lead.contacted_at = new Date().toISOString();
+    if (status === 'quoted' && !lead.quoted_at) lead.quoted_at = new Date().toISOString();
+    if (status === 'won' && !lead.won_at) lead.won_at = new Date().toISOString();
+    if (status === 'lost' && !lead.lost_at) lead.lost_at = new Date().toISOString();
+    saveDb();
+    res.json({ success: true, lead_status: status });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // ===== STATS ENDPOINT =====

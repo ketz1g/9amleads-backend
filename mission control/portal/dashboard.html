@@ -162,6 +162,19 @@ footer a{color:var(--accent);text-decoration:underline}
 <div id="today-preview" style="font-size:13px;color:var(--text2);margin:8px 2px 20px"></div>
 </div>
 
+<!-- YOUR RESULTS (live lead tracking: pipeline, revenue, ROI) -->
+<div class="card" id="results-card" style="margin-bottom:16px">
+<div class="sect-title"><i class="fas fa-chart-line" style="color:var(--accent)"></i> Your results <span style="margin-left:auto;font-size:11px;color:var(--muted)">Track each lead in <a href="/portal/leads.html" style="color:var(--accent)">My Leads</a></span></div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:10px">
+<div><div style="font-size:24px;font-weight:800" id="res-contacted">0</div><div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Contacted</div></div>
+<div><div style="font-size:24px;font-weight:800" id="res-quoted">0</div><div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Quoted</div></div>
+<div><div style="font-size:24px;font-weight:800;color:#16a34a" id="res-won">0</div><div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Won</div></div>
+<div><div style="font-size:24px;font-weight:800;color:#16a34a" id="res-revenue">&pound;0</div><div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Revenue won</div></div>
+<div><div style="font-size:24px;font-weight:800" id="res-roi">-</div><div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Return on plan</div></div>
+</div>
+<div id="res-nudge" style="display:none;font-size:12px;color:var(--text2);margin-top:10px;line-height:1.6">&#128073; Mark leads as <b>Contacted / Quoted / Won</b> in <a href="/portal/leads.html" style="color:var(--accent)">My Leads</a> and your pipeline, revenue and ROI appear here automatically.</div>
+</div>
+
 <!-- QUICK TIPS (rotating, helps conversion) -->
 <div class="card" style="margin-bottom:16px">
 <div class="sect-title"><i class="fas fa-lightbulb" style="color:var(--accent)"></i> Quick tips to win more <span style="margin-left:auto;font-size:11px;color:var(--muted)" id="tip-pager">Tip 1 of 5</span></div>
@@ -2174,6 +2187,22 @@ document.querySelectorAll('.modal').forEach(function(m){
         _seenT[k]=1; return true;
       });
       var _kt=document.getElementById('kpi-today'); if(_kt) _kt.textContent = tl.length;
+      // Live results panel from the aggregation API (contacted/quoted/won/revenue/ROI).
+      try {
+        fetch('/api/dashboard', { headers: { 'Authorization': 'Bearer ' + _token } })
+          .then(function(r){ return r.json(); })
+          .then(function(d){
+            if (!d || d.error) return;
+            function _set(id, v){ var el = document.getElementById(id); if (el) el.textContent = v; }
+            _set('res-contacted', d.contacted || 0);
+            _set('res-quoted', d.quoted || 0);
+            _set('res-won', d.won || 0);
+            _set('res-revenue', '\u00a3' + (Number(d.actual_revenue) || 0).toLocaleString('en-GB'));
+            _set('res-roi', d.subscription_roi || '-');
+            var _any = (Number(d.contacted)||0) + (Number(d.quoted)||0) + (Number(d.won)||0);
+            var _n = document.getElementById('res-nudge'); if (_n && _any === 0) _n.style.display = 'block';
+          }).catch(function(){});
+      } catch(e) {}
       // Fill the space under the Today card with a preview of today's delivered leads.
       var _pv = document.getElementById('today-preview');
       if (_pv) {
