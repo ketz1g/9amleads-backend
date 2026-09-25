@@ -16569,16 +16569,19 @@ app.post('/api/admin/print-post/help-nudge', adminAuth, async (req, res) => {
       if (dryRun) { sent.push(c.email); continue; } // preview only - do NOT send
       var _name = String(c.contact_name || c.company || 'there').replace(/[<>&]/g, '');
       var html = '<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:26px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px">'
-        + '<div style="font-size:20px;font-weight:800;color:#0f172a;margin-bottom:8px">Need a hand adding your leaflet?</div>'
+        + '<div style="font-size:20px;font-weight:800;color:#0f172a;margin-bottom:8px">Get your Print &amp; Post ready to send</div>'
         + '<p style="font-size:14px;color:#334155;line-height:1.7">Hi ' + _name + ',</p>'
-        + '<p style="font-size:14px;color:#334155;line-height:1.7">We can see you\u2019ve added your card and are set up for <b>Print &amp; Post</b>, but we haven\u2019t received your leaflet/letter artwork yet - so nothing can be posted until it\u2019s on file.</p>'
-        + '<p style="font-size:14px;color:#334155;line-height:1.7"><b>Want us to do it for you?</b> Just reply to this email and attach your artwork (PDF, JPG or PNG) and we\u2019ll upload it and finish the setup for you.</p>'
-        + '<p style="font-size:14px;color:#334155;line-height:1.7">Not sure what to send, or stuck on the upload? Reply and we\u2019ll send a simple checklist - or a ready-made template you can use. No design skills needed.</p>'
-        + '<p style="font-size:14px;color:#334155;line-height:1.7">If you\u2019d rather do it yourself, open your dashboard &rarr; <b>Print &amp; Post</b> and use the <b>Need help?</b> button any time.</p>'
-        + '<p style="font-size:13px;color:#64748b;line-height:1.6;margin-top:16px">Kind regards,<br>The 9amLeads team<br><a href="https://9amleads.com/portal/direct-mail.html" style="color:#0284c7">Open Print &amp; Post</a></p>'
+        + '<p style="font-size:14px;color:#334155;line-height:1.7">You\u2019re all set up for <b>Print &amp; Post</b> - you just need to add your <b>flyers and letters</b>. There are two easy ways to do it:</p>'
+        + '<div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:10px;padding:16px 18px;margin:14px 0">'
+        + '<p style="font-size:14px;color:#0f172a;line-height:1.7;margin:0 0 14px"><b>1. Upload your flyers and letters</b><br><span style="color:#334155">Open your dashboard &rarr; <b>Print &amp; Post</b> and upload your flyer and letter (PDF, JPG or PNG).</span></p>'
+        + '<p style="font-size:14px;color:#0f172a;line-height:1.7;margin:0"><b>2. Or send them to us and we\u2019ll upload them for you</b><br><span style="color:#334155">Just reply to this email and attach your flyers and letters. We\u2019ll upload them and get everything <b>ready for you for Print &amp; Post</b> - no design skills needed.</span></p>'
+        + '</div>'
+        + '<p style="font-size:14px;color:#334155;line-height:1.7">Once they\u2019re in, we handle the printing, addressing and posting to every lead you choose.</p>'
+        + '<p style="font-size:14px;color:#334155;line-height:1.7">Stuck or not sure what to send? Reply and we\u2019ll send a simple checklist, or a ready-made template you can use.</p>'
+        + '<p style="font-size:13px;color:#64748b;line-height:1.6;margin-top:16px">Kind regards,<br>The 9amLeads team<br><a href="https://9amleads.com/portal/direct-mail.html" style="color:#0284c7">Upload them in your dashboard</a></p>'
         + '</div>';
       try {
-        await sendBrevoEmail({ email: c.email, name: c.company || c.contact_name || 'Customer' }, 'Need a hand adding your leaflet to Print & Post?', html);
+        await sendBrevoEmail({ email: c.email, name: c.company || c.contact_name || 'Customer' }, 'Upload your flyers & letters - or send them to us for Print & Post', html);
         c.pp_help_notified = new Date().toISOString();
         sent.push(c.email);
       } catch(e2) { skipped.push({ email: c.email, reason: 'send failed' }); }
