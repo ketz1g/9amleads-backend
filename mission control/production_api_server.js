@@ -9229,6 +9229,55 @@ app.get('/api/dashboard', authMiddleware, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/follow-ups - leads the customer scheduled a follow-up for that are DUE
+// (today or overdue). Excludes won/lost. Powers the dashboard "Follow-ups due" panel.
+app.get('/api/follow-ups', authMiddleware, (req, res) => {
+  try {
+    var dbF = getDb();
+    var today = new Date().toISOString().slice(0, 10);
+    var rows = (dbF.leads || []).filter(function(l) {
+      if (l.customer_id !== req.user.id) return false;
+      if (!l.follow_up_date) return false;
+      if (l.lead_status === 'won' || l.lead_status === 'lost') return false;
+      return String(l.follow_up_date).slice(0, 10) <= today;
+    }).map(function(l) {
+      var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
+      return {
+        id: l.id, product: l.product,
+        title: d.address || d.company || d.deceasedName || d.tenderTitle || d.title || d.name || 'Lead',
+        postcode: d.postcode || '', follow_up_date: l.follow_up_date, lead_status: l.lead_status || 'new'
+      };
+    }).sort(function(a, b) { return String(a.follow_up_date).localeCompare(String(b.follow_up_date)); });
+    res.json({ success: true, count: rows.length, overdue: rows.filter(function(r) { return String(r.follow_up_date).slice(0, 10) < today; }).length, follow_ups: rows });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/leads/bulk-status { ids:[], status } - mark many of the customer's own
+// leads in one go (ownership enforced per id). statuses: new/contacted/quoted/won/lost.
+app.post('/api/leads/bulk-status', authMiddleware, (req, res) => {
+  try {
+    var ids = Array.isArray(req.body && req.body.ids) ? req.body.ids : [];
+    var status = req.body && req.body.status;
+    var valid = ['new', 'contacted', 'quoted', 'won', 'lost'];
+    if (valid.indexOf(status) === -1) return res.status(400).json({ error: 'Invalid status' });
+    if (!ids.length) return res.status(400).json({ error: 'No leads selected' });
+    var dbB = getDb();
+    var now = new Date().toISOString();
+    var n = 0;
+    (dbB.leads || []).forEach(function(l) {
+      if (l.customer_id !== req.user.id || ids.indexOf(l.id) === -1) return;
+      l.lead_status = status;
+      if (status === 'contacted' && !l.contacted_at) l.contacted_at = now;
+      if (status === 'quoted' && !l.quoted_at) l.quoted_at = now;
+      if (status === 'won' && !l.won_at) l.won_at = now;
+      if (status === 'lost' && !l.lost_at) l.lost_at = now;
+      n++;
+    });
+    saveDb();
+    res.json({ success: true, updated: n, status: status });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/pipeline - leads grouped by stage
 app.get('/api/pipeline', authMiddleware, (req, res) => {
   try {
@@ -17998,6 +18047,17 @@ function formatLeadForCRM(lead) {
   // Name fields: the COMPANY name (new business), deceased name (probate), etc.
   if (lead.companyName || lead.company) base.company_name = lead.companyName || lead.company;
   if (lead.name) base.name = lead.name;
+  // LEAD TRACKING: carry the customer's outcome + notes/values through to the CRM so
+  // their system reflects what actually happened (previously the CRM only got raw
+  // scraped data and never saw Contacted/Quoted/Won, notes or deal values).
+  if (lead.lead_status) base.lead_status = lead.lead_status;
+  if (lead.outcome_reason) base.outcome_reason = lead.outcome_reason;
+  if (lead.follow_up_date) base.follow_up_date = lead.follow_up_date;
+  if (lead.deal_value !== undefined && lead.deal_value !== null && lead.deal_value !== '') base.deal_value = lead.deal_value;
+  if (lead.quote_value !== undefined && lead.quote_value !== null && lead.quote_value !== '') base.quote_value = lead.quote_value;
+  if (lead.actual_revenue !== undefined && lead.actual_revenue !== null && lead.actual_revenue !== '') base.actual_revenue = lead.actual_revenue;
+  if (Array.isArray(lead.notes) && lead.notes.length) base.notes = lead.notes;
+  if (lead.status_updated_at) base.status_updated_at = lead.status_updated_at;
   return base;
 }
 // Build a CRM-ready payload from a DB lead row. The stored lead fields live inside
@@ -18012,6 +18072,15 @@ function leadRowToCrmPayload(l) {
   d.created_at = l.created_at || d.created_at;
   if (!d.source) d.source = l.source;
   if (!d.product) d.product = l.product;
+  // Merge the row-level tracking so the CRM receives outcome + notes/values too.
+  if (l.lead_status) d.lead_status = l.lead_status;
+  if (l.outcome_reason) d.outcome_reason = l.outcome_reason;
+  if (l.follow_up_date) d.follow_up_date = l.follow_up_date;
+  if (l.deal_value !== undefined && l.deal_value !== null && l.deal_value !== '') d.deal_value = l.deal_value;
+  if (l.quote_value !== undefined && l.quote_value !== null && l.quote_value !== '') d.quote_value = l.quote_value;
+  if (l.actual_revenue !== undefined && l.actual_revenue !== null && l.actual_revenue !== '') d.actual_revenue = l.actual_revenue;
+  if (Array.isArray(l.notes) && l.notes.length) d.notes = l.notes;
+  d.status_updated_at = l.won_at || l.lost_at || l.quoted_at || l.contacted_at || null;
   return formatLeadForCRM(d);
 }
 // POST a JSON payload to a CRM webhook with a hard timeout, and RECORD the result on

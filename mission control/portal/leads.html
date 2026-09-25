@@ -169,7 +169,15 @@ function showHelp(el, text){
 <div class="search-bar">
 <input type="text" id="search-input" placeholder="Search by address, postcode, company or area..." onkeyup="filterLeads()">
 <select id="status-filter" onchange="filterLeads()">
-<option value="">All statuses</option><option value="newly listed">newly listed</option><option value="New">New</option><option value="Reduced">Reduced</option><option value="Available">Available</option>
+<option value="">All listing statuses</option><option value="newly listed">newly listed</option><option value="New">New</option><option value="Reduced">Reduced</option><option value="Available">Available</option>
+</select>
+<select id="outcome-filter" onchange="filterLeads()" title="Filter by how far you've got with each lead">
+<option value="">All outcomes</option>
+<option value="new">Not tracked yet</option>
+<option value="contacted">Contacted</option>
+<option value="quoted">Quoted</option>
+<option value="won">Won</option>
+<option value="lost">Lost</option>
 </select>
 </div>
 
@@ -196,6 +204,11 @@ function showHelp(el, text){
 <div style="flex:1"></div>
 <button class="btn-ghost" onclick="bulkSelectVisible()"><i class="fas fa-check-double"></i> Select all in view</button>
 <button class="btn-ghost" onclick="bulkClear()"><i class="fas fa-times"></i> Clear</button>
+<select id="bulk-outcome" title="Mark all selected leads" style="padding:8px 10px;border-radius:8px;border:1px solid var(--border);font-family:inherit;font-size:12px;background:#fff">
+<option value="">Mark selected as...</option>
+<option value="contacted">Contacted</option><option value="quoted">Quoted</option><option value="won">Won</option><option value="lost">Lost</option>
+</select>
+<button class="btn-ghost" onclick="bulkSetStatus()"><i class="fas fa-check"></i> Apply</button>
 <button class="btn-white" onclick="bulkOpenMail()"><i class="fas fa-mail-bulk"></i> Print &amp; Post Selected</button>
 <span id="bulk-htip"></span>
 </div>
@@ -502,10 +515,12 @@ function outcomeBtn(leadId, row){
     var col = lbls[st] || '#64748b';
     return '<button onclick="setLeadStatus(\'' + leadId + '\',\'' + st + '\')" title="Mark as ' + label + '" style="padding:3px 9px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;border:1px solid ' + col + ';background:' + (active ? col : '#fff') + ';color:' + (active ? '#fff' : col) + ';margin-right:4px">' + label + '</button>';
   }
+  var fu = (row && row.follow_up_date) ? String(row.follow_up_date).slice(0,10) : '';
+  var fuBtn = '<button onclick="setFollowUp(\'' + leadId + '\')" title="Set or clear a follow-up reminder for this lead" style="margin-top:4px;padding:3px 9px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;border:1px solid ' + (fu ? '#7c3aed' : '#cbd5e1') + ';background:' + (fu ? '#7c3aed' : '#fff') + ';color:' + (fu ? '#fff' : '#64748b') + '">' + (fu ? ('&#9200; ' + fu) : '&#9200; Follow up') + '</button>';
   return '<div style="margin-top:5px;display:flex;align-items:center;gap:2px;flex-wrap:wrap">' +
     '<span style="font-size:9px;color:var(--muted);margin-right:2px">Outcome:</span>' +
     btn('contacted','Contacted') + btn('quoted','Quoted') + btn('won','Won') + btn('lost','Lost') +
-    '</div>';
+    '</div>' + fuBtn;
 }
 function maybeShowEngageNudge(leads) {
   try {
@@ -563,6 +578,14 @@ function setLeadStatus(leadId, status){
     .then(function(d){ if(d.success){ loadLeads(); } else { alert(d.error || 'Could not update status'); } })
     .catch(function(){ alert('Server error'); });
 }
+function setFollowUp(leadId){
+  var d = prompt('Follow-up date for this lead (format YYYY-MM-DD). Leave blank to clear.', '');
+  if (d === null) return;
+  fetch('/api/leads/' + leadId + '/status', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _token }, body: JSON.stringify({ follow_up_date: String(d).trim() }) })
+    .then(function(r){ return r.json(); })
+    .then(function(res){ if (res.success) { loadLeads(); } else { alert(res.error || 'Could not save follow-up'); } })
+    .catch(function(){ alert('Server error'); });
+}
 function cleanPlanAddr(a){
   if(!a) return '';
   var s = String(a).trim().replace(/\s+/g,' ').replace(/\s*,\s*/g,', ').replace(/,\s*$/,'');
@@ -617,15 +640,33 @@ function bulkClear() {
 function currentFiltered() {
   var q = document.getElementById('search-input').value.toLowerCase();
   var status = document.getElementById('status-filter').value.toLowerCase();
+  var _of = document.getElementById('outcome-filter');
+  var outcome = _of ? _of.value.toLowerCase() : '';
   return allLeads.filter(function(l){
     var d = typeof l.data === 'string' ? JSON.parse(l.data||'{}') : (l.data||{});
     var addr = ((d.address||'')+' '+(d.title||'')+' '+(d.postcode||'')+' '+(d.company||'')+' '+(d.tenderTitle||'')).toLowerCase();
     var ls = (d.listingStatus||d.status||'').toLowerCase();
     if (q && !addr.includes(q)) return false;
     if (status && ls !== status) return false;
+    if (outcome) {
+      var lstat = String(l.lead_status || 'new').toLowerCase();
+      if (outcome === 'new') { if (lstat !== 'new') return false; }
+      else if (lstat !== outcome) return false;
+    }
     if (!inRange(l, currentRange)) return false;
     return true;
   });
+}
+function bulkSetStatus() {
+  var sel = document.getElementById('bulk-outcome');
+  var status = sel ? sel.value : '';
+  if (!status) { alert('Choose an outcome to apply first'); return; }
+  if (!selectedLeads.length) { alert('Select at least one lead first'); return; }
+  if (!confirm('Mark ' + selectedLeads.length + ' selected lead(s) as "' + status + '"?')) return;
+  fetch('/api/leads/bulk-status', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _token }, body: JSON.stringify({ ids: selectedLeads.slice(), status: status }) })
+    .then(function(r){ return r.json(); })
+    .then(function(d){ if (d.success) { selectedLeads = []; if (sel) sel.value = ''; updateBulkBar(); loadLeads(); } else { alert(d.error || 'Could not update'); } })
+    .catch(function(e){ alert('Error: ' + e.message); });
 }
 function updateBulkBar() {
   var bar = document.getElementById('bulk-bar');

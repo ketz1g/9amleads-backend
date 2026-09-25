@@ -122,6 +122,10 @@ ok('lead status is validated + accepts zero values',
   has("const VALID_STATUS = ['new', 'contacted', 'quoted', 'won', 'lost']") && has('if (deal_value !== undefined)'));
 ok('PATCH + /api/stats unified on lead_status (no split-brain)',
   has('Unified with PUT /api/leads/:id/status'));
+ok('follow-ups + bulk-status endpoints exist',
+  has("app.get('/api/follow-ups'") && has("app.post('/api/leads/bulk-status'"));
+ok('CRM payload carries tracking (status/notes/values)',
+  has('base.lead_status = lead.lead_status') && has('if (Array.isArray(lead.notes) && lead.notes.length) base.notes = lead.notes;'));
 ok('morning readiness summary is digest-mode (silent when all ready)',
   has("all ' + rows.length + ' ready - no email (digest mode)"));
 ok('early readiness + guarantee do not send duplicate pre-9am emails',

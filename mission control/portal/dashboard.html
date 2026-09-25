@@ -175,6 +175,12 @@ footer a{color:var(--accent);text-decoration:underline}
 <div id="res-nudge" style="display:none;font-size:12px;color:var(--text2);margin-top:10px;line-height:1.6">&#128073; Mark leads as <b>Contacted / Quoted / Won</b> in <a href="/portal/leads.html" style="color:var(--accent)">My Leads</a> and your pipeline, revenue and ROI appear here automatically.</div>
 </div>
 
+<!-- FOLLOW-UPS DUE -->
+<div class="card" id="followups-card" style="display:none;margin-bottom:16px">
+<div class="sect-title"><i class="fas fa-bell" style="color:#7c3aed"></i> Follow-ups due <span style="margin-left:auto;font-size:11px;color:var(--muted)">Set them in <a href="/portal/leads.html" style="color:var(--accent)">My Leads</a></span></div>
+<div id="followups-list" style="font-size:13px;color:var(--text2);line-height:1.7"></div>
+</div>
+
 <!-- QUICK TIPS (rotating, helps conversion) -->
 <div class="card" style="margin-bottom:16px">
 <div class="sect-title"><i class="fas fa-lightbulb" style="color:var(--accent)"></i> Quick tips to win more <span style="margin-left:auto;font-size:11px;color:var(--muted)" id="tip-pager">Tip 1 of 5</span></div>
@@ -2201,6 +2207,26 @@ document.querySelectorAll('.modal').forEach(function(m){
             _set('res-roi', d.subscription_roi || '-');
             var _any = (Number(d.contacted)||0) + (Number(d.quoted)||0) + (Number(d.won)||0);
             var _n = document.getElementById('res-nudge'); if (_n && _any === 0) _n.style.display = 'block';
+          }).catch(function(){});
+      } catch(e) {}
+      // Follow-ups due (today / overdue) from /api/follow-ups
+      try {
+        fetch('/api/follow-ups', { headers: { 'Authorization': 'Bearer ' + _token } })
+          .then(function(r){ return r.json(); })
+          .then(function(d){
+            var card = document.getElementById('followups-card');
+            if (!card || !d || !d.count) return;
+            function _esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
+            var _today = new Date().toISOString().slice(0,10);
+            var html = d.follow_ups.slice(0, 8).map(function(f){
+              var over = String(f.follow_up_date).slice(0,10) < _today;
+              return '<div style="display:flex;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid #eef2f7">' +
+                '<span style="font-size:11px;font-weight:700;color:' + (over ? '#dc2626' : '#7c3aed') + '">' + (over ? 'Overdue' : 'Today') + '</span>' +
+                '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc(f.title || 'Lead') + (f.postcode ? ' · ' + _esc(f.postcode) : '') + '</span>' +
+                '<span style="font-size:11px;color:var(--muted)">' + _esc(f.lead_status || 'new') + '</span></div>';
+            }).join('');
+            document.getElementById('followups-list').innerHTML = html + (d.count > 8 ? ('<div style="margin-top:6px;font-size:11px;color:var(--muted)">+' + (d.count - 8) + ' more</div>') : '');
+            card.style.display = 'block';
           }).catch(function(){});
       } catch(e) {}
       // Fill the space under the Today card with a preview of today's delivered leads.
