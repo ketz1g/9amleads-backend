@@ -136,6 +136,8 @@ ok('paid welcome is sent immediately on subscribe (deduped)',
   has('function sendPaidWelcomeOnce') && has('sendPaidWelcomeOnce(customer)'));
 ok('paid tip cadence counts from payment (paid_since)',
   has('cust.paid_since ? new Date(cust.paid_since).getTime()'));
+ok('paid emails require real payment (not just a pre-selected plan)',
+  has('var isPaidNow = _hasSub || !!cust.paid_since;'));
 ok('morning readiness summary is digest-mode (silent when all ready)',
   has("all ' + rows.length + ' ready - no email (digest mode)"));
 ok('early readiness + guarantee do not send duplicate pre-9am emails',

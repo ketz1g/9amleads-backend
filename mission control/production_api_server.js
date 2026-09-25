@@ -6197,9 +6197,11 @@ app.post('/api/auth/signup', async (req, res) => {
     });
 
     // Send the welcome email immediately (trial_day1) after signup - don't wait
-    // for the 10:00 campaign cron. Tailored to the customer's product type.
+    // for the 10:00 campaign cron. Tailored to the customer's product type. ALWAYS the
+    // TRIAL welcome: at signup nobody has paid yet, even if they pre-selected a plan
+    // (which is stored as the plan label before payment).
     try {
-      if (customer.plan === 'free_trial') {
+      if (!customer.stripe_subscription_id) {
         var freshCustomer = db.prepare('SELECT * FROM customers WHERE id = ?').get(customer.id);
         var welcomeHtml = getCampaignEmailHTMLWithEdits(freshCustomer, 'trial_day1');
         var welcomeSubject = getEditedCampaignSubject('trial_day1', 'Your Free Trial Is Active. Your ' + (freshCustomer.lead_type || 'opportunities') + ' start now');
@@ -22889,12 +22891,14 @@ async function runCampaignEmails(dry) {
       var daysSinceTrialEnd = trialEnds ? Math.floor((new Date() - trialEnds) / 86400000) : -1;
       var createdDate = cust.created_at ? new Date(cust.created_at) : null;
       var accountAge = createdDate ? Math.floor((new Date() - createdDate) / 86400000) : 0;
-      // STOP-FOLLOW-UPS GUARANTEE: the moment a customer pays, the trial/nurture
-      // emails must stop. A customer is "effectively paid" if their plan is no
-      // longer free_trial OR they have an active Stripe subscription (covers any
-      // async lag between payment and the plan update). Paid customers get the
-      // paid welcome/tips series instead - never more trial follow-ups.
-      var isPaidNow = cust.plan !== 'free_trial' || !!cust.stripe_subscription_id;
+      // STOP-FOLLOW-UPS GUARANTEE: the moment a customer actually PAYS, the
+      // trial/nurture emails must stop. "Paid" now means money has been taken: a Stripe
+      // subscription exists, or paid_since was stamped on payment. It deliberately does
+      // NOT key off the plan label, because signup stores a pre-selected plan
+      // (starter/pro) BEFORE any payment - that made non-paying trial users get the
+      // paid welcome. Trial vs paid now follows real payment state + trial dates.
+      var _hasSub = !!cust.stripe_subscription_id && String(cust.stripe_subscription_id).toUpperCase() !== 'NULL';
+      var isPaidNow = _hasSub || !!cust.paid_since;
 
       var isCancelledNow = String(cust.plan || '') === 'cancelled';
       if (isCancelledNow) {
@@ -22920,7 +22924,9 @@ async function runCampaignEmails(dry) {
           }
           if (!dry) { cust.cancel_wb_sent = JSON.stringify(_cwSent); try { saveDb(); } catch(e) {} }
         }
-      } else if (!isPaidNow && cust.plan === 'free_trial' && trialEnds) {
+      } else if (!isPaidNow && trialEnds) {
+        // Not paid (regardless of the plan label they picked at signup) -> the trial
+        // nurture while the trial is active, then the win-back once it ends.
         if (new Date() <= trialEnds) {
           // Active trial: send onboarding emails at days 1, 3, 5 (after signup)
           var _sentThisCust = false;
