@@ -111,6 +111,7 @@ tbody tr:hover td{background:#f8fafc}
 
 <button onclick="switchTab('emails')"><i class="fas fa-envelope-open-text"></i> Emails <span id="emailCountBadge" style="display:none;background:#eff6ff;color:#0ea5e9;font-size:10px;font-weight:700;border-radius:20px;padding:1px 7px;margin-left:2px"></span></button>
 <button onclick="switchTab('activity')"><i class="fas fa-bolt"></i> Activity</button>
+<button onclick="switchTab('printpost')"><i class="fas fa-mail-bulk"></i> Print &amp; Post</button>
 <button onclick="openDeliveryPreview()" title="See which leads each customer will get at the next 9am"><i class="fas fa-eye"></i> Delivery Preview</button> <button onclick="openQuietAreas()" title="Which chosen postcode areas have had no leads for 3-5 days"><i class="fas fa-exclamation-triangle"></i> Quiet Areas</button> <a href="/portal/seo.html"><i class="fas fa-magnifying-glass"></i> SEO</a>
 <a href="/portal/"><i class="fas fa-arrow-right-to-bracket"></i> Portal</a>
 </div>
@@ -136,6 +137,13 @@ tbody tr:hover td{background:#f8fafc}
 <div class="hero"><div class="hero-text"><h1>&#129534; Billing &amp; Payments Due</h1><p>Who has paid, their plan and price, and when their next payment is due - all in one place. Past-due accounts are shown first.</p></div>
 <div class="hero-actions"><button class="btn btn-outline" onclick="loadBilling()"><i class="fas fa-rotate"></i> Refresh</button></div></div>
 <div id="billBody"><div class="loading">Loading billing...</div></div>
+</div>
+
+<!-- ============ PRINT & POST ============ -->
+<div class="tab-panel" id="tab-printpost">
+<div class="hero"><div class="hero-text"><h1>&#128233; Print &amp; Post</h1><p>Who has set up (materials + card), who is ready to send, who has Auto Send ON, and who has actually posted - with a recent send log.</p></div>
+<div class="hero-actions"><button class="btn btn-outline" onclick="loadPrintPost()"><i class="fas fa-rotate"></i> Refresh</button></div></div>
+<div id="ppBody"><div class="loading">Loading Print &amp; Post...</div></div>
 </div>
 
 <!-- ============ CRM ============ -->
@@ -604,6 +612,7 @@ function switchTab(name) {
   if (name === 'crm') loadCrm();
   if (name === 'payments') loadPayments();
   if (name === 'billing') loadBilling();
+  if (name === 'printpost') loadPrintPost();
   window.scrollTo(0, 0);
 }
 
@@ -692,6 +701,71 @@ function loadBilling() {
       b.innerHTML = h + '</table><div style="margin-top:8px;font-size:11px;color:#94a3b8">Next payment due comes from the Stripe subscription period end. Past-due accounts are listed first.</div>';
     })
     .catch(function() { b.innerHTML = '<div class="loading">Could not load billing.</div>'; });
+}
+
+// ===== PRINT & POST =====
+function ppDate(s){ return s ? billDate(s) : '-'; }
+function ppTick(b){ return b ? '<span style="color:#16a34a;font-weight:800">&#10003;</span>' : '<span style="color:#cbd5e1">&#10007;</span>'; }
+function ppBadge(r){
+  var map = {
+    ready:['Ready to send','#16a34a','rgba(22,163,74,.12)'],
+    auto_send_on:['Auto Send ON','#0ea5e9','rgba(14,165,233,.12)'],
+    auto_send_paused:['Auto Send PAUSED','#ef4444','rgba(239,68,68,.12)'],
+    needs_card:['Needs card','#f59e0b','rgba(245,158,11,.12)'],
+    needs_materials:['Needs materials','#f59e0b','rgba(245,158,11,.12)'],
+    not_set_up:['-','#94a3b8','rgba(148,163,184,.12)']
+  };
+  var m = map[r.status] || [r.status,'#64748b','rgba(100,116,139,.12)'];
+  return '<span style="display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;color:'+m[1]+';background:'+m[2]+'">'+m[0]+'</span>';
+}
+function loadPrintPost(){
+  var b = document.getElementById('ppBody'); if(!b) return;
+  b.innerHTML = '<div class="loading">Loading Print &amp; Post...</div>';
+  fetch(API + '/api/admin/print-post?t=' + Date.now(), { headers: adminHeaders() })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if(!d || !d.success){ b.innerHTML = '<div class="loading">Could not load Print &amp; Post.</div>'; return; }
+      var s = d.summary||{}, rows = d.rows||[], recent = d.recent||[];
+      function card(l,v,c){ return '<div class="stat-card"><div class="num" style="color:'+(c||'inherit')+'">'+v+'</div><div class="label">'+l+'</div></div>'; }
+      var h = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px">' +
+        card('Ready to send', s.ready||0, '#16a34a') +
+        card('Auto Send ON', s.auto_send_on||0, '#0ea5e9') +
+        card('Auto Send paused', s.auto_send_paused||0, s.auto_send_paused?'#ef4444':'inherit') +
+        card('Customers posted', s.customers_sent||0, '#7c3aed') +
+        card('Items posted', s.total_items_sent||0, '#7c3aed') +
+        '</div>';
+      h += '<div style="font-size:13px;font-weight:800;margin:4px 0 8px">Customers</div>';
+      h += '<table class="table"><tr><th>Customer</th><th>Plan</th><th>Materials</th><th>Card</th><th>Auto Send</th><th>Status</th><th>Last post</th><th>Items</th></tr>';
+      if(!rows.length) h += '<tr><td colspan="8" class="empty">No customers have set up Print &amp; Post yet.</td></tr>';
+      rows.forEach(function(r){
+        h += '<tr>' +
+          '<td><strong>'+esc(r.company||'-')+'</strong><div style="font-size:11px;color:#64748b">'+esc(r.email||'')+'</div></td>' +
+          '<td><span class="badge">'+esc(r.plan||'-')+'</span></td>' +
+          '<td style="text-align:center">'+ppTick(r.materials)+'</td>' +
+          '<td style="text-align:center">'+ppTick(r.card)+'</td>' +
+          '<td style="text-align:center">'+(r.auto_send?(r.auto_paused?'<span style="color:#ef4444;font-weight:700">paused</span>':'<span style="color:#16a34a;font-weight:700">ON</span>'):'<span style="color:#cbd5e1">off</span>')+'</td>' +
+          '<td>'+ppBadge(r)+'</td>' +
+          '<td style="font-size:11px">'+ppDate(r.last_activity)+'</td>' +
+          '<td>'+(r.items_sent||0)+'</td>' +
+          '</tr>';
+      });
+      h += '</table>';
+      h += '<div style="font-size:13px;font-weight:800;margin:18px 0 8px">Recent sends</div>';
+      h += '<table class="table"><tr><th>When (UK)</th><th>Customer</th><th>Campaign</th><th>Type</th><th>Items</th><th>Status</th><th>Payment</th></tr>';
+      if(!recent.length) h += '<tr><td colspan="7" class="empty">No Print &amp; Post sends yet.</td></tr>';
+      recent.forEach(function(c){
+        var uk='-'; try{ uk=new Date(c.at).toLocaleString('en-GB',{timeZone:'Europe/London',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}); }catch(x){}
+        h += '<tr><td style="font-size:11px;white-space:nowrap">'+uk+'</td>' +
+          '<td>'+esc(c.company||c.email||'-')+'</td>' +
+          '<td style="font-size:12px">'+esc(c.name||'-')+'</td>' +
+          '<td style="font-size:11px">'+esc(c.mail_type||'-')+'</td>' +
+          '<td>'+(c.items||0)+'</td>' +
+          '<td style="font-size:11px">'+esc(c.status||'-')+'</td>' +
+          '<td style="font-size:11px;color:'+(c.payment==='paid'?'#16a34a':'#64748b')+'">'+esc(c.payment||'-')+'</td></tr>';
+      });
+      b.innerHTML = h + '</table>';
+    })
+    .catch(function(){ b.innerHTML = '<div class="loading">Could not load Print &amp; Post.</div>'; });
 }
 }
 function loadCrm() {

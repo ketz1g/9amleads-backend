@@ -16248,6 +16248,87 @@ app.get('/api/admin/activity', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/admin/print-post - PRINT & POST at a glance: who has set up (materials +
+// card), who is 'ready to send', who has Auto Send ON, who has actually SENT post and
+// how much, plus a recent send log. Complements the Activity feed.
+app.get('/api/admin/print-post', adminAuth, (req, res) => {
+  try {
+    var d = getDb();
+    var tplByCust = {};
+    (d.direct_mail_templates || []).forEach(function(t) {
+      var cid = String(t && t.customer_id || ''); if (!cid) return;
+      var cur = tplByCust[cid];
+      if (!cur || String(t.created_at || '') > String(cur.created_at || '')) tplByCust[cid] = t;
+    });
+    var settingsByCust = {};
+    (d.direct_mail_automation_settings || []).forEach(function(s) { if (s && s.customer_id != null) settingsByCust[String(s.customer_id)] = s; });
+    var campsByCust = {};
+    var SENT_STATES = { sent: 1, sent_to_provider: 1, printing: 1, dispatched: 1, delivered: 1, completed: 1, paid: 1 };
+    (d.direct_mail_campaigns || []).forEach(function(c) {
+      if (!c || c.customer_id == null) return;
+      var k = String(c.customer_id);
+      if (!campsByCust[k]) campsByCust[k] = { count: 0, items: 0, last: '', last_status: '' };
+      campsByCust[k].count++;
+      campsByCust[k].items += Number(c.recipient_count || c.sent_count || c.target_count || 0);
+      var when = c.updated_at || c.created_at || '';
+      if (when > campsByCust[k].last) { campsByCust[k].last = when; campsByCust[k].last_status = c.status || ''; }
+    });
+    var cemail = {}, ccompany = {};
+    var rows = (d.customers || []).filter(function(c) { return !(typeof isInternalAccount === 'function' && isInternalAccount(c)); }).map(function(c) {
+      var tpl = tplByCust[String(c.id)];
+      var hasFront = !!(tpl && tpl.flyer_front_material_id);
+      var hasLetter = !!(tpl && (tpl.letter_material_id || tpl.ai_generated_text));
+      var materials = !!(hasFront && hasLetter);
+      var card = !!(c.stripe_payment_method_id || c.stripe_customer_id);
+      var st = settingsByCust[String(c.id)];
+      var autoSend = !!(st && st.enable_auto_send);
+      var autoPaused = !!c.auto_send_paused;
+      var camp = campsByCust[String(c.id)] || { count: 0, items: 0, last: '', last_status: '' };
+      var status;
+      if (autoSend && !autoPaused) status = 'auto_send_on';
+      else if (autoSend && autoPaused) status = 'auto_send_paused';
+      else if (materials && card) status = 'ready';
+      else if (materials && !card) status = 'needs_card';
+      else if (!materials && card) status = 'needs_materials';
+      else status = 'not_set_up';
+      var itemsSent = 0, sentCount = 0;
+      if (camp.items > 0) { itemsSent = camp.items; sentCount = camp.count; }
+      cemail[String(c.id)] = c.email; ccompany[String(c.id)] = c.company || '';
+      return {
+        email: c.email, company: c.company || '', plan: c.plan || '',
+        materials: materials, has_front: hasFront, has_letter: hasLetter, card: card,
+        auto_send: autoSend, auto_paused: autoPaused, status: status,
+        campaigns: camp.count, items_sent: itemsSent, last_activity: camp.last, last_status: camp.last_status
+      };
+    });
+    var engaged = rows.filter(function(r) { return r.materials || r.card || r.auto_send || r.campaigns > 0; });
+    var summary = {
+      ready: rows.filter(function(r) { return r.status === 'ready'; }).length,
+      auto_send_on: rows.filter(function(r) { return r.status === 'auto_send_on'; }).length,
+      auto_send_paused: rows.filter(function(r) { return r.auto_paused; }).length,
+      customers_sent: rows.filter(function(r) { return r.campaigns > 0; }).length,
+      total_items_sent: rows.reduce(function(t, r) { return t + r.items_sent; }, 0)
+    };
+    var recent = (d.direct_mail_campaigns || []).slice().sort(function(a, b) {
+      return String(b.updated_at || b.created_at || '').localeCompare(String(a.updated_at || a.created_at || ''));
+    }).slice(0, 30).map(function(c) {
+      return {
+        at: c.updated_at || c.created_at || '',
+        email: cemail[String(c.customer_id)] || '', company: ccompany[String(c.customer_id)] || '',
+        name: c.name || '', status: c.status || '', mail_type: c.mail_type || '',
+        items: Number(c.recipient_count || c.sent_count || c.target_count || 0),
+        payment: c.stripe_payment_status || ''
+      };
+    });
+    rows.sort(function(a, b) {
+      function rank(r) { return r.status === 'ready' ? 0 : r.status === 'auto_send_on' ? 1 : r.status === 'auto_send_paused' ? 2 : (r.campaigns > 0 ? 3 : 4); }
+      var ra = rank(a), rb = rank(b); if (ra !== rb) return ra - rb;
+      return String(b.last_activity || '').localeCompare(String(a.last_activity || ''));
+    });
+    res.json({ success: true, generated_at: new Date().toISOString(), summary: summary, rows: engaged, recent: recent });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== NEAREST-AREA FALLBACK =====
 // When a customer's exact areas are dry, the delivery broadens to the NEAREST
 // neighbouring areas first (geographically close) before the full pool. This keeps
@@ -21950,6 +22031,7 @@ async function runAutoSend() {
                   '<p style="color:#94a3b8;font-size:12px;line-height:1.7">' + schedInfo + ' Track each lead\'s live delivery status on the <a href="' + PUBLIC_URL + '/portal/tracking.html" style="color:#0ea5e9">Live Tracking</a> page, or view the "Materials Posted" badge + <b>Proof of Posting</b> on <a href="' + PUBLIC_URL + '/portal/leads.html" style="color:#0ea5e9">My Leads</a>.</p>';
                 try { await sendDMNotification(cust.id, 'auto_send_receipt', 'Auto Print & Post: ' + validAddressCount + ' items sent', '📬 Auto Print & Post sent', autoReceiptBody, 'View Leads', PUBLIC_URL + '/portal/leads.html'); } catch(rcE) { console.log('[AUTO-SEND] Receipt email error:', rcE.message); }
                 dmDashboardNotify(cust.id, 'auto_send_campaign_sent', '📬 Print & Post Sent', 'Print & Post sent ' + validAddressCount + ' ' + autoMailType + '(s) for ' + totalCost.toFixed(2), '');
+                try { logActivity(cust.id, 'auto_send_sent', 'Auto Send posted ' + validAddressCount + ' ' + autoMailType + '(s) (£' + totalCost.toFixed(2) + ')', { email: false }); } catch(eAs) {}
               }
             } else {
               db.prepare('UPDATE direct_mail_campaigns SET status = ?, updated_at = ? WHERE id = ? AND customer_id = ?').run('failed', new Date().toISOString(), campaign.id, cust.id);
@@ -33159,6 +33241,7 @@ app.post('/api/direct-mail/auto-toggle', authMiddleware, (req, res) => {
         });
         saveDb();
       }
+      try { logActivity(req.user.id, 'auto_send_off', 'Turned OFF Auto Print & Post', { email: false }); } catch(eAsOff) {}
       return res.json({ success: true, enabled: false, message: 'Auto Print & Post is OFF.' });
     }
   } catch(e) { res.status(500).json({ error: e.message }); }

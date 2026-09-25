@@ -105,6 +105,8 @@ ok('admin billing section (who paid + next due) exists',
   has("app.get('/api/admin/billing'") && has('weekly_value') && has('next_due'));
 ok('zero-value checkouts are logged as card-save, not PAID',
   has("_peType = 'setup'") && has('no charge'));
+ok('admin Print & Post view + auto-send activity logging exist',
+  has("app.get('/api/admin/print-post'") && has("logActivity(cust.id, 'auto_send_sent'"));
 ok('morning readiness summary is digest-mode (silent when all ready)',
   has("all ' + rows.length + ' ready - no email (digest mode)"));
 ok('early readiness + guarantee do not send duplicate pre-9am emails',
