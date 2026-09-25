@@ -37125,13 +37125,15 @@ app.post('/api/admin/blog/generate', adminAuth, function(req, res) {
 app.post('/api/admin/blog/topup', adminAuth, function(req, res) {
   // On-demand queue top-up: generate OpenAI-scheduled posts so the 2/day cadence
   // never runs dry. Mirrors the 3am cron but callable anytime.
-  try {
-    topUpBlogQueue().then(function(n) {
-      res.json({ success: true, created: n || 0, message: 'Blog queue topped up by ' + (n || 0) + ' post(s)' });
-    }).catch(function(e) {
-      res.status(500).json({ success: false, error: (e && e.message) || String(e) });
-    });
-  } catch(e) { res.status(500).json({ success: false, error: (e && e.message) || String(e) }); }
+  // Generation calls OpenAI once per post, which can take longer than the platform's
+  // request timeout - that returned a misleading 504 even though posts WERE still being
+  // created. So we kick it off in the background and return immediately.
+  res.json({ success: true, started: true, message: 'Blog queue top-up started - new posts appear in the queue shortly.' });
+  topUpBlogQueue().then(function(n) {
+    console.log('[SEO] Manual queue top-up created ' + (n || 0) + ' post(s)');
+  }).catch(function(e) {
+    console.log('[SEO] Manual queue top-up error: ' + ((e && e.message) || e));
+  });
 });
 
 app.post('/api/admin/blog/regen', adminAuth, function(req, res) {
