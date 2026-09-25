@@ -99,6 +99,8 @@ ok('paying customers are flagged paid (never shown as expired trial)',
   has('const paid = !!(c.stripe_subscription_id') && has('paid: paid,'));
 ok('successful subscription payments alert the founder (deduped)',
   has('Payment received: £') && has('_pdb.paid_invoice_alerts'));
+ok('stripe subscription reconcile self-heals missed webhooks',
+  has('async function reconcileStripeSubscriptions') && has('cleared_trial_ends') && has('/api/admin/reconcile-subscriptions'));
 ok('morning readiness summary is digest-mode (silent when all ready)',
   has("all ' + rows.length + ' ready - no email (digest mode)"));
 ok('early readiness + guarantee do not send duplicate pre-9am emails',

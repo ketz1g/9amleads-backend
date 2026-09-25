@@ -10605,6 +10605,84 @@ app.get('/api/admin/payment-events', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ===== STRIPE SUBSCRIPTION RECONCILE (self-heal) =====
+// The billing webhooks create a local `subscriptions` row and clear the signup
+// trial_ends when someone subscribes. If a webhook is missed (deploy/downtime/misconfig)
+// we are left with: no subscriptions row (so renewals/receipts never record), and a
+// stale past trial_ends (so the admin showed "Expired" for a PAYING customer - e.g.
+// removalserviceselite@gmail.com). This reconciles every customer that has a Stripe
+// subscription id against Stripe: creates/repairs the subscription row, clears stale
+// trial dates for active subs, and syncs the plan. Idempotent, safe to run any time.
+async function reconcileStripeSubscriptions(opts) {
+  opts = opts || {};
+  var dry = !!opts.dry;
+  var out = { scanned: 0, rows_created: 0, rows_updated: 0, trial_cleared: 0, plan_synced: 0, failed: 0, details: [] };
+  if (typeof STRIPE_SECRET_KEY === 'undefined' || !STRIPE_SECRET_KEY) { out.error = 'stripe_not_configured'; return out; }
+  var priceMap = {};
+  try {
+    [STRIPE_PRICE_IDS, STRIPE_TEST_PRICE_IDS].forEach(function(map) {
+      if (!map) return;
+      Object.keys(map).forEach(function(prod) {
+        Object.keys(map[prod]).forEach(function(key) {
+          var pl = /starter/.test(key) ? 'starter' : /growth/.test(key) ? 'pro' : /power/.test(key) ? 'enterprise' : /(^|-)pro/.test(key) ? 'pro' : '';
+          if (pl) priceMap[map[prod][key]] = { product: prod, plan: pl };
+        });
+      });
+    });
+  } catch(e) {}
+  var dbR = getDb();
+  var custs = (dbR.customers || []).filter(function(c) { return c.stripe_subscription_id && String(c.stripe_subscription_id).toUpperCase() !== 'NULL' && !(typeof isInternalAccount === 'function' && isInternalAccount(c)); });
+  for (var i = 0; i < custs.length; i++) {
+    var c = custs[i];
+    out.scanned++;
+    var act = [];
+    var sub = null;
+    try { sub = await stripeApiRequest('GET', 'subscriptions/' + c.stripe_subscription_id, null); } catch(e) { sub = null; }
+    if (!sub || !sub.id || sub.error) { out.failed++; out.details.push({ email: c.email, actions: ['stripe_fetch_failed'] }); continue; }
+    var item = (sub.items && sub.items.data && sub.items.data[0]) || null;
+    var priceId = (item && item.price && item.price.id) || '';
+    var plan = (sub.metadata && sub.metadata.plan) || '';
+    if (plan === 'essential') plan = 'starter';
+    if (priceMap[priceId]) plan = priceMap[priceId].plan;
+    if (['starter', 'pro', 'enterprise'].indexOf(plan) === -1) plan = (c.plan && ['starter', 'pro', 'enterprise'].indexOf(c.plan) !== -1) ? c.plan : 'starter';
+    var st = sub.status === 'active' ? 'active' : sub.status === 'past_due' ? 'past_due' : sub.status === 'trialing' ? 'trialing' : sub.status === 'canceled' ? 'canceled' : 'inactive';
+    var pEndRaw = sub.current_period_end || (item && item.current_period_end);
+    var pStartRaw = sub.current_period_start || (item && item.current_period_start);
+    var pEnd = pEndRaw ? new Date(pEndRaw * 1000).toISOString() : '';
+    var pStart = pStartRaw ? new Date(pStartRaw * 1000).toISOString() : '';
+    var existing = null;
+    try { existing = db.prepare('SELECT * FROM subscriptions WHERE stripe_id = ?').get(c.stripe_subscription_id); } catch(e) {}
+    var nowIso = new Date().toISOString();
+    if (!existing) {
+      if (!dry) { try { db.prepare('INSERT INTO subscriptions (id, customer_id, stripe_id, plan, status, current_period_start, current_period_end, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?)').run(uuidv4(), c.id, c.stripe_subscription_id, plan, st, pStart, pEnd, nowIso, nowIso); } catch(e) {} }
+      out.rows_created++; act.push('created_row');
+    } else if (existing.status !== st || existing.plan !== plan) {
+      if (!dry) { try { db.prepare('UPDATE subscriptions SET plan = ?, status = ?, current_period_start = ?, current_period_end = ?, updated_at = ? WHERE stripe_id = ?').run(plan, st, pStart, pEnd, nowIso, c.stripe_subscription_id); } catch(e) {} }
+      out.rows_updated++; act.push('updated_row');
+    }
+    if (st === 'active' && c.trial_ends && String(c.trial_ends).toUpperCase() !== 'NULL') {
+      // Active subscriber: the signup trial date is stale - clear it so nothing shows "Expired".
+      if (!dry) { try { db.prepare('UPDATE customers SET trial_ends = NULL WHERE id = ?').run(c.id); } catch(e) {} }
+      out.trial_cleared++; act.push('cleared_trial_ends');
+    }
+    if (st === 'active' && ['starter', 'pro', 'enterprise'].indexOf(plan) !== -1 && c.plan !== plan) {
+      if (!dry) { try { applyPlan(c, plan, c.product); } catch(e) {} }
+      out.plan_synced++; act.push('synced_plan');
+    }
+    out.details.push({ email: c.email, actions: act.length ? act : ['ok'] });
+  }
+  if (!dry) saveDb();
+  return out;
+}
+app.post('/api/admin/reconcile-subscriptions', adminAuth, async (req, res) => {
+  try { res.json(Object.assign({ success: true }, await reconcileStripeSubscriptions({ dry: !!(req.body && req.body.dry_run) }))); } catch(e) { res.status(500).json({ error: e.message }); }
+});
+// Daily self-heal (04:30 UK) so a missed webhook can never leave a paying customer
+// looking expired, or their renewals unrecorded, for more than a day.
+cron.schedule('30 4 * * *', async function() {
+  try { var r = await reconcileStripeSubscriptions({ dry: false }); if (r.rows_created || r.rows_updated || r.trial_cleared || r.plan_synced) console.log('[STRIPE-RECONCILE] repaired: ' + JSON.stringify({ created: r.rows_created, updated: r.rows_updated, trial_cleared: r.trial_cleared, plan_synced: r.plan_synced })); } catch(e) { console.log('[STRIPE-RECONCILE] error:', e.message); }
+}, { timezone: 'Europe/London' });
+
 // GET /api/admin/crm-status - which customers have a CRM connected, and the result of
 // their most recent push (status + when + lead count + response snippet).
 app.get('/api/admin/crm-status', adminAuth, (req, res) => {
