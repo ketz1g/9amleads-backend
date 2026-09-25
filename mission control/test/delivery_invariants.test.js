@@ -93,6 +93,8 @@ ok('daily digest counts only lead-owing customers (no expired-trial false shortf
   has('REAL, LEAD-OWING customers only') && has('activeCusts.forEach(function(c) {'));
 ok('daily digest ignores stale/pre-emptive readiness noise',
   has("if (!e || !e.at || e.kind === 'readiness') return false;"));
+ok('Postcoder daily cap reported as self-imposed (not an error / credit balance)',
+  has('self-imposed cap; EPC resolves the rest') && has('var pcLow = false;'));
 ok('morning readiness summary is digest-mode (silent when all ready)',
   has("all ' + rows.length + ' ready - no email (digest mode)"));
 ok('early readiness + guarantee do not send duplicate pre-9am emails',

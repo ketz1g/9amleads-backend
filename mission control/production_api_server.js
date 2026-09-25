@@ -19023,7 +19023,8 @@ async function preDeliveryReadinessCheck() {
   } catch(e) {}
   try { if (!(typeof JWT_SECRET !== 'undefined' && JWT_SECRET)) issues.push('JWT_SECRET missing - dashboard login links would break.'); } catch(e) {}
   try { Object.keys(PRODUCT_LEAD_FILES || {}).forEach(function(p) { var f = PRODUCT_LEAD_FILES[p] && PRODUCT_LEAD_FILES[p].file; if (f && !fs.existsSync(path.join(DATA_DIR, f))) issues.push('Pool file missing: ' + f); }); } catch(e) {}
-  try { var _pb = require('./postcoder_budget'); if (_pb && typeof _pb.getDailyBudget === 'function' && (_pb.getDailyBudget() - _pb.usage()) < 10) issues.push('Postcoder budget nearly exhausted - some door numbers may be missing.'); } catch(e) {}
+  // NOTE: a low Postcoder daily allowance is intentional (EPC is the primary, free
+  // resolver of door numbers) - it is not a pre-9am failure and must not alert.
   if (!issues.length) { console.log('[READINESS] Pre-9am check: all good'); return; }
   console.log('[READINESS] ISSUES: ' + issues.join(' | '));
   try {
@@ -20042,7 +20043,14 @@ cron.schedule('30 9 * * 1-5', async () => {
       if (!e || !e.at || e.kind === 'readiness') return false;
       return new Date(e.at).getTime() >= _errCutoff;
     }).slice(-3).map(function(e){ return e.message || e.kind || ''; }).filter(Boolean);
-    var pcLow = (typeof cap.postcoder === 'number' && cap.postcoder < 50);
+    // The daily Postcoder allowance is a SELF-IMPOSED cap to keep paid lookups low
+    // (the free EPC index resolves most door numbers). Reaching it just means EPC-only
+    // for the rest of the day - it is NOT an error and must never page the founder, and
+    // it is NOT the account credit balance. (Previously "remaining < 50" flagged LOW
+    // forever because the cap itself is 50.)
+    var _pcUsed = 0, _pcBudget = 0;
+    try { var _pbm = require('./postcoder_budget'); _pcUsed = _pbm.usage() || 0; _pcBudget = _pbm.getDailyBudget() || 0; } catch(e) {}
+    var pcLow = false;
     var stLow = (typeof cap.stannp === 'number' && cap.stannp < 20);
     // Per-customer shortfall count - ONLY customers actually owed leads today (expired
     // trials, paused, cancelled and internal accounts are excluded, and rejected/
@@ -20066,7 +20074,7 @@ cron.schedule('30 9 * * 1-5', async () => {
       '<b style="color:#38bdf8">Active customers:</b> ' + activeC + '<br>' +
       '<b style="color:#38bdf8">Leads delivered today:</b> ' + delToday + '<br>' +
       '<b style="color:#38bdf8">Customers below promise:</b> ' + (shortCount > 0 ? ('<b style="color:#f87171">' + shortCount + ' ⚠</b>') : '0') + '<br>' +
-      '<b style="color:#38bdf8">Postcoder budget:</b> ' + (cap.postcoder || 'n/a') + (pcLow ? ' ⚠ LOW' : '') + '<br>' +
+      '<b style="color:#38bdf8">Postcoder lookups today:</b> ' + _pcUsed + '/' + _pcBudget + ' (self-imposed cap; EPC resolves the rest)<br>' +
       '<b style="color:#38bdf8">Stannp balance:</b> ' + (typeof cap.stannp === 'number' ? ('&pound;' + cap.stannp.toFixed(2)) : cap.stannp) + (stLow ? ' ⚠ LOW' : '') + '<br><br>' +
       '<b style="color:#38bdf8">Recent errors:</b><ul style="margin:4px 0;padding-left:18px">' + errHtml + '</ul><br>' +
       '<div style="font-size:12px;color:#94a3b8">Only issues needing a manual decision are emailed. Healthy days are silent.</div></div>');
