@@ -767,7 +767,6 @@ function loadPrintPost(){
     })
     .catch(function(){ b.innerHTML = '<div class="loading">Could not load Print &amp; Post.</div>'; });
 }
-}
 function loadCrm() {
   var body = document.getElementById('crmBody');
   if (!body) return;
@@ -784,7 +783,9 @@ function loadCrm() {
       if (sum) sum.innerHTML = tile('Connected', d.with_crm, '#0ea5e9') + tile('Not connected', d.total - d.with_crm, '#64748b') + tile('Needs attention', failing, failing ? '#ef4444' : '#16a34a');
       var h = '<table class="table"><tr><th>Customer</th><th>Product</th><th>CRM webhook</th><th>Last push</th><th>Actions</th></tr>';
       if (!rows.length) h += '<tr><td colspan="5" class="empty">No customers</td></tr>';
+      window.__crmUrls = window.__crmUrls || {};
       rows.forEach(function(r){
+        window.__crmUrls[r.email] = r.crm_webhook_url || '';
         var lp = r.crm_last_push, lpCell = '-';
         if (lp) {
           var col = lp.ok ? '#16a34a' : '#ef4444';
@@ -794,14 +795,26 @@ function loadCrm() {
         }
         var urlCell = r.crm_webhook_url ? '<span style="font-size:11px;color:#0ea5e9;word-break:break-all">' + esc(r.crm_webhook_url) + '</span>' : '<span style="color:#94a3b8">Not connected</span>';
         var actions = r.crm_webhook_url
-          ? '<button class="btn btn-outline btn-sm" onclick="crmTest(\'' + esc(r.email) + '\')"><i class="fas fa-plug"></i> Test</button> <button class="btn btn-outline btn-sm" onclick="crmPush(\'' + esc(r.email) + '\')"><i class="fas fa-paper-plane"></i> Push</button> <button class="btn btn-outline btn-sm" onclick="crmRemind(\'' + esc(r.email) + '\')"><i class="fas fa-envelope"></i> Remind</button>'
-          : '<button class="btn btn-outline btn-sm" onclick="crmRemind(\'' + esc(r.email) + '\')"><i class="fas fa-envelope"></i> Send setup instructions</button>';
+          ? '<button class="btn btn-outline btn-sm" onclick="crmTest(\'' + esc(r.email) + '\')"><i class="fas fa-plug"></i> Test</button> <button class="btn btn-outline btn-sm" onclick="crmPush(\'' + esc(r.email) + '\')"><i class="fas fa-paper-plane"></i> Push</button> <button class="btn btn-outline btn-sm" onclick="crmEdit(\'' + esc(r.email) + '\')"><i class="fas fa-pen"></i> Edit</button> <button class="btn btn-outline btn-sm" onclick="crmConnect(\'' + esc(r.email) + '\',\'\')"><i class="fas fa-link-slash"></i> Disconnect</button> <button class="btn btn-outline btn-sm" onclick="crmRemind(\'' + esc(r.email) + '\')"><i class="fas fa-envelope"></i> Remind</button>'
+          : '<button class="btn btn-primary btn-sm" onclick="crmEdit(\'' + esc(r.email) + '\')"><i class="fas fa-link"></i> Connect CRM</button> <button class="btn btn-outline btn-sm" onclick="crmRemind(\'' + esc(r.email) + '\')"><i class="fas fa-envelope"></i> Send setup instructions</button>';
         h += '<tr><td><b>' + esc(r.email) + '</b><div style="font-size:11px;color:#64748b">' + esc(r.company || '') + ' &middot; ' + esc(r.plan || '') + '</div></td>' +
           '<td>' + esc(r.product || '') + '</td><td>' + urlCell + '</td><td>' + lpCell + '</td><td>' + actions + '</td></tr>';
       });
       body.innerHTML = h + '</table>';
     })
     .catch(function(){ body.innerHTML = '<div class="loading">Could not load CRM status.</div>'; });
+}
+function crmEdit(email) {
+  var cur = (window.__crmUrls || {})[email] || '';
+  var u = prompt('CRM webhook URL for ' + email + (cur ? '\n\nCurrently: ' + cur : '') + '\n\nPaste the inbound webhook URL (must start https://). Leave blank and OK to disconnect.', cur);
+  if (u === null) return;
+  crmConnect(email, u.trim());
+}
+function crmConnect(email, url) {
+  fetch(API + '/api/admin/crm-connect', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ email: email, crm_webhook_url: url }) })
+    .then(function(r){ return r.json(); })
+    .then(function(d){ if (!d.success) { alert('Failed: ' + (d.error || '')); return; } alert(url ? ('CRM connected for ' + email) : ('CRM disconnected for ' + email)); loadCrm(); })
+    .catch(function(e){ alert('Error: ' + e.message); });
 }
 function crmTest(email) {
   fetch(API + '/api/admin/crm-test', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ email: email }) })

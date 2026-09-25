@@ -10765,6 +10765,24 @@ app.get('/api/admin/crm-status', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/crm-connect { email, crm_webhook_url } - connect / edit / disconnect
+// a customer's CRM webhook from the admin (so the founder can set it up for them). An
+// empty crm_webhook_url disconnects. Only http(s) URLs are accepted.
+app.post('/api/admin/crm-connect', adminAuth, (req, res) => {
+  try {
+    var email = String((req.body && req.body.email) || '').toLowerCase().trim();
+    var url = String((req.body && req.body.crm_webhook_url) || '').trim();
+    if (!email) return res.status(400).json({ error: 'email required' });
+    if (url && !/^https?:\/\//i.test(url)) return res.status(400).json({ error: 'Webhook URL must start with http:// or https://' });
+    var dbCC = getDb();
+    var c = (dbCC.customers || []).find(function(x) { return String(x.email || '').toLowerCase() === email; });
+    if (!c) return res.status(404).json({ error: 'Customer not found' });
+    db.prepare('UPDATE customers SET crm_webhook_url = ? WHERE id = ?').run(url, c.id);
+    saveDb();
+    res.json({ success: true, email: c.email, crm_webhook_url: url, connected: !!url });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/crm-test { email } - send the standard test payload to a customer's
 // configured CRM webhook and return the raw result (200/404/etc) so admin can verify.
 app.post('/api/admin/crm-test', adminAuth, async (req, res) => {
