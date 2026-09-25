@@ -1185,8 +1185,16 @@ function renderTrialStatus(data) {
   if (!isFreeTrial || !endTime || endTime <= Date.now()) { card.style.display = 'none'; return; }
   card.style.display = '';
   var daysRemaining = Math.max(1, Math.ceil((endTime - Date.now()) / 86400000));
-  var dayX = Math.min(7, 8 - daysRemaining);
-  document.getElementById('trial-day').textContent = 'Day ' + dayX + ' of 7';
+  // ACTUAL trial length, not a hardcoded 7. Trials can be 7 (standard), 14
+  // (affiliate/partner) or extended, so derive the length from signup -> trial end.
+  // This keeps "Day X of N" correct (it used to read "Day 0 of 7" for a 9-day
+  // trial) and keeps the remaining count identical to the admin customer list.
+  var startTime = data.created_at ? new Date(data.created_at).getTime() : 0;
+  var totalDays = 7;
+  if (startTime && endTime > startTime) totalDays = Math.max(1, Math.round((endTime - startTime) / 86400000));
+  totalDays = Math.max(totalDays, daysRemaining);
+  var dayX = Math.min(totalDays, Math.max(1, totalDays - daysRemaining + 1));
+  document.getElementById('trial-day').textContent = 'Day ' + dayX + ' of ' + totalDays;
   document.getElementById('trial-days-left').textContent = daysRemaining + (daysRemaining === 1 ? ' day' : ' days') + ' remaining';
   var names = { moving: 'Moving leads', newbusiness: 'New Business leads', probate: 'Probate leads', planning: 'Planning leads', tenders: 'Public tender leads' };
   document.getElementById('trial-leadtype').textContent = names[data.product] || (data.product || 'your selected');

@@ -926,10 +926,10 @@ function renderSubscription() {
   var isTrial = currentUser.plan === 'Free Trial';
   document.getElementById('subPlanName').textContent = isTrial ? 'Free Trial' : 'Pro Plan';
   document.getElementById('subPlanPrice').innerHTML = isTrial ? '\u00a30<span>/mo</span>' : '\u00a3' + p + '<span>/mo</span>';
-  document.getElementById('subPlanDesc').textContent = isTrial ? '7-day free trial — ' + daysLeft + ' days remaining' : 'Up to ' + l + ' leads per day';
+  document.getElementById('subPlanDesc').textContent = isTrial ? 'Free trial — ' + daysLeft + ' days remaining' : 'Up to ' + l + ' leads per day';
   document.getElementById('subUsage').style.width = isTrial ? '35%' : '65%';
   document.getElementById('subUsed').textContent = isTrial ? 'Trial: ' + daysLeft + ' days left' : Math.floor(l * 0.65) + ' used today';
-  document.getElementById('subLimit').textContent = isTrial ? '7 day trial' : l + ' limit';
+  document.getElementById('subLimit').textContent = isTrial ? 'Trial' : l + ' limit';
   const features = [
     '<i class="fas fa-check"></i> Daily 9am email delivery',
     '<i class="fas fa-check"></i> Full lead details',
