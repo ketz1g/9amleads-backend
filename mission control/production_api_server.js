@@ -15581,10 +15581,15 @@ app.get('/api/admin/customers', adminAuth, (req, res) => {
   // Get lead counts for each customer
   const result = customers.map(c => {
     const leadCount = db.prepare('SELECT COUNT(*) as count FROM leads WHERE customer_id = ?').get(c.id);
+    // PAYING = has a Stripe subscription. Their signup trial_ends is stale and must
+    // NEVER be shown as "Expired" (the admin was showing a red "Expired (date)" for
+    // paying subscribers because a subscription webhook had not cleared trial_ends).
+    const paid = !!(c.stripe_subscription_id && String(c.stripe_subscription_id).toUpperCase() !== 'NULL');
     return Object.assign({}, c, {
       // The SQL shim stores a JS null as the string "NULL". Show the trial end date
-      // for ANY plan that has a valid one (everyone starts a 7-day trial).
-      trial_ends: (c.trial_ends && String(c.trial_ends).toUpperCase() !== 'NULL' && !isNaN(new Date(c.trial_ends).getTime())) ? c.trial_ends : null,
+      // for ANY plan that has a valid one - unless they are PAYING (then it's stale).
+      trial_ends: (!paid && c.trial_ends && String(c.trial_ends).toUpperCase() !== 'NULL' && !isNaN(new Date(c.trial_ends).getTime())) ? c.trial_ends : null,
+      paid: paid,
       lead_count: leadCount.count,
       trial_expired: customerTrialExpired(c),
       email_log: emailSeriesReceived(c)
@@ -28700,6 +28705,27 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
     if (event.type === 'invoice.payment_succeeded') {
       const invoice = event.data.object;
       const invSubId = invoice.subscription;
+      // FOUNDER VISIBILITY: tell the founder (once per invoice) that a customer has
+      // PAID. Previously only payment FAILURES alerted, so successful payments were
+      // invisible unless the founder opened Stripe - which caused "how come I can't
+      // see they paid?". Deduped by invoice id so retries can't double-email.
+      try {
+        var _invId = invoice.id;
+        var _pdb = getDb();
+        if (!_pdb.paid_invoice_alerts) _pdb.paid_invoice_alerts = [];
+        if (_invId && _pdb.paid_invoice_alerts.indexOf(_invId) === -1) {
+          _pdb.paid_invoice_alerts.push(_invId);
+          if (_pdb.paid_invoice_alerts.length > 500) _pdb.paid_invoice_alerts = _pdb.paid_invoice_alerts.slice(-500);
+          saveDb();
+          var _payCust = null;
+          try { _payCust = db.prepare('SELECT * FROM customers WHERE (stripe_subscription_id = ? AND ? <> \'\') OR (stripe_customer_id = ? AND ? <> \'\') LIMIT 1').get(invSubId || '', invSubId || '', invoice.customer || '', invoice.customer || ''); } catch(pe1) {}
+          if (!_payCust && invoice.customer_email) { try { _payCust = db.prepare('SELECT * FROM customers WHERE email = ? LIMIT 1').get(String(invoice.customer_email).toLowerCase()); } catch(pe2) {} }
+          var _amt = invoice.total ? (invoice.total / 100).toFixed(2) : (invoice.amount_paid ? (invoice.amount_paid / 100).toFixed(2) : '?');
+          var _isFirst = invoice.billing_reason === 'subscription_create';
+          sendAdminAlert('\uD83D\uDCB0 Payment received: £' + _amt + (_isFirst ? ' (new subscription)' : ' (renewal)'),
+            '<div style="font-size:13px;color:#e2e8f0;line-height:1.7"><b>' + ((_payCust && (_payCust.company || _payCust.email)) || invoice.customer_email || 'A customer') + '</b> paid <b>£' + _amt + '</b>.<br>Plan: ' + ((_payCust && _payCust.plan) || 'n/a') + '<br><span style="color:#94a3b8;font-size:12px">Invoice ' + (invoice.number || invoice.id) + ' &middot; ' + (invoice.billing_reason || '') + '</span></div>');
+        }
+      } catch(paErr2) { console.log('[WEBHOOK] payment alert error:', paErr2.message); }
       if (invSubId) {
         const invSub = db.prepare('SELECT * FROM subscriptions WHERE stripe_id = ?').get(invSubId);
         if (invSub) {

@@ -1733,9 +1733,12 @@ function renderCustomers(customers) {  const tbody = document.getElementById('cu
   if (customers.length === 0) { tbody.innerHTML = '<tr><td colspan="12" class="empty">No customers found</td></tr>'; return; }
   tbody.innerHTML = customers.map(c => {
     const areas = c.target_areas ? JSON.parse(c.target_areas).slice(0, 3).join(', ') + (JSON.parse(c.target_areas).length > 3 ? '...' : '') : '';
-    // Trial end + days remaining
+    // Trial end + days remaining. PAYING customers (Stripe subscription) are never
+    // shown as "Expired" - their signup trial date is stale once they subscribe.
     var trialHtml = '<span style="font-size:11px;color:#64748b">-</span>';
-    if (c.trial_ends) {
+    if (c.paid) {
+      trialHtml = '<span style="font-size:11px;color:#22c55e;font-weight:700" title="Active Stripe subscription - they have paid">&#10003; Paid</span>';
+    } else if (c.trial_ends) {
       var te = new Date(c.trial_ends);
       var days = Math.ceil((te - Date.now()) / 86400000);
       var teColor = days < 0 ? '#ef4444' : days <= 2 ? '#eab308' : '#64748b';

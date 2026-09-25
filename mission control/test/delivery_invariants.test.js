@@ -95,6 +95,10 @@ ok('daily digest ignores stale/pre-emptive readiness noise',
   has("if (!e || !e.at || e.kind === 'readiness') return false;"));
 ok('Postcoder daily cap reported as self-imposed (not an error / credit balance)',
   has('self-imposed cap; EPC resolves the rest') && has('var pcLow = false;'));
+ok('paying customers are flagged paid (never shown as expired trial)',
+  has('const paid = !!(c.stripe_subscription_id') && has('paid: paid,'));
+ok('successful subscription payments alert the founder (deduped)',
+  has('Payment received: £') && has('_pdb.paid_invoice_alerts'));
 ok('morning readiness summary is digest-mode (silent when all ready)',
   has("all ' + rows.length + ' ready - no email (digest mode)"));
 ok('early readiness + guarantee do not send duplicate pre-9am emails',
