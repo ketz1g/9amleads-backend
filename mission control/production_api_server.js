@@ -19845,11 +19845,18 @@ async function runFulfilmentGuarantee(label) {
       try {
         var gc = gCusts[gi];
         var gp = await deliveryPreviewForCustomer(gc, gSeen);
-        var gpromised = parseInt(gc.leads_per_day, 10) > 0 ? parseInt(gc.leads_per_day, 10) : (getPlanLimit(gc.product, gc.plan, gc.coverage) || 5);
-        if (!gp || gp.count < gpromised) {
-          gShort.push(gc.email + ' (' + gc.product + '): ' + (gp ? gp.count : 0) + '/' + gpromised + ' in ' + ((gp && gp.areas) || []).join(','));
-          gShortProds[gc.product] = (gShortProds[gc.product] || 0) + 1;
-        }
+    var gpromised = parseInt(gc.leads_per_day, 10) > 0 ? parseInt(gc.leads_per_day, 10) : (getPlanLimit(gc.product, gc.plan, gc.coverage) || 5);
+    // Count the RESERVED queue (leads pre-allocation already queued) AND the pool
+    // preview - otherwise this fires a false "will be short" before the queue is stocked
+    // (it runs after pre-allocation now, but keep it correct regardless). Mirrors
+    // readiness / delivery-preview.
+    var gReserved = 0;
+    try { gReserved = (gDb.leads || []).filter(function(l) { return l.customer_id === gc.id && !l.delivered && l.status !== 'removed'; }).length; } catch(gr) {}
+    var gHave = (gp ? gp.count : 0) + gReserved;
+    if (gHave < gpromised) {
+      gShort.push(gc.email + ' (' + gc.product + '): ' + gHave + '/' + gpromised + ' in ' + ((gp && gp.areas) || []).join(','));
+      gShortProds[gc.product] = (gShortProds[gc.product] || 0) + 1;
+    }
       } catch(ge2) { console.log('[GUARANTEE] preview error ' + gc.email + ': ' + ge2.message); }
     }
     if (gShort.length) {
@@ -19909,7 +19916,10 @@ async function runFulfilmentGuarantee(label) {
     } catch(sge) {}
   } catch(e) { console.log('[GUARANTEE] ' + label + ' error:', e.message); }
 }
-cron.schedule('25 7 * * 1-5', function() { runFulfilmentGuarantee('07:25'); }, { timezone: 'Europe/London' });
+// Runs AFTER pre-allocation (07:35) + readiness (07:55) so it reflects the FINAL
+// prepared state and only flags genuine gaps - moved from 07:25, which fired on a
+// not-yet-stocked queue and produced false "will be short" alerts.
+cron.schedule('56 7 * * 1-5', function() { runFulfilmentGuarantee('07:56'); }, { timezone: 'Europe/London' });
 // FINAL CHECK runs 07:25 UK - 15 min after the 07:10 planning re-scrape kicks off
 // (enough for the collector to land fresh apps) and right inside the 07:00 report /
 // 07:10 re-scrape / 07:25 verify cluster. This is the decisive "what will truly be
