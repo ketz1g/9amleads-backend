@@ -1912,7 +1912,7 @@ function renderCustomers(customers) {  const tbody = document.getElementById('cu
     var lostVal = parseInt(c.lost_count) || 0;
     var leadsVal = parseInt(c.lead_count) || 0;
     var convPct = leadsVal > 0 ? Math.round(bookedVal / leadsVal * 100) : 0;
-    var extendBtn = (c.plan === 'free_trial') ? '<button class="btn btn-sm" style="background:rgba(14,165,233,0.1);color:#0ea5e9;border:1px solid rgba(14,165,233,0.2);padding:3px 7px;font-size:10px;margin-left:4px" onclick="event.stopPropagation();fixExtendTrial(\'' + c.id + '\')" title="Extend trial"><i class="fas fa-clock"></i></button>' : '';
+    var extendBtn = (c.plan === 'free_trial') ? '<button class="btn btn-sm" style="background:rgba(14,165,233,0.1);color:#0ea5e9;border:1px solid rgba(14,165,233,0.2);padding:3px 7px;font-size:10px;margin-left:4px" onclick="event.stopPropagation();fixExtendTrial(\'' + c.id + '\',\'' + esc(c.email) + '\')" title="Extend trial"><i class="fas fa-clock"></i></button>' : '';
     return '<tr>' +
       '<td><strong>' + (c.company || '-') + '</strong>' + extendBtn + '</td>' +
       '<td style="font-size:12px;color:#64748b">' + c.email + '</td>' +
@@ -1992,13 +1992,23 @@ function sortBy(field) {
   renderCustomers(sorted);
 }
 
-async function fixExtendTrial(customerId) {
+async function fixExtendTrial(customerId, email) {
   var days = prompt('Extend trial by how many days?', '7');
   if (!days || isNaN(parseInt(days))) return;
+  // MANUAL, ON PURPOSE: extending never emails automatically. We ask first.
+  var notify = confirm('Extend by ' + parseInt(days) + ' day(s).\n\nAlso EMAIL this customer the "trial extended" explanation?\n\nOK = extend + email   |   Cancel = extend only (no email)');
   try {
     var r = await fetch(API + '/api/admin/extend-trial', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ customer_id: customerId, days: parseInt(days) }) });
     var d = await r.json();
-    alert(d.message || 'Done');
+    var msg = d.message || 'Done';
+    if (notify && email) {
+      try {
+        var r2 = await fetch(API + '/api/admin/send-trial-extension-notice', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ emails: [email] }) });
+        var d2 = await r2.json();
+        msg += (d2 && d2.sent_count) ? ' · explanation email sent' : ' · explanation email NOT sent';
+      } catch(e2) { msg += ' · email error'; }
+    }
+    alert(msg);
     loadHealth();
     loadData();
   } catch(e) { alert('Error: ' + e.message); }

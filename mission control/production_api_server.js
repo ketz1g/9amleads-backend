@@ -21597,19 +21597,14 @@ cron.schedule('7 9 * * 1-5', async () => {
         if (gLead && gData) {
           var gNew = { id: 'lead_' + Date.now() + '_goodwill_' + vi2, customer_id: gCust.id, product: gProd, data: JSON.stringify(Object.assign({}, gLead, { address: gData.address, fullAddress: gData.address, postcode: gData.postcode || '' })), status: 'new', delivered: 1, created_at: new Date().toISOString(), delivered_at: new Date().toISOString() };
           vDb.leads.push(gNew);
-          // TRIAL EXTENSION: add 2 free days to the affected customer's trial. Only
-          // ever extends a trial that is currently ACTIVE (the entitlement gate above
-          // guarantees this) - never an expired one.
-          var gExtendDays = 2;
-          if (gCust.plan === 'free_trial') {
-            var gTrialBase = gCust.trial_ends ? new Date(gCust.trial_ends) : new Date();
-            gCust.trial_ends = new Date(gTrialBase.getTime() + gExtendDays * 86400000).toISOString();
-          }
+          // MANUAL-ONLY POLICY: a short delivery is made good by adding the bonus lead
+          // only. We deliberately do NOT auto-extend the trial and do NOT auto-email
+          // here - the founder extends/emails ONLY when they decide to (admin "Extend
+          // trial" button, which then offers to send the explanation). This prevents
+          // unexplained extensions (the ones we just had to reverse).
           saveDb();
-          console.log('[VERIFY-9AM] goodwill bonus lead added to ' + vIssues[vi2].email + ' (' + gProd + ') - ' + gData.postcode + ' (trial +' + gExtendDays + 'd)');
-          try {
-            await sendBrevoEmail(gCust.email, 'A free bonus lead from 9amLeads \u{1F389}', '<div style="font-family:Inter,Arial,Helvetica,sans-serif;background:#f1f5f9;color:#1e293b;padding:28px 20px"><div style="max-width:600px;margin:0 auto"><table width="100%" cellpadding="0" cellspacing="0"><tbody>' + buildEmailHeader() + '<tr><td style="background:#ffffff;padding:28px 30px;color:#1e293b"><div style="font-size:11px;color:#64748b;letter-spacing:1px;margin-bottom:6px">9amLeads \u2022 Customer Care</div><h2 style="color:#15803d;margin:0 0 12px;font-size:20px">A free bonus lead for you \u{1F389}</h2><p style="font-size:14px;line-height:1.7;color:#334155">Thanks for your patience. As a <b>gesture of goodwill</b> for the delivery delay, we have added a <b>free bonus lead</b> to your dashboard, plus <b>+2 days</b> on your trial. No extra charge.</p><div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px 16px;margin:14px 0"><div style="font-size:15px;font-weight:700;color:#1e293b">' + String(gData.fullAddress || gData.address || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div><div style="font-size:13px;color:#64748b;margin-top:4px">' + (gData.postcode || '') + '</div></div><p style="font-size:13px;line-height:1.6;color:#475569">This bonus lead is yours to review in your dashboard. On top of your usual daily leads. If you have any questions, just reply to this email and we will help right away.</p></td></tr>' + buildEmailFooter() + '</tbody></table></div></div>');
-          } catch(gwe) { console.log('[VERIFY-9AM] goodwill email error: ' + gwe.message); }
+          try { logActivity(gCust.id, 'goodwill_lead', 'Bonus lead added after a delivery shortfall - ' + (gProd || '') + ' ' + (gData.postcode || '') + ' (trial NOT extended; no email sent)', { email: false }); } catch(eGa) {}
+          console.log('[VERIFY-9AM] bonus lead added to ' + vIssues[vi2].email + ' (' + gProd + ') - ' + gData.postcode + ' (no trial extension, no email - manual only)');
         }
       } catch(gw) { console.log('[VERIFY-9AM] goodwill error: ' + gw.message); }
     }

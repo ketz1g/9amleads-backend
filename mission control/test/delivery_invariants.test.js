@@ -111,6 +111,8 @@ ok('admin can connect/edit/disconnect a customer CRM webhook',
   has("app.post('/api/admin/crm-connect'"));
 ok('sendBrevoEmail accepts a string recipient (goodwill alerts actually send)',
   has("if (typeof to === 'string') to = { email: to.trim(), name: '' };"));
+ok('trial extensions/emails are manual only (no auto goodwill extension)',
+  has('MANUAL-ONLY POLICY') && has('no trial extension, no email - manual only'));
 ok('morning readiness summary is digest-mode (silent when all ready)',
   has("all ' + rows.length + ' ready - no email (digest mode)"));
 ok('early readiness + guarantee do not send duplicate pre-9am emails',
