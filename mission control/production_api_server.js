@@ -18046,6 +18046,27 @@ function buildAddCardEmail(customer, trialEndStr) {
     + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">The button takes you straight to secure card entry - it takes about 60 seconds. Any questions, just reply.</p>'
     + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0">All the best,<br><strong>Ketz Mandalia</strong><br><span style="color:#64748b">Founder, 9amLeads</span></p>';
 }
+// FINAL (day ~6) "last chance" add-card email - deliberately DIFFERENT from the day-4
+// nudge (urgent badge, orange CTA, "stop tomorrow" headline) so the final reminder does
+// not look like a straight repeat.
+function buildAddCardFinalEmail(customer, trialEndStr) {
+  var addUrl = PUBLIC_URL + '/portal/dashboard.html?addcard=1';
+  var metrics = {};
+  try { metrics = getTrialMetrics(customer); } catch(e) {}
+  var received = metrics.received > 0 ? metrics.received : 0;
+  var name = String(customer.contact_name || customer.company || 'there').replace(/[<>&]/g, '');
+  var prod = customer.lead_type || 'leads';
+  return '<p style="text-align:center;margin:0 0 8px"><span style="display:inline-block;background:#fee2e2;color:#b91c1c;font-size:11px;font-weight:800;letter-spacing:1px;padding:4px 12px;border-radius:20px">FINAL REMINDER</span></p>'
+    + '<h2 style="font-family:Outfit,sans-serif;font-size:23px;font-weight:800;color:#0f172a;margin:0 0 6px;text-align:center">Last chance - your ' + prod + ' stop tomorrow</h2>'
+    + '<p style="color:#64748b;font-size:13px;text-align:center;margin:0 0 20px">Your free trial ends ' + trialEndStr + '. Add your card and keep them coming.</p>'
+    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 16px">Hi ' + name + ',<br><br>This is the last nudge from me. ' + (received ? ('You\u2019ve received <strong>' + received + ' ' + prod + '</strong> so far. ') : '') + 'If you do nothing, your daily 9am leads <strong>pause tomorrow morning</strong>. Add your card now and there is no gap - everything carries on exactly as it is.</p>'
+    + '<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:16px 20px;margin:0 0 16px">'
+    + '<p style="color:#9a3412;font-size:14px;font-weight:800;margin:0 0 8px">Add your card in the next few minutes</p>'
+    + '<p style="color:#9a3412;font-size:13px;line-height:1.9;margin:0">\u2705 <strong>No charge until ' + trialEndStr + '</strong><br>\u2705 <strong>No gap</strong> - your leads keep arriving every morning at 9am<br>\u2705 <strong>Cancel in one click</strong> - no lock-in, no hassle<br>\u2705 Card saved securely by Stripe</p></div>'
+    + '<p style="text-align:center;margin:0 0 18px"><a href="' + addUrl + '" style="display:inline-block;padding:15px 34px;background-color:#ea580c;color:#ffffff;text-decoration:none;border-radius:50px;font-weight:800;font-size:15px">Add my card now - keep my leads</a></p>'
+    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">Takes about 60 seconds. If you\u2019d rather I did it for you, or you have any questions, just reply to this email.</p>'
+    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0">All the best,<br><strong>Ketz Mandalia</strong><br><span style="color:#64748b">Founder, 9amLeads</span></p>';
+}
 function fmtTrialEnd(customer) {
   try { if (!customer.trial_ends) return ''; var d = new Date(customer.trial_ends); return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); } catch(e) { return ''; }
 }
@@ -23092,8 +23113,15 @@ async function runCampaignEmails(dry) {
                 if (_cardTpl && !campaignSent.includes(_cardTpl)) {
                   campaignSent.push(_cardTpl);
                   var _teStr = fmtTrialEnd(cust) || 'your trial end';
-                  var _acSubject = 'Keep your ' + (cust.lead_type || 'leads') + ' coming after ' + _teStr + ' (no charge until then)';
-                  await sendIt(cust, _cardTpl, _acSubject, buildAddCardEmail(cust, _teStr));
+                  var _acSubject, _acHtml;
+                  if (_cardTpl === 'trial_addcard6') {
+                    _acSubject = 'Last chance to keep your ' + (cust.lead_type || 'leads') + ' (trial ends ' + _teStr + ')';
+                    _acHtml = buildAddCardFinalEmail(cust, _teStr);
+                  } else {
+                    _acSubject = 'Keep your ' + (cust.lead_type || 'leads') + ' coming after ' + _teStr + ' (no charge until then)';
+                    _acHtml = buildAddCardEmail(cust, _teStr);
+                  }
+                  await sendIt(cust, _cardTpl, _acSubject, _acHtml);
                   sent++; _sentThisCust = true;
                 }
               }
