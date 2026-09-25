@@ -16548,6 +16548,7 @@ app.post('/api/admin/print-post/help-nudge', adminAuth, async (req, res) => {
     var d = getDb();
     var only = Array.isArray(req.body && req.body.emails) && req.body.emails.length ? req.body.emails.map(function(e) { return String(e).toLowerCase().trim(); }) : null;
     var force = !!(req.body && req.body.force);
+    var dryRun = !!(req.body && req.body.dry_run);
     var tplByCust = {};
     (d.direct_mail_templates || []).forEach(function(t) {
       var cid = String(t && t.customer_id || ''); if (!cid) return;
@@ -16565,6 +16566,7 @@ app.post('/api/admin/print-post/help-nudge', adminAuth, async (req, res) => {
       var materials = !!(tpl && tpl.flyer_front_material_id && (tpl.letter_material_id || tpl.ai_generated_text));
       if (!only) { if (!card || materials) continue; } // default targeting: card but no materials
       if (!force && c.pp_help_notified && (Date.now() - new Date(c.pp_help_notified).getTime()) < 7 * 86400000) { skipped.push({ email: c.email, reason: 'recently notified' }); continue; }
+      if (dryRun) { sent.push(c.email); continue; } // preview only - do NOT send
       var _name = String(c.contact_name || c.company || 'there').replace(/[<>&]/g, '');
       var html = '<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:26px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px">'
         + '<div style="font-size:20px;font-weight:800;color:#0f172a;margin-bottom:8px">Need a hand adding your leaflet?</div>'
@@ -16581,8 +16583,8 @@ app.post('/api/admin/print-post/help-nudge', adminAuth, async (req, res) => {
         sent.push(c.email);
       } catch(e2) { skipped.push({ email: c.email, reason: 'send failed' }); }
     }
-    if (!req.body || !req.body.dry_run) saveDb();
-    res.json({ success: true, sent_count: sent.length, sent: sent, skipped: skipped });
+    if (!dryRun) saveDb();
+    res.json({ success: true, dry_run: dryRun, sent_count: sent.length, sent: sent, skipped: skipped });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
