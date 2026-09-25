@@ -140,6 +140,8 @@ ok('paid emails require real payment (not just a pre-selected plan)',
   has('var isPaidNow = _hasSub || !!cust.paid_since;'));
 ok('quiet-area emails skip ended trials / non-entitled customers',
   has("if (!isEntitledForDelivery(c)) return;") && has('EXPIRED TRIALS - an ended trial'));
+ok('quiet-area alert is one consolidated email per customer',
+  has('var quietCodes = [];') && has("No leads in ' + _qaCodes"));
 ok('morning readiness summary is digest-mode (silent when all ready)',
   has("all ' + rows.length + ' ready - no email (digest mode)"));
 ok('early readiness + guarantee do not send duplicate pre-9am emails',

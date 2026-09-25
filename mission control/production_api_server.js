@@ -13410,6 +13410,10 @@ function checkQuietAreas() {
           } catch(e) {}
         }
       });
+      // Collect this customer's quiet areas first, then send ONE consolidated email.
+      // De-duping was per-area, so a customer with two quiet areas received TWO
+      // separate "Update your postcode areas" emails in the same run.
+      var quietCodes = [];
       areas.forEach(function(a) {
         var code = extractPostcodeArea(a);
         // Only alert on real postcode-AREA targets (e.g. L, SW, CH2). Skip
@@ -13421,15 +13425,20 @@ function checkQuietAreas() {
         if (got > 0) return;
         var last = quietAreaAlertedDate(c, code);
         if (last && (Date.now() - new Date(last + 'T00:00:00Z').getTime()) < 7 * 86400000) return;
-        setQuietAreaAlerted(c, code, new Date().toISOString().split('T')[0]);
-        alerted.push({ email: c.email, area: code, days: days });
+        if (quietCodes.indexOf(code) === -1) quietCodes.push(code);
+      });
+      if (quietCodes.length) {
+        var _qaToday = new Date().toISOString().split('T')[0];
+        quietCodes.forEach(function(code) { setQuietAreaAlerted(c, code, _qaToday); });
+        var _qaCodes = quietCodes.join(', ');
+        alerted.push({ email: c.email, areas: quietCodes, days: days });
         try {
           sendDMNotification(c.id, 'quiet-area', 'Update your postcode areas',
-            'No leads in ' + code + ' for ' + days + ' days',
-            'We haven\u2019t been able to source new leads in <b>' + escHtml(code) + '</b> for the last ' + days + ' days. To keep your daily leads coming, open Settings and update your postcode areas. Try adding a nearby postcode or a busier area. Your other areas are unaffected.',
+            'No leads in ' + _qaCodes + ' for ' + days + ' days',
+            'We haven\u2019t been able to source new leads in <b>' + escHtml(_qaCodes) + '</b> for the last ' + days + ' days. To keep your daily leads coming, open Settings and update these postcode areas - try adding a nearby or busier area. Your other areas are unaffected.',
             'Update my areas', '/portal/dashboard.html');
         } catch(e) { console.log('[QUIET-AREA] notify error:', e.message); }
-      });
+      }
     });
     if (alerted.length) saveDb();
     return alerted;
