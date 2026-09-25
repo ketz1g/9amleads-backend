@@ -1898,10 +1898,12 @@ function renderCustomers(customers) {  const tbody = document.getElementById('cu
       var days = Math.ceil((te - Date.now()) / 86400000);
       var teColor = days < 0 ? '#ef4444' : days <= 2 ? '#eab308' : '#64748b';
       var teLabel = days < 0 ? 'Expired' : days === 0 ? 'Today' : days + 'd';
-      trialHtml = '<span style="font-size:11px;color:' + teColor + ';font-weight:' + (days<=2?'700':'400') + '">' + teLabel + ' (' + te.toLocaleDateString() + ')</span>';
+      var _teTotal = 7; try { if (c.created_at) { var _tsp = (te.getTime() - new Date(c.created_at).getTime()) / 86400000; if (_tsp > 0) _teTotal = Math.round(_tsp); } } catch(e) {}
+      var _teStr = te.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      trialHtml = '<span title="' + _teTotal + '-day trial (standard 7 + any goodwill extension)" style="font-size:11px;color:' + teColor + ';font-weight:' + (days<=2?'700':'400') + '">' + teLabel + (days > 0 && _teTotal > 7 ? ' of ' + _teTotal : '') + ' (' + _teStr + ')</span>';
     }
     const hasCrm = c.crm_webhook_url ? '<span style="color:#22c55e;font-size:11px">Connected</span>' : '<span style="color:#64748b;font-size:11px">No</span>';
-    const signupDate = c.created_at ? new Date(c.created_at).toLocaleDateString() : '';
+    const signupDate = c.created_at ? new Date(c.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
     // Multi-product: parse biz_field3 to show all products
     let productsHtml = '<span class="badge ' + badgeClass(c.product) + '">' + (c.lead_type || c.product) + '</span>';
     try { var extraProds = JSON.parse(c.biz_field3 || '[]'); if (Array.isArray(extraProds) && extraProds.length > 0) { productsHtml += extraProds.map(function(p) { return ' <span class="badge ' + badgeClass(p) + '">' + p + '</span>'; }).join(''); } } catch(e) {}
@@ -1934,8 +1936,8 @@ function renderExpiredCustomers(customers) {
   if (!customers || customers.length === 0) { tbody.innerHTML = '<tr><td colspan="10" class="empty">No expired trials yet</td></tr>'; return; }
   tbody.innerHTML = customers.map(c => {
     const areas = c.target_areas ? JSON.parse(c.target_areas).slice(0, 3).join(', ') + (JSON.parse(c.target_areas).length > 3 ? '...' : '') : '';
-    const trialEnd = c.trial_ends ? new Date(c.trial_ends).toLocaleDateString() : '-';
-    const signupDate = c.created_at ? new Date(c.created_at).toLocaleDateString() : '';
+    const trialEnd = c.trial_ends ? new Date(c.trial_ends).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-';
+    const signupDate = c.created_at ? new Date(c.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
     const log = c.email_log || [];
     const emailsChip = log.length
       ? '<div style="white-space:normal;max-width:160px" title="' + log.map(x => x.label || x.key).join('\\n').replace(/"/g, '&quot;') + '">' + log.map(x => emailDayBadge(x.key, x.label)).join('') + '</div>'
