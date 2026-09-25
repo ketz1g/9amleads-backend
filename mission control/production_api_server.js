@@ -9678,6 +9678,25 @@ app.get('/api/leads', authMiddleware, (req, res) => {
       var _full = _pp.filter(Boolean).join(', ');
       if (_full && _full.split(',').length >= 2) parsed.fullAddress = dedupeAddressSegments(_full);
     }
+    // DISPLAY SYNC (door-number fix): the dashboard lead cards read `data.address`,
+    // not `data.fullAddress`, so many leads that DO have a door number in their data
+    // (fullAddress / building_number + street) were rendering as a bare street (e.g.
+    // "High Street, London" instead of "12 High Street, London"). Mirror the complete
+    // rebuilt address into `address` (same sanitising) so the door number is always
+    // shown. Only ever replaces when the new value adds detail / a premise number -
+    // never regresses a stored address.
+    if (parsed.fullAddress && String(parsed.fullAddress).trim()) {
+      var _faClean = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(String(parsed.fullAddress))));
+      var _curAddr = String(parsed.address || '');
+      var _faHasNum = false, _curHasNum = false;
+      try {
+        _faHasNum = hasUsablePremiseAddress(_faClean, parsed.postcode || '');
+        _curHasNum = hasUsablePremiseAddress(_curAddr, parsed.postcode || '');
+      } catch(faE) {}
+      var _faLen = _faClean.replace(/[^a-z0-9]/gi, '').length;
+      var _curLen = _curAddr.replace(/[^a-z0-9]/gi, '').length;
+      if (_faClean && ((_faHasNum && !_curHasNum) || _faLen > _curLen)) parsed.address = _faClean;
+    }
     if (parsed.address) parsed.address = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(parsed.address)));
     if (parsed.deceasedAddress) parsed.deceasedAddress = stripPartialPostcode(stripRegionTags(stripGuessedFlatPrefix(parsed.deceasedAddress)));
     const scored = attachOpportunityScore(parsed, customer?.product || l.product);
@@ -11505,7 +11524,7 @@ app.get('/api/admin/delivery-status', adminAuth, (req, res) => {
     // counting them here made 'delivery_completed_today' false forever.
     var custs = (dbS.customers || []).filter(function(c) { return !isInternalAccount(c) && isEntitledForDelivery(c); });
     var rows = custs.map(function(c) {
-      var promised = getPlanLimit(c.product, c.plan, c.coverage) || 0;
+      var promised = getCustomerDailyQuota(c) || 0;
       var delivered = (dbS.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0; }).length;
       return { email: c.email, company: c.company || '', product: c.product, plan: c.plan, promised: promised, delivered: delivered, short: Math.max(0, promised - delivered), emailed: (c.last_email_date === today) };
     });
@@ -11956,7 +11975,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
   var areas = [];
   try { areas = JSON.parse(cust.target_areas || '[]'); } catch(e) { areas = []; }
   if (!areas.length) { try { var cfgP = JSON.parse(cust.product_config || '{}'); areas = (cfgP[cust.product] && cfgP[cust.product].target_areas) ? JSON.parse(cfgP[cust.product].target_areas) : []; } catch(e2) { areas = []; } }
-  var limit = getPlanLimit(cust.product, cust.plan, cust.coverage) || 5;
+  var limit = getCustomerDailyQuota(cust) || 5;
   var movingType = 'both';
   try { var cfgM = JSON.parse(cust.product_config || '{}'); movingType = (cfgM.moving && cfgM.moving.moving_type) || cust.moving_type || 'both'; } catch(e3) { movingType = cust.moving_type || 'both'; }
   var dbV = getDb();
@@ -13190,7 +13209,7 @@ app.get('/api/admin/readiness', adminAuth, async (req, res) => {
       var cc = custs[ri];
       try {
         var prev = await deliveryPreviewForCustomer(cc);
-        var promised = parseInt(cc.leads_per_day, 10) > 0 ? parseInt(cc.leads_per_day, 10) : (getPlanLimit(cc.product, cc.plan, cc.coverage) || 5);
+        var promised = getCustomerDailyQuota(cc) || 5;
         // DOOR-NUMBERED ONLY: the readiness check must reflect leads that will actually
         // pass the delivery's door-number gate. Counting PAF candidates as "available"
         // made the check report OK while the customer was still short at 9am (their
@@ -13253,7 +13272,7 @@ async function sendEarlyReadinessReport(label) {
       var cc = list[i];
       try {
         var pv = await deliveryPreviewForCustomer(cc);
-        var promised = parseInt(cc.leads_per_day, 10) > 0 ? parseInt(cc.leads_per_day, 10) : (getPlanLimit(cc.product, cc.plan, cc.coverage) || 5);
+        var promised = getCustomerDailyQuota(cc) || 5;
         var doorNow = (pv.leads || []).filter(function(l) { return l.has_door_number; }).length;
         var paf = (pv.leads || []).filter(function(l) { return l.paf_candidate; }).length;
         rows.push({ email: cc.email, product: cc.product, promised: promised, door: doorNow, paf: paf, reachable: doorNow + paf });
@@ -13665,7 +13684,7 @@ app.post('/api/admin/top-up-today', adminAuth, (req, res) => {
     var dbT = getDb();
     var cust = (dbT.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
     if (!cust) return res.status(404).json({ error: 'Customer not found' });
-    var dailyLimit = getPlanLimit(cust.product, cust.plan, cust.coverage) || 5;
+    var dailyLimit = getCustomerDailyQuota(cust) || 5;
     var today = new Date().toISOString().split('T')[0];
     // QUEUE-ONLY (pre-allocation): count/quota the customer's UNDELIVERED queued leads
     // and add the lead as NOT delivered, so the 9am run simply delivers the queue.
@@ -15166,7 +15185,7 @@ async function scrapeShortfallAreas() {
       if (c.product !== 'moving') return;
       if (!isEntitledForDelivery(c)) return;
       var areas = []; try { areas = JSON.parse(c.target_areas || '[]'); } catch (e) {}
-      var want = c.leads_per_day || (typeof getPlanLimit === 'function' ? getPlanLimit(c.product, c.plan, c.coverage) : 0) || 5;
+      var want = getCustomerDailyQuota(c) || 5;
       var avail = 0;
       areas.forEach(function (a) { var u = String(a).toUpperCase().replace(/[^A-Z].*$/, ''); if (/^[A-Z]{1,2}$/.test(u)) avail += (byArea[u] || 0); });
       if (avail < want) areas.forEach(function (a) { var u = String(a).toUpperCase().replace(/[^A-Z].*$/, ''); if (/^[A-Z]{1,2}$/.test(u) && shortAreas.indexOf(u) === -1) shortAreas.push(u); });
@@ -15467,7 +15486,9 @@ app.get('/api/admin/stats', adminAuth, (req, res) => {
   // an ISO string coerces the Date to its toString and is ALWAYS false, which is why
   // this stat read 0 forever.
   var _nowMs = Date.now();
-  var expiredTrials = allCusts.filter(function(c) { var t = c.trial_ends ? new Date(c.trial_ends).getTime() : NaN; return c.plan === 'free_trial' && !isNaN(t) && t < _nowMs; }).length;
+  // Same entitlement-based rule as the Expired Trials section (any plan whose trial
+  // ended unpaid), so the stat card always matches the list the founder sees.
+  var expiredTrials = allCusts.filter(function(c) { return customerTrialExpired(c); }).length;
   var weekSignups = allCusts.filter(function(c) { return c.created_at && c.created_at >= weekAgo; }).length;
   var crmConnected = allCusts.filter(function(c) { return c.crm_webhook_url; }).length;
   // Active = has leads owing today: not cancelled, not paused, trial not expired (unless paying).
@@ -15519,9 +15540,22 @@ function emailSeriesReceived(c) {
 function customerTrialExpired(c) {
   // Internal/test/demo accounts are never customers - never count them as expired.
   if (typeof isInternalAccount === 'function' && isInternalAccount(c)) return false;
-  if (String(c.plan || '') !== 'free_trial') return false;
+  // Cancelled accounts have their own win-back flow - never show them as an expired trial.
+  if (String(c.plan || '') === 'cancelled') return false;
+  // ENTITLEMENT-BASED (matches the delivery cutoff): a trial that has ended with no
+  // active Stripe subscription is expired, REGARDLESS of the plan label the customer
+  // picked at signup. Previously this required plan === 'free_trial', so a customer
+  // who chose Starter/Pro at signup but never paid kept a past trial_ends while
+  // showing `trial_expired:false` - and stayed in the main Customers list forever
+  // instead of moving to Expired Trials. trialExpiredUnpaid() is the single rule the
+  // 9am delivery already uses to stop their leads, so this keeps admin and delivery
+  // in agreement.
+  if (typeof trialExpiredUnpaid === 'function') return trialExpiredUnpaid(c);
   if (!c.trial_ends) return false;
-  return new Date(c.trial_ends) < new Date();
+  var t = new Date(c.trial_ends).getTime();
+  if (isNaN(t) || t >= Date.now()) return false;
+  if (c.stripe_subscription_id && String(c.stripe_subscription_id).toUpperCase() !== 'NULL') return false;
+  return true;
 }
 app.get('/api/admin/customers', adminAuth, (req, res) => {
   const page = parseInt(req.query.page) || 1;
@@ -16629,6 +16663,39 @@ function getPlanLimit(product, plan, coverage) {
   const planLimits = rule.plans[planKey] || rule.plans.starter;
   // Fallback: try specific coverage, then default, then first available
   return planLimits[coverageKey] || planLimits.default || Object.values(planLimits)[0] || 5;
+}
+
+// SINGLE SOURCE OF TRUTH for a customer's daily lead promise. Must match the
+// delivery engine's `totalDailyLimit` at the top of the /api/admin/deliver
+// customer block EXACTLY: plan limit for the primary product, summed across all
+// subscribed products (multi-product accounts), then any admin cap override
+// (cust.leads_per_day) if it RAISES the quota. Every watchdog / preview /
+// top-up / audit / trim path must use this so "promised" can never disagree
+// between the delivery that sends leads and the tools that measure or heal it -
+// a disagreement is what causes silent under-delivery or over-trimming.
+function getCustomerDailyQuota(c) {
+  try {
+    if (!c) return 0;
+    const plan = c.plan || 'free_trial';
+    const primary = c.product;
+    let products = [primary];
+    try { const extra = JSON.parse(c.biz_field3 || '[]'); if (Array.isArray(extra) && extra.length > 0) products = extra; } catch(e) {}
+    let pcfg = {};
+    try { pcfg = JSON.parse(c.product_config || '{}'); } catch(e) {}
+    const primaryCov = (pcfg[primary] && pcfg[primary].coverage) || c.coverage || 'postcode';
+    let quota = getPlanLimit(primary, plan, primaryCov) || 5;
+    if (products.length > 1) {
+      let sum = 0;
+      products.forEach(function(p) {
+        const cov = (pcfg[p] && pcfg[p].coverage) || c.coverage || 'postcode';
+        sum += getPlanLimit(p, plan, cov) || 5;
+      });
+      quota = Math.max(quota, sum);
+    }
+    const capOverride = parseInt(c.leads_per_day, 10);
+    if (capOverride && capOverride > quota) quota = capOverride;
+    return quota || 5;
+  } catch(e) { return 5; }
 }
 
 // Apply a paid plan: set plan + the per-product daily lead limit, clear the trial
@@ -18141,7 +18208,7 @@ cron.schedule('10 9 * * 1-5', async () => {
     var custsC = (dbC.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && !isInternalAccount(c) && isEntitledForDelivery(c); });
     var rowsC = [], totC = 0, okC = 0;
     custsC.forEach(function(c) {
-      var prom = parseInt(c.leads_per_day, 10) > 0 ? parseInt(c.leads_per_day, 10) : (getPlanLimit(c.product, c.plan, c.coverage) || 5);
+      var prom = getCustomerDailyQuota(c) || 5;
       var del = (dbC.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && l.delivered_at.startsWith(todayC); }).length;
       var em = (c.last_email_date === todayC);
       totC++; if (del >= prom && em) okC++;
@@ -18522,7 +18589,7 @@ function autoFillDeliveryShortfalls(cbDone) {
     (dbA.customers || []).forEach(function(c) {
       if (isInternalAccount(c)) return;
       if (!isEntitledForDelivery(c)) return;
-      var promised = getPlanLimit(c.product, c.plan, c.coverage) || 0;
+      var promised = getCustomerDailyQuota(c) || 0;
       if (promised <= 0) return;
       var have = (dbA.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0 && !_leadIsRejected(l); }).length;
       var need = promised - have;
@@ -18669,7 +18736,7 @@ function preallocateDeliveryQueues() {
       var chain = Promise.resolve();
       real.forEach(function(c) {
         chain = chain.then(function() {
-          var promised = getPlanLimit(c.product, c.plan, c.coverage) || c.leads_per_day || 5;
+          var promised = getCustomerDailyQuota(c) || 5;
           // Queue EXACTLY the leads the engine's own preview selects (identical area
           // matching, freshness and mailable gate), so pre-allocation and the admin
           // preview always agree - this is what was broken for county/region customers.
@@ -18772,7 +18839,7 @@ function sendMorningReadinessSummary() {
     var today = new Date().toISOString().split('T')[0];
     var custs = (db.customers || []).filter(function(c) { return !isInternalAccount(c) && isEntitledForDelivery(c); });
     var rows = custs.map(function(c) {
-      var promised = getPlanLimit(c.product, c.plan, c.coverage) || c.leads_per_day || 5;
+      var promised = getCustomerDailyQuota(c) || 5;
       var reserved = (db.leads || []).filter(function(l) { return l.customer_id === c.id && !l.delivered && l.status !== 'removed'; }).length;
       var delivered = (db.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0; }).length;
       return { email: c.email, product: c.product, promised: promised, reserved: reserved, delivered: delivered, ok: reserved >= promised };
@@ -18818,7 +18885,7 @@ function deliveryCompletionWatchdog(label) {
         if (typeof isInternalAccount === 'function' && isInternalAccount(c)) return;
         if (typeof isEntitledForDelivery === 'function' && !isEntitledForDelivery(c)) return;
         if (!c.plan || c.plan === 'cancelled') return;
-        var promised = (typeof getPlanLimit === 'function' ? getPlanLimit(c.product, c.plan, c.coverage) : 0) || 0;
+        var promised = (typeof getCustomerDailyQuota === 'function' ? getCustomerDailyQuota(c) : 0) || 0;
         if (promised <= 0) return;
         var have = (dbW.leads || []).filter(function(l) {
           return l.customer_id === c.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0 && !(typeof _leadIsRejected === 'function' && _leadIsRejected(l));
@@ -18898,7 +18965,7 @@ function sendDailySummaryEmail() {
     (db.customers || []).forEach(function(c) {
       if (!c.plan || c.plan === 'cancelled') return;
       if (typeof isInternalAccount === 'function' && isInternalAccount(c)) return;
-      var promised = (typeof getPlanLimit === 'function' ? getPlanLimit(c.product, c.plan, c.coverage) : 0) || 0;
+      var promised = (typeof getCustomerDailyQuota === 'function' ? getCustomerDailyQuota(c) : 0) || 0;
       if (promised <= 0) return;
       var delivered = (db.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0; }).length;
       rows.push({ email: c.email, promised: promised, delivered: delivered, emailed: (c.last_email_date === today) });
@@ -19201,7 +19268,7 @@ function runFinalGuaranteeAudit() {
     (dbA.customers || []).forEach(function(c) {
       if (isInternalAccount(c)) return;
       if (!isEntitledForDelivery(c)) return;
-      var promised = getPlanLimit(c.product, c.plan, c.coverage) || 0;
+      var promised = getCustomerDailyQuota(c) || 0;
       if (promised <= 0) return;
       var delivered = (dbA.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0 && !_leadIsRejected(l); }).length;
       var pending = (dbA.leads || []).filter(function(l) { return l.customer_id === c.id && !l.delivered; }).length;
@@ -19386,7 +19453,7 @@ async function sendDeliveryCompleteReport() {
     custs.forEach(function(c2) {
       var prod = c2.product || 'moving';
       var lds = (rDb.leads || []).filter(function(l2) { return l2.customer_id === c2.id && l2.delivered_at && String(l2.delivered_at).indexOf(todayS) === 0; });
-      var promised = parseInt(c2.leads_per_day, 10) > 0 ? parseInt(c2.leads_per_day, 10) : (getPlanLimit(c2.product, c2.plan, c2.coverage) || 5);
+      var promised = getCustomerDailyQuota(c2) || 5;
       totalDelivered += lds.length;
       totalPromised += promised;
       var ok = lds.length >= promised;
@@ -19459,7 +19526,7 @@ async function runDailyDeliveryReport() {
       try {
         var rc = rCusts[ri];
         var rp = await deliveryPreviewForCustomer(rc, rSeen);
-        var rPromised = parseInt(rc.leads_per_day, 10) > 0 ? parseInt(rc.leads_per_day, 10) : (getPlanLimit(rc.product, rc.plan, rc.coverage) || 5);
+        var rPromised = getCustomerDailyQuota(rc) || 5;
         // ACCOUNT FOR ALREADY-DELIVERED-TODAY: if a customer has already received
         // their full quota earlier today (e.g. a re-run/test), the preview shows 0
         // NEW leads - that's NOT a shortfall, they already have their count. Only
@@ -19644,7 +19711,7 @@ cron.schedule('10 9 * * 1-5', async () => {
         // NEVER warn a customer who already has their full promised count today: they
         // HAVE their leads (and the daily email did go out) even if the last_email_date
         // flag was lost to a mid-delivery cache reset. Warning them is a false alarm.
-        var sPromised = (typeof getPlanLimit === 'function' ? getPlanLimit(sc.product, sc.plan, sc.coverage) : 0) || 0;
+        var sPromised = (typeof getCustomerDailyQuota === 'function' ? getCustomerDailyQuota(sc) : 0) || 0;
         var sDelivered = (sDb.leads || []).filter(function(l) { return l.customer_id === sc.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(todayS) === 0; }).length;
         if (sPromised > 0 && sDelivered >= sPromised) { sNotified[sKey] = 'sorted'; continue; }
         if (!gotEmail) {
@@ -19787,7 +19854,7 @@ cron.schedule('30 6 * * 1-5', async () => {
       try {
         var rdc = rdCusts[rdi];
         var rdp = await deliveryPreviewForCustomer(rdc);
-        var rdpromised = parseInt(rdc.leads_per_day, 10) > 0 ? parseInt(rdc.leads_per_day, 10) : (getPlanLimit(rdc.product, rdc.plan, rdc.coverage) || 5);
+        var rdpromised = getCustomerDailyQuota(rdc) || 5;
         if (rdp.count < rdpromised) rdShort.push(rdc.email + ' (' + rdc.product + '): only ' + rdp.count + '/' + rdpromised + ' in ' + (rdp.areas || []).join(','));
       } catch(re) {}
     }
@@ -19845,7 +19912,7 @@ async function runFulfilmentGuarantee(label) {
       try {
         var gc = gCusts[gi];
         var gp = await deliveryPreviewForCustomer(gc, gSeen);
-    var gpromised = parseInt(gc.leads_per_day, 10) > 0 ? parseInt(gc.leads_per_day, 10) : (getPlanLimit(gc.product, gc.plan, gc.coverage) || 5);
+    var gpromised = getCustomerDailyQuota(gc) || 5;
     // Count the RESERVED queue (leads pre-allocation already queued) AND the pool
     // preview - otherwise this fires a false "will be short" before the queue is stocked
     // (it runs after pre-allocation now, but keep it correct regardless). Mirrors
@@ -19959,7 +20026,7 @@ cron.schedule('30 9 * * 1-5', async () => {
       (ddDb.customers || []).forEach(function(c) {
         if (!c.plan || c.plan === 'cancelled') return;
         if (typeof isInternalAccount === 'function' && isInternalAccount(c)) return;
-        var promised = (typeof getPlanLimit === 'function' ? getPlanLimit(c.product, c.plan, c.coverage) : 0) || 0;
+        var promised = (typeof getCustomerDailyQuota === 'function' ? getCustomerDailyQuota(c) : 0) || 0;
         if (promised <= 0) return;
         var have = (ddDb.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && String(l.delivered_at).startsWith(todayD); }).length;
         if (have < promised) shortCount++;
@@ -21081,7 +21148,7 @@ cron.schedule('7 9 * * 1-5', async () => {
       // SAME rule as the 9am run (plan + not paused + trial not expired).
       if (!isEntitledForDelivery(c)) return;
       if (c.bounced && parseInt(c.bounced) >= 3) return;
-      var quota = getPlanLimit(c.product, c.plan, c.coverage) || 5;
+      var quota = getCustomerDailyQuota(c) || 5;
       var todayDelivered = (vDb.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && l.delivered_at.startsWith(vToday); }).length;
       if (todayDelivered < quota) {
         vIssues.push({ email: c.email, company: c.company || c.email, quota: quota, delivered: todayDelivered, product: c.product, id: c.id });
@@ -22498,8 +22565,10 @@ function trimOverdeliveredLeads() {
   (d.customers || []).forEach(function(c) {
     if (!c.plan || c.plan === 'cancelled') return;
     if (typeof isInternalAccount === 'function' && isInternalAccount(c)) return;
-    var target = 0; try { target = getPlanLimit(c.product, c.plan, c.coverage || 'postcode'); } catch(x) { target = 0; }
-    if (!target) target = c.leads_per_day || 5;
+    // Use the SAME quota the delivery engine promises (cap override + multi-product),
+    // so a legitimately higher promise is never trimmed back to the plan default.
+    var target = 0; try { target = getCustomerDailyQuota(c); } catch(x) { target = 0; }
+    if (!target) target = 5;
     var todayLeads = (d.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && String(l.delivered_at).split('T')[0] === today; });
     if (todayLeads.length <= target) return;
     todayLeads.sort(function(a, b) { return String(b.delivered_at).localeCompare(String(a.delivered_at)); });
@@ -24893,7 +24962,6 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       // founder loses their only end-to-end check. Real customers are unaffected.
       if (isLeadsPaused(cust) && !testOnly) continue;
       if (!_deliverDiag[cust.email]) _deliverDiag[cust.email] = { global: 0, poolfile: 0, poolfile_total: 0, areas: [], stage: 'start' };
-_deliverDiag[cust.email].totalDailyLimit = totalDailyLimit;
 _deliverDiag[cust.email].products = products;
       
       // Use per-product limits based on lead type and coverage area.
@@ -25056,6 +25124,10 @@ _deliverDiag[cust.email].products = products;
       // The override set at the top of this customer's block was previously dropped by
       // the re-declaration above; re-apply it so admin changes actually stick.
       if (capOverride && capOverride > totalDailyLimit) totalDailyLimit = capOverride;
+      // Record the FINAL resolved quota (after multi-product sum + cap override). This
+      // used to be written before totalDailyLimit was assigned (var hoisting), so the
+      // diag/API always reported `undefined`; now it reflects what was really promised.
+      if (_deliverDiag[cust.email]) _deliverDiag[cust.email].totalDailyLimit = totalDailyLimit;
       // Ensure customer's primary product always has at least 1 lead
       var primaryPickedId = null;
       if (cust.product) {
@@ -26505,10 +26577,13 @@ _deliverDiag[cust.email].products = products;
       // deliver what exists (never over-deliver, never fabricate).
       try {
         var _fillLookupsC = 0; // per-customer fill PAF cap (prevents delivery stalls)
-        var finalShort = Math.max(0, totalDailyLimit - custLeads.length);
+        // Target the REMAINING daily allowance (totalNeeded), not the full plan quota,
+        // so a customer who already had leads delivered earlier today is never filled
+        // up to totalDailyLimit on top (which would over-deliver).
+        var finalShort = Math.max(0, totalNeeded - custLeads.length);
         // Same budget gate: never spin the paid exact-count fill once Postcoder is spent.
         if (finalShort > 0 && _pcBudgetNow > 0 && (process.env.POSTCODER_ENABLED === 'true' || process.env.POSTCODER_ENABLED === '1')) {
-          for (var fp = 0; fp < products.length && custLeads.length < totalDailyLimit; fp++) {
+          for (var fp = 0; fp < products.length && custLeads.length < totalNeeded; fp++) {
             var fprod = products[fp];
             if (prodTaken[fprod] >= prodDailyCap(fprod)) continue;
             if (!canTakeProduct(fprod, cust.plan, weekStart2, today, custLeads)) continue;
@@ -26516,7 +26591,7 @@ _deliverDiag[cust.email].products = products;
               var fpoolArr = interleavePoolByAreas(getDeliveryPool(fprod), custAreas);
               if (!Array.isArray(fpoolArr) || fpoolArr.length === 0) continue;
               var fcreated = [];
-              for (var fc=0; fc<fpoolArr.length && fcreated.length < finalShort && custLeads.length < totalDailyLimit; fc++) {
+              for (var fc=0; fc<fpoolArr.length && fcreated.length < finalShort && custLeads.length < totalNeeded; fc++) {
                 var fl = fpoolArr[fc];
                 if ((_deliveryDeadline && Date.now() > _deliveryDeadline) || (_custDeadline && Date.now() > _custDeadline)) { console.log('[DELIVERY] ' + cust.email + ': time budget reached during exact-count fill - stopping'); break; }
                 if (fl.commercial) continue;
@@ -26675,8 +26750,8 @@ _deliverDiag[cust.email].products = products;
             }
             // If the confirmation pass dropped leads, top up from the fresh pool so
             // the exact entitlement is still met with confirmed-numbered leads.
-            if (confirmedLeads.length < totalDailyLimit) {
-              var ncShort = totalDailyLimit - confirmedLeads.length;
+            if (confirmedLeads.length < totalNeeded) {
+              var ncShort = totalNeeded - confirmedLeads.length;
               var ncPoolArr = interleavePoolByAreas(getDeliveryPool('moving'), custAreas);
               if (!Array.isArray(ncPoolArr) || ncPoolArr.length === 0) continue;
               var confirmedIds = {}; confirmedLeads.forEach(function(cl){ try { var cd=JSON.parse(cl.data||'{}'); confirmedIds[cd.url||cd.id]=1; } catch(e){} });
@@ -26720,7 +26795,7 @@ _deliverDiag[cust.email].products = products;
                 ncPicked.push(ncNewLead);
               }
               confirmedLeads = confirmedLeads.concat(ncPicked);
-              if (confirmedLeads.length > totalDailyLimit) confirmedLeads = confirmedLeads.slice(0, totalDailyLimit);
+              if (confirmedLeads.length > totalNeeded) confirmedLeads = confirmedLeads.slice(0, totalNeeded);
             }
             custLeads = confirmedLeads;
             // ===== FINAL AUTO-REVIEW (moving) =====
@@ -26959,9 +27034,9 @@ _deliverDiag[cust.email].products = products;
         // with VALID leads only (mailable + in-area + not already delivered to anyone),
         // so a customer is never left short just because a bad lead was filtered out.
         // Skips repeat/watchdog runs that have already emailed (the day is settled).
-        if ((!alreadyEmailedToday || forceFull) && custLeads.length < totalDailyLimit) {
+        if ((!alreadyEmailedToday || forceFull) && custLeads.length < totalNeeded) {
           try {
-            var _fillNeed = totalDailyLimit - custLeads.length;
+            var _fillNeed = totalNeeded - custLeads.length;
             var _usedKeys = {};
             custLeads.forEach(function(cl) {
               try {
@@ -27000,20 +27075,25 @@ _deliverDiag[cust.email].products = products;
                 _fNeed--; _fillNeed--;
               }
             }
-            if (custLeads.length < totalDailyLimit) {
-              console.log('[DELIVERY-FILL] ' + cust.email + ': still short after fill (' + custLeads.length + '/' + totalDailyLimit + ') - genuine supply gap');
-              if (_deliverDiag[cust.email]) _deliverDiag[cust.email].fill_short = custLeads.length + '/' + totalDailyLimit;
+            if (custLeads.length < totalNeeded) {
+              console.log('[DELIVERY-FILL] ' + cust.email + ': still short after fill (' + custLeads.length + '/' + totalNeeded + ') - genuine supply gap');
+              if (_deliverDiag[cust.email]) _deliverDiag[cust.email].fill_short = custLeads.length + '/' + totalNeeded;
             } else {
-              console.log('[DELIVERY-FILL] ' + cust.email + ': backfilled to promise (' + custLeads.length + '/' + totalDailyLimit + ')');
+              console.log('[DELIVERY-FILL] ' + cust.email + ': backfilled to promise (' + custLeads.length + '/' + totalNeeded + ')');
             }
           } catch(_fe) { console.log('[DELIVERY-FILL] error for ' + cust.email + ': ' + _fe.message); }
         }
-        if (custLeads.length > totalDailyLimit) {
-          console.log('[DELIVERY-FINAL-CAP] ' + cust.email + ': hard-capped ' + custLeads.length + ' -> ' + totalDailyLimit + ' (never over-deliver) prod=' + cust.product + ' plan=' + cust.plan + ' cov=' + primCoverage + ' lpd=' + cust.leads_per_day);
-          if (_deliverDiag[cust.email]) _deliverDiag[cust.email].final_cap = custLeads.length + '->' + totalDailyLimit;
-          custLeads = custLeads.slice(0, totalDailyLimit);
+        // BULLETPROOF PRE-EMAIL HARD-CAP: cap to the REMAINING allowance (totalNeeded)
+        // BEFORE the email is built, so a customer who already received leads earlier
+        // today can never exceed their daily promise (over-delivery). totalNeeded equals
+        // totalDailyLimit on a normal first run, and totalDailyLimit - alreadyDelivered
+        // on any re-run/top-up, so this is exact in every case.
+        if (custLeads.length > totalNeeded) {
+          console.log('[DELIVERY-FINAL-CAP] ' + cust.email + ': hard-capped ' + custLeads.length + ' -> ' + totalNeeded + ' (never over-deliver) promise=' + totalDailyLimit + ' already=' + alreadyDeliveredToday + ' prod=' + cust.product + ' plan=' + cust.plan + ' cov=' + primCoverage + ' lpd=' + cust.leads_per_day);
+          if (_deliverDiag[cust.email]) _deliverDiag[cust.email].final_cap = custLeads.length + '->' + totalNeeded;
+          custLeads = custLeads.slice(0, totalNeeded);
         } else {
-          if (_deliverDiag[cust.email]) { _deliverDiag[cust.email].final_len = custLeads.length + ' limit=' + totalDailyLimit; _deliverDiag[cust.email].ms = Date.now() - _custT0; }
+          if (_deliverDiag[cust.email]) { _deliverDiag[cust.email].final_len = custLeads.length + ' limit=' + totalNeeded; _deliverDiag[cust.email].ms = Date.now() - _custT0; }
         }
         // NO SPLIT EMAILS: if this customer already got their daily email, only
         // mark the top-up leads as delivered - don't send a second email.
@@ -27086,11 +27166,35 @@ pushToCrm(cust, crmPayload2, 'daily delivery');
         // clamp to EXACTLY totalDailyLimit immediately before marking delivered +
         // emailing. "No more no less" is the #1 promise - a 6th lead must never
         // reach the mailbox or the delivered ledger.
-        if (custLeads.length > totalDailyLimit) {
-          console.log('[DELIVERY-FINAL-CAP] ' + cust.email + ': hard-capped ' + custLeads.length + ' -> ' + totalDailyLimit + ' (never over-deliver)');
-          custLeads = custLeads.slice(0, totalDailyLimit);
+        if (custLeads.length > totalNeeded) {
+          console.log('[DELIVERY-FINAL-CAP] ' + cust.email + ': hard-capped ' + custLeads.length + ' -> ' + totalNeeded + ' (never over-deliver)');
+          custLeads = custLeads.slice(0, totalNeeded);
         }
         for (var li = 0; li < custLeads.length; li++) { custLeads[li].delivered = 1; custLeads[li].delivered_at = new Date().toISOString(); custLeads[li].status = 'delivered'; if (testOnly && req.body && req.body.run_id) custLeads[li].delivery_run_id = req.body.run_id; }
+        // LIVE GLOBAL EXCLUSIVITY: add THIS customer's just-delivered leads to the
+        // run-wide delivered sets immediately. These sets are snapshotted at the start
+        // of the run and were never updated as the run progressed, so a pool/fill/PAF
+        // lead picked for an earlier customer in the SAME run was invisible to
+        // alreadyDeliveredLead() and could be re-delivered to a later overlapping-area
+        // customer (observed: the same Rightmove/OnTheMarket listing sent to 2-4
+        // customers on the same morning). Real (non-test) deliveries only: test/internal
+        // leads must never block a real customer.
+        if (!_isTestCust) {
+          try {
+            for (var _mki = 0; _mki < custLeads.length; _mki++) {
+              var _mkd = {}; try { _mkd = JSON.parse(custLeads[_mki].data || '{}'); } catch(mkE) { _mkd = {}; }
+              var _mku = String(_mkd.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
+              if (_mku) globalDeliveredUrls[_mku] = true;
+              var _mkr = String(_mkd.reference || _mkd.companyNumber || _mkd.tenderNoticeId || '').toLowerCase().trim();
+              if (_mkr) globalDeliveredKeys[_mkr] = true;
+              var _mkAddr = String(_mkd.fullAddress || _mkd.deceasedAddress || _mkd.address || '').toLowerCase().replace(/\s+/g, ' ').trim();
+              var _mkPc = String(_mkd.postcode || '').toUpperCase().replace(/\s+/g, ' ').trim();
+              var _mkid = propertyIdentityKey(_mkd.fullAddress || _mkd.deceasedAddress || _mkd.address || '', _mkd.postcode || '');
+              if (_mkid) globalDeliveredKeys['gg:' + _mkid] = true;
+              if (_mkAddr && _mkPc) globalDeliveredKeys[_mkAddr + '|' + _mkPc] = true;
+            }
+          } catch(mkErr) { console.log('[DELIVERY] live-exclusivity update error:', mkErr.message); }
+        }
         saveDb();
         delivered += custLeads.length;
         // GUARANTEE CHECK: never silently deliver less than promised. Log (and
@@ -30474,8 +30578,10 @@ app.get('/api/health', (req, res) => {
   var _nowMsH = Date.now();
   var customerCount = { count: _hcust.length };
   var leadCount = { count: (getDb().leads || []).length };
-  var activeTrials = { count: _hcust.filter(function(c) { if (c.plan !== 'free_trial') return false; var t = c.trial_ends ? new Date(c.trial_ends).getTime() : NaN; return !isNaN(t) && t > _nowMsH; }).length };
-  var expiredTrials = { count: _hcust.filter(function(c) { if (c.plan !== 'free_trial') return false; var t = c.trial_ends ? new Date(c.trial_ends).getTime() : NaN; return !isNaN(t) && t <= _nowMsH; }).length };
+  // Entitlement-based (matches the admin section + the delivery cutoff): a trial that
+  // has ended with no active subscription is expired, whatever plan label was chosen.
+  var activeTrials = { count: _hcust.filter(function(c) { if (String(c.plan || '') === 'cancelled') return false; var t = c.trial_ends ? new Date(c.trial_ends).getTime() : NaN; return !isNaN(t) && t > _nowMsH && !customerTrialExpired(c); }).length };
+  var expiredTrials = { count: _hcust.filter(function(c) { return customerTrialExpired(c); }).length };
   var paidCustomers = { count: _hcust.filter(function(c) { return c.plan && c.plan !== 'free_trial'; }).length };
   
   res.json({
@@ -35030,7 +35136,7 @@ async function runDeliveryRehearsal(trigger, opts) {
     var today = new Date().toISOString().split('T')[0];
     var d2 = getDb();
     accounts.forEach(function(c) {
-      var expected = getPlanLimit(c.product, c.plan, c.coverage) || 5;
+      var expected = getCustomerDailyQuota(c) || 5;
       var leads = (d2.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && String(l.delivered_at).split('T')[0] === today; });
       var badAddr = 0;
       leads.forEach(function(l) { var ld = {}; try { ld = JSON.parse(l.data || '{}'); } catch(e) {} if (!leadMailableForDelivery(ld, l.product || c.product)) badAddr++; });
@@ -35060,7 +35166,7 @@ async function runDeliveryRehearsal(trigger, opts) {
         if (_rd && _rd.json && _rd.json.customers) _rd.json.customers.forEach(function(r) { if (r && r.email) _byEmail[r.email] = r; });
         _newCusts.forEach(function(nc) {
           var row = _byEmail[nc.email] || {};
-          var expected = row.promised || (typeof getPlanLimit === 'function' ? getPlanLimit(nc.product, nc.plan, nc.coverage) : 0) || nc.leads_per_day || 5;
+          var expected = row.promised || getCustomerDailyQuota(nc) || 5;
           var have = (row.queued_mailable || 0) + (row.preview_count || 0);
           var status = row.status || (have >= expected ? 'OK' : 'SHORT');
           out.new_customers.push({ email: nc.email, product: nc.product, expected: expected, preview: have, status: status, areas: row.areas || [] });
@@ -41695,7 +41801,7 @@ app.listen(PORT, () => {
           (_db.customers || []).forEach(function(c) {
             if (!c.plan || c.plan === 'cancelled') return;
             if (typeof isInternalAccount === 'function' && isInternalAccount(c)) return;
-            var promised = (typeof getPlanLimit === 'function' ? getPlanLimit(c.product, c.plan, c.coverage) : 0) || 0;
+            var promised = (typeof getCustomerDailyQuota === 'function' ? getCustomerDailyQuota(c) : 0) || 0;
             if (promised <= 0) return;
             var have = (_db.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(_today) === 0; }).length;
             if (have < promised) _short++;

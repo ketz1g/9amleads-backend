@@ -57,8 +57,40 @@ ok('hard cap never exceeds the promised quota',
   has('custLeads.length > totalDailyLimit') && has('hard-capped'));
 ok('exact-count fill cannot exceed the promise',
   has('FILL_CAP') || has('EXACT_COUNT_FILL_CAP'));
-ok('pre-9am rehearsal exists and is scheduled',
-  has('function runDeliveryRehearsal') && has("cron.schedule('5 8 * * 1-5'"));
+
+console.log('\n=== Exact-count (never over / never under) invariants ===');
+// A single source of truth for the daily promise, matching the delivery engine
+// (plan limit + multi-product sum + cap override). Every watchdog/preview/top-up
+// path must use it, or "promised" disagrees and causes silent under-delivery or
+// over-trimming.
+ok('single-source daily quota helper exists',
+  has('function getCustomerDailyQuota(c)'));
+ok('quota helper honours the admin cap override',
+  has('if (capOverride && capOverride > quota) quota = capOverride;'));
+ok('quota helper sums multi-product entitlements',
+  has('quota = Math.max(quota, sum)'));
+ok('over-trim uses the shared quota (never trims a higher promise)',
+  has('try { target = getCustomerDailyQuota(c); }'));
+ok('completion watchdog uses the shared quota',
+  has('typeof getCustomerDailyQuota === \'function\' ? getCustomerDailyQuota(c)'));
+ok('delivery preview / readiness use the shared quota',
+  has('var limit = getCustomerDailyQuota(cust) || 5;'));
+ok('exact-count fill targets the REMAINING allowance',
+  has('var finalShort = Math.max(0, totalNeeded - custLeads.length);'));
+ok('fill-back targets the REMAINING allowance',
+  has('if ((!alreadyEmailedToday || forceFull) && custLeads.length < totalNeeded)'));
+ok('pre-email hard cap clamps to the REMAINING allowance',
+  has('if (custLeads.length > totalNeeded)') && has('custLeads.slice(0, totalNeeded)'));
+ok('diagnostic records the FINAL resolved quota (not undefined)',
+  has('if (_deliverDiag[cust.email]) _deliverDiag[cust.email].totalDailyLimit = totalDailyLimit;'));
+ok('cross-customer exclusivity sets update live within a run',
+  has('LIVE GLOBAL EXCLUSIVITY') && has('globalDeliveredUrls[_mku] = true;'));
+ok('dashboard address is synced from full address (door number shown)',
+  has('DISPLAY SYNC (door-number fix)') && has('parsed.address = _faClean;'));
+ok('expired-trial classification is entitlement-based (not plan label)',
+  has('if (typeof trialExpiredUnpaid === \'function\') return trialExpiredUnpaid(c);'));
+ok('pre-9am rehearsal exists and is scheduled before 9am',
+  has('function runDeliveryRehearsal') && has("runDeliveryRehearsal('07:45 schedule')"));
 ok('test/internal accounts never get real emails',
   has('Skipped un-deliverable test address'));
 ok('internal deliveries never block real customers',
