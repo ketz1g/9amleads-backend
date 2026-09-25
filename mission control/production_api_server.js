@@ -9223,6 +9223,9 @@ app.get('/api/dashboard', authMiddleware, (req, res) => {
       quoted_revenue: quotedRevenue,
       actual_revenue: actualRevenue,
       average_deal_size: won.length > 0 ? Math.round(actualRevenue / won.length) : 0,
+      reply_rate: contacted.length > 0 ? Math.round((replied.length / contacted.length) * 100) + '%' : '0%',
+      conversion_rate: contacted.length > 0 ? Math.round((won.length / contacted.length) * 100) + '%' : '0%',
+      loss_reasons: (function() { var m = {}; lost.forEach(function(l) { var r = l.outcome_reason || 'Not specified'; m[r] = (m[r] || 0) + 1; }); return Object.keys(m).map(function(k) { return { reason: k, count: m[k] }; }).sort(function(a, b) { return b.count - a.count; }); })(),
       subscription_roi: roi,
       weekly_cost: weeklyCost
     });
@@ -15906,6 +15909,10 @@ app.get('/api/admin/customers', adminAuth, (req, res) => {
       trial_ends: (!paid && c.trial_ends && String(c.trial_ends).toUpperCase() !== 'NULL' && !isNaN(new Date(c.trial_ends).getTime())) ? c.trial_ends : null,
       paid: paid,
       lead_count: leadCount.count,
+      // Real booked/lost counts from the customer's lead tracking (these admin columns
+      // were permanently 0 - nothing ever wrote booked_count/lost_count).
+      booked_count: (db.leads || []).filter(function(l) { return l.customer_id === c.id && l.lead_status === 'won'; }).length,
+      lost_count: (db.leads || []).filter(function(l) { return l.customer_id === c.id && l.lead_status === 'lost'; }).length,
       trial_expired: customerTrialExpired(c),
       email_log: emailSeriesReceived(c)
     });

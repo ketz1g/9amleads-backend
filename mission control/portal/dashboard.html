@@ -171,7 +171,10 @@ footer a{color:var(--accent);text-decoration:underline}
 <div><div style="font-size:24px;font-weight:800;color:#16a34a" id="res-won">0</div><div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Won</div></div>
 <div><div style="font-size:24px;font-weight:800;color:#16a34a" id="res-revenue">&pound;0</div><div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Revenue won</div></div>
 <div><div style="font-size:24px;font-weight:800" id="res-roi">-</div><div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Return on plan</div></div>
+<div><div style="font-size:24px;font-weight:800" id="res-conv">0%</div><div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Conversion</div></div>
 </div>
+<div id="res-lost" style="display:none;margin-top:10px;font-size:12px;color:var(--text2);line-height:1.6"></div>
+<div id="res-areas" style="display:none;margin-top:8px;font-size:12px;color:var(--text2);line-height:1.6"></div>
 <div id="res-nudge" style="display:none;font-size:12px;color:var(--text2);margin-top:10px;line-height:1.6">&#128073; Mark leads as <b>Contacted / Quoted / Won</b> in <a href="/portal/leads.html" style="color:var(--accent)">My Leads</a> and your pipeline, revenue and ROI appear here automatically.</div>
 </div>
 
@@ -2199,14 +2202,35 @@ document.querySelectorAll('.modal').forEach(function(m){
           .then(function(r){ return r.json(); })
           .then(function(d){
             if (!d || d.error) return;
+            function _esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
             function _set(id, v){ var el = document.getElementById(id); if (el) el.textContent = v; }
             _set('res-contacted', d.contacted || 0);
             _set('res-quoted', d.quoted || 0);
             _set('res-won', d.won || 0);
             _set('res-revenue', '\u00a3' + (Number(d.actual_revenue) || 0).toLocaleString('en-GB'));
             _set('res-roi', d.subscription_roi || '-');
+            _set('res-conv', d.conversion_rate || '0%');
+            try {
+              var lr = d.loss_reasons || [];
+              var le = document.getElementById('res-lost');
+              if (le && lr.length) { le.innerHTML = '<b>Why lost:</b> ' + lr.slice(0,4).map(function(x){ return _esc(x.reason) + ' (' + x.count + ')'; }).join(' · '); le.style.display = 'block'; }
+            } catch(e) {}
             var _any = (Number(d.contacted)||0) + (Number(d.quoted)||0) + (Number(d.won)||0);
             var _n = document.getElementById('res-nudge'); if (_n && _any === 0) _n.style.display = 'block';
+          }).catch(function(){});
+      } catch(e) {}
+      // Best-performing areas from lead tracking
+      try {
+        fetch('/api/areas/performance', { headers: { 'Authorization': 'Bearer ' + _token } })
+          .then(function(r){ return r.json(); })
+          .then(function(d){
+            if (!d || !d.areas) return;
+            function _esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
+            var rows = Object.keys(d.areas).map(function(k){ var a = d.areas[k] || {}; return { area:k, total:a.total||0, won:a.won||0, conv:a.conversion_rate||'0%' }; })
+              .filter(function(a){ return a.total > 0; })
+              .sort(function(a,b){ return (b.won - a.won) || (b.total - a.total); }).slice(0,5);
+            var el = document.getElementById('res-areas');
+            if (el && rows.length) { el.innerHTML = '<b>Your areas:</b> ' + rows.map(function(a){ return _esc(a.area) + ' ' + a.won + '/' + a.total + ' won (' + _esc(a.conv) + ')'; }).join(' · '); el.style.display = 'block'; }
           }).catch(function(){});
       } catch(e) {}
       // Follow-ups due (today / overdue) from /api/follow-ups

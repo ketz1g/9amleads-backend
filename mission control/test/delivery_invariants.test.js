@@ -126,6 +126,10 @@ ok('follow-ups + bulk-status endpoints exist',
   has("app.get('/api/follow-ups'") && has("app.post('/api/leads/bulk-status'"));
 ok('CRM payload carries tracking (status/notes/values)',
   has('base.lead_status = lead.lead_status') && has('if (Array.isArray(lead.notes) && lead.notes.length) base.notes = lead.notes;'));
+ok('dashboard reports conversion rate + why-lost',
+  has('conversion_rate: contacted.length') && has('loss_reasons: (function()'));
+ok('admin booked/lost counts derived from lead_status',
+  has("booked_count: (db.leads || []).filter") && has("lost_count: (db.leads || []).filter"));
 ok('morning readiness summary is digest-mode (silent when all ready)',
   has("all ' + rows.length + ' ready - no email (digest mode)"));
 ok('early readiness + guarantee do not send duplicate pre-9am emails',

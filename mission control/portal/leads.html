@@ -520,7 +520,22 @@ function outcomeBtn(leadId, row){
   return '<div style="margin-top:5px;display:flex;align-items:center;gap:2px;flex-wrap:wrap">' +
     '<span style="font-size:9px;color:var(--muted);margin-right:2px">Outcome:</span>' +
     btn('contacted','Contacted') + btn('quoted','Quoted') + btn('won','Won') + btn('lost','Lost') +
-    '</div>' + fuBtn;
+    '</div>' + fuBtn + notesBtn(leadId, row);
+}
+function notesBtn(leadId, row){
+  var n = (row && Array.isArray(row.notes)) ? row.notes.length : 0;
+  return '<button onclick="showNotes(\'' + leadId + '\')" title="Add or view notes for this lead" style="margin-top:4px;margin-left:4px;padding:3px 9px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;border:1px solid ' + (n ? '#0284c7' : '#cbd5e1') + ';background:' + (n ? '#0284c7' : '#fff') + ';color:' + (n ? '#fff' : '#64748b') + '">&#128221; Notes' + (n ? (' (' + n + ')') : '') + '</button>';
+}
+function showNotes(leadId){
+  var l = null; try { l = allLeads.find(function(x){ return x.id === leadId; }); } catch(e) {}
+  var notes = (l && Array.isArray(l.notes)) ? l.notes : [];
+  var existing = notes.map(function(n, i){ var dt=''; try { dt = n.created_at ? ' (' + new Date(n.created_at).toLocaleDateString('en-GB') + ')' : ''; } catch(e) {} return (i+1) + '. ' + (n.text || '') + dt; }).join('\n');
+  var text = prompt((existing ? ('Existing notes:\n' + existing + '\n\n') : '') + 'Add a note (blank = cancel):', '');
+  if (!text) return;
+  fetch('/api/leads/' + leadId + '/note', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _token }, body: JSON.stringify({ note: text }) })
+    .then(function(r){ return r.json(); })
+    .then(function(d){ if (d.success) { loadLeads(); } else { alert(d.error || 'Could not save note'); } })
+    .catch(function(){ alert('Server error'); });
 }
 function maybeShowEngageNudge(leads) {
   try {
