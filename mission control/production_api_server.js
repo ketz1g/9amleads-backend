@@ -17125,6 +17125,12 @@ function applyPlan(cust, plan, product) {
   } catch(e) {}
   db.prepare('UPDATE customers SET plan = ?, leads_per_day = ?, trial_ends = NULL WHERE id = ?').run(plan, leadsPerDay, cust.id);
   if (product) db.prepare('UPDATE customers SET product = ? WHERE id = ?').run(product, cust.id);
+  // Stamp paid_since on the LIVE customer the first time they become a paid plan, so
+  // the weekly paid-tip cadence counts from payment (not from a long trial signup).
+  try {
+    var _liveP = (getDb().customers || []).find(function(x) { return x.id === cust.id; });
+    if (_liveP && plan !== 'free_trial' && !_liveP.paid_since) _liveP.paid_since = new Date().toISOString();
+  } catch(e) {}
   saveDb();
 }
 
@@ -17300,6 +17306,33 @@ const PAID_EMAIL_SERIES = [
   { week: 8, subject: 'How to get even more from your leads', template: 'paid_checkin1' },
   { week: 12, subject: '3 months in. Here\u2019s how to scale', template: 'paid_checkin2' }
 ];
+
+// Send the paid WELCOME immediately when a customer subscribes, instead of waiting up
+// to 8 hours for the next campaign cron. Deduped via campaign_sent so it can never
+// double-send. Also stamps paid_since so the weekly tip cadence counts from PAYMENT
+// (a customer who trialled for weeks then paid shouldn't get all 4 tips at once).
+function sendPaidWelcomeOnce(cust) {
+  try {
+    if (!cust || !cust.email) return false;
+    var dbW = getDb();
+    var live = (dbW.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === String(cust.email || '').toLowerCase(); });
+    if (!live) return false;
+    if (!live.paid_since) live.paid_since = new Date().toISOString();
+    var sent = []; try { sent = JSON.parse(live.campaign_sent || '[]'); } catch(e) {}
+    if (sent.indexOf('paid_welcome') === -1) {
+      sent.push('paid_welcome');
+      live.campaign_sent = JSON.stringify(sent);
+      saveDb();
+      var subject = getEditedCampaignSubject('paid_welcome', 'Welcome to 9amLeads. Your opportunities arrive tomorrow at 9am!');
+      var html = getCampaignEmailHTMLWithEdits(live, 'paid_welcome');
+      sendBrevoEmail({ email: live.email, name: live.company || 'Customer' }, subject, html).catch(function(){});
+      console.log('[PAID] sent paid_welcome to ' + live.email);
+      return true;
+    }
+    saveDb();
+    return false;
+  } catch(e) { console.log('[PAID] paid_welcome error: ' + e.message); return false; }
+}
 
 // Redesigned welcome email body (trial_day1). Short and professional: a brief
 // welcome, one line on how to get set up, and a sign-off. The shared value/why/how
@@ -22974,8 +23007,10 @@ async function runCampaignEmails(dry) {
           }
         }
       } else if (isPaidNow) {
-        // Paid customer: send paid email series weekly
-        var subAgeWeeks = Math.floor(accountAge / 7);
+        // Paid customer: send paid email series weekly. Count weeks from when they PAID
+        // (paid_since) if known, else fall back to signup age.
+        var _paidBaseTs = cust.paid_since ? new Date(cust.paid_since).getTime() : (createdDate ? createdDate.getTime() : Date.now());
+        var subAgeWeeks = Math.max(0, Math.floor((Date.now() - _paidBaseTs) / (7 * 86400000)));
         for (var pi = 0; pi < PAID_EMAIL_SERIES.length; pi++) {
           var p = PAID_EMAIL_SERIES[pi];
           if (subAgeWeeks >= p.week && !campaignSent.includes(p.template)) {
@@ -28291,6 +28326,8 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
           if (session.customer) db.prepare('UPDATE customers SET stripe_customer_id = ? WHERE id = ?').run(session.customer, customer.id);
           if (session.subscription) db.prepare('UPDATE customers SET stripe_subscription_id = ? WHERE id = ?').run(session.subscription, customer.id);
           saveDb();
+          // Send the paid welcome right away (don't wait for the campaign cron).
+          try { sendPaidWelcomeOnce(customer); } catch(pwErr) {}
           console.log('[STRIPE] Upgraded ' + customerEmail + ' to ' + plan);
           var _paidAid = '';
           try { var dbm2 = getDb(); if (dbm2 && dbm2.uidMap && customer) _paidAid = dbm2.uidMap[customer.id] || ''; } catch(paErr) {}
@@ -29167,6 +29204,16 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
             '<div style="font-size:13px;color:#e2e8f0;line-height:1.7"><b>' + ((_payCust && (_payCust.company || _payCust.email)) || invoice.customer_email || 'A customer') + '</b> paid <b>£' + _amt + '</b>.<br>Plan: ' + ((_payCust && _payCust.plan) || 'n/a') + '<br><span style="color:#94a3b8;font-size:12px">Invoice ' + (invoice.number || invoice.id) + ' &middot; ' + (invoice.billing_reason || '') + '</span></div>');
         }
       } catch(paErr2) { console.log('[WEBHOOK] payment alert error:', paErr2.message); }
+      // Paid WELCOME on a new subscription (covers subscriptions not started via a
+      // checkout.session.completed event). Deduped, so it won't double with that path.
+      try {
+        if (invoice.billing_reason === 'subscription_create') {
+          var _pwCust = null;
+          try { _pwCust = db.prepare('SELECT * FROM customers WHERE (stripe_subscription_id = ? AND ? <> \'\') OR (stripe_customer_id = ? AND ? <> \'\') LIMIT 1').get(invSubId || '', invSubId || '', invoice.customer || '', invoice.customer || ''); } catch(e) {}
+          if (!_pwCust && invoice.customer_email) { try { _pwCust = db.prepare('SELECT * FROM customers WHERE email = ? LIMIT 1').get(String(invoice.customer_email).toLowerCase()); } catch(e) {} }
+          if (_pwCust) sendPaidWelcomeOnce(_pwCust);
+        }
+      } catch(pwInvErr) {}
       if (invSubId) {
         const invSub = db.prepare('SELECT * FROM subscriptions WHERE stripe_id = ?').get(invSubId);
         if (invSub) {
