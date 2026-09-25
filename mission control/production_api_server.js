@@ -17419,7 +17419,7 @@ function sendPaidWelcomeOnce(cust) {
 function buildWelcomeEmail(customer, productName, accent, prod) {
   return '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">From tomorrow, your fresh <strong>' + productName + '</strong> will arrive in your inbox every weekday at 9am.</p>'
     + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">To get set up, log in, upload your flyer and cover letter in Print &amp; Post (or pick a ready-made template), choose more areas if you\u2019d like to widen your coverage, and turn on Auto Send. If uploading is a hassle, just email your flyer and letter to hello@9amleads.com and we will upload them for you. We handle the delivery and the post \u2014 you just answer the phone.</p>'
-    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">One honest tip: direct mail is not overnight. Give it a few weeks of consistent posting and you will notice more phone enquiries. To see it working, ask every caller where they found you \u2014 when they say the flyer through the door, you know.</p>'
+    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">One honest tip: direct mail is not overnight. Post consistently for <strong>2-4 weeks</strong>, then start asking every new customer where they got your details. You\u2019ll start hearing \u201cI got your flyer through the post\u201d - that\u2019s how you know it\u2019s working.</p>'
     + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">Any questions, just reply and I\u2019ll answer personally.</p>'
     + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0">All the best,<br><strong>Ketz Mandalia</strong><br><span style="color:#64748b">Founder, 9amLeads</span></p>';
 }
@@ -17434,7 +17434,7 @@ function buildTrialPrintPostEmail(customer, productName, accent, prod) {
     + '<div style="background:rgba(14,165,233,0.05);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px">'
     + '<p style="color:#0f172a;font-size:14px;font-weight:800;margin:0 0 6px">Get started in minutes</p>'
     + '<p style="color:#1e293b;font-size:13px;line-height:1.8;margin:0">1. Upload your flyer (front and back) and a cover letter in Print &amp; Post<br>2. Or just email them to <strong>hello@9amleads.com</strong> and we will upload them for you<br>3. Turn on Auto Send and every new lead gets your marketing in the post automatically</p></div>'
-    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:' + accent + '">Be patient - it works over a few weeks.</strong> Direct mail is not overnight. Post consistently for three weeks or more and you will notice more phone enquiries. The way to know it is working: <strong>ask every caller where they found you</strong>. When they say the flyer through the door, you know.</p>'
+    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:' + accent + '">Be patient - it works over 2-4 weeks.</strong> Direct mail is not overnight. Post consistently for 2-4 weeks, then start asking every new customer <strong>where they got your details</strong>. You\u2019ll start hearing \u201cI got your flyer through the post\u201d - that\u2019s when you know it is working.</p>'
     + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 16px">Unlike social media or cold calling, your customers come to you - minimal effort and spend, and you reach them before your competitors even know they are looking.</p>'
     + '<p style="text-align:center;margin:0 0 18px"><a href="' + uploadUrl + '" style="display:inline-block;padding:14px 32px;background-color:#0ea5e9;color:#ffffff;text-decoration:none;border-radius:50px;font-weight:800;font-size:15px">Upload your materials</a></p>'
     + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">Any questions, just reply and I will answer personally.</p>'
@@ -17449,7 +17449,7 @@ function buildTrialDay3Email(customer, productName, accent, prod) {
     + '<div style="background:rgba(14,165,233,0.05);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px">'
     + '<p style="color:#0f172a;font-size:14px;font-weight:800;margin:0 0 6px">Not started yet? It takes minutes</p>'
     + '<p style="color:#1e293b;font-size:13px;line-height:1.8;margin:0">Upload your flyer (front and back) and a cover letter in Print &amp; Post<br>Or just email them to <strong>hello@9amleads.com</strong> and we will upload them for you<br>Turn on Auto Send and every new lead gets posted automatically</p></div>'
-    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:' + accent + '">Give it a few weeks.</strong> Direct mail is not overnight. Post consistently and you will notice more phone enquiries. Ask every caller where they found you - when they say the flyer through the door, you know it is working.</p>'
+    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:' + accent + '">Give it 2-4 weeks.</strong> Direct mail is not overnight. Post consistently for 2-4 weeks, then ask every new customer where they got your details - when they say \u201cI got your flyer through the post\u201d, you know it is working.</p>'
     + '<p style="text-align:center;margin:0 0 18px"><a href="' + uploadUrl + '" style="display:inline-block;padding:14px 32px;background-color:#0ea5e9;color:#ffffff;text-decoration:none;border-radius:50px;font-weight:800;font-size:15px">Upload your materials</a></p>'
     + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">Any questions, just reply and I will answer personally.</p>'
     + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0">All the best,<br><strong>Ketz Mandalia</strong><br><span style="color:#64748b">Founder, 9amLeads</span></p>';
@@ -17464,7 +17464,7 @@ function buildTrialDay7Email(customer, productName, accent, prod) {
     + '<div style="background:rgba(14,165,233,0.05);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px">'
     + '<p style="color:#0f172a;font-size:14px;font-weight:800;margin:0 0 6px">If you have not started yet, do it now</p>'
     + '<p style="color:#1e293b;font-size:13px;line-height:1.8;margin:0">Upload your flyer and letter, or email them to <strong>hello@9amleads.com</strong> and we will upload them for you<br>Turn on Auto Send so every new lead gets posted automatically<br>Quiet spell? Bulk Send lets you mail a bigger batch when you want more</p></div>'
-    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:' + accent + '">Do not judge it on a handful of days.</strong> It takes a few weeks of consistent posting to see the full effect. Ask every caller where they found you - when they say the flyer through the door, you know it is working. Your customers come to you, with minimal effort and spend, before your competitors.</p>'
+    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 16px"><strong style="color:' + accent + '">Do not judge it on a handful of days.</strong> It takes <strong>2-4 weeks</strong> of consistent posting to see the full effect. Then start asking every new customer where they got your details - when they say \u201cI got your flyer through the post\u201d, you know it is working. Your customers come to you, with minimal effort and spend, before your competitors.</p>'
     + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 16px">Keep your leads flowing and your Print &amp; Post running by picking a package. No lock-in, cancel anytime.</p>'
     + '<p style="text-align:center;margin:0 0 18px"><a href="' + pricingUrl + '" style="display:inline-block;padding:14px 32px;background-color:#0ea5e9;color:#ffffff;text-decoration:none;border-radius:50px;font-weight:800;font-size:15px">Pick a package and keep going</a></p>'
     + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">Any questions, just reply and I will answer personally.</p>'
@@ -17482,8 +17482,8 @@ function buildFirstWinEmail(customer, productName, accent, prod) {
     + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 16px">Hi,<br><br>You have had <strong>' + received + '</strong> fresh ' + productName + ' so far, but it does not look like you have contacted any yet. That is the bit that wins the work - and it takes minutes.</p>'
     + '<div style="background:rgba(14,165,233,0.05);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px">'
     + '<p style="color:#0f172a;font-size:14px;font-weight:800;margin:0 0 6px">Turn one into a job today</p>'
-    + '<p style="color:#1e293b;font-size:13px;line-height:1.8;margin:0">1. Open your leads and pick one<br>2. Send your flyer or letter with Print &amp; Post - we print and post it for you<br>3. Ask every caller where they found you. When they say the flyer through the door, you know it is working</p></div>'
-    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 16px">Give it a few weeks of consistent posting and you will notice more phone enquiries. Your customers come to you, with minimal effort and spend, before your competitors.</p>'
+    + '<p style="color:#1e293b;font-size:13px;line-height:1.8;margin:0">1. Open your leads and pick one<br>2. Send your flyer or letter with Print &amp; Post - we print and post it for you<br>3. Post for 2-4 weeks, then ask every new customer where they got your details. When they say \u201cI got your flyer through the post\u201d, you know it is working</p></div>'
+    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 16px">Give it 2-4 weeks of consistent posting and you will notice more phone enquiries. Your customers come to you, with minimal effort and spend, before your competitors.</p>'
     + '<p style="text-align:center;margin:0 0 18px"><a href="' + leadsUrl + '" style="display:inline-block;padding:14px 32px;background-color:#0ea5e9;color:#ffffff;text-decoration:none;border-radius:50px;font-weight:800;font-size:15px">View my leads</a></p>'
     + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">Any questions, just reply and I will answer personally.</p>'
     + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0">All the best,<br><strong>Ketz Mandalia</strong><br><span style="color:#64748b">Founder, 9amLeads</span></p>';
@@ -17946,6 +17946,9 @@ console.log('  Outbound campaigns: ' + Object.keys(OUTBOUND_CAMPAIGNS).length + 
   (template === 'trial_day1' ? buildTrialPersonalBlock(customer, template) : '') +
   '<tr><td bgcolor="#ffffff" class="mob" style="background:#ffffff;padding:20px 30px 26px">' + (  templates[template] || templates.trial_day1) + '</td></tr>' +
   (template === 'trial_day1' ? '' : buildTrialPersonalBlock(customer, template)) +
+  // "How you'll know it's working" proof block on the PAID nurture emails (2-4 weeks,
+  // ask where they got your details, "I got your flyer through the post").
+  (template.indexOf('paid_') === 0 ? buildPrintPostProofBlock() : '') +
   // Welcome (trial_day1) stays short and professional: summary + single CTA only.
   // The shared value / why / how / insight blocks are skipped across the WHOLE trial
   // and paid nurture series, since those emails carry their own message.
@@ -18139,6 +18142,18 @@ function buildTrialPersonalBlock(customer, template) {
     }
   } catch(e) {}
   return '';
+}
+
+// Shared "how you'll know Print & Post is working" proof block. Appended to the paid
+// nurture emails so the expectation is set repeatedly: after 2-4 weeks of posting, ask
+// every new customer where they got your details - you'll start hearing "I got your
+// flyer through the post", and that's how you know it's working.
+function buildPrintPostProofBlock() {
+  return '<tr><td class="mob" bgcolor="#f0fdf4" style="background-color:#f0fdf4;padding:16px 30px 18px">'
+    + '<div style="border:1px solid #bbf7d0;border-radius:12px;padding:14px 16px">'
+    + '<div style="font-size:13px;font-weight:800;color:#166534;font-family:Outfit,Arial,sans-serif;margin-bottom:4px">How you\u2019ll know Print &amp; Post is working</div>'
+    + '<p style="font-size:12.5px;color:#166534;line-height:1.7;margin:0">Post consistently for <strong>2-4 weeks</strong>, then start asking every new customer where they got your details. You\u2019ll start hearing <strong>\u201cI got your flyer through the post\u201d</strong> - that\u2019s when you know your Print &amp; Post is paying off. Keep it going and the enquiries keep coming.</p>'
+    + '</div></td></tr>';
 }
 
 // ===== CRM HELPER: Format lead for CRM webhook =====
@@ -21450,7 +21465,7 @@ function buildWinbackEmailHTML(product, step) {
     + leadTypeBlock() + whyUsBlock()
     + '</table></td></tr>'
     + cta(PRICING, 'Get started - pick your package', 'From &pound;25 per week &middot; cancel anytime') + footer;
-  return shell(subject, 'Give it a few weeks. Then the phone starts ringing - with people already interested.', inner);
+  return shell(subject, 'Give it 2-4 weeks of posting, then ask new customers where they got your details - when they say "I got your flyer through the post", you know it is working.', inner);
 }
 
 // ===== CANCELLED-CUSTOMER WIN-BACK =====

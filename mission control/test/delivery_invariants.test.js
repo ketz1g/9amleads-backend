@@ -113,6 +113,8 @@ ok('admin can email a materials-help offer (deduped)',
   has("app.post('/api/admin/print-post/help-nudge'") && has('pp_help_notified'));
 ok('card-capture: day-4/day-6 nudge + direct addcard link',
   has('trial_addcard6') && has('function buildAddCardEmail') && has('dashboard.html?addcard=1'));
+ok('Print & Post proof (2-4 weeks, flyer through the post) referenced widely',
+  has('function buildPrintPostProofBlock') && has('Post consistently for <strong>2-4 weeks</strong>') && has("template.indexOf('paid_') === 0 ? buildPrintPostProofBlock()"));
 ok('admin can connect/edit/disconnect a customer CRM webhook',
   has("app.post('/api/admin/crm-connect'"));
 ok('sendBrevoEmail accepts a string recipient (goodwill alerts actually send)',
