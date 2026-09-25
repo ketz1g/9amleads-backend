@@ -20005,7 +20005,7 @@ cron.schedule('30 9 * * 1-5', async () => {
   try {
     var ddDb = getDb();
     var todayD = new Date().toISOString().substring(0, 10);
-    var activeC = (ddDb.customers || []).filter(function(c) { return c.plan && c.plan !== 'cancelled' && !(typeof isInternalAccount === 'function' && isInternalAccount(c)); }).length;
+    var activeC = (ddDb.customers || []).filter(function(c) { return !(typeof isInternalAccount === 'function' && isInternalAccount(c)) && (typeof isEntitledForDelivery === 'function' ? isEntitledForDelivery(c) : (!!c.plan && c.plan !== 'cancelled')); }).length;
     var delToday = (ddDb.leads || []).filter(function(l) { return l.delivered && l.delivered_at && String(l.delivered_at).startsWith(todayD); }).length;
     var sup = {};
     try { sup = getPoolSupply(); } catch(e) {}
@@ -20026,6 +20026,7 @@ cron.schedule('30 9 * * 1-5', async () => {
       (ddDb.customers || []).forEach(function(c) {
         if (!c.plan || c.plan === 'cancelled') return;
         if (typeof isInternalAccount === 'function' && isInternalAccount(c)) return;
+        if (typeof isEntitledForDelivery === 'function' && !isEntitledForDelivery(c)) return;
         var promised = (typeof getCustomerDailyQuota === 'function' ? getCustomerDailyQuota(c) : 0) || 0;
         if (promised <= 0) return;
         var have = (ddDb.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && String(l.delivered_at).startsWith(todayD); }).length;

@@ -41,6 +41,8 @@ ok('engine keeps test.* only in test_only mode',
   has('if (testOnly && !_isTest) return false;'));
 ok('reports use the same internal + entitlement filter',
   (SRC.split('!isInternalAccount(c) && isEntitledForDelivery(c)').length - 1) >= 3);
+ok('health digest counts only entitled customers (active / below-promise)',
+  has('isEntitledForDelivery(c) : (!!c.plan && c.plan !== \'cancelled\')'));
 ok('EPC is resolved before Postcoder in the pool scan',
   has('EPC FIRST (FREE, local, in-memory)'));
 ok('door numbers come from EPC (free) before the paid fallback',
