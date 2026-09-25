@@ -733,8 +733,10 @@ function loadPrintPost(){
         card('Auto Send paused', s.auto_send_paused||0, s.auto_send_paused?'#ef4444':'inherit') +
         card('Customers posted', s.customers_sent||0, '#7c3aed') +
         card('Items posted', s.total_items_sent||0, '#7c3aed') +
+        card('Needs materials', s.needs_materials||0, s.needs_materials?'#f59e0b':'inherit') +
+        card('Not set up', s.not_set_up||0, '#94a3b8') +
         '</div>';
-      h += '<div style="font-size:13px;font-weight:800;margin:4px 0 8px">Customers</div>';
+      h += '<div style="font-size:13px;font-weight:800;margin:4px 0 8px">Customers <span style="font-weight:500;color:#94a3b8;font-size:11px">(all customers - sorted by set-up progress)</span></div>';
       h += '<table class="table"><tr><th>Customer</th><th>Plan</th><th>Materials</th><th>Card</th><th>Auto Send</th><th>Status</th><th>Last post</th><th>Items</th></tr>';
       if(!rows.length) h += '<tr><td colspan="8" class="empty">No customers have set up Print &amp; Post yet.</td></tr>';
       rows.forEach(function(r){

@@ -16505,7 +16505,10 @@ app.get('/api/admin/print-post', adminAuth, (req, res) => {
       auto_send_on: rows.filter(function(r) { return r.status === 'auto_send_on'; }).length,
       auto_send_paused: rows.filter(function(r) { return r.auto_send && r.auto_paused; }).length,
       customers_sent: rows.filter(function(r) { return r.campaigns > 0; }).length,
-      total_items_sent: rows.reduce(function(t, r) { return t + r.items_sent; }, 0)
+      total_items_sent: rows.reduce(function(t, r) { return t + r.items_sent; }, 0),
+      needs_materials: rows.filter(function(r) { return r.status === 'needs_materials'; }).length,
+      needs_card: rows.filter(function(r) { return r.status === 'needs_card'; }).length,
+      not_set_up: rows.filter(function(r) { return r.status === 'not_set_up'; }).length
     };
     // Only real customers' campaigns (cemail holds non-internal customers only), so
     // test/internal sends never clutter the founder's send log.
@@ -16521,11 +16524,18 @@ app.get('/api/admin/print-post', adminAuth, (req, res) => {
       };
     });
     rows.sort(function(a, b) {
-      function rank(r) { return r.status === 'ready' ? 0 : r.status === 'auto_send_on' ? 1 : r.status === 'auto_send_paused' ? 2 : (r.campaigns > 0 ? 3 : 4); }
+      function rank(r) {
+        return r.status === 'ready' ? 0 : r.status === 'auto_send_on' ? 1 : r.status === 'auto_send_paused' ? 2
+          : r.status === 'needs_materials' ? 3 : r.status === 'needs_card' ? 4 : (r.campaigns > 0 ? 5 : 6);
+      }
       var ra = rank(a), rb = rank(b); if (ra !== rb) return ra - rb;
       return String(b.last_activity || '').localeCompare(String(a.last_activity || ''));
     });
-    res.json({ success: true, generated_at: new Date().toISOString(), summary: summary, rows: engaged, recent: recent });
+    // Return EVERY customer (not just those who started Print & Post) so the founder can
+    // see at a glance who has/hasn't uploaded materials, saved a card or turned on Auto
+    // Send. Previously only "engaged" customers appeared, which made it look like only
+    // two customers existed. engaged_count is kept for reference.
+    res.json({ success: true, generated_at: new Date().toISOString(), summary: summary, rows: rows, engaged_count: engaged.length, recent: recent });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
