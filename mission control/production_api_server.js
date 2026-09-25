@@ -10683,6 +10683,66 @@ cron.schedule('30 4 * * *', async function() {
   try { var r = await reconcileStripeSubscriptions({ dry: false }); if (r.rows_created || r.rows_updated || r.trial_cleared || r.plan_synced) console.log('[STRIPE-RECONCILE] repaired: ' + JSON.stringify({ created: r.rows_created, updated: r.rows_updated, trial_cleared: r.trial_cleared, plan_synced: r.plan_synced })); } catch(e) { console.log('[STRIPE-RECONCILE] error:', e.message); }
 }, { timezone: 'Europe/London' });
 
+// GET /api/admin/billing - WHO HAS PAID, plan, price and WHEN THE NEXT PAYMENT IS DUE,
+// in one table (no need to open Stripe). Combines the local subscriptions row (from the
+// webhooks / reconcile), the customer record and the latest payment event.
+app.get('/api/admin/billing', adminAuth, (req, res) => {
+  try {
+    var dbb = getDb();
+    var weeklyPrice = { starter: 25, pro: 49, enterprise: 99 };
+    var _norm = function(x) { return String(x || '').toUpperCase() !== 'NULL' ? x : ''; };
+    var subsByCust = {};
+    (dbb.subscriptions || []).forEach(function(s) { if (s && s.customer_id != null) subsByCust[String(s.customer_id)] = s; });
+    var lastPay = {};
+    (dbb.payment_events || []).forEach(function(ev) {
+      if (!ev || ev.type !== 'paid') return;
+      var e = String(ev.email || '').toLowerCase(); if (!e) return;
+      if (!lastPay[e] || String(ev.at || '') > String(lastPay[e].at || '')) lastPay[e] = ev;
+    });
+    var rows = (dbb.customers || []).filter(function(c) { return !(typeof isInternalAccount === 'function' && isInternalAccount(c)); }).map(function(c) {
+      var paid = !!_norm(c.stripe_subscription_id);
+      var sub = subsByCust[String(c.id)] || null;
+      var trialEnds = '';
+      try { if (_norm(c.trial_ends) && !isNaN(new Date(c.trial_ends).getTime())) trialEnds = c.trial_ends; } catch(e) {}
+      var planLc = String(c.plan || '').toLowerCase();
+      var status;
+      if (paid) status = (sub && sub.status) || 'active';
+      else if (planLc === 'cancelled') status = 'cancelled';
+      else if (trialEnds && new Date(trialEnds).getTime() < Date.now()) status = 'trial_expired';
+      else if (trialEnds) status = 'trial';
+      else status = 'none';
+      var lp = lastPay[String(c.email || '').toLowerCase()] || null;
+      return {
+        email: c.email, company: c.company || '', plan: c.plan || '', product: c.product || '',
+        paid: paid, status: status,
+        weekly_price: paid ? (weeklyPrice[planLc] || null) : 0,
+        next_due: (sub && _norm(sub.current_period_end)) ? sub.current_period_end : '',
+        last_payment_at: lp ? (lp.at || '') : '',
+        last_payment_amount: lp ? (Number(lp.amount) || 0) : 0,
+        trial_ends: trialEnds,
+        stripe_subscription_id: c.stripe_subscription_id || ''
+      };
+    });
+    var paying = rows.filter(function(r) { return r.paid && r.status !== 'canceled' && r.status !== 'cancelled'; });
+    var summary = {
+      total_customers: rows.length,
+      paying: paying.length,
+      past_due: rows.filter(function(r) { return r.paid && r.status === 'past_due'; }).length,
+      trials: rows.filter(function(r) { return r.status === 'trial'; }).length,
+      trial_expired: rows.filter(function(r) { return r.status === 'trial_expired'; }).length,
+      cancelled: rows.filter(function(r) { return r.status === 'cancelled' || r.status === 'canceled'; }).length,
+      weekly_value: paying.reduce(function(t, r) { return t + (r.weekly_price || 0); }, 0)
+    };
+    // Sort: past_due first, then paying by next-due soonest, then trials/expired.
+    rows.sort(function(a, b) {
+      function rank(r) { return r.status === 'past_due' ? 0 : r.paid ? 1 : r.status === 'trial' ? 2 : r.status === 'trial_expired' ? 3 : 4; }
+      var ra = rank(a), rb = rank(b); if (ra !== rb) return ra - rb;
+      return String(a.next_due || '9999').localeCompare(String(b.next_due || '9999'));
+    });
+    res.json({ success: true, generated_at: new Date().toISOString(), summary: summary, rows: rows });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/admin/crm-status - which customers have a CRM connected, and the result of
 // their most recent push (status + when + lead count + response snippet).
 app.get('/api/admin/crm-status', adminAuth, (req, res) => {

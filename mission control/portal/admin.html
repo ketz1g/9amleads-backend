@@ -107,6 +107,7 @@ tbody tr:hover td{background:#f8fafc}
 <button onclick="switchTab('affiliates')"><i class="fas fa-handshake"></i> Affiliates</button>
 <button onclick="switchTab('crm')"><i class="fas fa-plug"></i> CRM <span id="crmBadge" style="display:none;background:#0ea5e9;color:#fff;font-size:10px;font-weight:700;border-radius:20px;padding:1px 7px;margin-left:2px"></span></button>
 <button onclick="switchTab('payments')"><i class="fas fa-credit-card"></i> Payments <span id="payBadge" style="display:none;background:#ef4444;color:#fff;font-size:10px;font-weight:700;border-radius:20px;padding:1px 7px;margin-left:2px"></span></button>
+<button onclick="switchTab('billing')"><i class="fas fa-file-invoice-pound"></i> Billing</button>
 
 <button onclick="switchTab('emails')"><i class="fas fa-envelope-open-text"></i> Emails <span id="emailCountBadge" style="display:none;background:#eff6ff;color:#0ea5e9;font-size:10px;font-weight:700;border-radius:20px;padding:1px 7px;margin-left:2px"></span></button>
 <button onclick="switchTab('activity')"><i class="fas fa-bolt"></i> Activity</button>
@@ -128,6 +129,13 @@ tbody tr:hover td{background:#f8fafc}
 <div class="hero"><div class="hero-text"><h1>&#128179; Payment Events</h1><p>Every Stripe money event - payments and failures - so you can see what happened without opening Stripe. Failed payments also email the customer and pause Auto Send if enabled.</p></div>
 <div class="hero-actions"><button class="btn btn-outline" onclick="loadPayments()"><i class="fas fa-rotate"></i> Refresh</button></div></div>
 <div id="payBody"><div class="loading">Loading payment events...</div></div>
+</div>
+
+<!-- ============ BILLING ============ -->
+<div class="tab-panel" id="tab-billing">
+<div class="hero"><div class="hero-text"><h1>&#129534; Billing &amp; Payments Due</h1><p>Who has paid, their plan and price, and when their next payment is due - all in one place. Past-due accounts are shown first.</p></div>
+<div class="hero-actions"><button class="btn btn-outline" onclick="loadBilling()"><i class="fas fa-rotate"></i> Refresh</button></div></div>
+<div id="billBody"><div class="loading">Loading billing...</div></div>
 </div>
 
 <!-- ============ CRM ============ -->
@@ -595,6 +603,7 @@ function switchTab(name) {
   if (name === 'activity') loadActivity();
   if (name === 'crm') loadCrm();
   if (name === 'payments') loadPayments();
+  if (name === 'billing') loadBilling();
   window.scrollTo(0, 0);
 }
 
@@ -625,6 +634,62 @@ function loadPayments() {
       b.innerHTML = h + '</table>';
     })
     .catch(function() { b.innerHTML = '<div class="loading">Could not load payment events.</div>'; });
+}
+
+// ===== BILLING: who's paid + next payment due =====
+function billMoney(n) { return '&pound;' + (Number(n) || 0).toFixed(2); }
+function billDate(s) { if (!s) return '-'; try { return new Date(s).toLocaleDateString('en-GB', { timeZone: 'Europe/London', day: '2-digit', month: 'short', year: 'numeric' }); } catch(e) { return '-'; } }
+function billStatusBadge(r) {
+  var map = {
+    active: ['Paid', '#16a34a', 'rgba(22,163,74,.12)'],
+    past_due: ['Past due', '#ef4444', 'rgba(239,68,68,.12)'],
+    trialing: ['Trialing', '#0ea5e9', 'rgba(14,165,233,.12)'],
+    trial: ['Free trial', '#0ea5e9', 'rgba(14,165,233,.12)'],
+    trial_expired: ['Trial ended', '#f59e0b', 'rgba(245,158,11,.12)'],
+    cancelled: ['Cancelled', '#ef4444', 'rgba(239,68,68,.12)'],
+    canceled: ['Cancelled', '#ef4444', 'rgba(239,68,68,.12)'],
+    none: ['-', '#94a3b8', 'rgba(148,163,184,.12)']
+  };
+  var m = map[r.status] || [r.status, '#64748b', 'rgba(100,116,139,.12)'];
+  return '<span style="display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;color:' + m[1] + ';background:' + m[2] + '">' + m[0] + '</span>';
+}
+function loadBilling() {
+  var b = document.getElementById('billBody');
+  if (!b) return;
+  b.innerHTML = '<div class="loading">Loading billing...</div>';
+  fetch(API + '/api/admin/billing?t=' + Date.now(), { headers: adminHeaders() })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (!d || !d.success) { b.innerHTML = '<div class="loading">Could not load billing.</div>'; return; }
+      var s = d.summary || {}, rows = d.rows || [];
+      function card(label, val, col) { return '<div class="stat-card"><div class="num" style="color:' + (col || 'inherit') + '">' + val + '</div><div class="label">' + label + '</div></div>'; }
+      var h = '<div class="stats-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px">' +
+        card('Paying', s.paying || 0, '#16a34a') +
+        card('Past due', s.past_due || 0, s.past_due ? '#ef4444' : 'inherit') +
+        card('Free trials', s.trials || 0, '#0ea5e9') +
+        card('Trial ended', s.trial_expired || 0, '#f59e0b') +
+        card('Weekly value', billMoney(s.weekly_value || 0), '#7c3aed') +
+        '</div>';
+      h += '<table class="table"><tr><th>Customer</th><th>Plan</th><th>Status</th><th>Weekly</th><th>Last payment</th><th>Next payment due</th></tr>';
+      if (!rows.length) h += '<tr><td colspan="6" class="empty">No customers.</td></tr>';
+      rows.forEach(function(r) {
+        var due = r.next_due ? billDate(r.next_due) : '-';
+        var dueCol = '#0f172a';
+        if (r.next_due) { var dd = Math.ceil((new Date(r.next_due).getTime() - Date.now()) / 86400000); if (dd <= 3) dueCol = '#ef4444'; else if (dd <= 7) dueCol = '#d97706'; }
+        var last = r.last_payment_at ? (billDate(r.last_payment_at) + ' &middot; ' + billMoney(r.last_payment_amount)) : '<span style="color:#94a3b8">never</span>';
+        h += '<tr>' +
+          '<td><strong>' + esc(r.company || '-') + '</strong><div style="font-size:11px;color:#64748b">' + esc(r.email || '') + '</div></td>' +
+          '<td><span class="badge">' + esc(r.plan || '-') + '</span></td>' +
+          '<td>' + billStatusBadge(r) + '</td>' +
+          '<td>' + (r.weekly_price ? billMoney(r.weekly_price) + '<span style="font-size:10px;color:#64748b">/wk</span>' : '-') + '</td>' +
+          '<td style="font-size:12px">' + last + '</td>' +
+          '<td style="font-weight:700;color:' + dueCol + '">' + due + '</td>' +
+          '</tr>';
+      });
+      b.innerHTML = h + '</table><div style="margin-top:8px;font-size:11px;color:#94a3b8">Next payment due comes from the Stripe subscription period end. Past-due accounts are listed first.</div>';
+    })
+    .catch(function() { b.innerHTML = '<div class="loading">Could not load billing.</div>'; });
+}
 }
 function loadCrm() {
   var body = document.getElementById('crmBody');
