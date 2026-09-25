@@ -13256,7 +13256,31 @@ async function sendEarlyReadinessReport(label) {
         var promised = parseInt(cc.leads_per_day, 10) > 0 ? parseInt(cc.leads_per_day, 10) : (getPlanLimit(cc.product, cc.plan, cc.coverage) || 5);
         var doorNow = (pv.leads || []).filter(function(l) { return l.has_door_number; }).length;
         var paf = (pv.leads || []).filter(function(l) { return l.paf_candidate; }).length;
-        rows.push({ email: cc.email, product: cc.product, promised: promised, door: doorNow, paf: paf, reachable: doorNow + paf });
+        // ALIGN WITH DELIVERY: the 9am run consumes the customer's already-queued
+        // (undelivered, mailable) leads FIRST, then fills from the pool. The pool
+        // preview alone can't see that queue, so this report falsely flagged customers
+        // who were actually covered. Count the UNION of queued mailable leads +
+        // door-numbered pool leads, deduped by url/address, so the email reflects what
+        // the customer will really receive.
+        function _erKey(d) {
+          var u = String(d.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
+          if (u) return 'u:' + u;
+          return 'a:' + String(d.fullAddress || d.address || d.deceasedAddress || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30) + '|' + String(d.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        }
+        var _unionKeys = {};
+        (dbE.leads || []).forEach(function(l) {
+          if (l.customer_id !== cc.id || l.delivered || l.status === 'removed') return;
+          var _d = {}; try { _d = JSON.parse(l.data || '{}'); } catch(e) { _d = {}; }
+          if (_d.rejected || _d.blocked || _d.blocked_by_admin) return;
+          var _addr = _d.fullAddress || _d.address || _d.deceasedAddress || '';
+          var _pc = _d.postcode || '';
+          if (!(hasUsablePremiseAddress(_addr, _pc, cc.product === 'probate' ? { relaxMultiUnit: true } : undefined) && /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(_pc).trim()))) return;
+          _unionKeys[_erKey(_d)] = 1;
+        });
+        (pv.leads || []).filter(function(l) { return l.has_door_number; }).forEach(function(l) { _unionKeys[_erKey(l)] = 1; });
+        var available = Object.keys(_unionKeys).length;
+        var reachable = available + paf;
+        rows.push({ email: cc.email, product: cc.product, promised: promised, available: available, door: doorNow, paf: paf, reachable: reachable });
       } catch(e) { rows.push({ email: cc.email, product: cc.product, promised: 0, reachable: 0, error: e.message }); }
     }
     var shorts = rows.filter(function(r) { return r.reachable < r.promised; });
@@ -13264,7 +13288,7 @@ async function sendEarlyReadinessReport(label) {
       + '<b style="color:' + (shorts.length ? '#f87171' : '#4ade80') + '">' + (rows.length - shorts.length) + '/' + rows.length + ' customers ready for the 9am run</b>'
       + '<table style="width:100%;border-collapse:collapse;margin-top:8px">'
       + rows.map(function(r) {
-          var cls = r.reachable < r.promised ? '#f87171' : (r.door < r.promised ? '#fbbf24' : '#4ade80');
+          var cls = r.reachable < r.promised ? '#f87171' : (r.available < r.promised ? '#fbbf24' : '#4ade80');
           return '<tr><td style="padding:3px 6px;color:#e2e8f0">' + r.email + '</td><td style="padding:3px 6px;color:' + cls + ';text-align:right">' + r.reachable + '/' + r.promised + (r.paf ? ' (+' + r.paf + ' PAF)' : '') + '</td><td style="padding:3px 6px;color:#94a3b8">' + (r.product || '') + '</td></tr>';
         }).join('')
       + '</table>'
