@@ -15969,6 +15969,13 @@ async function stripHtmlToText(html) {
 
 function sendBrevoEmail(to, subject, htmlContent) {
   if (!BREVO_API_KEY) return;
+  // NORMALISE RECIPIENT: several call sites pass a bare email STRING (e.g. the 09:07
+  // goodwill / trial-extension email and some owner alerts). Reading to.email on a
+  // string is undefined, so the Brevo payload had no recipient -> the send was
+  // rejected and silently swallowed, never logged. Customers were extended with no
+  // explanation email as a result. Accept both a string and an object.
+  if (typeof to === 'string') to = { email: to.trim(), name: '' };
+  if (!to || !to.email) { console.log('[BREVO] No recipient - skipped: ' + String(subject || '').slice(0, 60)); return; }
   // UN-DELIVERABLE TEST/INTERNAL ADDRESSES: never actually send to addresses that
   // cannot receive mail (generated test accounts, disposable providers, our own
   // @9amleads.com demo/test inboxes). Attempting these creates hard bounces that

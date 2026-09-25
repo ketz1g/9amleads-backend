@@ -109,6 +109,8 @@ ok('admin Print & Post view + auto-send activity logging exist',
   has("app.get('/api/admin/print-post'") && has("logActivity(cust.id, 'auto_send_sent'"));
 ok('admin can connect/edit/disconnect a customer CRM webhook',
   has("app.post('/api/admin/crm-connect'"));
+ok('sendBrevoEmail accepts a string recipient (goodwill alerts actually send)',
+  has("if (typeof to === 'string') to = { email: to.trim(), name: '' };"));
 ok('morning readiness summary is digest-mode (silent when all ready)',
   has("all ' + rows.length + ' ready - no email (digest mode)"));
 ok('early readiness + guarantee do not send duplicate pre-9am emails',
