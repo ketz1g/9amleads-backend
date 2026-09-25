@@ -10656,7 +10656,9 @@ async function reconcileStripeSubscriptions(opts) {
     if (!existing) {
       if (!dry) { try { db.prepare('INSERT INTO subscriptions (id, customer_id, stripe_id, plan, status, current_period_start, current_period_end, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?)').run(uuidv4(), c.id, c.stripe_subscription_id, plan, st, pStart, pEnd, nowIso, nowIso); } catch(e) {} }
       out.rows_created++; act.push('created_row');
-    } else if (existing.status !== st || existing.plan !== plan) {
+    } else if (existing.status !== st || existing.plan !== plan || String(existing.current_period_end || '') !== String(pEnd || '')) {
+      // Also refresh when the period end moved (weekly renewals) so "next payment due"
+      // is never stale - this was why a paying customer showed a past due date.
       if (!dry) { try { db.prepare('UPDATE subscriptions SET plan = ?, status = ?, current_period_start = ?, current_period_end = ?, updated_at = ? WHERE stripe_id = ?').run(plan, st, pStart, pEnd, nowIso, c.stripe_subscription_id); } catch(e) {} }
       out.rows_updated++; act.push('updated_row');
     }
@@ -10716,7 +10718,7 @@ app.get('/api/admin/billing', adminAuth, (req, res) => {
         email: c.email, company: c.company || '', plan: c.plan || '', product: c.product || '',
         paid: paid, status: status,
         weekly_price: paid ? (weeklyPrice[planLc] || null) : 0,
-        next_due: (sub && _norm(sub.current_period_end)) ? sub.current_period_end : '',
+        next_due: (sub && _norm(sub.current_period_end)) ? sub.current_period_end : ((status === 'trial' && trialEnds) ? trialEnds : ''),
         last_payment_at: lp ? (lp.at || '') : '',
         last_payment_amount: lp ? (Number(lp.amount) || 0) : 0,
         trial_ends: trialEnds,
