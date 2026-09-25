@@ -13567,6 +13567,38 @@ app.post('/api/admin/send-trial-extension-notice', adminAuth, async (req, res) =
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/revert-trial-extension - remove unexplained trial extensions and put
+// the trial back to the standard 7 days from signup. The previous trial_ends is kept on
+// the record as `trial_ends_extended` so it can be restored. Body: { emails?, dry_run? }.
+app.post('/api/admin/revert-trial-extension', adminAuth, (req, res) => {
+  try {
+    var body = req.body || {};
+    var only = Array.isArray(body.emails) && body.emails.length ? body.emails.map(function(e) { return String(e).toLowerCase().trim(); }) : null;
+    var dry = !!body.dry_run;
+    var standard = 7;
+    var dbR = getDb();
+    var reverted = [], becameExpired = [];
+    (dbR.customers || []).forEach(function(c) {
+      if (c.plan !== 'free_trial' || !c.trial_ends || !c.created_at) return;
+      if (typeof isInternalAccount === 'function' && isInternalAccount(c)) return;
+      var em = String(c.email || '').toLowerCase();
+      if (only && only.indexOf(em) === -1) return;
+      var len = Math.round((new Date(c.trial_ends).getTime() - new Date(c.created_at).getTime()) / 86400000);
+      if (len <= standard) return; // not extended
+      var target = new Date(new Date(c.created_at).getTime() + standard * 86400000);
+      var entry = { email: c.email, extended_days: len, new_trial_end: target.toISOString().slice(0, 10), became_expired: target.getTime() <= Date.now() };
+      if (!dry) {
+        if (!c.trial_ends_extended) c.trial_ends_extended = c.trial_ends; // safety snapshot
+        c.trial_ends = target.toISOString();
+      }
+      reverted.push(entry);
+      if (entry.became_expired) becameExpired.push(c.email);
+    });
+    if (!dry) saveDb();
+    res.json({ success: true, dry_run: dry, reverted_count: reverted.length, reverted: reverted, became_expired: becameExpired });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/clear-bounce - reset the bounce counter for all customers.
 app.post('/api/admin/clear-bounce', adminAuth, (req, res) => {
   try {
