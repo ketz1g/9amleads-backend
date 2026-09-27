@@ -17,6 +17,18 @@ const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const STORE_FILE = path.join(DATA_DIR, 'property-store.json');
 
 var _store = null;
+var _lastFirstSeenMs = 0;
+
+// first_seen_at must be strictly monotonic: two different properties scraped in the
+// same millisecond must NOT share a first_seen_at, otherwise a fresh property can be
+// mistaken for a re-seen one (and vice-versa) when first_seen_at is used as the
+// freshness fallback.
+function _freshFirstSeenIso() {
+  var ms = Date.now();
+  if (ms <= _lastFirstSeenMs) ms = _lastFirstSeenMs + 1;
+  _lastFirstSeenMs = ms;
+  return new Date(ms).toISOString();
+}
 
 function load() {
   if (_store) return _store;
@@ -42,7 +54,7 @@ function recordSeen(id, opts) {
   var now = new Date().toISOString();
   var entry = store[key];
   if (!entry) {
-    entry = { first_seen_at: now, last_seen_at: now };
+    entry = { first_seen_at: _freshFirstSeenIso(), last_seen_at: now };
     if (opts && opts.product) entry.product = opts.product;
     store[key] = entry;
     save();
