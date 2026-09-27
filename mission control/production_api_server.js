@@ -5513,6 +5513,27 @@ const FRONTEND_DIR = path.join(__dirname, '9amleads');
 const ROOT_DIR = __dirname;
 // Only serve specific public directories from root
 // Portal pages: no-cache so admin/dashboard always show live data (never a stale copy)
+// White portal theme: served here and linked into every portal page so the
+// sign-up, sign-in and affiliate pages match the marketing site.
+app.get('/portal-light.css', function(req, res) {
+  res.type('text/css').sendFile(path.join(__dirname, '..', '9amwebsite', 'portal-light.css'));
+});
+app.use('/portal', function(req, res, next) {
+  if (req.method !== 'GET') return next();
+  var requested;
+  try { requested = decodeURIComponent(req.path); } catch(e) { return next(); }
+  if (requested === '/' || requested === '') requested = '/index.html';
+  if (!/\.html$/i.test(requested)) return next();
+  var portalRoot = path.join(ROOT_DIR, 'portal');
+  var htmlFile = path.resolve(portalRoot, '.' + requested);
+  if (!htmlFile.startsWith(portalRoot + path.sep)) return next();
+  fs.readFile(htmlFile, 'utf8', function(error, html) {
+    if (error) return next();
+    if (html.indexOf('/portal-light.css') === -1) html = html.replace(/<\/head>/i, '<link rel="stylesheet" href="/portal-light.css"></head>');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.type('html').send(html);
+  });
+});
 app.use('/portal', express.static(path.join(ROOT_DIR, 'portal'), { setHeaders: function(res, path) { if (/\.html?$/.test(path)) res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate'); } }));
 app.use('/movingleadsdaily', express.static(path.join(ROOT_DIR, 'movingleadsdaily')));
 app.use('/probateleads', express.static(path.join(ROOT_DIR, 'probateleads')));

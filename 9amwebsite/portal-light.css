@@ -1,0 +1,85 @@
+/* 9amLeads portal — light theme.
+   Loaded after the portal's own styles so the white theme matches the marketing site. */
+
+:root{color-scheme:light}
+html,body{background:#f6f8fa!important;color:#0f2136!important}
+
+/* Dark surfaces (inline + CSS) -> light */
+[style*="background:#0f172a"],[style*="background: #0f172a"],
+[style*="background:#0f111a"],[style*="background: #0f111a"],
+[style*="background:#11131f"],[style*="background: #11131f"],
+[style*="background:#0b1220"],[style*="background: #0b1220"],
+[style*="background:#0a0a0f"],[style*="background:#0a0a0a"],
+[style*="background:#1e2030"],[style*="background: #1e2030"],
+[style*="background:#12141e"],[style*="background:#1e293b"],
+[style*="background:#334155"],[style*="background:#262626"],
+[style*="background:#0d0d0d"],[style*="background:#0b0f19"],
+[style*="background:#0f1117"],[style*="background:#14161f"],
+[style*="background:rgba(0,0,0"]{background:#fff!important}
+[style*="background:#0f172a"] *,[style*="background: #0f172a"] *{border-color:#e4e9ee!important}
+
+/* Dark surfaces declared in the portal stylesheet */
+.card,.modal,.modal-content,.panel,.section-card,.tool-card,.stat-card,.nav,.topbar,.sidebar,
+body>div,.auth-card,.signup-card{background:#fff!important;color:#0f2136!important;border-color:#e4e9ee!important}
+
+/* Light text -> dark */
+[style*="color:#fff"]:not([style*="linear-gradient"]):not([style*="background:#0ea5e9"]):not([style*="background:#2563eb"]):not([style*="background:linear-gradient"]),
+[style*="color: #fff"]:not([style*="linear-gradient"]),
+[style*="color:#ffffff"],[style*="color:#f1f5f9"],[style*="color:#e2e8f0"],[style*="color:#e8ebf2"],
+[style*="color:#cbd5e1"],[style*="color:#ccc"]{color:#0f2136!important}
+[style*="color:#94a3b8"],[style*="color:#8890a8"],[style*="color:#6b7280"]{color:#5b6b7b!important}
+
+/* Accent text that is too light on white */
+[style*="color:#34d399"],[style*="color:#22c55e"],[style*="color:#4ade80"],[style*="color:#86efac"],[style*="color:#bbf7d0"],[style*="color:#6ee7b7"]{color:#15803d!important}
+[style*="color:#fbbf24"],[style*="color:#fcd34d"],[style*="color:#fde047"],[style*="color:#fde68a"]{color:#b45309!important}
+[style*="color:#38bdf8"],[style*="color:#7dd3fc"]{color:#0a7ab8!important}
+
+/* Inputs */
+input,textarea,select{background:#fff!important;color:#0f2136!important;border-color:#cdd9e2!important}
+input::placeholder,textarea::placeholder{color:#8092a2!important}
+option{color:#0f2136!important;background:#fff!important}
+
+/* Headings and body copy */
+h1,h2,h3,h4,h5,h6,strong,b,label{color:#0f2136!important}
+p,li,span,div,small,td,th{color:#33465a}
+a{color:#0878b4!important}
+h1,h2,h3,h4{letter-spacing:-.02em}
+
+/* Keep brand gradient buttons readable */
+[style*="linear-gradient"][style*="color:#fff"]{color:#fff!important}
+button,[class*="btn"],[class*="btn"] *{color:inherit}
+[class*="btn-primary"],[class*="btn-p"]{color:#fff!important}
+
+/* Softer shadows on light */
+.card,.modal,.modal-content{box-shadow:0 20px 60px -30px rgba(16,43,67,.35)!important;border:1px solid #e4e9ee!important}
+
+@media(prefers-color-scheme:dark){
+  html,body{background:#f6f8fa!important;color:#0f2136!important}
+}
+
+/* Portal plan options and form fields (CSS-declared dark surfaces) */
+.plan-opt,.plan-option,.prod-cb{background:#fff!important;border:1px solid #e4e9ee!important}
+.plan-opt *,.plan-option *,.prod-cb *{color:#0f2136!important}
+.plan-opt:hover,.prod-cb:hover{border-color:#9fd0e6!important;background:#f8fbfd!important}
+.plan-opt:has(input:checked),.prod-cb:has(input:checked){background:#eaf5fb!important;border-color:#0878b4!important}
+select,.sf-field,.form-group input,.form-group textarea,.form-group select,input[type=text],input[type=email],input[type=password],input[type=tel],input[type=number],textarea{background:#fff!important;color:#0f2136!important;border-color:#cdd9e2!important}
+select option{background:#fff!important;color:#0f2136!important}
+
+/* Higher-specificity field overrides */
+html body select.sf-field,html body .sf-field,html body select,html body .form-group select,html body .form-group input,html body .form-group textarea{background:#fff!important;color:#0f2136!important;border-color:#cdd9e2!important}
+html body select.sf-field option,html body select option{background:#fff!important;color:#0f2136!important}
+
+/* Readability: larger text on the sign-up / sign-in forms */
+.form-group label,label{font-size:14px!important;font-weight:600!important;letter-spacing:0!important;color:#0f2136!important}
+input,textarea,select,.sf,.sf-field{font-size:15.5px!important}
+.ml,.pw,.q-note,.field-hint,small,.note{font-size:13px!important;line-height:1.6!important}
+.plan-d,.plan-desc{font-size:13px!important;line-height:1.55!important}
+.plan-n,.plan-opt strong,.plan-name{font-size:15.5px!important}
+.plan-p,.plan-price{font-size:22px!important}
+.prod-cb strong,.prod-name{font-size:14.5px!important}
+.prod-cb span,.prod-cb small,.prod-meta{font-size:12.5px!important;line-height:1.5!important}
+h1,.page-title,.signup-step-title{font-size:28px!important}
+.sub,.subtitle,#page-subtitle{font-size:15px!important;line-height:1.65!important}
+.trust-bar span,.trust-bar div,.trust-bar b,.badge-pill,.pill{font-size:12px!important}
+.btn-p,.btn-s,.btn-o,.btn,.btn-primary,.btn-secondary{font-size:15px!important}
+select option{font-size:15px!important}
