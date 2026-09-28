@@ -29790,6 +29790,37 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
         console.log('[STRIPE] Campaign refunded: ' + campR.name);
       }
     }
+    // CHARGEBACK / DISPUTE opened - money at risk and a compliance event. Alert the
+    // founder immediately, record it, and PAUSE the customer's leads while it's open.
+    else if (evType === 'charge.dispute.created') {
+      var dp = event.data.object || {};
+      var dpCust = null;
+      try { if (dp.customer) dpCust = db.prepare('SELECT * FROM customers WHERE stripe_customer_id = ?').get(dp.customer); } catch(e) {}
+      try {
+        var dbD = getDb(); if (!dbD.disputes) dbD.disputes = [];
+        dbD.disputes.push({ id: dp.id || uuidv4(), customer_id: dpCust ? dpCust.id : null, email: dpCust ? (dpCust.email || '') : '', amount: Number(dp.amount || 0) / 100, currency: dp.currency || 'gbp', reason: dp.reason || '', status: dp.status || 'needs_response', created_at: new Date().toISOString() });
+        saveDb();
+      } catch(e) {}
+      if (dpCust) { try { db.prepare('UPDATE customers SET leads_paused = 1 WHERE id = ?').run(dpCust.id); saveDb(); } catch(e) {} }
+      try {
+        sendAdminAlert('9amLeads DISPUTE opened: £' + (Number(dp.amount || 0) / 100).toFixed(2) + ' (' + (dp.reason || '') + ')',
+          '<div style="font-family:Inter,Arial,sans-serif;font-size:14px;color:#0f172a;line-height:1.7"><p>A payment <b>dispute/chargeback</b> has been opened.</p><ul><li><b>Customer:</b> ' + escHtml(dpCust ? (dpCust.company || dpCust.email) : 'unknown') + '</li><li><b>Amount:</b> £' + (Number(dp.amount || 0) / 100).toFixed(2) + ' ' + String(dp.currency || 'gbp').toUpperCase() + '</li><li><b>Reason:</b> ' + escHtml(dp.reason || '') + '</li><li><b>Status:</b> ' + escHtml(dp.status || '') + '</li><li><b>Dispute ID:</b> ' + escHtml(dp.id || '') + '</li></ul><p>Their lead delivery has been paused. Respond in the Stripe dashboard before the evidence deadline.</p></div>');
+      } catch(e) {}
+      console.log('[STRIPE] Dispute opened: ' + (dp.id || '') + ' £' + (Number(dp.amount || 0) / 100).toFixed(2));
+    }
+    // Dispute closed (won/lost) - update the record and tell the founder the outcome.
+    else if (evType === 'charge.dispute.closed') {
+      var dp2 = event.data.object || {};
+      var dpOutcome = dp2.status || 'closed';
+      try {
+        var dbD2 = getDb();
+        if (dbD2.disputes) { var _drec = dbD2.disputes.filter(function(x){ return x.id === dp2.id; })[0]; if (_drec) { _drec.status = dpOutcome; _drec.closed_at = new Date().toISOString(); } saveDb(); }
+      } catch(e) {}
+      try {
+        sendAdminAlert('9amLeads DISPUTE closed: ' + dpOutcome,
+          '<div style="font-family:Inter,Arial,sans-serif;font-size:14px;color:#0f172a;line-height:1.7"><p>Dispute <b>' + escHtml(dp2.id || '') + '</b> is now <b>' + escHtml(dpOutcome) + '</b>.' + (dpOutcome === 'won' ? ' <span style="color:#166534">Won - you keep the funds.</span>' : (dpOutcome === 'lost' ? ' <span style="color:#b91c1c">Lost - funds returned to the customer.</span>' : '')) + '</p><p>If it was won, you can un-pause the customer in Admin if appropriate.</p></div>');
+      } catch(e) {}
+    }
 
     res.json({ received: true });
   } catch(e) { console.error('[STRIPE] Webhook error:', e.message); res.status(500).json({ error: e.message }); }
