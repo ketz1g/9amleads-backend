@@ -208,7 +208,7 @@ try {
 // planning and newbusiness stay EXCLUSIVE (one firm per lead). Used by the 9am
 // delivery + preview so shared products skip CROSS-customer exclusivity but still
 // never deliver the same lead twice to the SAME customer.
-function isSharedLeadProduct(prod) { prod = String(prod || ''); return prod === 'tenders' || prod === 'probate'; }
+function isSharedLeadProduct(prod) { prod = String(prod || ''); return prod === 'tenders' || prod === 'probate' || prod === 'planning'; }
 // Per-product freshness window. Planning applications move slowly (and PLOTA ingests
 // with a lag), so planning uses a wider window (PLANNING_FRESH_DAYS, default 7). All
 // other products return null and use the standard 24h/48h window from the caller.
