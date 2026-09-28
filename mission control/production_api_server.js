@@ -4427,6 +4427,24 @@ function lifecycleSent(cust) {
   cust.lifecycle_emails.push(new Date().toISOString());
   if (cust.lifecycle_emails.length > 40) cust.lifecycle_emails = cust.lifecycle_emails.slice(-40);
 }
+// A reminder/nudge should only send while its underlying action is STILL undone.
+// Central helper so we can't accidentally nag a customer who has already done it.
+function customerHasCard(c) {
+  return !!(c && c.stripe_payment_method_id);
+}
+function customerIsPaid(c) {
+  return !!(c && (c.paid_since || (c.stripe_subscription_id && String(c.stripe_subscription_id).toUpperCase() !== 'NULL')));
+}
+function customerHasPrintAndPost(c) {
+  if (!c) return false;
+  var d = getDb();
+  var hasTpl = (d.direct_mail_templates || []).some(function(t){ return t.customer_id === c.id; });
+  var autoOn = (d.direct_mail_automation_settings || []).some(function(s){ return s.customer_id === c.id && Number(s.enable_auto_send) === 1; });
+  return hasTpl || autoOn;
+}
+function customerHasCrm(c) {
+  return !!(c && c.crm_webhook_url);
+}
 
 // (1) First-win onboarding: nudge new trials to set up Print & Post + Auto Send
 //     within the first few days - the single biggest churn killer.
@@ -4444,9 +4462,10 @@ function runFirstWinNudges(opts) {
         if (ageDays < 1 || ageDays > 4) return;
         var hasTpl = (db2.direct_mail_templates || []).some(function(t){ return t.customer_id === c.id; });
         var autoOn = (db2.direct_mail_automation_settings || []).some(function(s){ return s.customer_id === c.id && Number(s.enable_auto_send) === 1; });
-        if (hasTpl || autoOn) return;
+        if (hasTpl || autoOn) return; // already set up Print & Post - stop reminding
         candidates++;
         if (opts.dryRun) return;
+        if (customerIsPaid(c)) return; // upgraded/paid - no onboarding nudge
         if (!lifecycleAllowed(c, { minGapDays: 1, maxPerWeek: 3 })) return;
         var dash = PUBLIC_URL.replace(/\/+$/, '') + '/portal/dashboard.html';
         var html = '<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#0f172a"><h2 style="font-size:20px;color:#0b6bb3;margin:0 0 10px">Get your first win from 9amLeads</h2><p style="font-size:15px;line-height:1.7">Hi ' + escHtml(c.contact_name || c.company || 'there') + ',</p><p style="font-size:15px;line-height:1.7">The members who get the most from 9amLeads do two simple things in their first few days:</p><ol style="font-size:15px;line-height:1.9"><li><b>Upload a flyer or letter</b> in Print &amp; Post (takes 2 minutes).</li><li><b>Turn on Auto Print &amp; Post</b> so every new lead is printed and posted for you each morning.</li></ol><p style="font-size:15px;line-height:1.7">Then just keep it running for 2-4 weeks - direct mail builds.</p><p><a href="' + dash + '" style="display:inline-block;background:#0b6bb3;color:#fff;padding:13px 26px;border-radius:8px;text-decoration:none;font-weight:700">Open my dashboard</a></p></div>';
@@ -24102,7 +24121,9 @@ async function runCampaignEmails(dry) {
               // needs) - not just a Stripe customer id. Using the customer id here would
               // silently skip the add-a-card nudge for a triallist with no card, who
               // would then neither be charged nor nudged.
-              var _hasCardNow = !!cust.stripe_payment_method_id;
+              // Nudge ONLY while it is still needed: no saved card AND not already paid.
+              // (Adding a card or upgrading stops these reminders immediately.)
+              var _hasCardNow = !!cust.stripe_payment_method_id || !!cust.paid_since || (!!cust.stripe_subscription_id && String(cust.stripe_subscription_id).toUpperCase() !== 'NULL');
               if (!_hasCardNow) {
                 var _cardTpl = accountAge >= 6 ? 'trial_addcard6' : (accountAge >= 4 ? 'trial_addcard' : '');
                 if (_cardTpl && !campaignSent.includes(_cardTpl)) {
