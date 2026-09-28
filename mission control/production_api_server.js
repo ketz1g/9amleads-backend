@@ -4331,12 +4331,88 @@ function holdCommissionsForCancelled() {
   } catch(e) { return { held: held, error: e.message }; }
 }
 // Cron wrapper (safe): runs the engine daily + clearance + hold. Logged.
+// Send partner member invitations whose scheduled time has arrived.
+function sendScheduledPartnerInvites() {
+  var dbc = getDb(); var now = Date.now(); var sent = 0;
+  (dbc.partner_invites || []).forEach(function(iv){
+    if (iv.status !== 'scheduled' || iv.sent_at || !iv.scheduled_at) return;
+    if (new Date(iv.scheduled_at).getTime() > now) return;
+    var p = (dbc.affiliates || []).find(function(a){ return a.id === iv.partner_id; });
+    if (!p || !partnerStatusActive(p)) return;
+    var cfg = partnerConfig(); var td = Number(cfg.sales_partner_trial_days) || 14;
+    var org = p.business_name || p.name || 'your organisation';
+    try { sendBrevoEmail({ email: iv.email, name: iv.name || '' }, org + ' has partnered with 9amLeads - your ' + td + ' days free', memberInviteHtml(org, partnerRefLink(p), td, iv.name)); } catch(e) {}
+    iv.status = 'sent'; iv.sent_at = new Date().toISOString(); sent++;
+  });
+  if (sent) saveDb();
+  return sent;
+}
+// Re-nudge invitations sent 7+ days ago that have not converted (once each).
+function resendPartnerInvites() {
+  var dbc = getDb(); var now = Date.now(); var sent = 0;
+  (dbc.partner_invites || []).forEach(function(iv){
+    if (iv.converted_at || iv.reminded_at || iv.status !== 'sent' || !iv.sent_at) return;
+    if (now - new Date(iv.sent_at).getTime() < 7 * 86400000) return;
+    var p = (dbc.affiliates || []).find(function(a){ return a.id === iv.partner_id; });
+    if (!p || !partnerStatusActive(p)) return;
+    var cfg = partnerConfig(); var td = Number(cfg.sales_partner_trial_days) || 14;
+    var org = p.business_name || p.name || 'your organisation';
+    try { sendBrevoEmail({ email: iv.email, name: iv.name || '' }, 'Still time - your ' + td + ' days free with 9amLeads via ' + org, memberInviteHtml(org, partnerRefLink(p), td, iv.name)); } catch(e) {}
+    iv.reminded_at = new Date().toISOString(); sent++;
+  });
+  if (sent) saveDb();
+  return sent;
+}
+// Simple partner onboarding drip: day 1 / 3 / 7 / 14 nudges (once each).
+function partnerDripEmail(p, day) {
+  var accent = '#0b6bb3'; var dash = 'https://9amleads.com/portal/partner.html';
+  var code = escHtml(p.referral_code || p.code || '');
+  var heads = { 1: 'Your partner dashboard is ready', 3: 'Have you invited your members yet?', 7: 'A quick way to get your first paying member', 14: '2 weeks in - keep the momentum' };
+  var bodies = {
+    1: 'Log in, copy your code (' + code + ') and your link, then open "Invite your members" to send a co-branded invitation in one click.',
+    3: 'Paste your member list into the invite tool and we will send the co-branded invitation carrying your code. Every member gets 14 days free.',
+    7: 'Partners who invite their list get their first paying member fastest. You can also share your code in a newsletter or at events.',
+    14: 'You earn &pound;25 per active member, per month, recurring. Keep inviting and the commission compounds - check your funnel in the dashboard.'
+  };
+  return '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;padding:0;background:#f4f5f7">'
+    + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f5f7"><tr><td align="center" style="padding:24px 12px">'
+    + '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:600px;background:#fff;border:1px solid #e5e7eb;border-radius:8px">'
+    + '<tr><td style="height:4px;background:' + accent + ';font-size:0;line-height:0">&nbsp;</td></tr>'
+    + '<tr><td style="padding:26px 34px">'
+    + '<p style="margin:0 0 4px;font-size:18px;font-weight:800;color:#1f2937">9am<span style="color:' + accent + '">Leads</span></p>'
+    + '<p style="margin:0 0 14px;font-size:12px;color:#6b7280">Partner Programme</p>'
+    + '<h1 style="margin:0 0 12px;font-size:21px;line-height:1.3;font-weight:800;color:#1f2937">' + heads[day] + '</h1>'
+    + '<p style="margin:0 0 14px;color:#1f2937;font-size:15px;line-height:1.65">Hi ' + escHtml(p.name || 'there') + ', ' + bodies[day] + '</p>'
+    + '<table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="border-radius:8px;background:' + accent + '"><a href="' + dash + '" style="display:inline-block;padding:13px 28px;font-size:15px;font-weight:700;color:#fff;text-decoration:none;border-radius:8px">Open your dashboard</a></td></tr></table>'
+    + '</td></tr></table></td></tr></table></body></html>';
+}
+function partnerDripSequence() {
+  var dbc = getDb(); var now = Date.now(); var sent = 0;
+  (dbc.affiliates || []).filter(isPartnerRecurring).forEach(function(p){
+    if (!partnerStatusActive(p)) return;
+    var start = new Date(p.approved_at || p.activated_at || p.created_at || 0).getTime();
+    if (!start) return;
+    var age = Math.floor((now - start) / 86400000);
+    if (!p.drip_sent) p.drip_sent = [];
+    [1, 3, 7, 14].forEach(function(day){
+      if (age >= day && p.drip_sent.indexOf(day) === -1) {
+        try { sendBrevoEmail({ email: p.email, name: p.name || 'Partner' }, ['', 'Your partner dashboard is ready', 'Have you invited your members yet?', 'A quick way to get your first paying member', '2 weeks in - keep the momentum'][day] || 'Your 9amLeads partner update', partnerDripEmail(p, day)); } catch(e) {}
+        p.drip_sent.push(day); sent++;
+      }
+    });
+  });
+  if (sent) saveDb();
+  return sent;
+}
 function runPartnerJobs() {
   var r1 = processPartnerCommissions();
   var r2 = processCommissionClearance();
   var r3 = holdCommissionsForCancelled();
-  console.log('[PARTNER] commission job: created=' + r1.created + ' approved=' + r2.approved + ' held=' + r3.held);
-  return { created: r1.created, approved: r2.approved, held: r3.held };
+  var si = sendScheduledPartnerInvites();
+  var ri = resendPartnerInvites();
+  var dr = partnerDripSequence();
+  console.log('[PARTNER] job: created=' + r1.created + ' approved=' + r2.approved + ' held=' + r3.held + ' invites_sent=' + si + ' reminded=' + ri + ' drip=' + dr);
+  return { created: r1.created, approved: r2.approved, held: r3.held, invites_sent: si, invites_reminded: ri, drip: dr };
 }
 
 // ===== AFFILIATE AUTOMATION =====
@@ -5087,15 +5163,17 @@ app.get('/api/partner/announcements', requirePartner, (req, res) => {
 // A partner (association/network) can invite members by email. The email is
 // co-branded ("In partnership with X") and carries the partner's referral link so
 // every sign-up is attributed and the member gets the partner trial (14 days).
-function memberInviteHtml(orgName, refLink, trialDays) {
+function memberInviteHtml(orgName, refLink, trialDays, toName) {
   var org = escHtml(orgName || 'your association');
+  var greet = toName ? ('Hi ' + escHtml(toName) + ',') : 'Hi there,';
   var accent = '#0b6bb3';
   var btn = '<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-radius:8px;background:' + accent + '"><a href="' + refLink + '" style="display:inline-block;padding:15px 32px;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:8px">Start your free ' + trialDays + ' days</a></td></tr></table>';
   var bullets = [
     'Fresh moving leads every weekday at 9am, in your email and dashboard',
     'Leads are exclusive and never resold, and each one shows its source',
     'Print &amp; Post in one click, with live postage tracking and proof of posting',
-    'Auto Print &amp; Post, CRM integration and bulk campaigns for quiet times',
+    'CRM integration - every lead pushed straight into your CRM automatically',
+    'Auto Print &amp; Post and bulk campaigns for quiet times',
     'No contract, cancel anytime'
   ].map(function(t){ return '<tr><td style="padding:0 0 8px;color:#1f2937;font-size:14.5px;line-height:1.55"><span style="color:#16a34a;font-weight:800">&#10003;</span>&nbsp; ' + t + '</td></tr>'; }).join('');
   return '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>'
@@ -5107,7 +5185,7 @@ function memberInviteHtml(orgName, refLink, trialDays) {
     + '<p style="margin:0;font-size:18px;font-weight:800;color:#1f2937">9am<span style="color:' + accent + '">Leads</span></p>'
     + '<p style="margin:6px 0 0;font-size:12px;color:#6b7280">In partnership with ' + org + '</p>'
     + '<h1 style="margin:16px 0 12px;font-size:22px;line-height:1.3;font-weight:800;color:#1f2937">You are invited to try 9amLeads</h1>'
-    + '<p style="margin:0 0 12px;color:#1f2937;font-size:15px;line-height:1.65">' + org + ' has partnered with 9amLeads to give members a faster, cheaper way to win moving work. Through this private invite you get an extended <strong>' + trialDays + '-day free trial</strong>.</p>'
+    + '<p style="margin:0 0 12px;color:#1f2937;font-size:15px;line-height:1.65">' + greet + '<br><br>' + org + ' has partnered with 9amLeads to give members a faster, cheaper way to win moving work. Through this private invite you get an extended <strong>' + trialDays + '-day free trial</strong>.</p>'
     + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0">' + bullets + '</table>'
     + '<p style="margin:10px 0 4px;color:#1f2937;font-size:14px;line-height:1.6">This link is reserved for ' + org + ' members.</p>'
     + '</td></tr>'
@@ -5116,6 +5194,28 @@ function memberInviteHtml(orgName, refLink, trialDays) {
     + '<p style="margin:12px 0 8px;color:#9ca3af;font-size:11px;line-height:1.7">Sent by 9amLeads on behalf of ' + org + '. 9am Leads Ltd, Company No. 17402522, 66 Paul Street, London EC2A 4NA.</p>'
     + '<a href="mailto:hello@9amleads.com?subject=unsubscribe" style="color:#6b7280;font-size:12px">Unsubscribe</a>'
     + '</td></tr></table></td></tr></table></body></html>';
+}
+// Accepts "name@x.com", "Name <name@x.com>", "Name, name@x.com" and {email,name}.
+function parseInviteInput(input) {
+  var out = [], seen = {};
+  (input || []).forEach(function(x){
+    var name = '', e = '';
+    if (x && typeof x === 'object') { e = String(x.email || ''); name = String(x.name || ''); }
+    else {
+      var s = String(x || '').trim();
+      var m = s.match(/^(.*?)[<\(]([^>\)]+)[>\)]\s*$/);
+      if (m) { name = m[1].trim().replace(/^["']|["']$/g, ''); e = m[2].trim(); }
+      else {
+        var m2 = s.match(/^([^@,]+?)\s*,\s*([^@\s]+@[^@\s]+\.[^@\s]+)$/);
+        if (m2) { name = m2[1].trim(); e = m2[2].trim(); } else { e = s; }
+      }
+    }
+    e = e.toLowerCase();
+    if (!e || seen[e]) return;
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) return;
+    seen[e] = 1; out.push({ email: e, name: name });
+  });
+  return out;
 }
 
 app.post('/api/partner/invites', requirePartner, (req, res) => {
@@ -5126,43 +5226,113 @@ app.post('/api/partner/invites', requirePartner, (req, res) => {
     var trialDays = Number(cfg.sales_partner_trial_days) || 14;
     var refLink = partnerRefLink(p);
     var org = p.business_name || p.name || 'your organisation';
-    var input = [];
-    if (Array.isArray(req.body && req.body.emails)) input = req.body.emails.slice();
-    else if (req.body && req.body.text) input = String(req.body.text).split(/[\s,;]+/);
-    var seen = {}, emails = [];
-    input.forEach(function(x){
-      var e = String(x || '').trim().toLowerCase();
-      if (!e || seen[e]) return;
-      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) return;
-      seen[e] = 1; emails.push(e);
-    });
-    if (!emails.length) return res.status(400).json({ error: 'No valid email addresses found.' });
-    if (emails.length > 200) return res.status(400).json({ error: 'Please invite up to 200 addresses at a time.' });
+    var raw = [];
+    if (Array.isArray(req.body && req.body.emails)) raw = req.body.emails.slice();
+    else if (req.body && req.body.text) raw = String(req.body.text).split(/\r?\n|[,;]+/);
+    var recips = parseInviteInput(raw);
+    if (!recips.length) return res.status(400).json({ error: 'No valid email addresses found.' });
+    if (recips.length > 200) return res.status(400).json({ error: 'Please invite up to 200 addresses at a time.' });
+    var sched = (req.body && req.body.scheduled_at && String(req.body.scheduled_at).trim()) || '';
+    var schedDate = sched ? new Date(sched) : null;
+    var isFuture = !!(schedDate && !isNaN(schedDate.getTime()) && schedDate.getTime() > Date.now() + 60000);
     var dbc = getDb();
     if (!dbc.partner_invites) dbc.partner_invites = [];
     var already = {};
     dbc.partner_invites.forEach(function(iv){ if (iv.partner_id === p.id) already[String(iv.email || '').toLowerCase()] = 1; });
-    var html = memberInviteHtml(org, refLink, trialDays);
     var subject = org + ' has partnered with 9amLeads - your ' + trialDays + ' days free';
-    var sent = 0, skipped = 0;
-    emails.forEach(function(e){
-      if (already[e]) { skipped++; return; }
-      sendBrevoEmail({ email: e, name: '' }, subject, html);
-      dbc.partner_invites.push({ id: uuidv4(), partner_id: p.id, email: e, org: org, sent_at: new Date().toISOString(), ok: true });
-      already[e] = 1; sent++;
+    var sent = 0, skipped = 0, scheduled = 0;
+    recips.forEach(function(r){
+      if (already[r.email]) { skipped++; return; }
+      var rec = { id: uuidv4(), partner_id: p.id, email: r.email, name: r.name || '', org: org, created_at: new Date().toISOString() };
+      if (isFuture) { rec.status = 'scheduled'; rec.scheduled_at = schedDate.toISOString(); rec.sent_at = null; scheduled++; }
+      else { sendBrevoEmail({ email: r.email, name: r.name || '' }, subject, memberInviteHtml(org, refLink, trialDays, r.name)); rec.status = 'sent'; rec.sent_at = new Date().toISOString(); rec.ok = true; sent++; }
+      dbc.partner_invites.push(rec); already[r.email] = 1;
     });
-    if (sent) saveDb();
-    res.json({ success: true, sent: sent, skipped: skipped, total: emails.length });
+    if (sent || scheduled) saveDb();
+    res.json({ success: true, sent: sent, scheduled: scheduled, skipped: skipped, total: recips.length });
   } catch(e) { console.error('[PARTNER-INVITE]', (e && e.stack) || e); res.status(500).json({ error: (e && e.message) || String(e) }); }
 });
 app.get('/api/partner/invites', requirePartner, (req, res) => {
   try {
-    var list = (getDb().partner_invites || []).filter(function(iv){ return iv.partner_id === req.partner.id; }).sort(function(a,b){ return String(b.sent_at) < String(a.sent_at) ? -1 : 1; }).slice(0, 100);
-    res.json({ success: true, invites: list.map(function(iv){ return { email: iv.email, sent_at: iv.sent_at, org: iv.org || '', converted: !!iv.converted_at, converted_at: iv.converted_at || '' }; }) });
+    var list = (getDb().partner_invites || []).filter(function(iv){ return iv.partner_id === req.partner.id; }).sort(function(a,b){ return String(b.sent_at || b.scheduled_at || b.created_at) < String(a.sent_at || a.scheduled_at || a.created_at) ? -1 : 1; }).slice(0, 100);
+    res.json({ success: true, invites: list.map(function(iv){ return { email: iv.email, name: iv.name || '', sent_at: iv.sent_at || '', scheduled_at: iv.scheduled_at || '', scheduled: iv.status === 'scheduled', converted: !!iv.converted_at, converted_at: iv.converted_at || '' }; }) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+// Partner analytics funnel + tier progress + statement (real ledger, never front-end math).
+app.get('/api/partner/funnel', requirePartner, (req, res) => {
+  try {
+    var p = req.partner; var dbc = getDb();
+    var code = p.referral_code || p.code;
+    var clicks = (dbc.analytics || []).filter(function(e){ return e.event === 'partner_ref_click' && ((e.props && (e.props.code === code || e.props.partner_id === p.id))); }).length;
+    var invites = (dbc.partner_invites || []).filter(function(iv){ return iv.partner_id === p.id; });
+    var attr = (dbc.partner_attribution || []).filter(function(a){ return a.partner_id === p.id; });
+    var custs = dbc.customers || [];
+    var referred = attr.map(function(a){ return custs.find(function(c){ return c.id === a.customer_id; }); }).filter(Boolean);
+    var trials = referred.filter(function(c){ return String(c.plan) === 'free_trial'; }).length;
+    var paying = referred.filter(function(c){ return ['starter','pro','enterprise'].indexOf(c.plan) !== -1; }).length;
+    var churned = referred.filter(function(c){ return String(c.plan) === 'cancelled'; }).length;
+    var monthly = Number(p.commission_amount) || Number(partnerConfig().sales_partner_monthly_amount) || 25;
+    var milestones = [25,50,100,250,500];
+    var next = milestones.filter(function(n){ return n > paying; })[0] || null;
+    var board = (dbc.affiliates || []).filter(isPartnerRecurring).filter(partnerStatusActive).map(function(q){
+      var qa = (dbc.partner_attribution || []).filter(function(a){ return a.partner_id === q.id; });
+      var pay = qa.map(function(a){ return custs.find(function(c){ return c.id === a.customer_id; }); }).filter(Boolean).filter(function(c){ return ['starter','pro','enterprise'].indexOf(c.plan) !== -1; }).length;
+      return { name: q.business_name || q.name || 'Partner', paying: pay };
+    }).sort(function(a,b){ return b.paying - a.paying; }).slice(0, 5);
+    res.json({ success: true, funnel: { clicks: clicks, invites_sent: invites.length, invites_converted: invites.filter(function(iv){ return iv.converted_at; }).length, trials: trials, paying: paying, churned: churned }, commission: { per_member: monthly, monthly_now: paying * monthly }, tier: { paying: paying, next_members: next, next_monthly: next ? next * monthly : null }, leaderboard: board });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+app.get('/api/partner/statement', requirePartner, (req, res) => {
+  try {
+    var p = req.partner; var dbc = getDb();
+    var month = String(req.query.month || new Date().toISOString().slice(0,7));
+    var comms = (dbc.partner_commissions || []).filter(function(c){ return c.partner_id === p.id && String(c.commission_period || '').slice(0,7) === month; });
+    var attr = (dbc.partner_attribution || []).filter(function(a){ return a.partner_id === p.id; });
+    var custs = dbc.customers || [];
+    var members = attr.map(function(a){ var c = custs.find(function(x){ return x.id === a.customer_id; }); return c ? { company: c.company || '', email: c.email, plan: c.plan, joined: a.signup_at } : null; }).filter(Boolean);
+    var total = comms.reduce(function(s,c){ return s + Number(c.commission_amount || 0); }, 0);
+    res.json({ success: true, statement: { partner: p.business_name || p.name, code: p.referral_code || p.code, month: month, total: total, lines: comms.map(function(c){ return { period: c.commission_period, amount: c.commission_amount, status: c.status, customer: String(c.customer_id).slice(0,8) }; }), members: members } });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== ONE-OFF: find customers still marked free_trial who are actually paying =====
+// Reliable signal only: an active subscription row, a Stripe subscription id, or paid=1.
+// Pass ?apply=1 to correct them (sets their selected/stripe plan, else starter).
+app.get('/api/admin/scan-free-trial-paying', adminAuth, (req, res) => {
+  try {
+    var dry = String(req.query.apply || '') !== '1';
+    var rows = db.prepare("SELECT id,email,company,plan,selected_plan,paid,stripe_subscription_id,product,coverage FROM customers WHERE plan='free_trial'").all();
+    var out = [];
+    rows.forEach(function(c){
+      var sub = null; try { sub = db.prepare('SELECT status,plan FROM subscriptions WHERE customer_id = ? ORDER BY updated_at DESC LIMIT 1').get(c.id); } catch(e) {}
+      var subActive = sub && ['active','trialing','past_due'].indexOf(String(sub.status)) !== -1;
+      var isPaying = !!c.stripe_subscription_id || Number(c.paid) === 1 || subActive;
+      if (!isPaying) return;
+      var target = (c.selected_plan && ['starter','pro','enterprise'].indexOf(c.selected_plan) !== -1) ? c.selected_plan : ((sub && ['starter','pro','enterprise'].indexOf(String(sub.plan)) !== -1) ? sub.plan : 'starter');
+      out.push({ email: c.email, company: c.company, to: target, sub_status: sub ? sub.status : '' });
+      if (!dry) { var cust = db.prepare('SELECT * FROM customers WHERE id = ?').get(c.id); try { applyPlan(cust, target, cust.product); } catch(e) {} }
+    });
+    if (!dry && out.length) saveDb();
+    res.json({ success: true, applied: !dry, count: out.length, candidates: out });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // ===== COMMISSION PROCESSOR (admin + scheduled) =====
+app.post('/api/admin/partner/seed-resources', adminAuth, (req, res) => {
+  try {
+    var dbc = getDb(); if (!dbc.partner_resources) dbc.partner_resources = [];
+    var seeds = [
+      { title: 'CRM integration for your members (Zapier, Make, HubSpot, Pipedrive)', category: 'Integration', url: 'https://9amleads.com/portal/dashboard.html', content: 'Every lead can be pushed straight into a member\'s CRM automatically at 9am. Share this: they connect a webhook or use Zapier/Make, and leads flow in without copy-paste.', sort_order: 1 },
+      { title: 'Member invitation copy (email, SMS, social)', category: 'Marketing', url: 'https://9amleads.com/partners/', content: 'Ready-made wording to invite your members: "We have partnered with 9amLeads to give our members fresh, exclusive moving leads every morning at 9am, with an extended 14-day free trial."', sort_order: 2 },
+      { title: 'Partner proposal and pricing', category: 'Sales', url: 'https://9amleads.com/partners/', content: 'The full proposal: what members get, why 9amLeads beats other lead providers, and how your recurring commission works.', sort_order: 3 },
+      { title: 'Print & Post, tracking and CRM - what members can do', category: 'Product', url: 'https://9amleads.com/portal/demo.html?product=moving', content: 'Point members to the live demo so they can see fresh leads, proof of source, Print & Post with postage tracking and CRM integration in action.', sort_order: 4 }
+    ];
+    var added = 0;
+    seeds.forEach(function(s){ if (!dbc.partner_resources.some(function(r){ return r.title === s.title; })) { dbc.partner_resources.push(Object.assign({ id: uuidv4(), active: true, created_at: new Date().toISOString() }, s)); added++; } });
+    if (added) saveDb();
+    res.json({ success: true, added: added, total: dbc.partner_resources.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 app.post('/api/admin/partner/run-commissions', adminAuth, (req, res) => {
   var r = runPartnerJobs();
   res.json({ success: true, result: r });
@@ -5438,6 +5608,40 @@ app.post('/api/admin/partner/config', adminAuth, (req, res) => {
 // Cookie-attribution short link: /r/:code sets a 30-day referral cookie and
 // sends the visitor to the signup page with their code pre-filled. Works even
 // if the visitor signs up days later from a different device or tab.
+// Co-branded landing page for /r/CODE (association/sales partners). Shows the
+// partner's name and sends the visitor to signup with their referral code.
+function coBrandedLanding(p, trialDays) {
+  var org = escHtml(p.business_name || p.name || 'our partner');
+  var code = escHtml(p.referral_code || p.code || '');
+  var dest = PUBLIC_URL + '/portal/?ref=' + encodeURIComponent(p.referral_code || p.code || '') + '#signup';
+  var accent = '#0b6bb3';
+  var feats = [
+    'Fresh moving leads every weekday at 9am, by email and dashboard',
+    'Exclusive leads, never resold, each showing its source',
+    'Print &amp; Post in one click with live postage tracking',
+    'Auto Print &amp; Post, CRM integration and bulk campaigns',
+    'No contract, cancel anytime'
+  ].map(function(t){ return '<li style="margin:0 0 10px;padding-left:26px;position:relative;color:#334155;font-size:15px;line-height:1.5"><span style="position:absolute;left:0;color:#16a34a;font-weight:800">&#10003;</span>' + t + '</li>'; }).join('');
+  return '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+    + '<title>9amLeads in partnership with ' + org + '</title><meta name="robots" content="noindex,follow">'
+    + '<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;800;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">'
+    + '<style>body{margin:0;font-family:Inter,system-ui,sans-serif;background:#f4f7fa;color:#0f172a}h1,h2{font-family:Outfit,Inter,sans-serif}'
+    + '.wrap{max-width:920px;margin:0 auto;padding:0 20px}.hero{background:linear-gradient(160deg,#062a4a,#0b6bb3);color:#fff;padding:56px 0}'
+    + '.badge{display:inline-block;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#9fd0f5;border:1px solid rgba(255,255,255,.25);padding:6px 12px;border-radius:999px;margin-bottom:16px}'
+    + 'h1{font-size:clamp(28px,5vw,42px);line-height:1.14;margin:0 0 14px;letter-spacing:-.5px;max-width:760px}.hero p{color:#dbeaf7;font-size:17px;max-width:620px;line-height:1.65}'
+    + '.btn{display:inline-block;background:#fff;color:#0b4f86;font-weight:800;text-decoration:none;padding:15px 30px;border-radius:10px;font-size:16px;margin-top:22px}'
+    + '.card{background:#fff;border:1px solid #e6ebf1;border-radius:16px;padding:30px;margin:-34px auto 0;max-width:640px;box-shadow:0 20px 44px -28px rgba(11,79,134,.5);position:relative}'
+    + 'ul{list-style:none;padding:0;margin:16px 0 0}footer{text-align:center;color:#64748b;font-size:12px;padding:30px 0}'
+    + '</style></head><body>'
+    + '<header class="hero"><div class="wrap"><span class="badge">9amLeads &middot; In partnership with ' + org + '</span>'
+    + '<h1>Exclusive moving leads, every weekday at 9am</h1>'
+    + '<p>' + org + ' has partnered with 9amLeads to give members a faster, cheaper way to win moving work. Start today and get an extended <b>' + trialDays + '-day free trial</b>.</p>'
+    + '<a class="btn" href="' + dest + '">Start your free ' + trialDays + ' days</a></div></header>'
+    + '<div class="wrap"><div class="card"><h2 style="font-size:18px;margin:0 0 4px">What you get</h2><ul>' + feats + '</ul>'
+    + '<p style="margin:18px 0 0;color:#64748b;font-size:12px">Use code <b style="color:#0f172a">' + code + '</b> if asked. No contract. Cancel anytime.</p></div>'
+    + '<footer>9am Leads Ltd &middot; Company No. 17402522 &middot; 66 Paul Street, London EC2A 4NA</footer></div>'
+    + '</body></html>';
+}
 app.get('/r/:code', (req, res) => {
   try {
     var code = String(req.params.code || '').substring(0, 40).toUpperCase();
@@ -5446,6 +5650,12 @@ app.get('/r/:code', (req, res) => {
     var maxAge = 30 * 86400;
     res.setHeader('Set-Cookie', '9am_aff=' + encodeURIComponent(ckCode) + '; Max-Age=' + maxAge + '; Path=/; SameSite=Lax');
     if (p) trackAnalytics('partner_ref_click', { code: ckCode, src: 'shortlink', _uid: '' });
+    // Co-branded landing page for associations / sales partners (higher conversion
+    // than a bare redirect). Plain affiliates keep the direct signup redirect.
+    if (p && partnerTypeOf(p) !== 'affiliate') {
+      var cfgL = partnerConfig(); var tdL = Number(cfgL.sales_partner_trial_days) || 14;
+      return res.send(coBrandedLanding(p, tdL));
+    }
     var dest = PUBLIC_URL + '/portal/?ref=' + encodeURIComponent(ckCode) + '#signup';
     return res.redirect(302, dest);
   } catch(e) { return res.redirect(302, PUBLIC_URL + '/portal/#signup'); }
@@ -6208,6 +6418,7 @@ app.post('/api/auth/signup', async (req, res) => {
       try {
         var dbp = getDb();
         if (!dbp.partner_attribution) dbp.partner_attribution = [];
+        var _prevCount = (dbp.partner_attribution || []).filter(function(a){ return a.partner_id === affRef.id; }).length;
         var existingAttr = (dbp.partner_attribution || []).filter(function(a){ return a.customer_id === id; })[0];
         if (!existingAttr) {
           dbp.partner_attribution.push({
@@ -6221,15 +6432,29 @@ app.post('/api/auth/signup', async (req, res) => {
         }
         // INVITE CONVERSION: mark any matching partner invite as converted so the
         // partner dashboard can report invitations -> sign-ups.
+        var _invHit = 0;
         try {
           if (!dbp.partner_invites) dbp.partner_invites = [];
           var _invEmail = String(email || '').toLowerCase();
-          var _invHit = 0;
           dbp.partner_invites.forEach(function(iv){ if (iv.partner_id === affRef.id && !iv.converted_at && String(iv.email || '').toLowerCase() === _invEmail) { iv.converted_at = new Date().toISOString(); iv.customer_id = id; _invHit++; } });
           if (_invHit) saveDb();
         } catch(_invErr) {}
         // Also record the attribution source for the analytics funnel
         trackAnalytics('signup_completed', { product: product, plan: plan || 'free_trial', source: 'partner_' + partnerTypeOf(affRef) });
+        // Alerts + first-referral celebration (never allowed to break signup).
+        try {
+          if (isPartnerRecurring(affRef)) {
+            var _dash = 'https://9amleads.com/portal/partner.html';
+            var _who = escHtml(company || email || 'a business');
+            if (_invHit > 0) {
+              partnerNotify(affRef.id, 'invited_joined', 'An invited member just joined: ' + (company || email) + '.', id);
+              sendBrevoEmail({ email: affRef.email, name: affRef.name || 'Partner' }, 'An invited member just joined', '<div style="font-family:Inter,Arial,sans-serif;max-width:540px;margin:0 auto;padding:24px;color:#0f172a"><p style="font-size:15px;line-height:1.7">Hi ' + escHtml(affRef.name || 'there') + ',</p><p style="font-size:15px;line-height:1.7">Great news - <b>' + _who + '</b>, one of the members you invited, just started their free trial through your link (' + (trialDays || 14) + ' days free). You will start earning &pound;25 per month once they become a paying customer.</p><p><a href="' + _dash + '" style="display:inline-block;background:#0b6bb3;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700">Open your dashboard</a></p></div>');
+            }
+            if (_prevCount === 0) {
+              sendBrevoEmail({ email: affRef.email, name: affRef.name || 'Partner' }, 'Your first member signed up - nice work', '<div style="font-family:Inter,Arial,sans-serif;max-width:540px;margin:0 auto;padding:24px;color:#0f172a"><p style="font-size:15px;line-height:1.7">Hi ' + escHtml(affRef.name || 'there') + ',</p><p style="font-size:15px;line-height:1.7">Your first referral just signed up: <b>' + _who + '</b>. They get ' + (trialDays || 14) + ' days free, and once they become a paying customer your commission starts - &pound;25 per month, recurring.</p><p style="font-size:15px;line-height:1.7">Tip: use "Invite your members" in your dashboard to send a co-branded invitation to your whole list in one click.</p><p><a href="' + _dash + '" style="display:inline-block;background:#0b6bb3;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700">Open your dashboard</a></p></div>');
+            }
+          }
+        } catch(_cel) {}
       } catch(attrErr) {}
     }
 

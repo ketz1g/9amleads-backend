@@ -151,11 +151,24 @@ function render(db){
   // Member invite tool (associations)
   if (isAssoc) {
     html += '<div class="card"><div class="sect-title">Invite your members</div>' +
-      '<p class="muted" style="margin-bottom:8px">Paste your members\' email addresses (one per line, or comma-separated). We send a co-branded invitation carrying your code, and every sign-up is credited to you. Up to 200 at a time.</p>' +
-      '<textarea class="inp" id="inv-emails" rows="4" placeholder="member1@example.com&#10;member2@example.com"></textarea>' +
+      '<p class="muted" style="margin-bottom:8px">Paste member emails (one per line), or "Name &lt;email&gt;", or upload a CSV. We send a co-branded invitation carrying your code; every sign-up is credited to you. Up to 200 at a time.</p>' +
+      '<textarea class="inp" id="inv-emails" rows="4" placeholder="Jane Smith &lt;jane@example.com&gt;&#10;member2@example.com"></textarea>' +
+      '<div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:8px">' +
+      '<label class="muted" style="margin:0">CSV/TXT: <input type="file" id="inv-csv" accept=".csv,.txt" onchange="readInviteCsv(this)" style="font-size:11px"></label>' +
+      '<label class="muted" style="margin:0">Schedule (optional): <input class="inp" id="inv-when" type="datetime-local" style="width:auto;display:inline-block;margin:0;padding:6px 8px"></label>' +
+      '</div>' +
       '<button class="btn btn-p" onclick="sendInvites()">Send invitations</button> <span id="inv-msg" class="muted" style="margin-left:8px"></span>' +
       '<div id="inv-history" style="margin-top:10px"></div>' +
       '</div>';
+    html += '<div id="growth"></div>';
+    html += '<div class="card"><div class="sect-title">Share kit</div>' +
+      '<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start">' +
+      '<img alt="QR code" width="120" height="120" style="border:1px solid var(--border);border-radius:8px" src="https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=' + encodeURIComponent(db.referral_link) + '">' +
+      '<div style="flex:1;min-width:220px"><p class="muted" style="margin-bottom:6px">Print this QR code for events/newsletters, or copy ready-made wording:</p>' +
+      '<div class="link-box" id="share-copy" style="font-size:11px">We have partnered with 9amLeads - fresh, exclusive moving leads every morning at 9am. As a member you get an extended 14-day free trial. Join here: ' + esc(db.referral_link) + '</div>' +
+      '<button class="copy-btn" onclick="copyText(document.getElementById(\'share-copy\').textContent, this)">Copy wording</button>' +
+      '</div></div></div>';
+    html += '<div class="card"><div class="sect-title">Monthly statement</div><p class="muted" style="margin-bottom:8px">A printable statement of your members and commission.</p><button class="btn btn-o" onclick="openStatement()">Open this month\'s statement</button></div>';
   }
   html += '<div class="grid grid-3" style="margin-bottom:14px">' +
     '<div class="stat"><div class="n">' + (db.clicks || 0) + '</div><div class="l">Referral Clicks</div></div>' +
@@ -234,7 +247,7 @@ function render(db){
   window._db = db;
   window._isSales = isSales;
   if (isSales) { renderProspects(db); renderFollowups(db); renderFeedbackForm(db); renderEarnings(db); renderResources(); }
-  else { renderReferrals(db); renderEarnings(db); renderResources(); if (isAssoc) loadInvites(); }
+  else { renderReferrals(db); renderEarnings(db); renderResources(); if (isAssoc) { loadInvites(); loadGrowth(); } }
 }
 function showTab(name, btn){
   var tabs = ['prospects','followups','feedback','earnings','resources','referrals'];
@@ -378,14 +391,56 @@ function saveFeedback(){
 function sendInvites(){
   var el = document.getElementById('inv-emails'); var msg = document.getElementById('inv-msg');
   if (!el) return;
-  var emails = String(el.value || '').split(/[\s,;]+/).filter(Boolean);
+  var emails = String(el.value || '').split(/\r?\n|[,;]+/).map(function(s){ return s.trim(); }).filter(Boolean);
   if (!emails.length) { msg.textContent = 'Add at least one email address.'; return; }
+  var when = document.getElementById('inv-when');
+  var body = { emails: emails };
+  if (when && when.value) { body.scheduled_at = new Date(when.value).toISOString(); }
   msg.textContent = 'Sending...';
-  api('POST', '/api/partner/invites', { emails: emails }, function(d, st){
+  api('POST', '/api/partner/invites', body, function(d, st){
     if (d && d.success) {
-      msg.textContent = 'Sent ' + d.sent + ' invitation' + (d.sent === 1 ? '' : 's') + (d.skipped ? ' (' + d.skipped + ' already invited)' : '') + '.';
-      el.value = ''; loadInvites();
+      var parts = [];
+      if (d.sent) parts.push('sent ' + d.sent);
+      if (d.scheduled) parts.push('scheduled ' + d.scheduled);
+      if (d.skipped) parts.push(d.skipped + ' already invited');
+      msg.textContent = parts.length ? parts.join(', ') : 'Nothing to do.';
+      el.value = ''; if (when) when.value = ''; loadInvites(); loadGrowth();
     } else { msg.textContent = (d && d.error) || 'Could not send invitations.'; }
+  });
+}
+function readInviteCsv(input){
+  var f = input.files && input.files[0]; if (!f) return;
+  var r = new FileReader();
+  r.onload = function(){ var ta = document.getElementById('inv-emails'); if (ta) ta.value = String(r.result || '').trim(); };
+  r.readAsText(f);
+}
+function loadGrowth(){
+  api('GET', '/api/partner/funnel', null, function(d){
+    var el = document.getElementById('growth'); if (!el || !d || !d.success) return;
+    var f = d.funnel || {}, c = d.commission || {}, t = d.tier || {}, b = d.leaderboard || [];
+    var step = function(label, val, last){ return '<div style="flex:1;min-width:78px;text-align:center"><div style="font-family:var(--ff-h);font-weight:900;font-size:20px;color:#0c4a6e">' + (val||0) + '</div><div class="muted">' + label + '</div></div>' + (last ? '' : '<div style="align-self:center;color:#cbd5e1">&#8594;</div>'); };
+    var h = '<div class="card"><div class="sect-title">Your growth funnel</div>' +
+      '<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">' + step('Clicks', f.clicks) + step('Invites', f.invites_sent) + step('Joined', f.invites_converted) + step('Trials', f.trials) + step('Paying', f.paying) + step('Churned', f.churned, true) + '</div>' +
+      '<p class="muted" style="margin-top:10px">You earn ' + fmt(c.per_member || 25) + ' per active member, per month - currently ' + fmt(c.monthly_now || 0) + '/month recurring.</p>' +
+      (t.next_members ? '<p class="muted">Next milestone: ' + t.next_members + ' active members = ' + fmt(t.next_monthly) + '/month.</p>' : '<p class="muted">Top tier reached - well done.</p>') +
+      '</div>';
+    if (b.length) { h += '<div class="card"><div class="sect-title">Partner leaderboard</div>' + b.map(function(x, i){ return '<div class="fb-item"><b>#' + (i + 1) + ' ' + esc(x.name) + '</b> <span class="tag t-blue">' + x.paying + ' paying</span></div>'; }).join('') + '</div>'; }
+    el.innerHTML = h;
+  });
+}
+function openStatement(){
+  api('GET', '/api/partner/statement', null, function(d){
+    if (!d || !d.success) { alert('Could not load statement'); return; }
+    var s = d.statement || {}; var w = window.open('', '_blank'); if (!w) return;
+    var rows = (s.lines || []).map(function(l){ return '<tr><td>' + esc(l.period) + '</td><td>' + esc(l.customer) + '</td><td>' + fmt(l.amount) + '</td><td>' + esc(l.status) + '</td></tr>'; }).join('') || '<tr><td colspan="4">No commission this month</td></tr>';
+    var mem = (s.members || []).map(function(m){ return '<tr><td>' + esc(m.company || '') + '</td><td>' + esc(m.email || '') + '</td><td>' + esc(m.plan || '') + '</td><td>' + (m.joined ? new Date(m.joined).toLocaleDateString() : '') + '</td></tr>'; }).join('') || '<tr><td colspan="4">No members yet</td></tr>';
+    w.document.write('<html><head><title>Statement ' + esc(s.month) + '</title></head><body style="font-family:Inter,Arial,sans-serif;padding:24px">' +
+      '<h2>9amLeads partner statement - ' + esc(s.partner || '') + '</h2><p>Month: ' + esc(s.month) + ' &middot; Code: ' + esc(s.code || '') + '</p>' +
+      '<h3>Commission: ' + fmt(s.total || 0) + '</h3>' +
+      '<table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse"><tr><th>Period</th><th>Customer</th><th>Amount</th><th>Status</th></tr>' + rows + '</table>' +
+      '<h3 style="margin-top:18px">Members (' + (s.members || []).length + ')</h3><table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse"><tr><th>Company</th><th>Email</th><th>Plan</th><th>Joined</th></tr>' + mem + '</table>' +
+      '</body></html>');
+    w.document.close();
   });
 }
 function loadInvites(){
