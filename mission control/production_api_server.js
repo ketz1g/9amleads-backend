@@ -5232,6 +5232,7 @@ function parseInviteInput(input) {
     var parts = s.split(',').map(function(p){ return p.trim(); });
     if (parts.length >= 2 && /@/.test(parts[0]) && /@/.test(parts[1])) { parts.forEach(function(p){ if (/@/.test(p)) add(p, '', '', ''); }); return; }
     if (parts.length === 1) { add(parts[0], '', '', ''); return; }
+    if (/@/.test(parts[0])) { add(parts[0], '', parts[1], parts[2]); return; }
     add(parts[1], parts[0], parts[2], parts[3]);
   });
   return out;
@@ -5327,6 +5328,73 @@ app.post('/api/partner/ask', requirePartner, (req, res) => {
         '<div style="font-family:Inter,Arial,sans-serif;font-size:14px;color:#0f172a;line-height:1.7"><p><b>' + escHtml(org) + '</b> (' + escHtml(String(p.email || '')) + '), ' + escHtml(partnerTypeOf(p)) + ' partner, asked:</p><blockquote style="border-left:3px solid #0b6bb3;margin:0;padding:6px 14px;color:#334155">' + escHtml(q).replace(/\n/g, '<br>') + '</blockquote><p style="color:#64748b;font-size:12px">Reply directly to ' + escHtml(String(p.email || '')) + '</p></div>');
     } catch(e) {}
     res.json({ success: true, message: 'Thanks - we have received your question and will reply by email.' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/partner/signup-members - a partner creates free trials for their members
+// directly. We create the customer (attributed to the partner), email the member a
+// welcome + set-password link, and default areas to All UK so delivery starts.
+app.post('/api/partner/signup-members', requirePartner, (req, res) => {
+  try {
+    var p = req.partner;
+    if (!partnerStatusActive(p)) return res.status(403).json({ error: 'Your partner account is not active.' });
+    var cfg = partnerConfig();
+    var trialDays = Number(cfg[isPartnerRecurring(p) ? 'sales_partner_trial_days' : 'affiliate_trial_days']) || 14;
+    var PM = {
+      moving: { lead_type: 'Moving Leads', business_type: 'Removal Company' },
+      probate: { lead_type: 'Probate Leads', business_type: 'Solicitor & Estate Agent' },
+      newbusiness: { lead_type: 'New Business Alerts', business_type: 'Accountant & B2B Service' },
+      planning: { lead_type: 'Planning Permissions', business_type: 'Architect & Builder' },
+      tenders: { lead_type: 'Public Tenders', business_type: 'IT, Construction, Cleaning & More' }
+    };
+    var batchProduct = String((req.body && req.body.product) || 'moving').toLowerCase();
+    if (!PM[batchProduct]) batchProduct = 'moving';
+    var input = [];
+    if (Array.isArray(req.body && req.body.members)) input = req.body.members.slice();
+    else if (req.body && (req.body.text || req.body.csv)) input = [String(req.body.text || req.body.csv)];
+    var recips = parseInviteInput(input);
+    if (!recips.length) return res.status(400).json({ error: 'No valid email addresses found.' });
+    if (recips.length > 200) return res.status(400).json({ error: 'Please add up to 200 members at a time.' });
+    var bcryptjs = require('bcryptjs');
+    var created = 0, skipped = 0, failed = 0;
+    recips.forEach(function(r){
+      try {
+        if (db.prepare('SELECT id FROM customers WHERE email = ?').get(r.email)) { skipped++; return; }
+        var prod = (r.product && PM[String(r.product).toLowerCase()]) ? String(r.product).toLowerCase() : batchProduct;
+        var info = PM[prod];
+        var areas = r.segment ? String(r.segment).split(/[,\s;|]+/).map(function(x){ return x.trim(); }).filter(Boolean) : [];
+        var coverage = 'postcode';
+        if (!areas.length) { areas = ['All UK']; coverage = 'ukwide'; }
+        var id2 = uuidv4();
+        var pwHash = bcryptjs.hashSync(require('crypto').randomBytes(24).toString('hex'), 10);
+        var nowIso = new Date().toISOString();
+        var trial_ends = new Date(Date.now() + trialDays * 86400000).toISOString();
+        db.prepare(`INSERT INTO customers (id, email, company, contact_name, phone, password_hash, product, lead_type, business_type, target_areas, coverage, biz_field2, biz_field3, source, plan, trial_ends, marketing_consent, created_at, extra_postcodes, crm_webhook_url, campaign_sent, signup_ip, affiliate_id, affiliate_code, affiliate_applied_at, affiliate_trial_days, affiliate_payout_status, affiliate_payout_due)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+          id2, r.email, r.company || r.name || 'Your business', r.name || '', '', pwHash,
+          prod, info.lead_type, info.business_type, JSON.stringify(areas), coverage, '{}', JSON.stringify([prod]),
+          'partner:' + (p.referral_code || p.code || ''), 'free_trial', trial_ends, 1, nowIso, '0', '', '[]', 'partner',
+          p.id, p.referral_code || p.code || null, nowIso, trialDays, 'referral_pending', new Date(Date.now() + 30 * 86400000).toISOString()
+        );
+        var dbp = getDb();
+        if (!dbp.partner_attribution) dbp.partner_attribution = [];
+        if (!dbp.partner_attribution.some(function(a){ return a.customer_id === id2; })) {
+          dbp.partner_attribution.push({ id: uuidv4(), partner_id: p.id, customer_id: id2, attribution_source: 'partner_signup', referral_code: p.referral_code || p.code, first_referral_at: nowIso, signup_at: nowIso, converted_at: null, attribution_status: 'active', created_at: nowIso, updated_at: nowIso });
+        }
+        var rToken = require('crypto').randomBytes(32).toString('hex');
+        db.prepare('UPDATE customers SET reset_token = ?, reset_expires = ? WHERE id = ?').run(rToken, new Date(Date.now() + 7 * 86400000).toISOString(), id2);
+        saveDb();
+        try {
+          var org = p.business_name || p.name || 'Your association';
+          var link = PUBLIC_URL.replace(/\/+$/, '') + '/portal/reset-password.html?token=' + rToken;
+          var html = '<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#0f172a"><h2 style="font-size:20px;color:#0b6bb3;margin:0 0 10px">' + escHtml(org) + ' has set up your free 9amLeads trial</h2><p style="font-size:15px;line-height:1.7">Hi ' + escHtml(r.name || 'there') + ',</p><p style="font-size:15px;line-height:1.7">As part of your ' + escHtml(org) + ' membership you have a <b>free 2-week (' + trialDays + '-day) trial</b> of 9amLeads - fresh, exclusive UK moving leads delivered every weekday at 9am.</p><p style="font-size:15px;line-height:1.7">Click below to set your password and open your dashboard (you can choose your postcode areas there too):</p><p><a href="' + link + '" style="display:inline-block;background:#0b6bb3;color:#fff;padding:13px 26px;border-radius:8px;text-decoration:none;font-weight:700">Set your password</a></p><p style="font-size:13px;color:#64748b;line-height:1.6">If you did not expect this you can ignore this email - no card is required and nothing is charged during the trial.</p></div>';
+          sendBrevoEmail({ email: r.email, name: r.name || '' }, org + ' has set up your free 9amLeads trial', html);
+        } catch(mailErr) {}
+        created++;
+      } catch(cErr) { failed++; }
+    });
+    if (created) { try { saveDb(); } catch(e) {} }
+    res.json({ success: true, created: created, skipped: skipped, failed: failed, total: recips.length });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 

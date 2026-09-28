@@ -200,7 +200,7 @@ function render(db){
     ['What can my members do with it?', 'Fresh leads at 9am, Print & Post with postage tracking, Auto Print & Post, Bulk Postage for quiet times, and CRM integration.'],
     ['Does it cost me anything?', 'No cost, no minimum and no lock-in. You only earn when your members pay us.'],
     ['Can I pause or leave?', 'Yes - reply to hello@9amleads.com and we will pause or close your account. Commission already earned is still paid.'],
-    ['Why not just buy an address list?', 'A postcode address list (often around 22p an address) looks cheap, but anyone can buy the same list, it is just an address with no contact name or way to check it, and you pay per address whether or not they ever move. 9amLeads gives exclusive, freshly sourced leads at 9am, with the source shown and Print & Post built in.'],
+    ['Why not just buy an address list?', 'A postcode address list looks cheap, but anyone can buy the same list, it is just an address with no contact name or way to check it, and you pay per address whether or not they ever move. 9amLeads gives exclusive, freshly sourced leads at 9am, with the source shown and Print & Post built in.'],
     ['Who do I contact?', 'Email hello@9amleads.com - we usually reply the same working day.']
   ];
   html += '<div class="card"><div class="sect-title">Partner FAQs</div>' +
@@ -248,6 +248,14 @@ function render(db){
       '<div style="margin-top:8px"><input class="inp" id="inv-filter" placeholder="Filter history by segment (optional)" oninput="loadInvites(this.value)" style="max-width:280px"></div>' +
       '<div id="inv-history" style="margin-top:10px"></div>' +
       '</div>';
+    // Sign up members directly (create their free trial)
+    html += '<div class="card"><div class="sect-title">Sign up your members for them</div>' +
+      '<p class="muted" style="margin-bottom:8px">Add members directly and we create their <b>free 2-week trial</b> for you - credited to you - and email them to set a password. One per line: <b>Name, email, company, area</b> (name/company/area optional).</p>' +
+      '<textarea class="inp" id="su-members" rows="4" placeholder="Jane Smith, jane@example.com, Smith Removals, Leeds&#10;bob@example.com, Jones Haulage, Manchester&#10;member3@example.com"></textarea>' +
+      '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:8px">' +
+      '<select class="inp" id="su-product" style="max-width:180px"><option value="moving">Moving leads</option><option value="probate">Probate</option><option value="newbusiness">New business</option><option value="planning">Planning</option><option value="tenders">Tenders</option></select>' +
+      '<button class="btn btn-p" onclick="signupMembers()">Create trials &amp; invite</button> <span id="su-msg" class="muted"></span>' +
+      '</div></div>';
     html += '<div id="growth"></div>';
     html += '<div class="card"><div class="sect-title">Share kit</div>' +
       '<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start">' +
@@ -547,6 +555,19 @@ function saveCode(){
   api('POST', '/api/partner/set-code', { code: code }, function(d, st){
     if (d && d.success) { msg.textContent = 'Saved - your new code is ' + d.code + '.'; loadDash(); }
     else { msg.textContent = (d && d.error) || 'Could not save that code.'; }
+  });
+}
+function signupMembers(){
+  var el = document.getElementById('su-members'); var msg = document.getElementById('su-msg'); var prod = document.getElementById('su-product');
+  if (!el) return;
+  var txt = String(el.value || '').trim();
+  if (!txt) { msg.textContent = 'Add at least one member.'; return; }
+  msg.textContent = 'Creating trials...';
+  api('POST', '/api/partner/signup-members', { text: txt, product: (prod ? prod.value : 'moving') }, function(d, st){
+    if (d && d.success) {
+      msg.textContent = 'Created ' + d.created + (d.skipped ? (' · ' + d.skipped + ' already had an account') : '') + (d.failed ? (' · ' + d.failed + ' failed') : '') + '.';
+      el.value = ''; loadGrowth(); loadInvites();
+    } else { msg.textContent = (d && d.error) || 'Could not create members.'; }
   });
 }
 function sendInvites(){
