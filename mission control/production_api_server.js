@@ -4024,6 +4024,9 @@ function partnerStatusActive(p) {
 }
 function partnerTypeOf(p) { return (p && p.partner_type) || 'affiliate'; }
 function isSalesPartner(p) { return partnerTypeOf(p) === 'sales_partner'; }
+// Associations share the recurring-commission model (not the sales CRM).
+function isAssociationPartner(p) { return partnerTypeOf(p) === 'association'; }
+function isPartnerRecurring(p) { return isSalesPartner(p) || isAssociationPartner(p); }
 function partnerByCode(code) {
   if (!code) return null;
   var ql = String(code).trim().toLowerCase();
@@ -4054,8 +4057,8 @@ function partnerDashboardSafe(p) {
     referral_code: p.referral_code || p.code, referral_slug: p.referral_slug || (p.referral_code || p.code),
     full_name: p.name || p.full_name, business_name: p.business_name || '', email: p.email,
     joined_at: p.created_at || p.joined_at || '', approved_at: p.approved_at || '',
-    commission_type: p.commission_type || (isSalesPartner(p) ? 'recurring' : 'one_off'),
-    commission_amount: p.commission_amount || (isSalesPartner(p) ? partnerConfig().sales_partner_monthly_amount : partnerConfig().affiliate_one_off_amount),
+    commission_type: p.commission_type || (isPartnerRecurring(p) ? 'recurring' : 'one_off'),
+    commission_amount: p.commission_amount || (isPartnerRecurring(p) ? partnerConfig().sales_partner_monthly_amount : partnerConfig().affiliate_one_off_amount),
     commission_duration_months: p.commission_duration_months === undefined ? null : p.commission_duration_months,
     hide_from_leaderboard: !!p.hide_from_leaderboard
   };
@@ -4768,7 +4771,7 @@ app.post('/api/partner/apply', async (req, res) => {
     var cfg = partnerConfig();
     if (!cfg.partners_open) return res.status(403).json({ error: 'Partner applications are currently closed.' });
     var partner_type = String(req.body.partner_type || '').toLowerCase();
-    if (partner_type !== 'affiliate' && partner_type !== 'sales_partner') return res.status(400).json({ error: 'partner_type must be affiliate or sales_partner' });
+    if (['affiliate', 'sales_partner', 'association'].indexOf(partner_type) === -1) return res.status(400).json({ error: 'partner_type must be affiliate, sales_partner or association' });
     var name = String(req.body.full_name || req.body.name || '').trim();
     var email = String(req.body.email || '').toLowerCase().trim();
     var phone = String(req.body.phone || '').trim();
@@ -4778,10 +4781,11 @@ app.post('/api/partner/apply', async (req, res) => {
     if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
     var affs = getDb().affiliates || [];
     if (affs.some(function(a){ return String(a.email || '').toLowerCase() === email; })) return res.status(409).json({ error: 'An account with this email already exists. Please log in.' });
-    if (partner_type === 'sales_partner') {
+    if (partner_type === 'sales_partner' || partner_type === 'association') {
       if (!req.body.terms_accepted) return res.status(400).json({ error: 'You must accept the Partner Terms to apply.' });
       if (!req.body.compliance_acknowledged) return res.status(400).json({ error: 'You must acknowledge the compliance rules.' });
     }
+    var _recurring = (partner_type === 'sales_partner' || partner_type === 'association');
     var passwordHash = await bcrypt.hash(password, 10);
     var code = partnerRefCode(affs);
     var p = {
@@ -4789,20 +4793,22 @@ app.post('/api/partner/apply', async (req, res) => {
       referral_code: code, referral_slug: code.toLowerCase(),
       name: name, full_name: name, email: email, phone: phone,
       business_name: String(req.body.business_name || '').trim(),
+      member_reach: String(req.body.member_reach || '').trim(),
+      website: String(req.body.website || '').trim(),
       sales_experience: String(req.body.sales_experience || '').substring(0, 2000),
       preferred_sectors: Array.isArray(req.body.preferred_sectors) ? req.body.preferred_sectors : [],
-      commission_type: partner_type === 'sales_partner' ? 'recurring' : 'one_off',
-      commission_amount: partner_type === 'sales_partner' ? Number(cfg.sales_partner_monthly_amount) : Number(cfg.affiliate_one_off_amount),
+      commission_type: _recurring ? 'recurring' : 'one_off',
+      commission_amount: _recurring ? Number(cfg.sales_partner_monthly_amount) : Number(cfg.affiliate_one_off_amount),
       commission_duration_months: null,
       terms_version: req.body.terms_version || 'v1',
-      terms_accepted_at: partner_type === 'sales_partner' ? new Date().toISOString() : null,
-      compliance_acknowledged_at: partner_type === 'sales_partner' ? new Date().toISOString() : null,
+      terms_accepted_at: _recurring ? new Date().toISOString() : null,
+      compliance_acknowledged_at: _recurring ? new Date().toISOString() : null,
       password_hash: passwordHash, payout_rate: Number(cfg.affiliate_one_off_amount), status_note: '',
       created_at: new Date().toISOString(), joined_at: new Date().toISOString(), payouts: [], last_active_at: null
     };
     affs.push(p); saveDb();
     partnerAudit('partner_applied', { partner_id: p.id, partner_type: partner_type, email: email });
-    res.status(201).json({ success: true, message: partner_type === 'sales_partner' ? 'Sales Partner application received for review.' : 'Affiliate application received. You can log in once approved.', partner_id: p.id });
+    res.status(201).json({ success: true, message: partner_type === 'sales_partner' ? 'Sales Partner application received for review.' : partner_type === 'association' ? 'Trade Association application received for review.' : 'Affiliate application received. You can log in once approved.', partner_id: p.id });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -4880,6 +4886,17 @@ app.get('/api/partner/dashboard', requirePartner, (req, res) => {
         monthly_commission_est: paidCusts.length * (Number(p.commission_amount) || Number(cfg.sales_partner_monthly_amount) || 25),
         pending_commission: sum(pending), approved_commission: sum(approved), paid_commission: sum(paid), lifetime_earnings: sum(pending) + sum(approved) + sum(paid),
         feedback_recent: feedback.slice().sort(function(a,b){ return String(a.created_at) < String(b.created_at) ? 1 : -1; }).slice(0, 10).map(function(f){ return { id: f.id, customer_id: f.customer_id, feedback_type: f.feedback_type, category: f.category, status: f.status, created_at: f.created_at }; })
+      };
+    }
+    if (isAssociationPartner(p)) {
+      var _mon = Number(p.commission_amount) || Number(cfg.sales_partner_monthly_amount) || 25;
+      out.association = {
+        name: p.business_name || p.association || p.name || 'Your organisation',
+        monthly_amount: _mon,
+        member_reach: p.member_reach || '',
+        website: p.website || '',
+        co_brand: 'In partnership with ' + (p.business_name || p.name || 'your organisation'),
+        tiers: [25, 50, 100, 250, 500].map(function(n){ return { members: n, monthly: n * _mon }; })
       };
     }
     // Notifications + portfolio with payment status + recent leads + retention check-ins

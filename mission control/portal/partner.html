@@ -124,11 +124,17 @@ function loadDash(){
 }
 function render(db){
   var p = db.partner;
-  document.getElementById('nav-right').innerHTML = '<span style="font-size:12px;font-weight:700">' + esc(p.full_name || p.email) + '</span> <span class="tag t-blue">' + esc(p.partner_type.replace('_',' ')) + '</span> <button class="btn btn-o btn-ghost" style="font-size:11px" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>';
+  document.getElementById('nav-right').innerHTML = '<span style="font-size:12px;font-weight:700">' + esc(p.full_name || p.email) + '</span> <span class="tag t-blue">' + esc(({affiliate:'Affiliate',sales_partner:'Sales Partner',association:'Trade Association'}[p.partner_type]) || p.partner_type) + '</span> <button class="btn btn-o btn-ghost" style="font-size:11px" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>';
   var isSales = p.partner_type === 'sales_partner';
+  var isAssoc = p.partner_type === 'association';
+  var assoc = db.association || {};
   var html = '';
   // Banner
-  html += '<div class="banner"><strong>Your referral link</strong> - share this and anyone who signs up through it gets an extended 14-day free trial.<br><div class="link-box" style="margin-top:6px">' + esc(db.referral_link) + ' <button class="copy-btn" onclick="copyText(\'' + esc(db.referral_link) + '\', this)">Copy</button></div></div>';
+  if (isAssoc) {
+    html += '<div class="banner"><strong>Your organisation\'s referral link</strong> - share this with your members and they get an extended 14-day free trial. ' + (assoc.co_brand ? esc(assoc.co_brand) + '.' : '') + '<br><div class="link-box" style="margin-top:6px">' + esc(db.referral_link) + ' <button class="copy-btn" onclick="copyText(\'' + esc(db.referral_link) + '\', this)">Copy</button></div></div>';
+  } else {
+    html += '<div class="banner"><strong>Your referral link</strong> - share this and anyone who signs up through it gets an extended 14-day free trial.<br><div class="link-box" style="margin-top:6px">' + esc(db.referral_link) + ' <button class="copy-btn" onclick="copyText(\'' + esc(db.referral_link) + '\', this)">Copy</button></div></div>';
+  }
   html += '<div class="grid grid-3" style="margin-bottom:14px">' +
     '<div class="stat"><div class="n">' + (db.clicks || 0) + '</div><div class="l">Referral Clicks</div></div>' +
     '<div class="stat"><div class="n">' + (db.trials || 0) + '</div><div class="l">Trials</div></div>' +
@@ -173,6 +179,16 @@ function render(db){
     }
   }
   html += '</div>';
+  if (isAssoc) {
+    var tiers = assoc.tiers || [];
+    html += '<div class="card"><div class="sect-title">Association Partnership</div>' +
+      '<p class="muted" style="margin-bottom:8px">' + esc(assoc.co_brand || 'In partnership with your organisation') + '. You earn ' + fmt(assoc.monthly_amount || 0) + ' per active member, per month, for as long as they stay.</p>' +
+      '<table><thead><tr><th>Active members</th><th>Your monthly commission</th></tr></thead><tbody>' +
+      (tiers.length ? tiers.map(function(t){ return '<tr><td>' + t.members + '</td><td><b>' + fmt(t.monthly) + '</b></td></tr>'; }).join('') : '') +
+      '</tbody></table>' +
+      '<p class="muted" style="margin-top:8px">Illustrative and recurring while each member stays subscribed. Share your referral link above, or ask us to send a co-branded invitation to your member list.</p>' +
+      '</div>';
+  }
   if (isSales) {
     var s = db.sales;
     html += '<div class="card"><div class="sect-title">Your Portfolio</div><div class="grid grid-3">' +

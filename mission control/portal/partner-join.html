@@ -32,6 +32,7 @@ label{font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bot
 <div class="pick">
 <button type="button" id="pk-aff" class="active" onclick="pick('affiliate')">Affiliate<br><span style="font-weight:400;font-size:11px;color:var(--muted)">£25/month per active customer</span></button>
 <button type="button" id="pk-sales" onclick="pick('sales_partner')">Sales Partner<br><span style="font-weight:400;font-size:11px;color:var(--muted)">£25/month per active customer</span></button>
+<button type="button" id="pk-assoc" onclick="pick('association')">Trade Association<br><span style="font-weight:400;font-size:11px;color:var(--muted)">Co-branded page + recurring</span></button>
 </div>
 
 <div class="card">
@@ -44,6 +45,15 @@ label{font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bot
 <li>Remote / flexible - your own time and effort</li>
 <li>Build a portfolio + recurring monthly income</li>
 <li>Full sales resources, approved outreach copy + customer dashboard</li>
+<li>No guaranteed income - commission is performance-based</li>
+</ul>
+</div>
+<div id="desc-assoc" class="hidden">
+<p style="font-size:13px;margin-bottom:10px"><b>Become a Trade Association Partner</b> - for associations, networks and member bodies. We give your members a <b>14-day free trial</b> of fresh 9am moving leads through a dedicated, co-branded page, and you earn a <b>£25 monthly recurring commission</b> for every member who becomes a paying customer - that is <b>£2,500 per month for every 100 active members</b>. We handle onboarding, support and delivery; you simply introduce your members.</p>
+<ul style="font-size:12px;color:var(--muted);margin:10px 0;padding-left:18px">
+<li>No cost, no risk and nothing to manage on your side</li>
+<li>Co-branded landing page, tracked link and a partner dashboard</li>
+<li>Recurring income that compounds as your members stay</li>
 <li>No guaranteed income - commission is performance-based</li>
 </ul>
 </div>
@@ -61,6 +71,12 @@ label{font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bot
 <textarea class="inp" id="f-exp" rows="3" placeholder="Tell us about your sales experience"></textarea>
 <label>Preferred lead sectors</label>
 <input class="inp" id="f-sectors" placeholder="e.g. removals, probate, planning, new business, tenders">
+</div>
+<div id="assoc-fields" class="hidden">
+<label>Approx. members / businesses you represent (optional)</label>
+<input class="inp" id="f-reach" placeholder="e.g. 250">
+<label>Website (optional)</label>
+<input class="inp" id="f-web" placeholder="https://">
 </div>
 <div id="terms-block" class="hidden">
 <div class="terms"><b>Partner Terms (v1 - summary for your application)</b><br>
@@ -81,10 +97,13 @@ function pick(t){
   partner_type = t;
   document.getElementById('pk-aff').classList.toggle('active', t === 'affiliate');
   document.getElementById('pk-sales').classList.toggle('active', t === 'sales_partner');
+  document.getElementById('pk-assoc').classList.toggle('active', t === 'association');
   document.getElementById('desc-aff').classList.toggle('hidden', t !== 'affiliate');
   document.getElementById('desc-sales').classList.toggle('hidden', t !== 'sales_partner');
+  document.getElementById('desc-assoc').classList.toggle('hidden', t !== 'association');
   document.getElementById('sales-fields').classList.toggle('hidden', t !== 'sales_partner');
-  document.getElementById('terms-block').classList.toggle('hidden', t !== 'sales_partner');
+  document.getElementById('assoc-fields').classList.toggle('hidden', t !== 'association');
+  document.getElementById('terms-block').classList.toggle('hidden', t !== 'sales_partner' && t !== 'association');
 }
 function msg(m, ok){ var el = document.getElementById('msg'); el.className = 'msg ' + (ok ? 'ok' : 'err'); el.textContent = m; el.classList.remove('hidden'); }
 function apply(){
@@ -96,6 +115,14 @@ function apply(){
     body.compliance_acknowledged = document.getElementById('f-compliance').checked;
     body.terms_version = 'v1';
     if (!body.terms_accepted || !body.compliance_acknowledged) { msg('Please tick the Terms and Compliance boxes to apply as a Sales Partner.', false); return; }
+  }
+  if (partner_type === 'association') {
+    body.member_reach = document.getElementById('f-reach').value.trim();
+    body.website = document.getElementById('f-web').value.trim();
+    body.terms_accepted = document.getElementById('f-terms').checked;
+    body.compliance_acknowledged = document.getElementById('f-compliance').checked;
+    body.terms_version = 'v1';
+    if (!body.terms_accepted || !body.compliance_acknowledged) { msg('Please tick the Terms and Compliance boxes to apply as a Trade Association.', false); return; }
   }
   var x = new XMLHttpRequest(); x.open('POST', '/api/partner/apply', true); x.setRequestHeader('Content-Type', 'application/json');
   x.onload = function(){ var d = null; try { d = JSON.parse(x.responseText); } catch(e) {} if (d && d.success) { msg(d.message || 'Application received.', true); document.querySelector('.card:last-of-type .btn').style.display = 'none'; } else { msg((d && d.error) || 'Something went wrong.', false); } };
