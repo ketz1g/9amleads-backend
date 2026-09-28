@@ -23337,29 +23337,30 @@ async function trialAutoChargeCustomer(cust, opts) {
   return res2;
 }
 
-cron.schedule('0 8 * * *', async () => {
-  // KILL-SWITCH: TRIAL_AUTO_CHARGE_ENABLED must be explicitly 'true' for the
-  // auto-charge to run. Default OFF prevents any accidental/repeated charges.
-  if (String(process.env.TRIAL_AUTO_CHARGE_ENABLED || 'false').toLowerCase() !== 'true') {
-    console.log('[TRIAL AUTO-CHARGE] Disabled (TRIAL_AUTO_CHARGE_ENABLED != true) - skipping.');
-    return;
-  }
-  console.log('[TRIAL AUTO-CHARGE] Checking expired trials...');
+cron.schedule('0 * * * *', async () => {
+  // Runs HOURLY so an expired trial is charged within the hour (a single daily run
+  // could be up to ~24h late, since trials end at signup-time + 7 days).
+  // KILL-SWITCH: TRIAL_AUTO_CHARGE_ENABLED must be explicitly 'true'.
+  if (String(process.env.TRIAL_AUTO_CHARGE_ENABLED || 'false').toLowerCase() !== 'true') return;
   try {
     var db = getDb();
     var customers = db.customers || [];
-    var charged = 0;
+    var charged = 0, attempted = 0;
     for (var tc = 0; tc < customers.length; tc++) {
       var cust = customers[tc];
       if (cust.plan !== 'free_trial') continue;
       if (cust.trial_cancelled) continue;
       if (!cust.trial_ends || new Date(cust.trial_ends) > new Date()) continue;
       if (!cust.stripe_payment_method_id || !cust.stripe_customer_id) continue;
+      // Retry throttle: never hammer a failing card - retry at most every 6 hours.
+      if (cust.trial_charge_last_attempt && (Date.now() - new Date(cust.trial_charge_last_attempt).getTime() < 6 * 3600000)) continue;
+      cust.trial_charge_last_attempt = new Date().toISOString();
+      attempted++;
       var cres = await trialAutoChargeCustomer(cust, { dryRun: false });
       if (cres.status === 'charged') charged++;
     }
-    saveDb();
-    console.log('[TRIAL AUTO-CHARGE] Complete: ' + charged + ' customers charged');
+    try { saveDb(); } catch(e) {}
+    if (attempted) console.log('[TRIAL AUTO-CHARGE] complete: attempted=' + attempted + ' charged=' + charged);
   } catch(e) { console.log('[TRIAL AUTO-CHARGE] Error:', e.message); }
 }, { timezone: 'Europe/London' });
 
