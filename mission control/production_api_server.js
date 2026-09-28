@@ -26024,6 +26024,10 @@ _deliverDiag[cust.email].products = products;
           // caller passes freshCutoff48) marks the 48h fallback pass; otherwise the
           // default is the 24h primary window.
           var backfillCutoff = cut || freshCutoffNow;
+          // STRICT PROBATE: never relax to the 48h backfill pass for probate - an old
+          // grant must never be delivered just to reach the count. Uses the strict
+          // fresh window (24h/48h; Monday back to Friday 09:00 = 72h).
+          if (cust.product === 'probate') backfillCutoff = getFreshCutoffIso();
           return fv >= backfillCutoff;
         } catch(e) { return false; }
       }
