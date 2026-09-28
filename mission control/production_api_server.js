@@ -8905,6 +8905,9 @@ app.post('/api/admin/set-plan', adminAuth, (req, res) => {
       var ftLpd = parseInt(cust.leads_per_day, 10) > 0 ? parseInt(cust.leads_per_day, 10) : 5;
       db.prepare('UPDATE customers SET plan = ?, leads_per_day = ?, trial_ends = ?, leads_paused = 0, auto_send_paused = 0, product = ? WHERE id = ?')
         .run('free_trial', ftLpd, newTrialEnd, newProduct || cust.product, cust.id);
+      // A reverted/my-plan trial must not keep a stale paid_since (it would make the
+      // campaign engine send PAID emails to a non-paying trial). Clear it.
+      try { db.prepare('UPDATE customers SET paid_since = NULL WHERE id = ?').run(cust.id); var _lcF = (getDb().customers || []).find(function(x){ return x.id === cust.id; }); if (_lcF) _lcF.paid_since = null; } catch(e) {}
       saveDb();
       return res.json({ success: true, email: email, plan: 'free_trial', product: newProduct || cust.product, leads_per_day: ftLpd, trial_ends: newTrialEnd });
     }
@@ -8913,6 +8916,22 @@ app.post('/api/admin/set-plan', adminAuth, (req, res) => {
     saveDb();
     var after = db.prepare('SELECT * FROM customers WHERE id = ?').get(cust.id);
     res.json({ success: true, email: email, plan: after.plan, product: after.product, leads_per_day: after.leads_per_day, trial_ends: after.trial_ends });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/clear-paid-since - clear a stale paid_since so a reverted trial
+// account is treated as a trial again (stops PAID emails going to non-paying trials).
+app.post('/api/admin/clear-paid-since', adminAuth, (req, res) => {
+  try {
+    var email = String((req.body && req.body.email) || '').toLowerCase().trim();
+    if (!email) return res.status(400).json({ error: 'email required' });
+    var cust = db.prepare('SELECT * FROM customers WHERE email = ?').get(email);
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    try { db.prepare('UPDATE customers SET paid_since = NULL WHERE id = ?').run(cust.id); } catch(e) {}
+    var lc = (getDb().customers || []).find(function(x){ return x.id === cust.id; });
+    if (lc) lc.paid_since = null;
+    saveDb();
+    res.json({ success: true, email: email, paid_since: null });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -28762,6 +28781,8 @@ app.post('/api/admin/upgrade', adminAuth, (req, res) => {
     if (biz_field3) db.prepare('UPDATE customers SET biz_field3 = ? WHERE id = ?').run(biz_field3, customer.id);
     if (req.body.product_config) db.prepare('UPDATE customers SET product_config = ? WHERE id = ?').run(req.body.product_config, customer.id);
     if (req.body.password) { var pwHash = require('bcryptjs').hashSync(req.body.password, 10); db.prepare('UPDATE customers SET password_hash = ? WHERE id = ?').run(pwHash, customer.id); }
+    // Reverting to a trial clears any stale paid_since so trial (not paid) emails run.
+    if (plan === 'free_trial') { try { db.prepare('UPDATE customers SET paid_since = NULL WHERE id = ?').run(customer.id); var _lcU = (getDb().customers || []).find(function(x){ return x.id === customer.id; }); if (_lcU) _lcU.paid_since = null; } catch(e) {} }
     saveDb();
     res.json({ success: true, message: customer.company + ' upgraded to ' + plan });
   } catch (e) { res.status(500).json({ error: e.message }); }
