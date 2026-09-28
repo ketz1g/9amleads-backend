@@ -4404,6 +4404,95 @@ function partnerDripSequence() {
   if (sent) saveDb();
   return sent;
 }
+// ===== GROWTH / LIFECYCLE EMAILS =====
+// (1) First-win onboarding: nudge new trials to set up Print & Post + Auto Send
+//     within the first few days - the single biggest churn killer.
+function runFirstWinNudges(opts) {
+  opts = opts || {};
+  try {
+    var db2 = getDb(); var now = Date.now(); var sent = 0, candidates = 0;
+    (db2.customers || []).forEach(function(c){
+      try {
+        if (isInternalAccount(c)) return;
+        if (String(c.plan) !== 'free_trial') return;
+        if (!isEntitledForDelivery(c)) return;
+        if (c.first_win_nudge_sent) return;
+        var ageDays = (now - new Date(c.created_at || 0).getTime()) / 86400000;
+        if (ageDays < 1 || ageDays > 4) return;
+        var hasTpl = (db2.direct_mail_templates || []).some(function(t){ return t.customer_id === c.id; });
+        var autoOn = (db2.direct_mail_automation_settings || []).some(function(s){ return s.customer_id === c.id && Number(s.enable_auto_send) === 1; });
+        if (hasTpl || autoOn) return;
+        candidates++;
+        if (opts.dryRun) return;
+        var dash = PUBLIC_URL.replace(/\/+$/, '') + '/portal/dashboard.html';
+        var html = '<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#0f172a"><h2 style="font-size:20px;color:#0b6bb3;margin:0 0 10px">Get your first win from 9amLeads</h2><p style="font-size:15px;line-height:1.7">Hi ' + escHtml(c.contact_name || c.company || 'there') + ',</p><p style="font-size:15px;line-height:1.7">The members who get the most from 9amLeads do two simple things in their first few days:</p><ol style="font-size:15px;line-height:1.9"><li><b>Upload a flyer or letter</b> in Print &amp; Post (takes 2 minutes).</li><li><b>Turn on Auto Print &amp; Post</b> so every new lead is printed and posted for you each morning.</li></ol><p style="font-size:15px;line-height:1.7">Then just keep it running for 2-4 weeks - direct mail builds.</p><p><a href="' + dash + '" style="display:inline-block;background:#0b6bb3;color:#fff;padding:13px 26px;border-radius:8px;text-decoration:none;font-weight:700">Open my dashboard</a></p></div>';
+        sendBrevoEmail({ email: c.email, name: c.company || 'Customer' }, 'Get your first win: upload your flyer + switch on auto-post', html);
+        c.first_win_nudge_sent = new Date().toISOString(); sent++;
+      } catch(e) {}
+    });
+    if (sent) saveDb();
+    return opts.dryRun ? { candidates: candidates } : sent;
+  } catch(e) { console.log('[FIRST-WIN] error', e.message); return opts.dryRun ? { candidates: 0 } : 0; }
+}
+
+// (2) At-risk nudge: customers with delivered leads they have not acted on.
+function runAtRiskNudges(opts) {
+  opts = opts || {};
+  try {
+    var db2 = getDb(); var now = Date.now(); var sent = 0, candidates = 0;
+    (db2.customers || []).forEach(function(c){
+      try {
+        if (isInternalAccount(c)) return;
+        if (!isEntitledForDelivery(c)) return;
+        if (c.last_risk_nudge && (now - new Date(c.last_risk_nudge).getTime()) < 7 * 86400000) return;
+        var mine = (db2.leads || []).filter(function(l){ return l.customer_id === c.id && l.delivered && l.delivered_at && (now - new Date(l.delivered_at).getTime()) < 14 * 86400000; });
+        var untouched = mine.filter(function(l){ var s = String(l.lead_status || l.status || '').toLowerCase(); return !s || s === 'new' || s === 'delivered'; });
+        if (untouched.length < 3) return;
+        candidates++;
+        if (opts.dryRun) return;
+        var dash = PUBLIC_URL.replace(/\/+$/, '') + '/portal/leads.html';
+        var html = '<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#0f172a"><h2 style="font-size:20px;color:#0b6bb3;margin:0 0 10px">You have ' + untouched.length + ' fresh leads waiting</h2><p style="font-size:15px;line-height:1.7">Hi ' + escHtml(c.contact_name || c.company || 'there') + ',</p><p style="font-size:15px;line-height:1.7">You have <b>' + untouched.length + '</b> delivered opportunities you have not actioned yet. Leads win fastest when you contact them the same day.</p><p style="font-size:15px;line-height:1.7">Open your dashboard to call, email or Print &amp; Post them in one click.</p><p><a href="' + dash + '" style="display:inline-block;background:#0b6bb3;color:#fff;padding:13px 26px;border-radius:8px;text-decoration:none;font-weight:700">Work my leads</a></p></div>';
+        sendBrevoEmail({ email: c.email, name: c.company || 'Customer' }, 'You have ' + untouched.length + ' fresh leads waiting', html);
+        c.last_risk_nudge = new Date().toISOString(); sent++;
+      } catch(e) {}
+    });
+    if (sent) saveDb();
+    return opts.dryRun ? { candidates: candidates } : sent;
+  } catch(e) { console.log('[AT-RISK] error', e.message); return opts.dryRun ? { candidates: 0 } : 0; }
+}
+
+// (3) Monthly ROI summary: prove the value so customers never consider cancelling.
+function runMonthlyRoiSummary(opts) {
+  opts = opts || {};
+  try {
+    var db2 = getDb(); var sent = 0, candidates = 0;
+    var d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - 1);
+    var ym = d.toISOString().slice(0, 7);
+    var label = d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+    (db2.customers || []).forEach(function(c){
+      try {
+        if (isInternalAccount(c)) return;
+        if (!isEntitledForDelivery(c)) return;
+        if (c.last_roi_month === ym) return;
+        var mine = (db2.leads || []).filter(function(l){ return l.customer_id === c.id && l.created_at && String(l.created_at).slice(0, 7) === ym; });
+        if (!mine.length) return;
+        candidates++;
+        if (opts.dryRun) return;
+        var won = mine.filter(function(l){ return String(l.lead_status || '').toLowerCase() === 'won'; });
+        var contacted = mine.filter(function(l){ var s = String(l.lead_status || l.status || '').toLowerCase(); return s === 'contacted' || s === 'won'; });
+        var value = won.reduce(function(s, l){ return s + (parseInt(l.actual_revenue, 10) || parseInt(l.deal_value, 10) || 0); }, 0);
+        var dash = PUBLIC_URL.replace(/\/+$/, '') + '/portal/dashboard.html';
+        var valLine = value > 0 ? '<p style="font-size:15px;line-height:1.7">You recorded <b>&pound;' + value.toLocaleString() + '</b> of won work from these leads.</p>' : '';
+        var html = '<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#0f172a"><h2 style="font-size:20px;color:#0b6bb3;margin:0 0 10px">Your 9amLeads in ' + label + '</h2><p style="font-size:15px;line-height:1.7">Hi ' + escHtml(c.contact_name || c.company || 'there') + ',</p><p style="font-size:15px;line-height:1.7">In ' + label + ' we delivered <b>' + mine.length + '</b> opportunities to your dashboard. You contacted <b>' + contacted.length + '</b> of them.</p>' + valLine + '<p style="font-size:15px;line-height:1.7">Tip: keeping Auto Print &amp; Post on means every lead gets a letter out the same morning.</p><p><a href="' + dash + '" style="display:inline-block;background:#0b6bb3;color:#fff;padding:13px 26px;border-radius:8px;text-decoration:none;font-weight:700">Open my dashboard</a></p></div>';
+        sendBrevoEmail({ email: c.email, name: c.company || 'Customer' }, 'Your 9amLeads in ' + label + ': ' + mine.length + ' opportunities', html);
+        c.last_roi_month = ym; sent++;
+      } catch(e) {}
+    });
+    if (sent) saveDb();
+    return opts.dryRun ? { candidates: candidates } : sent;
+  } catch(e) { console.log('[ROI] error', e.message); return opts.dryRun ? { candidates: 0 } : 0; }
+}
+
 function runPartnerJobs() {
   var r1 = processPartnerCommissions();
   var r2 = processCommissionClearance();
@@ -7613,6 +7702,22 @@ cron.schedule('15 8 * * 1-5', function() { sendAffiliateFollowupDigests(); }, { 
 // Partner programme daily job: scheduled member invites, 7-day re-nudges and the
 // onboarding drip. Idempotent (every send is recorded), so safe to run daily.
 cron.schedule('45 6 * * *', function() { try { runPartnerJobs(); } catch(e) { console.log('[PARTNER] cron error:', e.message); } }, { timezone: 'Europe/London' });
+// Growth / lifecycle emails (all Europe/London):
+cron.schedule('15 8 * * *', function() { try { runFirstWinNudges(); } catch(e) { console.log('[FIRST-WIN] cron error:', e.message); } }, { timezone: 'Europe/London' });
+cron.schedule('20 8 * * 1', function() { try { runAtRiskNudges(); } catch(e) { console.log('[AT-RISK] cron error:', e.message); } }, { timezone: 'Europe/London' });
+cron.schedule('25 8 1 * *', function() { try { runMonthlyRoiSummary(); } catch(e) { console.log('[ROI] cron error:', e.message); } }, { timezone: 'Europe/London' });
+
+// Admin: run (or dry-run) the growth jobs now. GET, add ?apply=1 to actually send.
+app.get('/api/admin/run-growth-jobs', adminAuth, (req, res) => {
+  try {
+    var dry = String(req.query.apply || '') !== '1';
+    res.json({ success: true, applied: !dry, result: {
+      first_win: runFirstWinNudges({ dryRun: dry }),
+      at_risk: runAtRiskNudges({ dryRun: dry }),
+      roi: runMonthlyRoiSummary({ dryRun: dry })
+    } });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 
 // #2: Recruitment email funnel - capture a prospect from the affiliates page and
 // send a welcome email + follow-up sequence (day 3 and day 7). Stores prospects in
@@ -9651,6 +9756,21 @@ app.get('/api/prompts', authMiddleware, (req, res) => {
     const wonRevenue = leads.filter(l => l.lead_status === 'won').reduce((s, l) => s + (parseInt(l.actual_revenue) || parseInt(l.deal_value) || 0), 0);
     if (wonRevenue > 1000) {
       prompts.push({ type: 'roi', priority: 'low', message: 'You generated £' + wonRevenue.toLocaleString() + ' from 9am Leads. Upgrade to access more opportunities.', action: 'View Plans', page: 'billing' });
+    }
+
+    // FIRST-WIN ONBOARDING: trials that haven't set up Print & Post / auto-post yet.
+    if (customer.plan === 'free_trial') {
+      var _hasTpl = (db2.direct_mail_templates || []).some(function(t){ return t.customer_id === customer.id; });
+      var _autoOn = (db2.direct_mail_automation_settings || []).some(function(s){ return s.customer_id === customer.id && Number(s.enable_auto_send) === 1; });
+      if (!_hasTpl || !_autoOn) {
+        prompts.push({ type: 'first_win', priority: 'high', message: 'Get your first win: upload a flyer in Print & Post and switch on Auto Print & Post so every new lead is posted for you.', action: 'Set up Print & Post', page: 'direct-mail' });
+      }
+    }
+
+    // PLAN UPSELL: nudge Starter customers to Pro for more volume/areas.
+    if (customer.plan === 'starter') {
+      var _stLim = getPlanLimit(customer.product, 'starter', customer.coverage) || 5;
+      prompts.push({ type: 'upgrade', priority: 'medium', message: 'You are on Starter (' + _stLim + ' leads/day). Upgrade to Pro for more daily leads and wider areas.', action: 'See plans', page: 'billing' });
     }
 
     res.json({ prompts });
