@@ -5195,25 +5195,40 @@ function memberInviteHtml(orgName, refLink, trialDays, toName) {
     + '<a href="mailto:hello@9amleads.com?subject=unsubscribe" style="color:#6b7280;font-size:12px">Unsubscribe</a>'
     + '</td></tr></table></td></tr></table></body></html>';
 }
-// Accepts "name@x.com", "Name <name@x.com>", "Name, name@x.com" and {email,name}.
+// Accepts a mix of: "name@x.com", "Name <name@x.com>", CSV rows
+// ("Name, name@x.com, Company, Area"), a header row, or {email,name,company,segment}.
 function parseInviteInput(input) {
-  var out = [], seen = {};
+  var lines = [];
   (input || []).forEach(function(x){
-    var name = '', e = '';
-    if (x && typeof x === 'object') { e = String(x.email || ''); name = String(x.name || ''); }
-    else {
-      var s = String(x || '').trim();
-      var m = s.match(/^(.*?)[<\(]([^>\)]+)[>\)]\s*$/);
-      if (m) { name = m[1].trim().replace(/^["']|["']$/g, ''); e = m[2].trim(); }
-      else {
-        var m2 = s.match(/^([^@,]+?)\s*,\s*([^@\s]+@[^@\s]+\.[^@\s]+)$/);
-        if (m2) { name = m2[1].trim(); e = m2[2].trim(); } else { e = s; }
-      }
+    if (x && typeof x === 'object') { lines.push(x); return; }
+    String(x || '').split(/\r?\n|;/).forEach(function(l){ if (l.trim()) lines.push(l.trim()); });
+  });
+  var header = null;
+  if (lines.length && typeof lines[0] === 'string' && /email/i.test(lines[0]) && lines[0].indexOf(',') !== -1) {
+    header = lines.shift().split(',').map(function(h){ return h.trim().toLowerCase(); });
+  }
+  var out = [], seen = {};
+  function add(email, name, company, segment) {
+    email = String(email || '').trim().toLowerCase();
+    if (!email || seen[email]) return;
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return;
+    seen[email] = 1; out.push({ email: email, name: String(name || '').trim(), company: String(company || '').trim(), segment: String(segment || '').trim() });
+  }
+  lines.forEach(function(x){
+    if (x && typeof x === 'object') { add(x.email, x.name, x.company || x.business, x.segment || x.area); return; }
+    var s = String(x).trim();
+    if (header) {
+      var cols = s.split(',');
+      var rec = { email: '', name: '', company: '', segment: '' };
+      header.forEach(function(h, i){ var v = (cols[i] || '').trim(); if (/email/.test(h)) rec.email = v; else if (/name|contact/.test(h)) rec.name = v; else if (/company|business|organis/.test(h)) rec.company = v; else if (/area|segment|sector|location|region/.test(h)) rec.segment = v; });
+      add(rec.email, rec.name, rec.company, rec.segment); return;
     }
-    e = e.toLowerCase();
-    if (!e || seen[e]) return;
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) return;
-    seen[e] = 1; out.push({ email: e, name: name });
+    var m = s.match(/^(.*?)[<\(]([^>\)]+)[>\)]\s*$/);
+    if (m) { add(m[2], m[1].replace(/^["']|["']$/g, ''), '', ''); return; }
+    var parts = s.split(',').map(function(p){ return p.trim(); });
+    if (parts.length >= 2 && /@/.test(parts[0]) && /@/.test(parts[1])) { parts.forEach(function(p){ if (/@/.test(p)) add(p, '', '', ''); }); return; }
+    if (parts.length === 1) { add(parts[0], '', '', ''); return; }
+    add(parts[1], parts[0], parts[2], parts[3]);
   });
   return out;
 }
@@ -5228,7 +5243,7 @@ app.post('/api/partner/invites', requirePartner, (req, res) => {
     var org = p.business_name || p.name || 'your organisation';
     var raw = [];
     if (Array.isArray(req.body && req.body.emails)) raw = req.body.emails.slice();
-    else if (req.body && req.body.text) raw = String(req.body.text).split(/\r?\n|[,;]+/);
+    else if (req.body && (req.body.text || req.body.csv)) raw = [String(req.body.text || req.body.csv)];
     var recips = parseInviteInput(raw);
     if (!recips.length) return res.status(400).json({ error: 'No valid email addresses found.' });
     if (recips.length > 200) return res.status(400).json({ error: 'Please invite up to 200 addresses at a time.' });
@@ -5243,7 +5258,7 @@ app.post('/api/partner/invites', requirePartner, (req, res) => {
     var sent = 0, skipped = 0, scheduled = 0;
     recips.forEach(function(r){
       if (already[r.email]) { skipped++; return; }
-      var rec = { id: uuidv4(), partner_id: p.id, email: r.email, name: r.name || '', org: org, created_at: new Date().toISOString() };
+      var rec = { id: uuidv4(), partner_id: p.id, email: r.email, name: r.name || '', company: r.company || '', segment: r.segment || '', org: org, created_at: new Date().toISOString() };
       if (isFuture) { rec.status = 'scheduled'; rec.scheduled_at = schedDate.toISOString(); rec.sent_at = null; scheduled++; }
       else { sendBrevoEmail({ email: r.email, name: r.name || '' }, subject, memberInviteHtml(org, refLink, trialDays, r.name)); rec.status = 'sent'; rec.sent_at = new Date().toISOString(); rec.ok = true; sent++; }
       dbc.partner_invites.push(rec); already[r.email] = 1;
@@ -5254,8 +5269,14 @@ app.post('/api/partner/invites', requirePartner, (req, res) => {
 });
 app.get('/api/partner/invites', requirePartner, (req, res) => {
   try {
-    var list = (getDb().partner_invites || []).filter(function(iv){ return iv.partner_id === req.partner.id; }).sort(function(a,b){ return String(b.sent_at || b.scheduled_at || b.created_at) < String(a.sent_at || a.scheduled_at || a.created_at) ? -1 : 1; }).slice(0, 100);
-    res.json({ success: true, invites: list.map(function(iv){ return { email: iv.email, name: iv.name || '', sent_at: iv.sent_at || '', scheduled_at: iv.scheduled_at || '', scheduled: iv.status === 'scheduled', converted: !!iv.converted_at, converted_at: iv.converted_at || '' }; }) });
+    var pid = req.partner.id;
+    var segFilter = String(req.query.segment || '').toLowerCase();
+    var all = (getDb().partner_invites || []).filter(function(iv){ return iv.partner_id === pid; });
+    var list = all.slice().sort(function(a,b){ return String(b.sent_at || b.scheduled_at || b.created_at) < String(a.sent_at || a.scheduled_at || a.created_at) ? -1 : 1; });
+    if (segFilter) list = list.filter(function(iv){ return String(iv.segment || '').toLowerCase() === segFilter; });
+    var segs = {};
+    all.forEach(function(iv){ var k = String(iv.segment || '').trim() || '(no segment)'; segs[k] = (segs[k] || 0) + 1; });
+    res.json({ success: true, segments: segs, invites: list.slice(0, 100).map(function(iv){ return { email: iv.email, name: iv.name || '', company: iv.company || '', segment: iv.segment || '', sent_at: iv.sent_at || '', scheduled_at: iv.scheduled_at || '', scheduled: iv.status === 'scheduled', converted: !!iv.converted_at, converted_at: iv.converted_at || '' }; }) });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 // Partner analytics funnel + tier progress + statement (real ledger, never front-end math).
@@ -5293,6 +5314,39 @@ app.get('/api/partner/statement', requirePartner, (req, res) => {
     var total = comms.reduce(function(s,c){ return s + Number(c.commission_amount || 0); }, 0);
     res.json({ success: true, statement: { partner: p.business_name || p.name, code: p.referral_code || p.code, month: month, total: total, lines: comms.map(function(c){ return { period: c.commission_period, amount: c.commission_amount, status: c.status, customer: String(c.customer_id).slice(0,8) }; }), members: members } });
   } catch(e) { res.status(500).json({ error: e.message }); }
+});
+// Real PDF statement (pdfkit) - streamed to the partner dashboard as a download.
+app.get('/api/partner/statement.pdf', requirePartner, (req, res) => {
+  try {
+    var PDFDocument = require('pdfkit');
+    var p = req.partner; var dbc = getDb();
+    var month = String(req.query.month || new Date().toISOString().slice(0,7));
+    var comms = (dbc.partner_commissions || []).filter(function(c){ return c.partner_id === p.id && String(c.commission_period || '').slice(0,7) === month; });
+    var attr = (dbc.partner_attribution || []).filter(function(a){ return a.partner_id === p.id; });
+    var custs = dbc.customers || [];
+    var members = attr.map(function(a){ var c = custs.find(function(x){ return x.id === a.customer_id; }); return c ? { company: c.company || '', email: c.email, plan: c.plan, joined: a.signup_at } : null; }).filter(Boolean);
+    var total = comms.reduce(function(s,c){ return s + Number(c.commission_amount || 0); }, 0);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="9amleads-statement-' + month + '.pdf"');
+    var doc = new PDFDocument({ margin: 50, size: 'A4' });
+    doc.pipe(res);
+    doc.fontSize(20).fillColor('#0b6bb3').text('9amLeads Partner Statement');
+    doc.moveDown(0.3);
+    doc.fontSize(11).fillColor('#111111').text((p.business_name || p.name || 'Partner') + '  |  ' + month);
+    doc.text('Partner code: ' + (p.referral_code || p.code || ''));
+    doc.moveDown(0.5);
+    doc.fontSize(13).fillColor('#0f172a').text('Commission this month: GBP ' + total.toFixed(2));
+    doc.moveDown(0.5);
+    doc.fontSize(12).fillColor('#0b6bb3').text('Commission lines');
+    if (!comms.length) { doc.fontSize(10).fillColor('#555555').text('No commission this month.'); }
+    comms.forEach(function(c){ doc.fontSize(10).fillColor('#111111').text('- ' + (c.commission_period || '') + '   customer ' + String(c.customer_id || '').slice(0, 8) + '   GBP ' + Number(c.commission_amount || 0).toFixed(2) + '   [' + (c.status || '') + ']'); });
+    doc.moveDown(0.5);
+    doc.fontSize(12).fillColor('#0b6bb3').text('Members (' + members.length + ')');
+    members.forEach(function(m){ doc.fontSize(10).fillColor('#111111').text('- ' + (m.company || '(no company)') + '   ' + m.email + '   ' + (m.plan || '') + (m.joined ? '   joined ' + new Date(m.joined).toISOString().slice(0, 10) : '')); });
+    doc.moveDown(1);
+    doc.fontSize(9).fillColor('#888888').text('9am Leads Ltd - Company No. 17402522 - 66 Paul Street, London EC2A 4NA');
+    doc.end();
+  } catch(e) { try { res.status(500).json({ error: e.message }); } catch(_) {} }
 });
 
 // ===== ONE-OFF: find customers still marked free_trial who are actually paying =====
@@ -7392,6 +7446,9 @@ function sendAffiliateFollowupDigests() {
   } catch(e) { console.log('[AFFILIATE] followup digest error:', e.message); }
 }
 cron.schedule('15 8 * * 1-5', function() { sendAffiliateFollowupDigests(); }, { timezone: 'Europe/London' });
+// Partner programme daily job: scheduled member invites, 7-day re-nudges and the
+// onboarding drip. Idempotent (every send is recorded), so safe to run daily.
+cron.schedule('45 6 * * *', function() { try { runPartnerJobs(); } catch(e) { console.log('[PARTNER] cron error:', e.message); } }, { timezone: 'Europe/London' });
 
 // #2: Recruitment email funnel - capture a prospect from the affiliates page and
 // send a welcome email + follow-up sequence (day 3 and day 7). Stores prospects in

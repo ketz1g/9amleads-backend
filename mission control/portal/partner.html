@@ -158,6 +158,7 @@ function render(db){
       '<label class="muted" style="margin:0">Schedule (optional): <input class="inp" id="inv-when" type="datetime-local" style="width:auto;display:inline-block;margin:0;padding:6px 8px"></label>' +
       '</div>' +
       '<button class="btn btn-p" onclick="sendInvites()">Send invitations</button> <span id="inv-msg" class="muted" style="margin-left:8px"></span>' +
+      '<div style="margin-top:8px"><input class="inp" id="inv-filter" placeholder="Filter history by segment (optional)" oninput="loadInvites(this.value)" style="max-width:280px"></div>' +
       '<div id="inv-history" style="margin-top:10px"></div>' +
       '</div>';
     html += '<div id="growth"></div>';
@@ -168,7 +169,7 @@ function render(db){
       '<div class="link-box" id="share-copy" style="font-size:11px">We have partnered with 9amLeads - fresh, exclusive moving leads every morning at 9am. As a member you get an extended 14-day free trial. Join here: ' + esc(db.referral_link) + '</div>' +
       '<button class="copy-btn" onclick="copyText(document.getElementById(\'share-copy\').textContent, this)">Copy wording</button>' +
       '</div></div></div>';
-    html += '<div class="card"><div class="sect-title">Monthly statement</div><p class="muted" style="margin-bottom:8px">A printable statement of your members and commission.</p><button class="btn btn-o" onclick="openStatement()">Open this month\'s statement</button></div>';
+    html += '<div class="card"><div class="sect-title">Monthly statement</div><p class="muted" style="margin-bottom:8px">Download a PDF statement of your members and commission.</p><button class="btn btn-o" onclick="downloadStatement()">Download this month\'s statement (PDF)</button></div>';
   }
   html += '<div class="grid grid-3" style="margin-bottom:14px">' +
     '<div class="stat"><div class="n">' + (db.clicks || 0) + '</div><div class="l">Referral Clicks</div></div>' +
@@ -428,30 +429,24 @@ function loadGrowth(){
     el.innerHTML = h;
   });
 }
-function openStatement(){
-  api('GET', '/api/partner/statement', null, function(d){
-    if (!d || !d.success) { alert('Could not load statement'); return; }
-    var s = d.statement || {}; var w = window.open('', '_blank'); if (!w) return;
-    var rows = (s.lines || []).map(function(l){ return '<tr><td>' + esc(l.period) + '</td><td>' + esc(l.customer) + '</td><td>' + fmt(l.amount) + '</td><td>' + esc(l.status) + '</td></tr>'; }).join('') || '<tr><td colspan="4">No commission this month</td></tr>';
-    var mem = (s.members || []).map(function(m){ return '<tr><td>' + esc(m.company || '') + '</td><td>' + esc(m.email || '') + '</td><td>' + esc(m.plan || '') + '</td><td>' + (m.joined ? new Date(m.joined).toLocaleDateString() : '') + '</td></tr>'; }).join('') || '<tr><td colspan="4">No members yet</td></tr>';
-    w.document.write('<html><head><title>Statement ' + esc(s.month) + '</title></head><body style="font-family:Inter,Arial,sans-serif;padding:24px">' +
-      '<h2>9amLeads partner statement - ' + esc(s.partner || '') + '</h2><p>Month: ' + esc(s.month) + ' &middot; Code: ' + esc(s.code || '') + '</p>' +
-      '<h3>Commission: ' + fmt(s.total || 0) + '</h3>' +
-      '<table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse"><tr><th>Period</th><th>Customer</th><th>Amount</th><th>Status</th></tr>' + rows + '</table>' +
-      '<h3 style="margin-top:18px">Members (' + (s.members || []).length + ')</h3><table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse"><tr><th>Company</th><th>Email</th><th>Plan</th><th>Joined</th></tr>' + mem + '</table>' +
-      '</body></html>');
-    w.document.close();
-  });
+function downloadStatement(){
+  fetch(API + '/api/partner/statement.pdf?t=' + Date.now(), { headers: { 'Authorization': 'Bearer ' + getToken() } })
+    .then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); })
+    .then(function(blob){ var url = URL.createObjectURL(blob); var a = document.createElement('a'); a.href = url; a.download = '9amleads-statement.pdf'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(url); }, 4000); })
+    .catch(function(){ alert('Could not download the statement.'); });
 }
-function loadInvites(){
-  api('GET', '/api/partner/invites', null, function(d){
+function loadInvites(segment){
+  var seg = segment || (document.getElementById('inv-filter') ? document.getElementById('inv-filter').value : '');
+  api('GET', '/api/partner/invites' + (seg ? ('?segment=' + encodeURIComponent(seg)) : ''), null, function(d){
     var el = document.getElementById('inv-history'); if (!el) return;
     var list = (d && d.invites) || [];
-    if (!list.length) { el.innerHTML = '<p class="muted">No invitations sent yet.</p>'; return; }
+    var segs = (d && d.segments) || {};
+    var segLine = Object.keys(segs).length ? '<p class="muted" style="margin-bottom:6px">Segments: ' + Object.keys(segs).map(function(k){ return esc(k) + ' (' + segs[k] + ')'; }).join(' &middot; ') + '</p>' : '';
+    if (!list.length) { el.innerHTML = segLine + '<p class="muted">No invitations' + (seg ? ' in this segment' : ' sent yet') + '.</p>'; return; }
     var joined = list.filter(function(iv){ return iv.converted; }).length;
     el.innerHTML = '<div class="sect-title" style="font-size:12px">Invitation history</div>' +
-      '<p class="muted" style="margin-bottom:6px">' + list.length + ' invited &middot; ' + joined + ' joined</p>' +
-      list.map(function(iv){ return '<div class="fb-item"><b>' + esc(iv.email) + '</b> ' + (iv.converted ? '<span class="tag t-green">joined</span>' : '<span class="tag t-gray">invited</span>') + ' <span class="muted">sent ' + new Date(iv.sent_at).toLocaleDateString() + '</span></div>'; }).join('');
+      '<p class="muted" style="margin-bottom:6px">' + list.length + ' shown &middot; ' + joined + ' joined</p>' + segLine +
+      list.map(function(iv){ return '<div class="fb-item"><b>' + esc(iv.name ? (iv.name + ' - ' + iv.email) : iv.email) + '</b> ' + (iv.converted ? '<span class="tag t-green">joined</span>' : (iv.scheduled ? '<span class="tag t-amber">scheduled</span>' : '<span class="tag t-gray">invited</span>')) + (iv.company ? ' <span class="muted">' + esc(iv.company) + '</span>' : '') + (iv.segment ? ' <span class="tag t-blue">' + esc(iv.segment) + '</span>' : '') + ' <span class="muted">' + (iv.sent_at ? ('sent ' + new Date(iv.sent_at).toLocaleDateString()) : (iv.scheduled_at ? ('for ' + new Date(iv.scheduled_at).toLocaleDateString()) : '')) + '</span></div>'; }).join('');
   });
 }
 function renderResources(){  api('GET', '/api/partner/resources', null, function(d){
