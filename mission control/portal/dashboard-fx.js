@@ -26,7 +26,15 @@
     '.dfx-reveal.dfx-in{opacity:1;transform:none}',
     '.dfx-pop{animation:dfxPop .5s ease}',
     '@keyframes dfxPop{0%{transform:scale(.7);opacity:.4}60%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}',
-    '@media (prefers-reduced-motion: reduce){.dfx-icon,.dfx-sparkle,.dfx-aurora i{animation:none}.dfx-reveal{opacity:1;transform:none}}'
+    '.dfx-render{position:relative;flex:0 0 auto;display:flex;align-items:center;justify-content:center;z-index:1;margin:6px 0}',
+    '.dfx-render img{display:block;animation:dfxFloat 6s ease-in-out infinite;filter:drop-shadow(0 16px 26px rgba(14,165,233,.35))}',
+    '.dfx-orbit{position:absolute;inset:-14px;pointer-events:none}',
+    '.dfx-orbit-ring{position:absolute;inset:0;margin:auto;border-radius:50%;border:1px dashed rgba(14,165,233,.35);animation:dfxSpin 22s linear infinite}',
+    '.dfx-orbit-ring2{inset:16px;border-color:rgba(99,102,241,.32);animation-duration:16s;animation-direction:reverse}',
+    '@keyframes dfxFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}',
+    '@keyframes dfxSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}',
+    '@media (prefers-reduced-motion: reduce){.dfx-icon,.dfx-sparkle,.dfx-aurora i,.dfx-render img,.dfx-orbit-ring{animation:none}.dfx-reveal{opacity:1;transform:none}}',
+    '@media (max-width:768px){.dfx-render{display:none}}'
   ].join('');
   d.head.appendChild(st);
 
@@ -81,6 +89,21 @@
       if (window.getComputedStyle(c).position === 'static') c.style.position = 'relative';
       if (!c.style.zIndex) c.style.zIndex = '1';
     });
+    renderWidget(hero);
+  }
+
+  function renderWidget(host) {
+    var name = host.getAttribute('data-dfx-render');
+    if (!name || host.querySelector('.dfx-render')) return;
+    var box = d.createElement('div');
+    box.className = 'dfx-render';
+    box.setAttribute('aria-hidden', 'true');
+    box.innerHTML = '<img src="/assets/refresh/3d/' + name + '.webp" alt="" width="150" height="131" loading="lazy">' +
+      '<span class="dfx-orbit"><span class="dfx-orbit-ring"></span><span class="dfx-orbit-ring dfx-orbit-ring2"></span></span>';
+    var anchor = host.lastElementChild;
+    var isFlex = (window.getComputedStyle(host).display || '').indexOf('flex') !== -1;
+    if (isFlex && anchor) host.insertBefore(box, anchor);
+    else host.appendChild(box);
   }
 
   function reveal() {
