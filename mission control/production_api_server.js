@@ -4667,6 +4667,10 @@ function processInactiveAffiliateDeletion() {
       try {
         // Only ACTIVE (approved) affiliates are subject to the inactivity rule.
         if (!aff || !aff.email || aff.status !== 'active') return;
+        // Association / Sales PARTNERS are long-term B2B relationships, not individual
+        // affiliates. Never auto-delete a partner for inactivity - it would close their
+        // dashboard and free their code after 30 quiet days.
+        if (isPartnerRecurring(aff)) return;
         var activatedAt = aff.activated_at ? new Date(aff.activated_at) : (aff.created_at ? new Date(aff.created_at) : null);
         if (!activatedAt || isNaN(activatedAt.getTime())) return;
         var ageDays = Math.floor((now - activatedAt) / 86400000);
