@@ -4067,6 +4067,44 @@ function partnerRefLink(p) {
   var code = p.referral_code || p.code;
   return 'https://www.9amleads.com/portal/?ref=' + encodeURIComponent(code) + '&src=' + partnerTypeOf(p);
 }
+// Onboarding email sent the moment a partner is approved. Includes their code,
+// link, dashboard, next steps and the invite tool - so they can act immediately.
+function partnerOnboardingEmail(p, trialDays) {
+  var accent = '#0b6bb3';
+  var code = escHtml(p.referral_code || p.code || '');
+  var link = partnerRefLink(p);
+  var org = escHtml(p.business_name || p.name || 'your organisation');
+  var dash = 'https://9amleads.com/portal/partner.html';
+  var btn = function(u, t, solid) { return '<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-radius:8px;' + (solid ? 'background:' + accent + ';' : 'border:2px solid ' + accent + ';') + '"><a href="' + u + '" style="display:inline-block;padding:13px 28px;font-size:15px;font-weight:700;color:' + (solid ? '#ffffff' : accent) + ';text-decoration:none;border-radius:8px">' + t + '</a></td></tr></table>'; };
+  var step = function(n, t) { return '<tr><td style="padding:0 0 10px;color:#1f2937;font-size:14.5px;line-height:1.6"><b style="color:' + accent + '">' + n + '.</b> ' + t + '</td></tr>'; };
+  return '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>'
+    + '<body style="margin:0;padding:0;background:#f4f5f7">'
+    + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f5f7"><tr><td align="center" style="padding:24px 12px">'
+    + '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:600px;background:#fff;border:1px solid #e5e7eb;border-radius:8px">'
+    + '<tr><td style="height:4px;background:' + accent + ';font-size:0;line-height:0">&nbsp;</td></tr>'
+    + '<tr><td style="padding:26px 34px 0">'
+    + '<p style="margin:0;font-size:18px;font-weight:800;color:#1f2937">9am<span style="color:' + accent + '">Leads</span></p>'
+    + '<p style="margin:6px 0 0;font-size:12px;color:#6b7280">Partner Programme</p>'
+    + '<h1 style="margin:16px 0 12px;font-size:23px;line-height:1.3;font-weight:800;color:#1f2937">You are approved - here is your code and how to start</h1>'
+    + '<p style="margin:0 0 14px;color:#1f2937;font-size:15px;line-height:1.65">Hi ' + escHtml(p.name || 'there') + ', welcome aboard. ' + org + ' is now a 9amLeads partner. Your members get an extended <b>' + trialDays + '-day free trial</b> through you, and you earn <b>&pound;25 per active member, per month</b>, recurring while they stay.</p>'
+    + '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:12px;padding:16px;margin:0 0 14px">'
+    + '<p style="margin:0 0 6px;font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:' + accent + '">Your partner code</p>'
+    + '<p style="margin:0 0 10px;font-family:Outfit,Arial,sans-serif;font-weight:900;font-size:26px;letter-spacing:2px;color:#0c4a6e">' + code + '</p>'
+    + '<p style="margin:0;font-size:12px;color:#475569;word-break:break-all">Your link: <a href="' + link + '" style="color:' + accent + '">' + escHtml(link) + '</a></p>'
+    + '</div>'
+    + '<p style="margin:0 0 8px;font-size:13px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:' + accent + '">Your next steps</p>'
+    + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0">'
+    + step('1', 'Log in to your <a href="' + dash + '" style="color:' + accent + '">partner dashboard</a> - your code and link are ready to copy.')
+    + step('2', 'Use the <b>Invite your members</b> tool to send a co-branded invitation to your member list in one click (or share your code directly).')
+    + step('3', 'Every member who joins gets ' + trialDays + ' days free. When they become paying customers your commission starts, paid monthly.')
+    + '</table>'
+    + '</td></tr>'
+    + '<tr><td align="center" style="padding:10px 34px 6px">' + btn(dash, 'Open your partner dashboard', true) + '</td></tr>'
+    + '<tr><td align="center" style="padding:6px 34px 6px">' + btn('https://9amleads.com/partners/', 'View the partner proposal', false) + '</td></tr>'
+    + '<tr><td style="padding:8px 34px 26px;border-top:1px solid #e5e7eb">'
+    + '<p style="margin:12px 0 8px;color:#9ca3af;font-size:11px;line-height:1.7">You are receiving this because you were approved as a 9amLeads partner. Questions? Reply to this email or contact hello@9amleads.com. 9am Leads Ltd, Company No. 17402522, 66 Paul Street, London EC2A 4NA.</p>'
+    + '</td></tr></table></td></tr></table></body></html>';
+}
 function partnerAttributionForCustomer(customerId) {
   try { return (getDb().partner_attribution || []).filter(function(a){ return a.customer_id === customerId; })[0] || null; } catch(e) { return null; }
 }
@@ -4930,7 +4968,9 @@ app.get('/api/partner/dashboard', requirePartner, (req, res) => {
       };
     });
     out.trial_days = Number(isPartnerRecurring(p) ? cfg.sales_partner_trial_days : cfg.affiliate_trial_days) || 14;
-    out.invites_sent = (dbc.partner_invites || []).filter(function(iv){ return iv.partner_id === p.id; }).length;
+    var _invsAll = (dbc.partner_invites || []).filter(function(iv){ return iv.partner_id === p.id; });
+    out.invites_sent = _invsAll.length;
+    out.invites_converted = _invsAll.filter(function(iv){ return iv.converted_at; }).length;
     res.json({ success: true, dashboard: out });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -5118,7 +5158,7 @@ app.post('/api/partner/invites', requirePartner, (req, res) => {
 app.get('/api/partner/invites', requirePartner, (req, res) => {
   try {
     var list = (getDb().partner_invites || []).filter(function(iv){ return iv.partner_id === req.partner.id; }).sort(function(a,b){ return String(b.sent_at) < String(a.sent_at) ? -1 : 1; }).slice(0, 100);
-    res.json({ success: true, invites: list.map(function(iv){ return { email: iv.email, sent_at: iv.sent_at, org: iv.org || '' }; }) });
+    res.json({ success: true, invites: list.map(function(iv){ return { email: iv.email, sent_at: iv.sent_at, org: iv.org || '', converted: !!iv.converted_at, converted_at: iv.converted_at || '' }; }) });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -5454,7 +5494,12 @@ app.post('/api/admin/affiliates/:id/review', adminAuth, (req, res) => {
           : '<p style="color:#c9d1de;line-height:1.8">Thank you for applying to the 9amLeads affiliate programme. After carefully reviewing your application, we are unable to accept you into the programme at this time.</p>' +
             '<div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:12px;padding:16px;margin:14px 0"><p style="color:#c9d1de;line-height:1.8;margin:0">If you think this is a mistake, or would like to re-apply in the future, reply to this email or contact <a href="mailto:hello@9amleads.com" style="color:#0ea5e9">hello@9amleads.com</a>. We are always happy to help.</p></div>') +
         '<p style="color:#888;font-size:13px;margin-top:20px;border-top:1px solid #1e2030;padding-top:12px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>';
-      sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' }, decision === 'approve' ? 'Welcome to the 9amLeads Affiliate Programme' : '9amLeads Affiliate application update', emHtml);
+      if (decision === 'approve' && isPartnerRecurring(aff)) {
+        var _cfgOn = partnerConfig(); var _tdOn = Number(_cfgOn.sales_partner_trial_days) || 14;
+        sendBrevoEmail({ email: aff.email, name: aff.name || 'Partner' }, 'Welcome to the 9amLeads Partner Programme - your code and next steps', partnerOnboardingEmail(aff, _tdOn));
+      } else {
+        sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' }, decision === 'approve' ? 'Welcome to the 9amLeads Affiliate Programme' : '9amLeads Affiliate application update', emHtml);
+      }
     } catch(e) { console.log('[AFFILIATE] review email error:', e.message); }
     res.json({ success: true, affiliate: { id: aff.id, name: aff.name, status: aff.status, application: aff.application } });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -6174,6 +6219,15 @@ app.post('/api/auth/signup', async (req, res) => {
           });
           saveDb();
         }
+        // INVITE CONVERSION: mark any matching partner invite as converted so the
+        // partner dashboard can report invitations -> sign-ups.
+        try {
+          if (!dbp.partner_invites) dbp.partner_invites = [];
+          var _invEmail = String(email || '').toLowerCase();
+          var _invHit = 0;
+          dbp.partner_invites.forEach(function(iv){ if (iv.partner_id === affRef.id && !iv.converted_at && String(iv.email || '').toLowerCase() === _invEmail) { iv.converted_at = new Date().toISOString(); iv.customer_id = id; _invHit++; } });
+          if (_invHit) saveDb();
+        } catch(_invErr) {}
         // Also record the attribution source for the analytics funnel
         trackAnalytics('signup_completed', { product: product, plan: plan || 'free_trial', source: 'partner_' + partnerTypeOf(affRef) });
       } catch(attrErr) {}

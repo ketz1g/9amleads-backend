@@ -393,8 +393,10 @@ function loadInvites(){
     var el = document.getElementById('inv-history'); if (!el) return;
     var list = (d && d.invites) || [];
     if (!list.length) { el.innerHTML = '<p class="muted">No invitations sent yet.</p>'; return; }
-    el.innerHTML = '<div class="sect-title" style="font-size:12px">Invitation history (' + list.length + ')</div>' +
-      list.map(function(iv){ return '<div class="fb-item"><b>' + esc(iv.email) + '</b> <span class="muted">sent ' + new Date(iv.sent_at).toLocaleDateString() + '</span></div>'; }).join('');
+    var joined = list.filter(function(iv){ return iv.converted; }).length;
+    el.innerHTML = '<div class="sect-title" style="font-size:12px">Invitation history</div>' +
+      '<p class="muted" style="margin-bottom:6px">' + list.length + ' invited &middot; ' + joined + ' joined</p>' +
+      list.map(function(iv){ return '<div class="fb-item"><b>' + esc(iv.email) + '</b> ' + (iv.converted ? '<span class="tag t-green">joined</span>' : '<span class="tag t-gray">invited</span>') + ' <span class="muted">sent ' + new Date(iv.sent_at).toLocaleDateString() + '</span></div>'; }).join('');
   });
 }
 function renderResources(){  api('GET', '/api/partner/resources', null, function(d){
