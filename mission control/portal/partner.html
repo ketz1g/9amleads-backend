@@ -208,6 +208,23 @@ function render(db){
     '<p style="font-size:13px;color:#334155;line-height:1.8">Ketz Mandalia, Founder<br><a href="mailto:hello@9amleads.com" style="color:var(--accent);font-weight:700">hello@9amleads.com</a></p>' +
     '<p class="muted" style="margin-top:6px">We usually reply the same working day.</p>' +
     '</div>';
+  // Payout details (KYC + bank) - required before commission can be paid out.
+  html += '<div class="card"><div class="sect-title">Payout details</div>' +
+    '<div id="kyc-status" class="muted" style="margin-bottom:10px">Checking...</div>' +
+    '<div id="kyc-form">' +
+    '<p class="muted" style="margin-bottom:8px">We pay commission by UK bank transfer. Add your details so your first payout is not held. Your legal name must match the bank account holder.</p>' +
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px">' +
+    '<div><label style="font-size:11px;font-weight:700;color:#334155">Legal name</label><input class="inp" id="k-legal" placeholder="As shown on your ID"></div>' +
+    '<div><label style="font-size:11px;font-weight:700;color:#334155">ID type</label><select class="inp" id="k-idtype"><option>Driving licence</option><option>Passport</option></select></div>' +
+    '<div><label style="font-size:11px;font-weight:700;color:#334155">Bank name</label><input class="inp" id="k-bank" placeholder="e.g. Barclays"></div>' +
+    '<div><label style="font-size:11px;font-weight:700;color:#334155">Account holder</label><input class="inp" id="k-holder" placeholder="Name on the account"></div>' +
+    '<div><label style="font-size:11px;font-weight:700;color:#334155">Sort code</label><input class="inp" id="k-sort" placeholder="20-00-00"></div>' +
+    '<div><label style="font-size:11px;font-weight:700;color:#334155">Account number</label><input class="inp" id="k-acct" placeholder="8 digits"></div>' +
+    '</div>' +
+    '<label style="display:block;font-size:11px;font-weight:700;color:#334155;margin-top:10px">Photo/scan of your ID</label><input type="file" id="k-idfile" accept="image/*" style="font-size:12px;margin-top:4px">' +
+    '<label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:12px;color:#334155"><input type="checkbox" id="k-tc" style="width:auto"> I accept the partner agreement</label>' +
+    '<button class="btn btn-p" onclick="submitKyc()">Submit payout details</button> <span id="kyc-msg" class="muted" style="margin-left:8px"></span>' +
+    '</div></div>';
   // Member invite tool (associations)
   if (isAssoc) {
     html += '<div class="card"><div class="sect-title">Invite your members</div>' +
@@ -309,6 +326,7 @@ function render(db){
   window._isSales = isSales;
   if (isSales) { renderProspects(db); renderFollowups(db); renderFeedbackForm(db); renderEarnings(db); renderResources(); }
   else { renderReferrals(db); renderEarnings(db); renderResources(); if (isAssoc) { loadInvites(); loadGrowth(); } }
+  loadKyc();
 }
 function showTab(name, btn){
   var tabs = ['prospects','followups','feedback','earnings','resources','referrals'];
@@ -448,6 +466,41 @@ function saveFeedback(){
     partner_notes: document.getElementById('fb-notes').value,
     requested_action: document.getElementById('fb-action').value
   }, function(d){ if (d && d.success) { document.getElementById('tab-feedback').innerHTML = '<div class="card" style="text-align:center;padding:24px">✅ <b>Feedback submitted.</b> Thank you - it goes straight to the 9amLeads team.</div>'; } else alert('Could not submit feedback'); });
+}
+function loadKyc(){
+  api('GET', '/api/affiliate/kyc', null, function(d){
+    var el = document.getElementById('kyc-status'); if (!el) return;
+    var k = (d && d.kyc) || {}; var st = k.status || 'none';
+    var map = { approved: 'Approved - you are ready to be paid.', pending_review: 'Submitted - awaiting review.', pending: 'Submitted - awaiting review.', rejected: 'Not approved - ' + (k.id_review_note || 'please resubmit.'), none: 'Not submitted yet.' };
+    var cls = st === 'approved' ? 't-green' : (st === 'rejected' ? 't-amber' : 't-gray');
+    el.innerHTML = '<span class="tag ' + cls + '">' + esc(String(st).replace(/_/g, ' ')) + '</span> ' + esc(map[st] || '');
+    if (st === 'approved' || st === 'pending_review' || st === 'pending') { var f = document.getElementById('kyc-form'); if (f) f.style.display = 'none'; }
+  });
+}
+function submitKyc(){
+  var msg = document.getElementById('kyc-msg');
+  function post(idB64){
+    var body = {
+      legal_name: document.getElementById('k-legal').value,
+      id_type: document.getElementById('k-idtype').value,
+      bank_name: document.getElementById('k-bank').value,
+      bank_account_holder: document.getElementById('k-holder').value,
+      bank_sort_code: document.getElementById('k-sort').value,
+      bank_account_number: document.getElementById('k-acct').value,
+      id_image: idB64,
+      accept_tc: document.getElementById('k-tc').checked
+    };
+    msg.textContent = 'Submitting...';
+    api('POST', '/api/affiliate/kyc', body, function(d, st){
+      if (d && d.success) { msg.textContent = 'Submitted - we will review your ID shortly.'; loadKyc(); }
+      else { msg.textContent = (d && d.error) || 'Could not submit - please check the fields.'; }
+    });
+  }
+  var f = document.getElementById('k-idfile').files[0];
+  if (!f) { msg.textContent = 'Please attach a photo/scan of your ID.'; return; }
+  var r = new FileReader();
+  r.onload = function(){ post(String(r.result || '')); };
+  r.readAsDataURL(f);
 }
 function askQuestion(){
   var el = document.getElementById('ask-q'); var msg = document.getElementById('ask-msg');
