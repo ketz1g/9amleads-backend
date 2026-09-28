@@ -29463,7 +29463,7 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
 // Point Brevo (Transactional > Settings > Webhooks) at this URL for: blocked,
 // hard_bounce, spam, unsubscribed. We bump the customer's bounce counter (>=3 stops
 // emails) and honour unsubscribe. Idempotent-ish: safe to receive duplicates.
-app.post('/api/brevo/webhook', express.json({ limit: '2mb' }), (req, res) => {
+app.post('/api/brevo/webhook', (req, res) => {
   try {
     var b = req.body || {};
     var items = Array.isArray(b) ? b : (Array.isArray(b.items) ? b.items : [b]);
