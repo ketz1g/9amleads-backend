@@ -29459,6 +29459,35 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
   } catch(e) { console.error('[STRIPE] Webhook error:', e.message); res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/brevo/webhook - Brevo transactional webhook for deliverability events.
+// Point Brevo (Transactional > Settings > Webhooks) at this URL for: blocked,
+// hard_bounce, spam, unsubscribed. We bump the customer's bounce counter (>=3 stops
+// emails) and honour unsubscribe. Idempotent-ish: safe to receive duplicates.
+app.post('/api/brevo/webhook', express.json({ limit: '2mb' }), (req, res) => {
+  try {
+    var b = req.body || {};
+    var items = Array.isArray(b) ? b : (Array.isArray(b.items) ? b.items : [b]);
+    var handled = 0;
+    items.forEach(function(it){
+      try {
+        var ev = String((it && (it.event || it.type)) || '').toLowerCase();
+        var email = String((it && (it.email || (it.contact && it.contact.email))) || '').toLowerCase().trim();
+        if (!email || !ev) return;
+        var isBad = /hard_bounce|hardbounce|blocked|spam|invalid|unsubscrib/.test(ev);
+        if (!isBad) return;
+        var cust = db.prepare('SELECT * FROM customers WHERE email = ?').get(email);
+        if (!cust) return;
+        var nb = (parseInt(cust.bounced, 10) || 0) + 1;
+        db.prepare('UPDATE customers SET bounced = ? WHERE id = ?').run(nb, cust.id);
+        if (/unsubscrib/.test(ev)) { try { db.prepare('UPDATE customers SET marketing_consent = 0 WHERE id = ?').run(cust.id); } catch(e) {} }
+        handled++;
+      } catch(itemErr) {}
+    });
+    if (handled) saveDb();
+    res.json({ success: true, handled: handled });
+  } catch(e) { res.status(200).json({ success: false, error: e.message }); }
+});
+
 var DM_PRICE_CONFIG = {
   platform_fee: 29, // Manual campaign platform fee (£)
   min_fee: 99, // Minimum campaign order (£)
