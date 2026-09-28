@@ -8087,9 +8087,6 @@ app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
         }
         var fd = pickFreshDate(l);
         if (!fd) continue;
-        // STRICT FRESHNESS FOR PROBATE: never deliver an old grant just to hit a count.
-        // Enforces the fresh window (24h/48h; Monday back to Friday 09:00 = 72h).
-        if (prod === 'probate' && fd < getFreshCutoffIso()) continue;
         var mAddr = l.fullAddress || l.address || l.deceasedAddress || '';
         var mPc = l.postcode || '';
         if (!_mailable({ fullAddress: l.fullAddress, address: mAddr, deceasedAddress: l.deceasedAddress, postcode: mPc }, prod)) continue;
@@ -8117,7 +8114,7 @@ app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
       // This is the exact lead set the post-9am auto-fill used, but applied BEFORE 9am,
       // so the customer receives their full promised count AT 9am instead of a top-up
       // afterwards. Set TOPUP_ALLOW_OLDER=false to keep it fresh-only.
-      if (assigned < need && prod !== 'probate' && String(process.env.TOPUP_ALLOW_OLDER || 'true').toLowerCase() !== 'false') {
+      if (assigned < need && String(process.env.TOPUP_ALLOW_OLDER || 'true').toLowerCase() !== 'false') {
         for (var i3 = 0; i3 < poolForCust.length && assigned < need; i3++) {
           var l3 = poolForCust[i3];
           if (!_inArea(l3)) continue;
@@ -12554,13 +12551,6 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
         break;
       }
     }
-  }
-  // STRICT PROBATE FRESHNESS (final gate): fail-closed so no probate lead older than
-  // the fresh window is ever previewed, queued or delivered (24h/48h; on Mondays the
-  // window is Friday 09:00 = 72h). Never substitute an old grant to hit the count.
-  if (cust.product === 'probate') {
-    var _pCut = getFreshCutoffIso();
-    selected = selected.filter(function(c) { var f = pickFreshDate(c); return f && f >= _pCut; });
   }
   var out = selected.map(function(c) {
     var addr = c.fullAddress || c.address || c.deceasedAddress || '';
@@ -26024,10 +26014,6 @@ _deliverDiag[cust.email].products = products;
           // caller passes freshCutoff48) marks the 48h fallback pass; otherwise the
           // default is the 24h primary window.
           var backfillCutoff = cut || freshCutoffNow;
-          // STRICT PROBATE: never relax to the 48h backfill pass for probate - an old
-          // grant must never be delivered just to reach the count. Uses the strict
-          // fresh window (24h/48h; Monday back to Friday 09:00 = 72h).
-          if (cust.product === 'probate') backfillCutoff = getFreshCutoffIso();
           return fv >= backfillCutoff;
         } catch(e) { return false; }
       }
