@@ -13524,8 +13524,14 @@ app.get('/api/admin/readiness', adminAuth, async (req, res) => {
         // candidates as fully "available" used to mask real gaps, so keep `available`
         // strict but don't cry SHORT when the delivery can still number the leads.
         var reachable = available + pafCand;
-        var short = reachable < promised;
-        rows.push({ email: cc.email, product: cc.product, plan: cc.plan, promised: promised, available: available, reachable: reachable, queued_mailable: queuedMailable, pool_door_numbered: doorNow, paf_candidates: pafCand, preview_count: prev.count, status: short ? 'SHORT' : (available < promised ? 'PAF-RELIANT' : 'OK'), areas: prev.areas, last_error: prev.error || '' });
+        // TENDERS ARE EMAIL-ONLY: no postal address is required, so the door-number /
+        // reachable gate does not apply. Judge them on the delivered preview instead,
+        // otherwise every tenders customer reads as a false SHORT (and pages the founder).
+        var _isTenders = (cc.product === 'tenders');
+        var _tenderHave = (prev.count || 0);
+        var short = _isTenders ? (_tenderHave < promised) : (reachable < promised);
+        var _status = short ? 'SHORT' : (_isTenders ? 'OK' : (available < promised ? 'PAF-RELIANT' : 'OK'));
+        rows.push({ email: cc.email, product: cc.product, plan: cc.plan, promised: promised, available: available, reachable: reachable, queued_mailable: queuedMailable, pool_door_numbered: doorNow, paf_candidates: pafCand, preview_count: prev.count, status: _status, areas: prev.areas, last_error: prev.error || '' });
       } catch(e) { rows.push({ email: cc.email, product: cc.product, plan: cc.plan, status: 'ERROR', last_error: e.message }); }
     }
     var shorts = rows.filter(function(r){ return r.status === 'SHORT'; });
