@@ -242,14 +242,15 @@ function extractPostcode(str) {
 // Real planning applications with full site addresses + postcodes + status.
 // Query by postcode area, authority, or free-text. Optional category filter for
 // even distribution across the customer's selected application types.
-function fetchPlotaPlanning(postcode, maxItems, category) {
+function fetchPlotaPlanning(postcode, maxItems, category, dateFrom) {
   return new Promise((resolve) => {
     const key = getPlotaKey();
     if (!key) { console.log('    No PLOTA_API_KEY configured'); resolve([]); return; }
     const cleanPc = (postcode || '').replace(/[^A-Z0-9]/gi, '').toUpperCase();
     const q = cleanPc ? '?postcode=' + encodeURIComponent(cleanPc) : '?q=' + encodeURIComponent(postcode || 'London');
     const cat = category ? '&category=' + encodeURIComponent(category) : '';
-    const path = '/v1/applications' + q + cat + '&limit=' + (maxItems || 100);
+    const df = dateFrom ? ('&date_from=' + encodeURIComponent(dateFrom)) : '';
+    const path = '/v1/applications' + q + cat + df + '&limit=' + (maxItems || 100);
     const options = {
       hostname: 'api.plota.co.uk',
       path: path,
@@ -300,12 +301,13 @@ function fetchPlotaPlanning(postcode, maxItems, category) {
 }
 
 // Query PLOTA by free text (e.g. "London", "Manchester") rather than a postcode.
-function fetchPlotaPlanningFreeText(query, maxItems, category) {
+function fetchPlotaPlanningFreeText(query, maxItems, category, dateFrom) {
   return new Promise((resolve) => {
     const key = getPlotaKey();
     if (!key) { resolve([]); return; }
     const cat = category ? '&category=' + encodeURIComponent(category) : '';
-    const path = '/v1/applications?q=' + encodeURIComponent(query) + cat + '&limit=' + (maxItems || 100);
+    const df = dateFrom ? ('&date_from=' + encodeURIComponent(dateFrom)) : '';
+    const path = '/v1/applications?q=' + encodeURIComponent(query) + cat + df + '&limit=' + (maxItems || 100);
     const options = {
       hostname: 'api.plota.co.uk',
       path: path,
@@ -923,6 +925,62 @@ async function fetchPlanningApplications(maxItems, areas) {
 // Exported function for the production server's run-scrapers flow.
 // Queries PLOTA per selected application type + area, then distributes evenly
 // across the filter types so no single type dominates (e.g. not all trees).
+// UK-WIDE RECENT SWEEP: pull the freshest applications across the whole country
+// using PLOTA's date_from filter + cursor paging. PLOTA is not date-ordered, so
+// without date_from the pool filled with stale applications; this returns genuinely
+// recent ones (up to `maxItems`).
+function fetchPlotaRecent(maxItems, dateFrom) {
+  return new Promise((resolve) => {
+    const key = getPlotaKey();
+    if (!key) { resolve([]); return; }
+    const want = maxItems || 100;
+    const all = [];
+    let cursor = '';
+    function page() {
+      const path = '/v1/applications?limit=50'
+        + (dateFrom ? ('&date_from=' + encodeURIComponent(dateFrom)) : '')
+        + (cursor ? ('&cursor=' + encodeURIComponent(cursor)) : '');
+      const options = { hostname: 'api.plota.co.uk', path: path, method: 'GET', headers: { 'Accept': 'application/json', 'Authorization': 'Bearer ' + key, 'User-Agent': '9amLeads/1.0 (planning lead generator)' }, timeout: 30000 };
+      const rq = https.request(options, (res) => {
+        let body = ''; res.on('data', c => body += c); res.on('end', () => {
+          if (res.statusCode !== 200) { console.log('    Plota(recent) HTTP ' + res.statusCode); resolve(all); return; }
+          let j; try { j = JSON.parse(body); } catch(e) { resolve(all); return; }
+          const items = j.data || j.results || j.applications || (Array.isArray(j) ? j : []);
+          items.forEach(p => all.push({
+            id: 'PLOTA_' + (p.id || p.reference || Date.now()),
+            address: (p.address || '').trim(),
+            postcode: p.postcode || extractPostcode(p.address || ''),
+            proposal: p.description || '',
+            description: p.description || '',
+            applicantName: p.agent_name || p.applicant_name || '',
+            applicationType: (p.category && p.category.label) || 'Planning Application',
+            status: p.status || 'Pending',
+            council: (p.authority && p.authority.name) || p.authority || '',
+            reference: p.reference || '',
+            estimatedValue: 0,
+            valueLabel: '',
+            url: (p.links && (p.links.council || p.links.portal || p.links.application || p.links.details)) || p.url || p.link || p.applicationUrl || p.application_url || p.detailsUrl || ('https://www.planningportal.co.uk/search?q=' + encodeURIComponent(String(p.reference || p.address || 'planning application').substring(0, 90))),
+            links: p.links || {},
+            dateSubmitted: p.date_received || p.date_validated || '',
+            firstVisibleDate: p.date_validated || p.date_received || new Date().toISOString(),
+            receivedDate: p.date_received || '',
+            locationPoint: p.location ? (p.location.lat + ',' + p.location.lng) : '',
+            source: 'Planning Portal',
+            scrapedAt: new Date().toISOString()
+          }));
+          cursor = (j.meta && j.meta.next_cursor) || '';
+          if (cursor && all.length < want) { setTimeout(page, 120); }
+          else { console.log('    Plota recent (UK-wide) returned ' + all.length + ' applications since ' + dateFrom); resolve(all); }
+        });
+      });
+      rq.on('error', () => resolve(all));
+      rq.setTimeout(30000, () => { rq.destroy(); resolve(all); });
+      rq.end();
+    }
+    page();
+  });
+}
+
 async function collectPlanningLeads(config) {
   config = config || {};
   let results = [];
@@ -996,6 +1054,18 @@ async function collectPlanningLeads(config) {
   if (catSlugs.length === 0) {
     catSlugs = ['extensions', 'change-of-use', 'new-homes', 'listed-buildings', 'commercial-and-major-works'];
   }
+  // FRESHNESS: only pull applications RECEIVED within the fresh window. Without this
+  // PLOTA returned a mixed/old set (it is not date-ordered), so the pool was full of
+  // stale applications and only ~68/day looked fresh. With date_from the query returns
+  // genuinely recent UK applications.
+  const _planFreshDays = Math.max(1, parseInt(config.freshDays || process.env.PLANNING_FRESH_DAYS || '7', 10) || 7);
+  const _planDateFrom = new Date(Date.now() - _planFreshDays * 86400000).toISOString().slice(0, 10);
+  // UK-WIDE RECENT SWEEP FIRST: pull the freshest applications across the whole
+  // country (date_from + paging) so supply is not limited to a handful of towns.
+  try {
+    const recent = await fetchPlotaRecent(Math.min(parseInt(config.maxItems || 1000, 10) || 1000, 1000), _planDateFrom);
+    if (recent && recent.length) results = results.concat(recent);
+  } catch(e) { console.log('    Plota recent sweep error: ' + e.message); }
   // Query each category across the areas for EVEN distribution across filter types
   const perCat = Math.max(2, Math.ceil((config.maxItems || 20) / catSlugs.length));
   for (let c = 0; c < catSlugs.length; c++) {
@@ -1004,9 +1074,9 @@ async function collectPlanningLeads(config) {
         // "q:London" = free-text query; otherwise a postcode area query.
         let batch;
         if (String(areas[a]).indexOf('q:') === 0) {
-          batch = await fetchPlotaPlanningFreeText(String(areas[a]).substring(2), perCat, catSlugs[c]);
+          batch = await fetchPlotaPlanningFreeText(String(areas[a]).substring(2), perCat, catSlugs[c], _planDateFrom);
         } else {
-          batch = await fetchPlotaPlanning(areas[a], perCat, catSlugs[c]);
+          batch = await fetchPlotaPlanning(areas[a], perCat, catSlugs[c], _planDateFrom);
         }
         if (batch && batch.length > 0) {
           results.push.apply(results, batch.map(function(l){ l.selectedCategory = catSlugs[c]; return l; }));
@@ -1034,7 +1104,7 @@ async function collectPlanningLeads(config) {
   return results;
 }
 
-module.exports = { collectPlanningLeads, fetchPlanningApify, fetchFreePlanningData, fetchPlanningApplications, fetchPlotaPlanning };
+module.exports = { collectPlanningLeads, fetchPlanningApify, fetchFreePlanningData, fetchPlanningApplications, fetchPlotaPlanning, fetchPlotaRecent };
 
 if (require.main === module) {
   main().catch(e => console.error('Error:', e.message));

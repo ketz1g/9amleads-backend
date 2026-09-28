@@ -209,6 +209,13 @@ try {
 // delivery + preview so shared products skip CROSS-customer exclusivity but still
 // never deliver the same lead twice to the SAME customer.
 function isSharedLeadProduct(prod) { prod = String(prod || ''); return prod === 'tenders' || prod === 'probate'; }
+// Per-product freshness window. Planning applications move slowly (and PLOTA ingests
+// with a lag), so planning uses a wider window (PLANNING_FRESH_DAYS, default 7). All
+// other products return null and use the standard 24h/48h window from the caller.
+function freshCutoffForProduct(prod) {
+  if (String(prod) === 'planning') { var d = parseInt(process.env.PLANNING_FRESH_DAYS || '7', 10) || 7; return new Date(Date.now() - d * 86400000).toISOString(); }
+  return null;
+}
 
 function saveAssignments(data) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -13066,7 +13073,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen, opts) {
   // 48h fallback bound = the EARLIER of (24h/weekend-grace cutoff, 48h ago). On a
   // Monday freshCutoff is Friday 9am (weekend grace), earlier than 48h ago, so the
   // fallback tier never rejects a lead the 24h tier would accept.
-  var _cut48 = (freshCutoff48p < freshCutoff) ? freshCutoff48p : freshCutoff;
+  var _cut48 = freshCutoffForProduct(cust.product) || ((freshCutoff48p < freshCutoff) ? freshCutoff48p : freshCutoff);
   var movingFallback48 = true;
   // DELIVERED-LEAD EXCLUSION (matches the 9am run's GLOBAL exclusivity): a lead
   // already delivered to ANY real customer is not available to this one, ever.
@@ -26845,7 +26852,7 @@ _deliverDiag[cust.email].products = products;
       // this the primary pick promoted a stale queued probate/tenders row at 9am.
       var _primFresh = getFreshCutoffIso();
       var _primFresh48 = new Date(Date.now() - 48 * 3600000).toISOString();
-      var _primFreshCut = (_primFresh48 < _primFresh) ? _primFresh48 : _primFresh;
+      var _primFreshCut = freshCutoffForProduct(cust.product) || ((_primFresh48 < _primFresh) ? _primFresh48 : _primFresh);
       var primaryPickedId = null;
       if (cust.product) {
         // MAILABLE-ADDRESS GATE on the primary pick: only promote a pending lead
@@ -27125,7 +27132,7 @@ _deliverDiag[cust.email].products = products;
           // out-of-area). The lead may exist as delivered=0 rows in the DB even after
           // being blocked - filter by the data flags so it can never be picked up again.
           try { var _pd = JSON.parse(l.data || '{}'); if (_pd.rejected || _pd.blocked || _pd.blocked_by_admin) return false; } catch(_pe) {}
-          if (!isLeadFresh24(l)) return false;
+          if (!isLeadFresh24(l, freshCutoffForProduct(cust.product))) return false;
           if (!leadPassesFilters((l && typeof l.data === 'string' && l.data) ? JSON.parse(l.data) : (l || {}))) return false;
           if (!notDeliveredBefore(l)) return false;
           return true;
@@ -27147,7 +27154,7 @@ _deliverDiag[cust.email].products = products;
         var globalPool = (db.leads || []).filter(function(l) {
           if (l.delivered !== 0 || l.product !== p) return false;
           try { var _gd = JSON.parse(l.data || '{}'); if (_gd.rejected || _gd.blocked || _gd.blocked_by_admin) return false; } catch(_ge) {}
-          if (p === 'moving' ? !isLeadFresh24(l, freshCutoff48) : !isLeadFresh24(l, freshCutoff48)) return false;
+          if (!isLeadFresh24(l, freshCutoffForProduct(p) || freshCutoff48)) return false;
           if (!leadPassesFilters((l && typeof l.data === 'string' && l.data) ? JSON.parse(l.data) : (l || {}))) return false;
           if (!notDeliveredBefore(l)) return false;
           return true;
