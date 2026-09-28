@@ -23783,7 +23783,11 @@ async function runCampaignEmails(dry) {
           // seen value, before it ends. Loss-aversion + risk-reversal + a direct setup link.
           try {
             if (!_sentThisCust) {
-              var _hasCardNow = !!(cust.stripe_payment_method_id || cust.stripe_customer_id);
+              // "Has card" must mean an actual saved PAYMENT METHOD (what the auto-charge
+              // needs) - not just a Stripe customer id. Using the customer id here would
+              // silently skip the add-a-card nudge for a triallist with no card, who
+              // would then neither be charged nor nudged.
+              var _hasCardNow = !!cust.stripe_payment_method_id;
               if (!_hasCardNow) {
                 var _cardTpl = accountAge >= 6 ? 'trial_addcard6' : (accountAge >= 4 ? 'trial_addcard' : '');
                 if (_cardTpl && !campaignSent.includes(_cardTpl)) {
