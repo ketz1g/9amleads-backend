@@ -37026,7 +37026,13 @@ app.post('/api/admin/run-rehearsal', adminAuth, async (req, res) => {
 });
 // 08:05 UK weekdays - well before the 08:30-09:45 delivery/deploy window, so a
 // regression is caught (and can still be fixed) before the real 9am run.
-cron.schedule('45 7 * * 1-5', function() { try { runDeliveryRehearsal('07:45 schedule'); } catch(e) { console.log('[REHEARSAL] cron error:', e.message); } }, { timezone: 'Europe/London' });
+// GATED by DELIVERY_REHEARSAL_CRON=true (default OFF): the rehearsal runs the REAL
+// engine with force:true (test accounts only) which spends Postcoder credits and
+// bypasses the freshness gate, so it must be opt-in, not daily.
+cron.schedule('45 7 * * 1-5', function() {
+  if (String(process.env.DELIVERY_REHEARSAL_CRON || 'false').toLowerCase() !== 'true') return;
+  try { runDeliveryRehearsal('07:45 schedule'); } catch(e) { console.log('[REHEARSAL] cron error:', e.message); }
+}, { timezone: 'Europe/London' });
 
 // Every 15 minutes - automated delivery test + report (TEST ONLY). Gated by
 // TEST_DELIVERY_CRON=true (off by default). Each run delivers EXACTLY the
