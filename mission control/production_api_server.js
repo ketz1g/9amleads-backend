@@ -4405,6 +4405,29 @@ function partnerDripSequence() {
   return sent;
 }
 // ===== GROWTH / LIFECYCLE EMAILS =====
+// Per-customer lifecycle email cap so nurture/nudge emails never stack up and annoy
+// people. The daily 9am lead email is NOT a lifecycle email and is unaffected.
+function lifecycleAllowed(cust, opts) {
+  opts = opts || {};
+  var minGapDays = (opts.minGapDays != null) ? opts.minGapDays : 1;
+  var maxPerWeek = (opts.maxPerWeek != null) ? opts.maxPerWeek : 3;
+  var now = Date.now();
+  var all = cust.lifecycle_emails || [];
+  var hist = all.filter(function(t){ return (now - new Date(t).getTime()) < 7 * 86400000; });
+  if (hist.length >= maxPerWeek) return false;
+  if (hist.length) {
+    var last = new Date(hist[hist.length - 1]).getTime();
+    if ((now - last) < minGapDays * 86400000) return false;
+  }
+  return true;
+}
+function lifecycleSent(cust) {
+  if (!cust) return;
+  if (!cust.lifecycle_emails) cust.lifecycle_emails = [];
+  cust.lifecycle_emails.push(new Date().toISOString());
+  if (cust.lifecycle_emails.length > 40) cust.lifecycle_emails = cust.lifecycle_emails.slice(-40);
+}
+
 // (1) First-win onboarding: nudge new trials to set up Print & Post + Auto Send
 //     within the first few days - the single biggest churn killer.
 function runFirstWinNudges(opts) {
@@ -4424,9 +4447,11 @@ function runFirstWinNudges(opts) {
         if (hasTpl || autoOn) return;
         candidates++;
         if (opts.dryRun) return;
+        if (!lifecycleAllowed(c, { minGapDays: 1, maxPerWeek: 3 })) return;
         var dash = PUBLIC_URL.replace(/\/+$/, '') + '/portal/dashboard.html';
         var html = '<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#0f172a"><h2 style="font-size:20px;color:#0b6bb3;margin:0 0 10px">Get your first win from 9amLeads</h2><p style="font-size:15px;line-height:1.7">Hi ' + escHtml(c.contact_name || c.company || 'there') + ',</p><p style="font-size:15px;line-height:1.7">The members who get the most from 9amLeads do two simple things in their first few days:</p><ol style="font-size:15px;line-height:1.9"><li><b>Upload a flyer or letter</b> in Print &amp; Post (takes 2 minutes).</li><li><b>Turn on Auto Print &amp; Post</b> so every new lead is printed and posted for you each morning.</li></ol><p style="font-size:15px;line-height:1.7">Then just keep it running for 2-4 weeks - direct mail builds.</p><p><a href="' + dash + '" style="display:inline-block;background:#0b6bb3;color:#fff;padding:13px 26px;border-radius:8px;text-decoration:none;font-weight:700">Open my dashboard</a></p></div>';
         sendBrevoEmail({ email: c.email, name: c.company || 'Customer' }, 'Get your first win: upload your flyer + switch on auto-post', html);
+        lifecycleSent(c);
         c.first_win_nudge_sent = new Date().toISOString(); sent++;
       } catch(e) {}
     });
@@ -4450,9 +4475,11 @@ function runAtRiskNudges(opts) {
         if (untouched.length < 3) return;
         candidates++;
         if (opts.dryRun) return;
+        if (!lifecycleAllowed(c, { minGapDays: 1, maxPerWeek: 3 })) return;
         var dash = PUBLIC_URL.replace(/\/+$/, '') + '/portal/leads.html';
         var html = '<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#0f172a"><h2 style="font-size:20px;color:#0b6bb3;margin:0 0 10px">You have ' + untouched.length + ' fresh leads waiting</h2><p style="font-size:15px;line-height:1.7">Hi ' + escHtml(c.contact_name || c.company || 'there') + ',</p><p style="font-size:15px;line-height:1.7">You have <b>' + untouched.length + '</b> delivered opportunities you have not actioned yet. Leads win fastest when you contact them the same day.</p><p style="font-size:15px;line-height:1.7">Open your dashboard to call, email or Print &amp; Post them in one click.</p><p><a href="' + dash + '" style="display:inline-block;background:#0b6bb3;color:#fff;padding:13px 26px;border-radius:8px;text-decoration:none;font-weight:700">Work my leads</a></p></div>';
         sendBrevoEmail({ email: c.email, name: c.company || 'Customer' }, 'You have ' + untouched.length + ' fresh leads waiting', html);
+        lifecycleSent(c);
         c.last_risk_nudge = new Date().toISOString(); sent++;
       } catch(e) {}
     });
@@ -4478,6 +4505,7 @@ function runMonthlyRoiSummary(opts) {
         if (!mine.length) return;
         candidates++;
         if (opts.dryRun) return;
+        if (!lifecycleAllowed(c, { minGapDays: 1, maxPerWeek: 3 })) return;
         var won = mine.filter(function(l){ return String(l.lead_status || '').toLowerCase() === 'won'; });
         var contacted = mine.filter(function(l){ var s = String(l.lead_status || l.status || '').toLowerCase(); return s === 'contacted' || s === 'won'; });
         var value = won.reduce(function(s, l){ return s + (parseInt(l.actual_revenue, 10) || parseInt(l.deal_value, 10) || 0); }, 0);
@@ -4485,6 +4513,7 @@ function runMonthlyRoiSummary(opts) {
         var valLine = value > 0 ? '<p style="font-size:15px;line-height:1.7">You recorded <b>&pound;' + value.toLocaleString() + '</b> of won work from these leads.</p>' : '';
         var html = '<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#0f172a"><h2 style="font-size:20px;color:#0b6bb3;margin:0 0 10px">Your 9amLeads in ' + label + '</h2><p style="font-size:15px;line-height:1.7">Hi ' + escHtml(c.contact_name || c.company || 'there') + ',</p><p style="font-size:15px;line-height:1.7">In ' + label + ' we delivered <b>' + mine.length + '</b> opportunities to your dashboard. You contacted <b>' + contacted.length + '</b> of them.</p>' + valLine + '<p style="font-size:15px;line-height:1.7">Tip: keeping Auto Print &amp; Post on means every lead gets a letter out the same morning.</p><p><a href="' + dash + '" style="display:inline-block;background:#0b6bb3;color:#fff;padding:13px 26px;border-radius:8px;text-decoration:none;font-weight:700">Open my dashboard</a></p></div>';
         sendBrevoEmail({ email: c.email, name: c.company || 'Customer' }, 'Your 9amLeads in ' + label + ': ' + mine.length + ' opportunities', html);
+        lifecycleSent(c);
         c.last_roi_month = ym; sent++;
       } catch(e) {}
     });
@@ -23975,6 +24004,8 @@ async function runCampaignEmails(dry) {
   var sendIt = async function (cust, template, subject, html) {
     subject = abPickSubject(template, cust, subject);
     if (dry) { log.push({ email: cust.email, template: template, subject: subject }); return; }
+    if (!lifecycleAllowed(cust, { minGapDays: 1, maxPerWeek: 3 })) { console.log('[LIFECYCLE] throttled ' + template + ' for ' + cust.email); return; }
+    lifecycleSent(cust);
     await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, subject, html);
   };
   for (var ci = 0; ci < customers.length; ci++) {
