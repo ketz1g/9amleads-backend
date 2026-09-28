@@ -35827,7 +35827,11 @@ function runDeliveryTestReport() {
 // on failure. This is the safety net that catches a regression BEFORE 9am.
 var REHEARSAL_ACCOUNTS = [
   { email: 'test.rehearsal@9amleads.com',    product: 'moving',      plan: 'starter', coverage: 'postcode', areas: ['AL','EN','N','MK','SW','KT','CR','HA','RM'] },
-  { email: 'test.rehearsal.nb@9amleads.com', product: 'newbusiness', plan: 'starter', coverage: 'county',   areas: ['Kent','London'] }
+  { email: 'test.rehearsal.nb@9amleads.com', product: 'newbusiness', plan: 'starter', coverage: 'county',   areas: ['Kent','London'] },
+  // PROBATE is OPTIONAL: grants are published infrequently, so a thin fresh pool must
+  // NOT page the founder - but it still exercises the probate path (selection, deceased
+  // name in the email, mailable address) so a genuine breakage is caught before 9am.
+  { email: 'test.rehearsal.prob@9amleads.com', product: 'probate', plan: 'starter', coverage: 'county', optional: true, areas: ['Kent','London','Essex','Surrey'] }
 ];
 function _ensureRehearsalAccounts() {
   try {
@@ -35902,13 +35906,18 @@ async function runDeliveryRehearsal(trigger, opts) {
     if (out.duration_ms > 90000) out.problems.push('run took ' + Math.round(out.duration_ms / 1000) + 's (>90s) - too slow for the 9am window');
     var today = new Date().toISOString().split('T')[0];
     var d2 = getDb();
+    var _optionalRehearsal = {};
+    REHEARSAL_ACCOUNTS.forEach(function(a) { if (a.optional) _optionalRehearsal[String(a.email).toLowerCase()] = 1; });
     accounts.forEach(function(c) {
       var expected = getCustomerDailyQuota(c) || 5;
+      var _isOpt = !!_optionalRehearsal[String(c.email || '').toLowerCase()];
       var leads = (d2.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && String(l.delivered_at).split('T')[0] === today; });
       var badAddr = 0;
       leads.forEach(function(l) { var ld = {}; try { ld = JSON.parse(l.data || '{}'); } catch(e) {} if (!leadMailableForDelivery(ld, l.product || c.product)) badAddr++; });
-      out.accounts.push({ email: c.email, product: c.product, expected: expected, delivered: leads.length, unmailable: badAddr });
-      if (leads.length !== expected) out.problems.push(c.email + ': ' + leads.length + '/' + expected + ' (must be exactly ' + expected + ')');
+      out.accounts.push({ email: c.email, product: c.product, expected: expected, delivered: leads.length, unmailable: badAddr, optional: _isOpt });
+      // Optional accounts (e.g. probate - sparse supply) report but never page.
+      if (leads.length !== expected && !_isOpt) out.problems.push(c.email + ': ' + leads.length + '/' + expected + ' (must be exactly ' + expected + ')');
+      // A delivered-but-unmailable lead is always a real fault, even for optional accounts.
       if (badAddr > 0) out.problems.push(c.email + ': ' + badAddr + ' delivered lead(s) not mail-ready');
     });
     // NEW-CUSTOMER READINESS: new signups are the most likely to be misconfigured
