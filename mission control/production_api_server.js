@@ -5400,6 +5400,52 @@ app.get('/api/partner/statement.pdf', requirePartner, (req, res) => {
   } catch(e) { try { res.status(500).json({ error: e.message }); } catch(_) {} }
 });
 
+// Partner payouts list (commission bank transfers) + downloadable invoice.
+app.get('/api/partner/payouts', requirePartner, (req, res) => {
+  try {
+    var p = req.partner;
+    var list = (p.payouts || []).slice().sort(function(a, b) { return String(b.created_at) < String(a.created_at) ? -1 : 1; });
+    var paid = 0, ready = 0;
+    (p.payouts || []).forEach(function(po){ if (po.status === 'paid') paid += Number(po.amount || 0); else ready += Number(po.amount || 0); });
+    res.json({ success: true, total_paid: paid, total_ready: ready, payouts: list.map(function(po){ return { id: po.id, amount: Number(po.amount || 0), status: po.status || '', created_at: po.created_at || '', method: po.method || 'bank_transfer', reference: po.reference || '' }; }) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+app.get('/api/partner/payouts/:id/invoice.pdf', requirePartner, (req, res) => {
+  try {
+    var PDFDocument = require('pdfkit');
+    var p = req.partner;
+    var po = (p.payouts || []).find(function(x){ return x.id === req.params.id; });
+    if (!po) return res.status(404).json({ error: 'Payout not found' });
+    var vatNo = String(process.env.COMPANY_VAT_NUMBER || '').trim();
+    var amount = Number(po.amount || 0);
+    var vat = vatNo ? Math.round(amount * 0.2 * 100) / 100 : 0;
+    var net = vatNo ? Math.round((amount - vat) * 100) / 100 : amount; // payouts are gross for VAT-registered partners
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="9amleads-partner-invoice-' + String(po.id).slice(0, 8) + '.pdf"');
+    var doc = new PDFDocument({ margin: 50, size: 'A4' });
+    doc.pipe(res);
+    doc.fontSize(20).fillColor('#0b6bb3').text('9amLeads');
+    doc.fontSize(10).fillColor('#333333').text('9am Leads Ltd - Company No. 17402522');
+    doc.text('66 Paul Street, London EC2A 4NA');
+    if (vatNo) doc.text('VAT No. ' + vatNo);
+    doc.moveDown(0.6);
+    doc.fontSize(16).fillColor('#0f172a').text(vatNo ? 'VAT Invoice' : 'Commission Invoice / Statement');
+    doc.fontSize(10).fillColor('#333333').text('Invoice no: ' + String(po.id).slice(0, 8).toUpperCase() + '    Date: ' + (po.created_at ? new Date(po.created_at).toISOString().slice(0, 10) : ''));
+    doc.moveDown(0.3);
+    doc.text('To: ' + (p.business_name || p.name || '') + '   ' + (p.email || ''));
+    doc.moveDown(0.8);
+    doc.fontSize(12).fillColor('#0b6bb3').text('Description');
+    doc.fontSize(10).fillColor('#111111').text('Partner commission - 9amLeads Partner Programme' + (po.reference ? ' (' + po.reference + ')' : ''));
+    doc.moveDown(0.5);
+    if (vatNo) { doc.text('Net: GBP ' + net.toFixed(2)); doc.text('VAT @ 20%: GBP ' + vat.toFixed(2)); doc.text('Total: GBP ' + amount.toFixed(2)); }
+    else { doc.text('Amount: GBP ' + amount.toFixed(2)); doc.text('VAT: not applicable (not VAT registered)'); }
+    doc.moveDown(0.6);
+    doc.fontSize(9).fillColor('#666666').text(vatNo
+      ? 'Self-billed VAT invoice issued by 9am Leads Ltd on behalf of the partner for commission earned under the Partner Programme.'
+      : 'This is a commission statement/invoice for partner commission earned. 9am Leads Ltd is not VAT registered.');
+    doc.end();
+  } catch(e) { try { res.status(500).json({ error: e.message }); } catch(_) {} }
+});
 // ===== ONE-OFF: find customers still marked free_trial who are actually paying =====
 // Reliable signal only: an active subscription row, a Stripe subscription id, or paid=1.
 // Pass ?apply=1 to correct them (sets their selected/stripe plan, else starter).

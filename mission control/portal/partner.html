@@ -87,6 +87,13 @@ label{font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bot
 <div id="dash-body"></div>
 </div>
 
+<div style="text-align:center;color:var(--muted);font-size:12px;padding:6px 16px 30px;line-height:2">
+  <a href="/portal/partner-help.html" style="color:#0369a1;text-decoration:none">Help Centre</a> &middot;
+  <a href="/portal/partner-contact.html" style="color:#0369a1;text-decoration:none">Contact</a> &middot;
+  <a href="/portal/partner-terms.html" style="color:#0369a1;text-decoration:none">Partner Terms</a> &middot;
+  <a href="/portal/partner-privacy.html" style="color:#0369a1;text-decoration:none">Privacy</a>
+</div>
+
 </div>
 
 <script>
@@ -225,6 +232,8 @@ function render(db){
     '<label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:12px;color:#334155"><input type="checkbox" id="k-tc" style="width:auto"> I accept the partner agreement</label>' +
     '<button class="btn btn-p" onclick="submitKyc()">Submit payout details</button> <span id="kyc-msg" class="muted" style="margin-left:8px"></span>' +
     '</div></div>';
+  // Payouts + VAT invoices
+  html += '<div class="card"><div class="sect-title">Payouts &amp; VAT invoices</div><div id="payouts-list" class="muted">Loading...</div></div>';
   // Member invite tool (associations)
   if (isAssoc) {
     html += '<div class="card"><div class="sect-title">Invite your members</div>' +
@@ -326,7 +335,7 @@ function render(db){
   window._isSales = isSales;
   if (isSales) { renderProspects(db); renderFollowups(db); renderFeedbackForm(db); renderEarnings(db); renderResources(); }
   else { renderReferrals(db); renderEarnings(db); renderResources(); if (isAssoc) { loadInvites(); loadGrowth(); } }
-  loadKyc();
+  loadKyc(); loadPayouts();
 }
 function showTab(name, btn){
   var tabs = ['prospects','followups','feedback','earnings','resources','referrals'];
@@ -501,6 +510,21 @@ function submitKyc(){
   var r = new FileReader();
   r.onload = function(){ post(String(r.result || '')); };
   r.readAsDataURL(f);
+}
+function loadPayouts(){
+  api('GET', '/api/partner/payouts', null, function(d){
+    var el = document.getElementById('payouts-list'); if (!el) return;
+    var list = (d && d.payouts) || [];
+    var head = '<p class="muted" style="margin-bottom:8px">Paid: ' + fmt((d && d.total_paid) || 0) + ' &middot; Ready to pay: ' + fmt((d && d.total_ready) || 0) + '</p>';
+    if (!list.length) { el.innerHTML = head + '<p class="muted">No payouts yet. Commission is paid weekly by UK bank transfer once it clears and your payout details are approved.</p>'; return; }
+    el.innerHTML = head + list.map(function(po){ return '<div class="fb-item" style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span><b>' + fmt(po.amount) + '</b> <span class="muted">' + (po.created_at ? new Date(po.created_at).toLocaleDateString() : '') + '</span> <span class="tag ' + (po.status === 'paid' ? 't-green' : 't-amber') + '">' + esc(po.status) + '</span></span><button class="btn btn-o" style="font-size:11px" onclick="downloadInvoice(\'' + po.id + '\')">Download invoice (PDF)</button></div>'; }).join('');
+  });
+}
+function downloadInvoice(id){
+  fetch(API + '/api/partner/payouts/' + id + '/invoice.pdf', { headers: { 'Authorization': 'Bearer ' + getToken() } })
+    .then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); })
+    .then(function(blob){ var url = URL.createObjectURL(blob); var a = document.createElement('a'); a.href = url; a.download = '9amleads-partner-invoice.pdf'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(url); }, 4000); })
+    .catch(function(){ alert('Could not download the invoice.'); });
 }
 function askQuestion(){
   var el = document.getElementById('ask-q'); var msg = document.getElementById('ask-msg');
