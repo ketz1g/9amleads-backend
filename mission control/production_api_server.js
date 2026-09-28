@@ -12555,6 +12555,13 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
       }
     }
   }
+  // STRICT PROBATE FRESHNESS (final gate): fail-closed so no probate lead older than
+  // the fresh window is ever previewed, queued or delivered (24h/48h; on Mondays the
+  // window is Friday 09:00 = 72h). Never substitute an old grant to hit the count.
+  if (cust.product === 'probate') {
+    var _pCut = getFreshCutoffIso();
+    selected = selected.filter(function(c) { var f = pickFreshDate(c); return f && f >= _pCut; });
+  }
   var out = selected.map(function(c) {
     var addr = c.fullAddress || c.address || c.deceasedAddress || '';
     var pc = c.postcode || '';
