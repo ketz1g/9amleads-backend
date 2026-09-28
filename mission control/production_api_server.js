@@ -12156,6 +12156,15 @@ app.get('/api/admin/epc-status', adminAuth, (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/admin/postcoder-usage?days=30 - exact credits spent per day (delivery + bulk)
+// plus today's spend and remaining budget, so credit use can be audited.
+app.get('/api/admin/postcoder-usage', adminAuth, (req, res) => {
+  try {
+    var _pb = require('./postcoder_budget');
+    res.json({ success: true, report: _pb.report(parseInt(req.query.days || '30', 10)) });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/admin/pool-postcodes?product=moving - distinct postcodes in the pool file
 // (used to build a SMALL EPC index subset that fits Render's disk/memory).
 app.get('/api/admin/pool-postcodes', adminAuth, (req, res) => {

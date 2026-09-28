@@ -65,6 +65,15 @@ function getDailyBudget() {
   return budget;
 }
 
+// Persistent per-day history so exact credit spend can be audited per day.
+function _bump(u, day, field) {
+  u.history = u.history || {};
+  u.history[day] = u.history[day] || { delivery: 0, bulk: 0 };
+  u.history[day][field] = (u.history[day][field] || 0) + 1;
+  var keys = Object.keys(u.history).sort();
+  while (keys.length > 90) { delete u.history[keys.shift()]; }
+}
+
 // Try to spend one lookup credit. Returns true if allowed (and records the spend),
 // false if the daily budget is exhausted or Postcoder is disabled.
 function spend() {
@@ -88,6 +97,7 @@ function spend() {
   if (u.date !== today) { u.date = today; u.used = 0; }
   if (u.used >= getDailyBudget()) return false;
   u.used++;
+  _bump(u, today, 'delivery');
   save(u);
   return true;
 }
@@ -159,8 +169,34 @@ function spendBulk() {
   }
   u.window.push(now);
   u.bulkUsed = (u.bulkUsed || 0) + 1;
+  _bump(u, today, 'bulk');
   save(u);
   return true;
 }
 
-module.exports = { spend, usage, getDailyBudget, enabled, canLookup, RATE_LIMIT, RATE_WINDOW_MS, bulkUsage, spendBulk, bulkBudget };
+// Audit report: exact credits spent per day (delivery + bulk), plus today + remaining.
+function report(days) {
+  var u = load();
+  var h = u.history || {};
+  var list = Object.keys(h).sort().slice(-(days || 30)).map(function(d) {
+    var x = h[d] || {};
+    var del = x.delivery || 0, blk = x.bulk || 0;
+    return { date: d, delivery: del, bulk: blk, total: del + blk };
+  });
+  var today = new Date().toISOString().split('T')[0];
+  var usedToday = usage();
+  var budget = getDailyBudget();
+  return {
+    today: today,
+    today_delivery: u.date === today ? (u.used || 0) : usedToday,
+    today_bulk: bulkUsage(),
+    today_total: usedToday + bulkUsage(),
+    daily_budget: budget,
+    remaining_today: Math.max(0, budget - usedToday),
+    bulk_budget: bulkBudget(),
+    logged_total: list.reduce(function(n, x) { return n + x.total; }, 0),
+    days: list
+  };
+}
+
+module.exports = { spend, usage, getDailyBudget, enabled, canLookup, RATE_LIMIT, RATE_WINDOW_MS, bulkUsage, spendBulk, bulkBudget, report };
