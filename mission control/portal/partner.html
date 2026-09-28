@@ -148,6 +148,31 @@ function render(db){
     '<li>Your referrals sign up and get <b>' + trialDays + ' days free</b>, no card needed.</li>' +
     '<li>You earn <b>' + fmt(p.commission_amount || 25) + ' per active customer, per month</b>, recurring while they stay.</li>' +
     '</ol></div>';
+  // Custom vanity referral code
+  html += '<div class="card"><div class="sect-title">Customise your referral code</div>' +
+    '<p class="muted" style="margin-bottom:8px">Choose your own memorable code (3-24 letters/numbers). Your link and QR update automatically. New sign-ups still get the full 14-day free trial.</p>' +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">' +
+    '<input class="inp" id="code-input" value="' + esc(db.referral_code || '') + '" style="max-width:220px;text-transform:uppercase" placeholder="YOURCODE">' +
+    '<button class="btn btn-p" onclick="saveCode()">Save code</button> <span id="code-msg" class="muted"></span>' +
+    '</div></div>';
+  // Promotion tips
+  html += '<div class="card"><div class="sect-title">How to promote 9amLeads</div><ul style="margin:0;padding-left:18px;font-size:12.5px;color:#334155;line-height:1.9">' +
+    '<li>Email your member list using our ready-made wording (see Share kit / Resources).</li>' +
+    '<li>Add it to your newsletter or member bulletin.</li>' +
+    '<li>Post it in your member forum, WhatsApp or Slack group.</li>' +
+    '<li>Include it in your new-member welcome pack.</li>' +
+    '<li>Share your link on LinkedIn/Facebook and on your website\'s partners page.</li>' +
+    '<li>Print your QR code (Share kit) for events, AGMs and trade shows.</li>' +
+    '<li>Ask members to quote your code when they sign up.</li>' +
+    '</ul></div>';
+  // Help members succeed
+  html += '<div class="card"><div class="sect-title">Help your members get the most from it</div><ul style="margin:0;padding-left:18px;font-size:12.5px;color:#334155;line-height:1.9">' +
+    '<li>Tell them to <b>upload a flyer and letter in Print &amp; Post</b> (or email it to hello@9amleads.com and we upload it).</li>' +
+    '<li>Turn on <b>Auto Print &amp; Post</b> so every new lead is printed and posted automatically each morning.</li>' +
+    '<li>Post consistently for <b>2-4 weeks</b> - direct mail builds, it is not overnight.</li>' +
+    '<li>Use <b>Bulk Postage</b> in quiet weeks to keep the pipeline full.</li>' +
+    '<li>Connect their <b>CRM</b> so leads land in their system automatically at 9am.</li>' +
+    '</ul></div>';
   // Member invite tool (associations)
   if (isAssoc) {
     html += '<div class="card"><div class="sect-title">Invite your members</div>' +
@@ -388,6 +413,17 @@ function saveFeedback(){
     partner_notes: document.getElementById('fb-notes').value,
     requested_action: document.getElementById('fb-action').value
   }, function(d){ if (d && d.success) { document.getElementById('tab-feedback').innerHTML = '<div class="card" style="text-align:center;padding:24px">✅ <b>Feedback submitted.</b> Thank you - it goes straight to the 9amLeads team.</div>'; } else alert('Could not submit feedback'); });
+}
+function saveCode(){
+  var el = document.getElementById('code-input'); var msg = document.getElementById('code-msg');
+  if (!el) return;
+  var code = String(el.value || '').trim().toUpperCase();
+  if (!code) { msg.textContent = 'Enter a code.'; return; }
+  msg.textContent = 'Saving...';
+  api('POST', '/api/partner/set-code', { code: code }, function(d, st){
+    if (d && d.success) { msg.textContent = 'Saved - your new code is ' + d.code + '.'; loadDash(); }
+    else { msg.textContent = (d && d.error) || 'Could not save that code.'; }
+  });
 }
 function sendInvites(){
   var el = document.getElementById('inv-emails'); var msg = document.getElementById('inv-msg');

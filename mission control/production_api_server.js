@@ -5279,6 +5279,32 @@ app.get('/api/partner/invites', requirePartner, (req, res) => {
     res.json({ success: true, segments: segs, invites: list.slice(0, 100).map(function(iv){ return { email: iv.email, name: iv.name || '', company: iv.company || '', segment: iv.segment || '', sent_at: iv.sent_at || '', scheduled_at: iv.scheduled_at || '', scheduled: iv.status === 'scheduled', converted: !!iv.converted_at, converted_at: iv.converted_at || '' }; }) });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+// POST /api/partner/set-code - a partner can choose their own vanity referral code
+// (the code that gives the member the 14-day / 2-week trial). Validated & unique.
+app.post('/api/partner/set-code', requirePartner, (req, res) => {
+  try {
+    var p = req.partner;
+    if (!partnerStatusActive(p)) return res.status(403).json({ error: 'Your partner account is not active.' });
+    var raw = String((req.body && req.body.code) || '').trim().toUpperCase().replace(/[\s]+/g, '');
+    if (!/^[A-Z0-9_-]{3,24}$/.test(raw)) return res.status(400).json({ error: 'Code must be 3-24 characters: letters, numbers, hyphen or underscore.' });
+    var reserved = ['DEMO', 'ADMIN', 'TEST', '9AM', 'SIGNUP', 'LOGIN', 'PORTAL', 'FREE', 'TRIAL', 'NULL', 'UNDEFINED', 'BONUS', 'AFFILIATE', 'PARTNER', 'REF', 'CODE'];
+    if (reserved.indexOf(raw) !== -1) return res.status(400).json({ error: 'That code is reserved - please choose another.' });
+    var affs = getDb().affiliates || [];
+    var taken = affs.some(function(a) {
+      if (a.id === p.id) return false;
+      return [a.code, a.referral_code, a.referral_slug, a.name].some(function(f) {
+        return String(f || '').toUpperCase().replace(/[^A-Z0-9_-]/g, '') === raw;
+      });
+    });
+    if (taken) return res.status(409).json({ error: 'That code is already in use - please choose another.' });
+    var prevCode = p.referral_code || p.code || '';
+    p.code = raw; p.referral_code = raw; p.referral_slug = raw.toLowerCase();
+    if (prevCode && prevCode !== raw) { if (!p.code_history) p.code_history = []; p.code_history.push({ from: prevCode, to: raw, at: new Date().toISOString() }); }
+    saveDb();
+    res.json({ success: true, code: raw, referral_link: partnerRefLink(p) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // Partner analytics funnel + tier progress + statement (real ledger, never front-end math).
 app.get('/api/partner/funnel', requirePartner, (req, res) => {
   try {
