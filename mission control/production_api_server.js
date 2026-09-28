@@ -16459,7 +16459,7 @@ function sendBrevoEmail(to, subject, htmlContent) {
   const data = JSON.stringify({
     sender: { name: senderName, email: senderFrom },
     replyTo: to.replyTo ? { email: to.replyTo.email, name: to.replyTo.name || 'Customer' } : { email: 'hello@9amleads.com', name: '9amLeads Support' },
-    to: [{ email: to.email, name: to.name }],
+    to: [{ email: to.email, name: to.name || 'Customer' }],
     subject,
     htmlContent,
     headers: {
