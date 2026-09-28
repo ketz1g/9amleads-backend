@@ -8087,6 +8087,9 @@ app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
         }
         var fd = pickFreshDate(l);
         if (!fd) continue;
+        // STRICT FRESHNESS FOR PROBATE: never deliver an old grant just to hit a count.
+        // Enforces the fresh window (24h/48h; Monday back to Friday 09:00 = 72h).
+        if (prod === 'probate' && fd < getFreshCutoffIso()) continue;
         var mAddr = l.fullAddress || l.address || l.deceasedAddress || '';
         var mPc = l.postcode || '';
         if (!_mailable({ fullAddress: l.fullAddress, address: mAddr, deceasedAddress: l.deceasedAddress, postcode: mPc }, prod)) continue;
@@ -8114,7 +8117,7 @@ app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
       // This is the exact lead set the post-9am auto-fill used, but applied BEFORE 9am,
       // so the customer receives their full promised count AT 9am instead of a top-up
       // afterwards. Set TOPUP_ALLOW_OLDER=false to keep it fresh-only.
-      if (assigned < need && String(process.env.TOPUP_ALLOW_OLDER || 'true').toLowerCase() !== 'false') {
+      if (assigned < need && prod !== 'probate' && String(process.env.TOPUP_ALLOW_OLDER || 'true').toLowerCase() !== 'false') {
         for (var i3 = 0; i3 < poolForCust.length && assigned < need; i3++) {
           var l3 = poolForCust[i3];
           if (!_inArea(l3)) continue;
