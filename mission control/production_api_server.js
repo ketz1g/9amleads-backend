@@ -203,6 +203,13 @@ try {
   }
 } catch(e) { console.log('[BOOT] Startup purge check:', e.message); }
 
+// Products delivered as SHARED opportunities: the same notice/lead may legitimately
+// go to multiple customers (public tenders; probate gazette notices). Moving,
+// planning and newbusiness stay EXCLUSIVE (one firm per lead). Used by the 9am
+// delivery + preview so shared products skip CROSS-customer exclusivity but still
+// never deliver the same lead twice to the SAME customer.
+function isSharedLeadProduct(prod) { prod = String(prod || ''); return prod === 'tenders' || prod === 'probate'; }
+
 function saveAssignments(data) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
   fs.writeFileSync(POSTCODE_ASSIGNMENTS_FILE, JSON.stringify(data, null, 2));
@@ -211,12 +218,6 @@ function saveAssignments(data) {
 function getPostcodeLimit(plan, extraPostcodes, product) {
   // Specialist types (planning, probate, tenders) use wider areas by default
   var specialistTypes = { planning: true, probate: true, tenders: true };
-// Products delivered as SHARED opportunities: the same notice/lead may legitimately
-// go to multiple customers (public tenders; probate gazette notices). Moving,
-// planning and newbusiness stay EXCLUSIVE (one firm per lead). Used by the 9am
-// delivery so shared products skip CROSS-customer exclusivity but still never
-// deliver the same lead twice to the SAME customer.
-function isSharedLeadProduct(prod) { prod = String(prod || ''); return prod === 'tenders' || prod === 'probate'; }
   if (product && specialistTypes[product]) {
     var rule = getLeadTypeRule(product);
     if (rule && rule.area_limit) {
