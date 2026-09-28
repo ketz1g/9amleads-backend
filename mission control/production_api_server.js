@@ -12239,7 +12239,12 @@ app.get('/api/admin/quiet-areas-report', adminAuth, (req, res) => {
 // deliveryPreviewForCustomer(cust) - the per-customer pool preview used by both
 // /api/admin/delivery-preview and /api/admin/readiness. Returns how many valid,
 // in-area, fresh leads the customer would receive at 9am with the current pool.
-async function deliveryPreviewForCustomer(cust, sharedSeen) {
+async function deliveryPreviewForCustomer(cust, sharedSeen, opts) {
+  // includeRaw: attach the SOURCE pool lead to each previewed lead so callers that
+  // persist leads (e.g. /api/admin/swap-leads-fresh) keep every product field
+  // (firstVisibleDate, publishedDate, title, deceasedAddress, ...) instead of the
+  // flattened display object, which has no freshness date and uses snake_case.
+  var _includeRaw = !!(opts && opts.includeRaw);
   var areas = [];
   try { areas = JSON.parse(cust.target_areas || '[]'); } catch(e) { areas = []; }
   if (!areas.length) { try { var cfgP = JSON.parse(cust.product_config || '{}'); areas = (cfgP[cust.product] && cfgP[cust.product].target_areas) ? JSON.parse(cfgP[cust.product].target_areas) : []; } catch(e2) { areas = []; } }
@@ -12579,7 +12584,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
     if (cust.product === 'moving') {
       try { var _copyM = Object.assign({}, c); _copyM.address = _dispA; _copyM.fullAddress = _dispA; enrichMovingLeadTown(_copyM); if (_copyM.fullAddress) _dispA = _copyM.fullAddress; } catch(e) {}
     }
-    return { address: _dispA, postcode: pc, url: c.url || '', county: c.county || '', source: c.source || '', has_door_number: hasDoor, paf_candidate: pafCandidate, paf_failed: pafFailed, in_area: inArea, name: c.name || c.companyName || c.company_name || '', company_number: c.companyNumber || c.company_number || '', incorporation_date: c.incorporationDate || c.date_of_creation || '', sic_code: c.sicCode || (Array.isArray(c.sic_codes) ? c.sic_codes.join(', ') : (c.sic_codes || '')), verified_link: (c.url || (c.companyNumber ? 'https://find-and-update.company-information.service.gov.uk/company/' + c.companyNumber : '')),
+    var _o = { address: _dispA, postcode: pc, url: c.url || '', county: c.county || '', source: c.source || '', has_door_number: hasDoor, paf_candidate: pafCandidate, paf_failed: pafFailed, in_area: inArea, name: c.name || c.companyName || c.company_name || '', company_number: c.companyNumber || c.company_number || '', incorporation_date: c.incorporationDate || c.date_of_creation || '', sic_code: c.sicCode || (Array.isArray(c.sic_codes) ? c.sic_codes.join(', ') : (c.sic_codes || '')), verified_link: (c.url || (c.companyNumber ? 'https://find-and-update.company-information.service.gov.uk/company/' + c.companyNumber : '')),
       // PROBATE (option 1): the product is the deceased's last address (the property).
       // Executor-direct (home) leads are flagged as a premium bonus so the customer can
       // prioritise writing straight to the executor's home; via-solicitor leads are sent
@@ -12588,6 +12593,8 @@ async function deliveryPreviewForCustomer(cust, sharedSeen) {
       executor_name: c.executorName || '', executor_address: c.executorAddress || '',
       executor_home: c.executorType === 'home', solicitor: c.solicitor || '',
       probate_date: c.grantDate || c.dateOfDeath || '' };
+    if (_includeRaw) _o._raw = c;
+    return _o;
   });
   // HARD DISTANCE GATE (moving): regardless of how a lead was selected (in-area match,
   // fallback, preview replacement), an out-of-area moving lead MUST be within a
@@ -14982,15 +14989,42 @@ app.post('/api/admin/swap-leads-fresh', adminAuth, async (req, res) => {
     var db5 = getDb();
     var cust = (db5.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
     if (!cust) return res.status(404).json({ error: 'Customer not found' });
-    var pv = await deliveryPreviewForCustomer(cust);
+    // includeRaw: persist the SOURCE pool lead, not the flattened display object -
+    // that object drops firstVisibleDate/publishedDate (so swapped leads looked
+    // dateless) and renames the probate address to `deceased_address` (snake_case),
+    // which the dashboard/email never read. See deliveryPreviewForCustomer.
+    var pv = await deliveryPreviewForCustomer(cust, null, { includeRaw: true });
     var leads = (pv && pv.leads) || [];
-    db5.leads = (db5.leads || []).filter(function(l) { return l.customer_id !== cust.id; });
     var nowIso = new Date().toISOString();
+    // Only accept leads with a VERIFIABLE fresh date on the raw pool lead. A lead
+    // with no date can never be judged fresh, so it must never be persisted.
+    var built = [];
     leads.forEach(function(pl) {
-      db5.leads.push({ id: uuidv4(), customer_id: cust.id, product: cust.product, data: JSON.stringify(pl), status: 'new', delivered: 1, created_at: nowIso, delivered_at: nowIso, release_at: null });
+      var raw = pl && pl._raw;
+      if (!raw) return;
+      var fd = pickFreshDate(raw);
+      if (!fd) return;
+      var d = Object.assign({}, raw);
+      // Put the canonical date back in case a source used a non-ISO display format
+      // (pickFreshDate normalises), and provide the camelCase aliases consumers use.
+      if (!d.firstVisibleDate) d.firstVisibleDate = fd;
+      if (d.deceasedAddress === undefined) d.deceasedAddress = raw.deceasedAddress || '';
+      if (!d.fullAddress) d.fullAddress = d.address || d.deceasedAddress || '';
+      if (!d.address) d.address = d.fullAddress || d.deceasedAddress || '';
+      built.push(d);
+    });
+    if (!built.length) {
+      return res.status(409).json({ success: false, email: email, product: cust.product, replaced: 0, message: 'No fresh, dated replacement leads available - customer left unchanged.' });
+    }
+    // Preserve the OUTPUT (what the customer will see) on each lead for the email.
+    // Re-run the display mapping for the selected raw leads is unnecessary: the raw
+    // lead already carries every field the email/dashboard render.
+    db5.leads = (db5.leads || []).filter(function(l) { return l.customer_id !== cust.id; });
+    built.forEach(function(d) {
+      db5.leads.push({ id: uuidv4(), customer_id: cust.id, product: cust.product, data: JSON.stringify(d), status: 'new', delivered: 1, created_at: nowIso, delivered_at: nowIso, release_at: null });
     });
     saveDb();
-    res.json({ success: true, email: email, product: cust.product, replaced: leads.length, leads: leads.map(function(l) { return { label: String(l.name || l.deceasedName || l.tenderTitle || l.description || l.address || '').slice(0, 70), date: pickFreshDate(l) }; }) });
+    res.json({ success: true, email: email, product: cust.product, replaced: built.length, leads: built.map(function(l) { return { label: String(l.name || l.deceasedName || l.title || l.description || l.address || '').slice(0, 70), date: pickFreshDate(l) }; }) });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 // POST /api/admin/replace-customer-leads - remove a customer's current (e.g.
@@ -19409,7 +19443,7 @@ function preallocateDeliveryQueues() {
           // matching, freshness and mailable gate), so pre-allocation and the admin
           // preview always agree - this is what was broken for county/region customers.
           function queueFromPreview() {
-            return Promise.resolve(deliveryPreviewForCustomer(c, seen)).then(function(pv) {
+            return Promise.resolve(deliveryPreviewForCustomer(c, seen, { includeRaw: true })).then(function(pv) {
               var leads = (pv && pv.leads) || [];
               var db = getDb();
               var have = {};
@@ -19424,11 +19458,17 @@ function preallocateDeliveryQueues() {
               var added = 0;
               leads.forEach(function(pl) {
                 if (added >= need) return;
-                var u = String(pl.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase();
-                var a = String(pl.fullAddress || pl.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30);
+                // Persist the SOURCE pool lead (pl._raw), not the flattened preview
+                // display object: the display object has no firstVisibleDate /
+                // publishedDate, so queued rows could not be freshness-gated and the
+                // 9am run saw them as "old". Never queue a lead with no verifiable date.
+                var src = (pl && pl._raw) ? pl._raw : pl;
+                if (!pickFreshDate(src)) return;
+                var u = String(src.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase();
+                var a = String(src.fullAddress || src.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30);
                 var k1 = u ? 'u:' + u : ''; var k2 = a ? 'a:' + a : '';
                 if ((k1 && (have[k1] || seen[k1])) || (k2 && (have[k2] || seen[k2]))) return;
-                db.leads.push({ id: uuidv4(), customer_id: c.id, product: c.product, data: JSON.stringify(pl), status: 'new', delivered: 0, created_at: nowIso, delivered_at: null, release_at: today + 'T09:00:00.000Z' });
+                db.leads.push({ id: uuidv4(), customer_id: c.id, product: c.product, data: JSON.stringify(src), status: 'new', delivered: 0, created_at: nowIso, delivered_at: null, release_at: today + 'T09:00:00.000Z' });
                 if (k1) seen[k1] = 1; if (k2) seen[k2] = 1; added++;
               });
               if (added) saveDb();
@@ -25897,6 +25937,12 @@ _deliverDiag[cust.email].products = products;
       // diag/API always reported `undefined`; now it reflects what was really promised.
       if (_deliverDiag[cust.email]) _deliverDiag[cust.email].totalDailyLimit = totalDailyLimit;
       // Ensure customer's primary product always has at least 1 lead
+      // Freshness floor for the PRE-ALLOCATED QUEUE, identical to the pool paths
+      // (24h primary; Monday extends to Friday 09:00; 48h fallback bound). Without
+      // this the primary pick promoted a stale queued probate/tenders row at 9am.
+      var _primFresh = getFreshCutoffIso();
+      var _primFresh48 = new Date(Date.now() - 48 * 3600000).toISOString();
+      var _primFreshCut = (_primFresh48 < _primFresh) ? _primFresh48 : _primFresh;
       var primaryPickedId = null;
       if (cust.product) {
         // MAILABLE-ADDRESS GATE on the primary pick: only promote a pending lead
@@ -25908,6 +25954,11 @@ _deliverDiag[cust.email].products = products;
           var pld = null; try { pld = JSON.parse(l.data || '{}'); } catch(e) { pld = null; }
           if (!pld || typeof pld !== 'object') pld = { address: l.address || '', fullAddress: l.fullAddress || '', postcode: l.postcode || '' };
           if (!leadMailableAddress(pld, l.product)) return false;
+          // FRESHNESS GATE (mirrors the pool paths): never promote a queued lead older
+          // than the 24h/48h window. A queued row with no date can never be judged
+          // fresh, so it is rejected too (it will be sourced fresh from the pool below).
+          var _pfd = pickFreshDate(pld);
+          if (!_pfd || _pfd < _primFreshCut) return false;
           // NEVER promote a queued lead whose property/listing was ALREADY DELIVERED
           // (to this customer on a previous day, or to anyone). The queue can contain a
           // duplicate row for a property already sent, which the primary pick used to
