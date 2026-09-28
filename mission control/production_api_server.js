@@ -12290,7 +12290,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen, opts) {
     custLeadFilters.propertyType = String(_lfFlat['f-proptype'] || _lfFlat['f-type'] || _lfFlat.propertyType || '').toLowerCase();
     custLeadFilters.appTypes = (Array.isArray(_lfFlat['f-app-type']) ? _lfFlat['f-app-type'] : (_lfFlat['f-app-type'] ? [_lfFlat['f-app-type']] : []));
     custLeadFilters.industries = (Array.isArray(_lfFlat['f-industries']) ? _lfFlat['f-industries'] : (_lfFlat['f-industries'] ? [_lfFlat['f-industries']] : []));
-    custLeadFilters.minContractVal = parseInt(_lfFlat['f-min-val'] || _lfFlat.minContractValue) || 0;
+    custLeadFilters.minContractVal = parseTenderMinValue(_lfFlat['f-min-val'] || _lfFlat.minContractValue);
     custLeadFilters.keywords = String(_lfFlat['f-keywords'] || _lfFlat.keywords || '').toLowerCase();
     custLeadFilters.sectors = (Array.isArray(_lfFlat['f-sectors']) ? _lfFlat['f-sectors'] : (_lfFlat['f-sectors'] ? [_lfFlat['f-sectors']] : []));
     custLeadFilters.strict = !!(_lfFlat._strict || _lfP._strict);
@@ -12339,7 +12339,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen, opts) {
         if (!indOk) return false;
       }
       if (cust.product === 'tenders') {
-        var cv = parseFloat(String(ld2.contractValue || ld2.contractValueLabel || '0').replace(/[^0-9.]/g, '')) || 0;
+        var cv = parseTenderValueNum(ld2.contractValue || ld2.contractValueLabel);
         if (custLeadFilters.minContractVal > 0 && cv > 0 && cv < custLeadFilters.minContractVal) return false;
         var tx = (String(ld2.title || '') + ' ' + String(ld2.description || '') + ' ' + String(ld2.cpvCode || '') + ' ' + String(ld2.procurementType || '')).toLowerCase();
         if (custLeadFilters.sectors && custLeadFilters.sectors.length) {
@@ -12418,7 +12418,12 @@ async function deliveryPreviewForCustomer(cust, sharedSeen, opts) {
       else {
         var countyMatch = areas.some(function(a) { return String(a).toLowerCase().replace(/[\s-]+/g,'-') === String(l.county || '').toLowerCase().replace(/[\s-]+/g,'-'); });
         var pcMatch = areas.some(function(a) { var m = COUNTY_POSTCODE_MAP[String(a).toLowerCase().replace(/[\s-]+/g,'-')]; return m ? m.indexOf(pcArea) !== -1 : false; });
-        if (countyMatch || pcMatch) matched = true;
+        // AREA-MATCH PARITY with the delivery's candidateInArea: also match by
+        // county/council/town/description keywords. Tenders frequently carry no
+        // postcode, so postcode-only matching dropped most of them even when they
+        // were inside the customer's chosen county/region.
+        var kwMatch = areaMatchesLead(l, areas, false);
+        if (countyMatch || pcMatch || kwMatch) matched = true;
       }
     }
     if (!matched) continue;
@@ -13259,21 +13264,46 @@ function planningAppTypeMatches(selected, leadText) {
 }
 // TENDERS sector groups (replaces free-text keywords with a curated, broader list).
 var TENDER_SECTORS = {
-  'construction': ['construction', 'build', 'refurb', 'works', 'civils', 'roofing', 'groundworks', 'mechanical', 'electrical', 'demolition', 'fit-out', 'scaffold'],
-  'it & digital': ['it ', 'software', 'digital', 'cloud', 'cyber', 'data', 'system', 'computer', 'technology', 'network', 'saas', 'ict'],
+  'construction': ['construction', 'build', 'refurb', 'works', 'civils', 'roofing', 'groundworks', 'mechanical', 'electrical', 'demolition', 'fit-out', 'scaffold', 'repair', 'maintenance', 'renovation', 'refurbish', 'highway', 'paving', 'drainage', 'structural', 'plumbing', 'heating', 'ventilation', 'insulation', 'glazing', 'asbestos'],
+  'it & digital': [' it ', 'software', 'digital', 'cloud', 'cyber', 'data', 'system', 'computer', 'technology', 'network', 'saas', 'telecom', 'broadband', 'hardware', 'hosting', 'website', 'helpdesk', 'service desk', 'digitisation', 'digitalisation'],
   'facilities & cleaning': ['facilities', 'cleaning', 'janitorial', 'grounds', 'maintenance', 'waste', 'security', ' fm '],
-  'healthcare & social care': ['health', 'nhs', 'care', 'medical', 'clinical', 'social care', 'pharmacy', 'dental'],
-  'transport & logistics': ['transport', 'logistics', 'fleet', 'haulage', 'distribution', 'travel', 'vehicle', 'bus ', 'courier'],
+  'healthcare & social care': ['health', 'nhs', 'care', 'medical', 'clinical', 'social care', 'pharmacy', 'dental', 'x-ray', 'radiolog', 'nursing', 'domiciliary', 'mental health', 'therapy', 'physio', 'hospital ', 'disabilit', 'supported living', 'wellbeing', 'public health'],
+  'transport & logistics': ['transport', 'logistics', 'fleet', 'haulage', 'distribution', 'travel', 'vehicle', ' bus ', 'courier', 'taxi', 'private hire', 'psv', 'minibus', 'passenger transport', 'school transport', 'freight', 'warehous'],
   'professional services': ['professional', 'consultancy', 'consulting', 'legal', 'financial', 'audit', 'account', ' hr ', 'recruitment'],
   'training & education': ['training', 'education', 'school', 'learning', 'apprentice', 'tuition', 'college', 'university'],
   'environmental & energy': ['environment', 'recycl', 'sustainab', 'energy', 'solar', 'carbon', 'utilit', 'arboricult', 'landscap']
 };
 function tenderSectorMatches(selected, leadText) {
   var sel = String(selected || '').toLowerCase().trim();
-  var at = String(leadText || '').toLowerCase();
+  // Pad both ends so short whole-word tokens (' it ', ' bus ', ' fm ') match only as
+  // standalone words - without this, 'it ' matched inside "audit", "unit", "credit".
+  var at = ' ' + String(leadText || '').toLowerCase() + ' ';
   if (!sel) return true;
   if (TENDER_SECTORS[sel]) return TENDER_SECTORS[sel].some(function(k) { return at.indexOf(k) !== -1; });
   return at.indexOf(sel) !== -1;
+}
+// Tender contract values are stored as human labels ("£50k", "£1M", "£1,200,000",
+// sometimes a range "£500,000 - £1,000,000"). parseInt on those returns NaN, which
+// silently DISABLED the customer's minimum-contract-value filter. Parse the number
+// and the k/m suffix properly, and take the LOW bound of a range.
+function parseTenderValueNum(v) {
+  if (v === undefined || v === null) return 0;
+  var s = String(v).toLowerCase().replace(/,/g, '');
+  var m = s.match(/([0-9]+(?:\.[0-9]+)?)\s*([km])?/);
+  if (!m) return 0;
+  var n = parseFloat(m[1]);
+  if (!isFinite(n)) return 0;
+  if (m[2] === 'k') n *= 1000;
+  else if (m[2] === 'm') n *= 1000000;
+  return n;
+}
+// The customer's chosen minimum: accepts "Any"/"" (=0), "£50k", "£1M" and plain
+// numbers ("50000" from the dashboard picker).
+function parseTenderMinValue(v) {
+  if (v === undefined || v === null) return 0;
+  var s = String(v).trim().toLowerCase();
+  if (!s || s === 'any') return 0;
+  return Math.round(parseTenderValueNum(s));
 }
 // County/region -> town/council keywords. Planning/tender leads frequently have no
 // county or postcode populated, so we also match on council/address/description text.
@@ -13347,6 +13377,11 @@ var AREA_MATCH_KEYWORDS = {
   'east-midlands': ['nottingham', 'leicester', 'derby', 'lincoln', 'northampton', 'east midlands'],
   'south-east': ['kent', 'surrey', 'sussex', 'hampshire', 'berkshire', 'oxford', 'brighton', 'southampton'],
   'south-west': ['devon', 'cornwall', 'somerset', 'dorset', 'bristol', 'plymouth', 'exeter'],
+  // Broad region labels offered by the signup picker. Without these, the matcher
+  // fell back to splitting the label into generic words ("south"/"england"), which
+  // matched far too widely (e.g. "South Yorkshire" for a South England customer).
+  'south-england': ['london', 'kent', 'surrey', 'sussex', 'hampshire', 'berkshire', 'oxford', 'buckinghamshire', 'essex', 'hertfordshire', 'brighton', 'southampton', 'portsmouth', 'reading', 'maidstone', 'guildford', 'milton keynes', 'slough', 'luton', 'isle of wight', 'dorset', 'devon', 'cornwall', 'somerset', 'wiltshire', 'gloucestershire', 'bristol', 'bath', 'poole', 'bournemouth', 'eastbourne', 'worthing', 'crawley', 'hastings', 'canterbury', 'dover', 'ashford', 'basildon', 'chelmsford', 'colchester', 'southend', 'watford', 'st albans', 'stevenage', 'croydon', 'sutton', 'kingston upon thames', 'tunbridge wells'],
+  'west-england': ['bristol', 'bath', 'devon', 'cornwall', 'somerset', 'dorset', 'gloucestershire', 'wiltshire', 'worcestershire', 'herefordshire', 'shropshire', 'staffordshire', 'warwickshire', 'west midlands', 'birmingham', 'coventry', 'wolverhampton', 'exeter', 'plymouth', 'taunton', 'truro', 'gloucester', 'cheltenham', 'swindon', 'salisbury', 'worcester', 'shrewsbury', 'stoke'],
   'east-of-england': ['essex', 'norfolk', 'suffolk', 'cambridge', 'hertford', 'colchester', 'ipswich'],
   'north-england': ['manchester', 'leeds', 'newcastle', 'liverpool', 'sheffield', 'yorkshire']
 };
@@ -13369,7 +13404,7 @@ function areaMatchesLead(l, areas, ukwide) {
   var county = String(l.county || '').toLowerCase().replace(/[\s-]+/g, '-');
   // Match keywords against the LOCALITY (town/county), never the street line, plus
   // structured fields. This is the fix for street-name false positives.
-  var hay = (addressLocalityText(l.address || l.fullAddress || l.deceasedAddress || '') + ' ' + String(l.town || l.city || '') + ' ' + String(l.council || '') + ' ' + String(l.description || '') + ' ' + String(l.proposal || '') + ' ' + String(l.applicationType || '')).toLowerCase();
+  var hay = (addressLocalityText(l.address || l.fullAddress || l.deceasedAddress || '') + ' ' + String(l.town || l.city || '') + ' ' + String(l.council || '') + ' ' + String(l.county || '') + ' ' + String(l.description || '') + ' ' + String(l.proposal || '') + ' ' + String(l.applicationType || '')).toLowerCase();
   for (var i = 0; i < areas.length; i++) {
     var a = String(areas[i] || '').toLowerCase().trim();
     if (!a) continue;
@@ -25802,7 +25837,7 @@ _deliverDiag[cust.email].products = products;
         // so the leads a customer receives respect the filters they chose at signup.
         custLeadFilters.appTypes = (Array.isArray(lfFlat['f-app-type']) ? lfFlat['f-app-type'] : (lfFlat['f-app-type'] ? [lfFlat['f-app-type']] : []));
         custLeadFilters.industries = (Array.isArray(lfFlat['f-industries']) ? lfFlat['f-industries'] : (lfFlat['f-industries'] ? [lfFlat['f-industries']] : []));
-        custLeadFilters.minContractVal = parseInt(lfFlat['f-min-val'] || lfFlat.minContractValue) || 0;
+        custLeadFilters.minContractVal = parseTenderMinValue(lfFlat['f-min-val'] || lfFlat.minContractValue);
         custLeadFilters.keywords = String(lfFlat['f-keywords'] || lfFlat.keywords || '').toLowerCase();
         custLeadFilters.sectors = (Array.isArray(lfFlat['f-sectors']) ? lfFlat['f-sectors'] : (lfFlat['f-sectors'] ? [lfFlat['f-sectors']] : []));
         // STRICT MODE: customer opted out of automatic widening - filters stay hard,
@@ -25880,7 +25915,7 @@ _deliverDiag[cust.email].products = products;
           if (cust.product === 'tenders') {
             // TENDERS: min contract value + curated SECTOR match (legacy free-text
             // keywords still honoured for older accounts).
-            var cv = parseFloat(String(ld2.contractValue || ld2.contractValueLabel || '0').replace(/[^0-9.]/g, '')) || 0;
+            var cv = parseTenderValueNum(ld2.contractValue || ld2.contractValueLabel);
             if (custLeadFilters.minContractVal > 0 && cv > 0 && cv < custLeadFilters.minContractVal) return false;
             var tx = (String(ld2.title || '') + ' ' + String(ld2.description || '') + ' ' + String(ld2.cpvCode || '') + ' ' + String(ld2.procurementType || '')).toLowerCase();
             if (custLeadFilters.sectors && custLeadFilters.sectors.length) {
