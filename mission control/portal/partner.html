@@ -130,10 +130,32 @@ function render(db){
   var assoc = db.association || {};
   var html = '';
   // Banner
+  var trialDays = db.trial_days || 14;
+  var _codeBox = '<div style="margin-top:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
+    '<span style="font-family:var(--ff-h);font-weight:900;font-size:20px;letter-spacing:1px;color:#0c4a6e;background:#fff;border:1px dashed #93c5fd;border-radius:10px;padding:8px 16px">' + esc(db.referral_code || '') + '</span>' +
+    '<button class="btn btn-p" onclick="copyText(\'' + esc(db.referral_code || '') + '\', this)">Copy code</button>' +
+    '<button class="btn btn-o" onclick="copyText(\'' + esc(db.referral_link || '') + '\', this)">Copy link</button>' +
+    '</div>';
   if (isAssoc) {
-    html += '<div class="banner"><strong>Your organisation\'s referral link</strong> - share this with your members and they get an extended 14-day free trial. ' + (assoc.co_brand ? esc(assoc.co_brand) + '.' : '') + '<br><div class="link-box" style="margin-top:6px">' + esc(db.referral_link) + ' <button class="copy-btn" onclick="copyText(\'' + esc(db.referral_link) + '\', this)">Copy</button></div></div>';
+    html += '<div class="banner"><strong>Your referral code</strong> - share it and your members get an extended ' + trialDays + '-day free trial. ' + (assoc.co_brand ? esc(assoc.co_brand) + '.' : '') + _codeBox + '<div class="link-box" style="margin-top:8px">' + esc(db.referral_link) + '</div></div>';
   } else {
-    html += '<div class="banner"><strong>Your referral link</strong> - share this and anyone who signs up through it gets an extended 14-day free trial.<br><div class="link-box" style="margin-top:6px">' + esc(db.referral_link) + ' <button class="copy-btn" onclick="copyText(\'' + esc(db.referral_link) + '\', this)">Copy</button></div></div>';
+    html += '<div class="banner"><strong>Your referral code</strong> - share it and anyone who signs up gets an extended ' + trialDays + '-day free trial.' + _codeBox + '<div class="link-box" style="margin-top:8px">' + esc(db.referral_link) + '</div></div>';
+  }
+  // Getting started
+  html += '<div class="card"><div class="sect-title">Getting started</div><ol style="margin:0;padding-left:18px;font-size:12.5px;color:#334155;line-height:1.9">' +
+    '<li>Share your code or link with your members.</li>' +
+    (isAssoc ? '<li>Or use "Invite your members" below and we will send the co-branded invitation for you.</li>' : '<li>Use the ready-made scripts in Resources.</li>') +
+    '<li>Your referrals sign up and get <b>' + trialDays + ' days free</b>, no card needed.</li>' +
+    '<li>You earn <b>' + fmt(p.commission_amount || 25) + ' per active customer, per month</b>, recurring while they stay.</li>' +
+    '</ol></div>';
+  // Member invite tool (associations)
+  if (isAssoc) {
+    html += '<div class="card"><div class="sect-title">Invite your members</div>' +
+      '<p class="muted" style="margin-bottom:8px">Paste your members\' email addresses (one per line, or comma-separated). We send a co-branded invitation carrying your code, and every sign-up is credited to you. Up to 200 at a time.</p>' +
+      '<textarea class="inp" id="inv-emails" rows="4" placeholder="member1@example.com&#10;member2@example.com"></textarea>' +
+      '<button class="btn btn-p" onclick="sendInvites()">Send invitations</button> <span id="inv-msg" class="muted" style="margin-left:8px"></span>' +
+      '<div id="inv-history" style="margin-top:10px"></div>' +
+      '</div>';
   }
   html += '<div class="grid grid-3" style="margin-bottom:14px">' +
     '<div class="stat"><div class="n">' + (db.clicks || 0) + '</div><div class="l">Referral Clicks</div></div>' +
@@ -212,7 +234,7 @@ function render(db){
   window._db = db;
   window._isSales = isSales;
   if (isSales) { renderProspects(db); renderFollowups(db); renderFeedbackForm(db); renderEarnings(db); renderResources(); }
-  else { renderReferrals(db); renderEarnings(db); renderResources(); }
+  else { renderReferrals(db); renderEarnings(db); renderResources(); if (isAssoc) loadInvites(); }
 }
 function showTab(name, btn){
   var tabs = ['prospects','followups','feedback','earnings','resources','referrals'];
@@ -353,8 +375,29 @@ function saveFeedback(){
     requested_action: document.getElementById('fb-action').value
   }, function(d){ if (d && d.success) { document.getElementById('tab-feedback').innerHTML = '<div class="card" style="text-align:center;padding:24px">✅ <b>Feedback submitted.</b> Thank you - it goes straight to the 9amLeads team.</div>'; } else alert('Could not submit feedback'); });
 }
-function renderResources(){
-  api('GET', '/api/partner/resources', null, function(d){
+function sendInvites(){
+  var el = document.getElementById('inv-emails'); var msg = document.getElementById('inv-msg');
+  if (!el) return;
+  var emails = String(el.value || '').split(/[\s,;]+/).filter(Boolean);
+  if (!emails.length) { msg.textContent = 'Add at least one email address.'; return; }
+  msg.textContent = 'Sending...';
+  api('POST', '/api/partner/invites', { emails: emails }, function(d, st){
+    if (d && d.success) {
+      msg.textContent = 'Sent ' + d.sent + ' invitation' + (d.sent === 1 ? '' : 's') + (d.skipped ? ' (' + d.skipped + ' already invited)' : '') + '.';
+      el.value = ''; loadInvites();
+    } else { msg.textContent = (d && d.error) || 'Could not send invitations.'; }
+  });
+}
+function loadInvites(){
+  api('GET', '/api/partner/invites', null, function(d){
+    var el = document.getElementById('inv-history'); if (!el) return;
+    var list = (d && d.invites) || [];
+    if (!list.length) { el.innerHTML = '<p class="muted">No invitations sent yet.</p>'; return; }
+    el.innerHTML = '<div class="sect-title" style="font-size:12px">Invitation history (' + list.length + ')</div>' +
+      list.map(function(iv){ return '<div class="fb-item"><b>' + esc(iv.email) + '</b> <span class="muted">sent ' + new Date(iv.sent_at).toLocaleDateString() + '</span></div>'; }).join('');
+  });
+}
+function renderResources(){  api('GET', '/api/partner/resources', null, function(d){
     var list = (d && d.resources) || [];
     var html = '<div class="card"><div class="sect-title">Sales Resources</div>';
     if (!list.length) html += '<p class="muted">No resources published yet.</p>';

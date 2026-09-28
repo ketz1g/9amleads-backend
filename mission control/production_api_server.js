@@ -4929,6 +4929,8 @@ app.get('/api/partner/dashboard', requirePartner, (req, res) => {
         recent_leads: leads.map(function(l){ try { var d = typeof l.data === 'string' ? JSON.parse(l.data) : (l.data || {}); return { address: d.address || d.title || d.company_name || '', town: d.town || d.city || '', source: d.source || d.source_url || '', status: l.status || 'new', created_at: l.created_at }; } catch(e) { return { address: '', status: l.status, created_at: l.created_at }; } })
       };
     });
+    out.trial_days = Number(isPartnerRecurring(p) ? cfg.sales_partner_trial_days : cfg.affiliate_trial_days) || 14;
+    out.invites_sent = (dbc.partner_invites || []).filter(function(iv){ return iv.partner_id === p.id; }).length;
     res.json({ success: true, dashboard: out });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -5038,6 +5040,85 @@ app.get('/api/partner/announcements', requirePartner, (req, res) => {
     var now = new Date();
     var list = (getDb().partner_announcements || []).filter(function(a){ return a.active !== false && (!a.published_at || new Date(a.published_at) <= now) && (!a.expires_at || new Date(a.expires_at) > now); });
     res.json({ success: true, announcements: list });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== PARTNER MEMBER INVITES =====
+// A partner (association/network) can invite members by email. The email is
+// co-branded ("In partnership with X") and carries the partner's referral link so
+// every sign-up is attributed and the member gets the partner trial (14 days).
+function memberInviteHtml(orgName, refLink, trialDays) {
+  var org = escHtml(orgName || 'your association');
+  var accent = '#0b6bb3';
+  var btn = '<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-radius:8px;background:' + accent + '"><a href="' + refLink + '" style="display:inline-block;padding:15px 32px;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:8px">Start your free ' + trialDays + ' days</a></td></tr></table>';
+  var bullets = [
+    'Fresh moving leads every weekday at 9am, in your email and dashboard',
+    'Leads are exclusive and never resold, and each one shows its source',
+    'Print &amp; Post in one click, with live postage tracking and proof of posting',
+    'Auto Print &amp; Post, CRM integration and bulk campaigns for quiet times',
+    'No contract, cancel anytime'
+  ].map(function(t){ return '<tr><td style="padding:0 0 8px;color:#1f2937;font-size:14.5px;line-height:1.55"><span style="color:#16a34a;font-weight:800">&#10003;</span>&nbsp; ' + t + '</td></tr>'; }).join('');
+  return '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>'
+    + '<body style="margin:0;padding:0;background:#f4f5f7">'
+    + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f5f7"><tr><td align="center" style="padding:24px 12px">'
+    + '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:600px;background:#fff;border:1px solid #e5e7eb;border-radius:8px">'
+    + '<tr><td style="height:4px;background:' + accent + ';font-size:0;line-height:0">&nbsp;</td></tr>'
+    + '<tr><td style="padding:26px 34px 0">'
+    + '<p style="margin:0;font-size:18px;font-weight:800;color:#1f2937">9am<span style="color:' + accent + '">Leads</span></p>'
+    + '<p style="margin:6px 0 0;font-size:12px;color:#6b7280">In partnership with ' + org + '</p>'
+    + '<h1 style="margin:16px 0 12px;font-size:22px;line-height:1.3;font-weight:800;color:#1f2937">You are invited to try 9amLeads</h1>'
+    + '<p style="margin:0 0 12px;color:#1f2937;font-size:15px;line-height:1.65">' + org + ' has partnered with 9amLeads to give members a faster, cheaper way to win moving work. Through this private invite you get an extended <strong>' + trialDays + '-day free trial</strong>.</p>'
+    + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0">' + bullets + '</table>'
+    + '<p style="margin:10px 0 4px;color:#1f2937;font-size:14px;line-height:1.6">This link is reserved for ' + org + ' members.</p>'
+    + '</td></tr>'
+    + '<tr><td align="center" style="padding:10px 34px 6px">' + btn + '</td></tr>'
+    + '<tr><td style="padding:8px 34px 26px;border-top:1px solid #e5e7eb">'
+    + '<p style="margin:12px 0 8px;color:#9ca3af;font-size:11px;line-height:1.7">Sent by 9amLeads on behalf of ' + org + '. 9am Leads Ltd, Company No. 17402522, 66 Paul Street, London EC2A 4NA.</p>'
+    + '<a href="mailto:hello@9amleads.com?subject=unsubscribe" style="color:#6b7280;font-size:12px">Unsubscribe</a>'
+    + '</td></tr></table></td></tr></table></body></html>';
+}
+
+app.post('/api/partner/invites', requirePartner, (req, res) => {
+  try {
+    var p = req.partner;
+    if (!partnerStatusActive(p)) return res.status(403).json({ error: 'Your partner account is not active.' });
+    var cfg = partnerConfig();
+    var trialDays = Number(cfg.sales_partner_trial_days) || 14;
+    var refLink = partnerRefLink(p);
+    var org = p.business_name || p.name || 'your organisation';
+    var input = [];
+    if (Array.isArray(req.body && req.body.emails)) input = req.body.emails.slice();
+    else if (req.body && req.body.text) input = String(req.body.text).split(/[\s,;]+/);
+    var seen = {}, emails = [];
+    input.forEach(function(x){
+      var e = String(x || '').trim().toLowerCase();
+      if (!e || seen[e]) return;
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) return;
+      seen[e] = 1; emails.push(e);
+    });
+    if (!emails.length) return res.status(400).json({ error: 'No valid email addresses found.' });
+    if (emails.length > 200) return res.status(400).json({ error: 'Please invite up to 200 addresses at a time.' });
+    var dbc = getDb();
+    if (!dbc.partner_invites) dbc.partner_invites = [];
+    var already = {};
+    dbc.partner_invites.forEach(function(iv){ if (iv.partner_id === p.id) already[String(iv.email || '').toLowerCase()] = 1; });
+    var html = memberInviteHtml(org, refLink, trialDays);
+    var subject = org + ' has partnered with 9amLeads - your ' + trialDays + ' days free';
+    var sent = 0, skipped = 0;
+    emails.forEach(function(e){
+      if (already[e]) { skipped++; return; }
+      sendBrevoEmail({ email: e, name: '' }, subject, html);
+      dbc.partner_invites.push({ id: uuidv4(), partner_id: p.id, email: e, org: org, sent_at: new Date().toISOString(), ok: true });
+      already[e] = 1; sent++;
+    });
+    if (sent) saveDb();
+    res.json({ success: true, sent: sent, skipped: skipped, total: emails.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+app.get('/api/partner/invites', requirePartner, (req, res) => {
+  try {
+    var list = (getDb().partner_invites || []).filter(function(iv){ return iv.partner_id === req.partner.id; }).sort(function(a,b){ return String(b.sent_at) < String(a.sent_at) ? -1 : 1; }).slice(0, 100);
+    res.json({ success: true, invites: list.map(function(iv){ return { email: iv.email, sent_at: iv.sent_at, org: iv.org || '' }; }) });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
