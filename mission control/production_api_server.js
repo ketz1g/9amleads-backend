@@ -31609,7 +31609,9 @@ function generateLeadEmailHTML(customer, leads) {  const brand = getProductBrand
     } else if (leadProduct === 'probate') {
       // Deceased/company name as title, full address on one line as subtitle.
       // Publication/grant date shown first as a freshness indicator.
-      title = d.deceasedName || 'Probate Estate';
+      // The scraper stores the deceased name as `name` (gov.uk) or `deceasedName`
+      // (Gazette) - accept both so the email always shows the deceased's name.
+      title = d.deceasedName || d.name || l.name || 'Probate Estate';
       var pAddr = d.deceasedAddress || d.fullAddress || d.address || l.address || '';
       var pLoc = d.locality || d.town || d.city || '';
       var pPc = d.postcode || l.postcode || '';
