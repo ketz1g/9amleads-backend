@@ -35908,13 +35908,20 @@ async function runDeliveryRehearsal(trigger, opts) {
     var d2 = getDb();
     var _optionalRehearsal = {};
     REHEARSAL_ACCOUNTS.forEach(function(a) { if (a.optional) _optionalRehearsal[String(a.email).toLowerCase()] = 1; });
+    out.fresh_cutoff = getFreshCutoffIso();
     accounts.forEach(function(c) {
       var expected = getCustomerDailyQuota(c) || 5;
       var _isOpt = !!_optionalRehearsal[String(c.email || '').toLowerCase()];
       var leads = (d2.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && String(l.delivered_at).split('T')[0] === today; });
       var badAddr = 0;
-      leads.forEach(function(l) { var ld = {}; try { ld = JSON.parse(l.data || '{}'); } catch(e) {} if (!leadMailableForDelivery(ld, l.product || c.product)) badAddr++; });
-      out.accounts.push({ email: c.email, product: c.product, expected: expected, delivered: leads.length, unmailable: badAddr, optional: _isOpt });
+      var _fresh = [];
+      leads.forEach(function(l) {
+        var ld = {}; try { ld = JSON.parse(l.data || '{}'); } catch(e) {}
+        if (!leadMailableForDelivery(ld, l.product || c.product)) badAddr++;
+        var _f = pickFreshDate(ld) || '';
+        _fresh.push({ fd: _f, firstVisible: ld.firstVisibleDate || '', published: ld.publishedDate || '', grant: ld.grantDate || '', fresh: !_f || _f >= getFreshCutoffIso() });
+      });
+      out.accounts.push({ email: c.email, product: c.product, expected: expected, delivered: leads.length, unmailable: badAddr, optional: _isOpt, freshness: _fresh });
       // Optional accounts (e.g. probate - sparse supply) report but never page.
       if (leads.length !== expected && !_isOpt) out.problems.push(c.email + ': ' + leads.length + '/' + expected + ' (must be exactly ' + expected + ')');
       // A delivered-but-unmailable lead is always a real fault, even for optional accounts.
