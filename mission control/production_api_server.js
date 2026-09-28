@@ -16369,6 +16369,10 @@ function sendBrevoEmail(to, subject, htmlContent) {
   // explanation email as a result. Accept both a string and an object.
   if (typeof to === 'string') to = { email: to.trim(), name: '' };
   if (!to || !to.email) { console.log('[BREVO] No recipient - skipped: ' + String(subject || '').slice(0, 60)); return; }
+  // Brevo requires a non-empty `name` on the `to` recipient. Some call sites pass a
+  // recipient object without a name (or an empty one), which Brevo rejects with
+  // "name is missing in to". Fall back to 'Customer' so the send never hard-fails.
+  if (!to.name) to.name = 'Customer';
   // UN-DELIVERABLE TEST/INTERNAL ADDRESSES: never actually send to addresses that
   // cannot receive mail (generated test accounts, disposable providers, our own
   // @9amleads.com demo/test inboxes). Attempting these creates hard bounces that
