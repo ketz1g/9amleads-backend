@@ -106,6 +106,9 @@ function fetchProbateRegistry() {
                     dateOfDeath: dateOfDeath,
                     grantDate: grantDate,
                     publishedDate: pubIso,
+                    // firstVisibleDate = the grant/publication date (ISO) so the freshness
+                    // window is judged on the REAL event date, not the scrape time.
+                    firstVisibleDate: pubIso,
                     grantType: grantType || 'Probate Grant',
                     source: 'Gov.uk Probate Registry',
                     scrapedAt: new Date().toISOString()
@@ -194,6 +197,10 @@ function fetchGazetteHTML(maxItems, pageNum) {
             executorAddress: '',
             solicitorAddress: '',
             noticeUrl: 'https://www.thegazette.co.uk/notice/' + noticeId,
+            // url + firstVisibleDate so freshness/dedup are reliable: the freshness
+            // window is judged on the notice's PUBLICATION date, never the scrape time.
+            url: 'https://www.thegazette.co.uk/notice/' + noticeId,
+            firstVisibleDate: pubIso,
             occupation: '',
             grantType: 'Deceased Estates',
             source: 'The Gazette (HTML)',
