@@ -29422,6 +29422,39 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
       }
     }
 
+    // Subscription updated (upgrade / downgrade / cancel-at-period-end / dunning).
+    // Keeps entitlement in sync with Stripe even when the change is made in Stripe
+    // rather than in our dashboard.
+    else if (evType === 'customer.subscription.updated') {
+      var subU = event.data.object || {};
+      var custU = null;
+      try { if (subU.id) custU = db.prepare('SELECT * FROM customers WHERE stripe_subscription_id = ?').get(subU.id); } catch(e) {}
+      if (!custU && subU.customer) { try { custU = db.prepare('SELECT * FROM customers WHERE stripe_customer_id = ?').get(subU.customer); } catch(e) {} }
+      if (custU) {
+        if (subU.status === 'canceled') {
+          db.prepare('UPDATE customers SET plan = ?, leads_per_day = 0, auto_send_paused = 1, leads_paused = 1, cancelled_at = ?, cancel_wb_sent = ? WHERE id = ?').run('cancelled', new Date().toISOString(), '[]', custU.id);
+        } else if (subU.status === 'past_due') {
+          db.prepare('UPDATE customers SET leads_paused = 1 WHERE id = ?').run(custU.id);
+        } else if (subU.status === 'active') {
+          db.prepare('UPDATE customers SET leads_paused = 0, auto_send_paused = 0 WHERE id = ?').run(custU.id);
+        }
+        saveDb();
+      }
+    }
+    // Refund issued - cancel any matching Print & Post campaign + record it.
+    else if (evType === 'charge.refunded') {
+      var chR = event.data.object || {};
+      var pidR = chR.payment_intent || chR.id || '';
+      var campR = null;
+      try { campR = db.prepare('SELECT * FROM direct_mail_campaigns WHERE stripe_payment_id = ?').get(pidR); } catch(e) {}
+      if (campR) {
+        var prevR = campR.status;
+        db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_status = ?, status = ?, updated_at = ? WHERE id = ?').run('refunded', 'cancelled', new Date().toISOString(), campR.id);
+        try { db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), campR.customer_id, campR.id, prevR, 'cancelled', 'system', 'Payment refunded', new Date().toISOString()); } catch(e) {}
+        console.log('[STRIPE] Campaign refunded: ' + campR.name);
+      }
+    }
+
     res.json({ received: true });
   } catch(e) { console.error('[STRIPE] Webhook error:', e.message); res.status(500).json({ error: e.message }); }
 });
