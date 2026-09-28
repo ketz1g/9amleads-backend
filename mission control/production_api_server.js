@@ -12638,6 +12638,22 @@ app.post('/api/admin/quiet-areas', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/quiet-area-suppress - opt a customer OUT of the "update your
+// postcode areas" emails (or back in). Body { email, off:true|false }.
+app.post('/api/admin/quiet-area-suppress', adminAuth, (req, res) => {
+  try {
+    var dbq = getDb(); if (!dbq.quiet_area_suppress) dbq.quiet_area_suppress = [];
+    var email = String((req.body && req.body.email) || '').toLowerCase().trim();
+    if (!email) return res.status(400).json({ error: 'email required' });
+    var off = !(req.body && (req.body.off === false || String(req.body.off) === 'false'));
+    var has = dbq.quiet_area_suppress.map(function(e){ return String(e || '').toLowerCase(); }).indexOf(email) !== -1;
+    if (off && !has) dbq.quiet_area_suppress.push(email);
+    if (!off && has) dbq.quiet_area_suppress = dbq.quiet_area_suppress.filter(function(e){ return String(e || '').toLowerCase() !== email; });
+    saveDb();
+    res.json({ success: true, suppressed: off, list: dbq.quiet_area_suppress });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/admin/quiet-areas-report - for each active customer, list their chosen
 // postcode areas that have produced ZERO leads in the last QUIET_AREA_DAYS days,
 // with the last-alerted date. READ-ONLY (no emails sent).
@@ -13884,6 +13900,7 @@ function checkQuietAreas() {
     var days = parseInt(process.env.QUIET_AREA_DAYS || '4', 10);
     var since = new Date(Date.now() - days * 86400000).toISOString();
     var alerted = [];
+    var _qaSuppress = (dbq.quiet_area_suppress || []).map(function(e){ return String(e || '').toLowerCase(); });
     (dbq.customers || []).forEach(function(c) {
       // Only customers ACTUALLY owed leads. isEntitledForDelivery() skips paused,
       // cancelled AND EXPIRED TRIALS - an ended trial is not receiving leads, so
@@ -13891,6 +13908,7 @@ function checkQuietAreas() {
       // being sent to ended-trial users because the old check only skipped paused.
       if (!isEntitledForDelivery(c)) return;
       if (typeof isInternalAccount === 'function' && isInternalAccount(c)) return;
+      if (_qaSuppress.indexOf(String(c.email || '').toLowerCase()) !== -1) return;
       if (c.bounced && parseInt(c.bounced, 10) >= 3) return;
       var areas = [];
       try { areas = JSON.parse(c.target_areas || '[]'); } catch(e) { areas = []; }
