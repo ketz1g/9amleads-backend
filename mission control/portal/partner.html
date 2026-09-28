@@ -162,7 +162,8 @@ function render(db){
     '</div></div>';
   // Promotion tips
   html += '<div class="card"><div class="sect-title">How to promote 9amLeads</div><ul style="margin:0;padding-left:18px;font-size:12.5px;color:#334155;line-height:1.9">' +
-    '<li>Email your member list using our ready-made wording (see Share kit / Resources).</li>' +
+    '<li><b>Frame it as a member benefit</b> - tell your members that, as part of their membership, they get <b>2 weeks of free 9amLeads</b>: fresh moving leads delivered every morning.</li>' +
+    '<li>Email your member list using the ready-made wording in your Share kit (one click to copy).</li>' +
     '<li>Add it to your newsletter or member bulletin.</li>' +
     '<li>Post it in your member forum, WhatsApp or Slack group.</li>' +
     '<li>Include it in your new-member welcome pack.</li>' +
@@ -224,7 +225,7 @@ function render(db){
       '<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start">' +
       '<img alt="QR code" width="120" height="120" style="border:1px solid var(--border);border-radius:8px" src="https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=' + encodeURIComponent(db.referral_link) + '">' +
       '<div style="flex:1;min-width:220px"><p class="muted" style="margin-bottom:6px">Print this QR code for events/newsletters, or copy ready-made wording:</p>' +
-      '<div class="link-box" id="share-copy" style="font-size:11px">We have partnered with 9amLeads - fresh, exclusive moving leads every morning at 9am. As a member you get an extended 14-day free trial. Join here: ' + esc(db.referral_link) + '</div>' +
+      '<div class="link-box" id="share-copy" style="font-size:11px">As a member of our association you get 2 weeks of 9amLeads free - fresh, exclusive moving leads delivered every morning at 9am. No card needed to start. Start here: ' + esc(db.referral_link) + '</div>' +
       '<button class="copy-btn" onclick="copyText(document.getElementById(\'share-copy\').textContent, this)">Copy wording</button>' +
       '</div></div></div>';
     html += '<div class="card"><div class="sect-title">Monthly statement</div><p class="muted" style="margin-bottom:8px">Download a PDF statement of your members and commission.</p><button class="btn btn-o" onclick="downloadStatement()">Download this month\'s statement (PDF)</button></div>';

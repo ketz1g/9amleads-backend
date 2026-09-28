@@ -5185,7 +5185,7 @@ function memberInviteHtml(orgName, refLink, trialDays, toName) {
     + '<p style="margin:0;font-size:18px;font-weight:800;color:#1f2937">9am<span style="color:' + accent + '">Leads</span></p>'
     + '<p style="margin:6px 0 0;font-size:12px;color:#6b7280">In partnership with ' + org + '</p>'
     + '<h1 style="margin:16px 0 12px;font-size:22px;line-height:1.3;font-weight:800;color:#1f2937">You are invited to try 9amLeads</h1>'
-    + '<p style="margin:0 0 12px;color:#1f2937;font-size:15px;line-height:1.65">' + greet + '<br><br>' + org + ' has partnered with 9amLeads to give members a faster, cheaper way to win moving work. Through this private invite you get an extended <strong>' + trialDays + '-day free trial</strong>.</p>'
+    + '<p style="margin:0 0 12px;color:#1f2937;font-size:15px;line-height:1.65">' + greet + '<br><br>As a member of ' + org + ', you get an extended <strong>2-week (' + trialDays + '-day) free trial</strong> of 9amLeads - fresh, exclusive moving leads delivered every morning at 9am. No card needed to start.</p>'
     + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0">' + bullets + '</table>'
     + '<p style="margin:10px 0 4px;color:#1f2937;font-size:14px;line-height:1.6">This link is reserved for ' + org + ' members.</p>'
     + '</td></tr>'
