@@ -5305,6 +5305,27 @@ app.post('/api/partner/set-code', requirePartner, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/partner/ask - a partner sends a question; we record it and email the team.
+app.post('/api/partner/ask', requirePartner, (req, res) => {
+  try {
+    var p = req.partner;
+    var q = String((req.body && req.body.question) || '').trim();
+    if (!q) return res.status(400).json({ error: 'Please type your question.' });
+    if (q.length > 4000) q = q.slice(0, 4000);
+    var dbq = getDb();
+    if (!dbq.partner_questions) dbq.partner_questions = [];
+    dbq.partner_questions.push({ id: uuidv4(), partner_id: p.id, partner_type: partnerTypeOf(p), name: p.business_name || p.name || '', email: p.email || '', question: q, at: new Date().toISOString() });
+    if (dbq.partner_questions.length > 2000) dbq.partner_questions = dbq.partner_questions.slice(-2000);
+    saveDb();
+    var org = p.business_name || p.name || 'A partner';
+    try {
+      sendBrevoEmail({ email: 'hello@9amleads.com', name: '9amLeads' }, 'Partner question: ' + org,
+        '<div style="font-family:Inter,Arial,sans-serif;font-size:14px;color:#0f172a;line-height:1.7"><p><b>' + escHtml(org) + '</b> (' + escHtml(String(p.email || '')) + '), ' + escHtml(partnerTypeOf(p)) + ' partner, asked:</p><blockquote style="border-left:3px solid #0b6bb3;margin:0;padding:6px 14px;color:#334155">' + escHtml(q).replace(/\n/g, '<br>') + '</blockquote><p style="color:#64748b;font-size:12px">Reply directly to ' + escHtml(String(p.email || '')) + '</p></div>');
+    } catch(e) {}
+    res.json({ success: true, message: 'Thanks - we have received your question and will reply by email.' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // Partner analytics funnel + tier progress + statement (real ledger, never front-end math).
 app.get('/api/partner/funnel', requirePartner, (req, res) => {
   try {

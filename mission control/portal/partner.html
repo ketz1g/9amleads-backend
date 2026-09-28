@@ -191,6 +191,16 @@ function render(db){
   html += '<div class="card"><div class="sect-title">Partner FAQs</div>' +
     _faqs.map(function(f){ return '<details style="border-bottom:1px solid var(--border);padding:8px 0"><summary style="cursor:pointer;font-weight:700;font-size:13px;color:#0c4a6e">' + esc(f[0]) + '</summary><p class="muted" style="margin:8px 0 0;font-size:12.5px;line-height:1.7">' + esc(f[1]) + '</p></details>'; }).join('') +
     '</div>';
+  // Ask a question + contact
+  html += '<div class="card"><div class="sect-title">Ask us a question</div>' +
+    '<p class="muted" style="margin-bottom:8px">Questions about commission, your members or anything else? Send it here and we will reply by email.</p>' +
+    '<textarea class="inp" id="ask-q" rows="3" placeholder="Type your question..."></textarea>' +
+    '<button class="btn btn-p" onclick="askQuestion()">Send question</button> <span id="ask-msg" class="muted" style="margin-left:8px"></span>' +
+    '</div>';
+  html += '<div class="card"><div class="sect-title">Contact</div>' +
+    '<p style="font-size:13px;color:#334155;line-height:1.8">Ketz Mandalia, Founder<br><a href="mailto:hello@9amleads.com" style="color:var(--accent);font-weight:700">hello@9amleads.com</a></p>' +
+    '<p class="muted" style="margin-top:6px">We usually reply the same working day.</p>' +
+    '</div>';
   // Member invite tool (associations)
   if (isAssoc) {
     html += '<div class="card"><div class="sect-title">Invite your members</div>' +
@@ -431,6 +441,17 @@ function saveFeedback(){
     partner_notes: document.getElementById('fb-notes').value,
     requested_action: document.getElementById('fb-action').value
   }, function(d){ if (d && d.success) { document.getElementById('tab-feedback').innerHTML = '<div class="card" style="text-align:center;padding:24px">✅ <b>Feedback submitted.</b> Thank you - it goes straight to the 9amLeads team.</div>'; } else alert('Could not submit feedback'); });
+}
+function askQuestion(){
+  var el = document.getElementById('ask-q'); var msg = document.getElementById('ask-msg');
+  if (!el) return;
+  var q = String(el.value || '').trim();
+  if (!q) { msg.textContent = 'Please type your question.'; return; }
+  msg.textContent = 'Sending...';
+  api('POST', '/api/partner/ask', { question: q }, function(d, st){
+    if (d && d.success) { msg.textContent = d.message || 'Sent - we will reply by email.'; el.value = ''; }
+    else { msg.textContent = (d && d.error) || 'Could not send your question.'; }
+  });
 }
 function saveCode(){
   var el = document.getElementById('code-input'); var msg = document.getElementById('code-msg');
