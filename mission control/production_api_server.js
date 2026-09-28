@@ -5113,7 +5113,7 @@ app.post('/api/partner/invites', requirePartner, (req, res) => {
     });
     if (sent) saveDb();
     res.json({ success: true, sent: sent, skipped: skipped, total: emails.length });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error('[PARTNER-INVITE]', (e && e.stack) || e); res.status(500).json({ error: (e && e.message) || String(e) }); }
 });
 app.get('/api/partner/invites', requirePartner, (req, res) => {
   try {
