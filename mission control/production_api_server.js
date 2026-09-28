@@ -1024,15 +1024,10 @@ function pickFreshDate(lead) {
   // server, the recent pool is thin, so we FILL to the promised count from notices
   // published within TENDERS_FRESH_DAYS (default 7). Leads are still recent; tighten
   // to 2 once the source reliably delivers same-day notices.
-  if (lead.deadlineDate) {
-    var dl = toIsoDate(lead.deadlineDate);
-    if (dl) {
-      var dlMs = new Date(dl).getTime();
-      var _tfd = Math.max(1, parseInt(process.env.TENDERS_FRESH_DAYS || '7', 10) || 7);
-      var _age = latest ? (Date.now() - new Date(latest).getTime()) : Infinity;
-      if (!isNaN(dlMs) && dlMs > Date.now() && _age <= _tfd * 86400000) return new Date().toISOString();
-    }
-  }
+  // TENDERS: freshness must reflect the notice's REAL publication date (latest), NOT
+  // "now" just because the deadline is in the future. Previously any future-deadline
+  // notice was forced to look brand new, so old/rolling notices passed the 24h test.
+  // The delivery's 24h-primary / 48h-fallback passes now work on the true date.
   return latest;
 }
 
@@ -21222,6 +21217,39 @@ cron.schedule('0 10 * * *', function() {
 app.post('/api/admin/prune-pools', adminAuth, (req, res) => {
   try { res.json({ success: true, ...pruneStalePoolLeads() }); }
   catch(e) { res.status(500).json({ error: e.message }); }
+});
+// POST /api/admin/backfill-pool-dates - set firstVisibleDate on pool leads missing it,
+// from their real publication/grant date (ISO). Safe: local only, no network/credits.
+app.post('/api/admin/backfill-pool-dates', adminAuth, (req, res) => {
+  try {
+    var out = {};
+    Object.keys(PRODUCT_LEAD_FILES || {}).forEach(function(prod) {
+      var f = PRODUCT_LEAD_FILES[prod] && PRODUCT_LEAD_FILES[prod].file;
+      if (!f) return;
+      var file = path.join(DATA_DIR, f);
+      var raw = null;
+      try { raw = JSON.parse(fs.readFileSync(file, 'utf-8')); } catch(e) { return; }
+      var container = null, arr = null;
+      if (Array.isArray(raw)) arr = raw;
+      else if (raw && typeof raw === 'object') { container = raw; arr = []; Object.keys(raw).forEach(function(k) { if (k.indexOf('_') !== 0 && Array.isArray(raw[k])) raw[k].forEach(function(x) { arr.push({ _key: k, _item: x }); }); }); }
+      if (!arr || !arr.length) { out[prod] = 0; return; }
+      var fixed = 0;
+      arr.forEach(function(e) {
+        var l = e._item || e;
+        if (!l || l.firstVisibleDate) return;
+        var d = toIsoDate(l.publishedDate || l.grantDate || l.dateOfDeath || l.deadlineDate || '') || '';
+        if (d) { l.firstVisibleDate = d; fixed++; }
+      });
+      if (fixed) {
+        var payload;
+        if (container) { var rebuilt = {}; Object.keys(container).forEach(function(k) { if (k.indexOf('_') === 0) rebuilt[k] = container[k]; }); arr.forEach(function(e) { if (!rebuilt[e._key]) rebuilt[e._key] = []; rebuilt[e._key].push(e._item); }); payload = rebuilt; }
+        else { payload = arr.map(function(e) { return e._item || e; }); }
+        fs.writeFileSync(file, JSON.stringify(payload, null, 2));
+      }
+      out[prod] = fixed;
+    });
+    res.json({ success: true, backfilled: out });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 // POST /api/admin/email-preview - manually trigger the pre-delivery email now.
 // POST /api/admin/send-sample-weekly - send the weekly nurture email (with the Bulk
