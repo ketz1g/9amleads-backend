@@ -14972,6 +14972,27 @@ app.post('/api/admin/replace-pending-lead', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/swap-leads-fresh - replace a customer's leads with the FRESH leads
+// their own delivery preview selects (areas + freshness + mailable). Dashboard only,
+// never emails. Corrects a stale delivery (e.g. probate/tenders) without a send.
+app.post('/api/admin/swap-leads-fresh', adminAuth, async (req, res) => {
+  try {
+    var email = String((req.body && req.body.email) || '').toLowerCase();
+    if (!email) return res.status(400).json({ error: 'email required' });
+    var db5 = getDb();
+    var cust = (db5.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
+    if (!cust) return res.status(404).json({ error: 'Customer not found' });
+    var pv = await deliveryPreviewForCustomer(cust);
+    var leads = (pv && pv.leads) || [];
+    db5.leads = (db5.leads || []).filter(function(l) { return l.customer_id !== cust.id; });
+    var nowIso = new Date().toISOString();
+    leads.forEach(function(pl) {
+      db5.leads.push({ id: uuidv4(), customer_id: cust.id, product: cust.product, data: JSON.stringify(pl), status: 'new', delivered: 1, created_at: nowIso, delivered_at: nowIso, release_at: null });
+    });
+    saveDb();
+    res.json({ success: true, email: email, product: cust.product, replaced: leads.length, leads: leads.map(function(l) { return { label: String(l.name || l.deceasedName || l.tenderTitle || l.description || l.address || '').slice(0, 70), date: pickFreshDate(l) }; }) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 // POST /api/admin/replace-customer-leads - remove a customer's current (e.g.
 // wrong-area) leads and replace them with fresh in-area leads from the pool.
 // Used when leads were delivered from the wrong areas (area override, fallback).
