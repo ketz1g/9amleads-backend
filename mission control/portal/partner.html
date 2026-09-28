@@ -173,6 +173,24 @@ function render(db){
     '<li>Use <b>Bulk Postage</b> in quiet weeks to keep the pipeline full.</li>' +
     '<li>Connect their <b>CRM</b> so leads land in their system automatically at 9am.</li>' +
     '</ul></div>';
+  // Partner FAQs
+  var _faqs = [
+    ['How much do I earn, and when am I paid?', 'You earn £25 per active paying customer, per month, recurring for as long as they stay - that is £2,500/month for every 100 active customers. Commission is approved after our standard ~30-day clearance period and paid monthly once your balance reaches the £50 minimum.'],
+    ['What trial do my members get?', 'Through your link or code they get an extended 14-day (2-week) free trial - double our standard 7 days. No card is required to start.'],
+    ['How is a member credited to me?', 'They must sign up through your link or quote your code. Attribution lasts 30 days from the first click, so you still get the credit if they sign up later.'],
+    ['When does my commission start?', 'When a referred member becomes a paying customer. It then recurs monthly while they remain subscribed. If they cancel, commission for that customer stops.'],
+    ['Can I choose my own code?', 'Yes - use "Customise your referral code" above. Your link and QR update automatically.'],
+    ['Do I have to manage anything?', 'No. We handle onboarding, support, billing and the daily delivery. You just share your link/code, or use "Invite your members" and we send the co-branded invitation for you.'],
+    ['Is there a co-branded page?', 'Yes - your link opens a page that says "In partnership with" your organisation, with the 14-day free trial offer.'],
+    ['How do I track results?', 'Your growth funnel above shows clicks, invites, joins, trials, paying customers and churn.'],
+    ['What can my members do with it?', 'Fresh leads at 9am, Print & Post with postage tracking, Auto Print & Post, Bulk Postage for quiet times, and CRM integration.'],
+    ['Does it cost me anything?', 'No cost, no minimum and no lock-in. You only earn when your members pay us.'],
+    ['Can I pause or leave?', 'Yes - reply to hello@9amleads.com and we will pause or close your account. Commission already earned is still paid.'],
+    ['Who do I contact?', 'Email hello@9amleads.com - we usually reply the same working day.']
+  ];
+  html += '<div class="card"><div class="sect-title">Partner FAQs</div>' +
+    _faqs.map(function(f){ return '<details style="border-bottom:1px solid var(--border);padding:8px 0"><summary style="cursor:pointer;font-weight:700;font-size:13px;color:#0c4a6e">' + esc(f[0]) + '</summary><p class="muted" style="margin:8px 0 0;font-size:12.5px;line-height:1.7">' + esc(f[1]) + '</p></details>'; }).join('') +
+    '</div>';
   // Member invite tool (associations)
   if (isAssoc) {
     html += '<div class="card"><div class="sect-title">Invite your members</div>' +
