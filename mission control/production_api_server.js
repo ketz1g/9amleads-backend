@@ -211,6 +211,12 @@ function saveAssignments(data) {
 function getPostcodeLimit(plan, extraPostcodes, product) {
   // Specialist types (planning, probate, tenders) use wider areas by default
   var specialistTypes = { planning: true, probate: true, tenders: true };
+// Products delivered as SHARED opportunities: the same notice/lead may legitimately
+// go to multiple customers (public tenders; probate gazette notices). Moving,
+// planning and newbusiness stay EXCLUSIVE (one firm per lead). Used by the 9am
+// delivery so shared products skip CROSS-customer exclusivity but still never
+// deliver the same lead twice to the SAME customer.
+function isSharedLeadProduct(prod) { prod = String(prod || ''); return prod === 'tenders' || prod === 'probate'; }
   if (product && specialistTypes[product]) {
     var rule = getLeadTypeRule(product);
     if (rule && rule.area_limit) {
@@ -13068,11 +13074,18 @@ async function deliveryPreviewForCustomer(cust, sharedSeen, opts) {
   // 'u:'+url (which never matched the candidate key), so the preview over-counted
   // and promised leads the delivery could not actually send.
   var deliveredKeys = {};
+  // SHARED products (tenders/probate): only THIS customer's own delivered leads
+  // block re-offering, so the same notice CAN be offered to other customers.
+  // Exclusive products: any delivered lead blocks (unchanged), but shared-product
+  // leads never block an exclusive one.
+  var _sharedPv = isSharedLeadProduct(cust.product);
   var _pvInternalIds = {};
   (dbV.customers || []).forEach(function(c2) { try { if (typeof isInternalAccount === 'function' && isInternalAccount(c2)) _pvInternalIds[c2.id] = 1; } catch(e) {} });
   (dbV.leads || []).forEach(function(l) {
     if (!l.delivered) return;
     if (_pvInternalIds[l.customer_id]) return;
+    if (_sharedPv) { if (l.customer_id !== cust.id) return; }
+    else if (isSharedLeadProduct(l.product)) return;
     try {
       var dd = JSON.parse(l.data || '{}');
       var u = dd.url || ''; if (u) deliveredKeys[u] = 1;
@@ -13244,8 +13257,9 @@ async function deliveryPreviewForCustomer(cust, sharedSeen, opts) {
     if (!previewLeadPassesFilters(l)) continue;
     var key = l.url || ('a:' + String(l.address || l.fullAddress || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30));
     var addrKeyP = 'aa:' + propertyIdentityKey(l.fullAddress || l.address || '', l.postcode || '');
-    if (deliveredKeys[key] || deliveredKeys[addrKeyP] || seen[key] || _sharedSeen[key]) continue;
-    if (addrKeyP.length > 5 && (seen[addrKeyP] || _sharedSeen[addrKeyP])) continue;
+    if (deliveredKeys[key] || deliveredKeys[addrKeyP]) continue;
+    if (!_sharedPv && (seen[key] || _sharedSeen[key])) continue;
+    if (!_sharedPv && addrKeyP.length > 5 && (seen[addrKeyP] || _sharedSeen[addrKeyP])) continue;
     seen[key] = 1; seen[addrKeyP] = 1;
     if (_sharedSeen !== seen) { _sharedSeen[key] = 1; if (addrKeyP.length > 5) _sharedSeen[addrKeyP] = 1; }
     candidates.push(l);
@@ -26606,6 +26620,9 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
     (db.leads || []).forEach(function(l) {
       if (!l.delivered) return;
       if (_internalCustIds[l.customer_id]) return; // test/monitor deliveries don't count
+      // SHARED products (tenders/probate) are exempt from cross-customer exclusivity,
+      // so they are never added to the global delivered sets.
+      if (isSharedLeadProduct(l.product)) return;
       try {
         var gdd = JSON.parse(l.data || '{}');
         var gu = gdd.url || '';
@@ -26625,6 +26642,12 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
     var _inRunSeen = {};
     for (var ci = 0; ci < customers.length; ci++) {
       var cust = customers[ci];
+      // SHARED vs EXCLUSIVE: for shared products (tenders/probate) this customer gets
+      // its OWN in-run seen set, so a lead can be shared across customers within the
+      // same run while never repeating for the same customer. For exclusive products
+      // it is the shared set (unchanged behaviour).
+      var _sharedProd = isSharedLeadProduct(cust.product);
+      var _inRunSeenCust = _sharedProd ? {} : _inRunSeen;
       _deliveryHeartbeat();
       var _custT0 = Date.now();
       // HARD PER-CUSTOMER TIME CAP: one low-supply customer (whose pool scan falls
@@ -26861,9 +26884,9 @@ _deliverDiag[cust.email].products = products;
           // in this run. Previously the primary pick ignored the in-run set, so two
           // customers with overlapping areas could each be delivered the same property
           // from their own pre-queued lead.
-          if (_pu && _inRunSeen['u:' + _pu]) return false;
+          if (_pu && _inRunSeenCust['u:' + _pu]) return false;
           var _pa = 'aa:' + _pid;
-          if (_pid && _inRunSeen[_pa]) return false;
+          if (_pid && _inRunSeenCust[_pa]) return false;
           return true;
         });
         if (_deliverDiag[cust.email]) {
@@ -26883,9 +26906,9 @@ _deliverDiag[cust.email].products = products;
             try {
               var _ppd = JSON.parse(primaryLeads[_pix].data || '{}');
               var _ppu = String(_ppd.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
-              if (_ppu) _inRunSeen['u:' + _ppu] = true;
+              if (_ppu) _inRunSeenCust['u:' + _ppu] = true;
               var _ppa = 'aa:' + propertyIdentityKey(_ppd.fullAddress || _ppd.deceasedAddress || _ppd.address || '', _ppd.postcode || '');
-              if (_ppa) _inRunSeen[_ppa] = true;
+              if (_ppa) _inRunSeenCust[_ppa] = true;
             } catch(e) {}
           }
         }
@@ -27045,15 +27068,15 @@ _deliverDiag[cust.email].products = products;
           // IN-RUN dedup: reject a property/listing already assigned this run.
           var normU = String(u).split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
           var iKey = normU ? 'u:' + normU : ('a:' + String(dd.fullAddress || dd.deceasedAddress || dd.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30));
-          if (_inRunSeen && _inRunSeen[iKey]) return false;
-          if (_inRunSeen) _inRunSeen[iKey] = true;
+          if (_inRunSeen && _inRunSeenCust[iKey]) return false;
+          if (_inRunSeen) _inRunSeenCust[iKey] = true;
           // ADDRESS+POSTCODE in-run dedup: the same property scraped by multiple
           // providers/runs has different URLs (e.g. Rightmove RES_BUY vs COM_BUY),
           // so URL alone lets near-identical leads through 2-3x in one run. Collapse
           // any duplicate property via its street+number+postcode identity.
           var addrKeyRun = 'aa:' + propertyIdentityKey(dd.fullAddress || dd.deceasedAddress || dd.address || '', dd.postcode || '');
-          if (addrKeyRun && _inRunSeen && _inRunSeen[addrKeyRun]) return false;
-          if (addrKeyRun && _inRunSeen) _inRunSeen[addrKeyRun] = true;
+          if (addrKeyRun && _inRunSeen && _inRunSeenCust[addrKeyRun]) return false;
+          if (addrKeyRun && _inRunSeen) _inRunSeenCust[addrKeyRun] = true;
           var aKey = String(dd.fullAddress || dd.deceasedAddress || dd.address || '').toLowerCase().replace(/\s+/g, ' ').trim();
           var rKey = String(dd.reference || dd.companyNumber || dd.deceasedName || dd.tenderNoticeId || '').toLowerCase().trim();
           var pKey = String(dd.postcode || '').toUpperCase().replace(/\s+/g, ' ').trim();
@@ -27431,7 +27454,7 @@ _deliverDiag[cust.email].products = products;
                     var poolUrl = rl.url || '';
                     var poolUrlKey = poolUrl ? ('u:' + String(poolUrl).split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim()) : '';
                     if (rl.url && (deliveredUrls[rl.url] || globalDeliveredUrls[rl.url])) continue;
-                    if (poolUrlKey && _inRunSeen[poolUrlKey]) continue;
+                    if (poolUrlKey && _inRunSeenCust[poolUrlKey]) continue;
                     // PRESERVE ALL POOL FIELDS: spread the raw pool lead first so
                     // product-specific fields (deceasedName/deceasedAddress for probate,
                     // companyName for newbusiness, reference/proposal for planning,
@@ -27552,8 +27575,8 @@ _deliverDiag[cust.email].products = products;
                     existingKeys[poolKey] = 1;
                     // Reserve it for the whole run so another overlapping customer
                     // never picks the same pool lead in this delivery (exclusive).
-                    if (poolUrlKey) _inRunSeen[poolUrlKey] = true;
-                    try { var _akr = 'aa:' + propertyIdentityKey(poolLeadData.fullAddress || poolLeadData.deceasedAddress || poolLeadData.address || '', poolLeadData.postcode || ''); if (_akr) _inRunSeen[_akr] = true; } catch(e) {}
+                    if (poolUrlKey) _inRunSeenCust[poolUrlKey] = true;
+                    try { var _akr = 'aa:' + propertyIdentityKey(poolLeadData.fullAddress || poolLeadData.deceasedAddress || poolLeadData.address || '', poolLeadData.postcode || ''); if (_akr) _inRunSeenCust[_akr] = true; } catch(e) {}
                     createdFromPool.push(newLead);
                   }
                   } // end _fp freshness passes (24h -> 48h fallback)
@@ -27583,8 +27606,8 @@ _deliverDiag[cust.email].products = products;
                     var _ald = JSON.parse(areaLead2.data || '{}');
                     var _alU = String(_ald.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
                     var _alKey = _alU ? 'u:' + _alU : ('a:' + String(_ald.fullAddress || _ald.deceasedAddress || _ald.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30));
-                    if (_inRunSeen && _inRunSeen[_alKey]) continue;
-                    if (_inRunSeen) _inRunSeen[_alKey] = true;
+                    if (_inRunSeen && _inRunSeenCust[_alKey]) continue;
+                    if (_inRunSeen) _inRunSeenCust[_alKey] = true;
                   } catch(eu) {}
                   // If this lead was pre-assigned to another customer (global fallback),
                   // reassign it to this customer so it delivers correctly.
@@ -28763,13 +28786,13 @@ _deliverDiag[cust.email].products = products;
                 if (!candidateInArea(_rd, custAreas, _fp, _custUkwide)) continue;
                 var _fu = String(_rd.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
                 var _fid = propertyIdentityKey(_rd.fullAddress || _rd.deceasedAddress || _rd.address || '', _rd.postcode || '');
-                if (_fu && (_usedKeys['u:' + _fu] || _inRunSeen['u:' + _fu] || globalDeliveredUrls[_fu] || globalDeliveredUrls[_rd.url])) continue;
-                if (_fid && (_usedKeys['aa:' + _fid] || _inRunSeen['aa:' + _fid] || globalDeliveredKeys['gg:' + _fid])) continue;
+                if (_fu && (_usedKeys['u:' + _fu] || _inRunSeenCust['u:' + _fu] || globalDeliveredUrls[_fu] || globalDeliveredUrls[_rd.url])) continue;
+                if (_fid && (_usedKeys['aa:' + _fid] || _inRunSeenCust['aa:' + _fid] || globalDeliveredKeys['gg:' + _fid])) continue;
                 var _fNew = { id: uuidv4(), customer_id: cust.id, product: _fp, data: JSON.stringify(Object.assign({}, _rl, { address: _rd.address, fullAddress: _rd.address, postcode: _rd.postcode || '' })), status: 'new', delivered: 0, created_at: new Date().toISOString(), delivered_at: null, release_at: today + 'T09:00:00.000Z' };
                 db.leads.push(_fNew);
                 custLeads.push(_fNew);
-                if (_fu) { _usedKeys['u:' + _fu] = 1; _inRunSeen['u:' + _fu] = 1; }
-                if (_fid) { _usedKeys['aa:' + _fid] = 1; _inRunSeen['aa:' + _fid] = 1; }
+                if (_fu) { _usedKeys['u:' + _fu] = 1; _inRunSeenCust['u:' + _fu] = 1; }
+                if (_fid) { _usedKeys['aa:' + _fid] = 1; _inRunSeenCust['aa:' + _fid] = 1; }
                 _fNeed--; _fillNeed--;
               }
             }
@@ -28877,9 +28900,9 @@ pushToCrm(cust, crmPayload2, 'daily delivery');
         // customer (observed: the same Rightmove/OnTheMarket listing sent to 2-4
         // customers on the same morning). Real (non-test) deliveries only: test/internal
         // leads must never block a real customer.
-        if (!_isTestCust) {
-          try {
-            for (var _mki = 0; _mki < custLeads.length; _mki++) {
+    if (!_isTestCust && !_sharedProd) {
+      try {
+        for (var _mki = 0; _mki < custLeads.length; _mki++) {
               var _mkd = {}; try { _mkd = JSON.parse(custLeads[_mki].data || '{}'); } catch(mkE) { _mkd = {}; }
               var _mku = String(_mkd.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
               if (_mku) globalDeliveredUrls[_mku] = true;
