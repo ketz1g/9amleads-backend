@@ -1,0 +1,116 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Contact the Partner team - 9amLeads</title>
+<meta name="robots" content="noindex,follow">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕘</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--accent:#0ea5e9;--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--bg:#f1f5f9;--card:#fff}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.6}
+h1,h2,h3{font-family:Outfit,Inter,sans-serif}
+.nav{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
+.nav-in{max-width:960px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{font-weight:900;font-size:19px;color:var(--ink);text-decoration:none}
+.brand span{color:var(--accent)}
+.nav a.lnk{color:var(--muted);text-decoration:none;font-size:13px;font-weight:600;margin-left:16px}
+.nav a.lnk:hover{color:var(--ink)}
+.wrap{max-width:960px;margin:0 auto;padding:24px 20px}
+.hero{background:linear-gradient(160deg,#062a4a,#0b6bb3);color:#fff;border-radius:18px;padding:34px 28px;margin-bottom:18px}
+.hero h1{font-size:clamp(24px,4vw,34px);letter-spacing:-.5px;margin-bottom:8px}
+.hero p{color:#dbeaf7;font-size:16px;max-width:640px}
+.grid{display:grid;grid-template-columns:1.2fr .8fr;gap:16px}
+@media(max-width:760px){.grid{grid-template-columns:1fr}.nav a.lnk:not(.dash){display:none}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px}
+.card h3{font-size:16px;margin-bottom:10px;color:#0c4a6e}
+label{display:block;font-size:12px;font-weight:700;color:#334155;margin:12px 0 5px}
+input,select,textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:11px 12px;font-family:inherit;font-size:14px;color:var(--ink);background:#fff}
+textarea{min-height:130px;resize:vertical}
+button{background:var(--accent);color:#fff;border:none;border-radius:9px;padding:13px 26px;font-weight:800;font-size:14px;cursor:pointer;margin-top:14px;font-family:inherit}
+.msg{margin-top:10px;font-size:13px}
+.ok{color:#166534}.err{color:#b91c1c}
+.muted{color:var(--muted);font-size:13px}
+.row{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:none}
+.ic{width:34px;height:34px;border-radius:9px;background:rgba(14,165,233,.1);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:800;flex:0 0 auto}
+.foot{text-align:center;color:var(--muted);font-size:12px;padding:26px 0}
+.foot a{color:#0369a1;text-decoration:none}
+a{color:var(--accent)}
+</style></head><body>
+
+<div class="nav"><div class="nav-in">
+  <a class="brand" href="/portal/partner.html">9am<span>Leads</span> Partner</a>
+  <div>
+    <a class="lnk dash" href="/portal/partner.html">Dashboard</a>
+    <a class="lnk" href="/portal/partner-help.html">Help Centre</a>
+    <a class="lnk" href="/portal/partner-contact.html">Contact</a>
+  </div>
+</div></div>
+
+<div class="wrap">
+<div class="hero">
+  <h1>Contact the Partner team</h1>
+  <p>Questions about commission, your members, or anything else? Send us a message and we'll reply by email - usually the same working day.</p>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h3>Send us a message</h3>
+    <label for="topic">What's it about?</label>
+    <select id="topic">
+      <option>Commission &amp; payments</option>
+      <option>Inviting / managing my members</option>
+      <option>My code or link</option>
+      <option>Technical issue</option>
+      <option>Something else</option>
+    </select>
+    <label for="message">Your message</label>
+    <textarea id="message" placeholder="Type your question or message..."></textarea>
+    <label for="from">Your email (optional)</label>
+    <input id="from" type="email" placeholder="you@example.com">
+    <button onclick="sendMsg()">Send message</button>
+    <div id="status" class="msg"></div>
+    <p class="muted" style="margin-top:10px">If you're signed in, this goes straight to the team. Otherwise it opens your email app to send it.</p>
+  </div>
+
+  <div>
+    <div class="card">
+      <h3>Direct contact</h3>
+      <div class="row"><div class="ic">K</div><div><b>Ketz Mandalia</b><div class="muted">Founder, 9amLeads</div></div></div>
+      <div class="row"><div class="ic">@</div><div><a href="mailto:hello@9amleads.com">hello@9amleads.com</a><div class="muted">We reply the same working day</div></div></div>
+      <div class="row"><div class="ic">🏢</div><div>9am Leads Ltd<div class="muted">66 Paul Street, London EC2A 4NA<br>Company No. 17402522</div></div></div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h3>Not a partner yet?</h3>
+      <p class="muted">See the full proposal and apply - it takes a minute.</p>
+      <a class="btn" href="/portal/partner-join.html" style="display:inline-block;margin-top:10px;background:var(--accent);color:#fff;text-decoration:none;font-weight:700;padding:12px 22px;border-radius:9px;font-size:14px">Become a partner</a>
+    </div>
+  </div>
+</div>
+
+<p class="foot">9am Leads Ltd &middot; <a href="/portal/partner-help.html">Help Centre</a> &middot; <a href="/partners/">Partner proposal</a> &middot; <a href="mailto:hello@9amleads.com">hello@9amleads.com</a></p>
+</div>
+
+<script>
+function getToken(){ try { return localStorage.getItem('partner_token') || ''; } catch(e){ return ''; } }
+function sendMsg(){
+  var topic = document.getElementById('topic').value;
+  var msg = document.getElementById('message').value.trim();
+  var from = document.getElementById('from').value.trim();
+  var st = document.getElementById('status');
+  if (!msg) { st.className = 'msg err'; st.textContent = 'Please type a message.'; return; }
+  var body = '[' + topic + '] ' + msg + (from ? ('\n\nReply to: ' + from) : '');
+  var tok = getToken();
+  if (!tok) {
+    st.className = 'msg'; st.textContent = 'Opening your email app...';
+    window.location.href = 'mailto:hello@9amleads.com?subject=' + encodeURIComponent('Partner enquiry: ' + topic) + '&body=' + encodeURIComponent(body);
+    return;
+  }
+  st.className = 'msg'; st.textContent = 'Sending...';
+  fetch('/api/partner/ask', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok }, body: JSON.stringify({ question: body }) })
+    .then(function(r){ return r.json(); })
+    .then(function(d){ if (d && d.success) { st.className = 'msg ok'; st.textContent = d.message || 'Thanks - we will reply by email.'; document.getElementById('message').value = ''; } else { st.className = 'msg err'; st.textContent = (d && d.error) || 'Could not send - please email hello@9amleads.com.'; } })
+    .catch(function(){ st.className = 'msg err'; st.textContent = 'Could not send - please email hello@9amleads.com.'; });
+}
+</script>
+</body></html>
