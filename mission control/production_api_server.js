@@ -4116,7 +4116,7 @@ function processPartnerCommissions() {
     var attr = dbc.partner_attribution || [];
     partners.forEach(function(p) {
       if (!partnerStatusActive(p)) return;
-      var isSales = isSalesPartner(p);
+      var isSales = isPartnerRecurring(p);
       if (isSales) {
         var monthly = Number(p.commission_amount) || Number(cfg.sales_partner_monthly_amount) || 25;
         var duration = p.commission_duration_months !== undefined && p.commission_duration_months !== null ? Number(p.commission_duration_months) : Number(cfg.sales_partner_commission_duration_months);
@@ -5189,10 +5189,11 @@ app.post('/api/admin/partners/:id/type', adminAuth, (req, res) => {
     var dbc = getDb(); var p = (dbc.affiliates || []).find(function(x){ return x.id === req.params.id; });
     if (!p) return res.status(404).json({ error: 'Partner not found' });
     var to = String(req.body.partner_type || '').toLowerCase();
-    if (to !== 'affiliate' && to !== 'sales_partner') return res.status(400).json({ error: 'partner_type must be affiliate or sales_partner' });
+    if (['affiliate', 'sales_partner', 'association'].indexOf(to) === -1) return res.status(400).json({ error: 'partner_type must be affiliate, sales_partner or association' });
     var prev = p.partner_type; p.partner_type = to;
-    p.commission_type = to === 'sales_partner' ? 'recurring' : 'one_off';
-    p.commission_amount = to === 'sales_partner' ? Number(partnerConfig().sales_partner_monthly_amount) : Number(partnerConfig().affiliate_one_off_amount);
+    var _toRecurring = (to === 'sales_partner' || to === 'association');
+    p.commission_type = _toRecurring ? 'recurring' : 'one_off';
+    p.commission_amount = _toRecurring ? Number(partnerConfig().sales_partner_monthly_amount) : Number(partnerConfig().affiliate_one_off_amount);
     saveDb();
     partnerAudit('partner_type_changed', { partner_id: p.id, previous_value: prev, new_value: to, admin: (req.user && req.user.email) || 'admin' });
     res.json({ success: true, partner: partnerDashboardSafe(p) });
@@ -5899,7 +5900,7 @@ app.post('/api/auth/signup', async (req, res) => {
     try { affRef = resolveAffiliate(_affCode); } catch(e) {}
     if (affRef && !partnerStatusActive(affRef)) affRef = null;
     var cfgTrial = partnerConfig();
-    var trialDays = affRef ? (Number(cfgTrial[partnerTypeOf(affRef) === 'sales_partner' ? 'sales_partner_trial_days' : 'affiliate_trial_days']) || 14) : (Number(cfgTrial.standard_trial_days) || 7);
+    var trialDays = affRef ? (Number(cfgTrial[isPartnerRecurring(affRef) ? 'sales_partner_trial_days' : 'affiliate_trial_days']) || 14) : (Number(cfgTrial.standard_trial_days) || 7);
     var trial_ends = new Date(Date.now() + trialDays * 86400000).toISOString();
     var affiliateAppliedAt = affRef ? new Date().toISOString() : null;
     var affiliatePayoutDue = affRef ? new Date(Date.now() + 30 * 86400000).toISOString() : null;
