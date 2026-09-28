@@ -18699,7 +18699,18 @@ function buildTrialPersonalBlock(customer, template) {
     var prodName = _allProds.map(function(p) { return prodNames[p] || p; }).join(' + ') || (customer.lead_type || 'your selected');
     var alloc = customer.leads_per_day || 5;
     var metrics = getTrialMetrics(customer);
-    var noCardLine = '<p style="color:#64748b;font-size:11px;text-align:center;margin:8px 0 0;line-height:1.6">No card required. Nothing will be charged automatically at the end of your trial.</p>';
+    // The trial only "pauses" for customers with NO card. Anyone who saved a card at
+    // signup is auto-charged at trial end, so the messaging MUST say so (a "nothing
+    // will be charged" line to a card-holder is misleading and a chargeback risk).
+    var _hasCard = !!customer.stripe_payment_method_id;
+    var _wk = { starter: 25, pro: 49, enterprise: 99 };
+    var _plane = customer.selected_plan || 'starter';
+    var _amt = _wk[_plane] || 25;
+    var _endLbl = '';
+    try { _endLbl = fmtTrialEnd(customer) || ''; } catch(e) {}
+    var noCardLine = _hasCard
+      ? '<p style="color:#b45309;font-size:11px;text-align:center;margin:8px 0 0;line-height:1.6">Important: you have a saved card. Unless you cancel before your trial ends' + (_endLbl ? ' (' + _endLbl + ')' : '') + ', your ' + _plane + ' plan starts automatically at &pound;' + _amt + '.00 per week. Cancel anytime in your dashboard.</p>'
+      : '<p style="color:#64748b;font-size:11px;text-align:center;margin:8px 0 0;line-height:1.6">No card on file, so nothing will be charged when your trial ends. Your 9am deliveries pause until you choose a plan - add one whenever you are ready.</p>';
 
     if (template === 'trial_day1') {
       // Welcome summary
@@ -18734,7 +18745,10 @@ function buildTrialPersonalBlock(customer, template) {
             noCardLine + '</div></td></tr>';
         }
         if (template === 'trial_day7') {
-          lines += '<p style="font-size:11.5px;color:#475569;margin:8px 0 0">Your lead delivery will pause when your trial ends. Continue receiving fresh opportunities every morning at 9am by choosing your plan.</p>';
+          var _d7 = _hasCard
+            ? 'Your trial ends tomorrow. Your saved card will be charged &pound;' + _amt + '.00 per week and your fresh 9am deliveries will continue. Cancel anytime before then if you do not want to continue.'
+            : 'Your lead delivery will pause when your trial ends. Continue receiving fresh opportunities every morning at 9am by choosing your plan.';
+          lines += '<p style="font-size:11.5px;color:#475569;margin:8px 0 0">' + _d7 + '</p>';
           return '<tr><td class="mob" bgcolor="#eff6ff" style="background-color:#eff6ff;padding:0 30px 16px"><div style="border:1px solid #bfdbfe;border-radius:12px;padding:16px 20px">' + lines +
             buildCtaBtn('Continue My 9am Leads', pricingUrl) +
             '<div style="text-align:center;margin-top:4px"><a href="' + leadsUrl + '" style="color:#0ea5e9;font-size:11px;font-weight:700;text-decoration:underline">View Plans</a></div>' +
