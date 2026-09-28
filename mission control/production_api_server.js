@@ -19481,6 +19481,23 @@ function preallocateDeliveryQueues() {
             return Promise.resolve(deliveryPreviewForCustomer(c, seen, { includeRaw: true })).then(function(pv) {
               var leads = (pv && pv.leads) || [];
               var db = getDb();
+              // FRESHNESS FLOOR the 9am run will use, evaluated for ~09:00 (pre-allocation
+              // runs ~1.5h earlier) so nothing queued here can age out before delivery.
+              var _freshFloor = getFreshCutoffIso(Date.now() + 90 * 60000);
+              // DROP undelivered queued rows that can no longer pass the freshness gate
+              // (stale or undated). They can never be delivered, yet they counted toward
+              // `queuedNow` and blocked a fresh top-up - leaving the customer silently
+              // short at 9am. Removing them keeps the queue honest.
+              var _staleRemoved = 0;
+              db.leads = (db.leads || []).filter(function(l) {
+                if (l.customer_id !== c.id) return true;
+                if (l.delivered || l.status === 'removed') return true;
+                var dd = null; try { dd = JSON.parse(l.data || '{}'); } catch(e) { dd = null; }
+                var _fd = dd ? pickFreshDate(dd) : '';
+                if (!_fd || _fd < _freshFloor) { _staleRemoved++; return false; }
+                return true;
+              });
+              if (_staleRemoved) { saveDb(); console.log('[PREALLOC] ' + c.email + ': dropped ' + _staleRemoved + ' stale/undated queued lead(s)'); }
               var have = {};
               (db.leads || []).forEach(function(l) {
                 if (l.customer_id !== c.id) return;
