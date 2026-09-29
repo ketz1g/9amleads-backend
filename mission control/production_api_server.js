@@ -21138,11 +21138,18 @@ async function runDailyDeliveryReport() {
         // flag as short if today's delivered + preview < promised.
         var todayR2 = new Date().toISOString().split('T')[0];
         var rDeliveredToday = (rDb.leads || []).filter(function(l) { return l.customer_id === rc.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(todayR2) === 0 && (function(){ try { return !JSON.parse(l.data||'{}').rejected; } catch(e){ return true; } })(); }).length;
-        var rAvailable = rp.count + Math.max(0, rDeliveredToday);
+        // Count the RESERVED queue too (leads the 07:35 pre-allocation already queued).
+        // This report runs at 07:00 - BEFORE pre-allocation - and used to ignore the
+        // queue, so a customer already stocked with reserved leads showed a false
+        // "CHECK n/promised" shortfall every morning. Mirrors the fulfilment guarantee
+        // (runFulfilmentGuarantee) and the morning readiness summary.
+        var rReserved = 0;
+        try { rReserved = (rDb.leads || []).filter(function(l) { return l.customer_id === rc.id && !l.delivered && l.status !== 'removed'; }).length; } catch(gr2) {}
+        var rAvailable = rp.count + rReserved + Math.max(0, rDeliveredToday);
         var ok = rAvailable >= rPromised;
-        var row = { email: rc.email, product: rc.product, count: rp.count, promised: rPromised, delivered_today: rDeliveredToday, areas: (rp.areas || []).join(', '), ok: ok };
+        var row = { email: rc.email, product: rc.product, count: rAvailable, promised: rPromised, preview_count: rp.count, reserved: rReserved, delivered_today: rDeliveredToday, areas: (rp.areas || []).join(', '), ok: ok };
         rRows.push(row);
-        if (!ok) rShort.push(rc.email + ' (' + rc.product + '): ' + rAvailable + '/' + rPromised + ' (preview ' + rp.count + ' + already ' + rDeliveredToday + ') in ' + (rp.areas || []).join(','));
+        if (!ok) rShort.push(rc.email + ' (' + rc.product + '): ' + rAvailable + '/' + rPromised + ' (preview ' + rp.count + ' + reserved ' + rReserved + ' + already ' + rDeliveredToday + ') in ' + (rp.areas || []).join(','));
       } catch(re2) {}
     }
     // ---- 3) BUILD + EMAIL THE REPORT ----
