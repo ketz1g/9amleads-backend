@@ -4250,7 +4250,7 @@ function processPartnerCommissions() {
         var affRateN = Number(paN.commission_amount) || Number(Number(cmN.commission_amount) || 25);
         var affAmtTxt = '\u00a3' + Number(affRateN || 25).toFixed(2);
         var _aHtml = '<div style="font-family:Inter,Arial,sans-serif;max-width:540px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px"><div style="font-size:34px;margin-bottom:6px">\uD83C\uDF89</div><h2 style="color:#4ade80;margin:0 0 10px;font-size:19px">You earned ' + affAmtTxt + '!</h2><p style="font-size:14px;line-height:1.7;color:#cbd5e1">A customer you referred <b style="color:#fff">' + escHtml(cuN && (cuN.company || cuN.email) || 'your referral') + '</b> has paid their second invoice, so your commission is now pending and will clear into your next payout.</p><p style="font-size:13px;color:#94a3b8;line-height:1.6">Track it anytime in your dashboard: <a href="https://www.9amleads.com/portal/affiliate.html" style="color:#38bdf8">affiliate dashboard &rarr;</a></p></div>';
-        sendBrevoEmail({ email: paN.email, name: paN.name || 'Affiliate' }, '\uD83C\uDF89 You earned ' + affAmtTxt + ' - commission earned', _aHtml);
+        sendBrevoEmail({ email: paN.email, name: paN.name || 'Affiliate' }, '\uD83C\uDF89 You earned ' + affAmtTxt + ' - commission earned', wrapDarkEmailShell(_aHtml));
       });
     } catch(eN) { console.log('[AFFILIATE] commission notify error:', eN.message); }
     return { created: created.length };
@@ -4286,7 +4286,7 @@ function processCommissionClearance() {
             try {
               sendBrevoEmail({ email: _recruiter.email, name: _recruiter.name || 'Affiliate' },
                 'You earned a £' + bonusAmt + ' recruit bonus!',
-                '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:600px;margin:0 auto">' +
+                wrapDarkEmailShell('<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:600px;margin:0 auto">' +
                 '<div style="text-align:center;margin-bottom:18px"><span style="background:rgba(52,211,153,.15);color:#34d399;font-size:11px;font-weight:800;padding:5px 14px;border-radius:50px;letter-spacing:.5px">9amLeads TWO-TIER BONUS</span></div>' +
                 '<h1 style="font-family:Outfit,sans-serif;color:#34d399;margin:0 0 8px;font-size:26px">Recruit bonus earned! 🎉</h1>' +
                 '<p style="color:#c9d1de;line-height:1.8;margin:0 0 14px">Hi ' + escHtml(_recruiter.name || 'there') + ',</p>' +
@@ -4296,7 +4296,7 @@ function processCommissionClearance() {
                 '</div>' +
                 '<p style="color:#c9d1de;line-height:1.8">You can see this bonus and all your earnings in your dashboard.</p>' +
                 '<div style="text-align:center;margin:18px 0 6px"><a href="https://9amleads.com/portal/affiliate.html" style="display:inline-block;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;padding:12px 26px;border-radius:10px;font-weight:700;font-size:14px;text-decoration:none">Open your dashboard</a></div>' +
-                '<p style="color:#888;font-size:13px;margin-top:20px;border-top:1px solid #1e2030;padding-top:12px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>').catch(function(){});
+                '<p style="color:#888;font-size:13px;margin-top:20px;border-top:1px solid #1e2030;padding-top:12px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>')).catch(function(){});
             } catch(e4) {}
           }
         }
@@ -4309,7 +4309,7 @@ function processCommissionClearance() {
           if (_affOwner && _affOwner.email) {
             sendBrevoEmail({ email: _affOwner.email, name: _affOwner.name || 'Affiliate' },
               'Your £' + Number(cm.commission_amount || 25) + ' commission has cleared',
-              '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto">' +
+              wrapDarkEmailShell('<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto">' +
               '<h1 style="font-family:Outfit,sans-serif;color:#34d399;margin:0 0 10px">Your commission has cleared!</h1>' +
               '<p style="color:#c9d1de;line-height:1.8">Hi ' + escHtml(_affOwner.name || 'there') + ',</p>' +
               '<p style="color:#c9d1de;line-height:1.8">Great news - a referral you made has reached their second invoice and your <strong style="color:#fff;font-size:20px">£' + Number(cm.commission_amount || 25) + '</strong> commission has cleared.</p>' +
@@ -4318,7 +4318,7 @@ function processCommissionClearance() {
               '</div>' +
               '<p style="color:#c9d1de;line-height:1.8">Keep going! Every retained sign-up adds £25, and every 50 adds a wheel spin worth up to £1,000.</p>' +
               '<div style="text-align:center;margin:18px 0 6px"><a href="https://9amleads.com/portal/affiliate.html" style="display:inline-block;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;padding:12px 26px;border-radius:10px;font-weight:700;font-size:14px;text-decoration:none">See it in your dashboard</a></div>' +
-              '<p style="color:#888;font-size:13px;margin-top:20px;border-top:1px solid #1e2030;padding-top:12px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>').catch(function(){});
+              '<p style="color:#888;font-size:13px;margin-top:20px;border-top:1px solid #1e2030;padding-top:12px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>')).catch(function(){});
           }
         } catch(e2) {}
       }
@@ -5750,7 +5750,7 @@ app.post('/api/admin/affiliate/payouts/confirm', adminAuth, (req, res) => {
     // Tell the affiliate their money is on the way.
     try {
       var _ch = '<div style="font-family:Inter,Arial,sans-serif;max-width:540px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px"><h2 style="color:#4ade80;margin:0 0 10px;font-size:19px">\u00a3' + Number(payout.amount || 0).toFixed(2) + ' is on its way!</h2><p style="font-size:14px;line-height:1.7;color:#cbd5e1">Your commission payout of <b style="color:#fff">\u00a3' + Number(payout.amount || 0).toFixed(2) + '</b> has been sent to your bank account. It should arrive within 1-3 working days.</p><p style="font-size:13px;color:#94a3b8">Thanks for being part of 9amLeads.</p></div>';
-      sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' }, '\u00a3' + Number(payout.amount || 0).toFixed(2) + ' payout sent - thank you!', _ch);
+      sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' }, '\u00a3' + Number(payout.amount || 0).toFixed(2) + ' payout sent - thank you!', wrapDarkEmailShell(_ch));
     } catch(eCh) {}
     res.json({ success: true, payout: payout });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -6770,7 +6770,7 @@ app.post('/api/auth/signup', async (req, res) => {
           try { partnerNotify(affRef.id, 'signup', 'New sign-up using your code: ' + (company || email) + ' (free trial started).', id); } catch(pnE) {}
         } else {
         var _snHtml = '<div style="font-family:Inter,Arial,sans-serif;max-width:540px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px"><h2 style="color:#38bdf8;margin:0 0 10px;font-size:19px">\uD83D\uDE4C Your referral just signed up!</h2><p style="font-size:14px;line-height:1.7;color:#cbd5e1"><b style="color:#fff">' + escHtml(company || name || email) + '</b> started their free ' + (trialDays || 14) + '-day ' + escHtml(product || '') + ' trial using your code <b style="color:#38bdf8">' + escHtml(affRef.code || '') + '</b>.</p><p style="font-size:12.5px;line-height:1.7;color:#e2e8f0;background:rgba(14,165,233,.14);border:1px solid rgba(14,165,233,.3);border-radius:8px;padding:10px 12px;margin:0 0 12px">' + (name ? escHtml(name) + '<br>' : '') + '<span style="color:#94a3b8">' + escHtml(email) + (phone ? ' \u00b7 ' + escHtml(phone) : '') + '</span></p><p style="font-size:13px;line-height:1.6;color:#94a3b8">They may not upgrade right away, so follow up over the next few days. You earn \u00a3' + Number(affRef.commission_amount || cfgTrial.affiliate_one_off_amount || 25) + ' when they pay their second invoice. Add them to your follow-up list in the dashboard and set a reminder.</p><p><a href="https://www.9amleads.com/portal/affiliate.html" style="display:inline-block;background:#0ea5e9;color:#fff;font-weight:700;padding:11px 18px;border-radius:8px;text-decoration:none;font-size:13px">Open my dashboard</a></p></div>';
-        sendBrevoEmail({ email: affRef.email, name: affRef.name || 'Affiliate' }, '\uD83D\uDE4C A referral just signed up - follow up to close it', _snHtml);
+        sendBrevoEmail({ email: affRef.email, name: affRef.name || 'Affiliate' }, '\uD83D\uDE4C A referral just signed up - follow up to close it', wrapDarkEmailShell(_snHtml));
         }
       } catch(eSN) { console.log('[AFFILIATE] signup notify error:', eSN.message); }
       // ALSO store an unread sign-up alert so the new referral is the first thing
@@ -7756,7 +7756,7 @@ function sendAffiliateFollowupDigests() {
       if (!overdue.length && !dueToday.length) return;
       var rows = function(list) { return list.map(function(p) { return '<li><b>' + escHtml(p.company || p.name || 'Contact') + '</b>' + (p.status ? ' (' + p.status + ')' : '') + ' - ' + escHtml(p.phone || p.email || 'no contact') + '</li>'; }).join(''); };
       var _dHtml = '<div style="font-family:Inter,Arial,sans-serif;max-width:540px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:14px"><h2 style="color:#f59e0b;margin:0 0 8px;font-size:19px">\u23F0 Your follow-ups for today</h2>' + (overdue.length ? '<p style="font-size:13px;color:#f87171;font-weight:700;margin:8px 0 4px">Overdue (' + overdue.length + ')</p><ul style="margin:0 0 10px;padding-left:18px;color:#e2e8f0;font-size:13px;line-height:1.8">' + rows(overdue) + '</ul>' : '') + (dueToday.length ? '<p style="font-size:13px;color:#4ade80;font-weight:700;margin:8px 0 4px">Due today (' + dueToday.length + ')</p><ul style="margin:0 0 10px;padding-left:18px;color:#e2e8f0;font-size:13px;line-height:1.8">' + rows(dueToday) + '</ul>' : '') + '<p style="font-size:13px;color:#94a3b8;line-height:1.6;margin-top:10px">Call them, add a note, and set the next reminder. <a href="https://www.9amleads.com/portal/affiliate.html" style="color:#38bdf8">Open my follow-up list</a></p></div>';
-      sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' }, '\u23F0 ' + (dueToday.length + overdue.length) + ' follow-up reminder' + (dueToday.length + overdue.length === 1 ? '' : 's') + ' today', _dHtml);
+      sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' }, '\u23F0 ' + (dueToday.length + overdue.length) + ' follow-up reminder' + (dueToday.length + overdue.length === 1 ? '' : 's') + ' today', wrapDarkEmailShell(_dHtml));
       if (!dbD.affiliate_reminder_sent) dbD.affiliate_reminder_sent = {};
       dbD.affiliate_reminder_sent[aff.id + '|' + todayKey] = new Date().toISOString();
     });
@@ -7987,7 +7987,7 @@ app.post('/api/affiliate/ask-question', affiliateAuth, (req, res) => {
     try {
       sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' },
         'We received your question',
-        '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="font-family:Outfit,sans-serif;color:#34d399;margin:0 0 8px;font-size:24px">We received your question</h1><p style="color:#c9d1de;line-height:1.8">Hi ' + escHtml(aff.name || 'there') + ',</p><p style="color:#c9d1de;line-height:1.8">Thanks for getting in touch. Your question about <b style="color:#fff">' + escHtml(topic) + '</b> has been sent to our team and we will reply to this email address shortly.</p></div>').catch(function(){});
+        wrapDarkEmailShell('<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="font-family:Outfit,sans-serif;color:#34d399;margin:0 0 8px;font-size:24px">We received your question</h1><p style="color:#c9d1de;line-height:1.8">Hi ' + escHtml(aff.name || 'there') + ',</p><p style="color:#c9d1de;line-height:1.8">Thanks for getting in touch. Your question about <b style="color:#fff">' + escHtml(topic) + '</b> has been sent to our team and we will reply to this email address shortly.</p></div>')).catch(function(){});
     } catch(eB) {}
     res.json({ success: true, message: 'Your question has been sent. We will reply to your email shortly.' });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -8146,7 +8146,7 @@ var h = '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5
             '<div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:12px;padding:16px;margin:14px 0"><p style="color:#c9d1de;line-height:1.8;margin:0">To fix it: log in to your <a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">affiliate dashboard</a>, open the Compliance tab, and re-upload a clear photo of your driving licence or passport. Make sure the legal name matches your bank account holder. We review re-submissions quickly.</p></div>') +
         '<div style="text-align:center;margin:18px 0 6px"><a href="https://9amleads.com/portal/affiliate.html" style="display:inline-block;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;padding:12px 26px;border-radius:10px;font-weight:700;font-size:14px;text-decoration:none">Open your dashboard</a></div>' +
         '<p style="color:#888;font-size:13px;margin-top:20px;border-top:1px solid #1e2030;padding-top:12px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>';
-      sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' }, decision === 'approve' ? 'Your 9amLeads ID has been verified' : '9amLeads: please re-submit your ID', h).catch(function() {});
+      sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' }, decision === 'approve' ? 'Your 9amLeads ID has been verified' : '9amLeads: please re-submit your ID', wrapDarkEmailShell(h)).catch(function() {});
     } catch(eB) {}
     res.json({ success: true, kyc: kycStatus(aff) });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -19236,8 +19236,14 @@ function wrapTrialEmailShell(bodyHtml) {
 // background (light text) - area-health / status notices. Same header + footer as the
 // premium welcome email so it matches the rest of the brand.
 function wrapDarkEmailShell(bodyHtml) {
+  // Neutralise any inner near-black/near-white block so body-only emails blend into
+  // the branded dark content area instead of showing a different black background.
+  var _body = String(bodyHtml == null ? '' : bodyHtml)
+    .replace(/background(?:-color)?\s*:\s*#0a0a0a/gi, 'background-color:transparent')
+    .replace(/background(?:-color)?\s*:\s*#000000?/gi, 'background-color:transparent')
+    .replace(/background(?:-color)?\s*:\s*#0a0a0f/gi, 'background-color:transparent');
   return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark"><style>:root{color-scheme:dark}@media only screen and (max-width:480px){.mob{padding-left:16px!important;padding-right:16px!important}}</style></head><body style="margin:0;padding:0;background:#07090f;font-family:Inter,Arial,sans-serif"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#07090f"><tr><td align="center" style="padding:24px 16px"><table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%">' + buildEmailHeader() +
-    '<tr><td bgcolor="#0f172a" class="mob" style="background:#0f172a;padding:26px 30px">' + (bodyHtml || '') + '</td></tr>' +
+    '<tr><td bgcolor="#0f172a" class="mob" style="background:#0f172a;padding:26px 30px">' + _body + '</td></tr>' +
     buildEmailFooter() + '</td></tr></table></td></tr></table></body></html>';
 }
 
