@@ -170,6 +170,7 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 </div>
 <!-- Enterprise -->
 <div class="pricing-card">
+<div class="pricing-badge" id="ent-badge" style="display:none;background:linear-gradient(135deg,#0ea5e9,#2563eb)">Multi-site</div>
 <div class="pricing-name">Enterprise</div>
 <div class="pricing-price" id="price-enterprise">£99<span>/wk</span></div>
 <div class="pricing-leads" id="leads-enterprise"><strong>15</strong> leads/day · Mon-Fri</div>
@@ -185,6 +186,7 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 </div>
 
 <p style="text-align:center;font-size:12px;color:var(--muted);margin:-24px 0 40px">All prices are per week. Cancel anytime. 7-day free trial ,  No obligation. No card needed to start; if you add a card, it is charged automatically at your weekly price when the trial ends unless you cancel.<br><strong style="color:var(--text)">Commercial Moves:</strong> 3/day &pound;50 &middot; 6/day &pound;99 &middot; 10/day &pound;150. Multi-site companies (branches across the UK) can spread their commercial leads across all sites on the 10/day plan. Need more? We offer 25+/day custom packages on request.</p>
+<div style="text-align:center;margin:-30px 0 40px"><a href="/contact/" class="btn-pill pricing-btn" style="font-size:13px;padding:11px 26px">Contact us for 25+/day or multi-site &rarr;</a></div>
 
 <!-- Comparison table -->
 <h2 style="font-size:20px;font-weight:800;font-family:var(--ff-h);text-align:center;margin-bottom:16px">Leads per day by product</h2>
@@ -280,6 +282,7 @@ function switchProduct(prod) {
     var pe = document.getElementById('price-' + t); if (pe) pe.innerHTML = pr[i] + '<span>/wk</span>';
     var ne = document.querySelectorAll('.pricing-name')[i]; if (ne) ne.textContent = names[i];
   });
+  var eb = document.getElementById('ent-badge'); if (eb) eb.style.display = comm ? 'block' : 'none';
 }
 function toggleMobile(){
   var m=document.getElementById('mobileMenu'),o=document.getElementById('mobileOverlay'),h=document.getElementById('hamBtn');
