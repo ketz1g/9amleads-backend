@@ -1877,7 +1877,12 @@ function deleteCustomerAdmin(emailEnc) {
 // Compact badge for a single auto-email (e.g. trial_day9 -> "D9", trial_month3 -> "M3").
 function emailDayBadge(key, label) {
   var short = String(key || '').replace('trial_', '');
-  if (short.indexOf('day') === 0) short = 'D' + short.substring(3);
+  // Explicit labels for non day/month/week templates so nothing is misread. "addcard"
+  // is the "please add a card" NUDGE (sent BECAUSE there is no card) - it must never
+  // read like the customer's card was added.
+  var _explicit = { addcard: 'No card', addcard6: 'No card', precharge: 'Charge soon', firstwin: 'First win' };
+  if (_explicit[short]) short = _explicit[short];
+  else if (short.indexOf('day') === 0) short = 'D' + short.substring(3);
   else if (short.indexOf('month') === 0) short = 'M' + short.substring(5);
   else if (short.indexOf('wk') === 0) short = 'W' + short.substring(2);
   var post = String(key || '').indexOf('day') === 0 && parseInt(short.substring(1), 10) >= 9;

@@ -16798,6 +16798,7 @@ app.get('/api/admin/stats', adminAuth, (req, res) => {
 var EMAIL_SERIES_LABELS = {
   trial_day1: 'Day 1 - welcome/how to win',
   trial_day3: 'Day 3 - how are leads looking',
+  trial_day4: 'Day 4 - start Print & Post',
   trial_day5: 'Day 5 - 3 tips to convert',
   trial_day7: 'Day 7 - trial ends tomorrow',
   trial_day9: 'Day 9 (trial over) - leads paused, come back',
@@ -16805,7 +16806,12 @@ var EMAIL_SERIES_LABELS = {
   trial_day16: 'Day 16 - success stories',
   trial_day21: 'Day 21 - leads still waiting',
   trial_day30: 'Day 30 - restart invite',
-  trial_month3: 'Month 3 - fresh free week offer'
+  trial_month3: 'Month 3 - fresh free week offer',
+  // Card status emails - labelled explicitly so an operator never confuses "we asked
+  // them to add a card" with "they added a card".
+  trial_addcard: 'No card on file - asked to add a card',
+  trial_addcard6: 'No card on file - final reminder to add a card',
+  trial_precharge: 'Card on file - pre-charge notice sent'
 };
 function emailSeriesReceived(c) {
   var sent = [];
@@ -40220,6 +40226,42 @@ app.post('/api/admin/send-reminder', adminAuth, async (req, res) => {
     if (!campaignSent.includes('trial_day7')) { campaignSent.push('trial_day7'); db.prepare('UPDATE customers SET campaign_sent = ? WHERE id = ?').run(JSON.stringify(campaignSent), cust.id); saveDb(); }
     console.log('[SEND-REMINDER] Sent trial reminder to ' + cust.email);
     res.json({ success: true, message: 'Trial reminder sent to ' + cust.email });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/send-addcard-link - (re)send the "add your card" nudge to a single
+// customer who has NO card on file. Useful when a customer believes they already added
+// a card (they may have abandoned the save). Sends the SAME email the lifecycle cron
+// would, and records it in campaign_sent so the daily cron does not immediately repeat.
+// Optional body.final = true sends the final "last chance" variant instead.
+app.post('/api/admin/send-addcard-link', adminAuth, async (req, res) => {
+  try {
+    var email = String((req.body && req.body.email) || '').toLowerCase().trim();
+    if (!email) return res.status(400).json({ error: 'email required' });
+    var dbA = getDb();
+    var cust = (dbA.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
+    if (!cust) return res.status(404).json({ error: 'No customer record for ' + email });
+    // Never nudge someone who already has a card - that is the exact bug this guards.
+    if (trialHasSavedCard(cust)) return res.status(400).json({ error: 'Customer already has a card on file - no add-card nudge needed.' });
+    var isFinal = !!(req.body && req.body.final);
+    var teStr = fmtTrialEnd(cust) || 'your trial end';
+    var subject, html;
+    if (isFinal) {
+      subject = 'Last chance to keep your ' + (cust.lead_type || 'leads') + ' (trial ends ' + teStr + ')';
+      html = buildAddCardFinalEmail(cust, teStr);
+    } else {
+      subject = 'Keep your ' + (cust.lead_type || 'leads') + ' coming after ' + teStr + ' (no charge until then)';
+      html = buildAddCardEmail(cust, teStr);
+    }
+    await sendBrevoEmail({ email: cust.email, name: cust.company || cust.contact_name || 'Customer' }, subject, html);
+    // Mark so the daily campaign cron treats this nudge as already sent.
+    try {
+      var sentA = []; try { sentA = JSON.parse(cust.campaign_sent || '[]'); } catch(e) {}
+      var markTpl = isFinal ? 'trial_addcard6' : 'trial_addcard';
+      if (sentA.indexOf(markTpl) === -1) { sentA.push(markTpl); db.prepare('UPDATE customers SET campaign_sent = ? WHERE id = ?').run(JSON.stringify(sentA), cust.id); saveDb(); }
+    } catch(mkErr) {}
+    console.log('[SEND-ADDCARD] Sent add-card link to ' + cust.email + (isFinal ? ' (final)' : ''));
+    res.json({ success: true, email: cust.email, final: isFinal, subject: subject });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
