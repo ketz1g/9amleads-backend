@@ -37646,7 +37646,7 @@ function runDeliveryTestReport() {
         // delivered_at >= runStart. This is accurate because forceFull re-delivers
         // fresh leads every run (the exact-count cap keeps each EMAIL at exactly
         // the promised count - no more, no less).
-        var PLAN = { moving: 5, probate: 2, newbusiness: 5, planning: 1, tenders: 1 };
+        var PLAN = { moving: 5, commercial: 3, probate: 2, newbusiness: 5, planning: 1, tenders: 1 };
         var lines = [];
         var issues = [];
         var rows = []; // structured rows for the HTML report email
