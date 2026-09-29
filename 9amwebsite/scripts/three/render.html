@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>9amLeads 3D scene renderer</title>
+<style>html,body{margin:0;background:transparent}canvas{display:block}</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "/vendor/three/build/three.module.js",
+    "three/addons/": "/vendor/three/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import { renderScene } from '/scenes.js';
+window.renderScene = renderScene;
+window.__ready = true;
+</script>
+</head>
+<body></body>
+</html>

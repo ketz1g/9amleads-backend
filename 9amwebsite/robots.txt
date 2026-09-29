@@ -1,5 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /investors/
 Disallow: /portal/
 Disallow: /9amleadsmc/
 Disallow: /newbusiness/
@@ -7,3 +8,4 @@ Disallow: /planningpermission/
 Disallow: /moverstaff/
 
 Sitemap: https://9amleads.com/sitemap.xml
+Sitemap: https://9amleads.com/sitemap-cities.xml

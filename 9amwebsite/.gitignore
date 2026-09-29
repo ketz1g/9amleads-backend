@@ -6,3 +6,5 @@ data/videos/
 data/uploads/
 .env
 .git/
+dist/
+test-results/

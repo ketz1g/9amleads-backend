@@ -1,5 +1,5 @@
 <!DOCTYPE html><html lang="en">
-<head>
+<head><script>try{if(!localStorage.getItem("theme"))localStorage.setItem("theme","light");}catch(e){}</script>
   <link rel="icon" type="image/png" href="/favicon.png"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta charset="UTF-8">
 <meta name="msvalidate.01" content="722F0474C4A2E6D3BCF479C7A4B8C3CD"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -83,21 +83,11 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 .footer-bottom{text-align:center;padding:20px 24px 0;font-size:12px;color:var(--muted);border-top:1px solid var(--border);margin-top:32px;max-width:var(--max-w);margin-left:auto;margin-right:auto}
 </style>
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://9amleads.com/#organization","name":"9amLeads","url":"https://9amleads.com/","email":"hello@9amleads.com"},{"@type":"WebPage","name":"FAQ - Frequently Asked Questions | 9amLeads","url":"https://9amleads.com/faq/","isPartOf":{"@id":"https://9amleads.com/#organization"}}]}</script>
-</head><body>
+<link rel="stylesheet" href="/site-enhance.css"></head><body>
 <!-- SITE HEADER -->
 <nav><div class="nav-inner">
-<a href="/" class="logo"><div class="logo-mark">9</div>9am<span>Leads</span></a>
-<div class="nav-links">
-<a href="/">Home</a>
-<a href="/who-we-serve/">Lead Types</a>
-<a href="/pricing/">Pricing</a>
-<a href="/how-it-works/">How It Works</a>
-<a href="/help/">Help Centre</a>
-<a href="/contact/">Contact</a>
-<a href="/portal/#signup" class="btn-nav"><i class="fas fa-gift"></i> Start Free Trial</a>
-<a href="/affiliates" style="font-size:13px;font-weight:600;color:#0ea5e9;text-decoration:none;padding:8px 14px">Affiliates</a>
-<a href="/portal/" style="font-size:13px;font-weight:600;color:var(--text2);text-decoration:none;padding:8px 14px">Sign In</a>
-</div>
+<a href="/" class="logo"><span class="icon">9</span>9am<span class="leadsword">Leads</span></a>
+<div class="nav-links"><a href="/who-we-serve/">Lead Types</a><a href="/pricing/">Pricing</a><a href="/how-it-works/">How It Works</a><a href="/bulk.html">Bulk Packs</a><a href="/help/">Help Centre</a><a href="/contact/">Contact</a><a href="/portal/#signup" class="btn-nav"><i class="fas fa-gift"></i> Start Free Trial</a><a href="/portal/#login" class="nav-signin">Sign In</a><a href="/portal/#signup" class="nav-signup">Sign Up</a></div>
 <button class="hamburger" id="hamBtn" onclick="toggleMobile()" aria-label="Menu"><span></span><span></span><span></span></button>
 </div></nav>
 <div class="mobile-overlay" id="mobileOverlay" onclick="toggleMobile()"></div>
@@ -114,8 +104,8 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 <a href="/portal/#signup" class="btn-mobile" onclick="toggleMobile()"><i class="fas fa-gift"></i> Start Free Trial</a>
 </div>
 
-<section class="hero">
-<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1400&q=80')"></div>
+<section class="hero" data-float-icons="❓,💬,📘,✅" data-sparkles>
+<div class="s-bg" style="background-image:none"></div>
 <div class="s-grid"></div>
 <div class="s-orb" style="width:500px;height:500px;background:var(--accent);top:-200px;right:-100px;animation:float 8s ease-in-out infinite"></div>
 <div class="s-orb" style="width:400px;height:400px;background:#06b6d4;bottom:-150px;left:-100px;animation:float 10s ease-in-out infinite reverse"></div>
@@ -154,7 +144,7 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">What lead types do you offer? <i class="fas fa-chevron-down"></i></button><div class="faq-a">Five lead types: <a href="/movingleadsdaily/" style="color:var(--accent)">Moving Leads</a> (newly listed properties), <a href="/probateleads/" style="color:var(--accent)">Probate Leads</a> (grant applications), <a href="/newbusinessalert/" style="color:var(--accent)">New Business</a> (new company registrations), <a href="/planningleads/" style="color:var(--accent)">Planning</a> (planning applications), and <a href="/tenders/" style="color:var(--accent)">Public Tenders</a>.</div></div>
 <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">Can I have more than one lead type? <i class="fas fa-chevron-down"></i></button><div class="faq-a">Yes. You can subscribe to multiple lead types at once. Each has its own daily allowance, delivery and dashboard.</div></div>
 <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">Can I change my postcode areas later? <i class="fas fa-chevron-down"></i></button><div class="faq-a">Yes - update your target areas anytime from your dashboard. Changes take effect from the next delivery.</div></div>
-<div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">Are leads exclusive to me? <i class="fas fa-chevron-down"></i></button><div class="faq-a">You receive your own daily allocation of fresh opportunities matched to your chosen areas. Your allocation is never sold elsewhere and you're never sent the same lead twice. Where more opportunities exist than your plan covers, the extras go to other customers. We're transparent: we're a subscription data feed, not a territory-exclusive marketplace.</div></div>
+<div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">Are leads exclusive to me? <i class="fas fa-chevron-down"></i></button><div class="faq-a">Moving and new-business leads are your own exclusive allocation - never a shared enquiry, and never sent to you twice. Tenders, probate and planning are public records, so other subscribers may receive the same ones; you still get your full daily allocation, matched to your areas, delivered at 9am. We're transparent: we're a subscription data feed for public data, not a territory-exclusive marketplace.</div></div>
 
 <h2 class="section-title" id="pricing" style="scroll-margin-top:100px;font-size:26px;text-align:left;margin-bottom:18px">Pricing &amp; Billing</h2>
 <div class="faq-item"><button class="faq-q" onclick="toggleFaq(this)">How much does it cost? <i class="fas fa-chevron-down"></i></button><div class="faq-a">Plans start at £25/week (Starter), with Pro at £49/week and Enterprise at £99/week. Daily allowances vary by lead type - see <a href="/pricing/" style="color:var(--accent)">Pricing &amp; Plans</a> for the full breakdown.</div></div>
@@ -206,7 +196,7 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 </div>
 <div>
 <h4>Lead Types</h4>
-<a href="/movingleadsdaily/">Moving Leads</a>
+<a href="/movingleadsdaily/">Moving Leads</a> <a href="/movingleadsdaily/#commercial">Commercial Moves</a>
 <a href="/probateleads/">Probate Leads</a>
 <a href="/newbusinessalert/">New Business Alerts</a>
 <a href="/planningleads/">Planning Permission</a>

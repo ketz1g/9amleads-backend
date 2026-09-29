@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head>
+<!DOCTYPE html><html lang="en"><head><script>try{if(!localStorage.getItem("theme"))localStorage.setItem("theme","light");}catch(e){}</script>
 <meta charset="UTF-8">
 <meta name="msvalidate.01" content="722F0474C4A2E6D3BCF479C7A4B8C3CD"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>About Us - Our Goals &amp; What We Want to Achieve | 9amLeads</title>
@@ -91,22 +91,12 @@ a{color:var(--accent)}
 .footer-bottom{border-top:1px solid rgba(255,255,255,.08);margin-top:30px;padding-top:18px;text-align:center;font-size:11.5px;color:#64748b}
 </style>
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://9amleads.com/#organization","name":"9amLeads","url":"https://9amleads.com/","email":"hello@9amleads.com"},{"@type":"WebPage","name":"About Us - Our Goals &amp; What We Want to Achieve | 9amLeads","url":"https://9amleads.com/about-us/","isPartOf":{"@id":"https://9amleads.com/#organization"}}]}</script>
-</head><body>
+<link rel="stylesheet" href="/site-enhance.css"></head><body>
 
 <nav class="nav">
 <div class="nav-inner">
-<a class="logo" href="/"><div class="icon">9</div>9am<span class="accent">Leads</span></a>
-<div class="nav-links">
-<a href="/who-we-serve/">Lead Types</a>
-<a href="/who-we-serve/">Who We Serve</a>
-<a href="/pricing/">Pricing</a>
-<a href="/how-it-works/">How It Works</a>
-<a href="/about-us/">About Us</a>
-<a href="/help/">Help Centre</a>
-<a href="/contact/">Contact</a>
-<a href="/portal/#signup" class="btn-pill">Start Free Trial</a>
-<a href="/portal/#login">Sign In</a>
-</div>
+<a href="/" class="logo"><span class="icon">9</span>9am<span class="leadsword">Leads</span></a>
+<div class="nav-links"><a href="/who-we-serve/">Lead Types</a><a href="/pricing/">Pricing</a><a href="/how-it-works/">How It Works</a><a href="/bulk.html">Bulk Packs</a><a href="/help/">Help Centre</a><a href="/contact/">Contact</a><a href="/portal/#signup" class="btn-nav"><i class="fas fa-gift"></i> Start Free Trial</a><a href="/portal/#login" class="nav-signin">Sign In</a><a href="/portal/#signup" class="nav-signup">Sign Up</a></div>
 <button class="menu-toggle" onclick="document.querySelector('.mobile-menu').classList.toggle('open')"><i class="fas fa-bars"></i></button>
 </div>
 <div class="mobile-menu">
@@ -125,7 +115,7 @@ a{color:var(--accent)}
 </nav>
 
 <div style="background:var(--bg2,#0a0a0a);border-bottom:1px solid var(--border);padding:8px 20px;text-align:center;position:relative;z-index:50"><a href="/" style="display:inline-flex;align-items:center;gap:7px;color:var(--text,#e2e8f0);text-decoration:none;font-size:13px;font-weight:600;transition:.2s"><i class="fas fa-arrow-left" style="font-size:11px;color:var(--accent,#0ea5e9)"></i> Back to Home</a></div>
-<section class="hero">
+<section class="hero" data-float-icons="🎯,🤝,💡,📈,🏆" data-sparkles>
 <div class="container">
 <div class="section-kicker" style="color:#38bdf8">About 9amLeads</div>
 <h1>Built to Give UK Businesses a <span class="gradient">Predictable Pipeline of Fresh Opportunities</span></h1>
@@ -193,7 +183,7 @@ a{color:var(--accent)}
 <div class="value-item"><i class="fas fa-seedling"></i><div><strong>Freshness first</strong><p>Opportunities are prioritised from the last 24 hours. When supply is lower, selected lead types may use the latest suitable opportunities available.</p></div></div>
 <div class="value-item"><i class="fas fa-eye"></i><div><strong>Source transparency</strong><p>Where available, every opportunity includes its original source link so you can review and verify it yourself.</p></div></div>
 <div class="value-item"><i class="fas fa-route"></i><div><strong>Transparency and tracking, not just addresses</strong><p>Unlike traditional address and leaflet providers, you're not simply handed a list and asked to trust it. Every lead shows where it originated so you can verify it, and every Print &amp; Post lead can be tracked from your dashboard - including who you've already mailed, notes and status (contacted, quoted, won or lost).</p></div></div>
-<div class="value-item"><i class="fas fa-handshake"></i><div><strong>No shared-lead marketplace model</strong><p>We don't auction enquiries to the highest bidder. You get your own daily allocation, and we never send you the same opportunity twice.</p></div></div>
+<div class="value-item"><i class="fas fa-handshake"></i><div><strong>No shared-lead marketplace (moving &amp; new business)</strong><p>For moving and new-business leads we don't auction enquiries to the highest bidder - you get your own daily allocation and are never sent the same one twice. Tenders, probate and planning come from official public records, so those can be seen by others too; we surface the ones you want, early.</p></div></div>
 <div class="value-item"><i class="fas fa-map-marker-alt"></i><div><strong>Postcode targeting</strong><p>You choose the areas you serve, so your team only sees opportunities worth acting on.</p></div></div>
 <div class="value-item"><i class="fas fa-tools"></i><div><strong>Tools to convert, not just leads</strong><p>Opportunity scoring, marketing templates, suggested outreach, built-in lead management and optional Print &amp; Post.</p></div></div>
 </div>
@@ -294,4 +284,5 @@ document.addEventListener('DOMContentLoaded', function(){
   for (var j = 0; j < pricingLinks.length; j++) { (function(a){ a.addEventListener('click', function(){ trackEvent('pricing_viewed', {}); }); })(pricingLinks[j]); }
 });
 </script>
+<script src="/enhancements.js"></script>
 </body></html>

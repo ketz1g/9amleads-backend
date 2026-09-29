@@ -1,5 +1,5 @@
 <!DOCTYPE html><html lang="en">
-<head>
+<head><script>try{if(!localStorage.getItem("theme"))localStorage.setItem("theme","light");}catch(e){}</script>
   <link rel="icon" type="image/png" href="/favicon.png"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta charset="UTF-8">
 <meta name="msvalidate.01" content="722F0474C4A2E6D3BCF479C7A4B8C3CD"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -83,21 +83,11 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 .footer-bottom{text-align:center;padding:20px 24px 0;font-size:12px;color:var(--muted);border-top:1px solid var(--border);margin-top:32px;max-width:var(--max-w);margin-left:auto;margin-right:auto}
 </style>
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://9amleads.com/#organization","name":"9amLeads","url":"https://9amleads.com/","email":"hello@9amleads.com"},{"@type":"WebPage","name":"System Status | 9amLeads","url":"https://9amleads.com/status/","isPartOf":{"@id":"https://9amleads.com/#organization"}}]}</script>
-</head><body>
+<link rel="stylesheet" href="/site-enhance.css"></head><body>
 <!-- SITE HEADER -->
 <nav><div class="nav-inner">
-<a href="/" class="logo"><div class="logo-mark">9</div>9am<span>Leads</span></a>
-<div class="nav-links">
-<a href="/">Home</a>
-<a href="/who-we-serve/">Lead Types</a>
-<a href="/pricing/">Pricing</a>
-<a href="/how-it-works/">How It Works</a>
-<a href="/help/">Help Centre</a>
-<a href="/contact/">Contact</a>
-<a href="/portal/#signup" class="btn-nav"><i class="fas fa-gift"></i> Start Free Trial</a>
-<a href="/affiliates" style="font-size:13px;font-weight:600;color:#0ea5e9;text-decoration:none;padding:8px 14px">Affiliates</a>
-<a href="/portal/" style="font-size:13px;font-weight:600;color:var(--text2);text-decoration:none;padding:8px 14px">Sign In</a>
-</div>
+<a href="/" class="logo"><span class="icon">9</span>9am<span class="leadsword">Leads</span></a>
+<div class="nav-links"><a href="/who-we-serve/">Lead Types</a><a href="/pricing/">Pricing</a><a href="/how-it-works/">How It Works</a><a href="/bulk.html">Bulk Packs</a><a href="/help/">Help Centre</a><a href="/contact/">Contact</a><a href="/portal/#signup" class="btn-nav"><i class="fas fa-gift"></i> Start Free Trial</a><a href="/portal/#login" class="nav-signin">Sign In</a><a href="/portal/#signup" class="nav-signup">Sign Up</a></div>
 <button class="hamburger" id="hamBtn" onclick="toggleMobile()" aria-label="Menu"><span></span><span></span><span></span></button>
 </div></nav>
 <div class="mobile-overlay" id="mobileOverlay" onclick="toggleMobile()"></div>
@@ -115,7 +105,7 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 </div>
 
 <section class="hero">
-<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1400&q=80')"></div>
+<div class="s-bg" style="background-image:none"></div>
 <div class="s-grid"></div>
 <div class="s-orb" style="width:500px;height:500px;background:var(--accent);top:-200px;right:-100px;animation:float 8s ease-in-out infinite"></div>
 <div class="s-orb" style="width:400px;height:400px;background:#06b6d4;bottom:-150px;left:-100px;animation:float 10s ease-in-out infinite reverse"></div>
@@ -166,7 +156,7 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 </div>
 <div>
 <h4>Lead Types</h4>
-<a href="/movingleadsdaily/">Moving Leads</a>
+<a href="/movingleadsdaily/">Moving Leads</a> <a href="/movingleadsdaily/#commercial">Commercial Moves</a>
 <a href="/probateleads/">Probate Leads</a>
 <a href="/newbusinessalert/">New Business Alerts</a>
 <a href="/planningleads/">Planning Permission</a>

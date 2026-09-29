@@ -34,4 +34,32 @@
 /contact/  /portal/enquiry.html  301
 /cookies.html  /privacy.html  301
 /favicon.ico  /favicon.png  200
+# Legacy URL redirects (old product/site paths) - fixes 404s reported in Search Console
+/movingleads  /movingleadsdaily/  301
+/movingleads/  /movingleadsdaily/  301
+/moving-leads  /movingleadsdaily/  301
+/moving-leads/  /movingleadsdaily/  301
+/moving/  /movingleadsdaily/  301
+/removals/  /movingleadsdaily/  301
+/probate/  /probateleads/  301
+/probate-leads/  /probateleads/  301
+/new-business/  /newbusinessalert/  301
+/new-business-leads/  /newbusinessalert/  301
+/planning/  /planningleads/  301
+/planning-leads/  /planningleads/  301
+/public-tenders/  /tenders/  301
+/tender/  /tenders/  301
+/tenders-alerts/  /tenders/  301
+/home/  /  301
+/leads/  /  301
+/signup  /portal/  301
+/signup/  /portal/  301
+/login  /portal/  301
+/login/  /portal/  301
+/affiliate.html  /affiliates  301
+# Block internal tooling/source files from public access
+/site/*  /404.html  404!
+/scripts/*  /404.html  404!
+/package.json  /404.html  404!
+/package-lock.json  /404.html  404!
 /*  /404.html  404

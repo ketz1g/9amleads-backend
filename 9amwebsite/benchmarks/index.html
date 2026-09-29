@@ -1,0 +1,162 @@
+<!DOCTYPE html><html lang="en"><head><script>try{if(!localStorage.getItem("theme"))localStorage.setItem("theme","light");}catch(e){}</script>
+<meta charset="UTF-8">
+<meta name="msvalidate.01" content="722F0474C4A2E6D3BCF479C7A4B8C3CD">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>UK Lead Supply Benchmarks 2026 - Live Opportunity Data | 9amLeads</title>
+<meta name="description" content="Live UK lead supply benchmarks: how many moving, probate, planning, new business and tender opportunities are available right now, by product and postcode area. Original data from the 9amLeads supply pipeline.">
+<meta property="og:title" content="UK Lead Supply Benchmarks 2026 - Live Opportunity Data | 9amLeads">
+<meta property="og:description" content="How many UK business opportunities are available right now, by product and postcode area. Original data, updated continuously.">
+<meta property="og:url" content="https://9amleads.com/benchmarks/">
+<meta property="og:type" content="article">
+<meta property="og:image" content="https://9amleads.com/og-image.png">
+<meta property="og:site_name" content="9amLeads">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://9amleads.com/benchmarks/">
+<link rel="icon" type="image/png" href="/favicon.png"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="/site-polish.css">
+<style>
+:root{--accent:#0ea5e9;--bg:#050505;--bg-card:#0a0a0a;--border:#1a1a1a;--text:#f5f5f5;--text2:#999;--muted:#666;--ff-h:'Outfit',sans-serif;--ff-b:'Inter',sans-serif;--max-w:1140px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--ff-b);color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;line-height:1.65}
+a{color:var(--accent);text-decoration:none}
+.container{max-width:var(--max-w);margin:0 auto;padding:0 24px}
+header{padding:22px 0;border-bottom:1px solid var(--border)}
+.logo{font-family:var(--ff-h);font-weight:900;font-size:20px;color:#fff}
+.logo span{color:var(--accent)}
+.hero{padding:64px 0 34px}
+h1{font-family:var(--ff-h);font-size:42px;font-weight:900;line-height:1.15;letter-spacing:-.02em}
+h1 span{color:var(--accent)}
+.lede{font-size:17px;color:var(--text2);max-width:720px;margin-top:14px}
+.stamp{font-size:12px;color:var(--muted);margin-top:18px}
+h2{font-family:var(--ff-h);font-size:26px;font-weight:800;margin:44px 0 14px}
+h3{font-family:var(--ff-h);font-size:17px;font-weight:700;margin:22px 0 8px}
+p{color:var(--text2);margin-bottom:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-top:22px}
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:20px}
+.card .k{font-family:var(--ff-h);font-size:34px;font-weight:900;color:var(--accent)}
+.card .l{font-size:13px;color:var(--text2);margin-top:4px}
+.card .s{font-size:11px;color:var(--muted);margin-top:6px}
+table{width:100%;border-collapse:collapse;font-size:14px;margin-top:16px}
+th{text-align:left;color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em;padding:8px 10px;border-bottom:1px solid var(--border)}
+td{padding:9px 10px;border-bottom:1px solid var(--border);color:var(--text2)}
+td.n{color:var(--accent);font-weight:700;text-align:right}
+.bar{height:6px;background:var(--accent);border-radius:3px;opacity:.55;min-width:3px}
+.note{background:var(--bg-card);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:10px;padding:16px 18px;margin:22px 0;font-size:14px;color:var(--text2)}
+.cta{background:linear-gradient(135deg,rgba(14,165,233,.12),rgba(14,165,233,.03));border:1px solid rgba(14,165,233,.25);border-radius:16px;padding:30px;margin:40px 0;text-align:center}
+.cta h2{margin:0 0 8px}
+.btn{display:inline-block;background:var(--accent);color:#001018;font-weight:800;padding:13px 26px;border-radius:10px;margin-top:16px;font-family:var(--ff-h)}
+footer{border-top:1px solid var(--border);padding:30px 0;margin-top:50px;font-size:13px;color:var(--muted)}
+.skeleton{color:var(--muted);font-size:14px}
+@media(max-width:640px){h1{font-size:31px}}
+</style>
+<link rel="stylesheet" href="/site-enhance.css"></head>
+<body>
+
+<header><div class="container"><a href="/" class="logo">9am<span>Leads</span></a></div></header>
+
+<main class="container">
+<div class="hero">
+<h1>UK Lead Supply <span>Benchmarks</span></h1>
+<p class="lede">How many UK business opportunities are available right now, broken down by product and postcode area. These figures are drawn live from our own supply pipeline, which is fed continuously from official UK sources.</p>
+<div class="stamp" id="stamp">Loading current figures...</div>
+</div>
+
+<h2>Available right now</h2>
+<p>Every figure below counts opportunities currently in the pool that are fresh, mailable and not yet delivered to a customer.</p>
+<div class="grid" id="productGrid"><div class="skeleton">Loading...</div></div>
+
+<h2>Where the opportunities are</h2>
+<p>The 20 postcode areas with the deepest current supply across all five products.</p>
+<div id="areaTable"><div class="skeleton">Loading...</div></div>
+
+<div class="note">
+<strong style="color:#f5f5f5">How to read this.</strong> A high count in an area means more choice and more exclusivity per customer. Areas with thinner supply are the ones where new subscribers can crowd each other out, which is why we cap customers per area rather than overselling.
+</div>
+
+<h2>Where the data comes from</h2>
+<p>Every figure on this page is derived from the same pipeline that fills our customers' 9am emails. Nothing here is estimated or modelled.</p>
+<table>
+<tr><th>Product</th><th>Primary source</th><th>What it captures</th></tr>
+<tr><td style="color:#f5f5f5">Moving</td><td>Property listings</td><td>Properties newly listed or reduced, matched to your postcode areas</td></tr>
+<tr><td style="color:#f5f5f5">Probate</td><td>probate register</td><td>Recently granted probate, the point executors can act</td></tr>
+<tr><td style="color:#f5f5f5">New business</td><td>company register</td><td>Newly incorporated companies, before they have suppliers</td></tr>
+<tr><td style="color:#f5f5f5">Planning</td><td>planning.public data and council portals</td><td>Live planning applications: extensions, conversions, new builds</td></tr>
+<tr><td style="color:#f5f5f5">Tenders</td><td>public procurement portals and public data</td><td>Public sector opportunities open for bidding</td></tr>
+</table>
+
+<h2>Frequently asked questions</h2>
+<h3>How often are these numbers updated?</h3>
+<p>Continuously. The pipeline refreshes through the day and night, and the figures on this page are recalculated on every load (cached for a maximum of ten minutes).</p>
+<h3>What counts as "available"?</h3>
+<p>An opportunity that is still fresh, carries a usable mailable address, and has not yet been allocated to a customer. Opportunities that have already been delivered are excluded.</p>
+<h3>Why do some postcode areas show very few?</h3>
+<p>Supply is not evenly distributed. Dense urban areas generate far more property, probate and planning activity than rural ones. We cap subscriber numbers per area so the pool is never oversold.</p>
+<h3>Can I check supply in my own area before subscribing?</h3>
+<p>Yes. The trial is free and requires no card, so you can see exactly what lands in your inbox for your postcode areas before paying anything.</p>
+<h3>Is this data free to cite?</h3>
+<p>Yes. These are original figures published by 9amLeads. You are welcome to cite them with a link to this page.</p>
+
+<div class="cta">
+<h2>See the opportunities in your area</h2>
+<p>Fresh UK business opportunities delivered every weekday at 9am. Seven-day free trial, no card required.</p>
+<a href="/pricing/" class="btn">View pricing and start free</a>
+</div>
+
+<footer>
+<p>9amLeads - fresh UK business opportunities delivered daily at 9am. Figures on this page are generated from live supply data and are refreshed on load. Last updated <span id="footStamp">-</span>.</p>
+</footer>
+</main>
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"Dataset","name":"UK Lead Supply Benchmarks","description":"Live counts of UK business opportunities available by product and postcode area, derived from the 9amLeads supply pipeline.","url":"https://9amleads.com/benchmarks/","creator":{"@type":"Organization","name":"9amLeads","url":"https://9amleads.com/"},"license":"https://creativecommons.org/licenses/by/4.0/","isAccessibleForFree":true,"keywords":["UK lead generation","moving leads","probate leads","planning permission leads","new company leads","public sector tenders"]},
+{"@type":"FAQPage","mainEntity":[
+{"@type":"Question","name":"How often are the UK lead supply figures updated?","acceptedAnswer":{"@type":"Answer","text":"Continuously. The pipeline refreshes through the day and night, and the figures are recalculated on every page load, cached for a maximum of ten minutes."}},
+{"@type":"Question","name":"What counts as an available lead?","acceptedAnswer":{"@type":"Answer","text":"An opportunity that is still fresh, carries a usable mailable address, and has not yet been allocated to a customer. Already-delivered opportunities are excluded."}},
+{"@type":"Question","name":"Why do some postcode areas have very few leads?","acceptedAnswer":{"@type":"Answer","text":"Supply is not evenly distributed. Dense urban areas generate far more property, probate and planning activity than rural ones. Subscriber numbers are capped per area so the pool is never oversold."}},
+{"@type":"Question","name":"Can I check lead supply in my own area before subscribing?","acceptedAnswer":{"@type":"Answer","text":"Yes. The trial is free and requires no card, so you can see exactly what arrives for your postcode areas before paying."}}
+]}
+]}
+</script>
+
+<script>
+(function(){
+  var NAMES = { moving:'Moving', probate:'Probate', newbusiness:'New business', planning:'Planning', tenders:'Public tenders' };
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function fmt(n){ return (n||0).toLocaleString('en-GB'); }
+  fetch('/api/public/benchmarks')
+    .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+    .then(function(d){
+      if(!d || !d.success) throw new Error('bad payload');
+      var when = new Date(d.updated_at);
+      var stamp = 'Live data, last refreshed ' + when.toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'}) + '. Total available: ' + fmt(d.total_available) + ' opportunities.';
+      document.getElementById('stamp').textContent = stamp;
+      document.getElementById('footStamp').textContent = when.toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'});
+
+      var g = document.getElementById('productGrid');
+      g.innerHTML = (d.products||[]).filter(function(p){return p.available>0;}).map(function(p){
+        return '<div class="card"><div class="k">'+fmt(p.available)+'</div><div class="l">'+esc(NAMES[p.product]||p.product)+'</div><div class="s">across '+fmt(p.areas)+' postcode areas</div></div>';
+      }).join('') || '<div class="skeleton">No figures available right now.</div>';
+
+      var areas = d.top_areas || [];
+      var max = areas.length ? areas[0].leads : 1;
+      var t = '<table><tr><th>Postcode area</th><th style="text-align:right">Available</th><th style="width:38%">Relative supply</th></tr>';
+      areas.forEach(function(a){
+        var w = Math.max(3, Math.round((a.leads/max)*100));
+        t += '<tr><td style="color:#f5f5f5;font-weight:600">'+esc(a.area)+'</td><td class="n">'+fmt(a.leads)+'</td><td><div class="bar" style="width:'+w+'%"></div></td></tr>';
+      });
+      t += '</table>';
+      document.getElementById('areaTable').innerHTML = areas.length ? t : '<div class="skeleton">No area data available right now.</div>';
+    })
+    .catch(function(e){
+      document.getElementById('stamp').textContent = 'Live figures are temporarily unavailable. Please refresh in a moment.';
+      document.getElementById('productGrid').innerHTML = '<div class="skeleton">Figures unavailable.</div>';
+      document.getElementById('areaTable').innerHTML = '<div class="skeleton">Figures unavailable.</div>';
+    });
+})();
+</script>
+</body></html>

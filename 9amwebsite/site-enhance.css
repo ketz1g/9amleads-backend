@@ -1,0 +1,236 @@
+/* 9amLeads — light theme completion and layout polish for the current site.
+   Scoped to html:not(.dark) so the dark toggle keeps working if used. */
+
+/* ---- Light palette: finish what the base theme started ---- */
+html:not(.dark){--bg:#fff;--bg2:#f6f8fa;--bg-alt:#f6f8fa;--bg-card:#fff;--card:#fff;--border:#e4e9ee;--border-h:#d2dae3;--border-l:#eef1f5;--text:#0f2136;--text2:#20364b;--text-secondary:#4b5b6c;--muted:#5b6b7b;--muted2:#5b6b7b}
+html:not(.dark) body{background:#fff!important;color:#0f2136!important}
+
+/* Header */
+html:not(.dark) nav{background:rgba(255,255,255,.94)!important;border-bottom:1px solid #e4e9ee!important;box-shadow:0 1px 0 rgba(16,43,67,.03),0 10px 30px -22px rgba(16,43,67,.4)}
+html:not(.dark) nav .logo{color:#0f2136!important}
+html:not(.dark) nav .logo span{color:#0ea5e9!important}
+html:not(.dark) nav .nav-links a{color:#20364b!important}
+html:not(.dark) nav .nav-links a:hover{color:#0878b4!important}
+html:not(.dark) nav .nav-links a.btn-nav{color:#fff!important}
+html:not(.dark) .theme-toggle{color:#20364b!important}
+
+/* Hero: replace the dark photo with a clean light stage */
+html:not(.dark) .hero{background:radial-gradient(1100px 560px at 50% -14%,#e9f4fb,transparent 60%),linear-gradient(180deg,#f8fbfd,#fff)!important}
+html:not(.dark) .hero h1{color:#0f2136!important}
+html:not(.dark) .hero h1 span{color:#0878b4!important}
+html:not(.dark) .hero p{color:#48586a!important}
+html:not(.dark) .hero-stat-num{color:#0f2136!important}
+html:not(.dark) .hero-stat-label{color:#5b6b7b!important}
+html:not(.dark) .hero-badge{background:#eaf5fb!important;color:#0878b4!important;border-color:#cfe6f4!important}
+html:not(.dark) .hero::after{background:linear-gradient(transparent,#fff)!important}
+
+/* Hardcoded dark bands and text that the theme missed */
+html:not(.dark) [style*="background:#000"],html:not(.dark) [style*="background: #000"],html:not(.dark) [style*="background:#020202"],html:not(.dark) [style*="background:#050505"],html:not(.dark) [style*="background:#0a0a0a"],html:not(.dark) [style*="background:#0a0a0f"],html:not(.dark) [style*="background: #0a0a0f"],html:not(.dark) [style*="background:#0a0a12"],html:not(.dark) [style*="background:#0a0f1e"],html:not(.dark) [style*="background:#0a0f19"],html:not(.dark) [style*="background:#0b0f19"],html:not(.dark) [style*="background: #0b0f19"],html:not(.dark) [style*="background:#0b1120"],html:not(.dark) [style*="background:#0d1117"],html:not(.dark) [style*="background:#0d1220"],html:not(.dark) [style*="background:#0d1b2a"],html:not(.dark) [style*="background:#0f111a"],html:not(.dark) [style*="background:#0f172a"],html:not(.dark) [style*="background:#111"],html:not(.dark) [style*="background: #111"],html:not(.dark) [style*="background:#111111"],html:not(.dark) [style*="background:#11131f"],html:not(.dark) [style*="background:#111827"],html:not(.dark) [style*="background: #111827"],html:not(.dark) [style*="background:#12131f"],html:not(.dark) [style*="background:#141414"],html:not(.dark) [style*="background:#1a1a2e"],html:not(.dark) [style*="background:#2a2a2a"],html:not(.dark) [style*="background:#333"],html:not(.dark) [style*="background:#444"],html:not(.dark) [style*="background:#555"]{background:#fff!important}
+/* Dark surface variables (e.g. bulk page panels) */
+html:not(.dark){--panel:#fff;--txt2:#5b6b7b;--panel2:#f6f8fa}
+html:not(.dark) :is(.acard,.pack,.rate,.step,.ind){background:#fff!important;border-color:#e4e9ee!important}
+html:not(.dark) .acard h3,html:not(.dark) .pack h3,html:not(.dark) .rate h3{color:#0f2136!important}
+html:not(.dark) .acard p,html:not(.dark) .pack p,html:not(.dark) .rate p{color:#5b6b7b!important}
+html:not(.dark) .acard .ico,html:not(.dark) .pack .ico,html:not(.dark) .rate .ico{background:#eaf5fb!important;color:var(--acc,#0878b4)!important}
+html:not(.dark) .acard:hover,html:not(.dark) .pack:hover,html:not(.dark) .rate:hover{border-color:#c7dbe7!important;box-shadow:0 30px 60px -36px rgba(16,43,67,.45)!important}
+html:not(.dark) [style*="background:rgba(0,0,0"],html:not(.dark) [style*="background: rgba(0,0,0"]{background:rgba(255,255,255,.9)!important}
+/* Dark backgrounds set in CSS (not inline) */
+html:not(.dark) header,html:not(.dark) footer{background:#fff!important;border-color:#e4e9ee!important}
+html:not(.dark) footer :is(h2,h3,h4){color:#0f2136!important}
+html:not(.dark) footer a{color:#4a5b6c!important}
+html:not(.dark) footer a:hover{color:#0878b4!important}
+html:not(.dark) footer p,html:not(.dark) footer li{color:#5b6b7b!important}
+html:not(.dark) footer span{color:#5b6b7b!important}
+html:not(.dark) :is(footer,header) [style*="color:#0ea5e9"],html:not(.dark) :is(footer,header) a[style*="color:#0ea5e9"],html:not(.dark) :is(footer,header) [style*="color:var(--accent)"]{color:#0878b4!important}
+html:not(.dark) .mobile-menu{background:#fff!important;border-color:#e4e9ee!important;box-shadow:-24px 0 60px rgba(16,43,67,.16)!important}
+html:not(.dark) .mobile-menu :is(a,div,span,p,h1,h2,h3,h4){color:#20364b!important}
+html:not(.dark) .mobile-menu [style*="color:#0ea5e9"]{color:#0878b4!important}
+/* Inline white text (from the dark design) inside light sections */
+html:not(.dark) :is(strong,b,span,em,i)[style*="color:#fff"]:not([style*="background"]),html:not(.dark) :is(div,p,h1,h2,h3,h4,li,a)[style*="color:#fff"]:not([style*="background"]){color:#0f2136!important}
+html:not(.dark) [style*="color:#f5f5f5"]:not([style*="background"]),html:not(.dark) [style*="color:#e2e8f0"]:not([style*="background"]),html:not(.dark) [style*="color:#f1f5f9"]:not([style*="background"]){color:#0f2136!important}
+html:not(.dark) [style*="color:#94a3b8"]:not([style*="background"]),html:not(.dark) [style*="color:#8890a8"]:not([style*="background"]),html:not(.dark) [style*="color:#ccc"]:not([style*="background"]){color:#5b6b7b!important}
+html:not(.dark) .btn-pill-outline{color:#0878b4!important;border-color:#9fd0e6!important;background:#fff!important}
+html:not(.dark) .btn-pill-outline:hover{background:#eaf5fb!important;color:#066091!important}
+
+/* ---- Layout and typography polish ---- */
+html:not(.dark) .section{padding:84px 0}
+html:not(.dark) .section-title{letter-spacing:-.03em;line-height:1.16}
+html:not(.dark) .section-sub{line-height:1.8}
+html:not(.dark) .section-kicker{margin-bottom:14px}
+html:not(.dark) .container{max-width:1180px}
+html:not(.dark) .card,html:not(.dark) .value,html:not(.dark) .step-card,html:not(.dark) [class$="-card"]{border-radius:16px;box-shadow:0 1px 2px rgba(16,43,67,.05),0 20px 44px -34px rgba(16,43,67,.45);transition:transform .3s ease,box-shadow .3s ease,border-color .3s ease}
+html:not(.dark) .card:hover,html:not(.dark) .value:hover,html:not(.dark) .step-card:hover{transform:translateY(-4px);box-shadow:0 30px 60px -36px rgba(16,43,67,.5);border-color:#c7dbe7}
+html:not(.dark) .btn-pill,html:not(.dark) .btn-primary{box-shadow:0 12px 26px -14px rgba(8,120,180,.65)}
+html:not(.dark) hr,html:not(.dark) .divider{border-color:#eef1f5}
+html:not(.dark) blockquote{border-color:#dbe7ef}
+
+/* Softer, more current hero rhythm */
+html:not(.dark) .hero-content{padding:104px 24px 64px}
+html:not(.dark) .hero h1{letter-spacing:-1.6px}
+html:not(.dark) .hero-actions{gap:12px}
+html:not(.dark) .hero-stats{gap:56px;margin-top:48px}
+
+/* Product/landing hero bands that use a washed-out photo */
+html:not(.dark) .page-hero,html:not(.dark) .hero-section{background:linear-gradient(180deg,#f7fbfd,#fff)!important}
+
+/* ---- Footer: compact and tidy ---- */
+footer{padding:46px 0 24px!important;margin-top:46px!important}
+footer h4{font-size:11px!important;letter-spacing:.06em;text-transform:uppercase;color:var(--muted2)!important;margin-bottom:11px!important}
+footer a{font-size:12.5px!important;margin-bottom:6px!important;line-height:1.5}
+footer p{font-size:12.5px!important;line-height:1.7!important}
+.footer-bottom{padding-top:20px!important;margin-top:22px!important;font-size:11.5px!important;line-height:1.7!important}
+@media(min-width:801px){
+  .footer-grid{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:30px 26px!important;align-items:start}
+  .footer-grid>div:first-child{grid-column:1/-1;max-width:560px}
+}
+@media(max-width:800px){.footer-grid{grid-template-columns:1fr 1fr!important;gap:24px 18px!important}.footer-grid>div:first-child{grid-column:1/-1}}
+@media(max-width:460px){.footer-grid{gap:20px 16px!important}}
+/* Compact the advisory promo band and the contact band, when present */
+footer>.container>div[style*="border-radius:12px"]:not(.footer-grid):not(.footer-bottom){padding:16px 20px!important;margin:0 0 24px!important}
+footer [style*="font-size:28px"]{font-size:20px!important;margin-bottom:3px!important}
+footer>.container>div[style*="text-align:center"][style*="border-top"]{padding:18px 20px!important;margin-top:22px!important}
+footer>.container>div[style*="text-align:center"] a[style*="padding:12px 28px"]{padding:9px 18px!important;font-size:13px!important}
+footer [style*="padding:24px"]{padding:18px 20px!important}
+
+/* ---- Neutralise dark-first design tokens across the product templates ---- */
+html:not(.dark){
+  --bg:#fff;--bg2:#f6f8fa;--bg-alt:#f6f8fa;--bg-card:#fff;--bg-card-hover:#f8fafc;
+  --card:#fff;--card2:#fff;--card-hover:#f8fafc;--panel:#fff;
+  --clr-bg:#fff;--clr-bg-alt:#f6f8fa;--clr-card:#fff;--clr-card-hover:#f8fafc;
+  --border:#e4e9ee;--border2:#e4e9ee;--border-l:#eef1f5;--border-light:#eef1f5;
+  --border-h:#d2dae3;--border-hover:#c7dbe7;--line:#e4e9ee;
+  --clr-border:#e4e9ee;--clr-border-light:#eef1f5;
+  --text:#0f2136;--text2:#20364b;--text-secondary:#4a5b6c;--ink:#0f2136;
+  --muted:#5b6b7b;--muted2:#5b6b7b;--text-muted:#5b6b7b;--clr-muted-dark:#5b6b7b;
+  --code-bg:#f3f6f8;
+}
+html:not(.dark) .nav-links{background:transparent!important}
+html:not(.dark) .page,html:not(.dark) .top{background:#fff!important}
+html:not(.dark) input,html:not(.dark) textarea,html:not(.dark) select{background:#fff!important;color:#0f2136!important;border-color:#cdd9e2!important}
+html:not(.dark) input::placeholder,html:not(.dark) textarea::placeholder{color:#8092a2!important}
+html:not(.dark) .form-group input,html:not(.dark) .form-group textarea,html:not(.dark) .form-group select{background:#fff!important;color:#0f2136!important}
+html:not(.dark) :is(.pricing-card,.price-card,.plan,.plan-card,.pcard,.tier){background:#fff!important;border-color:#e4e9ee!important}
+html:not(.dark) :is(.pricing-card,.plan,.plan-card,.pcard,.tier) :is(h2,h3,h4,.price,.plan-price,.num){color:#0f2136!important}
+html:not(.dark) :is(.pricing-card,.plan,.plan-card,.pcard,.tier) :is(p,li,span:not([class*="badge"]):not([class*="tag"])){color:#4a5b6c!important}
+
+/* Dark translucent backgrounds */
+html:not(.dark) [style*="background:rgba(15,23,42"],html:not(.dark) [style*="background:rgba(15, 23, 42"],html:not(.dark) [style*="background:rgba(17,24,39"],html:not(.dark) [style*="background:rgba(2,6,23"],html:not(.dark) [style*="background:rgba(3,7,18"]{background:#fff!important}
+
+/* Light-grey text from dark designs (nav links, meta) */
+html:not(.dark) [style*="color:#cbd5e1"]:not([style*="background"]),html:not(.dark) [style*="color:#cbd5e1,"]:not([style*="background"]),html:not(.dark) [style*="color:#e2e8f0"]:not([style*="background"]),html:not(.dark) [style*="color:#d1d5db"]:not([style*="background"]),html:not(.dark) [style*="color:#e5e7eb"]:not([style*="background"]),html:not(.dark) [style*="color:#cbd5e1;"]:not([style*="background"]){color:#20364b!important}
+html:not(.dark) :is(header,nav) a[style*="color:#cbd5e1"],html:not(.dark) :is(header,nav) a[style*="color:#94a3b8"],html:not(.dark) :is(header,nav) a[style*="color:#8890a8"]{color:#20364b!important}
+
+/* Breadcrumb + outline buttons + meta text */
+html:not(.dark) [aria-label="Breadcrumb"] span,html:not(.dark) [aria-label="Breadcrumb"] a{color:#5b6b7b!important}
+html:not(.dark) .btn-outline{color:#0878b4!important;border-color:#9fd0e6!important;background:#fff!important}
+html:not(.dark) .btn-outline:hover{background:#eaf5fb!important}
+html:not(.dark) a.back{color:#5b6b7b!important}
+
+/* Logos that were white on dark headers */
+html:not(.dark) .logo,html:not(.dark) a.logo,html:not(.dark) .brand{color:#0f2136!important}
+html:not(.dark) .logo span,html:not(.dark) a.logo span{color:#0ea5e9!important}
+
+
+/* Light text colours from dark designs -> readable on white */
+html:not(.dark) [style*="color:#cbd5e1"],html:not(.dark) [style*="color: #cbd5e1"],html:not(.dark) [style*="color:#f5f5f5"],html:not(.dark) [style*="color: #f5f5f5"],html:not(.dark) [style*="color:#e2e8f0"],html:not(.dark) [style*="color: #e2e8f0"],html:not(.dark) [style*="color:#e8edf5"],html:not(.dark) [style*="color: #e8edf5"],html:not(.dark) [style*="color:#e8ebf2"],html:not(.dark) [style*="color: #e8ebf2"],html:not(.dark) [style*="color:#f1f5f9"],html:not(.dark) [style*="color: #f1f5f9"],html:not(.dark) [style*="color:#eef2f7"],html:not(.dark) [style*="color: #eef2f7"],html:not(.dark) [style*="color:#ddd"],html:not(.dark) [style*="color: #ddd"],html:not(.dark) [style*="color:#f0f0f0"],html:not(.dark) [style*="color: #f0f0f0"],html:not(.dark) [style*="color:#e0e0e0"],html:not(.dark) [style*="color: #e0e0e0"],html:not(.dark) [style*="color:#d6dde8"],html:not(.dark) [style*="color: #d6dde8"],html:not(.dark) [style*="color:#b0b8d0"],html:not(.dark) [style*="color: #b0b8d0"],html:not(.dark) [style*="color:#ffffff"]:not([style*="background"]),html:not(.dark) [style*="color:#fff"]:not([style*="background"]){color:#3f5266!important}
+
+/* Outlined / transparent buttons and social links from the dark design */
+html:not(.dark) a[style*="background:transparent"][style*="color:#fff"],html:not(.dark) a[style*="background:transparent"][style*="color: #fff"]{color:#0878b4!important;border-color:#9fd0e6!important}
+html:not(.dark) [style*="background:rgba(255,255,255,0.03)"],html:not(.dark) [style*="background:rgba(255,255,255,.03)"]{background:#f2f5f8!important;border-color:#e4e9ee!important;color:#20364b!important}
+html:not(.dark) :is(header,nav) .btn-nav,html:not(.dark) .nav-links .btn-nav{background:linear-gradient(135deg,#0ea5e9,#2563eb)!important;color:#fff!important}
+/* Body copy on light pages */
+html:not(.dark) p,html:not(.dark) li,html:not(.dark) dd,html:not(.dark) td{color:#4a5b6c}
+
+/* Remaining CSS-dark section */
+html:not(.dark) section.founder,html:not(.dark) .section.founder{background:#fff!important}
+
+/* Bright accent text/icons that look faded on white */
+html:not(.dark) [style*="color:#38bdf8"]{color:#0a7ab8!important}
+html:not(.dark) [style*="color:#22d3ee"]{color:#0e7490!important}
+html:not(.dark) [style*="color:#34d399"]{color:#0f7a5a!important}
+html:not(.dark) [style*="color:#22c55e"]{color:#15803d!important}
+html:not(.dark) [style*="color:#4ade80"]{color:#15803d!important}
+html:not(.dark) [style*="color:#a78bfa"]{color:#6d4fc4!important}
+html:not(.dark) [style*="color:#818cf8"]{color:#4f46e5!important}
+html:not(.dark) [style*="color:#fbbf24"]{color:#b45309!important}
+html:not(.dark) [style*="color:#f59e0b"]{color:#b45309!important}
+
+/* Founder section: white text on the lightened section */
+html:not(.dark) .founder :is(h1,h2,h3,h4,strong,b){color:#0f2136!important}
+html:not(.dark) .founder :is(p,li,span,dd,div){color:#4a5b6c!important}
+html:not(.dark) .founder a{color:#0878b4!important}
+
+/* Keep code blocks dark for legibility */
+html:not(.dark) pre,html:not(.dark) code,html:not(.dark) .code,html:not(.dark) .code-block,html:not(.dark) pre code{background:#0f172a!important;color:#e2e8f0!important;border-color:#1e293b!important}
+
+/* Amber notice on bulk page */
+html:not(.dark) .warn{color:#8a5a00!important;background:rgba(245,158,11,.12)!important;border-color:rgba(245,158,11,.35)!important}
+
+/* ---- Replace stock photo backgrounds with clean on-brand backgrounds ---- */
+html:not(.dark) [class*="s-bg"]{display:none!important}
+html:not(.dark) [style*="images.unsplash.com"]:not(.hero){background-image:none!important}
+html:not(.dark) .hero-bg{background-image:none!important;background:linear-gradient(180deg,#f8fbfd,#fff)!important}
+html:not(.dark) .hero{background:radial-gradient(1000px 520px at 50% -14%,#e9f4fb,transparent 62%),linear-gradient(180deg,#f8fbfd,#fff)!important}
+html:not(.dark) section.hero,html:not(.dark) [class*="hero"]:not(.hero-badge):not([class*="hero-badges"]):not([class*="hero-stat"]):not([class*="hero-action"]):not([class*="hero-content"]):not([class*="hero-proof"]){background-image:none!important}
+html:not(.dark) section.hero{background:radial-gradient(1000px 520px at 50% -14%,#e9f4fb,transparent 62%),linear-gradient(180deg,#f8fbfd,#fff)!important}
+
+/* Native dropdown options */
+html:not(.dark) option{color:#0f2136!important;background:#fff!important}
+/* Text set to light slate in dark designs */
+html:not(.dark) [style*="#cbd5e1"],html:not(.dark) [style*="#e8edf5"],html:not(.dark) [style*="#e8ebf2"]{color:#3f5266!important}
+
+/* rgb() notation + photo badges */
+html:not(.dark) [style*="color:rgb(203, 213, 225)"],html:not(.dark) [style*="color: rgb(203, 213, 225)"]{color:#3f5266!important}
+html:not(.dark) .photo-badge,html:not(.dark) [class*="photo-badge"]{background:#0878b4!important;color:#fff!important;border-color:#0878b4!important}
+
+/* Mobile header: visible hamburger + menu button on the light header */
+html:not(.dark) .hamburger,html:not(.dark) .menu-toggle,html:not(.dark) [class*="hamburger"],html:not(.dark) [class*="menu-toggle"]{color:#0f2136!important}
+html:not(.dark) .hamburger span,html:not(.dark) .menu-toggle span,html:not(.dark) [class*="hamburger"] span{background:#0f2136!important}
+html:not(.dark) .hamburger{border:1px solid #d7e0e8!important;border-radius:8px!important;padding:0 8px!important}
+html:not(.dark) nav,html:not(.dark) .mobile-menu{box-shadow:0 1px 0 rgba(16,43,67,.05),0 12px 30px -24px rgba(16,43,67,.5)}
+@media(max-width:820px){
+  html:not(.dark) nav{background:#fff!important;border-bottom:1px solid #e4e9ee!important}
+  html:not(.dark) .mobile-menu{background:#fff!important}
+  html:not(.dark) .mobile-menu a,html:not(.dark) .mobile-menu div,html:not(.dark) .mobile-menu span{color:#20364b!important}
+}
+
+/* Mobile nav: the "Home" pill was white-on-white */
+html:not(.dark) .mobile-home,html:not(.dark) a.mobile-home{color:#0f2136!important;border-color:#d7e0e8!important;background:#fff!important}
+html:not(.dark) .mobile-home:hover{background:#eaf5fb!important;color:#0878b4!important}
+html:not(.dark) .hamburger span,html:not(.dark) .menu-toggle span{background:#0f2136!important;height:2.5px!important;border-radius:2px!important}
+
+
+
+/* Mobile: keep floating chat, positioned above the sticky CTA bar */
+@media(max-width:768px){
+  body:has(.msticky){padding-bottom:120px!important}
+  #a9-btn,#chatBubble{bottom:126px!important}
+  #a9-panel,#chatPanel{bottom:126px!important;max-height:calc(100dvh - 182px)!important}
+  body:has(.msticky) #backToTop{bottom:196px!important}
+}
+
+/* Affiliate pages (dark-designed) -> light */
+html:not(.dark) body:has(.lgo){background:#fff!important;color:#3f5266!important}
+html:not(.dark) body:has(.lgo) .top{background:rgba(255,255,255,.94)!important;border-bottom:1px solid #e4e9ee!important}
+html:not(.dark) body:has(.lgo) :is(h1,h2,h3,h4,strong,b,.stat .v,.sec-h h2,.card h3,.step h3,.bar h3,.ind h3,.q h3,.final h2,.cform h3,tbody td b,.lgo span){color:#0f2136!important}
+html:not(.dark) body:has(.lgo) :is(.card,.step,.bar,.tq,.ind,.kit,.commission,.why,.final,.stat,.cform){background-color:#fff!important;border-color:#e4e9ee!important}
+html:not(.dark) body:has(.lgo) :is(.card,.step,.bar,.tq,.ind,.kit){box-shadow:0 1px 2px rgba(16,43,67,.05),0 18px 40px -32px rgba(16,43,67,.5)}
+html:not(.dark) body:has(.lgo) a:not([class*=btn]):not([style*=linear-gradient]){color:#0878b4!important}
+html:not(.dark) body:has(.lgo) :is(.btn-primary,.btn,[class*=btn]){color:#fff!important}
+html:not(.dark) body:has(.lgo) :is(p,li,small,td,th,.sub,.muted){color:#4a5b6c!important}
+html:not(.dark) body:has(.lgo) [style*="rgba(255,255,255,.0"]{border-color:#e4e9ee!important}
+
+/* ---- Consistent header across pages ---- */
+html:not(.dark) nav:has(.nav-inner){position:sticky!important;top:0!important;z-index:200!important;background:rgba(255,255,255,.96)!important;border-bottom:1px solid #e4e9ee!important;backdrop-filter:blur(12px)}
+html:not(.dark) .nav-inner{max-width:1200px!important;margin:0 auto!important;padding:0 24px!important;height:72px!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:18px}
+html:not(.dark) .nav-links{display:flex!important;align-items:center!important;gap:18px!important}
+html:not(.dark) .nav-links>a{font-size:13.5px!important;font-weight:600!important;color:#20364b!important;text-decoration:none!important;white-space:nowrap}
+html:not(.dark) .nav-links>a:hover{color:#0878b4!important}
+html:not(.dark) .logo{display:inline-flex!important;align-items:center!important;gap:9px!important;font-size:20px!important;font-weight:800!important;color:#0f2136!important;text-decoration:none!important;white-space:nowrap}
+html:not(.dark) .logo .icon{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:34px!important;height:34px!important;border-radius:10px!important;background:linear-gradient(135deg,#0ea5e9,#2563eb)!important;color:#fff!important;font-weight:800!important;font-size:18px!important}
+html:not(.dark) .logo .leadsword,html:not(.dark) .logo span{color:#0ea5e9!important}
+html:not(.dark) .btn-nav{display:inline-flex!important;align-items:center!important;gap:6px!important;background:linear-gradient(135deg,#0ea5e9,#2563eb)!important;color:#fff!important;padding:9px 16px!important;border-radius:8px!important;font-weight:700!important;font-size:13px!important;text-decoration:none!important}
+html:not(.dark) .nav-signin{color:#20364b!important}
+html:not(.dark) .nav-signup{background:linear-gradient(135deg,#0ea5e9,#2563eb)!important;color:#fff!important;padding:8px 14px!important;border-radius:8px!important;font-weight:700!important;text-decoration:none!important}
+@media(max-width:1100px){html:not(.dark) .nav-links{gap:12px!important}html:not(.dark) .nav-links>a{font-size:12.5px!important}}
+@media(max-width:900px){html:not(.dark) .nav-links{display:none!important}}

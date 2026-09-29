@@ -4,7 +4,11 @@
   "description": "9amLeads — exclusive business leads delivered at 9am daily.",
   "main": "production_api_server.js",
   "scripts": {
-    "start": "node production_api_server.js"
+    "start": "node production_api_server.js",
+    "build": "node scripts/build-site.cjs",
+    "render:3d": "node scripts/render-3d.cjs",
+    "preview": "node scripts/preview-site.cjs",
+    "test:site": "node scripts/test-site.cjs"
   },
   "engines": {
     "node": "20.x || 22.x || 23.x"
@@ -23,6 +27,8 @@
     "uuid": "^14.0.0"
   },
   "devDependencies": {
-    "netlify-cli": "^26.1.0"
+    "cheerio": "^1.0.0",
+    "netlify-cli": "^26.1.0",
+    "three": "^0.169.0"
   }
 }
