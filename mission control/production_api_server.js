@@ -18347,6 +18347,12 @@ function sendPaidWelcomeOnce(cust) {
     var dbW = getDb();
     var live = (dbW.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === String(cust.email || '').toLowerCase(); });
     if (!live) return false;
+    // GUARD: paid_welcome is only for customers who have ACTUALLY paid - i.e. a live
+    // Stripe subscription exists. Saving a card (or a stray paid_since on a still-
+    // trialling account) must never trigger a "welcome to your paid plan" email. This
+    // is what sent a paid welcome to a free-trial user who had only added a card.
+    var _realSub = !!(live.stripe_subscription_id && String(live.stripe_subscription_id).toUpperCase() !== 'NULL');
+    if (!_realSub) { console.log('[PAID] paid_welcome skipped - no active subscription for ' + live.email); return false; }
     if (!live.paid_since) live.paid_since = new Date().toISOString();
     var sent = []; try { sent = JSON.parse(live.campaign_sent || '[]'); } catch(e) {}
     if (sent.indexOf('paid_welcome') === -1) {
@@ -19025,6 +19031,24 @@ function buildAddCardFinalEmail(customer, trialEndStr) {
     + '<p style="text-align:center;margin:0 0 18px"><a href="' + addUrl + '" style="display:inline-block;padding:15px 34px;background-color:#ea580c;color:#ffffff;text-decoration:none;border-radius:50px;font-weight:800;font-size:15px">Add my card now - keep my leads</a></p>'
     + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">Takes about 60 seconds. If you\u2019d rather I did it for you, or you have any questions, just reply to this email.</p>'
     + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0">All the best,<br><strong>Ketz Mandalia</strong><br><span style="color:#64748b">Founder, 9amLeads</span></p>';
+}
+// CARD-ON-FILE PRE-CHARGE NOTICE (~3 days before the trial ends). A card-holder is
+// auto-charged at trial end, so they get advance notice of the exact amount and date
+// and are told what continues - a surprise charge is the #1 chargeback trigger.
+function buildTrialPrechargeEmail(customer, trialEndStr, amount, planLabel) {
+  var dashUrl = PUBLIC_URL + '/portal/dashboard.html';
+  var name = String(customer.contact_name || customer.company || 'there').replace(/[<>&]/g, '');
+  var prod = customer.lead_type || 'leads';
+  return '<p style="text-align:center;margin:0 0 8px"><span style="display:inline-block;background:#e0f2fe;color:#0369a1;font-size:11px;font-weight:800;letter-spacing:1px;padding:4px 12px;border-radius:20px">TRIAL ENDING SOON</span></p>'
+    + '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#0f172a;margin:0 0 6px;text-align:center">Your ' + planLabel + ' plan starts ' + trialEndStr + '</h2>'
+    + '<p style="color:#64748b;font-size:13px;text-align:center;margin:0 0 20px">You have a card on file - here is exactly what happens next</p>'
+    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 16px">Hi ' + name + ',<br><br>Your free trial ends on <strong>' + trialEndStr + '</strong>. Because you saved a card, your <strong>' + planLabel + '</strong> plan will start automatically that day and your fresh ' + prod + ' will keep arriving every morning at 9am - <strong>no gap, nothing for you to do</strong>.</p>'
+    + '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:12px;padding:16px 20px;margin:0 0 16px">'
+    + '<p style="color:#0c4a6e;font-size:14px;font-weight:800;margin:0 0 8px">Your billing from ' + trialEndStr + '</p>'
+    + '<p style="color:#0c4a6e;font-size:13px;line-height:1.9;margin:0">\u2705 <strong>\u00a3' + amount + '.00 per week</strong> for your ' + planLabel + ' plan<br>\u2705 Charged to the card you saved - nothing due today<br>\u2705 Billed weekly, cancel any time with one click<br>\u2705 Your existing leads and Print &amp; Post stay exactly as they are</p></div>'
+    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">If you would rather not continue, you can cancel in one click any time before your trial ends and you will not be charged.</p>'
+    + '<p style="text-align:center;margin:0 0 18px"><a href="' + dashUrl + '" style="display:inline-block;padding:14px 32px;background-color:#0ea5e9;color:#ffffff;text-decoration:none;border-radius:50px;font-weight:800;font-size:15px">Manage my account</a></p>'
+    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0">Any questions, just reply.<br><br>All the best,<br><strong>Ketz Mandalia</strong><br><span style="color:#64748b">Founder, 9amLeads</span></p>';
 }
 function fmtTrialEnd(customer) {
   try { if (!customer.trial_ends) return ''; var d = new Date(customer.trial_ends); return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); } catch(e) { return ''; }
@@ -24027,8 +24051,29 @@ var AB_SUBJECTS = {
   winback_planning_1: ['Let us get your flyer through their door', 'Your flyer could be landing on doorsteps this week'],
   winback_tenders_1: ['Let us get your flyer through their door', 'Your flyer could be landing on doorsteps this week']
 };
+// A trial customer has a card on file (auto-charged at trial end) if a Stripe
+// payment method or a live subscription is stored. Used so trial messaging never
+// tells a card-holder their leads will "pause" (they will not - the card is charged
+// and delivery continues).
+function trialHasSavedCard(c) {
+  try { return !!(c && (c.stripe_payment_method_id || (c.stripe_subscription_id && String(c.stripe_subscription_id).toUpperCase() !== 'NULL'))); } catch(e) { return false; }
+}
+function trialWeeklyAmount(c) {
+  var wk = { starter: 25, pro: 49, enterprise: 99 };
+  try { return wk[String((c && c.selected_plan) || 'starter').toLowerCase()] || 25; } catch(e) { return 25; }
+}
+function trialPlanLabel(c) {
+  var p = String((c && c.selected_plan) || 'starter').toLowerCase();
+  return (p === 'pro' || p === 'enterprise') ? (p.charAt(0).toUpperCase() + p.slice(1)) : 'Starter';
+}
 function abPickSubject(template, customer, baseSubject) {
   try {
+    // Card-on-file trial: NEVER A/B them onto the "your leads pause" variant - it is
+    // false for them (their saved card is charged at trial end and delivery carries
+    // on). Use an explicit, accurate subject naming the charge instead.
+    if (template === 'trial_day7' && trialHasSavedCard(customer)) {
+      return 'Your trial ends tomorrow - your saved card is charged \u00a3' + trialWeeklyAmount(customer) + '/week and your leads continue';
+    }
     var v = AB_SUBJECTS[template];
     if (!v || v.length < 2) return baseSubject;
     var s = String((customer && (customer.id || customer.email)) || '');
@@ -24042,8 +24087,37 @@ function abPickSubject(template, customer, baseSubject) {
 // expiry, then 12/16/21/30/91, then weekly to week 26). Paid customers get the paid
 // series instead and never receive trial follow-ups. Run daily at 10:00 UK; also
 // callable manually (with dry:true to preview) via POST /api/admin/run-campaigns.
+// One-time self-heal: a customer who is STILL on an active free trial (no Stripe
+// subscription) must never carry paid markers. A stray paid_since or a leftover
+// paid_welcome/paid_tip in campaign_sent makes the campaign engine treat them as a
+// paid subscriber and send the paid series. Clear those for active trials only
+// (expired trials are left to the win-back sequence; real subscribers are untouched).
+function reconcileTrialPaidMarkers() {
+  try {
+    var d = getDb();
+    var changed = 0;
+    (d.customers || []).forEach(function(c) {
+      try {
+        if (String(c.plan || '') !== 'free_trial') return;
+        if (c.stripe_subscription_id && String(c.stripe_subscription_id).toUpperCase() !== 'NULL') return;
+        if (!c.trial_ends || new Date(c.trial_ends).getTime() <= Date.now()) return;
+        var dirty = false;
+        if (c.paid_since) { c.paid_since = null; dirty = true; }
+        try {
+          var sent = JSON.parse(c.campaign_sent || '[]');
+          var kept = sent.filter(function(t) { return String(t).indexOf('paid_') !== 0; });
+          if (kept.length !== sent.length) { c.campaign_sent = JSON.stringify(kept); dirty = true; }
+        } catch(e) {}
+        if (dirty) { changed++; console.log('[PAID-RECONCILE] cleared stale paid markers for ' + c.email); }
+      } catch(e) {}
+    });
+    if (changed) saveDb();
+    return changed;
+  } catch(e) { return 0; }
+}
 async function runCampaignEmails(dry) {
   console.log('[CAMPAIGN] Starting campaign email check...' + (dry ? ' (DRY RUN)' : ''));
+  if (!dry) { try { reconcileTrialPaidMarkers(); } catch(e) { console.log('[PAID-RECONCILE] error:', e.message); } }
   // Cancelled customers ARE included so they can receive the cancelled-customer
   // win-back (handled separately below) - but they never get trial or paid emails.
   var customers = (getDb().customers || []).filter(function(c) { return c.plan && (!c.bounced || c.bounced < 3) && c.marketing_consent === 1; });
@@ -24072,7 +24146,11 @@ async function runCampaignEmails(dry) {
       // (starter/pro) BEFORE any payment - that made non-paying trial users get the
       // paid welcome. Trial vs paid now follows real payment state + trial dates.
       var _hasSub = !!cust.stripe_subscription_id && String(cust.stripe_subscription_id).toUpperCase() !== 'NULL';
-      var isPaidNow = _hasSub || !!cust.paid_since;
+      // A paid customer has a live subscription OR a stamped paid_since AND is on a
+      // paid plan. A stray paid_since on an account still labelled free_trial must
+      // NOT trigger the paid series (that sent a false "welcome to your paid plan" to
+      // a trial user who had only saved a card).
+      var isPaidNow = _hasSub || (!!cust.paid_since && String(cust.plan || '') !== 'free_trial');
 
       var isCancelledNow = String(cust.plan || '') === 'cancelled';
       if (isCancelledNow) {
@@ -24102,9 +24180,26 @@ async function runCampaignEmails(dry) {
         // Not paid (regardless of the plan label they picked at signup) -> the trial
         // nurture while the trial is active, then the win-back once it ends.
         if (new Date() <= trialEnds) {
-          // Active trial: send onboarding emails at days 1, 3, 5 (after signup)
           var _sentThisCust = false;
-          for (var ei = 0; ei < CAMPAIGN_EMAILS.length; ei++) {
+          // Days until the trial ends (used by the pre-charge notice + day-7 reminder).
+          var msToTrialEnd = trialEnds.getTime() - new Date().getTime();
+          var daysToTrialEnd = msToTrialEnd / 86400000;
+          // CARD-ON-FILE PRE-CHARGE NOTICE (~3 days out, once): a card-holder is
+          // auto-charged at trial end, so give them exact, advance notice of the
+          // charge and what continues. Takes priority over the generic day-5 tip so
+          // they are never surprised by the charge.
+          if (!_sentThisCust && trialHasSavedCard(cust) && daysToTrialEnd > 2 && daysToTrialEnd <= 3.5 && !campaignSent.includes('trial_precharge')) {
+            campaignSent.push('trial_precharge');
+            var _pcEnd = fmtTrialEnd(cust) || 'soon';
+            var _pcAmt = trialWeeklyAmount(cust);
+            var _pcLbl = trialPlanLabel(cust);
+            await sendIt(cust, 'trial_precharge', 'Your ' + _pcLbl + ' plan starts ' + _pcEnd + ' - your card is charged \u00a3' + _pcAmt + '/week', buildTrialPrechargeEmail(cust, _pcEnd, _pcAmt, _pcLbl));
+            sent++;
+            _sentThisCust = true;
+          }
+          // Active trial: send onboarding emails at days 1, 3, 5 (after signup) -
+          // unless the pre-charge notice just went out on this run.
+          for (var ei = 0; !_sentThisCust && ei < CAMPAIGN_EMAILS.length; ei++) {
             var e = CAMPAIGN_EMAILS[ei];
             if (e.day <= 6 && accountAge >= e.day && !campaignSent.includes(e.template)) {
               campaignSent.push(e.template);
@@ -24116,9 +24211,8 @@ async function runCampaignEmails(dry) {
           }
           // trial_day7 ("ends tomorrow"): send it while the trial is STILL active,
           // roughly one day before it ends - not after it ends (which is what the
-          // old logic did and made the subject misleading).
-          var msToTrialEnd = trialEnds.getTime() - new Date().getTime();
-          var daysToTrialEnd = msToTrialEnd / 86400000;
+          // old logic did and made the subject misleading). The subject is card-aware
+          // (see abPickSubject) so a card-holder is never told their leads pause.
           if (daysToTrialEnd > 0 && daysToTrialEnd <= 2 && !campaignSent.includes('trial_day7')) {
             campaignSent.push('trial_day7');
             await sendIt(cust, 'trial_day7', getEditedCampaignSubject('trial_day7', 'Your free trial ends tomorrow'), getCampaignEmailHTMLWithEdits(cust, 'trial_day7'));
