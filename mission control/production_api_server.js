@@ -10541,10 +10541,13 @@ app.get('/api/leads', authMiddleware, (req, res) => {
     var _st = parsed.street || '';
     var _tn = parsed.town || parsed.city || '';
     var _cn = parsed.county || '';
-    // TOWN-FROM-POSTCODE: some scraped leads carry only a county ("hertfordshire") and
-    // no town, so the displayed address read "34 Crescent West, hertfordshire,
-    // EN4 0EJ" with no town. Derive the postal town from the district dataset
-    // ("EN4" -> "Enfield EN4") so the address always shows a real town.
+    // SANITIZE the town: a 1-2 letter "town" is really a postcode AREA (the scraper
+    // stored city="EN"/"AL"), and a town equal to the county is not a town. Treat both
+    // as missing so we never render a county-only address with no town.
+    if (/^[A-Za-z]{1,2}$/.test(String(_tn).trim())) _tn = '';
+    if (_tn && _cn && String(_tn).toLowerCase() === String(_cn).toLowerCase()) _tn = '';
+    // TOWN-FROM-POSTCODE: derive the postal town from the district dataset
+    // ("EN4" -> "Enfield EN4") when the lead has no usable town.
     var _tnDerived = '';
     if (!_tn && _pc) {
       try {
@@ -10562,41 +10565,42 @@ app.get('/api/leads', authMiddleware, (req, res) => {
     var _src = parsed.address || parsed.fullAddress || parsed.deceasedAddress || '';
     if (_pc && (_bn || _st || _src)) {
       var _pp = [];
-      // DOOR-NUMBER DISPLAY FIX: when building_number is empty the old code fell back
-      // to `street` alone, which DROPPED the house number ("Braithwaite Avenue" instead
-      // of "15 Braithwaite Avenue"). Customers saw a bare street and rejected the lead
-      // as a "wrong address". Prefer the stored address/fullAddress when it clearly
-      // carries a premise number, so the number is never hidden.
+      // DOOR-NUMBER DISPLAY FIX: prefer the stored address when it carries a premise
+      // number, so the house number is never dropped (bare-street addresses were
+      // rejected by customers as "wrong address").
       var _srcHasNum = false;
       try { _srcHasNum = hasUsablePremiseAddress(String(_src || ''), _pc); } catch(eNb) {}
-      if (_bn) _pp.push(String(_bn).trim() + (_st ? ' ' + String(_st).trim() : ''));
-      else if (_src && _srcHasNum) _pp.push(String(_src).trim());
-      else if (_st) _pp.push(String(_st).trim());
-      else if (_src) _pp.push(String(_src).trim());
-      var _joined = _pp.join(',');
-      if (_tn && _joined.toLowerCase().indexOf(String(_tn).toLowerCase()) === -1) _pp.push(String(_tn).trim());
-      if (_cn && _joined.toLowerCase().indexOf(String(_cn).toLowerCase()) === -1) _pp.push(String(_cn).trim());
-      if (_joined.toLowerCase().indexOf(String(_pc).toLowerCase()) === -1) _pp.push(String(_pc).trim());
+      if (_tnDerived && !_tn) {
+        // REBUILD cleanly (street, town, county, postcode). The stored address often
+        // already contains the county (and the postcode), and a county / bare postcode
+        // AREA must not sit in the town slot, so strip the postcode and any trailing
+        // county, then re-assemble with the derived town in the correct position.
+        var _base = _bn ? (String(_bn).trim() + (_st ? ' ' + String(_st).trim() : '')) : (_srcHasNum ? String(_src).trim() : (_st ? String(_st).trim() : String(_src).trim()));
+        var _base2 = String(_base).replace(new RegExp(String(_pc).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '').replace(/[,\s]+$/, '');
+        var _seg = _base2.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+        while (_seg.length > 1) {
+          var _last = _seg[_seg.length - 1];
+          var _lastL = String(_last).toLowerCase().replace(/[\s-]+/g, '-');
+          var _isCountySeg = (_cn && _lastL === String(_cn).toLowerCase().replace(/[\s-]+/g, '-')) || (function(){ try { return !!(typeof COUNTY_POSTCODE_MAP !== 'undefined' && COUNTY_POSTCODE_MAP[_lastL]); } catch(e){ return false; } })();
+          if (_isCountySeg) { _seg.pop(); continue; }
+          break;
+        }
+        _pp = _seg.length ? _seg : [_base];
+        _pp.push(_tnDerived);
+        if (_cn) _pp.push(String(_cn).trim());
+        if (_pc) _pp.push(String(_pc).trim());
+      } else {
+        if (_bn) _pp.push(String(_bn).trim() + (_st ? ' ' + String(_st).trim() : ''));
+        else if (_src && _srcHasNum) _pp.push(String(_src).trim());
+        else if (_st) _pp.push(String(_st).trim());
+        else if (_src) _pp.push(String(_src).trim());
+        var _joined = _pp.join(',');
+        if (_tn && _joined.toLowerCase().indexOf(String(_tn).toLowerCase()) === -1) _pp.push(String(_tn).trim());
+        if (_cn && _joined.toLowerCase().indexOf(String(_cn).toLowerCase()) === -1) _pp.push(String(_cn).trim());
+        if (_joined.toLowerCase().indexOf(String(_pc).toLowerCase()) === -1) _pp.push(String(_pc).trim());
+      }
       var _full = _pp.filter(Boolean).join(', ');
       if (_full && _full.split(',').length >= 2) parsed.fullAddress = dedupeAddressSegments(_full);
-      // Insert the derived town BEFORE the county/region and postcode (proper UK order:
-      // street, town, county, postcode) - only when the lead had no town of its own.
-      if (_tnDerived && parsed.fullAddress && String(parsed.fullAddress).toLowerCase().indexOf(_tnDerived.toLowerCase()) === -1) {
-        try {
-          var _parts2 = String(parsed.fullAddress).split(',').map(function(s){ return s.trim(); }).filter(Boolean);
-          var _pcN2 = String(_pc).toUpperCase().replace(/\s+/g, '');
-          var _countyAt = -1, _pcAt = -1;
-          for (var _pi = 0; _pi < _parts2.length; _pi++) {
-            var _pn = _parts2[_pi].toUpperCase().replace(/\s+/g, '');
-            if (_pn === _pcN2) { _pcAt = _pi; break; }
-            var _pl2 = _parts2[_pi].toLowerCase().replace(/[\s-]+/g, '-');
-            try { if (typeof COUNTY_POSTCODE_MAP !== 'undefined' && COUNTY_POSTCODE_MAP[_pl2]) _countyAt = _pi; } catch(eCo) {}
-          }
-          var _insAt = (_countyAt >= 0) ? _countyAt : (_pcAt >= 0 ? _pcAt : _parts2.length);
-          _parts2.splice(_insAt, 0, _tnDerived);
-          parsed.fullAddress = dedupeAddressSegments(_parts2.join(', '));
-        } catch(eIn) {}
-      }
     }
     // DISPLAY SYNC (door-number fix): the dashboard lead cards read `data.address`,
     // not `data.fullAddress`, so many leads that DO have a door number in their data
