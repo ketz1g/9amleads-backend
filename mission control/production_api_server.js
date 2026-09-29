@@ -10544,7 +10544,15 @@ app.get('/api/leads', authMiddleware, (req, res) => {
     var _src = parsed.address || parsed.fullAddress || parsed.deceasedAddress || '';
     if (_pc && (_bn || _st || _src)) {
       var _pp = [];
+      // DOOR-NUMBER DISPLAY FIX: when building_number is empty the old code fell back
+      // to `street` alone, which DROPPED the house number ("Braithwaite Avenue" instead
+      // of "15 Braithwaite Avenue"). Customers saw a bare street and rejected the lead
+      // as a "wrong address". Prefer the stored address/fullAddress when it clearly
+      // carries a premise number, so the number is never hidden.
+      var _srcHasNum = false;
+      try { _srcHasNum = hasUsablePremiseAddress(String(_src || ''), _pc); } catch(eNb) {}
       if (_bn) _pp.push(String(_bn).trim() + (_st ? ' ' + String(_st).trim() : ''));
+      else if (_src && _srcHasNum) _pp.push(String(_src).trim());
       else if (_st) _pp.push(String(_st).trim());
       else if (_src) _pp.push(String(_src).trim());
       var _joined = _pp.join(',');
@@ -10852,6 +10860,22 @@ async function createReplacementLead(cust, product, deliveredNow, exclude) {
     var exUrl = String(exclude.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
     var exPc = String(exclude.postcode || '').toUpperCase().replace(/\s+/g, '');
     var exAddr = String(exclude.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 40);
+    // EVERYTHING this customer already has (by URL + address), so a replacement is
+    // NEVER a lead they already own. Without this, repeated "replace" clicks kept
+    // returning the same pool lead (observed: "21 Durham Road, HARROW" inserted 3x).
+    var ownedKeys = {};
+    try {
+      var ownedRows = db.prepare('SELECT data FROM leads WHERE customer_id = ? AND (status IS NULL OR status != ?)').all(cust.id, 'removed');
+      ownedRows.forEach(function(r) {
+        try {
+          var od = JSON.parse(r.data || '{}');
+          var ou = String(od.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
+          if (ou) ownedKeys['u:' + ou] = 1;
+          var oa = String(od.fullAddress || od.address || od.deceasedAddress || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 40);
+          if (oa) ownedKeys['a:' + oa] = 1;
+        } catch(oe) {}
+      });
+    } catch(oe2) {}
     var file = (PRODUCT_LEAD_FILES[product] && PRODUCT_LEAD_FILES[product].file) || 'moving-leads.json';
     var poolPath = path.join(DATA_DIR, file);
     var pool = [];
@@ -10937,6 +10961,10 @@ async function createReplacementLead(cust, product, deliveredNow, exclude) {
         if (product === 'moving') { if (!isCompleteMovingAddress(fAddr, fpc)) continue; }
         else if (!hasProperAddressModule(fAddr, fpc)) continue;
       }
+      // NEVER hand back a lead the customer already has (URL or address match).
+      var _cu = String(fl.url || fl.noticeUrl || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim();
+      var _ca = String(fAddr || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 40);
+      if ((_cu && ownedKeys['u:' + _cu]) || (_ca && ownedKeys['a:' + _ca])) continue;
       // NATIONAL FALLBACK only for genuinely postcode-less public notices
       // (some tender/older-probate records have no address/postcode at all).
       var areaOfPool = extractPostcodeArea(fpc || fl.address || fl.title || '');
@@ -10974,18 +11002,14 @@ async function createReplacementLead(cust, product, deliveredNow, exclude) {
       return { id: nr.id, address: nr.data ? JSON.parse(nr.data).address : '', postcode: fpc2, nearest: !!fld.replacement_fallback };
     }
 
-    // Prefer an exact-area replacement.
+    // IN-AREA ONLY: a replacement must come from the customer's OWN chosen postcode
+    // areas. We deliberately do NOT fall back to a "nearest area" (random/out-of-area)
+    // lead - a customer who rejects a lead expects another lead from their chosen
+    // areas, not one from a different area. If their areas are dry, we return null
+    // (the dashboard shows no replacement available) rather than a random substitute.
     if (exactCands.length) {
       var pickExact = exactCands[0];
       return insertReplacement(pickExact);
-    }
-    // Otherwise the NEAREST area with a valid lead - but ONLY within the fallback
-    // radius. A replacement far outside the customer's area (e.g. Preston for a Leeds
-    // customer) is worse than none, so cap it at MOVING_MAX_FALLBACK_KM.
-    if (nearestCands.length) {
-      nearestCands.sort(function(a,b){ return (a.km||9999) - (b.km||9999); });
-      var _maxKmRep = Number(process.env.MOVING_MAX_FALLBACK_KM) || 25;
-      if ((nearestCands[0].km || 9999) <= _maxKmRep) return insertReplacement(nearestCands[0]);
     }
     return null;
   } catch(e) { console.log('[CREATE-REPL] error:', e.message); return null; }
