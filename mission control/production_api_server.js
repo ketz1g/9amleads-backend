@@ -22262,6 +22262,21 @@ async function warmUpDeliveryPaf() {
       var pc0 = String(lead.postcode || '').toUpperCase().trim();
       var addr0 = lead.fullAddress || lead.address || '';
       var hint = lead.doorNumberHint || '';
+      // EPC-FIRST (FREE): resolve the door number from the local EPC index before any
+      // paid Postcoder credit. The EPC index covers these postcodes, so this removes the
+      // bulk of paid lookups here (the 07:20 warm-up was the main credit spender).
+      var _epcW = '';
+      try {
+        if (typeof EPC_INDEX !== 'undefined' && EPC_INDEX.isLoaded && EPC_INDEX.isLoaded()) {
+          var _e = EPC_INDEX.resolveFullAddress(addr0, pc0);
+          if (_e && hasUsablePremiseAddress(_e, pc0)) _epcW = _e;
+        }
+      } catch(e) {}
+      if (_epcW) {
+        lead.address = _epcW; lead.fullAddress = _epcW;
+        lead.paf_done = true; lead.addressVerificationSource = 'epc-free'; enriched++;
+        continue;
+      }
       var full = await pcDeliver.lookupPostcoderAddress(pc0, addr0, hint);
       if (full && full.rateLimited) { await new Promise(function(r) { setTimeout(r, 30000); }); full = await pcDeliver.lookupPostcoderAddress(pc0, addr0, hint); }
       // TRANSIENT/BUDGET: leave for a later pass, do NOT mark failed.
@@ -28238,6 +28253,35 @@ _deliverDiag[cust.email].products = products;
             if (m2) return m2[1].trim();
             return '';
           }
+          // ===== FREE-FIRST (issue #3): resolve door numbers from the FREE local EPC
+          // index BEFORE any paid Postcoder lookup. Most scraped leads are street-only
+          // and the EPC index already covers those postcodes, so this removes the bulk
+          // of paid lookups. Only leads the free index cannot resolve fall through to
+          // the paid Postcoder call below.
+          try {
+            if (typeof EPC_INDEX !== 'undefined' && EPC_INDEX.isLoaded && EPC_INDEX.isLoaded()) {
+              var _epcFilled = 0;
+              custLeads.forEach(function(l) {
+                try {
+                  if (l.product !== 'moving') return;
+                  var ld = null; try { ld = JSON.parse(l.data || '{}'); } catch(e) { ld = null; }
+                  if (!ld || typeof ld !== 'object') ld = {};
+                  var _pc = String(ld.postcode || '').trim();
+                  var _addr = ld.fullAddress || ld.address || ld.deceasedAddress || '';
+                  if (!_pc || hasPremiseNumber(_addr, _pc)) return;
+                  var _epc = EPC_INDEX.resolveFullAddress(_addr, _pc);
+                  if (_epc && hasPremiseNumber(_epc, _pc)) {
+                    ld.address = _epc; ld.fullAddress = _epc;
+                    ld.addressVerificationStatus = 'EXACT_ADDRESS';
+                    ld.addressVerificationSource = ld.addressVerificationSource || 'epc-free';
+                    l.data = JSON.stringify(ld);
+                    _epcFilled++;
+                  }
+                } catch(e) {}
+              });
+              if (_epcFilled) { if (!testOnly) saveDb(); console.log('[DELIVERY] EPC free-resolution: filled ' + _epcFilled + ' door numbers (0 credits) for ' + cust.email); }
+            }
+          } catch(epcFreeErr) { console.log('[DELIVERY] EPC free-first error: ' + epcFreeErr.message); }
           var needPc = custLeads.filter(function(l) {
             var ld = null; try { ld = JSON.parse(l.data || ''); } catch(e) { ld = null; }
             if (!ld || typeof ld !== 'object') ld = { postcode: l.postcode || '', address: l.address || l.fullAddress || '', fullAddress: l.fullAddress || l.address || '' };
