@@ -29294,6 +29294,24 @@ _deliverDiag[cust.email].products = products;
             else { try { db.prepare('UPDATE leads SET status = ?, delivered = 0 WHERE id = ?').run('removed', l.id); } catch(e) {} }
           });
           if (_keptCL.length !== custLeads.length) { console.log('[PRODUCT-GATE] ' + cust.email + ' dropped ' + (custLeads.length - _keptCL.length) + ' non-conforming lead(s) (' + cust.product + ')'); custLeads = _keptCL; }
+          // ALSO sweep PENDING (undelivered) rows for this customer: some top-up/fill
+          // passes create "commercial"-product rows WITHOUT adding them to custLeads, so
+          // the gate above never saw them. Remove any that violate the product identity /
+          // area rule so nothing wrong can ever sit in the queue or reach the dashboard.
+          var _removedP = 0;
+          db.leads = (db.leads || []).filter(function(l) {
+            if (l.customer_id !== cust.id || l.delivered || l.status === 'removed') return true;
+            var dd2 = null; try { dd2 = JSON.parse(l.data || '{}'); } catch(e) { dd2 = {}; }
+            var lp2 = l.product || cust.product;
+            var bad = false;
+            if (lp2 === 'commercial') {
+              if (!isCommercialLead(dd2)) bad = true;
+              else if (!_ukC && custAreas.length && !custAreas.some(function(x) { return extractPostcodeArea(x) === extractPostcodeArea(dd2.postcode || dd2.address || dd2.fullAddress || ''); })) bad = true;
+            } else if (lp2 === 'moving' && products.indexOf('commercial') !== -1 && isCommercialLead(dd2)) { bad = true; }
+            if (bad) { _removedP++; return false; }
+            return true;
+          });
+          if (_removedP) { saveDb(); console.log('[PRODUCT-GATE] ' + cust.email + ' removed ' + _removedP + ' pending non-conforming row(s)'); }
         } catch(ePg) {}
         if (custLeads.length > totalNeeded) {
           console.log('[DELIVERY-FINAL-CAP] ' + cust.email + ': hard-capped ' + custLeads.length + ' -> ' + totalNeeded + ' (email matches ledger)');
