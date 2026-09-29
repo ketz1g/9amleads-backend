@@ -4095,10 +4095,10 @@ function partnerOnboardingEmail(p, trialDays) {
     + '<body style="margin:0;padding:0;background:#f4f5f7">'
     + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f5f7"><tr><td align="center" style="padding:24px 12px">'
     + '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:600px;background:#fff;border:1px solid #e5e7eb;border-radius:8px">'
-    + '<tr><td style="height:4px;background:' + accent + ';font-size:0;line-height:0">&nbsp;</td></tr>'
+    + buildEmailHeader()
     + '<tr><td style="padding:26px 34px 0">'
-    + '<p style="margin:0;font-size:18px;font-weight:800;color:#1f2937">9am<span style="color:' + accent + '">Leads</span></p>'
-    + '<p style="margin:6px 0 0;font-size:12px;color:#6b7280">Partner Programme</p>'
+    + ''
+    + ''
     + '<h1 style="margin:16px 0 12px;font-size:23px;line-height:1.3;font-weight:800;color:#1f2937">You are approved - here is your code and how to start</h1>'
     + '<p style="margin:0 0 14px;color:#1f2937;font-size:15px;line-height:1.65">Hi ' + escHtml(p.name || 'there') + ', welcome aboard. ' + org + ' is now a 9amLeads partner. Your members get an extended <b>' + trialDays + '-day free trial</b> through you, and you earn <b>&pound;25 per active member, per month</b>, recurring while they stay.</p>'
     + '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:12px;padding:16px;margin:0 0 14px">'
@@ -4115,9 +4115,7 @@ function partnerOnboardingEmail(p, trialDays) {
     + '</td></tr>'
     + '<tr><td align="center" style="padding:10px 34px 6px">' + btn(dash, 'Open your partner dashboard', true) + '</td></tr>'
     + '<tr><td align="center" style="padding:6px 34px 6px">' + btn('https://9amleads.com/partners/', 'View the partner proposal', false) + '</td></tr>'
-    + '<tr><td style="padding:8px 34px 26px;border-top:1px solid #e5e7eb">'
-    + '<p style="margin:12px 0 8px;color:#9ca3af;font-size:11px;line-height:1.7">You are receiving this because you were approved as a 9amLeads partner. Questions? Reply to this email or contact hello@9amleads.com. 9am Leads Ltd, Company No. 17402522, 66 Paul Street, London EC2A 4NA.</p>'
-    + '</td></tr></table></td></tr></table></body></html>';
+    + buildEmailFooter() + '</table></td></tr></table></body></html>';
 }
 function partnerAttributionForCustomer(customerId) {
   try { return (getDb().partner_attribution || []).filter(function(a){ return a.customer_id === customerId; })[0] || null; } catch(e) { return null; }
@@ -4391,14 +4389,14 @@ function partnerDripEmail(p, day) {
   return '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;padding:0;background:#f4f5f7">'
     + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f5f7"><tr><td align="center" style="padding:24px 12px">'
     + '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:600px;background:#fff;border:1px solid #e5e7eb;border-radius:8px">'
-    + '<tr><td style="height:4px;background:' + accent + ';font-size:0;line-height:0">&nbsp;</td></tr>'
+    + buildEmailHeader()
     + '<tr><td style="padding:26px 34px">'
     + '<p style="margin:0 0 4px;font-size:18px;font-weight:800;color:#1f2937">9am<span style="color:' + accent + '">Leads</span></p>'
     + '<p style="margin:0 0 14px;font-size:12px;color:#6b7280">Partner Programme</p>'
     + '<h1 style="margin:0 0 12px;font-size:21px;line-height:1.3;font-weight:800;color:#1f2937">' + heads[day] + '</h1>'
     + '<p style="margin:0 0 14px;color:#1f2937;font-size:15px;line-height:1.65">Hi ' + escHtml(p.name || 'there') + ', ' + bodies[day] + '</p>'
     + '<table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="border-radius:8px;background:' + accent + '"><a href="' + dash + '" style="display:inline-block;padding:13px 28px;font-size:15px;font-weight:700;color:#fff;text-decoration:none;border-radius:8px">Open your dashboard</a></td></tr></table>'
-    + '</td></tr></table></td></tr></table></body></html>';
+    + buildEmailFooter() + '</table></td></tr></table></body></html>';
 }
 function partnerDripSequence() {
   var dbc = getDb(); var now = Date.now(); var sent = 0;
@@ -4676,7 +4674,7 @@ function processAffiliateNurture() {
       [3, 7, 14].forEach(function(day) {
         if (ageDays >= day && !sentArr.includes('d' + day)) {
           try {
-            sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' }, '9amLeads Affiliate - ' + (day === 3 ? 'your kit is ready' : day === 7 ? 'keep your referrals converting' : '2 weeks in, keep the momentum'), affiliateNurtureEmail(aff, day));
+            sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' }, '9amLeads Affiliate - ' + (day === 3 ? 'your kit is ready' : day === 7 ? 'keep your referrals converting' : '2 weeks in, keep the momentum'), wrapDarkEmailShell(affiliateNurtureEmail(aff, day)));
             sentArr.push('d' + day);
             sent++;
           } catch(e) {}
@@ -4739,7 +4737,7 @@ function processAffiliateReactivation() {
       try { sentArr = JSON.parse(aff.reactivation_sent || '[]'); } catch(e) {}
       if (sentArr.length) return; // only once per affiliate
       try {
-        sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' }, '9amLeads Affiliate - your code is still live', affiliateReactivationEmail(aff));
+        sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' }, '9amLeads Affiliate - your code is still live', wrapDarkEmailShell(affiliateReactivationEmail(aff)));
         aff.reactivation_sent = JSON.stringify(['sent']);
         sent++;
       } catch(e) {}
@@ -4837,7 +4835,7 @@ function processInactiveAffiliateDeletion() {
         if (!warnedAt || isNaN(warnedAt.getTime())) {
           aff[warnedKey] = now.toISOString();
           try {
-            sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' }, '9amLeads Affiliate - action needed to keep your account', affiliateInactiveWarningEmail(aff)).catch(function() {});
+            sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' }, '9amLeads Affiliate - action needed to keep your account', wrapDarkEmailShell(affiliateInactiveWarningEmail(aff))).catch(function() {});
             warned.push(aff.email);
           } catch(eW) { errored.push(aff.email); }
           return;
@@ -4848,7 +4846,7 @@ function processInactiveAffiliateDeletion() {
         aff.status = 'deleted';
         aff.deleted_at = now.toISOString();
         aff.deleted_reason = 'no referrals within 30 days (inactive account deletion)';
-        try { sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' }, 'Your 9amLeads affiliate account has been closed', affiliateClosedEmail(aff)).catch(function() {}); } catch(eD) {}
+        try { sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' }, 'Your 9amLeads affiliate account has been closed', wrapDarkEmailShell(affiliateClosedEmail(aff))).catch(function() {}); } catch(eD) {}
         deleted.push(aff.email);
       } catch(e) { errored.push(aff.email); }
     });
@@ -5330,25 +5328,22 @@ function memberInviteHtml(orgName, refLink, trialDays, toName) {
     'CRM integration - every lead pushed straight into your CRM automatically',
     'Auto Print &amp; Post and bulk campaigns for quiet times',
     'No contract, cancel anytime'
-  ].map(function(t){ return '<tr><td style="padding:0 0 8px;color:#1f2937;font-size:14.5px;line-height:1.55"><span style="color:' + p.accent + ';font-weight:800">&#10003;</span>&nbsp; ' + t + '</td></tr>'; }).join('');
+  ].map(function(t){ return '<tr><td style="padding:0 0 8px;color:#1f2937;font-size:14.5px;line-height:1.55"><span style="color:' + accent + ';font-weight:800">&#10003;</span>&nbsp; ' + t + '</td></tr>'; }).join('');
   return '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>'
     + '<body style="margin:0;padding:0;background:#f4f5f7">'
     + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f5f7"><tr><td align="center" style="padding:24px 12px">'
     + '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:600px;background:#fff;border:1px solid #e5e7eb;border-radius:8px">'
-    + '<tr><td style="height:4px;background:' + accent + ';font-size:0;line-height:0">&nbsp;</td></tr>'
+    + buildEmailHeader()
     + '<tr><td style="padding:26px 34px 0">'
-    + '<p style="margin:0;font-size:18px;font-weight:800;color:#1f2937">9am<span style="color:' + accent + '">Leads</span></p>'
-    + '<p style="margin:6px 0 0;font-size:12px;color:#6b7280">In partnership with ' + org + '</p>'
+    + ''
+    + ''
     + '<h1 style="margin:16px 0 12px;font-size:22px;line-height:1.3;font-weight:800;color:#1f2937">You are invited to try 9amLeads</h1>'
     + '<p style="margin:0 0 12px;color:#1f2937;font-size:15px;line-height:1.65">' + greet + '<br><br>As a member of ' + org + ', you get an extended <strong>2-week (' + trialDays + '-day) free trial</strong> of 9amLeads - fresh, exclusive moving leads delivered every morning at 9am. No card needed to start.</p>'
     + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0">' + bullets + '</table>'
     + '<p style="margin:10px 0 4px;color:#1f2937;font-size:14px;line-height:1.6">This link is reserved for ' + org + ' members.</p>'
     + '</td></tr>'
     + '<tr><td align="center" style="padding:10px 34px 6px">' + btn + '</td></tr>'
-    + '<tr><td style="padding:8px 34px 26px;border-top:1px solid #e5e7eb">'
-    + '<p style="margin:12px 0 8px;color:#9ca3af;font-size:11px;line-height:1.7">Sent by 9amLeads on behalf of ' + org + '. 9am Leads Ltd, Company No. 17402522, 66 Paul Street, London EC2A 4NA.</p>'
-    + '<a href="mailto:hello@9amleads.com?subject=unsubscribe" style="color:#6b7280;font-size:12px">Unsubscribe</a>'
-    + '</td></tr></table></td></tr></table></body></html>';
+    + buildEmailFooter() + '</table></td></tr></table></body></html>';
 }
 // Accepts a mix of: "name@x.com", "Name <name@x.com>", CSV rows
 // ("Name, name@x.com, Company, Area"), a header row, or {email,name,company,segment}.
@@ -6072,7 +6067,7 @@ app.post('/api/admin/affiliates/:id/review', adminAuth, (req, res) => {
         var _cfgOn = partnerConfig(); var _tdOn = Number(_cfgOn.sales_partner_trial_days) || 14;
         sendBrevoEmail({ email: aff.email, name: aff.name || 'Partner' }, 'Welcome to the 9amLeads Partner Programme - your code and next steps', partnerOnboardingEmail(aff, _tdOn));
       } else {
-        sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' }, decision === 'approve' ? 'Welcome to the 9amLeads Affiliate Programme' : '9amLeads Affiliate application update', emHtml);
+        sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' }, decision === 'approve' ? 'Welcome to the 9amLeads Affiliate Programme' : '9amLeads Affiliate application update', wrapDarkEmailShell(emHtml));
       }
     } catch(e) { console.log('[AFFILIATE] review email error:', e.message); }
     res.json({ success: true, affiliate: { id: aff.id, name: aff.name, status: aff.status, application: aff.application } });
@@ -7250,7 +7245,7 @@ app.post('/api/affiliate/register', async (req, res) => {
     // Confirmation email to the affiliate (so they know their application arrived).
     try {
       var welcomeHtml = affiliateWelcomeEmail(name, code2, aff.payout_rate, AFFILIATE_AUTO_ACTIVATE);
-      sendBrevoEmail({ email: em, name: String(name).trim() }, 'Welcome to the 9amLeads Affiliate Programme', welcomeHtml).catch(function() {});
+      sendBrevoEmail({ email: em, name: String(name).trim() }, 'Welcome to the 9amLeads Affiliate Programme', wrapDarkEmailShell(welcomeHtml)).catch(function() {});
     } catch(eW) {}
     // Alert the owner so they know a new affiliate joined.
     try {
