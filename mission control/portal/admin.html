@@ -646,8 +646,9 @@ function loadPayments() {
         var col = e.type === 'failed' ? '#ef4444' : (isSetup ? '#0ea5e9' : '#16a34a');
         var label = e.type === 'failed' ? 'FAILED' : (isSetup ? 'CARD SAVED' : 'PAID');
         var amt = isSetup ? '<span style="color:#94a3b8">no charge</span>' : ('&pound;' + (Number(e.amount) || 0).toFixed(2));
-        var uk = '-'; try { uk = new Date(e.at).toLocaleString('en-GB', { timeZone: 'Europe/London' }); } catch(x) {}
-        h += '<tr><td style="font-size:11px;white-space:nowrap">' + uk + '</td>' +
+        var uk = '-'; try { var _evt = e.stripe_at || e.at; uk = new Date(_evt).toLocaleString('en-GB', { timeZone: 'Europe/London' }); } catch(x) {}
+        var _recv = e.stripe_at ? (' title="Charge time from Stripe. Webhook received ' + String(e.at || '').replace('T', ' ').substring(0, 16) + ' UTC"') : '';
+        h += '<tr><td style="font-size:11px;white-space:nowrap"' + _recv + '>' + uk + '</td>' +
           '<td style="color:' + col + ';font-weight:700">' + label + '</td>' +
           '<td>' + esc(e.email || '-') + '</td>' +
           '<td>' + amt + '</td>' +

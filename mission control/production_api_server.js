@@ -30304,7 +30304,13 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
       else if (typeof _pe.amount === 'number') _peAmt = _pe.amount / 100;
       else if (typeof _pe.amount_total === 'number') _peAmt = _pe.amount_total / 100;
       var _peErr = (_pe.last_payment_error && _pe.last_payment_error.message) || '';
-      _peDb.payment_events.push({ at: new Date().toISOString(), type: _peType, event: evType, email: _peEmail, customer: _pe.customer || '', amount: _peAmt, currency: (_pe.currency || 'gbp'), error: _peErr, event_id: (event.id || '') });
+      // Store the ACTUAL Stripe event/charge time (stripe_at) as well as when our webhook
+      // processed it. A delayed/retried webhook (deploy or downtime) used to make a weekly
+      // charge appear as if it was collected days later - the admin billing view then
+      // looked like the customer was double-charged. Display uses stripe_at.
+      var _peStripeTs = (_pe.status_transitions && _pe.status_transitions.paid_at) || _pe.created || event.created || 0;
+      var _peStripeAt = _peStripeTs ? new Date(_peStripeTs * 1000).toISOString() : '';
+      _peDb.payment_events.push({ at: new Date().toISOString(), stripe_at: _peStripeAt, type: _peType, event: evType, email: _peEmail, customer: _pe.customer || '', amount: _peAmt, currency: (_pe.currency || 'gbp'), error: _peErr, event_id: (event.id || '') });
       if (_peDb.payment_events.length > 1000) _peDb.payment_events = _peDb.payment_events.slice(-1000);
       saveDb();
       console.log('[PAYMENT-EVENT] ' + _peType + ' ' + evType + ' ' + _peEmail + ' ' + _peAmt.toFixed(2) + (_peErr ? ' err=' + _peErr : ''));
