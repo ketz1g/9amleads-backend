@@ -33417,6 +33417,19 @@ function generateLeadEmailHTML(customer, leads) {  const brand = getProductBrand
   if (customer.product === 'tenders') {
     body += '<tr><td style="background:#ffffff;padding:0 30px 16px;color:#64748b;font-size:11px;line-height:1.7;text-align:center">Tender opportunities are public by law. Other businesses can see the same notices on the official portals. Your 9amLeads feed is curated to your business and never re-sold; responding first with a strong submission is how you win. Note: some areas publish fewer tenders than others.</td></tr>';
   }
+  // COMMERCIAL MOVES cross-sell: tell MOVING customers (who don't already hold it) that
+  // we also supply exclusive commercial / office-relocation leads.
+  try {
+    var _prodsE = [customer.product];
+    try { var _bxE = JSON.parse(customer.biz_field3 || '[]'); if (Array.isArray(_bxE) && _bxE.length) _prodsE = _bxE; } catch(eBe) {}
+    if (customer.product === 'moving' && _prodsE.indexOf('commercial') === -1) {
+      body += '<tr><td style="background:#ffffff;padding:0 30px 16px"><table cellpadding="0" cellspacing="0" width="100%" style="border:1px solid #bae6fd;border-radius:14px;overflow:hidden"><tr><td style="background-color:#f0f9ff;padding:16px 20px">'
+        + '<div style="font-family:Inter,Arial,sans-serif;font-size:15px;font-weight:800;color:#0c4a6e;margin-bottom:6px">\uD83C\uDFE2 Can we do your commercial moves too?</div>'
+        + '<div style="font-family:Inter,Arial,sans-serif;font-size:13px;line-height:1.6;color:#0c4a6e;margin-bottom:12px">We now also supply <strong>Commercial Moves</strong> &mdash; exclusive office &amp; commercial relocation leads, 3 per day, from &pound;50/week. Add it to your account and they arrive in this same daily email.</div>'
+        + '<a href="https://www.9amleads.com/movingleadsdaily#commercial" style="display:inline-block;background-color:#0ea5e9;background-image:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;text-decoration:none;border-radius:50px;font-weight:800;font-size:13px;padding:10px 22px">See Commercial Moves &rarr;</a>'
+        + '</td></tr></table></td></tr>';
+    }
+  } catch(eComm) {}
   body += '<table cellpadding="0" cellspacing="0" align="center" style="margin:0 auto 10px"><tr><td style="background-color:#0ea5e9;background-image:linear-gradient(135deg,#0ea5e9,#2563eb);border-radius:8px;width:26px;height:26px;text-align:center;vertical-align:middle;line-height:26px;font-family:Outfit,Arial,Helvetica,sans-serif;font-size:14px;font-weight:900;color:#ffffff">9</td><td style="padding-left:8px;vertical-align:middle"><span style="font-family:Outfit,Arial,Helvetica,sans-serif;font-size:15px;font-weight:900;color:#38bdf8;letter-spacing:-0.2px">9am<span style="color:#38bdf8">Leads</span></span></td></tr></table>';
   body += '<p style="color:#ffffff;font-size:9px;margin:0 0 8px;letter-spacing:.3px">' + (customer.product === 'tenders' ? 'Fresh curated business opportunities, delivered at 9am every morning' : (customer.product === 'probate' ? 'Fresh probate opportunities, delivered at 9am every morning' : 'Fresh exclusive business opportunities, delivered at 9am every morning')) + '</p>';
   body += '<p style="color:#ffffff;font-size:10px;margin:0 0 4px;letter-spacing:.4px">9amLeads &middot; hello@9amleads.com</p>';

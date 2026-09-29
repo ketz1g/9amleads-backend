@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head><script>try{if(!localStorage.getItem("theme"))localStorage.setItem("theme","light");}catch(e){}</script>
   <link rel="icon" type="image/png" href="/favicon.png"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <meta charset="UTF-8">
 <meta name="msvalidate.01" content="722F0474C4A2E6D3BCF479C7A4B8C3CD">
@@ -70,7 +70,7 @@
 
     /* HERO */
     .hero{min-height:100vh;display:flex;align-items:center;position:relative;overflow:hidden;background:var(--bg)}
-    .hero-bg{position:absolute;inset:0;background:url('https://images.unsplash.com/photo-1600518464441-9154a4dea21b?w=1600&q=85') center/cover no-repeat;filter:brightness(0.35) saturate(0.8);transform:scale(1.05)}
+    .hero-bg{position:absolute;inset:0;background: center/cover no-repeat;filter:brightness(0.35) saturate(0.8);transform:scale(1.05)}
     .hero-overlay{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 40%,transparent 0%,var(--bg) 95%),linear-gradient(to top,var(--bg) 0%,transparent 40%,transparent 60%,var(--bg) 100%)}
     .hero .container{position:relative;z-index:2;text-align:center;padding:120px 24px 80px}
     .hero-badge{display:inline-flex;align-items:center;gap:8px;background:var(--orange-subtle);border:1px solid rgba(255,107,53,0.2);border-radius:999px;padding:7px 18px;font-size:13px;font-weight:600;color:var(--orange);margin-bottom:28px}
@@ -259,7 +259,7 @@
     .s-orb.br{width:400px;height:400px;bottom:-150px;left:-100px}
   </style>
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://9amleads.com/#organization","name":"9amLeads","url":"https://9amleads.com/","logo":"https://9amleads.com/og-image.png","email":"hello@9amleads.com","sameAs":["https://www.facebook.com/share/1SBwDAUuxh/","https://www.instagram.com/9amleads/"]},{"@type":"Service","name":"Moving Leads","serviceType":"Moving lead generation","description":"Fresh UK moving leads delivered to your inbox every morning at 9am.","provider":{"@id":"https://9amleads.com/#organization"},"areaServed":{"@type":"Country","name":"United Kingdom"},"url":"https://9amleads.com/movingleadsdaily/"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://9amleads.com/"},{"@type":"ListItem","position":2,"name":"Moving Leads","item":"https://9amleads.com/movingleadsdaily/"}]}]}</script>
-</head>
+<link rel="stylesheet" href="/site-enhance.css"></head>
 <body>
   <div style="background:#0a0a0a;border-bottom:1px solid rgba(255,255,255,0.06);padding:7px 0;font-size:11px;text-align:center;font-family:Arial,sans-serif;">
     <span style="color:#888">Part of </span>
@@ -310,10 +310,10 @@
   </div>
   <div style="text-align:center;padding:7px 0;font-size:11px;color:#555;background:#0a0a0a;border-bottom:1px solid rgba(255,255,255,0.06)">9am Leads Ltd &middot; Company No. 17402522 &middot; hello@9amleads.com</div>
 
-  <section class="hero">
+  <section class="hero" data-aurora data-float-icons="🏠,📦,🚚,🔑" data-sparkles>
     <div class="hero-bg"></div>
     <div class="hero-overlay"></div>
-    <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1600518464441-9154a4dea21b?w=1400&q=80')"></div>
+    <div class="s-bg" style="background-image:none"></div>
     <div class="s-grid"></div>
     <div class="s-orb tl" style="background:#ff6b35"></div>
     <div class="s-orb br" style="background:#06b6d4"></div>
@@ -338,11 +338,11 @@
 <div style="display:flex;justify-content:center;margin-top:14px"><a href="/data/last-email-london-removals.html" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--primary,#0ea5e9);text-decoration:none;border:1px solid var(--border);padding:8px 18px;border-radius:50px;background:var(--bg-card,var(--card))"><i class="fas fa-envelope-open-text"></i> See a sample delivery email</a></div>
       <div class="hero-proof">
         <div class="hero-proof-avatars">
-          <img decoding="async" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80" alt="" loading="lazy">
-          <img decoding="async" src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&q=80" alt="" loading="lazy">
-          <img decoding="async" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80" alt="" loading="lazy">
-          <img decoding="async" src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=80&q=80" alt="" loading="lazy">
-          <img decoding="async" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=80" alt="" loading="lazy">
+          <img decoding="async" src="/assets/avatars/avatar-1.svg" alt="" loading="lazy">
+          <img decoding="async" src="/assets/avatars/avatar-2.svg" alt="" loading="lazy">
+          <img decoding="async" src="/assets/avatars/avatar-3.svg" alt="" loading="lazy">
+          <img decoding="async" src="/assets/avatars/avatar-4.svg" alt="" loading="lazy">
+          <img decoding="async" src="/assets/avatars/avatar-5.svg" alt="" loading="lazy">
         </div>
         <div class="hero-proof-text">Fresh moving opportunities in your chosen areas, delivered at 9am every morning</div>
       </div>
@@ -453,7 +453,7 @@
 
 
   <section class="section" style="position:relative;overflow:hidden;padding:40px 0;background:var(--bg-alt);border-top:1px solid var(--border);border-bottom:1px solid var(--border);text-align:center">
-  <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1400&q=80')"></div>
+  <div class="s-bg" style="background-image:none"></div>
   <div class="s-grid"></div>
   <div class="s-orb tl" style="background:#ff6b35"></div>
   <div class="s-orb br" style="background:#06b6d4"></div>
@@ -470,7 +470,7 @@
   </section>
 
   <section class="section" id="how" style="position:relative;overflow:hidden">
-    <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1553877522-43269d4ea984?w=1400&q=80')"></div>
+    <div class="s-bg" style="background-image:none"></div>
     <div class="s-grid"></div>
     <div class="s-orb tl" style="background:#ff6b35"></div>
     <div class="s-orb br" style="background:#06b6d4"></div>
@@ -500,7 +500,7 @@
   @media(max-width:680px){.win-grid-2{grid-template-columns:1fr}.win-grid-4{grid-template-columns:1fr}}
 </style>
 <section class="section" id="win" style="position:relative;overflow:hidden;background:var(--bg-alt,var(--bg2,#0f1220));border-top:1px solid var(--border,#ffffff14);border-bottom:1px solid var(--border,#ffffff14)">
-  <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1400&q=80')"></div>
+  <div class="s-bg" style="background-image:none"></div>
   <div class="s-grid"></div>
   <div class="s-orb tl" style="background:#ff6b35"></div>
   <div class="s-orb br" style="background:#06b6d4"></div>
@@ -604,11 +604,11 @@
 
   
 
-<section style="padding:54px 0;background:var(--bg2,#0a0a0a);border-top:1px solid var(--border,#1e293b);border-bottom:1px solid var(--border,#1e293b)"><div style="max-width:1020px;margin:0 auto;padding:0 20px"><div style="text-align:center;font-size:12px;font-weight:800;letter-spacing:2px;color:var(--accent,#0ea5e9);text-transform:uppercase;margin-bottom:8px">Bulk Lead Packs</div><h2 style="text-align:center;font-size:clamp(22px,3.4vw,32px);line-height:1.2;margin:0 0 10px;color:var(--text,#f1f5f9)">Prefer volume? Send to 50-1000 moving leads in one go</h2><p style="text-align:center;font-size:15px;color:var(--text2,#94a3b8);max-width:700px;margin:0 auto 22px">Buy a bulk pack of recent, never-sent leads, review them, then we <strong style="color:var(--text,#fff)">print &amp; post your leaflet or letter to every single one</strong>.  Pick leads from this month, 1 month or 2 months old. Once paid, your full list appears in your dashboard to review, and every mailpiece is tracked live in Print &amp; Post. Full addresses revealed, from <strong style="color:var(--text,#fff)">&pound;1.99 per lead</strong> on Pro &amp; Enterprise.</p><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;max-width:900px;margin:0 auto 22px"><div style="background:var(--bg-card,#0f172a);border:1px solid var(--border,#1e293b);border-radius:14px;padding:18px;text-align:center"><div style="font-size:26px">📋</div><div style="font-weight:800;font-size:14px;margin:6px 0 4px;color:var(--text,#f1f5f9)">Review first</div><div style="font-size:12.5px;color:var(--text2,#94a3b8)">Full addresses revealed after you buy, review before you send.</div></div><div style="background:var(--bg-card,#0f172a);border:1px solid var(--border,#1e293b);border-radius:14px;padding:18px;text-align:center"><div style="font-size:26px">�-�️</div><div style="font-weight:800;font-size:14px;margin:6px 0 4px;color:var(--text,#f1f5f9)">Printed &amp; posted</div><div style="font-size:12.5px;color:var(--text2,#94a3b8)">We print, address and post to every lead, proof included.</div></div><div style="background:var(--bg-card,#0f172a);border:1px solid var(--border,#1e293b);border-radius:14px;padding:18px;text-align:center"><div style="font-size:26px">🏆</div><div style="font-weight:800;font-size:14px;margin:6px 0 4px;color:var(--text,#f1f5f9)">Be first</div><div style="font-size:12.5px;color:var(--text2,#94a3b8)">Never-sent leads, so your pack lands before competitors call.</div></div></div><div style="text-align:center"><a href="/bulk.html" style="background:linear-gradient(135deg,var(--accent,#0ea5e9),var(--accent2,#2563eb));color:#fff;padding:13px 26px;border-radius:50px;font-weight:800;font-size:15px;text-decoration:none;display:inline-block">See Bulk Lead Packs &rarr;</a></div></div></section>
+<section style="padding:54px 0;background:var(--bg2,#0a0a0a);border-top:1px solid var(--border,#1e293b);border-bottom:1px solid var(--border,#1e293b)"><div style="max-width:1020px;margin:0 auto;padding:0 20px"><div style="text-align:center;font-size:12px;font-weight:800;letter-spacing:2px;color:var(--accent,#0ea5e9);text-transform:uppercase;margin-bottom:8px">Bulk Lead Packs</div><h2 style="text-align:center;font-size:clamp(22px,3.4vw,32px);line-height:1.2;margin:0 0 10px;color:var(--text,#f1f5f9)">Prefer volume? Send to 50-1000 moving leads in one go</h2><p style="text-align:center;font-size:15px;color:var(--text2,#94a3b8);max-width:700px;margin:0 auto 22px">Buy a bulk pack of recent, never-sent leads, review them, then we <strong style="color:var(--text,#fff)">print &amp; post your leaflet or letter to every single one</strong>.  Pick leads from this month, 1 month or 2 months old. Once paid, your full list appears in your dashboard to review, and every mailpiece is tracked live in Print &amp; Post. Full addresses revealed, from <strong style="color:var(--text,#fff)">&pound;1.99 per lead</strong> on Pro &amp; Enterprise.</p><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;max-width:900px;margin:0 auto 22px"><div style="background:var(--bg-card,#0f172a);border:1px solid var(--border,#1e293b);border-radius:14px;padding:18px;text-align:center"><div style="font-size:26px">📋</div><div style="font-weight:800;font-size:14px;margin:6px 0 4px;color:var(--text,#f1f5f9)">Review first</div><div style="font-size:12.5px;color:var(--text2,#94a3b8)">Full addresses revealed after you buy, review before you send.</div></div><div style="background:var(--bg-card,#0f172a);border:1px solid var(--border,#1e293b);border-radius:14px;padding:18px;text-align:center"><div style="font-size:26px">→ ·</div><div style="font-weight:800;font-size:14px;margin:6px 0 4px;color:var(--text,#f1f5f9)">Printed &amp; posted</div><div style="font-size:12.5px;color:var(--text2,#94a3b8)">We print, address and post to every lead, proof included.</div></div><div style="background:var(--bg-card,#0f172a);border:1px solid var(--border,#1e293b);border-radius:14px;padding:18px;text-align:center"><div style="font-size:26px">🏆</div><div style="font-weight:800;font-size:14px;margin:6px 0 4px;color:var(--text,#f1f5f9)">Be first</div><div style="font-size:12.5px;color:var(--text2,#94a3b8)">Never-sent leads, so your pack lands before competitors call.</div></div></div><div style="text-align:center"><a href="/bulk.html" style="background:linear-gradient(135deg,var(--accent,#0ea5e9),var(--accent2,#2563eb));color:#fff;padding:13px 26px;border-radius:50px;font-weight:800;font-size:15px;text-decoration:none;display:inline-block">See Bulk Lead Packs &rarr;</a></div></div></section>
 
 <!-- PLATFORM FEATURES -->
 <section class="section" style="position:relative;overflow:hidden;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
-<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1400&q=80')"></div>
+<div class="s-bg" style="background-image:none"></div>
 <div class="s-grid"></div>
 <div class="s-orb" style="width:500px;height:500px;background:var(--accent);top:-200px;right:-100px;animation:float 8s ease-in-out infinite"></div>
 <div class="s-orb" style="width:400px;height:400px;background:#06b6d4;bottom:-150px;left:-100px;animation:float 10s ease-in-out infinite reverse"></div>
@@ -725,6 +725,37 @@
 </div>
 
   
+<!-- NO COMPETITION / EXCLUSIVE ALLOCATION -->
+<section class="section" id="no-competition" style="position:relative;overflow:hidden;padding:56px 0;background:linear-gradient(135deg,rgba(255,107,53,0.10),rgba(255,107,53,0.02));border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+<div class="container" style="position:relative;z-index:2">
+<div style="text-align:center" data-float>
+<img src="/assets/refresh/3d/moving.webp" alt="" data-orbit="#ff6b35" width="210" height="183" loading="lazy" style="display:block;margin:0 auto 2px;filter:drop-shadow(0 24px 34px rgba(255,107,53,.35))">
+</div>
+<div style="text-align:center;margin-bottom:26px">
+<div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:#ff6b35;margin-bottom:10px">No Competition</div>
+<h2 style="font-size:clamp(24px,3.6vw,34px);line-height:1.2;margin:0 0 12px;color:var(--text)">These leads are yours alone</h2>
+<p style="font-size:16px;color:var(--text2);max-width:760px;margin:0 auto;line-height:1.75">Most removal lead companies sell the <strong style="color:var(--text)">same enquiry to three to five firms</strong>, so winning the job becomes a race to the bottom on price. 9amLeads is different: every moving lead is issued to <strong style="color:var(--text)">one removal company only - you</strong>. No shared enquiries, no being undercut, and you are never sent the same lead twice. Your full daily allocation arrives at 9am and is yours alone.</p>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;max-width:960px;margin:0 auto">
+<div data-tilt="7" style="background:var(--bg-card,#0f172a);border:1px solid var(--border,#1e293b);border-radius:14px;padding:22px;text-align:center">
+<div style="font-size:26px">🔒</div>
+<div style="font-weight:800;font-size:15px;margin:8px 0 5px;color:var(--text)">Exclusive to you</div>
+<div style="font-size:13px;color:var(--text2);line-height:1.6">One removal firm per lead - yours. Never resold to another mover.</div>
+</div>
+<div data-tilt="7" style="background:var(--bg-card,#0f172a);border:1px solid var(--border,#1e293b);border-radius:14px;padding:22px;text-align:center">
+<div style="font-size:26px">⚔️</div>
+<div style="font-weight:800;font-size:15px;margin:8px 0 5px;color:var(--text)">No price war</div>
+<div style="font-size:13px;color:var(--text2);line-height:1.6">You are not bidding against four rivals for the same job.</div>
+</div>
+<div data-tilt="7" style="background:var(--bg-card,#0f172a);border:1px solid var(--border,#1e293b);border-radius:14px;padding:22px;text-align:center">
+<div style="font-size:26px">✅</div>
+<div style="font-weight:800;font-size:15px;margin:8px 0 5px;color:var(--text)">Never sent twice</div>
+<div style="font-size:13px;color:var(--text2);line-height:1.6">You are never sent the same moving lead again.</div>
+</div>
+</div>
+</div>
+</section>
+
 <!-- COMPARISON TABLE -->
 
 <section class="section" style="position:relative;overflow:hidden;background:var(--bg-alt,#0a0a0a);border-top:1px solid var(--border,#1c1c1c);border-bottom:1px solid var(--border,#1c1c1c)">
@@ -745,8 +776,66 @@
 </section>
 
 <!-- /COMPARISON TABLE -->
+<!-- ROI CALCULATOR -->
+<section class="section" id="roi-calc" style="position:relative;overflow:hidden;padding:56px 0;background:var(--bg2,var(--bg-alt,#0a0a0a));border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+<div class="container" style="position:relative;z-index:2;max-width:980px">
+<div style="text-align:center;margin-bottom:26px" data-fx>
+<div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:#ff6b35;margin-bottom:10px">ROI Calculator</div>
+<h2 style="font-size:clamp(22px,3.4vw,32px);line-height:1.2;margin:0 0 10px;color:var(--text)">What could this be worth to you?</h2>
+<p style="font-size:15px;color:var(--text2,var(--muted,#94a3b8));max-width:640px;margin:0 auto">Move the sliders to match your business and see an estimate of the monthly and annual revenue your moving leads could generate.</p>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;align-items:stretch">
+<div style="background:var(--bg-card,var(--card,#111827));border:1px solid var(--border);border-radius:16px;padding:24px">
+<div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:16px">Your numbers</div>
+<div style="margin-bottom:18px"><label for="roiLeads" style="display:block;font-size:13px;font-weight:700;color:var(--text2,var(--muted,#94a3b8));margin-bottom:8px">Leads per day</label><input id="roiLeads" type="range" min="1" max="40" value="5" style="width:100%;accent-color:#ff6b35"></div>
+<div style="margin-bottom:18px"><label for="roiConv" style="display:block;font-size:13px;font-weight:700;color:var(--text2,var(--muted,#94a3b8));margin-bottom:8px">Conversion rate (%)</label><input id="roiConv" type="range" min="1" max="50" value="10" style="width:100%;accent-color:#ff6b35"></div>
+<div><label for="roiProfit" style="display:block;font-size:13px;font-weight:700;color:var(--text2,var(--muted,#94a3b8));margin-bottom:8px">Average value per job (&pound;)</label><input id="roiProfit" type="range" min="50" max="3000" step="50" value="800" style="width:100%;accent-color:#ff6b35"></div>
+</div>
+<div data-tilt="5" style="background:linear-gradient(135deg,rgba(255,107,53,.14),rgba(99,102,241,.12));border:1px solid rgba(255,107,53,.35);border-radius:16px;padding:24px">
+<div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:14px">Estimated potential</div>
+<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid rgba(148,163,184,.18)"><span style="font-size:13.5px;color:var(--text2,var(--muted,#94a3b8))">Leads per month</span><strong id="roiMonthlyLeads" style="font-size:15px;color:var(--text)">0</strong></div>
+<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid rgba(148,163,184,.18)"><span style="font-size:13.5px;color:var(--text2,var(--muted,#94a3b8))">Jobs won per month</span><strong id="roiMonthlyWins" style="font-size:15px;color:var(--text)">0</strong></div>
+<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid rgba(148,163,184,.18)"><span style="font-size:13.5px;color:var(--text2,var(--muted,#94a3b8))">Revenue per month</span><strong id="roiMonthlyRevenue" style="font-size:16px;color:var(--text)">&pound;0</strong></div>
+<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0 2px"><span style="font-size:14px;font-weight:800;color:var(--text)">Revenue per year</span><strong id="roiAnnualRevenue" style="font-size:22px;font-weight:900;color:#22c55e">&pound;0</strong></div>
+<div style="font-size:11px;color:var(--muted2,var(--muted,#64748b));margin-top:12px;line-height:1.5">Estimate only, based on the values you enter above.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- COMMERCIAL MOVES -->
+<section class="section" id="commercial" style="position:relative;overflow:hidden">
+  <div class="container" style="position:relative;z-index:2">
+    <div style="text-align:center;max-width:780px;margin:0 auto 28px">
+      <span style="display:inline-block;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;padding:6px 14px;border-radius:50px;margin-bottom:14px">For commercial movers</span>
+      <h2 class="section-title" style="margin-top:6px">Commercial Moving Leads, <span class="gradient-text">Exclusive</span></h2>
+      <p style="color:var(--muted);font-size:16px;line-height:1.7;margin:10px 0 0">Office, retail and industrial relocations needing a removal or relocation firm &mdash; delivered in the same 9am email and dashboard as your residential leads, and never sold to another company.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;max-width:900px;margin:0 auto">
+      <div style="background:var(--bg2,#111);border:1px solid var(--border,rgba(255,255,255,.1));border-radius:14px;padding:20px">
+        <div style="font-size:26px;margin-bottom:8px">&#127970;</div>
+        <div style="font-weight:800;color:var(--text);margin-bottom:6px">Commercial premises only</div>
+        <div style="color:var(--muted);font-size:14px;line-height:1.6">Offices, shops, units and warehouses &mdash; filtered so you never receive residential leads.</div>
+      </div>
+      <div style="background:var(--bg2,#111);border:1px solid var(--border,rgba(255,255,255,.1));border-radius:14px;padding:20px">
+        <div style="font-size:26px;margin-bottom:8px">&#128274;</div>
+        <div style="font-weight:800;color:var(--text);margin-bottom:6px">100% exclusive</div>
+        <div style="color:var(--muted);font-size:14px;line-height:1.6">Each commercial lead goes to one company only &mdash; never shared, never re-sold.</div>
+      </div>
+      <div style="background:var(--bg2,#111);border:1px solid var(--border,rgba(255,255,255,.1));border-radius:14px;padding:20px">
+        <div style="font-size:26px;margin-bottom:8px">&#9200;</div>
+        <div style="font-weight:800;color:var(--text);margin-bottom:6px">3 a day at 9am</div>
+        <div style="color:var(--muted);font-size:14px;line-height:1.6">In your inbox alongside your residential leads. Add it to any Moving plan.</div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:26px">
+      <a href="#signup" style="display:inline-block;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;font-weight:800;font-size:15px;padding:14px 34px;border-radius:50px;text-decoration:none">Add Commercial Moves &mdash; &pound;50/week</a>
+    </div>
+  </div>
+</section>
+
 <section class="section" id="pricing" style="position:relative;overflow:hidden">
-    <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=1400&q=80')"></div>
+    <div class="s-bg" style="background-image:none"></div>
     <div class="s-grid"></div>
     <div class="s-orb tl" style="background:#ff6b35"></div>
     <div class="s-orb br" style="background:#06b6d4"></div>
@@ -823,7 +912,7 @@
 </section>
 
   <section class="section" style="background:var(--bg-alt);border-top:1px solid var(--border);border-bottom:1px solid var(--border);position:relative;overflow:hidden">
-    <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1521791136064-2b8711a1cfb9?w=1400&q=80')"></div>
+    <div class="s-bg" style="background-image:none"></div>
     <div class="s-grid"></div>
     <div class="s-orb tl" style="background:#ff6b35"></div>
     <div class="s-orb br" style="background:#06b6d4"></div>
@@ -836,7 +925,7 @@
           <div class="t-stars">★★★★★</div>
           <blockquote>We were spending a fortune on Google Ads with mixed results. 9amLeads sends us 15-20 qualified leads a week and we know exactly where they come from. Our best marketing investment by far.</blockquote>
           <div class="t-author">
-            <img decoding="async" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80" alt="" loading="lazy">
+            <img decoding="async" src="/assets/avatars/avatar-1.svg" alt="" loading="lazy">
             <div><div class="name">Mark Davies</div><div class="role">Davies Removals, Manchester</div></div>
           </div>
         </div>
@@ -844,7 +933,7 @@
           <div class="t-stars">★★★★★</div>
           <blockquote>The 9am delivery is a game changer. I check my leads with my morning coffee and have three quotes out before 10am. The speed of contacting moving homeowners first is everything in this industry.</blockquote>
           <div class="t-author">
-            <img decoding="async" src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&q=80" alt="" loading="lazy">
+            <img decoding="async" src="/assets/avatars/avatar-2.svg" alt="" loading="lazy">
             <div><div class="name">James Wilson</div><div class="role">Wilson &amp; Sons Removals, Birmingham</div></div>
           </div>
         </div>
@@ -852,7 +941,7 @@
           <div class="t-stars">★★★★★</div>
           <blockquote>I was sceptical about lead generation services, but the free trial convinced me. Fresh leads every morning, real homeowners to contact. The 9am delivery fits straight into our morning routine.</blockquote>
           <div class="t-author">
-            <img decoding="async" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80" alt="" loading="lazy">
+            <img decoding="async" src="/assets/avatars/avatar-3.svg" alt="" loading="lazy">
             <div><div class="name">Tom Richards</div><div class="role">Swift Moves, London</div></div>
           </div>
         </div>
@@ -863,7 +952,7 @@
 
 <!-- MARKETING SERVICES -->
 <section class="section" style="position:relative;overflow:hidden;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
-<div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1557838923-2985c318be48?w=1400&q=80')"></div>
+<div class="s-bg" style="background-image:none"></div>
 <div class="s-grid"></div>
 <div class="s-orb" style="width:500px;height:500px;background:var(--accent);top:-200px;right:-100px;animation:float 8s ease-in-out infinite"></div>
 <div class="s-orb" style="width:400px;height:400px;background:#06b6d4;bottom:-150px;left:-100px;animation:float 10s ease-in-out infinite reverse"></div>
@@ -910,7 +999,7 @@
 </section>
 <!-- /FREE TRIAL BAND -->
 <section class="section" id="faq" style="position:relative;overflow:hidden">
-    <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=1400&q=80')"></div>
+    <div class="s-bg" style="background-image:none"></div>
     <div class="s-grid"></div>
     <div class="s-orb tl" style="background:#ff6b35"></div>
     <div class="s-orb br" style="background:#06b6d4"></div>
@@ -936,7 +1025,7 @@
   </section>
 
   <section class="cta-banner" style="position:relative;overflow:hidden">
-    <div class="s-bg" style="background-image:url('https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1400&q=80')"></div>
+    <div class="s-bg" style="background-image:none"></div>
     <div class="s-grid"></div>
     <div class="s-orb tl" style="background:#ff6b35"></div>
     <div class="s-orb br" style="background:#06b6d4"></div>
