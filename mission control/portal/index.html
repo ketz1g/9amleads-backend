@@ -674,7 +674,7 @@ function setAllUK() { selectedCoverage = 'ukwide'; signupPostcodes = ['all-uk'];
      err.textContent = 'Your ' + getSelectedPlan() + ' plan includes ' + limit + ' ' + areaLabelText() + '. Please pick exactly ' + limit + '.';
      err.style.display = 'block'; return;
    }
-  signupPostcodes.push(area);
+  signupPostcodes.push(area.toUpperCase());
   input.value = '';
   renderSignupPostcodes();
   input.focus();
