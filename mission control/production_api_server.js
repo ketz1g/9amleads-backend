@@ -29269,6 +29269,32 @@ _deliverDiag[cust.email].products = products;
         // delivered, and the post-run auto-fill sent a confusing "one more lead". Clamp
         // to EXACTLY the quota here so the email is generated from the same set that is
         // persisted as delivered below.
+        // ===== PRODUCT-IDENTITY GATE (final) =====
+        // The COMMERCIAL product must only ever deliver commercial premises; a MOVING
+        // customer who ALSO holds Commercial must not receive commercial leads here; and
+        // commercial leads must sit inside the customer's chosen areas. Applied at the
+        // very last step so NO upstream pass can leak a wrong lead into the email/ledger.
+        try {
+          var _ukC = /all.?uk|uk.?wide|nationwide|whole.?uk/i.test((custAreas || []).join(' '));
+          var _keptCL = [];
+          custLeads.forEach(function(l) {
+            var dd = null; try { dd = JSON.parse(l.data || '{}'); } catch(e) { dd = {}; }
+            var lp = l.product || cust.product;
+            var ok = true;
+            if (lp === 'commercial') {
+              if (!isCommercialLead(dd)) ok = false;
+              else if (!_ukC && custAreas.length) {
+                var _a = extractPostcodeArea(dd.postcode || dd.address || dd.fullAddress || '');
+                if (!custAreas.some(function(x) { return extractPostcodeArea(x) === _a; })) ok = false;
+              }
+            } else if (lp === 'moving' && products.indexOf('commercial') !== -1 && isCommercialLead(dd)) {
+              ok = false;
+            }
+            if (ok) _keptCL.push(l);
+            else { try { db.prepare('UPDATE leads SET status = ?, delivered = 0 WHERE id = ?').run('removed', l.id); } catch(e) {} }
+          });
+          if (_keptCL.length !== custLeads.length) { console.log('[PRODUCT-GATE] ' + cust.email + ' dropped ' + (custLeads.length - _keptCL.length) + ' non-conforming lead(s) (' + cust.product + ')'); custLeads = _keptCL; }
+        } catch(ePg) {}
         if (custLeads.length > totalNeeded) {
           console.log('[DELIVERY-FINAL-CAP] ' + cust.email + ': hard-capped ' + custLeads.length + ' -> ' + totalNeeded + ' (email matches ledger)');
           custLeads = custLeads.slice(0, totalNeeded);
