@@ -1042,6 +1042,14 @@ function pickFreshDate(lead) {
   // "now" just because the deadline is in the future. Previously any future-deadline
   // notice was forced to look brand new, so old/rolling notices passed the 24h test.
   // The delivery's 24h-primary / 48h-fallback passes now work on the true date.
+  // COMMERCIAL MOVES: commercial premises stay listed for months and carry no reliable
+  // "first listed" date, so freshness = when we scraped them (daily). This gives
+  // commercial the SAME 24h fresh / 48h fallback / Monday(Fri 09:00) windows as every
+  // other product, instead of rejecting long-listed premises as stale.
+  if (lead.commercial || lead.commercial_let) {
+    var _cs = toIsoDate(lead.scrapedAt || lead.first_seen_at || lead.createdAt || lead.created_at || '');
+    if (_cs && (!latest || _cs > latest)) latest = _cs;
+  }
   return latest;
 }
 
