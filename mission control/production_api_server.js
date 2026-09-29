@@ -25723,7 +25723,7 @@ app.post('/api/newbusiness/bulk/checkout', authMiddleware, async (req, res) => {
     if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe not configured' });
     var eligible = getBulkEligibleLeads();
     if (eligible.length < count) return res.status(400).json({ error: 'Not enough exclusive leads available right now (' + eligible.length + ' ready). New leads mature into the archive within a few days - check back soon.', available: eligible.length });
-    var amountPence = bulkPackTotal(count, mailType);
+    var amountPence = bulkPackTotal(count, mailType, 'newbusiness');
     var typeLabel = mailType === 'both' ? 'leaflet + letter' : mailType + ' only';
     var baseUrl = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
     var sessionBody = {
@@ -25974,9 +25974,13 @@ app.post('/api/admin/normalise-pool', adminAuth, (req, res) => {
 // single Print & Post offers: A5 leaflet £3.00 / A4 letter £2.50 / leaflet+letter £4.50.
 // Cost to us: leaflet £1.18, letter £1.02, both £2.20 (Stannp).
 var BULK_MAIL_RATES = { leaflet: 249, letter: 199, both: 399 }; // pence per lead - bulk/boost volume discount sits UNDER single on-demand rates
-var BOOST_PACK_SIZES = { moving: [100, 250, 500, 1000], commercial: [50, 100, 200, 500], probate: [50, 100, 200, 500], planning: [100, 250, 500, 1000], newbusiness: [100, 250, 500, 1000] };
+// COMMERCIAL MOVES bulk carries a clear premium over moving (higher-value premises,
+// scarcer supply): A5 £3.49 / A4 £2.99 / both £4.99 per lead.
+var BULK_MAIL_RATES_COMMERCIAL = { leaflet: 349, letter: 299, both: 499 };
+function bulkRatesFor(product) { return product === 'commercial' ? BULK_MAIL_RATES_COMMERCIAL : BULK_MAIL_RATES; }
+var BOOST_PACK_SIZES = { moving: [100, 250, 500, 1000], commercial: [100, 250, 500, 1000], probate: [50, 100, 200, 500], planning: [100, 250, 500, 1000], newbusiness: [100, 250, 500, 1000] };
 var NB_BULK_SIZES = [100, 250, 500, 1000];
-function bulkPackTotal(count, mailType) { return (BULK_MAIL_RATES[mailType] || BULK_MAIL_RATES.leaflet) * (count || 0); }
+function bulkPackTotal(count, mailType, product) { var r = bulkRatesFor(product); return (r[mailType] || r.leaflet) * (count || 0); }
 // LAUNCH GATE: bulk/Boost storefronts stay OFF until the archive pools have enough
 // inventory. Set BULK_POOLS_LIVE=1 in Render env to turn the customer storefronts on
 // (the admin Bulk Pool monitor is always available). Backend endpoints still work so
@@ -26199,7 +26203,7 @@ app.get('/api/boost', authMiddleware, (req, res) => {
     ['moving', 'commercial', 'probate', 'planning', 'newbusiness'].forEach(function(p) { available[p] = { 'tm': getBoostArchiveLeads(p, 'tm', 0).length, '1m': getBoostArchiveLeads(p, '1m', 0).length, '2m': getBoostArchiveLeads(p, '2m', 0).length }; });
     var pack = null;
     try { pack = c.boost_pack ? JSON.parse(c.boost_pack) : null; } catch(e) {}
-    res.json({ success: true, product: c.product, available: available, live_products: liveProducts, unavailable: unavailable, sizes: BOOST_PACK_SIZES, mail_rates: BULK_MAIL_RATES, live: bulkPoolsLive(), pack: pack });
+    res.json({ success: true, product: c.product, available: available, live_products: liveProducts, unavailable: unavailable, sizes: BOOST_PACK_SIZES, mail_rates: BULK_MAIL_RATES, mail_rates_by_product: { moving: BULK_MAIL_RATES, commercial: BULK_MAIL_RATES_COMMERCIAL, probate: BULK_MAIL_RATES, planning: BULK_MAIL_RATES, newbusiness: BULK_MAIL_RATES }, live: bulkPoolsLive(), pack: pack });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -26232,7 +26236,7 @@ app.post('/api/boost/checkout', authMiddleware, async (req, res) => {
     if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe not configured' });
     var avail = getBoostArchiveLeads(product, age, 0).length;
     if (avail < count) return res.status(400).json({ error: 'Not enough archive leads for that size yet. The pool is being filled - please try again shortly.' });
-    var amountPence = bulkPackTotal(count, mailType);
+    var amountPence = bulkPackTotal(count, mailType, product);
     var baseUrl = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
     var label = product === 'commercial' ? 'Commercial' : product === 'probate' ? 'Probate' : product === 'newbusiness' ? 'New Business' : product === 'planning' ? 'Planning' : 'Moving';
     var typeLabel = mailType === 'both' ? 'leaflet + letter' : mailType + ' only';

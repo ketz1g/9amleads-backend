@@ -75,7 +75,7 @@ h3{font-size:15px;font-weight:700;margin-bottom:10px}
     </div>
     <div class="card">
       <h3>1. Choose your lead type</h3>
-      <div class="seg"><button class="on" data-p="moving" onclick="setProduct('moving')">&#128230; Moving</button><button data-p="probate" onclick="setProduct('probate')">&#9878;&#65039; Probate</button><button data-p="planning" onclick="setProduct('planning')">&#127959;&#65039; Planning</button><button data-p="newbusiness" onclick="setProduct('newbusiness')">&#127963;&#65039; New Business</button></div>
+      <div class="seg"><button class="on" data-p="moving" onclick="setProduct('moving')">&#128230; Moving</button><button data-p="commercial" onclick="setProduct('commercial')">&#127970; Commercial</button><button data-p="probate" onclick="setProduct('probate')">&#9878;&#65039; Probate</button><button data-p="planning" onclick="setProduct('planning')">&#127959;&#65039; Planning</button><button data-p="newbusiness" onclick="setProduct('newbusiness')">&#127963;&#65039; New Business</button></div>
       <div id="availMoving" class="avail"></div>
       <h3 style="margin-top:6px">2. Choose how fresh</h3>
       <div class="seg">
@@ -114,7 +114,7 @@ function esc(s){ return String(s||'').replace(/[&<>"']/g,function(c){return {'&'
 var ST = { product:'moving', age:'tm', mail:'leaflet', DATA:null, PACK:null };
 (function(){ try {
   var qp = new URLSearchParams(window.location.search);
-  if (qp.get('product') === 'probate') ST.product = 'probate';
+  try { var _qp = qp.get('product'); if (['moving','commercial','probate','planning','newbusiness'].indexOf(_qp) !== -1) ST.product = _qp; } catch(e2) {}
   var a = qp.get('age');
   if (a === 'tm' || a === '1m' || a === '2m') ST.age = a;
 } catch(e){} })();
@@ -124,7 +124,7 @@ function setAge(a){ ST.age=a; document.querySelectorAll('#content .seg button[da
 function setMail(m){ ST.mail=m; document.querySelectorAll('#content .seg button[data-m]').forEach(function(b){b.classList.toggle('on',b.dataset.m===m);}); render(); }
 function render(){ 
   var D=ST.DATA; if(!D)return; 
-  var nm={moving:'Moving',probate:'Probate',planning:'Planning',newbusiness:'New Business'}[ST.product]||ST.product; 
+  var nm={moving:'Moving',commercial:'Commercial',probate:'Probate',planning:'Planning',newbusiness:'New Business'}[ST.product]||ST.product; 
   var a=D.available[ST.product]||{tm:0,'1m':0,'2m':0}; 
   document.getElementById('availMoving').innerHTML='';
   var av=a[ST.age];
@@ -143,10 +143,16 @@ function render(){
     ? (biggestReady ? '<span style="color:#16a34a;font-weight:800">'+biggestReady+'-pack in stock now</span>' : '') + ' &middot; '+av+' '+nm.toLowerCase()+' leads ready in this band'
     : '<span style="color:#fbbf24;font-weight:800">Pool filling - check back soon</span>';
   document.getElementById('availAge').innerHTML = stockTxt; 
+  document.querySelectorAll('#content .seg button[data-p]').forEach(function(b){b.classList.toggle('on',b.dataset.p===ST.product);});
   var sizes=(D.sizes&&D.sizes[ST.product])||[]; 
-  var rate=(D.mail_rates&&D.mail_rates[ST.mail])||249; 
+  var rates=(D.mail_rates_by_product&&D.mail_rates_by_product[ST.product])||D.mail_rates||{}; 
+  var rate=rates[ST.mail]||249; 
+  document.querySelectorAll('#content .seg button[data-m]').forEach(function(b){
+    var mm={leaflet:'&#128230; A5 Leaflet',letter:'&#128196; A4 Letter',both:'&#128196;&#128230; Leaflet + Letter'}[b.dataset.m]||'Post';
+    b.innerHTML = mm + ' &middot; &pound;' + ((rates[b.dataset.m]||249)/100).toFixed(2) + '/lead';
+  });
   var box=document.getElementById('packsBox'); 
-  var lbl={moving:'moving leads',probate:'probate leads',planning:'planning permission leads',newbusiness:'new business leads'}[ST.product]||ST.product; 
+  var lbl={moving:'moving leads',commercial:'commercial leads',probate:'probate leads',planning:'planning permission leads',newbusiness:'new business leads'}[ST.product]||ST.product; 
   box.innerHTML=sizes.map(function(cnt){
     var total=Math.round(cnt*rate)/100;
     var can = av >= cnt;
@@ -167,7 +173,8 @@ function render(){
   }).join('');
 }
 function buy(count){
-  if(!confirm('Buy '+count+' '+ageName(ST.age)+' '+ST.product+' archive leads ('+ST.mail+') printed & posted for £'+(Math.round(count*(ST.DATA.mail_rates[ST.mail])/100)/1).toFixed(2)+'?'))return;
+  var _mt=ST.DATA.mail_rates_by_product&&ST.DATA.mail_rates_by_product[ST.product]?ST.DATA.mail_rates_by_product[ST.product]:ST.DATA.mail_rates;
+  if(!confirm('Buy '+count+' '+ageName(ST.age)+' '+ST.product+' archive leads ('+ST.mail+') printed & posted for £'+(Math.round(count*((_mt[ST.mail])||249)/100)/1).toFixed(2)+'?'))return;
   fetch(API+'/api/boost/checkout',{method:'POST',headers:ah(),body:JSON.stringify({product:ST.product,age:ST.age,count:count,mail_type:ST.mail})})
   .then(function(r){return r.json();}).then(function(d){ if(d.checkout_url)window.location.href=d.checkout_url; else alert(d.error||'Could not start checkout.'); })
   .catch(function(){alert('Could not start checkout.');});
