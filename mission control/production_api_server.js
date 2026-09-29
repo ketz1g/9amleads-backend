@@ -26709,10 +26709,23 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
     // REAL CUSTOMERS FIRST (defensive): if any test account is ever present in a
     // full run, process the real customers before it so the delivery budget is
     // always spent on paying customers first.
+    // AREA-SPECIFIC CUSTOMERS FIRST: because a lead delivered to one customer can
+    // never go to another (global exclusivity), whoever is processed first claims the
+    // in-area leads. A UK-wide ("All UK") customer would otherwise grab leads that sit
+    // inside another customer's CHOSEN areas, starving area-specific customers into the
+    // out-of-area fallback (observed: a Sutton/KT-adjacent lead sent to a customer whose
+    // chosen areas never included it). So process the NARROWEST coverage first -
+    // postcode -> county -> region -> UK-wide - then test accounts last. Area-specific
+    // customers get first pick of the leads that belong to their chosen areas.
     customers.sort(function(a, b) {
-      var at = /^test\./.test(String(a.email || '').toLowerCase()) ? 1 : 0;
-      var bt = /^test\./.test(String(b.email || '').toLowerCase()) ? 1 : 0;
-      return at - bt;
+      function _rank(c) {
+        var emailR = /^test\./.test(String(c.email || '').toLowerCase()) ? 100 : 0;
+        var cov = String(c.coverage || '').toLowerCase();
+        var uk = cov === 'ukwide' || /all.?uk|uk.?wide|nationwide|whole.?uk/i.test(String(c.target_areas || ''));
+        var r = uk ? 3 : (cov === 'region' ? 2 : (cov === 'county' ? 1 : 0));
+        return emailR + r;
+      }
+      return _rank(a) - _rank(b);
     });
     console.log('[DELIVERY] Running for ' + customers.length + ' customer(s)' + (onlyEmail ? ' (filtered to ' + onlyEmail + ')' : '') + (getDb().delivery_hold ? ' [DELIVERY HOLD: test accounts only]' : ''));
     // GLOBAL EXCLUSIVITY: a lead delivered to ANY customer is never delivered to a
@@ -28941,6 +28954,17 @@ _deliverDiag[cust.email].products = products;
         // resets) must NOT email the customer - the founder does not want customers
         // notified of internal lead corrections. The leads are updated in the
         // dashboard, but no email goes out.
+        // CLAMP BEFORE EMAIL: the "no more, no less" guarantee applies to the EMAIL,
+        // not just the ledger. Previously the hard-cap ran AFTER the email was generated,
+        // so if a top-up/fill/guarantee pass re-grew custLeads the customer's email could
+        // list a lead that the cap then dropped - they saw a lead that was never
+        // delivered, and the post-run auto-fill sent a confusing "one more lead". Clamp
+        // to EXACTLY the quota here so the email is generated from the same set that is
+        // persisted as delivered below.
+        if (custLeads.length > totalNeeded) {
+          console.log('[DELIVERY-FINAL-CAP] ' + cust.email + ': hard-capped ' + custLeads.length + ' -> ' + totalNeeded + ' (email matches ledger)');
+          custLeads = custLeads.slice(0, totalNeeded);
+        }
         var _noEmail = !!(req.body && req.body.no_email);
         if ((!alreadyEmailedToday || forceFull) && !_noEmail && _claimDailyEmail(cust.id, today)) {
           // EMAIL FIRST, THEN DASHBOARD: send this customer's email IMMEDIATELY
