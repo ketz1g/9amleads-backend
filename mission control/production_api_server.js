@@ -6709,7 +6709,7 @@ app.post('/api/auth/signup', async (req, res) => {
     var planKeyOther = String(planName || plan || 'free_trial').toLowerCase();
     var isUnlimitedOther = (planKeyOther === 'pro' || planKeyOther === 'enterprise');
     var allUkOther = (areas || []).some(function(a){ return /all.?uk|uk.?wide|nationwide|whole.?uk/i.test(String(a)); });
-    var minOther = (signupProdOther === 'probate' || signupProdOther === 'tenders') ? 2 : 3;
+    var minOther = (signupProdOther === 'probate' || signupProdOther === 'tenders' || signupProdOther === 'commercial') ? 2 : 3;
     if (!isUnlimitedOther && signupProdOther !== 'moving' && (areas || []).length > 0 && (areas || []).length < minOther && !allUkOther) {
       return res.status(400).json({ error: 'Please choose at least ' + minOther + ' areas or counties for your ' + signupProdOther + ' leads (you selected ' + (areas || []).length + ').', too_few_areas: true, min_areas: minOther });
     }
@@ -9445,8 +9445,8 @@ app.post('/api/auth/update-areas', authMiddleware, (req, res) => {
     if (!isPaidUnlimited && prodKey === 'moving' && clean.length < maxAreas) {
       return res.status(400).json({ error: 'Moving leads require exactly ' + maxAreas + ' postcode areas (you selected ' + clean.length + ').', too_few_areas: true, max_areas: maxAreas });
     }
-    if (!isPaidUnlimited && prodKey !== 'moving' && clean.length > 0 && clean.length < (prodKey === 'probate' || prodKey === 'tenders' ? 2 : 3)) {
-      return res.status(400).json({ error: 'Please keep at least ' + (prodKey === 'probate' || prodKey === 'tenders' ? 2 : 3) + ' areas or counties for your ' + prodKey + ' leads (you selected ' + clean.length + ').', too_few_areas: true, min_areas: (prodKey === 'probate' || prodKey === 'tenders' ? 2 : 3) });
+    if (!isPaidUnlimited && prodKey !== 'moving' && clean.length > 0 && clean.length < (prodKey === 'probate' || prodKey === 'tenders' || prodKey === 'commercial' ? 2 : 3)) {
+      return res.status(400).json({ error: 'Please keep at least ' + (prodKey === 'probate' || prodKey === 'tenders' || prodKey === 'commercial' ? 2 : 3) + ' areas or counties for your ' + prodKey + ' leads (you selected ' + clean.length + ').', too_few_areas: true, min_areas: (prodKey === 'probate' || prodKey === 'tenders' || prodKey === 'commercial' ? 2 : 3) });
     }
     // Coverage: infer from the chosen areas. Postcode-area codes (1-2 letters)
     // => 'postcode'; anything else (county/region names) => 'county'. This also
