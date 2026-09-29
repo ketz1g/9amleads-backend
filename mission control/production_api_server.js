@@ -10541,6 +10541,24 @@ app.get('/api/leads', authMiddleware, (req, res) => {
     var _st = parsed.street || '';
     var _tn = parsed.town || parsed.city || '';
     var _cn = parsed.county || '';
+    // TOWN-FROM-POSTCODE: some scraped leads carry only a county ("hertfordshire") and
+    // no town, so the displayed address read "34 Crescent West, hertfordshire,
+    // EN4 0EJ" with no town. Derive the postal town from the district dataset
+    // ("EN4" -> "Enfield EN4") so the address always shows a real town.
+    var _tnDerived = '';
+    if (!_tn && _pc) {
+      try {
+        var _dm = String(_pc).toUpperCase().replace(/[^A-Z0-9]/g, '').match(/^([A-Z]{1,2}[0-9][0-9A-Z]?)([0-9][A-Z]{2})$/);
+        if (_dm) {
+          var _dd = require(path.join(__dirname, 'data', 'uk-postcode-districts.json'));
+          var _de = _dd && _dd[_dm[1]];
+          if (_de && _de.name) {
+            var _nm = String(_de.name).replace(new RegExp('\\s*' + _dm[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$'), '').trim();
+            if (_nm && !/[0-9]/.test(_nm)) _tnDerived = _nm;
+          }
+        }
+      } catch(eTn) {}
+    }
     var _src = parsed.address || parsed.fullAddress || parsed.deceasedAddress || '';
     if (_pc && (_bn || _st || _src)) {
       var _pp = [];
@@ -10561,6 +10579,24 @@ app.get('/api/leads', authMiddleware, (req, res) => {
       if (_joined.toLowerCase().indexOf(String(_pc).toLowerCase()) === -1) _pp.push(String(_pc).trim());
       var _full = _pp.filter(Boolean).join(', ');
       if (_full && _full.split(',').length >= 2) parsed.fullAddress = dedupeAddressSegments(_full);
+      // Insert the derived town BEFORE the county/region and postcode (proper UK order:
+      // street, town, county, postcode) - only when the lead had no town of its own.
+      if (_tnDerived && parsed.fullAddress && String(parsed.fullAddress).toLowerCase().indexOf(_tnDerived.toLowerCase()) === -1) {
+        try {
+          var _parts2 = String(parsed.fullAddress).split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+          var _pcN2 = String(_pc).toUpperCase().replace(/\s+/g, '');
+          var _countyAt = -1, _pcAt = -1;
+          for (var _pi = 0; _pi < _parts2.length; _pi++) {
+            var _pn = _parts2[_pi].toUpperCase().replace(/\s+/g, '');
+            if (_pn === _pcN2) { _pcAt = _pi; break; }
+            var _pl2 = _parts2[_pi].toLowerCase().replace(/[\s-]+/g, '-');
+            try { if (typeof COUNTY_POSTCODE_MAP !== 'undefined' && COUNTY_POSTCODE_MAP[_pl2]) _countyAt = _pi; } catch(eCo) {}
+          }
+          var _insAt = (_countyAt >= 0) ? _countyAt : (_pcAt >= 0 ? _pcAt : _parts2.length);
+          _parts2.splice(_insAt, 0, _tnDerived);
+          parsed.fullAddress = dedupeAddressSegments(_parts2.join(', '));
+        } catch(eIn) {}
+      }
     }
     // DISPLAY SYNC (door-number fix): the dashboard lead cards read `data.address`,
     // not `data.fullAddress`, so many leads that DO have a door number in their data
