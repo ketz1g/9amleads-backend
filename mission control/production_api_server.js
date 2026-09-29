@@ -37683,7 +37683,12 @@ function runDeliveryTestReport() {
           }
           if (_authCount >= 0 && _authCount !== thisRun.length) {
             console.log('[TEST] ' + c.email + ': deliver says ' + _authCount + ', DB scan says ' + thisRun.length + ' - trusting deliver');
-            thisRun = thisRun.slice(0, _authCount);
+            // The run_id DB scan can miss rows (tag not persisted on the stored copy).
+            // Fall back to today's delivered leads for this customer - the run's clean
+            // slate guarantees they are THIS run's. Never report 0 when the deliver
+            // response says it delivered leads.
+            if (_authCount > thisRun.length && todayTotal.length) thisRun = todayTotal.slice(-_authCount);
+            else thisRun = thisRun.slice(0, Math.max(0, _authCount));
           }
           var leads = thisRun.map(function(l) {
             var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
