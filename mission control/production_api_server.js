@@ -9670,7 +9670,7 @@ app.get('/api/admin/founder-dashboard', adminAuth, (req, res) => {
     const cancelledCustomers = customers.filter(c => c.plan === 'cancelled');
 
     // MRR calculation
-    const planPrices = { starter: 25, pro: 49, enterprise: 99 };
+    const planPrices = { starter: 25, pro: 49, enterprise: 99, commercial: 99 };
     var mrr = activeCustomers.reduce(function(sum, c) { return sum + (planPrices[c.plan] || 0); }, 0);
     var weeklyRr = activeCustomers.reduce(function(sum, c) { return sum + (planPrices[c.plan] || 0); }, 0);
 
@@ -11343,14 +11343,16 @@ app.put('/api/settings', authMiddleware, (req, res) => {
   // commercial mix is only granted at signup or by us (admin). If a customer
   // sends commercial/both, force it back to residential so the choice is locked.
   if (moving_type && ['residential','commercial','both'].indexOf(moving_type) !== -1) {
-    if (moving_type === 'commercial' || moving_type === 'both') {
+    // COMMERCIAL MOVES accounts are commercial-only; every other customer stays locked
+    // to residential unless we (admin) grant a commercial mix, so nobody can self-switch.
+    var _isCommercialAcct = String(customer.plan || '').toLowerCase() === 'commercial';
+    if (!_isCommercialAcct && (moving_type === 'commercial' || moving_type === 'both')) {
       moving_type = 'residential';
     }
     var mtCfg = {}; try { mtCfg = JSON.parse(customer.product_config || '{}'); } catch(e) {}
     if (!mtCfg.moving) mtCfg.moving = {};
-    // Commercial-only is NOT offered - every moving customer keeps a residential
-    // base with commercial mixed in when available.
-    mtCfg.moving.moving_type = (moving_type === 'commercial') ? 'both' : moving_type;
+    // Commercial Moves = commercial-only (keeps volume at ~1 exclusive lead/day).
+    mtCfg.moving.moving_type = _isCommercialAcct ? 'commercial' : moving_type;
     db.prepare('UPDATE customers SET product_config = ? WHERE id = ?').run(JSON.stringify(mtCfg), req.user.id);
   }
   if (target_areas) {
@@ -14589,6 +14591,34 @@ app.post('/api/admin/set-trial-end', adminAuth, (req, res) => {
     db.prepare('UPDATE customers SET trial_ends = ? WHERE id = ?').run(trialEnds, cust.id);
     saveDb();
     res.json({ success: true, email: email, trial_ends: trialEnds });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/set-commercial - provision (or revert) a COMMERCIAL MOVES account.
+// enable=true  -> plan 'commercial' (1 EXCLUSIVE commercial lead/day), moving_type
+//                 'commercial', product 'moving', trial cleared (a paying account).
+// enable=false -> back to a normal residential moving customer (plan 'starter').
+// Body { email, enable:true|false }.
+app.post('/api/admin/set-commercial', adminAuth, (req, res) => {
+  try {
+    var email = String((req.body && req.body.email) || '').toLowerCase().trim();
+    var enable = !(req.body && req.body.enable === false);
+    if (!email) return res.status(400).json({ error: 'email required' });
+    var c = getDb().customers.find(function(x) { return String(x.email || '').toLowerCase() === email; });
+    if (!c) return res.status(404).json({ error: 'Customer not found' });
+    var cfg = {}; try { cfg = JSON.parse(c.product_config || '{}'); } catch(e) {}
+    if (!cfg.moving) cfg.moving = {};
+    if (enable) {
+      cfg.moving.moving_type = 'commercial';
+      db.prepare('UPDATE customers SET plan = ?, leads_per_day = ?, product = ?, coverage = ?, product_config = ?, trial_ends = NULL, leads_paused = 0, auto_send_paused = 0 WHERE id = ?')
+        .run('commercial', 1, 'moving', c.coverage || 'postcode', JSON.stringify(cfg), c.id);
+    } else {
+      cfg.moving.moving_type = 'residential';
+      db.prepare('UPDATE customers SET plan = ?, leads_per_day = ?, product = ?, product_config = ? WHERE id = ?')
+        .run('starter', 5, 'moving', JSON.stringify(cfg), c.id);
+    }
+    saveDb();
+    res.json({ success: true, email: email, commercial: enable, plan: enable ? 'commercial' : 'starter', moving_type: cfg.moving.moving_type, leads_per_day: enable ? 1 : 5 });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -18076,13 +18106,17 @@ const LEAD_TYPE_RULES = {
   moving: {
     name: 'Moving Leads', key: 'moving', local: true, model: 'daily',
     coverage: ['postcode', 'county', 'region'],
-    plans: { free_trial: { default: 5, postcode: 5, county: 5, region: 5 }, starter: { default: 5, postcode: 5, county: 5, region: 5 }, pro: { default: 10, postcode: 10, county: 10, region: 10 }, enterprise: { default: 15, postcode: 15, county: 15, region: 15 } },
+    plans: { free_trial: { default: 5, postcode: 5, county: 5, region: 5 }, starter: { default: 5, postcode: 5, county: 5, region: 5 }, pro: { default: 10, postcode: 10, county: 10, region: 10 }, enterprise: { default: 15, postcode: 15, county: 15, region: 15 }, commercial: { default: 1, postcode: 1, county: 1, region: 1 } },
     min_area: 'postcode', up_to: false, enabled: true,
     price_starter: 'price_1Tm6PMADspDnFpfBJtsUWi6v',
     price_growth: 'price_1Tm6PNADspDnFpfB847Dubdf',
     price_power: 'price_1Tm6POADspDnFpfBkf0gfqXs',
-    weekly_est: { starter: 25, pro: 75, enterprise: 200 },
-    monthly_est: { starter: 100, pro: 300, enterprise: 800 }
+    // 'commercial' = the COMMERCIAL MOVES plan: 1 EXCLUSIVE commercial/office relocation
+    // lead per day, £99/week. Set price_commercial to the Stripe price id before
+    // enabling self-serve checkout; until then it is provisioned by admin.
+    price_commercial: '',
+    weekly_est: { starter: 25, pro: 75, enterprise: 200, commercial: 99 },
+    monthly_est: { starter: 100, pro: 300, enterprise: 800, commercial: 396 }
   },
   newbusiness: {
     name: 'New Business Alerts', key: 'newbusiness', local: true, model: 'daily',
@@ -26657,7 +26691,17 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
       var pc = String(ld.postcode || '').trim();
       if (!addr || !pc) return false;
       // MOVING: number + street + town + full postcode (founder requirement).
-      if (prod === 'moving') return isCompleteMovingAddress(addr, pc);
+      // COMMERCIAL MOVES: offices/units/retail often carry "Unit 5" or a building name
+      // rather than a house number, so accept a usable premise + street + full postcode
+      // instead of the strict residential rule (otherwise every commercial lead is
+      // dropped and the commercial customer gets 0).
+      if (prod === 'moving') {
+        if (typeof isCommercialLead === 'function' && isCommercialLead(ld)) {
+          if (!/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(pc)) return false;
+          return hasStreetName(addr) && hasUsablePremiseAddress(addr, pc, { relaxMultiUnit: true });
+        }
+        return isCompleteMovingAddress(addr, pc);
+      }
       if (!/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(pc)) return false;
       if (!hasStreetName(addr)) return false;
       return hasUsablePremiseAddress(addr, pc, prod === 'probate' ? { relaxMultiUnit: true } : undefined);
@@ -31409,7 +31453,7 @@ app.get('/api/subscription', authMiddleware, (req, res) => {
   // OPTION 2: weekly price = SUM of every subscribed lead type at this tier
   // (e.g. Moving £25 + Probate £25 = £50/wk on Starter).
   var AMOUNT_BY_PRODUCT = {
-    moving: { starter: 25, pro: 49, enterprise: 99 },
+    moving: { starter: 25, pro: 49, enterprise: 99, commercial: 99 },
     probate: { starter: 25, pro: 49, enterprise: 99 },
     newbusiness: { starter: 25, pro: 25, enterprise: 49 },
     planning: { starter: 49, pro: 99, enterprise: 99 },
@@ -31606,7 +31650,7 @@ app.get('/api/payments', authMiddleware, async (req, res) => {
     var product = customer.product || 'moving';
     // OPTION 2: weekly price = SUM of every subscribed lead type at this tier.
     var AMOUNT_BY_PRODUCT_P = {
-      moving: { starter: 25, pro: 49, enterprise: 99 },
+      moving: { starter: 25, pro: 49, enterprise: 99, commercial: 99 },
       probate: { starter: 25, pro: 49, enterprise: 99 },
       newbusiness: { starter: 25, pro: 25, enterprise: 49 },
       planning: { starter: 49, pro: 99, enterprise: 99 },
@@ -41964,7 +42008,7 @@ app.get('/api/admin/metrics', adminAuth, (req, res) => {
       return /^test\./.test(em) || /@9amleads\.com$/.test(em) || /^demo/.test(em);
     }
     const customers = (db.customers || []).filter(function(c) { return !_isInternalM(c); });
-    const planPrices = { starter: 25, pro: 49, enterprise: 99 };
+    const planPrices = { starter: 25, pro: 49, enterprise: 99, commercial: 99 };
     function isPaid(c) { return !!(c.plan && c.plan !== 'free_trial' && planPrices[String(c.plan).toLowerCase()]); }
     function trialActive(c) { return c.plan === 'free_trial' && c.trial_ends && new Date(c.trial_ends).getTime() > Date.now(); }
 
