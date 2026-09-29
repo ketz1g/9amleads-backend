@@ -19236,6 +19236,8 @@ function wrapTrialEmailShell(bodyHtml) {
 // background (light text) - area-health / status notices. Same header + footer as the
 // premium welcome email so it matches the rest of the brand.
 function wrapDarkEmailShell(bodyHtml) {
+  // Idempotent: if the body is already a full branded document, don't wrap it again.
+  if (typeof bodyHtml === 'string' && bodyHtml.indexOf('<!DOCTYPE') === 0) return bodyHtml;
   // Neutralise any inner near-black/near-white block so body-only emails blend into
   // the branded dark content area instead of showing a different black background.
   var _body = String(bodyHtml == null ? '' : bodyHtml)
@@ -23202,13 +23204,13 @@ app.get('/api/admin/email-library', adminAuth, (req, res) => {
     // 9) AFFILIATE PROGRAMME (affiliates only, not customers)
     var affSample = { name: 'Sarah', email: 'affiliate@example.com', code: 'SARAH25', payout_rate: AFFILIATE_PAYOUT_RATE };
     var affiliateEmails = [];
-    try { affiliateEmails.push({ id: 'aff_welcome', name: 'Affiliate welcome (on application)', subject: 'Welcome to the 9amLeads Affiliate Programme', when: 'The moment they apply to join', html: affiliateWelcomeEmail('Sarah', 'SARAH25', AFFILIATE_PAYOUT_RATE, AFFILIATE_AUTO_ACTIVATE) }); } catch(e) {}
-    try { affiliateEmails.push({ id: 'aff_nurture_3', name: 'Nurture - day 3 (your kit is ready)', subject: '9amLeads Affiliate - your kit is ready', when: 'Day 3 after joining (if approved)', html: affiliateNurtureEmail(affSample, 3) }); } catch(e) {}
-    try { affiliateEmails.push({ id: 'aff_nurture_7', name: 'Nurture - day 7 (keep referrals converting)', subject: '9amLeads Affiliate - keep your referrals converting', when: 'Day 7 after joining', html: affiliateNurtureEmail(affSample, 7) }); } catch(e) {}
-    try { affiliateEmails.push({ id: 'aff_nurture_14', name: 'Nurture - day 14 (2 weeks in)', subject: '9amLeads Affiliate - 2 weeks in, keep the momentum', when: 'Day 14 after joining', html: affiliateNurtureEmail(affSample, 14) }); } catch(e) {}
-    try { affiliateEmails.push({ id: 'aff_reactivation', name: 'Reactivation (code still live)', subject: '9amLeads Affiliate - your code is still live', when: '21+ days in with no earnings and no recent login', html: affiliateReactivationEmail(affSample) }); } catch(e) {}
-    try { affiliateEmails.push({ id: 'aff_inactive_warning', name: 'Inactive warning - account about to close', subject: '9amLeads Affiliate - action needed to keep your account', when: 'Day 30 with no referrals (7-day deadline)', html: affiliateInactiveWarningEmail(affSample) }); } catch(e) {}
-    try { affiliateEmails.push({ id: 'aff_closed', name: 'Account closed (no referrals)', subject: 'Your 9amLeads affiliate account has been closed', when: 'Day 37 - still no referrals after the warning', html: affiliateClosedEmail(affSample) }); } catch(e) {}
+    try { affiliateEmails.push({ id: 'aff_welcome', name: 'Affiliate welcome (on application)', subject: 'Welcome to the 9amLeads Affiliate Programme', when: 'The moment they apply to join', html: wrapDarkEmailShell(affiliateWelcomeEmail('Sarah', 'SARAH25', AFFILIATE_PAYOUT_RATE, AFFILIATE_AUTO_ACTIVATE)) }); } catch(e) {}
+    try { affiliateEmails.push({ id: 'aff_nurture_3', name: 'Nurture - day 3 (your kit is ready)', subject: '9amLeads Affiliate - your kit is ready', when: 'Day 3 after joining (if approved)', html: wrapDarkEmailShell(affiliateNurtureEmail(affSample, 3)) }); } catch(e) {}
+    try { affiliateEmails.push({ id: 'aff_nurture_7', name: 'Nurture - day 7 (keep referrals converting)', subject: '9amLeads Affiliate - keep your referrals converting', when: 'Day 7 after joining', html: wrapDarkEmailShell(affiliateNurtureEmail(affSample, 7)) }); } catch(e) {}
+    try { affiliateEmails.push({ id: 'aff_nurture_14', name: 'Nurture - day 14 (2 weeks in)', subject: '9amLeads Affiliate - 2 weeks in, keep the momentum', when: 'Day 14 after joining', html: wrapDarkEmailShell(affiliateNurtureEmail(affSample, 14)) }); } catch(e) {}
+    try { affiliateEmails.push({ id: 'aff_reactivation', name: 'Reactivation (code still live)', subject: '9amLeads Affiliate - your code is still live', when: '21+ days in with no earnings and no recent login', html: wrapDarkEmailShell(affiliateReactivationEmail(affSample)) }); } catch(e) {}
+    try { affiliateEmails.push({ id: 'aff_inactive_warning', name: 'Inactive warning - account about to close', subject: '9amLeads Affiliate - action needed to keep your account', when: 'Day 30 with no referrals (7-day deadline)', html: wrapDarkEmailShell(affiliateInactiveWarningEmail(affSample)) }); } catch(e) {}
+    try { affiliateEmails.push({ id: 'aff_closed', name: 'Account closed (no referrals)', subject: 'Your 9amLeads affiliate account has been closed', when: 'Day 37 - still no referrals after the warning', html: wrapDarkEmailShell(affiliateClosedEmail(affSample)) }); } catch(e) {}
     groups.push({ key: 'affiliate', label: 'Affiliate programme (affiliates only)', icon: '\uD83E\uDD1D', sends: 'Only to affiliates - from application through to inactivity', emails: affiliateEmails });
     // 10) CANCELLED CUSTOMERS (win-back)
     var cancelledEmails = [];
