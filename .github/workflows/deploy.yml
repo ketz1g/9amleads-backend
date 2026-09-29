@@ -1,7 +1,7 @@
 name: Deploy (gated out of the 9am window)
 
 # Acts as "auto-deploy": every push to master deploys the backend — but if the push
-# lands during the weekday 08:30-09:45 UK delivery window, the job WAITS until 09:45
+# lands during the weekday 08:30-09:15 UK delivery window, the job WAITS until 09:15
 # before triggering, so a deploy can never restart the server mid-9am-delivery.
 on:
   push:
@@ -23,17 +23,17 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Hold until outside the 08:30-09:45 UK delivery window
+      - name: Hold until outside the 08:30-09:15 UK delivery window
         run: |
           now_hm=$(TZ=Europe/London date +%H%M)
           dow=$(TZ=Europe/London date +%u)   # 1=Mon .. 7=Sun
           echo "UK time now: $(TZ=Europe/London date '+%a %d %b %H:%M')"
-          if [ "$dow" -le 5 ] && [ "$now_hm" -ge 0830 ] && [ "$now_hm" -lt 0945 ]; then
-            target=$(TZ=Europe/London date -d 'today 09:45' +%s)
+          if [ "$dow" -le 5 ] && [ "$now_hm" -ge 0830 ] && [ "$now_hm" -lt 0915 ]; then
+            target=$(TZ=Europe/London date -d 'today 09:15' +%s)
             now=$(date +%s)
             wait=$(( target - now ))
             if [ "$wait" -gt 0 ]; then
-              echo "Inside the 9am delivery window - holding ${wait}s until 09:45 UK"
+              echo "Inside the 9am delivery window - holding ${wait}s until 09:15 UK"
               sleep "$wait"
             fi
           fi
