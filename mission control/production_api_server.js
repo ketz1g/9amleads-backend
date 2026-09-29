@@ -16827,11 +16827,16 @@ app.get('/api/admin/stats', adminAuth, (req, res) => {
     if (c.stripe_subscription_id || (c.selected_plan && c.selected_plan !== 'free_trial' && c.selected_plan !== 'starter')) return true;
     return false;
   }).length;
-  const totalLeads = db.prepare('SELECT COUNT(*) as count FROM leads').get();
-  const todayLeads = db.prepare('SELECT COUNT(*) as count FROM leads WHERE date(created_at) = date(\'now\')').get();
-  // Deliveries are recorded by setting delivered=1 + delivered_at on each lead
-  // (there is no populated 'deliveries' table), so count delivered leads today.
-  const deliveriesToday = db.prepare('SELECT COUNT(*) as count FROM leads WHERE delivered = 1 AND date(delivered_at) = date(\'now\')').get();
+  // Restrict lead stats to REAL customers (test/demo/internal excluded) and count only
+  // DELIVERED leads, so these agree with the customer dashboards and Leads Overview.
+  // The old COUNT(*) counted every row (including test accounts, pending and
+  // removed/replaced leads), which is why Total/Today Leads read far too high.
+  var _realIdsStat = {}; allCusts.forEach(function(c) { _realIdsStat[c.id] = 1; });
+  var _todayStat = new Date().toISOString().split('T')[0];
+  var _deliveredStat = (getDb().leads || []).filter(function(l) { return _realIdsStat[l.customer_id] && (l.delivered || l.delivered_at); });
+  const totalLeads = { count: _deliveredStat.length };
+  const todayLeads = { count: _deliveredStat.filter(function(l) { return String(l.delivered_at || '').split('T')[0] === _todayStat; }).length };
+  const deliveriesToday = { count: (function() { var s = {}; _deliveredStat.forEach(function(l) { if (String(l.delivered_at || '').split('T')[0] === _todayStat) s[l.customer_id] = 1; }); return Object.keys(s).length; })() };
   const bounced = db.prepare('SELECT COUNT(*) as count FROM customers WHERE bounced > 0').get();
   const rejectedLeads = db.prepare("SELECT COUNT(*) as count FROM leads WHERE status = 'rejected'").get();
 
@@ -16962,7 +16967,10 @@ app.get('/api/admin/customers', adminAuth, (req, res) => {
 
   // Get lead counts for each customer
   const result = customers.map(c => {
-    const leadCount = db.prepare('SELECT COUNT(*) as count FROM leads WHERE customer_id = ?').get(c.id);
+    // Count DELIVERED leads only (matching the customer dashboard + leads-overview).
+    // The old COUNT(*) included pending + removed/replaced rows, so the admin number
+    // disagreed with the customer's own dashboard (e.g. redlion 63 vs 58).
+    const leadCount = { count: (db.leads || []).filter(function(l) { return l.customer_id === c.id && (l.delivered || l.delivered_at); }).length };
     // PAYING = has a Stripe subscription. Their signup trial_ends is stale and must
     // NEVER be shown as "Expired" (the admin was showing a red "Expired (date)" for
     // paying subscribers because a subscription webhook had not cleared trial_ends).
@@ -41901,34 +41909,40 @@ app.post('/api/admin/qa-tests', adminAuth, (req, res) => {
 app.get('/api/admin/metrics', adminAuth, (req, res) => {
   try {
     const db = getDb();
-    const customers = db.customers || [];
-    const activeCustomers = customers.filter(c => c.plan && c.plan !== 'cancelled' && (!c.trial_ends || new Date(c.trial_ends) > new Date()));
-    const totalCustomers = customers.length;
+    // REAL customers only - the old version counted internal/test/demo accounts (which
+    // are seeded as "starter"), which is why Paid read 7, Active 18, Total 38 and MRR
+    // £150 instead of the true 1 paid / 6 active / 25 customers / £25.
+    function _isInternalM(c) {
+      try { if (typeof isInternalAccount === 'function' && isInternalAccount(c)) return true; } catch(e) {}
+      var em = String((c && c.email) || '').toLowerCase();
+      return /^test\./.test(em) || /@9amleads\.com$/.test(em) || /^demo/.test(em);
+    }
+    const customers = (db.customers || []).filter(function(c) { return !_isInternalM(c); });
     const planPrices = { starter: 25, pro: 49, enterprise: 99 };
+    function isPaid(c) { return !!(c.plan && c.plan !== 'free_trial' && planPrices[String(c.plan).toLowerCase()]); }
+    function trialActive(c) { return c.plan === 'free_trial' && c.trial_ends && new Date(c.trial_ends).getTime() > Date.now(); }
 
-    // MRR
-    var mrr = activeCustomers.reduce(function(s, c) { return s + (planPrices[c.plan] || 0); }, 0);
+    const paidCusts = customers.filter(isPaid);
+    const activeTrials = customers.filter(trialActive);
+    // Active = paying customers + live trials (mirrors the admin "Active" stat).
+    const activeCount = paidCusts.length + activeTrials.length;
 
-    // Average revenue per customer
-    var totalMonthly = customers.reduce(function(s, c) { return s + (planPrices[c.plan] || 0); }, 0);
-    var arpu = activeCustomers.length > 0 ? Math.round(totalMonthly / activeCustomers.length) : 0;
+    // MRR = sum of the actual plan prices of PAYING customers only.
+    var mrr = paidCusts.reduce(function(s, c) { return s + (planPrices[String(c.plan).toLowerCase()] || 0); }, 0);
+    var arpu = paidCusts.length > 0 ? Math.round(mrr / paidCusts.length) : 0;
 
-    // Average subscription length
-    var totalDays = customers.filter(c => c.created_at).reduce(function(s, c) { return s + Math.round((Date.now() - new Date(c.created_at).getTime()) / 86400000); }, 0);
-    var avgDays = totalCustomers > 0 ? Math.round(totalDays / totalCustomers) : 0;
+    var totalDays = customers.filter(function(c) { return c.created_at; }).reduce(function(s, c) { return s + Math.round((Date.now() - new Date(c.created_at).getTime()) / 86400000); }, 0);
+    var avgDays = customers.length > 0 ? Math.round(totalDays / customers.length) : 0;
 
-    // Churn
-    var cancelled = customers.filter(c => c.plan === 'cancelled').length;
-    var churnRate = totalCustomers > 0 ? Math.round((cancelled / totalCustomers) * 100) : 0;
+    var cancelled = customers.filter(function(c) { return c.plan === 'cancelled'; }).length;
+    var churnRate = customers.length > 0 ? Math.round((cancelled / customers.length) * 100) : 0;
 
-    // LTV estimate
     var avgMonths = Math.max(1, Math.round(avgDays / 30));
     var ltv = arpu * avgMonths;
 
-    // Trial conversion
-    var everTrial = customers.filter(c => c.plan === 'free_trial' || c.created_at).length;
-    var paid = customers.filter(c => c.plan === 'starter' || c.plan === 'pro' || c.plan === 'enterprise').length;
-    var trialConversion = everTrial > 0 ? Math.round((paid / everTrial) * 100) : 0;
+    // Trial conversion = paying / everyone who ever started (free_trial + paying).
+    var everTrial = customers.filter(function(c) { return c.plan === 'free_trial' || isPaid(c); }).length;
+    var trialConversion = everTrial > 0 ? Math.round((paidCusts.length / everTrial) * 100) : 0;
 
     res.json({
       mrr: mrr,
@@ -41939,10 +41953,10 @@ app.get('/api/admin/metrics', adminAuth, (req, res) => {
       churn_rate: churnRate,
       churned_customers: cancelled,
       trial_conversion_rate: trialConversion,
-      paid_customers: paid,
-      active_customers: activeCustomers.length,
-      total_customers_ever: totalCustomers,
-      failed_payment_rate: customers.length > 0 ? Math.round((customers.filter(c => parseInt(c.fail_count) > 0).length / customers.length) * 100) : 0
+      paid_customers: paidCusts.length,
+      active_customers: activeCount,
+      total_customers_ever: customers.length,
+      failed_payment_rate: customers.length > 0 ? Math.round((customers.filter(function(c) { return parseInt(c.fail_count) > 0; }).length / customers.length) * 100) : 0
     });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
