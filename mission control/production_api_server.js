@@ -6620,31 +6620,23 @@ app.post('/api/auth/signup', async (req, res) => {
     // ukwide coverage so the delivery knows to skip area matching on the next run.
     var ukAreas = areas.some(function(a){ return /all.?uk|uk.?wide|nationwide|whole.?uk/i.test(String(a)); });
     if (ukAreas || String(coverage || '').toLowerCase() === 'ukwide') { areas = ['All UK']; coverage = 'ukwide'; }
-    else if ((Array.isArray(req.body.products) ? req.body.products : [product]).indexOf('commercial') !== -1) {
-      // COMMERCIAL MOVES defaults to All-UK coverage: the commercial pool is national
-      // and in-area supply is thin, so widen by default to reliably deliver 1-3/day.
-      areas = ['All UK']; coverage = 'ukwide'; ukAreas = true;
-    }
     else {
-      // MINIMUM AREAS: probate/tenders are shared, county-wide products where two
-      // counties already cover a wide area (minimum 2). Every other product needs at
-      // least 3 so we can deliver a steady daily supply. No upper limit.
-      var minAreas = (product === 'probate' || product === 'tenders') ? 2 : 3;
+      var minAreas = (product === 'probate' || product === 'tenders' || product === 'commercial') ? 2 : 3;
       if (areas.length < minAreas) {
-        return res.status(400).json({ error: 'Please choose at least ' + minAreas + (product === 'probate' || product === 'tenders' ? ' counties/areas' : ' areas or postcodes') + ' so we can deliver a steady daily supply of leads. You can select as many as you like (or choose All of UK).' });
+        return res.status(400).json({ error: 'Please choose at least ' + minAreas + ((product === 'probate' || product === 'tenders' || product === 'commercial') ? ' counties/areas' : ' areas or postcodes') + ' so we can deliver a steady daily supply of leads. You can select as many as you like (or choose All of UK).' });
       }
     }
-    // PROBATE USES AREAS (counties/regions), NOT postcodes - probate supply is
-    // national and sparse, so a single postcode area starves the customer. Enforce
-    // county/region selection at sign-up (min 2, as many as they like).
-    if (product === 'probate' && !(ukAreas || coverage === 'ukwide')) {
-      var probateRegionsS = ['East Midlands','East of England','London','North East','North West','South East','South West','West Midlands','Yorkshire and the Humber'];
-      var badPAreas = areas.filter(function(a) {
+    // COUNTY/REGION PRODUCTS: probate + commercial are chosen by county/region (London,
+    // Essex, Hertfordshire, Greater London, South East...) - a far bigger net than single
+    // postcodes, so the smaller commercial pool still fills the daily promise.
+    if ((product === 'probate' || product === 'commercial') && !(ukAreas || coverage === 'ukwide')) {
+      var countyRegionsS = ['East Midlands','East of England','London','North East','North West','South East','South West','West Midlands','Yorkshire and the Humber','Scotland','Wales','Northern Ireland'];
+      var badCAreas = areas.filter(function(a) {
         var k = String(a).toLowerCase().replace(/[\s-]+/g, '-');
-        return !COUNTY_POSTCODE_MAP[k] && probateRegionsS.indexOf(a) === -1;
+        return !COUNTY_POSTCODE_MAP[k] && countyRegionsS.indexOf(a) === -1;
       });
-      if (badPAreas.length) {
-        return res.status(400).json({ error: 'For probate leads, choose UK counties or regions (e.g. Kent, Greater London, South West), not single postcodes. Please pick at least 2 areas.' });
+      if (badCAreas.length) {
+        return res.status(400).json({ error: 'For ' + (product === 'commercial' ? 'commercial' : 'probate') + ' leads, choose UK counties or regions (e.g. London, Essex, Hertfordshire, Greater London, South East), not single postcodes. Please pick at least 2 areas.' });
       }
       coverage = 'county';
     }
@@ -29281,6 +29273,23 @@ _deliverDiag[cust.email].products = products;
         // very last step so NO upstream pass can leak a wrong lead into the email/ledger.
         try {
           var _ukC = /all.?uk|uk.?wide|nationwide|whole.?uk/i.test((custAreas || []).join(' '));
+          // County/region-aware area check (London/Essex/Hertfordshire etc.) so commercial
+          // customers who choose counties are not wrongly rejected as out-of-area.
+          function _commAreaOk(d) {
+            if (_ukC || !custAreas.length) return true;
+            var a = extractPostcodeArea(d.postcode || d.address || d.fullAddress || '');
+            if (!a) return false;
+            var counties = custAreas.some(function(x) { return !/^[A-Z]{1,3}$/i.test(String(x)); });
+            if (counties) {
+              for (var i = 0; i < custAreas.length; i++) {
+                var k = String(custAreas[i] || '').toLowerCase().replace(/[\s-]+/g, '-');
+                try { if ((REGION_TO_POSTCODE_AREAS[k] || []).indexOf(a) >= 0) return true; } catch(e) {}
+                try { if ((COUNTY_POSTCODE_MAP[k] || []).indexOf(a) >= 0) return true; } catch(e) {}
+              }
+              return false;
+            }
+            return custAreas.some(function(x) { return extractPostcodeArea(x) === a; });
+          }
           var _keptCL = [];
           custLeads.forEach(function(l) {
             var dd = null; try { dd = JSON.parse(l.data || '{}'); } catch(e) { dd = {}; }
@@ -29289,10 +29298,7 @@ _deliverDiag[cust.email].products = products;
             if (lp === 'commercial') {
               if (/\bchannel=RES_(BUY|LET|RENT)|RES_(BUY|LET|RENT)\b/i.test(String(dd.url || ''))) ok = false;
               else if (!isCommercialLead(dd) && !/channel=COM_|commercial|COM_(BUY|LET|RENT)/i.test(String(dd.url || ''))) ok = false;
-              else if (!_ukC && custAreas.length) {
-                var _a = extractPostcodeArea(dd.postcode || dd.address || dd.fullAddress || '');
-                if (!custAreas.some(function(x) { return extractPostcodeArea(x) === _a; })) ok = false;
-              }
+              else if (!_commAreaOk(dd)) ok = false;
             } else if (lp === 'moving' && products.indexOf('commercial') !== -1 && isCommercialLead(dd)) {
               ok = false;
             }
@@ -29313,7 +29319,7 @@ _deliverDiag[cust.email].products = products;
             if (lp2 === 'commercial') {
               if (/\bchannel=RES_(BUY|LET|RENT)|RES_(BUY|LET|RENT)\b/i.test(String(dd2.url || ''))) bad = true;
               else if (!isCommercialLead(dd2) && !/channel=COM_|commercial|COM_(BUY|LET|RENT)/i.test(String(dd2.url || ''))) bad = true;
-              else if (!_ukC && custAreas.length && !custAreas.some(function(x) { return extractPostcodeArea(x) === extractPostcodeArea(dd2.postcode || dd2.address || dd2.fullAddress || ''); })) bad = true;
+              else if (!_commAreaOk(dd2)) bad = true;
             } else if (lp2 === 'moving' && products.indexOf('commercial') !== -1 && isCommercialLead(dd2)) { bad = true; }
             if (bad) { _removedP++; return false; }
             return true;
@@ -29332,7 +29338,7 @@ _deliverDiag[cust.email].products = products;
               var dd3 = null; try { dd3 = JSON.parse(l.data || '{}'); } catch(e) { dd3 = {}; }
               if (/\bchannel=RES_(BUY|LET|RENT)|RES_(BUY|LET|RENT)\b/i.test(String(dd3.url || ''))) return;
               if (!isCommercialLead(dd3) && !/channel=COM_|commercial|COM_(BUY|LET|RENT)/i.test(String(dd3.url || ''))) return;
-              if (!_ukC && custAreas.length && !custAreas.some(function(x) { return extractPostcodeArea(x) === extractPostcodeArea(dd3.postcode || dd3.address || dd3.fullAddress || ''); })) return;
+              if (!_commAreaOk(dd3)) return;
               custLeads.push(l);
             });
           }
