@@ -25687,7 +25687,7 @@ app.post('/api/admin/normalise-pool', adminAuth, (req, res) => {
 // single Print & Post offers: A5 leaflet £3.00 / A4 letter £2.50 / leaflet+letter £4.50.
 // Cost to us: leaflet £1.18, letter £1.02, both £2.20 (Stannp).
 var BULK_MAIL_RATES = { leaflet: 249, letter: 199, both: 399 }; // pence per lead - bulk/boost volume discount sits UNDER single on-demand rates
-var BOOST_PACK_SIZES = { moving: [100, 250, 500, 1000], probate: [50, 100, 200, 500], planning: [100, 250, 500, 1000], newbusiness: [100, 250, 500, 1000] };
+var BOOST_PACK_SIZES = { moving: [100, 250, 500, 1000], commercial: [50, 100, 200, 500], probate: [50, 100, 200, 500], planning: [100, 250, 500, 1000], newbusiness: [100, 250, 500, 1000] };
 var NB_BULK_SIZES = [100, 250, 500, 1000];
 function bulkPackTotal(count, mailType) { return (BULK_MAIL_RATES[mailType] || BULK_MAIL_RATES.leaflet) * (count || 0); }
 // LAUNCH GATE: bulk/Boost storefronts stay OFF until the archive pools have enough
@@ -25711,6 +25711,9 @@ function boostAgeName(ageKey) {
 // '1m' = ~1 month (~28-34d) or '2m' = ~2 months (~58-64d).
 function getBoostArchiveLeads(product, ageKey, count) {
   var arr = readPoolFile(product);
+  // COMMERCIAL MOVES bulk pool: same archive file as moving, but only commercial
+  // premises (offices/units/retail) - the pool commercial buyers actually want.
+  if (product === 'commercial') arr = (arr || []).filter(function(l) { try { return isCommercialLead(l); } catch(e) { return false; } });
   var now = Date.now();
   var range = BOOST_AGE_RANGES[ageKey];
   var lo, hi;
@@ -25737,7 +25740,7 @@ function getBoostArchiveLeads(product, ageKey, count) {
     if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/.test(pc)) return;
     // Residential (moving/probate) needs a house number; new business (B2B) accepts a
     // company at a real address. Anything else is flagged and excluded pre-Stannp.
-    if (!postableLeadInfo(l, product === 'newbusiness').ok) return;
+    if (!postableLeadInfo(l, product === 'newbusiness' || product === 'commercial').ok) return;
     out.push(l);
   });
   return out.slice(0, count || out.length);
@@ -25904,9 +25907,9 @@ app.get('/api/boost', authMiddleware, (req, res) => {
     if (!c) return res.status(404).json({ error: 'User not found' });
     var liveProducts = String(process.env.BOOST_PRODUCTS_LIVE || 'newbusiness').toLowerCase().split(',').map(function(x){ return x.trim(); }).filter(Boolean);
     var unavailable = {};
-    ['moving', 'probate', 'planning', 'newbusiness'].forEach(function(p) { if (liveProducts.indexOf(p) === -1) unavailable[p] = 'Currently unavailable - we are filling the pool. New Business packs are available now.'; });
+    ['moving', 'commercial', 'probate', 'planning', 'newbusiness'].forEach(function(p) { if (liveProducts.indexOf(p) === -1) unavailable[p] = 'Currently unavailable - we are filling the pool. New Business packs are available now.'; });
     var available = {};
-    ['moving', 'probate', 'planning', 'newbusiness'].forEach(function(p) { available[p] = { 'tm': getBoostArchiveLeads(p, 'tm', 0).length, '1m': getBoostArchiveLeads(p, '1m', 0).length, '2m': getBoostArchiveLeads(p, '2m', 0).length }; });
+    ['moving', 'commercial', 'probate', 'planning', 'newbusiness'].forEach(function(p) { available[p] = { 'tm': getBoostArchiveLeads(p, 'tm', 0).length, '1m': getBoostArchiveLeads(p, '1m', 0).length, '2m': getBoostArchiveLeads(p, '2m', 0).length }; });
     var pack = null;
     try { pack = c.boost_pack ? JSON.parse(c.boost_pack) : null; } catch(e) {}
     res.json({ success: true, product: c.product, available: available, live_products: liveProducts, unavailable: unavailable, sizes: BOOST_PACK_SIZES, mail_rates: BULK_MAIL_RATES, live: bulkPoolsLive(), pack: pack });
@@ -25920,7 +25923,7 @@ app.post('/api/boost/checkout', authMiddleware, async (req, res) => {
     var age = String((req.body && req.body.age) || '1m');
     var count = parseInt(req.body && req.body.count, 10);
     var mailType = String((req.body && req.body.mail_type) || 'leaflet');
-    if (['moving', 'probate', 'planning', 'newbusiness'].indexOf(product) === -1) return res.status(400).json({ error: 'Choose Moving, Probate, Planning or New Business.' });
+    if (['moving', 'commercial', 'probate', 'planning', 'newbusiness'].indexOf(product) === -1) return res.status(400).json({ error: 'Choose Moving, Probate, Planning or New Business.' });
     var liveAllowed = String(process.env.BOOST_PRODUCTS_LIVE || 'newbusiness').toLowerCase().split(',').map(function(x){ return x.trim(); }).filter(Boolean);
     if (liveAllowed.indexOf(product) === -1) return res.status(400).json({ error: 'Lead pool being filled - packs will be available very soon.' });
     // Hard guard: never sell a pack we cannot fill with mailable leads right now.
@@ -25932,13 +25935,19 @@ app.post('/api/boost/checkout', authMiddleware, async (req, res) => {
     if (['tm', '1m', '2m'].indexOf(age) === -1) return res.status(400).json({ error: 'Choose This month (up to a month old), 1 month old or 2 months old.' });
     var c = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
     if (!c) return res.status(404).json({ error: 'User not found' });
-    if (c.product !== product) return res.status(400).json({ error: 'Boost packs are for your own lead type. Switch your product or ask support.' });
+    // Own lead type only - EXCEPT Commercial packs, which a Moving customer (or a
+    // customer with Commercial as an add-on) can also buy.
+    var _bpOK = (c.product === product);
+    if (!_bpOK && product === 'commercial') {
+      try { var _bps = JSON.parse(c.biz_field3 || '[]'); _bpOK = (_bps.indexOf('commercial') !== -1) || (c.product === 'moving'); } catch(eBp) { _bpOK = (c.product === 'moving'); }
+    }
+    if (!_bpOK) return res.status(400).json({ error: 'Boost packs are for your own lead type. Switch your product or ask support.' });
     if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe not configured' });
     var avail = getBoostArchiveLeads(product, age, 0).length;
     if (avail < count) return res.status(400).json({ error: 'Not enough archive leads for that size yet. The pool is being filled - please try again shortly.' });
     var amountPence = bulkPackTotal(count, mailType);
     var baseUrl = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
-    var label = product === 'probate' ? 'Probate' : product === 'newbusiness' ? 'New Business' : product === 'planning' ? 'Planning' : 'Moving';
+    var label = product === 'commercial' ? 'Commercial' : product === 'probate' ? 'Probate' : product === 'newbusiness' ? 'New Business' : product === 'planning' ? 'Planning' : 'Moving';
     var typeLabel = mailType === 'both' ? 'leaflet + letter' : mailType + ' only';
     var sessionBody = {
       mode: 'payment',
