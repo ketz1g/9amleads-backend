@@ -6629,16 +6629,23 @@ app.post('/api/auth/signup', async (req, res) => {
     // COUNTY/REGION PRODUCTS: probate + commercial are chosen by county/region (London,
     // Essex, Hertfordshire, Greater London, South East...) - a far bigger net than single
     // postcodes, so the smaller commercial pool still fills the daily promise.
-    if ((product === 'probate' || product === 'commercial') && !(ukAreas || coverage === 'ukwide')) {
+    if (product === 'probate' && !(ukAreas || coverage === 'ukwide')) {
       var countyRegionsS = ['East Midlands','East of England','London','North East','North West','South East','South West','West Midlands','Yorkshire and the Humber','Scotland','Wales','Northern Ireland'];
       var badCAreas = areas.filter(function(a) {
         var k = String(a).toLowerCase().replace(/[\s-]+/g, '-');
         return !COUNTY_POSTCODE_MAP[k] && countyRegionsS.indexOf(a) === -1;
       });
       if (badCAreas.length) {
-        return res.status(400).json({ error: 'For ' + (product === 'commercial' ? 'commercial' : 'probate') + ' leads, choose UK counties or regions (e.g. London, Essex, Hertfordshire, Greater London, South East), not single postcodes. Please pick at least 2 areas.' });
+        return res.status(400).json({ error: 'For probate leads, choose UK counties or regions (e.g. Kent, Greater London, South West), not single postcodes. Please pick at least 2 areas.' });
       }
       coverage = 'county';
+    }
+    // COMMERCIAL MOVES accepts EITHER counties/regions (bigger net: London, Essex,
+    // Hertfordshire) OR postcode areas - so it also works as an add-on to a Moving
+    // account (which picks postcodes). Infer coverage from what they chose.
+    if (product === 'commercial' && !(ukAreas || coverage === 'ukwide')) {
+      var _allPcAreasC = areas.length > 0 && areas.every(function(a) { return /^[A-Z]{1,3}$/i.test(String(a)); });
+      coverage = _allPcAreasC ? 'postcode' : 'county';
     }
 
     // Validate product count by plan

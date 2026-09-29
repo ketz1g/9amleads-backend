@@ -675,8 +675,9 @@ var COUNTY_BASED = ['planning', 'probate', 'tenders', 'newbusiness', 'commercial
 function isCountyBased() {
   var types = getSelectedLeadTypes();
   if (!types.length) return false;
-  // If ANY county-based product is selected, use county/area mode (a customer can
-  // add multiple products; the widest requirement governs the area selector).
+  // MOVING uses postcode areas. If moving is selected, use POSTCODE mode even when a
+  // county-based product (e.g. Commercial) is also selected, so the two never conflict.
+  if (types.indexOf('moving') !== -1) return false;
   return types.some(function(t) { return COUNTY_BASED.indexOf(t) !== -1; });
 }
 function getPostcodeAreaLimit() {
@@ -1228,6 +1229,9 @@ function doSignup() {
   var selectedPlan = document.querySelector('#s-plan-container input[type=radio]:checked');
   var planVal = selectedPlan ? selectedPlan.value : 'free_trial';
   var maxProducts = planVal === 'free_trial' ? 1 : planVal === 'starter' ? 2 : 99;
+  // Moving + Commercial together is allowed on the FREE TRIAL (two feeds, 8 leads/day).
+  var _mcTrial = products.length === 2 && products.slice().map(function(x){ return String(x).toLowerCase(); }).sort().join(',') === 'commercial,moving';
+  if (planVal === 'free_trial' && _mcTrial) maxProducts = 2;
   var minProducts = 1;
   if (products.length > maxProducts) {
     document.getElementById('signup-error').textContent = (planVal === 'free_trial' ? 'Free Trial' : planVal.charAt(0).toUpperCase() + planVal.slice(1)) + ' allows up to ' + maxProducts + ' lead type' + (maxProducts > 1 ? 's' : '') + '. ' + (maxProducts < 99 ? 'Upgrade to ' + (planVal === 'free_trial' ? 'Starter' : 'Pro') + ' for more.' : '');
