@@ -184,7 +184,7 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 </div>
 </div>
 
-<p style="text-align:center;font-size:12px;color:var(--muted);margin:-24px 0 40px">All prices are per week. Cancel anytime. 7-day free trial ,  No obligation. No card needed to start; if you add a card, it is charged automatically at your weekly price when the trial ends unless you cancel.</p>
+<p style="text-align:center;font-size:12px;color:var(--muted);margin:-24px 0 40px">All prices are per week. Cancel anytime. 7-day free trial ,  No obligation. No card needed to start; if you add a card, it is charged automatically at your weekly price when the trial ends unless you cancel.<br><strong style="color:var(--text)">Commercial Moves:</strong> 3/day &pound;50 &middot; 6/day &pound;99 &middot; 10/day &pound;150. Multi-site companies (branches across the UK) can spread their commercial leads across all sites on the 10/day plan. Need more? We offer 25+/day custom packages on request.</p>
 
 <!-- Comparison table -->
 <h2 style="font-size:20px;font-weight:800;font-family:var(--ff-h);text-align:center;margin-bottom:16px">Leads per day by product</h2>
@@ -260,7 +260,7 @@ var productData = {
   planning: { starter:'1', pro:'3', enterprise:'5', areaStarter:'3 areas', areaPro:'Unlimited areas', areaEnterprise:'All UK', prices:['£25','£49','£99'] },
   tenders: { starter:'1', pro:'3', enterprise:'5', areaStarter:'3 areas', areaPro:'Unlimited areas', areaEnterprise:'All UK', prices:['£25','£49','£99'] },
   // COMMERCIAL MOVES: one flat plan - 3 exclusive commercial leads/day, £50/week.
-  commercial: { starter:'3', pro:'3', enterprise:'3', areaStarter:'Choose counties/regions', areaPro:'Choose counties/regions', areaEnterprise:'All UK (optional)', prices:['£50','£50','£50'], comm:true }
+  commercial: { starter:'3', pro:'6', enterprise:'10', areaStarter:'Choose counties/regions', areaPro:'Choose counties/regions', areaEnterprise:'All UK - spread across your sites', prices:['£50','£99','£150'], comm:true }
 };
 function switchProduct(prod) {
   document.querySelectorAll('.prod-tab').forEach(function(t){t.classList.remove('active');});
@@ -274,7 +274,7 @@ function switchProduct(prod) {
   document.getElementById('feat-area-starter').textContent = d.areaStarter;
   document.getElementById('feat-area-pro').textContent = d.areaPro;
   document.getElementById('feat-area-enterprise').textContent = d.areaEnterprise;
-  var names = comm ? ['Commercial Moves','Commercial Moves','Commercial Moves'] : ['Starter','Pro','Enterprise'];
+  var names = comm ? ['Commercial Moves','Commercial Moves 6','Commercial Moves 10'] : ['Starter','Pro','Enterprise'];
   var pr = d.prices || ['£25','£49','£99'];
   ['starter','pro','enterprise'].forEach(function(t, i) {
     var pe = document.getElementById('price-' + t); if (pe) pe.innerHTML = pr[i] + '<span>/wk</span>';

@@ -18160,15 +18160,19 @@ const LEAD_TYPE_RULES = {
     name: 'Commercial Moves', key: 'commercial', local: true, model: 'daily',
     coverage: ['postcode', 'county', 'region', 'ukwide'],
     // ITS OWN PRODUCT (not a moving plan), so a customer can hold MOVING and COMMERCIAL
-    // at the same time, each charged and delivered separately. Single plan: 3 exclusive
-    // commercial/office-relocation leads per day for £50/week (~£3.33/lead).
-    // free_trial = a 7-day FREE TRIAL of Commercial Moves (3/day, same as paid), so a
-    // customer can trial Moving, Commercial, or BOTH together.
-    plans: { free_trial: { default: 3, postcode: 3, county: 3, region: 3, ukwide: 3 }, starter: { default: 3, postcode: 3, county: 3, region: 3, ukwide: 3 }, pro: { default: 3, postcode: 3, county: 3, region: 3, ukwide: 3 }, enterprise: { default: 3, postcode: 3, county: 3, region: 3, ukwide: 3 }, commercial: { default: 3, postcode: 3, county: 3, region: 3, ukwide: 3 } },
+    // at the same time, each charged and delivered separately. Tiers: 3/day £50 (starter),
+    // 6/day £99 (pro), 10/day £150 (enterprise). Larger multi-site packages (25+/day
+    // spread across UK offices) are available on request. Enterprise = All-UK spread so
+    // a company with multiple sites/areas can distribute leads.
+    // free_trial = a 7-day FREE TRIAL of Commercial Moves (3/day), so a customer can
+    // trial Moving, Commercial, or BOTH together.
+    plans: { free_trial: { default: 3, postcode: 3, county: 3, region: 3, ukwide: 3 }, starter: { default: 3, postcode: 3, county: 3, region: 3, ukwide: 3 }, pro: { default: 6, postcode: 6, county: 6, region: 6, ukwide: 6 }, enterprise: { default: 10, postcode: 10, county: 10, region: 10, ukwide: 10 }, commercial: { default: 3, postcode: 3, county: 3, region: 3, ukwide: 3 } },
     min_area: 'postcode', up_to: false, enabled: true, commercial_only: true,
-    price_starter: 'price_1UKyNPADspDnFpfBOhQXjV4H', // the 'commercial' plan price (£50/wk)
-    weekly_est: { commercial: 50 },
-    monthly_est: { commercial: 200 }
+    price_starter: 'price_1UKyNPADspDnFpfBOhQXjV4H', // £50/wk (3/day)
+    price_growth: 'price_1UL0ulADspDnFpfByjgRYI45',  // £99/wk (6/day)
+    price_power: 'price_1UL0ulADspDnFpfBacHH5eOT',   // £150/wk (10/day)
+    weekly_est: { starter: 50, pro: 99, enterprise: 150, commercial: 50 },
+    monthly_est: { starter: 200, pro: 396, enterprise: 600, commercial: 200 }
   },
   newbusiness: {
     name: 'New Business Alerts', key: 'newbusiness', local: true, model: 'daily',
@@ -29556,8 +29560,8 @@ pushToCrm(cust, crmPayload2, 'daily delivery');
 // All are weekly subscriptions (interval=week, confirmed live on Stripe).
 const STRIPE_PRICE_IDS = {
   'moving': { 'mov-starter': 'price_1UCHYtADspDnFpfBBd7QOcYI', 'mov-growth': 'price_1UCHYuADspDnFpfB393MTFG9', 'mov-power': 'price_1UCHYuADspDnFpfBcEfj4VQb' },
-  // COMMERCIAL MOVES: a single £50/week price for every tier (it's a flat product).
-  'commercial': { 'comm-starter': 'price_1UKyNPADspDnFpfBOhQXjV4H', 'comm-growth': 'price_1UKyNPADspDnFpfBOhQXjV4H', 'comm-power': 'price_1UKyNPADspDnFpfBOhQXjV4H' },
+  // COMMERCIAL MOVES tiers: 3/day £50/wk (starter), 6/day £99/wk (growth), 10/day £150/wk (power).
+  'commercial': { 'comm-starter': 'price_1UKyNPADspDnFpfBOhQXjV4H', 'comm-growth': 'price_1UL0ulADspDnFpfByjgRYI45', 'comm-power': 'price_1UL0ulADspDnFpfBacHH5eOT' },
   'planning': { 'plan-starter': 'price_1UCHYzADspDnFpfBr5xlVz9b', 'plan-growth': 'price_1UCHYzADspDnFpfB93hxERUY', 'plan-power': 'price_1UCHZ0ADspDnFpfByi7gAIYX' },
   'newbusiness': { 'nb-starter': 'price_1UCHYxADspDnFpfBzoPTlNjN', 'nb-growth': 'price_1UCHYxADspDnFpfBPFAN12xE', 'nb-power': 'price_1UCHYyADspDnFpfBA5goep7L' },
   'probate': { 'prob-starter': 'price_1UCHYvADspDnFpfBtBbyRQc3', 'prob-growth': 'price_1UCHYvADspDnFpfBGBWMRaJ8', 'prob-power': 'price_1UCHYwADspDnFpfBPtzxOqnM' },
