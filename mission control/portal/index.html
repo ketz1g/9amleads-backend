@@ -352,12 +352,12 @@ function updatePlanDisplay() {
   function setDesc(id, txt) { var el = document.querySelector('#' + id + ' .plan-d'); if (el) el.textContent = txt; }
   var ft = document.querySelector('#plan-free_trial .plan-d');
   if (commOnly) {
-    if (ft) ft.textContent = '3 exclusive commercial leads/day · 7-day trial · choose counties/regions';
+    if (ft) ft.innerHTML = 'Free 7-day trial &middot; <strong>3 commercial leads a day</strong> &middot; choose counties/regions';
     setPrice('plan-starter', '£50<span class="pw">/wk</span>'); setDesc('plan-starter', '3 exclusive commercial leads/day · choose counties');
     setPrice('plan-pro', '£99<span class="pw">/wk</span>'); setDesc('plan-pro', '6 exclusive commercial leads/day · choose counties');
     setPrice('plan-enterprise', '£150<span class="pw">/wk</span>'); setDesc('plan-enterprise', '10 commercial leads/day · All UK · spread across your sites');
   } else if (hasComm && hasMove) {
-    if (ft) ft.textContent = '8 leads/day (5 moving + 3 commercial) · 7-day trial';
+    if (ft) ft.innerHTML = 'Free 7-day trial &middot; <strong>8 leads a day</strong> (5 moving + 3 commercial)';
     setPrice('plan-starter', '£75<span class="pw">/wk</span>'); setDesc('plan-starter', '5 moving + 3 commercial = 8 leads/day');
     setPrice('plan-pro', '£148<span class="pw">/wk</span>'); setDesc('plan-pro', '10 moving + 6 commercial = 16 leads/day');
     setPrice('plan-enterprise', '£249<span class="pw">/wk</span>'); setDesc('plan-enterprise', '15 moving + 10 commercial = 25 leads/day');
