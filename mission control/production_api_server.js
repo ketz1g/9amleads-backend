@@ -20292,18 +20292,33 @@ function autoResendFailedEmails() {
     var dbc = getDb();
     var q = (dbc.failed_emails || []).slice();
     if (!q.length) return 0;
-    var sent = 0, stillFailing = [];
-    for (var i = 0; i < q.length; i++) {
-      var m = q[i];
-      try {
-        sendBrevoEmail({ email: m.email, name: m.name || 'Customer' }, m.subject, m.html);
-        sent++;
-      } catch(e) { m.attempts = (m.attempts || 0) + 1; if ((m.attempts||0) <= 5) stillFailing.push(m); }
-    }
-    dbc.failed_emails = stillFailing;
+    var todayA = _ukDay();
+    var fire = 0;
+    // Rewrite the queue: only genuine, still-unresolved failures are put back (in the
+    // catch handlers below). Claim each customer's daily email first, so this 15-min
+    // auto-heal can NEVER re-send a copy another path already delivered - the previous
+    // version fired-and-forgot (no await) and treated every send as a success, so a
+    // delivered-but-queued email was mailed again on the next heal cycle.
+    dbc.failed_emails = [];
     saveDb();
-    if (sent) console.log('[AUTO-HEAL] Resent ' + sent + ' failed emails (' + stillFailing.length + ' still failing)');
-    return sent;
+    q.forEach(function(m) {
+      var _cust = null;
+      try { _cust = (dbc.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === String(m.email || '').toLowerCase(); }); } catch(ge) {}
+      if (_cust) {
+        if (String(_cust.last_email_date || '') === todayA) { console.log('[AUTO-HEAL] skip ' + m.email + ' - already emailed today'); return; }
+        if (!_claimDailyEmail(_cust.id, todayA)) { console.log('[AUTO-HEAL] skip ' + m.email + ' - already claimed/sent today'); return; }
+      }
+      fire++;
+      Promise.resolve(sendBrevoEmail({ email: m.email, name: m.name || 'Customer' }, m.subject, m.html)).then(function() {
+        if (_cust) { try { _cust.last_email_date = todayA; _markDailyEmailSent(_cust.id, todayA); } catch(le) {} }
+        saveDb();
+      }).catch(function() {
+        if (_cust) { try { _releaseDailyEmail(_cust.id, todayA); } catch(re) {} }
+        try { var d2 = getDb(); if (!d2.failed_emails) d2.failed_emails = []; m.attempts = (m.attempts || 0) + 1; if ((m.attempts || 0) <= 5) d2.failed_emails.push(m); saveDb(); } catch(e2) {}
+      });
+    });
+    if (fire) console.log('[AUTO-HEAL] Resending ' + fire + ' failed emails');
+    return fire;
   } catch(e) { return 0; }
 }
 function verifyBackupRestorable() {
@@ -20389,8 +20404,44 @@ var _deliveryLockAt = 0;
 // duplicate 9am emails). Claimed BEFORE the send; released if the send fails so
 // the retry/queue still delivers it.
 var __dailyEmailClaimed = {};
-function _claimDailyEmail(custId, day) { var k = String(custId) + '|' + day; if (__dailyEmailClaimed[k]) return false; __dailyEmailClaimed[k] = 1; return true; }
-function _releaseDailyEmail(custId, day) { delete __dailyEmailClaimed[String(custId) + '|' + day]; }
+// Europe/London calendar day (YYYY-MM-DD). Business-day boundaries are UK, not UTC, so
+// every date used for daily-email dedup must use this (not toISOString()).
+function _ukDay(d) {
+  try { return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d ? new Date(d) : new Date()); }
+  catch(e) { return (d ? new Date(d) : new Date()).toISOString().split('T')[0]; }
+}
+// PERSISTENT daily-email claim (db.daily_email_claims[custId] = 'YYYY-MM-DD'). The
+// in-memory map alone was lost on a process restart / cache invalidation, which
+// allowed a later watchdog/reconcile run to email the SAME customer twice in a day.
+function _claimDailyEmail(custId, day) {
+  var k = String(custId) + '|' + day;
+  if (__dailyEmailClaimed[k]) return false;
+  try {
+    var d = getDb();
+    if (d) {
+      if (!d.daily_email_claims) d.daily_email_claims = {};
+      if (String(d.daily_email_claims[custId] || '') === String(day)) { __dailyEmailClaimed[k] = 1; return false; }
+      var cu = (d.customers || []).find(function(c) { return String(c.id) === String(custId); });
+      if (cu && String(cu.last_email_date || '') === String(day)) { __dailyEmailClaimed[k] = 1; return false; }
+      d.daily_email_claims[custId] = day;
+      saveDb();
+    }
+  } catch(e) {}
+  __dailyEmailClaimed[k] = 1;
+  return true;
+}
+// Confirm a daily email as SENT for the day (persistent + in-memory). Call after a
+// confirmed Brevo send so no later path can re-send it.
+function _markDailyEmailSent(custId, day) {
+  __dailyEmailClaimed[String(custId) + '|' + day] = 1;
+  try { var d = getDb(); if (d) { if (!d.daily_email_claims) d.daily_email_claims = {}; d.daily_email_claims[custId] = day; } } catch(e) {}
+}
+// Release the claim so a genuine failure can be retried - but only for the SAME day,
+// so an old release can never clobber a newer day's claim.
+function _releaseDailyEmail(custId, day) {
+  delete __dailyEmailClaimed[String(custId) + '|' + day];
+  try { var d = getDb(); if (d && d.daily_email_claims && String(d.daily_email_claims[custId] || '') === String(day)) { delete d.daily_email_claims[custId]; saveDb(); } } catch(e) {}
+}
 // SINGLE-FLIGHT: how many delivery runs are genuinely in progress, plus a heartbeat
 // updated as the run advances. A second run may only start when no run is active or
 // the heartbeat is stale (a truly hung run) - belt-and-braces on top of the email claim.
@@ -21152,7 +21203,7 @@ function dedupeDailyDelivered() {
 function reconcileTodayEmails() {
   try {
     var dbR = getDb();
-    var today = new Date().toISOString().split('T')[0];
+    var today = _ukDay();
     var sent = 0;
     (dbR.customers || []).forEach(function(cust) {
       if (isInternalAccount(cust)) return;
@@ -21740,23 +21791,28 @@ async function resendFailedEmails() {
     var q = (feDb.failed_emails || []).slice();
     if (!q.length) return;
     var sent = 0, stillFailing = [];
-    var todayE = new Date().toISOString().split('T')[0];
+    var todayE = _ukDay();
     for (var fi = 0; fi < q.length; fi++) {
       var m = q[fi];
-      // DUPLICATE-EMAIL GUARD: never re-send a daily email to a customer who already
-      // received one today. A send that succeeded but was ALSO queued (crash/restart
-      // during the delivery) must not produce a second copy in the customer's inbox.
-      try {
-        var _cust = (feDb.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === String(m.email || '').toLowerCase(); });
-        if (_cust && _cust.last_email_date === todayE) {
-          console.log('[EMAIL-CATCHUP] skip ' + m.email + ' - already emailed today');
-          continue;
-        }
-      } catch(ge) {}
+      // DEDUP: match the customer, then take the PERSISTENT daily-email claim. If the
+      // daily email was already sent OR already claimed today by ANY path (9am run,
+      // restart, reconcile, another resend) we SKIP. Critically, a SUCCESSFUL resend now
+      // sets last_email_date, so the 09:10 reconcile no longer sends a second copy
+      // (previously a resent-then-reconciled email produced a duplicate).
+      var _cust = null;
+      try { _cust = (feDb.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === String(m.email || '').toLowerCase(); }); } catch(ge) {}
+      if (_cust) {
+        if (String(_cust.last_email_date || '') === todayE) { console.log('[EMAIL-CATCHUP] skip ' + m.email + ' - already emailed today'); continue; }
+        if (!_claimDailyEmail(_cust.id, todayE)) { console.log('[EMAIL-CATCHUP] skip ' + m.email + ' - already claimed/sent today'); continue; }
+      }
       try {
         await sendBrevoEmail({ email: m.email, name: m.name || 'Customer' }, m.subject, m.html);
         sent++;
-      } catch(e) { m.attempts = (m.attempts || 0) + 1; stillFailing.push(m); }
+        if (_cust) { try { _cust.last_email_date = todayE; _markDailyEmailSent(_cust.id, todayE); } catch(le) {} }
+      } catch(e) {
+        m.attempts = (m.attempts || 0) + 1; stillFailing.push(m);
+        if (_cust) { try { _releaseDailyEmail(_cust.id, todayE); } catch(re) {} }
+      }
     }
     feDb.failed_emails = stillFailing;
     saveDb();
