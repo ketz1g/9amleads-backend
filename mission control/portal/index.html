@@ -671,7 +671,7 @@ function getSelectedLeadTypes() {
   return types;
 }
 // County/area-based products (not postcode-based). planning, probate, tenders
-var COUNTY_BASED = ['planning', 'probate', 'tenders', 'newbusiness'];
+var COUNTY_BASED = ['planning', 'probate', 'tenders', 'newbusiness', 'commercial'];
 function isCountyBased() {
   var types = getSelectedLeadTypes();
   if (!types.length) return false;
