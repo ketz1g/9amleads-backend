@@ -14595,7 +14595,7 @@ app.post('/api/admin/set-trial-end', adminAuth, (req, res) => {
 });
 
 // POST /api/admin/set-commercial - provision (or revert) a COMMERCIAL MOVES account.
-// enable=true  -> plan 'commercial' (1 EXCLUSIVE commercial lead/day), moving_type
+// enable=true  -> plan 'commercial' (3 EXCLUSIVE commercial leads/day, £50/week), moving_type
 //                 'commercial', product 'moving', trial cleared (a paying account).
 // enable=false -> back to a normal residential moving customer (plan 'starter').
 // Body { email, enable:true|false }.
@@ -14611,14 +14611,14 @@ app.post('/api/admin/set-commercial', adminAuth, (req, res) => {
     if (enable) {
       cfg.moving.moving_type = 'commercial';
       db.prepare('UPDATE customers SET plan = ?, leads_per_day = ?, product = ?, coverage = ?, product_config = ?, trial_ends = NULL, leads_paused = 0, auto_send_paused = 0 WHERE id = ?')
-        .run('commercial', 1, 'moving', c.coverage || 'postcode', JSON.stringify(cfg), c.id);
+        .run('commercial', 3, 'moving', c.coverage || 'postcode', JSON.stringify(cfg), c.id);
     } else {
       cfg.moving.moving_type = 'residential';
       db.prepare('UPDATE customers SET plan = ?, leads_per_day = ?, product = ?, product_config = ? WHERE id = ?')
         .run('starter', 5, 'moving', JSON.stringify(cfg), c.id);
     }
     saveDb();
-    res.json({ success: true, email: email, commercial: enable, plan: enable ? 'commercial' : 'starter', moving_type: cfg.moving.moving_type, leads_per_day: enable ? 1 : 5 });
+    res.json({ success: true, email: email, commercial: enable, plan: enable ? 'commercial' : 'starter', moving_type: cfg.moving.moving_type, leads_per_day: enable ? 3 : 5 });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -18106,7 +18106,7 @@ const LEAD_TYPE_RULES = {
   moving: {
     name: 'Moving Leads', key: 'moving', local: true, model: 'daily',
     coverage: ['postcode', 'county', 'region'],
-    plans: { free_trial: { default: 5, postcode: 5, county: 5, region: 5 }, starter: { default: 5, postcode: 5, county: 5, region: 5 }, pro: { default: 10, postcode: 10, county: 10, region: 10 }, enterprise: { default: 15, postcode: 15, county: 15, region: 15 }, commercial: { default: 1, postcode: 1, county: 1, region: 1 } },
+    plans: { free_trial: { default: 5, postcode: 5, county: 5, region: 5 }, starter: { default: 5, postcode: 5, county: 5, region: 5 }, pro: { default: 10, postcode: 10, county: 10, region: 10 }, enterprise: { default: 15, postcode: 15, county: 15, region: 15 }, commercial: { default: 3, postcode: 3, county: 3, region: 3 } },
     min_area: 'postcode', up_to: false, enabled: true,
     price_starter: 'price_1Tm6PMADspDnFpfBJtsUWi6v',
     price_growth: 'price_1Tm6PNADspDnFpfB847Dubdf',
@@ -18114,7 +18114,7 @@ const LEAD_TYPE_RULES = {
     // 'commercial' = the COMMERCIAL MOVES plan: 1 EXCLUSIVE commercial/office relocation
     // lead per day, £99/week. Set price_commercial to the Stripe price id before
     // enabling self-serve checkout; until then it is provisioned by admin.
-    // £50/week = ~£10 per commercial lead (1/day, 5/week), exclusive.
+    // £50/week = 3 exclusive commercial leads/day (15/week, ~£3.33/lead).
     price_commercial: 'price_1UKyNPADspDnFpfBOhQXjV4H',
     weekly_est: { starter: 25, pro: 75, enterprise: 200, commercial: 50 },
     monthly_est: { starter: 100, pro: 300, enterprise: 800, commercial: 200 }
