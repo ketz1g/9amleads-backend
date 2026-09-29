@@ -12708,18 +12708,29 @@ app.get('/api/admin/delivery-preview', adminAuth, async (req, res) => {
     var _hr = parseInt(_getUk('hour'), 10);
     var _isWeekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].indexOf(_wd) !== -1;
     var _phase = (_isWeekday && _hr < 9) ? 'before_today_run' : 'after_today_run';
-    var _next = null;
-    var _startOff = (_isWeekday && _hr < 9) ? 0 : 1;
-    for (var _ni = 0; _ni < 8; _ni++) {
-      var _d = new Date(Date.now() + (_startOff + _ni) * 86400000);
-      var _p2 = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', weekday: 'short', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(_d);
-      var _g2 = function(t) { var p = _p2.filter(function(x){ return x.type === t; })[0]; return p ? p.value : ''; };
-      if (['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].indexOf(_g2('weekday')) !== -1) { _next = { date: _g2('year') + '-' + _g2('month') + '-' + _g2('day'), weekday: _g2('weekday') }; break; }
+    // LIVE PREVIEW WINDOW: only 08:00-09:00 UK on delivery days, so the founder only
+    // ever sees leads that WILL actually be sent - never confusing pool candidates.
+    var _windowOpen = _isWeekday && _hr >= 8 && _hr < 9;
+    function _nextWeekdayAt(startOff) {
+      for (var _ni = 0; _ni < 8; _ni++) {
+        var _d = new Date(Date.now() + (startOff + _ni) * 86400000);
+        var _p2 = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', weekday: 'short', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(_d);
+        var _g2 = function(t) { var p = _p2.filter(function(x){ return x.type === t; })[0]; return p ? p.value : ''; };
+        if (['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].indexOf(_g2('weekday')) !== -1) { return { date: _g2('year') + '-' + _g2('month') + '-' + _g2('day'), weekday: _g2('weekday') }; }
+      }
+      return null;
     }
-    var _note = (_phase === 'before_today_run')
-      ? 'Live projection for TODAY\'S 9am delivery (finalised at 9am). The pool is refreshed by the overnight scrape and the pre-verify pass, so the exact leads can still change before sending.'
-      : 'Today\'s 9am delivery has ALREADY been sent (see "delivered today" per customer). The pool leads below are CANDIDATES for the NEXT 9am delivery - they are not final and will change after the overnight scrape.';
-    res.json({ success: true, generated_at: new Date().toISOString(), phase: _phase, next_run: _next, all_ready: (out.length > 0 && _ready === out.length), ready_count: _ready, short_count: out.length - _ready, delivered_count: _delivered, customer_count: out.length, note: _note, last_preverify: dbP.seo_last_preverify || null, guarantee: dbP.fulfilment_guarantee || null, customers: out });
+    var _next = _nextWeekdayAt((_isWeekday && _hr < 9) ? 0 : 1);        // next 9am run
+    var _nextPreview = _nextWeekdayAt((_isWeekday && _hr < 8) ? 0 : 1); // next preview (08:00)
+    var _note = _windowOpen
+      ? 'LIVE preview - these are the leads matched for TODAY\'S 9am send.'
+      : 'Live preview opens 08:00-09:00 UK on delivery days, so it only shows leads that will actually be sent.';
+    if (!_windowOpen) {
+      // Outside the window: never show pool candidates (they may not be sent). Keep a
+      // compact per-customer "today so far" status only.
+      out = out.map(function(x) { return { email: x.email, company: x.company, product: x.product, plan: x.plan, promised: x.promised, delivered_today: x.delivered_today, emailed_today: x.emailed_today, status: x.status }; });
+    }
+    res.json({ success: true, generated_at: new Date().toISOString(), phase: _phase, preview_window_open: _windowOpen, next_run: _next, next_preview: _nextPreview, all_ready: (out.length > 0 && _ready === out.length), ready_count: _ready, short_count: out.length - _ready, delivered_count: _delivered, customer_count: out.length, note: _note, last_preverify: dbP.seo_last_preverify || null, guarantee: dbP.fulfilment_guarantee || null, customers: out });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 

@@ -443,10 +443,14 @@ function openDeliveryPreview() {
     .then(function(d) {
       if (d.error) { document.getElementById('dp-content').innerHTML = '<span style="color:#dc2626">' + d.error + '</span>'; return; }
       var _nextTxt = (d.next_run && d.next_run.date) ? (d.next_run.weekday + ' ' + d.next_run.date + ' 09:00 UK') : 'next weekday 09:00 UK';
-      var _phaseBanner = (d.phase === 'before_today_run')
-        ? '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:8px 12px;margin:0 0 10px;font-size:12px;color:#1e40af"><b>Snapshot for TODAY\'S 9am.</b> Not sent yet - it is finalised at 9am, and the overnight scrape refreshes the pool, so the list can still change.</div>'
-        : '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;margin:0 0 10px;font-size:12px;color:#334155"><b>Today\'s 9am has already been sent.</b> The pool leads below are <b>candidates for the next 9am (' + _nextTxt + ')</b> - they are not final and will change after the overnight scrape.</div>';
-      var html = '<p style="font-size:11px;color:#64748b;margin-bottom:8px">Live snapshot generated ' + (d.generated_at || '').replace('T', ' ').substring(0, 16) + ' UTC &middot; Next run: <b>' + _nextTxt + '</b></p>' + _phaseBanner;
+      var _pvTxt = (d.next_preview && d.next_preview.date) ? (d.next_preview.weekday + ' ' + d.next_preview.date + ' 08:00 UK') : 'next weekday 08:00 UK';
+      var _phaseBanner;
+      if (d.preview_window_open) {
+        _phaseBanner = '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:8px 12px;margin:0 0 10px;font-size:12px;color:#1e40af"><b>LIVE preview (08:00-09:00 UK).</b> These are the leads matched for today\'s 9am send. Sending starts at 9am.</div>';
+      } else {
+        _phaseBanner = '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;margin:0 0 12px;font-size:13px;color:#334155"><b>Live preview is closed.</b> It opens <b>08:00-09:00 UK on delivery days</b>, so it only ever shows leads that will actually be sent.<br>Next preview: <b>' + _pvTxt + '</b>' + (d.delivered_count ? ' &middot; Today already sent for ' + d.delivered_count + '/' + d.customer_count + ' customer(s).' : '') + '</div>';
+      }
+      var html = '<p style="font-size:11px;color:#64748b;margin-bottom:8px">Snapshot generated ' + (d.generated_at || '').replace('T', ' ').substring(0, 16) + ' UTC &middot; Next run: <b>' + _nextTxt + '</b></p>' + _phaseBanner;
       // FULFILMENT GUARANTEE STATUS (latest 07:15 / 07:45 check) - the FINAL, post-check
       // state so the founder sees the guaranteed outcome the moment they open this.
       if (d.guarantee) {
@@ -498,7 +502,8 @@ function openDeliveryPreview() {
           if (cx.door_fail) guar += ' · ' + cx.door_fail + ' replaced';
           html += '<div style="font-size:11px;color:#0f766e;background:#f0fdfa;border:1px solid #ccfbf1;border-radius:6px;padding:4px 8px;margin:0 0 6px">Guarantee: ' + guar + '. Every delivered lead has a full address + door number</div>';
         }
-        if ((cx.leads || []).length) html += '<div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin:6px 0 4px">Pool candidates for the next 9am (not final)</div>';
+        if (d.preview_window_open) {
+        if ((cx.leads || []).length) html += '<div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin:6px 0 4px">Leads for today\'s 9am send</div>';
         (cx.leads || []).forEach(function(l) {
           // Display address without duplicating the postcode area (pool addresses
           // often end with the outward code, e.g. "Chester CH2" + postcode "CH2 1NN").
@@ -532,6 +537,7 @@ function openDeliveryPreview() {
           html += '<div style="font-size:12px;color:#334155;padding-left:12px;border-left:3px solid #0ea5e9;margin-bottom:4px">' + namePart + (namePart ? '<div style="color:#475569">' + dispAddr + '</div>' : dispTitle) + badge + linkPart + '</div>';
         });
         if (!(cx.leads || []).length) html += '<div style="font-size:11px;color:#b45309;padding-left:12px">No leads in pool for these areas right now (will top up after the 6am scrape).</div>';
+        }
         html += '</div>';
       });
       document.getElementById('dp-content').innerHTML = html;
