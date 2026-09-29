@@ -19227,6 +19227,16 @@ console.log('  Outbound campaigns: ' + Object.keys(OUTBOUND_CAMPAIGNS).length + 
   buildEmailFooter() + '</td></tr></table></td></tr></table></body></html>';
 }
 
+// SHARED BRANDED SHELL for BODY-ONLY customer emails (add-card, pre-charge, first-win,
+// win-back). Identical header, white content card, background and footer as the welcome
+// + daily lead emails, so EVERY email a customer receives shares one consistent,
+// professional design (previously these were sent as a bare body with no header/footer).
+function wrapTrialEmailShell(bodyHtml) {
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"><style>:root{color-scheme:light}@media only screen and (max-width:480px){.mob{padding-left:16px!important;padding-right:16px!important}.mobbtn{display:block!important;width:100%!important;box-sizing:border-box!important;margin:6px 0!important}}</style></head><body style="margin:0;padding:0;background:#f1f5f9;font-family:Inter,Arial,sans-serif;color:#1e293b"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f1f5f9"><tr><td align="center" style="padding:24px 16px"><table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%">' + buildEmailHeader() +
+    '<tr><td bgcolor="#ffffff" class="mob" style="background:#ffffff;padding:20px 30px 26px">' + (bodyHtml || '') + '</td></tr>' +
+    buildEmailFooter() + '</td></tr></table></td></tr></table></body></html>';
+}
+
 // POST /api/admin/send-tip-sample - email a single paid/tip campaign template to
 // the owner so they can review the copy. Body: { template, email }.
 app.post('/api/admin/send-tip-sample', adminAuth, async (req, res) => {
@@ -19292,14 +19302,14 @@ function buildAddCardEmail(customer, trialEndStr) {
   return '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#0f172a;margin:0 0 6px;text-align:center">Keep your ' + prod + ' coming after ' + trialEndStr + '</h2>'
     + '<p style="color:#64748b;font-size:13px;text-align:center;margin:0 0 20px">Add your card in 60 seconds - no charge until ' + trialEndStr + '</p>'
     + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 16px">Hi ' + name + ',<br><br>' + gotLine + ' Your trial ends on <strong>' + trialEndStr + '</strong>, and without a card your daily leads <strong>pause at 9am that morning</strong>.</p>'
-    + '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:16px 20px;margin:0 0 16px">'
-    + '<p style="color:#92400e;font-size:14px;font-weight:800;margin:0 0 8px">Add your card today and nothing changes</p>'
-    + '<p style="color:#92400e;font-size:13px;line-height:1.9;margin:0">\u2705 <strong>No charge until ' + trialEndStr + '</strong> - the trial carries on exactly as now<br>\u2705 <strong>Leads don\u2019t stop</strong> when the trial ends<br>\u2705 <strong>Cancel in one click</strong> any time before then<br>\u2705 Card saved securely by Stripe</p></div>'
-    + '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px 20px;margin:0 0 16px">'
-    + '<p style="color:#166534;font-size:14px;font-weight:800;margin:0 0 8px">Why Print &amp; Post works</p>'
-    + '<p style="color:#166534;font-size:13px;line-height:1.9;margin:0">\u2705 <strong>It gets read.</strong> A letter on the kitchen table gets picked up and looked at - unlike an email that gets deleted.<br>\u2705 <strong>You reach them at home</strong>, right when they are planning the job - before they call anyone else.<br>\u2705 <strong>It is just you.</strong> No competitors bidding, no shared leads, no ad auction.<br>\u23f3 <strong>Give it 2-4 weeks.</strong> Post consistently, then ask every new customer where they got your details. When they say \u201cI got your flyer through the post\u201d, you know it is working.</p>'
+    + '<div style="background:rgba(14,165,233,0.05);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px">'
+    + '<p style="color:#0369a1;font-size:14px;font-weight:800;margin:0 0 8px">Add your card today and nothing changes</p>'
+    + '<p style="color:#1e293b;font-size:13px;line-height:1.9;margin:0">\u2705 <strong>No charge until ' + trialEndStr + '</strong> - the trial carries on exactly as now<br>\u2705 <strong>Leads don\u2019t stop</strong> when the trial ends<br>\u2705 <strong>Cancel in one click</strong> any time before then<br>\u2705 Card saved securely by Stripe</p></div>'
+    + '<div style="background:rgba(14,165,233,0.05);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px">'
+    + '<p style="color:#0369a1;font-size:14px;font-weight:800;margin:0 0 8px">Why Print &amp; Post works</p>'
+    + '<p style="color:#1e293b;font-size:13px;line-height:1.9;margin:0">\u2705 <strong>It gets read.</strong> A letter on the kitchen table gets picked up and looked at - unlike an email that gets deleted.<br>\u2705 <strong>You reach them at home</strong>, right when they are planning the job - before they call anyone else.<br>\u2705 <strong>It is just you.</strong> No competitors bidding, no shared leads, no ad auction.<br>\u23f3 <strong>Give it 2-4 weeks.</strong> Post consistently, then ask every new customer where they got your details. When they say \u201cI got your flyer through the post\u201d, you know it is working.</p>'
     + '</div>'
-    + '<p style="text-align:center;margin:0 0 18px"><a href="' + addUrl + '" style="display:inline-block;padding:14px 32px;background-color:#0ea5e9;color:#ffffff;text-decoration:none;border-radius:50px;font-weight:800;font-size:15px">Add my card (no charge until ' + trialEndStr + ')</a></p>'
+    + buildCtaBtn('Add my card (no charge until ' + trialEndStr + ')', addUrl)
     + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">The button takes you straight to secure card entry - it takes about 60 seconds. Any questions, just reply.</p>'
     + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0">All the best,<br><strong>Ketz Mandalia</strong><br><span style="color:#64748b">Founder, 9amLeads</span></p>';
 }
@@ -19313,19 +19323,19 @@ function buildAddCardFinalEmail(customer, trialEndStr) {
   var received = metrics.received > 0 ? metrics.received : 0;
   var name = String(customer.contact_name || customer.company || 'there').replace(/[<>&]/g, '');
   var prod = customer.lead_type || 'leads';
-  return '<p style="text-align:center;margin:0 0 8px"><span style="display:inline-block;background:#fee2e2;color:#b91c1c;font-size:11px;font-weight:800;letter-spacing:1px;padding:4px 12px;border-radius:20px">FINAL REMINDER</span></p>'
-    + '<h2 style="font-family:Outfit,sans-serif;font-size:23px;font-weight:800;color:#0f172a;margin:0 0 6px;text-align:center">Last chance - your ' + prod + ' stop tomorrow</h2>'
-    + '<p style="color:#64748b;font-size:13px;text-align:center;margin:0 0 20px">Your free trial ends ' + trialEndStr + '. Add your card and keep them coming.</p>'
-    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 16px">Hi ' + name + ',<br><br>This is the last nudge from me. ' + (received ? ('You\u2019ve received <strong>' + received + ' ' + prod + '</strong> so far. ') : '') + 'If you do nothing, your daily 9am leads <strong>pause tomorrow morning</strong>. Add your card now and there is no gap - everything carries on exactly as it is.</p>'
-    + '<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:16px 20px;margin:0 0 16px">'
-    + '<p style="color:#9a3412;font-size:14px;font-weight:800;margin:0 0 8px">Add your card in the next few minutes</p>'
-    + '<p style="color:#9a3412;font-size:13px;line-height:1.9;margin:0">\u2705 <strong>No charge until ' + trialEndStr + '</strong><br>\u2705 <strong>No gap</strong> - your leads keep arriving every morning at 9am<br>\u2705 <strong>Cancel in one click</strong> - no lock-in, no hassle<br>\u2705 Card saved securely by Stripe</p></div>'
-    + '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:14px 18px;margin:0 0 16px">'
-    + '<p style="color:#166534;font-size:13px;font-weight:800;margin:0 0 4px">It works - but it needs a few weeks to show</p>'
-    + '<p style="color:#166534;font-size:12.5px;line-height:1.8;margin:0">A letter on the kitchen table gets read (unlike an email), you reach people at home before they call anyone else, and there is no bidding war. Post consistently for <strong>2-4 weeks</strong>, then ask every new customer where they got your details - when they say <strong>\u201cI got your flyer through the post\u201d</strong>, you know it is working. That is why you want your posting running from day one.</p>'
+  return '<p style="text-align:center;margin:0 0 10px"><span style="display:inline-block;background:#e0f2fe;color:#0369a1;font-size:11px;font-weight:800;letter-spacing:1px;padding:4px 12px;border-radius:20px">TRIAL ENDS ' + String(trialEndStr || '').toUpperCase() + '</span></p>'
+    + '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#0f172a;margin:0 0 6px;text-align:center">Keep your ' + prod + ' coming</h2>'
+    + '<p style="color:#64748b;font-size:13px;text-align:center;margin:0 0 20px">Add your card and nothing changes - no charge until ' + trialEndStr + '</p>'
+    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 16px">Hi ' + name + ',<br><br>' + (received ? ('You\u2019ve received <strong>' + received + ' ' + prod + '</strong> so far. ') : '') + 'If you do nothing, your daily 9am leads <strong>pause tomorrow morning</strong>. Add your card now and there is no gap - everything carries on exactly as it is.</p>'
+    + '<div style="background:rgba(14,165,233,0.05);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px">'
+    + '<p style="color:#0369a1;font-size:14px;font-weight:800;margin:0 0 8px">Add your card in the next few minutes</p>'
+    + '<p style="color:#1e293b;font-size:13px;line-height:1.9;margin:0">\u2705 <strong>No charge until ' + trialEndStr + '</strong><br>\u2705 <strong>No gap</strong> - your leads keep arriving every morning at 9am<br>\u2705 <strong>Cancel in one click</strong> - no lock-in, no hassle<br>\u2705 Card saved securely by Stripe</p></div>'
+    + '<div style="background:rgba(14,165,233,0.05);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px">'
+    + '<p style="color:#0369a1;font-size:13px;font-weight:800;margin:0 0 4px">It works - but it needs a few weeks to show</p>'
+    + '<p style="color:#1e293b;font-size:12.5px;line-height:1.8;margin:0">A letter on the kitchen table gets read (unlike an email), you reach people at home before they call anyone else, and there is no bidding war. Post consistently for <strong>2-4 weeks</strong>, then ask every new customer where they got your details - when they say <strong>\u201cI got your flyer through the post\u201d</strong>, you know it is working. That is why you want your posting running from day one.</p>'
     + '</div>'
-    + '<p style="text-align:center;margin:0 0 18px"><a href="' + addUrl + '" style="display:inline-block;padding:15px 34px;background-color:#ea580c;color:#ffffff;text-decoration:none;border-radius:50px;font-weight:800;font-size:15px">Add my card now - keep my leads</a></p>'
-    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">Takes about 60 seconds. If you\u2019d rather I did it for you, or you have any questions, just reply to this email.</p>'
+    + buildCtaBtn('Add my card now - keep my leads', addUrl)
+    + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:12px 0">Takes about 60 seconds. If you\u2019d rather I did it for you, or you have any questions, just reply to this email.</p>'
     + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0">All the best,<br><strong>Ketz Mandalia</strong><br><span style="color:#64748b">Founder, 9amLeads</span></p>';
 }
 // CARD-ON-FILE PRE-CHARGE NOTICE (~3 days before the trial ends). A card-holder is
@@ -19339,11 +19349,11 @@ function buildTrialPrechargeEmail(customer, trialEndStr, amount, planLabel) {
     + '<h2 style="font-family:Outfit,sans-serif;font-size:22px;font-weight:800;color:#0f172a;margin:0 0 6px;text-align:center">Your ' + planLabel + ' plan starts ' + trialEndStr + '</h2>'
     + '<p style="color:#64748b;font-size:13px;text-align:center;margin:0 0 20px">You have a card on file - here is exactly what happens next</p>'
     + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 16px">Hi ' + name + ',<br><br>Your free trial ends on <strong>' + trialEndStr + '</strong>. Because you saved a card, your <strong>' + planLabel + '</strong> plan will start automatically that day and your fresh ' + prod + ' will keep arriving every morning at 9am - <strong>no gap, nothing for you to do</strong>.</p>'
-    + '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:12px;padding:16px 20px;margin:0 0 16px">'
-    + '<p style="color:#0c4a6e;font-size:14px;font-weight:800;margin:0 0 8px">Your billing from ' + trialEndStr + '</p>'
-    + '<p style="color:#0c4a6e;font-size:13px;line-height:1.9;margin:0">\u2705 <strong>\u00a3' + amount + '.00 per week</strong> for your ' + planLabel + ' plan<br>\u2705 Charged to the card you saved - nothing due today<br>\u2705 Billed weekly, cancel any time with one click<br>\u2705 Your existing leads and Print &amp; Post stay exactly as they are</p></div>'
+    + '<div style="background:rgba(14,165,233,0.05);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 16px">'
+    + '<p style="color:#0369a1;font-size:14px;font-weight:800;margin:0 0 8px">Your billing from ' + trialEndStr + '</p>'
+    + '<p style="color:#1e293b;font-size:13px;line-height:1.9;margin:0">\u2705 <strong>\u00a3' + amount + '.00 per week</strong> for your ' + planLabel + ' plan<br>\u2705 Charged to the card you saved - nothing due today<br>\u2705 Billed weekly, cancel any time with one click<br>\u2705 Your existing leads and Print &amp; Post stay exactly as they are</p></div>'
     + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">If you would rather not continue, you can cancel in one click any time before your trial ends and you will not be charged.</p>'
-    + '<p style="text-align:center;margin:0 0 18px"><a href="' + dashUrl + '" style="display:inline-block;padding:14px 32px;background-color:#0ea5e9;color:#ffffff;text-decoration:none;border-radius:50px;font-weight:800;font-size:15px">Manage my account</a></p>'
+    + buildCtaBtn('Manage my account', dashUrl)
     + '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0">Any questions, just reply.<br><br>All the best,<br><strong>Ketz Mandalia</strong><br><span style="color:#64748b">Founder, 9amLeads</span></p>';
 }
 function fmtTrialEnd(customer) {
@@ -24539,7 +24549,11 @@ async function runCampaignEmails(dry) {
     if (dry) { log.push({ email: cust.email, template: template, subject: subject }); return; }
     if (!lifecycleAllowed(cust, { minGapDays: 1, maxPerWeek: 3 })) { console.log('[LIFECYCLE] throttled ' + template + ' for ' + cust.email); return; }
     lifecycleSent(cust);
-    await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, subject, html);
+    // CONSISTENCY: body-only emails (add-card, pre-charge, first-win, win-back) are
+    // wrapped in the SAME branded shell as the welcome/daily emails so every customer
+    // email shares one design. Full HTML documents pass through untouched.
+    var finalHtml = (typeof html === 'string' && html.indexOf('<!DOCTYPE') === 0) ? html : wrapTrialEmailShell(html);
+    await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, subject, finalHtml);
   };
   for (var ci = 0; ci < customers.length; ci++) {
     var cust = customers[ci];
