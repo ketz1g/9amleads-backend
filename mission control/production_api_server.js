@@ -10546,19 +10546,49 @@ app.get('/api/leads', authMiddleware, (req, res) => {
     // as missing so we never render a county-only address with no town.
     if (/^[A-Za-z]{1,2}$/.test(String(_tn).trim())) _tn = '';
     if (_tn && _cn && String(_tn).toLowerCase() === String(_cn).toLowerCase()) _tn = '';
-    // TOWN-FROM-POSTCODE: derive the postal town from the district dataset
-    // ("EN4" -> "Enfield EN4") when the lead has no usable town.
+    // TOWN-FROM-POSTCODE: derive the postal town when the lead has no usable town.
+    // NOTE: the districts JSON sits in data/, which is SHADOWED on the server by a
+    // mounted disk, so it may be unreadable - hence the three-layer fallback: district
+    // dataset -> cached Postcoder town -> a built-in postcode-AREA map (no files).
     var _tnDerived = '';
     if (!_tn && _pc) {
       try {
-        var _dm = String(_pc).toUpperCase().replace(/[^A-Z0-9]/g, '').match(/^([A-Z]{1,2}[0-9][0-9A-Z]?)([0-9][A-Z]{2})$/);
-        if (_dm) {
-          var _dd = require(path.join(__dirname, 'data', 'uk-postcode-districts.json'));
-          var _de = _dd && _dd[_dm[1]];
-          if (_de && _de.name) {
-            var _nm = String(_de.name).replace(new RegExp('\\s*' + _dm[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$'), '').trim();
+        var _pcn = String(_pc).toUpperCase().replace(/[^A-Z0-9]/g, '');
+        var _dmm = _pcn.match(/^([A-Z]{1,2}[0-9][0-9A-Z]?)([0-9][A-Z]{2})$/);
+        var _distN = _dmm ? _dmm[1] : '';
+        var _areaN = (_pcn.match(/^[A-Z]{1,2}/) || [''])[0];
+        // 1) district dataset (only if it made it onto the disk)
+        try {
+          var _dd = loadPostcodeDistricts();
+          if (_distN && _dd && _dd[_distN] && _dd[_distN].name) {
+            var _nm = String(_dd[_distN].name).replace(new RegExp('\\s*' + _distN.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$'), '').trim();
             if (_nm && !/[0-9]/.test(_nm)) _tnDerived = _nm;
           }
+        } catch(eD1) {}
+        // 2) cached Postcoder town (reads the on-disk PAF cache; avoids a new spend).
+        if (!_tnDerived) {
+          try {
+            var _gt = require('./rightmove_scraper_v2').getTownForPostcode(_pc);
+            if (_gt && !/^[A-Z]{1,2}[0-9][0-9A-Z]*$/i.test(String(_gt).replace(/\s+/g, ''))) _tnDerived = String(_gt).replace(/\s+area$/i, '').trim();
+          } catch(eD2) {}
+        }
+        // 3) BUILT-IN postcode-AREA map - works with no files/cache at all.
+        if (!_tnDerived) {
+          var _areaTown = {
+            EN: 'Enfield', AL: 'St Albans', HA: 'Harrow', CR: 'Croydon', KT: 'Kingston upon Thames',
+            RM: 'Romford', IG: 'Ilford', N: 'London', SW: 'London', SE: 'London', NW: 'London',
+            E: 'London', W: 'London', EC: 'London', WC: 'London', BR: 'Bromley', DA: 'Dartford',
+            TW: 'Twickenham', UB: 'Uxbridge', SM: 'Sutton', GU: 'Guildford', RH: 'Redhill',
+            SL: 'Slough', HP: 'Hemel Hempstead', WD: 'Watford', SG: 'Stevenage', CM: 'Chelmsford',
+            MK: 'Milton Keynes', LU: 'Luton', BS: 'Bristol', BA: 'Bath', SN: 'Swindon',
+            GL: 'Gloucester', NP: 'Newport', CF: 'Cardiff', DT: 'Dorchester', BH: 'Bournemouth',
+            PO: 'Portsmouth', SO: 'Southampton', RG: 'Reading', SP: 'Salisbury', OX: 'Oxford',
+            CV: 'Coventry', LE: 'Leicester', NG: 'Nottingham', DE: 'Derby', ST: 'Stoke-on-Trent',
+            WV: 'Wolverhampton', B: 'Birmingham', LS: 'Leeds', BD: 'Bradford', HD: 'Huddersfield',
+            WF: 'Wakefield', M: 'Manchester', SK: 'Stockport', WA: 'Warrington', CH: 'Chester',
+            L: 'Liverpool', PR: 'Preston', BL: 'Bolton', WN: 'Wigan', OL: 'Oldham'
+          };
+          if (_areaN && _areaTown[_areaN]) _tnDerived = _areaTown[_areaN];
         }
       } catch(eTn) {}
     }
