@@ -159,7 +159,7 @@ function __applyProductPreselect() {
       if (hm) want = hm[1].toLowerCase();
     }
     if (!want) return;
-    var valid = ['moving', 'planning', 'newbusiness', 'probate', 'tenders'];
+      var valid = ['moving', 'commercial', 'planning', 'newbusiness', 'probate', 'tenders'];
     if (valid.indexOf(want) === -1) return;
     var boxes = document.querySelectorAll('#s-products-container input[type=checkbox]');
     if (!boxes.length) return;
@@ -292,6 +292,10 @@ setTimeout(__applyProductPreselect, 60);
 <span style="text-align:right"><span style="font-size:11px;color:#f59e0b;font-weight:700">from £25</span><span style="font-size:9px;color:#6b7280">/wk</span></span>
 </label>
 <label class="prod-cb" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer">
+<input type="checkbox" value="commercial" onchange="calcTotal()"> <span style="flex:1"><strong style="color:#f1f5f9">🏢 Commercial Moves</strong><br><span style="font-size:9px;color:#6b7280">Office &amp; commercial relocations · 3/day · exclusive</span></span>
+<span style="text-align:right"><span style="font-size:11px;color:#0ea5e9;font-weight:700">£50</span><span style="font-size:9px;color:#6b7280">/wk</span></span>
+</label>
+<label class="prod-cb" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;cursor:pointer">
 <input type="checkbox" value="planning" onchange="calcTotal()"> <span style="flex:1"><strong style="color:#f1f5f9">🔨 Planning</strong><br><span style="font-size:9px;color:#6b7280">Planning applications · from 1/day</span></span>
 <span style="text-align:right"><span style="font-size:11px;color:#f59e0b;font-weight:700">from £25</span><span style="font-size:9px;color:#6b7280">/wk</span></span>
 </label>
@@ -326,7 +330,7 @@ setTimeout(__applyProductPreselect, 60);
 <script>
 function calcTotal() {
   var els = document.querySelectorAll('#s-products-container input:checked');
-  var prices = { moving: 25, planning: 25, newbusiness: 25, probate: 25, tenders: 25 };
+  var prices = { moving: 25, commercial: 50, planning: 25, newbusiness: 25, probate: 25, tenders: 25 };
   var total = 0;
   els.forEach(function(el) { total += prices[el.value] || 0; });
   document.getElementById('s-total-price').textContent = '£' + total;

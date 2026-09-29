@@ -6649,6 +6649,10 @@ app.post('/api/auth/signup', async (req, res) => {
     if (!Array.isArray(productsList)) productsList = [product];
     var planName = plan || 'free_trial';
     var maxTypes = planName === 'free_trial' ? 1 : planName === 'starter' ? 2 : 99;
+    // FREE TRIAL of MOVING + COMMERCIAL together is allowed (two types) - it's the same
+    // relocation buyer trying both feeds. Any other free-trial combo stays at 1 type.
+    var _isMoveCommTrial = productsList.length === 2 && productsList.map(function(x){ return String(x).toLowerCase(); }).sort().join(',') === 'commercial,moving';
+    if (planName === 'free_trial' && _isMoveCommTrial) maxTypes = 2;
     if (productsList.length > maxTypes) {
       return res.status(400).json({ error: (planName === 'free_trial' ? 'Free Trial' : planName.charAt(0).toUpperCase() + planName.slice(1)) + ' allows up to ' + maxTypes + ' lead type' + (maxTypes > 1 ? 's' : '') + '. Upgrade for more.' });
     }
@@ -6664,7 +6668,7 @@ app.post('/api/auth/signup', async (req, res) => {
     // (they scale as more areas/accounts + scrapers grow); newbusiness/probate are
     // comfortably above current committed demand. Planning raised after the PLOTA
     // Starter boost (455 apps/run vs 50 before).
-    var supplyCeilingMap = { moving: 300, newbusiness: 1500, probate: 300, planning: 400, tenders: 100 };
+    var supplyCeilingMap = { moving: 300, commercial: 400, newbusiness: 1500, probate: 300, planning: 400, tenders: 100 };
     var _dailyLimitForCap = (planName === 'pro' ? 15 : planName === 'enterprise' ? 30 : planName === 'free_trial' ? 5 : 5);
     var _existingCommitted = db.prepare('SELECT COALESCE(SUM(leads_per_day), 0) AS total FROM customers WHERE product = ? AND plan != ?').get(product, 'cancelled');
     var _currentCommitted = (_existingCommitted && _existingCommitted.total) ? _existingCommitted.total : 0;
@@ -6834,20 +6838,18 @@ app.post('/api/auth/signup', async (req, res) => {
       claimPostcodes(areas, id, product);
     }
 
-    // Store product_config including moving_type (residential/commercial/both)
+    // Store product_config for EVERY selected product (Moving + Commercial etc.) so
+    // each product gets the chosen areas/coverage. moving_type applies to MOVING only.
     var signupCfg = {};
     try { signupCfg = JSON.parse(req.body.product_config || '{}'); } catch(e) {}
-    if (movingType && ['residential','commercial','both'].indexOf(movingType) !== -1) {
-      if (!signupCfg[product]) signupCfg[product] = {};
-      // Commercial-only is NOT offered: every moving customer gets a residential
-      // base with commercial mixed in when available. Enforce 'both' if the client
-      // somehow sends 'commercial' alone.
-      signupCfg[product].moving_type = (movingType === 'commercial') ? 'both' : movingType;
-    }
-    if (areas && areas.length) {
-      if (!signupCfg[product]) signupCfg[product] = {};
-      signupCfg[product].target_areas = JSON.stringify(areas);
-      signupCfg[product].coverage = coverage || 'postcode';
+    var _signupProds = (Array.isArray(productsList) && productsList.length) ? productsList : [product];
+    _signupProds.forEach(function(pp) {
+      if (!signupCfg[pp]) signupCfg[pp] = {};
+      if (areas && areas.length) { signupCfg[pp].target_areas = JSON.stringify(areas); signupCfg[pp].coverage = coverage || 'postcode'; }
+    });
+    if (movingType && ['residential','commercial','both'].indexOf(movingType) !== -1 && _signupProds.indexOf('moving') !== -1) {
+      if (!signupCfg.moving) signupCfg.moving = {};
+      signupCfg.moving.moving_type = (movingType === 'commercial') ? 'both' : movingType;
     }
     if (Object.keys(signupCfg).length) {
       db.prepare('UPDATE customers SET product_config = ? WHERE id = ?').run(JSON.stringify(signupCfg), id);
@@ -18156,7 +18158,9 @@ const LEAD_TYPE_RULES = {
     // ITS OWN PRODUCT (not a moving plan), so a customer can hold MOVING and COMMERCIAL
     // at the same time, each charged and delivered separately. Single plan: 3 exclusive
     // commercial/office-relocation leads per day for £50/week (~£3.33/lead).
-    plans: { free_trial: { default: 0, postcode: 0, county: 0, region: 0, ukwide: 0 }, starter: { default: 3, postcode: 3, county: 3, region: 3, ukwide: 3 }, pro: { default: 3, postcode: 3, county: 3, region: 3, ukwide: 3 }, enterprise: { default: 3, postcode: 3, county: 3, region: 3, ukwide: 3 }, commercial: { default: 3, postcode: 3, county: 3, region: 3, ukwide: 3 } },
+    // free_trial = a 7-day FREE TRIAL of Commercial Moves (3/day, same as paid), so a
+    // customer can trial Moving, Commercial, or BOTH together.
+    plans: { free_trial: { default: 3, postcode: 3, county: 3, region: 3, ukwide: 3 }, starter: { default: 3, postcode: 3, county: 3, region: 3, ukwide: 3 }, pro: { default: 3, postcode: 3, county: 3, region: 3, ukwide: 3 }, enterprise: { default: 3, postcode: 3, county: 3, region: 3, ukwide: 3 }, commercial: { default: 3, postcode: 3, county: 3, region: 3, ukwide: 3 } },
     min_area: 'postcode', up_to: false, enabled: true, commercial_only: true,
     price_starter: 'price_1UKyNPADspDnFpfBOhQXjV4H', // the 'commercial' plan price (£50/wk)
     weekly_est: { commercial: 50 },
