@@ -26016,7 +26016,7 @@ function getBoostArchiveLeads(product, ageKey, count) {
     // Age = when the property/notice REALLY appeared (sourceListedDate from the portal,
     // else pickFreshDate) - NOT when we scraped it. Long-running listings are genuine
     // 1-2-month-old archive leads even if scraped today.
-    var d = l.sourceListedDate || pickFreshDate(l) || l.incorporationDate || l.incorporated_on || String(l.scrapedAt || l.createdAt || l.firstVisibleDate || '');
+    var d = l.sourceListedDate || l.firstVisibleDate || l.addedOn || l.publishedDate || l.incorporationDate || l.incorporated_on || l.updateDate || String(l.scrapedAt || l.createdAt || '');
     var t = d ? new Date(d).getTime() : 0;
     if (!(t && t >= now - hi && t <= now - lo)) return;
     // need a mailable address
@@ -26368,13 +26368,20 @@ app.get('/api/admin/bulk-pools', adminAuth, (req, res) => {
     var released = releaseStaleBoostReservations();
     function bands(prod) {
       var arr = readPoolFile(prod) || [];
+      // Commercial Moves shares the moving archive file - count only the commercial
+      // subset so it is a true, separate bulk pool.
+      if (prod === 'commercial') { try { arr = arr.filter(function(l) { return isCommercialLead(l); }); } catch(e) { arr = []; } }
       var now = Date.now();
       var out = { total: arr.length, '0-2d': 0, '3-7d': 0, tm: 0, '1m': 0, '2m': 0, reserved: 0, sold: 0 };
       arr.forEach(function(l) {
         if (!l) return;
         if (l.boost_sold || l.bulk_sold) { out.sold++; return; }
         if (l.boost_reserved || l.bulk_reserved) { out.reserved++; return; }
-        var d = l.sourceListedDate || pickFreshDate(l) || '';
+        // Age = the real LISTING date. Commercial premises must NOT use scrapedAt
+        // (their delivery freshness anchor) or every long-listed unit would look new.
+        var d = (prod === 'commercial')
+          ? (l.sourceListedDate || l.firstVisibleDate || l.addedOn || l.publishedDate || l.updateDate || '')
+          : (l.sourceListedDate || pickFreshDate(l) || '');
         var t = d ? new Date(d).getTime() : 0;
         if (!t) return;
         var age = (now - t) / 86400000;
@@ -26396,10 +26403,11 @@ app.get('/api/admin/bulk-pools', adminAuth, (req, res) => {
       success: true,
       generated_at: new Date().toISOString(),
       moving: bands('moving'),
+      commercial: bands('commercial'),
       probate: bands('probate'),
       planning: bands('planning'),
       newbusiness: bands('newbusiness'),
-      note: 'Moving/Probate/Planning: tm = This month (3-27 days, never sent) · 1m = 28-35d · 2m = 58-65d. New Business: 3-7d = bulk reserve. Archive bands never touch the daily 24/48h fresh feed.' + (released ? ' Released ' + released + ' stale reservation(s).' : '')
+      note: 'Moving/Commercial/Probate/Planning: tm = This month (3-27 days, never sent) · 1m = 28-35d · 2m = 58-65d. New Business: 3-7d = bulk reserve. Archive bands never touch the daily 24/48h fresh feed.' + (released ? ' Released ' + released + ' stale reservation(s).' : '')
     });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
