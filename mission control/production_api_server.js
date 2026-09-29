@@ -5493,6 +5493,7 @@ app.post('/api/partner/signup-members', requirePartner, (req, res) => {
     var trialDays = Number(cfg[isPartnerRecurring(p) ? 'sales_partner_trial_days' : 'affiliate_trial_days']) || 14;
     var PM = {
       moving: { lead_type: 'Moving Leads', business_type: 'Removal Company' },
+    commercial: { lead_type: 'Commercial Moves', business_type: 'Commercial Removal & Office Relocation' },
       probate: { lead_type: 'Probate Leads', business_type: 'Solicitor & Estate Agent' },
       newbusiness: { lead_type: 'New Business Alerts', business_type: 'Accountant & B2B Service' },
       planning: { lead_type: 'Planning Permissions', business_type: 'Architect & Builder' },
@@ -6607,6 +6608,7 @@ app.post('/api/auth/signup', async (req, res) => {
 
     const PRODUCT_MAP = {
       moving: { lead_type: 'Moving Leads', business_type: 'Removal Company' },
+    commercial: { lead_type: 'Commercial Moves', business_type: 'Commercial Removal & Office Relocation' },
       probate: { lead_type: 'Probate Leads', business_type: 'Solicitor & Estate Agent' },
       newbusiness: { lead_type: 'New Business Alerts', business_type: 'Accountant & B2B Service' },
       planning: { lead_type: 'Planning Permissions', business_type: 'Architect & Builder' },
@@ -13163,6 +13165,10 @@ async function deliveryPreviewForCustomer(cust, sharedSeen, opts) {
   var limit = getCustomerDailyQuota(cust) || 5;
   var movingType = 'both';
   try { var cfgM = JSON.parse(cust.product_config || '{}'); movingType = (cfgM.moving && cfgM.moving.moving_type) || cust.moving_type || 'both'; } catch(e3) { movingType = cust.moving_type || 'both'; }
+  // Products this account holds (multi-product). Used so MOVING stays residential when
+  // the customer ALSO has the separate Commercial Moves product.
+  var products = [cust.product];
+  try { var _bxP = JSON.parse(cust.biz_field3 || '[]'); if (Array.isArray(_bxP) && _bxP.length) products = _bxP; } catch(eBx) {}
   var dbV = getDb();
   var freshCutoff = getFreshCutoffIso();
   var freshCutoff48p = new Date(Date.now() - 48 * 3600000).toISOString();
@@ -13221,7 +13227,9 @@ async function deliveryPreviewForCustomer(cust, sharedSeen, opts) {
       // RELAXED FILL (mirror delivery): when the strict preview tiers are short and
       // this customer has optional filters, the 48h fallback relaxes them so the
       // preview shows the same count the guaranteed-fill delivery will actually send.
-      if (previewFilterRelax && cust.product !== 'moving') return true;
+      if (previewFilterRelax && cust.product !== 'moving' && cust.product !== 'commercial') return true;
+      // COMMERCIAL MOVES product: commercial premises only (mirror delivery).
+      if (cust.product === 'commercial') return isCommercialLead(ld2);
       if (cust.product === 'moving') {
         if (!previewFilterRelax) {
           var b = parseInt(ld2.bedrooms) || 0;
@@ -13230,7 +13238,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen, opts) {
         // COMMERCIAL FILTER (mirror delivery): residential-only must not get commercial.
         var _mt2 = 'both';
         try { var _pc3 = JSON.parse(cust.product_config || '{}'); _mt2 = (_pc3.moving && _pc3.moving.moving_type) || cust.moving_type || 'both'; } catch(e) {}
-        if (_mt2 === 'residential' && isCommercialLead(ld2)) return false;
+        if ((products.indexOf('commercial') !== -1 || _mt2 === 'residential') && isCommercialLead(ld2)) return false;
         if (_mt2 === 'commercial' && !isCommercialLead(ld2)) return false;
         return true;
       }
@@ -14594,31 +14602,56 @@ app.post('/api/admin/set-trial-end', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/admin/set-commercial - provision (or revert) a COMMERCIAL MOVES account.
-// enable=true  -> plan 'commercial' (3 EXCLUSIVE commercial leads/day, £50/week), moving_type
-//                 'commercial', product 'moving', trial cleared (a paying account).
-// enable=false -> back to a normal residential moving customer (plan 'starter').
-// Body { email, enable:true|false }.
+// POST /api/admin/set-commercial - provision (or revert) the COMMERCIAL MOVES product.
+// Body { email, enable:true|false, add:true|false }
+//   enable=true, add=false -> commercial-ONLY account (product 'commercial', plan
+//                             'commercial', 3 exclusive leads/day, £50/week).
+//   enable=true, add=true  -> ADD Commercial Moves ALONGSIDE the customer's existing
+//                             products (e.g. Moving) so both are delivered and billed
+//                             separately on one account (same email + dashboard).
+//   enable=false           -> remove Commercial Moves (commercial-only -> Starter moving).
 app.post('/api/admin/set-commercial', adminAuth, (req, res) => {
   try {
     var email = String((req.body && req.body.email) || '').toLowerCase().trim();
     var enable = !(req.body && req.body.enable === false);
+    var addOn = !!(req.body && req.body.add === true);
     if (!email) return res.status(400).json({ error: 'email required' });
     var c = getDb().customers.find(function(x) { return String(x.email || '').toLowerCase() === email; });
     if (!c) return res.status(404).json({ error: 'Customer not found' });
     var cfg = {}; try { cfg = JSON.parse(c.product_config || '{}'); } catch(e) {}
-    if (!cfg.moving) cfg.moving = {};
+    cfg.moving = cfg.moving || {}; cfg.commercial = cfg.commercial || {};
+    // Commercial Moves draws from the moving pool (commercial-tagged), so record the
+    // customer's areas/coverage on the commercial product too.
+    var areasJson = c.target_areas || '[]';
+    cfg.commercial.target_areas = areasJson;
+    cfg.commercial.coverage = c.coverage || 'postcode';
+    cfg.moving.moving_type = enable ? 'commercial' : 'residential';
+    var prods = []; try { prods = JSON.parse(c.biz_field3 || '[]'); } catch(e) {}
+    if (!Array.isArray(prods) || !prods.length) prods = [c.product || 'moving'];
     if (enable) {
-      cfg.moving.moving_type = 'commercial';
-      db.prepare('UPDATE customers SET plan = ?, leads_per_day = ?, product = ?, coverage = ?, product_config = ?, trial_ends = NULL, leads_paused = 0, auto_send_paused = 0 WHERE id = ?')
-        .run('commercial', 3, 'moving', c.coverage || 'postcode', JSON.stringify(cfg), c.id);
+      if (addOn) {
+        // Add-on: keep the existing products, add 'commercial' (separate charge/delivery).
+        if (prods.indexOf('commercial') === -1) prods.push('commercial');
+        db.prepare('UPDATE customers SET biz_field3 = ?, product_config = ?, leads_paused = 0, auto_send_paused = 0 WHERE id = ?')
+          .run(JSON.stringify(prods), JSON.stringify(cfg), c.id);
+      } else {
+        // Commercial-only account.
+        db.prepare('UPDATE customers SET plan = ?, product = ?, biz_field3 = ?, coverage = ?, product_config = ?, trial_ends = NULL, leads_paused = 0, auto_send_paused = 0 WHERE id = ?')
+          .run('commercial', 'commercial', JSON.stringify(['commercial']), c.coverage || 'postcode', JSON.stringify(cfg), c.id);
+      }
     } else {
-      cfg.moving.moving_type = 'residential';
-      db.prepare('UPDATE customers SET plan = ?, leads_per_day = ?, product = ?, product_config = ? WHERE id = ?')
-        .run('starter', 5, 'moving', JSON.stringify(cfg), c.id);
+      var kept = prods.filter(function(p) { return p !== 'commercial'; });
+      if (kept.length && c.product !== 'commercial') {
+        // Was an add-on: just drop commercial from the product list.
+        db.prepare('UPDATE customers SET biz_field3 = ?, product_config = ? WHERE id = ?').run(JSON.stringify(kept), JSON.stringify(cfg), c.id);
+      } else {
+        // Was commercial-only: revert to a normal residential moving customer.
+        db.prepare('UPDATE customers SET plan = ?, product = ?, biz_field3 = ?, product_config = ? WHERE id = ?')
+          .run('starter', 'moving', JSON.stringify(['moving']), JSON.stringify(cfg), c.id);
+      }
     }
     saveDb();
-    res.json({ success: true, email: email, commercial: enable, plan: enable ? 'commercial' : 'starter', moving_type: cfg.moving.moving_type, leads_per_day: enable ? 3 : 5 });
+    res.json({ success: true, email: email, commercial: enable, add_on: addOn, products: prods, plan: (enable && !addOn) ? 'commercial' : c.plan, moving_type: cfg.moving.moving_type, commercial_leads_per_day: 3 });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -17842,6 +17875,9 @@ function broadenAreas(areas) {
 // Realistic daily lead volumes based on available UK data supply
 const PRODUCT_LEAD_FILES = {
   moving: { file: 'moving-leads.json', key: 'customerId' },
+  // Commercial Moves draws from the SAME scraped pool as moving (commercial leads are
+  // tagged commercial:true); the delivery filters to commercial-only for this product.
+  commercial: { file: 'moving-leads.json', key: 'customerId' },
   probate: { file: 'probate-leads.json', key: 'customerId' },
   newbusiness: { file: 'newbusiness-leads.json', key: 'customerId' },
   planning: { file: 'planning-leads.json', key: 'customerId' },
@@ -18106,18 +18142,25 @@ const LEAD_TYPE_RULES = {
   moving: {
     name: 'Moving Leads', key: 'moving', local: true, model: 'daily',
     coverage: ['postcode', 'county', 'region'],
-    plans: { free_trial: { default: 5, postcode: 5, county: 5, region: 5 }, starter: { default: 5, postcode: 5, county: 5, region: 5 }, pro: { default: 10, postcode: 10, county: 10, region: 10 }, enterprise: { default: 15, postcode: 15, county: 15, region: 15 }, commercial: { default: 3, postcode: 3, county: 3, region: 3 } },
+    plans: { free_trial: { default: 5, postcode: 5, county: 5, region: 5 }, starter: { default: 5, postcode: 5, county: 5, region: 5 }, pro: { default: 10, postcode: 10, county: 10, region: 10 }, enterprise: { default: 15, postcode: 15, county: 15, region: 15 } },
     min_area: 'postcode', up_to: false, enabled: true,
     price_starter: 'price_1Tm6PMADspDnFpfBJtsUWi6v',
     price_growth: 'price_1Tm6PNADspDnFpfB847Dubdf',
     price_power: 'price_1Tm6POADspDnFpfBkf0gfqXs',
-    // 'commercial' = the COMMERCIAL MOVES plan: 1 EXCLUSIVE commercial/office relocation
-    // lead per day, £99/week. Set price_commercial to the Stripe price id before
-    // enabling self-serve checkout; until then it is provisioned by admin.
-    // £50/week = 3 exclusive commercial leads/day (15/week, ~£3.33/lead).
-    price_commercial: 'price_1UKyNPADspDnFpfBOhQXjV4H',
-    weekly_est: { starter: 25, pro: 75, enterprise: 200, commercial: 50 },
-    monthly_est: { starter: 100, pro: 300, enterprise: 800, commercial: 200 }
+    weekly_est: { starter: 25, pro: 75, enterprise: 200 },
+    monthly_est: { starter: 100, pro: 300, enterprise: 800 }
+  },
+  commercial: {
+    name: 'Commercial Moves', key: 'commercial', local: true, model: 'daily',
+    coverage: ['postcode', 'county', 'region', 'ukwide'],
+    // ITS OWN PRODUCT (not a moving plan), so a customer can hold MOVING and COMMERCIAL
+    // at the same time, each charged and delivered separately. Single plan: 3 exclusive
+    // commercial/office-relocation leads per day for £50/week (~£3.33/lead).
+    plans: { free_trial: { default: 0, postcode: 0, county: 0, region: 0, ukwide: 0 }, starter: { default: 3, postcode: 3, county: 3, region: 3, ukwide: 3 }, pro: { default: 3, postcode: 3, county: 3, region: 3, ukwide: 3 }, enterprise: { default: 3, postcode: 3, county: 3, region: 3, ukwide: 3 }, commercial: { default: 3, postcode: 3, county: 3, region: 3, ukwide: 3 } },
+    min_area: 'postcode', up_to: false, enabled: true, commercial_only: true,
+    price_starter: 'price_1UKyNPADspDnFpfBOhQXjV4H', // the 'commercial' plan price (£50/wk)
+    weekly_est: { commercial: 50 },
+    monthly_est: { commercial: 200 }
   },
   newbusiness: {
     name: 'New Business Alerts', key: 'newbusiness', local: true, model: 'daily',
@@ -27076,15 +27119,21 @@ _deliverDiag[cust.email].products = products;
               var b = parseInt(ld2.bedrooms) || 0;
               if (custLeadFilters.maxBedrooms < 99 && b > custLeadFilters.maxBedrooms) return false;
             }
-            // COMMERCIAL FILTER: only accept leads matching the customer's moving_type
-            // (residential/commercial/both). A residential-only customer must never
-            // receive a commercial property (cafe/shop/office/unit etc). Always enforced
-            // - this is an identity-level rule, never relaxed by guaranteed-fill.
+            // COMMERCIAL FILTER: the COMMERCIAL MOVES product accepts commercial premises
+            // only. A MOVING customer accepts leads matching their moving_type; if they
+            // ALSO hold the separate Commercial Moves product, MOVING stays residential
+            // so the two products never overlap. Always enforced (never relaxed by fill).
+            var _hasCommercialProduct = products.indexOf('commercial') !== -1;
             var _mt = 'both';
             try { var _pc2 = JSON.parse(cust.product_config || '{}'); _mt = (_pc2.moving && _pc2.moving.moving_type) || cust.moving_type || 'both'; } catch(e) {}
+            if (_hasCommercialProduct && isCommercialLead(ld2)) return false;
             if (_mt === 'residential' && isCommercialLead(ld2)) return false;
             if (_mt === 'commercial' && !isCommercialLead(ld2)) return false;
             return true;
+          }
+          if (cust.product === 'commercial') {
+            // Commercial Moves product: commercial premises only (identity-level rule).
+            return isCommercialLead(ld2);
           }
           if (cust.product === 'planning' && custLeadFilters.appTypes && custLeadFilters.appTypes.length) {
             // PLANNING: customer chose application-type GROUPS (Residential, Commercial &
@@ -27333,10 +27382,16 @@ _deliverDiag[cust.email].products = products;
           // those are for the customer's own Print & Post / sample testing, not
           // their daily lead supply.
           if (ld2.source === 'manual-test' || ld2.source === 'manual_test') return false;
-          // COMMERCIAL FILTER (moving): only accept leads matching the customer's
-          // moving_type (residential/commercial/both). Leads are tagged commercial:true.
+          // COMMERCIAL FILTER: the COMMERCIAL MOVES product accepts commercial premises
+          // only. A MOVING customer accepts leads matching their moving_type; if they
+          // ALSO hold the separate Commercial Moves product, MOVING stays residential so
+          // the two products never overlap.
+          if (cust.product === 'commercial') {
+            if (!isCommercialLead(ld2)) return false;
+          }
           if (cust.product === 'moving') {
             var leadIsCommercial = isCommercialLead(ld2);
+            if (products.indexOf('commercial') !== -1 && leadIsCommercial) return false;
             if (custMovingType === 'residential' && leadIsCommercial) return false;
             if (custMovingType === 'commercial' && !leadIsCommercial) return false;
           }
