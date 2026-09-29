@@ -4984,7 +4984,7 @@ function runAffiliateWheelUnlockEmails() {
         try {
           sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' },
             'Your Wheel of Fortune is ready!',
-            '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:600px;margin:0 auto">' +
+            wrapDarkEmailShell('<div style="font-family:Inter,sans-serif">' +
             '<div style="text-align:center;margin-bottom:18px"><span style="background:rgba(245,158,11,.15);color:#f59e0b;font-size:11px;font-weight:800;padding:5px 14px;border-radius:50px;letter-spacing:.5px">9amLeads REWARD WHEEL</span></div>' +
             '<h1 style="font-family:Outfit,sans-serif;color:#f59e0b;margin:0 0 8px;font-size:26px">Your Wheel of Fortune is ready! 🎡</h1>' +
             '<p style="color:#c9d1de;line-height:1.8;margin:0 0 14px">Hi ' + escHtml(aff.name || 'there') + ',</p>' +
@@ -4999,7 +4999,7 @@ function runAffiliateWheelUnlockEmails() {
             '<p style="color:#c9d1de;line-height:1.8;margin:0">Hit Spin in your dashboard, the wheel lands on a prize, and it is added to your payout balance instantly. As you refer more, the tiers grow: 50 sign-ups unlocks up to £200, 100 up to £500, and 200+ up to £1,000. Keep referring and the rewards keep coming.</p>' +
             '</div>' +
             '<div style="text-align:center;margin:20px 0 8px"><a href="https://9amleads.com/portal/affiliate.html" style="display:inline-block;background:linear-gradient(135deg,#f59e0b,#f97316);color:#fff;padding:13px 28px;border-radius:10px;font-weight:700;font-size:14px;text-decoration:none">Hit Spin now</a></div>' +
-            '<p style="color:#888;font-size:13px;margin-top:22px;border-top:1px solid #1e2030;padding-top:14px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>');
+            '<p style="color:#888;font-size:13px;margin-top:22px;border-top:1px solid #1e2030;padding-top:14px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>'));
           notified.push(String(aff.wheel_spins || 0));
           aff.wheel_unlocked_sent = notified;
           aff.wheel_unlocked_at = new Date().toISOString();
@@ -5014,11 +5014,11 @@ function runAffiliateWheelUnlockEmails() {
           try {
             sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' },
               'Your wheel spin is waiting - don\'t leave money behind',
-              '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto">' +
+              wrapDarkEmailShell('<div style="font-family:Inter,sans-serif">' +
               '<h1 style="font-family:Outfit,sans-serif;color:#f59e0b;margin:0 0 10px">Your spin is waiting</h1>' +
               '<p style="color:#ccc;line-height:1.7">Hi ' + escHtml(aff.name || 'there') + ',</p>' +
               '<p style="color:#ccc;line-height:1.7">You unlocked a Wheel of Fortune spin a few days ago and it is still waiting. Prizes up to <strong style="color:#f59e0b">£' + st.prizes[st.prizes.length-1] + '</strong>, fair odds, paid instantly.</p>' +
-              '<p style="color:#ccc;line-height:1.7"><a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">Open your dashboard and hit Spin</a> before you forget.</p></div>').catch(function(){});
+              '<p style="color:#ccc;line-height:1.7"><a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">Open your dashboard and hit Spin</a> before you forget.</p></div>')).catch(function(){});
             remindedArr.push(String(aff.wheel_spins || 0));
             aff.wheel_reminded_sent = remindedArr;
             sent++;
@@ -15564,7 +15564,7 @@ app.post('/api/admin/send-missed-lead-email', adminAuth, async (req, res) => {
     var n = leads.length;
     var heading = n > 1 ? ('We missed ' + n + ', and we\u2019re sorry &#128583;') : 'We missed one, and we\u2019re sorry &#128583;';
     var subject = n > 1 ? (n + ' more leads for you today') : 'One more lead for you today';
-    var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background-color:#f1f5f9;font-family:Inter,Arial,sans-serif;color:#1e293b"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 16px"><table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%"><tr><td style="background-color:#0f172a;padding:24px 30px;border-radius:16px 16px 0 0;text-align:center;border-bottom:3px solid #38bdf8"><div style="font-family:Outfit,Arial,sans-serif;font-size:24px;font-weight:900;color:#38bdf8">9am<span style="color:#38bdf8">Leads</span></div><div style="font-size:10px;color:#94a3b8;letter-spacing:1.2px;text-transform:uppercase;margin-top:4px">' + (n > 1 ? (n + ' extra leads for you') : 'An extra lead for you') + '</div></td></tr><tr><td style="background:#ffffff;padding:28px 30px"><h2 style="margin:0 0 10px;font-size:18px;color:#0f172a">' + heading + '</h2><p style="font-size:14px;line-height:1.7;color:#334155;margin:0 0 6px">' + (n > 1 ? 'Some leads that should have been in your 9am email were held up this morning.' : 'A lead that should have been in your 9am email was held up this morning.') + ' They\u2019re now in your dashboard and we\u2019ve included ' + (n > 1 ? 'them' : 'it') + ' below.</p><p style="font-size:14px;line-height:1.7;color:#334155;margin:0 0 18px">Sorry for the inconvenience. Your full set of leads is always in your dashboard.</p>' + blocks + '<table cellpadding="0" cellspacing="0" style="margin-top:18px"><tr><td><a href="' + dashUrl + '" style="display:inline-block;background:#0ea5e9;background-image:linear-gradient(135deg,#0ea5e9,#2563eb);color:#ffffff;font-weight:800;font-size:13px;padding:11px 18px;border-radius:8px;text-decoration:none">Open your dashboard</a></td></tr></table></td></tr><tr><td style="background:#0f172a;padding:18px 30px;border-radius:0 0 16px 16px;text-align:center"><span style="color:#94a3b8;font-size:11px">9amLeads &middot; hello@9amleads.com &middot; <a href="https://www.9amleads.com" style="color:#38bdf8;text-decoration:none">9amleads.com</a></span></td></tr></table></td></tr></table></body></html>';
+    var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background-color:#f1f5f9;font-family:Inter,Arial,sans-serif;color:#1e293b"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 16px"><table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">' + buildEmailHeader(n > 1 ? (n + ' extra leads for you') : 'An extra lead for you') + '<tr><td style="background:#ffffff;padding:28px 30px"><h2 style="margin:0 0 10px;font-size:18px;color:#0f172a">' + heading + '</h2><p style="font-size:14px;line-height:1.7;color:#334155;margin:0 0 6px">' + (n > 1 ? 'Some leads that should have been in your 9am email were held up this morning.' : 'A lead that should have been in your 9am email was held up this morning.') + ' They\u2019re now in your dashboard and we\u2019ve included ' + (n > 1 ? 'them' : 'it') + ' below.</p><p style="font-size:14px;line-height:1.7;color:#334155;margin:0 0 18px">Sorry for the inconvenience. Your full set of leads is always in your dashboard.</p>' + blocks + '<table cellpadding="0" cellspacing="0" style="margin-top:18px"><tr><td><a href="' + dashUrl + '" style="display:inline-block;background:#0ea5e9;background-image:linear-gradient(135deg,#0ea5e9,#2563eb);color:#ffffff;font-weight:800;font-size:13px;padding:11px 18px;border-radius:8px;text-decoration:none">Open your dashboard</a></td></tr></table></td></tr>' + buildEmailFooter() + '</table></td></tr></table></body></html>';
     await sendBrevoEmail({ email: cust.email, name: cust.company || 'Customer' }, subject, html);
     res.json({ success: true, email: cust.email, count: n });
   } catch(e) { res.status(500).json({ error: e.message }); }
