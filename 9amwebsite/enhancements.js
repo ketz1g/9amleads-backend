@@ -402,7 +402,7 @@
       var l = parseInt(leads.value);
       var c = parseInt(conv.value);
       var p = parseInt(profit.value);
-      var ml = l * 30;
+      var ml = l * 20; /* 20 working days/month - matches the published plan figures (5/day = 100/month) */
       var mw = Math.round(ml * c / 100);
       var mr = mw * p;
       d.getElementById('roiMonthlyLeads').textContent = ml;
