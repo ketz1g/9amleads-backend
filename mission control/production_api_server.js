@@ -16965,12 +16965,14 @@ app.get('/api/admin/customers', adminAuth, (req, res) => {
   // Count on the already internal-filtered list so test/demo accounts can't inflate it.
   const totalExpiredTrials = allCustomers.filter(customerTrialExpired).length;
 
-  // Get lead counts for each customer
+  // Get lead counts for each customer. The immutable DB connection has no `.leads`;
+  // the in-memory data array lives on getDb(), so use that or every count reads 0.
+  const _leadsArr = (getDb().leads || []);
   const result = customers.map(c => {
     // Count DELIVERED leads only (matching the customer dashboard + leads-overview).
     // The old COUNT(*) included pending + removed/replaced rows, so the admin number
     // disagreed with the customer's own dashboard (e.g. redlion 63 vs 58).
-    const leadCount = { count: (db.leads || []).filter(function(l) { return l.customer_id === c.id && (l.delivered || l.delivered_at); }).length };
+    const leadCount = { count: _leadsArr.filter(function(l) { return l.customer_id === c.id && (l.delivered || l.delivered_at); }).length };
     // PAYING = has a Stripe subscription. Their signup trial_ends is stale and must
     // NEVER be shown as "Expired" (the admin was showing a red "Expired (date)" for
     // paying subscribers because a subscription webhook had not cleared trial_ends).
@@ -16983,8 +16985,8 @@ app.get('/api/admin/customers', adminAuth, (req, res) => {
       lead_count: leadCount.count,
       // Real booked/lost counts from the customer's lead tracking (these admin columns
       // were permanently 0 - nothing ever wrote booked_count/lost_count).
-      booked_count: (db.leads || []).filter(function(l) { return l.customer_id === c.id && l.lead_status === 'won'; }).length,
-      lost_count: (db.leads || []).filter(function(l) { return l.customer_id === c.id && l.lead_status === 'lost'; }).length,
+      booked_count: _leadsArr.filter(function(l) { return l.customer_id === c.id && l.lead_status === 'won'; }).length,
+      lost_count: _leadsArr.filter(function(l) { return l.customer_id === c.id && l.lead_status === 'lost'; }).length,
       trial_expired: customerTrialExpired(c),
       email_log: emailSeriesReceived(c)
     });
