@@ -4483,7 +4483,7 @@ function runFirstWinNudges(opts) {
         if (!lifecycleAllowed(c, { minGapDays: 1, maxPerWeek: 3 })) return;
         var dash = PUBLIC_URL.replace(/\/+$/, '') + '/portal/dashboard.html';
         var html = '<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#0f172a"><h2 style="font-size:20px;color:#0b6bb3;margin:0 0 10px">Get your first win from 9amLeads</h2><p style="font-size:15px;line-height:1.7">Hi ' + escHtml(c.contact_name || c.company || 'there') + ',</p><p style="font-size:15px;line-height:1.7">The members who get the most from 9amLeads do two simple things in their first few days:</p><ol style="font-size:15px;line-height:1.9"><li><b>Upload a flyer or letter</b> in Print &amp; Post (takes 2 minutes).</li><li><b>Turn on Auto Print &amp; Post</b> so every new lead is printed and posted for you each morning.</li></ol><p style="font-size:15px;line-height:1.7">Then just keep it running for 2-4 weeks - direct mail builds.</p><p><a href="' + dash + '" style="display:inline-block;background:#0b6bb3;color:#fff;padding:13px 26px;border-radius:8px;text-decoration:none;font-weight:700">Open my dashboard</a></p></div>';
-        sendBrevoEmail({ email: c.email, name: c.company || 'Customer' }, 'Get your first win: upload your flyer + switch on auto-post', html);
+        sendBrevoEmail({ email: c.email, name: c.company || 'Customer' }, 'Get your first win: upload your flyer + switch on auto-post', wrapTrialEmailShell(html));
         lifecycleSent(c);
         c.first_win_nudge_sent = new Date().toISOString(); sent++;
       } catch(e) {}
@@ -4511,7 +4511,7 @@ function runAtRiskNudges(opts) {
         if (!lifecycleAllowed(c, { minGapDays: 1, maxPerWeek: 3 })) return;
         var dash = PUBLIC_URL.replace(/\/+$/, '') + '/portal/leads.html';
         var html = '<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#0f172a"><h2 style="font-size:20px;color:#0b6bb3;margin:0 0 10px">You have ' + untouched.length + ' fresh leads waiting</h2><p style="font-size:15px;line-height:1.7">Hi ' + escHtml(c.contact_name || c.company || 'there') + ',</p><p style="font-size:15px;line-height:1.7">You have <b>' + untouched.length + '</b> delivered opportunities you have not actioned yet. Leads win fastest when you contact them the same day.</p><p style="font-size:15px;line-height:1.7">Open your dashboard to call, email or Print &amp; Post them in one click.</p><p><a href="' + dash + '" style="display:inline-block;background:#0b6bb3;color:#fff;padding:13px 26px;border-radius:8px;text-decoration:none;font-weight:700">Work my leads</a></p></div>';
-        sendBrevoEmail({ email: c.email, name: c.company || 'Customer' }, 'You have ' + untouched.length + ' fresh leads waiting', html);
+        sendBrevoEmail({ email: c.email, name: c.company || 'Customer' }, 'You have ' + untouched.length + ' fresh leads waiting', wrapTrialEmailShell(html));
         lifecycleSent(c);
         c.last_risk_nudge = new Date().toISOString(); sent++;
       } catch(e) {}
@@ -4545,7 +4545,7 @@ function runMonthlyRoiSummary(opts) {
         var dash = PUBLIC_URL.replace(/\/+$/, '') + '/portal/dashboard.html';
         var valLine = value > 0 ? '<p style="font-size:15px;line-height:1.7">You recorded <b>&pound;' + value.toLocaleString() + '</b> of won work from these leads.</p>' : '';
         var html = '<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#0f172a"><h2 style="font-size:20px;color:#0b6bb3;margin:0 0 10px">Your 9amLeads in ' + label + '</h2><p style="font-size:15px;line-height:1.7">Hi ' + escHtml(c.contact_name || c.company || 'there') + ',</p><p style="font-size:15px;line-height:1.7">In ' + label + ' we delivered <b>' + mine.length + '</b> opportunities to your dashboard. You contacted <b>' + contacted.length + '</b> of them.</p>' + valLine + '<p style="font-size:15px;line-height:1.7">Tip: keeping Auto Print &amp; Post on means every lead gets a letter out the same morning.</p><p><a href="' + dash + '" style="display:inline-block;background:#0b6bb3;color:#fff;padding:13px 26px;border-radius:8px;text-decoration:none;font-weight:700">Open my dashboard</a></p></div>';
-        sendBrevoEmail({ email: c.email, name: c.company || 'Customer' }, 'Your 9amLeads in ' + label + ': ' + mine.length + ' opportunities', html);
+        sendBrevoEmail({ email: c.email, name: c.company || 'Customer' }, 'Your 9amLeads in ' + label + ': ' + mine.length + ' opportunities', wrapTrialEmailShell(html));
         lifecycleSent(c);
         c.last_roi_month = ym; sent++;
       } catch(e) {}
@@ -5540,7 +5540,7 @@ app.post('/api/partner/signup-members', requirePartner, (req, res) => {
           var org = p.business_name || p.name || 'Your association';
           var link = PUBLIC_URL.replace(/\/+$/, '') + '/portal/reset-password.html?token=' + rToken;
           var html = '<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#0f172a"><h2 style="font-size:20px;color:#0b6bb3;margin:0 0 10px">' + escHtml(org) + ' has set up your free 9amLeads trial</h2><p style="font-size:15px;line-height:1.7">Hi ' + escHtml(r.name || 'there') + ',</p><p style="font-size:15px;line-height:1.7">As part of your ' + escHtml(org) + ' membership you have a <b>free 2-week (' + trialDays + '-day) trial</b> of 9amLeads - fresh, exclusive UK moving leads delivered every weekday at 9am.</p><p style="font-size:15px;line-height:1.7">Click below to set your password and open your dashboard (you can choose your postcode areas there too):</p><p><a href="' + link + '" style="display:inline-block;background:#0b6bb3;color:#fff;padding:13px 26px;border-radius:8px;text-decoration:none;font-weight:700">Set your password</a></p><p style="font-size:13px;color:#64748b;line-height:1.6">If you did not expect this you can ignore this email - no card is required and nothing is charged during the trial.</p></div>';
-          sendBrevoEmail({ email: r.email, name: r.name || '' }, org + ' has set up your free 9amLeads trial', html);
+          sendBrevoEmail({ email: r.email, name: r.name || '' }, org + ' has set up your free 9amLeads trial', wrapTrialEmailShell(html));
         } catch(mailErr) {}
         created++;
       } catch(cErr) { failed++; }
@@ -14718,8 +14718,8 @@ app.post('/api/admin/send-trial-extension-notice', adminAuth, async (req, res) =
       var left = Math.ceil((new Date(c.trial_ends).getTime() - Date.now()) / 86400000);
       if (activeOnly && left <= 0) { skipped.push({ email: c.email, reason: 'expired' }); continue; }
       if (c.trial_extension_notified) { skipped.push({ email: c.email, reason: 'already notified' }); continue; }
-      var html = '<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px">'
-        + '<div style="font-size:20px;font-weight:800;color:#0f172a;margin-bottom:8px">Good news from 9amLeads</div>'
+      var html = '<div style="font-family:Inter,Arial,Helvetica,sans-serif">'
+        + '<h2 style="font-size:20px;font-weight:800;color:#0f172a;margin:0 0 10px">Good news from 9amLeads</h2>'
         + '<p style="font-size:14px;color:#334155;line-height:1.7">Hi ' + String(c.contact_name || c.company || 'there').replace(/[<>&]/g, '') + ',</p>'
         + '<p style="font-size:14px;color:#334155;line-height:1.7">We hit a small technical issue on a couple of recent deliveries, and as a <b>gesture of goodwill</b> we have <b>extended your free trial by 2 days</b> so there is no interruption to your leads.</p>'
         + '<p style="font-size:14px;color:#334155;line-height:1.7">This was applied automatically - <b>no charge, and nothing to do</b>. Your fresh 9am delivery continues as normal' + (left > 0 ? ' (your trial now runs to ' + new Date(c.trial_ends).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }) + ')' : '') + '.</p>'
@@ -14728,7 +14728,7 @@ app.post('/api/admin/send-trial-extension-notice', adminAuth, async (req, res) =
         + '</div>';
       if (!dry) {
         try {
-          await sendBrevoEmail({ email: c.email, name: c.contact_name || c.company || '' }, 'Your 9amLeads trial has been extended (no charge)', html);
+          await sendBrevoEmail({ email: c.email, name: c.contact_name || c.company || '' }, 'Your 9amLeads trial has been extended (no charge)', wrapTrialEmailShell(html));
           c.trial_extension_notified = new Date().toISOString();
         } catch(sendE) { skipped.push({ email: c.email, reason: 'send failed: ' + sendE.message }); continue; }
       }
@@ -17730,24 +17730,24 @@ app.post('/api/admin/print-post/help-nudge', adminAuth, async (req, res) => {
       if (!force && c.pp_help_notified && (Date.now() - new Date(c.pp_help_notified).getTime()) < 7 * 86400000) { skipped.push({ email: c.email, reason: 'recently notified' }); continue; }
       if (dryRun) { sent.push(c.email); continue; } // preview only - do NOT send
       var _name = String(c.contact_name || c.company || 'there').replace(/[<>&]/g, '');
-      var html = '<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:26px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px">'
-        + '<div style="font-size:20px;font-weight:800;color:#0f172a;margin-bottom:8px">Get your Print &amp; Post ready to send</div>'
+      var html = '<div style="font-family:Inter,Arial,Helvetica,sans-serif">'
+        + '<h2 style="font-size:20px;font-weight:800;color:#0f172a;margin:0 0 10px">Get your Print &amp; Post ready to send</h2>'
         + '<p style="font-size:14px;color:#334155;line-height:1.7">Hi ' + _name + ',</p>'
         + '<p style="font-size:14px;color:#334155;line-height:1.7">You\u2019re all set up for <b>Print &amp; Post</b> - you just need to add your <b>flyers and letters</b>. There are two easy ways to do it:</p>'
         + '<div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:10px;padding:16px 18px;margin:14px 0">'
         + '<p style="font-size:14px;color:#0f172a;line-height:1.7;margin:0 0 14px"><b>1. Upload your flyers and letters</b><br><span style="color:#334155">Open your dashboard &rarr; <b>Print &amp; Post</b> and upload your flyer and letter (PDF, JPG or PNG).</span></p>'
         + '<p style="font-size:14px;color:#0f172a;line-height:1.7;margin:0"><b>2. Or send them to us and we\u2019ll upload them for you</b><br><span style="color:#334155">Just reply to this email and attach your flyers and letters. We\u2019ll upload them and get everything <b>ready for you for Print &amp; Post</b> - no design skills needed.</span></p>'
         + '</div>'
-        + '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px 18px;margin:14px 0">'
-        + '<p style="font-size:13.5px;font-weight:800;color:#166534;margin:0 0 6px">Why Print &amp; Post works</p>'
-        + '<p style="font-size:12.5px;color:#166534;line-height:1.85;margin:0">\u2705 <strong>It gets read.</strong> A letter on the kitchen table gets picked up and looked at - unlike an email that gets deleted.<br>\u2705 <strong>You reach them at home</strong>, right when they are planning the job - before they call anyone else.<br>\u2705 <strong>It is just you.</strong> No competitors bidding, no shared leads.<br>\u23f3 <strong>Give it 2-4 weeks.</strong> Post consistently, then ask every new customer where they got your details. When they say \u201cI got your flyer through the post\u201d, you know it is working.</p>'
+        + '<div style="background:rgba(14,165,233,0.05);border:1px solid rgba(14,165,233,0.15);border-radius:10px;padding:14px 18px;margin:14px 0">'
+        + '<p style="font-size:13.5px;font-weight:800;color:#0369a1;margin:0 0 6px">Why Print &amp; Post works</p>'
+        + '<p style="font-size:12.5px;color:#1e293b;line-height:1.85;margin:0">\u2705 <strong>It gets read.</strong> A letter on the kitchen table gets picked up and looked at - unlike an email that gets deleted.<br>\u2705 <strong>You reach them at home</strong>, right when they are planning the job - before they call anyone else.<br>\u2705 <strong>It is just you.</strong> No competitors bidding, no shared leads.<br>\u23f3 <strong>Give it 2-4 weeks.</strong> Post consistently, then ask every new customer where they got your details. When they say \u201cI got your flyer through the post\u201d, you know it is working.</p>'
         + '</div>'
         + '<p style="font-size:14px;color:#334155;line-height:1.7">Once they\u2019re in, we handle the printing, addressing and posting to every lead you choose.</p>'
         + '<p style="font-size:14px;color:#334155;line-height:1.7">Stuck or not sure what to send? Reply and we\u2019ll send a simple checklist, or a ready-made template you can use.</p>'
         + '<p style="font-size:13px;color:#64748b;line-height:1.6;margin-top:16px">Kind regards,<br>The 9amLeads team<br><a href="https://9amleads.com/portal/direct-mail.html" style="color:#0284c7">Upload them in your dashboard</a></p>'
         + '</div>';
       try {
-        await sendBrevoEmail({ email: c.email, name: c.company || c.contact_name || 'Customer' }, 'Upload your flyers & letters - or send them to us for Print & Post', html);
+        await sendBrevoEmail({ email: c.email, name: c.company || c.contact_name || 'Customer' }, 'Upload your flyers & letters - or send them to us for Print & Post', wrapTrialEmailShell(html));
         c.pp_help_notified = new Date().toISOString();
         sent.push(c.email);
       } catch(e2) { skipped.push({ email: c.email, reason: 'send failed' }); }
@@ -19234,6 +19234,15 @@ console.log('  Outbound campaigns: ' + Object.keys(OUTBOUND_CAMPAIGNS).length + 
 function wrapTrialEmailShell(bodyHtml) {
   return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"><style>:root{color-scheme:light}@media only screen and (max-width:480px){.mob{padding-left:16px!important;padding-right:16px!important}.mobbtn{display:block!important;width:100%!important;box-sizing:border-box!important;margin:6px 0!important}}</style></head><body style="margin:0;padding:0;background:#f1f5f9;font-family:Inter,Arial,sans-serif;color:#1e293b"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f1f5f9"><tr><td align="center" style="padding:24px 16px"><table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%">' + buildEmailHeader() +
     '<tr><td bgcolor="#ffffff" class="mob" style="background:#ffffff;padding:20px 30px 26px">' + (bodyHtml || '') + '</td></tr>' +
+    buildEmailFooter() + '</td></tr></table></td></tr></table></body></html>';
+}
+
+// SHARED DARK SHELL for body-only customer emails whose content is written for a dark
+// background (light text) - area-health / status notices. Same header + footer as the
+// premium welcome email so it matches the rest of the brand.
+function wrapDarkEmailShell(bodyHtml) {
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark"><style>:root{color-scheme:dark}@media only screen and (max-width:480px){.mob{padding-left:16px!important;padding-right:16px!important}}</style></head><body style="margin:0;padding:0;background:#07090f;font-family:Inter,Arial,sans-serif"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#07090f"><tr><td align="center" style="padding:24px 16px"><table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%">' + buildEmailHeader() +
+    '<tr><td bgcolor="#0f172a" class="mob" style="background:#0f172a;padding:26px 30px">' + (bodyHtml || '') + '</td></tr>' +
     buildEmailFooter() + '</td></tr></table></td></tr></table></body></html>';
 }
 
@@ -21661,8 +21670,8 @@ cron.schedule('0 10 * * 2', async () => {
 
 // Wrap admin-style emails (reuse for the area-health note).
 function buildAdminStyleEmail(bodyHtml) {
-  return '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:16px">' +
-    '<div style="font-size:17px;font-weight:800;color:#38bdf8;margin-bottom:12px">9am<span style="color:#0ea5e9">Leads</span></div>' + bodyHtml + '</div>';
+  // Wrapped in the same branded shell so it matches every other customer email.
+  return wrapDarkEmailShell(bodyHtml);
 }
 
 // FAILED-EMAIL CATCH-UP: re-send delivery emails that failed at 9am (after the
@@ -21710,7 +21719,7 @@ cron.schedule('10 9 * * 1-5', async () => {
           // customer is missing their daily email right now - reassure them.
           await sendBrevoEmail({ email: sc.email, name: sc.company || 'Customer' },
             'Your 9amLeads are on their way 🚚',
-            '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:16px"><h2 style="color:#38bdf8;margin:0 0 8px">Your leads are on their way ✨</h2><p style="font-size:15px;line-height:1.6;color:#cbd5e1">Just a quick heads-up: today\'s fresh opportunities are still being delivered to your dashboard and inbox. They\'ll be with you very shortly.</p><p style="font-size:15px;line-height:1.6;color:#cbd5e1">No action needed. Everything is being handled and your leads will arrive today as usual. 😊</p><p style="font-size:13px;color:#94a3b8;margin:16px 0 0">- The 9amLeads Team</p></div>');
+            wrapDarkEmailShell('<h2 style="color:#38bdf8;margin:0 0 10px;font-size:20px;font-weight:800">Your leads are on their way ✨</h2><p style="font-size:15px;line-height:1.6;color:#cbd5e1">Just a quick heads-up: today\'s fresh opportunities are still being delivered to your dashboard and inbox. They\'ll be with you very shortly.</p><p style="font-size:15px;line-height:1.6;color:#cbd5e1">No action needed. Everything is being handled and your leads will arrive today as usual. 😊</p><p style="font-size:13px;color:#94a3b8;margin:16px 0 0">- The 9amLeads Team</p>'));
           sNotified[sKey] = 'notified';
           console.log('[09:10 STATUS] Delay notice sent to ' + sc.email);
         }
@@ -21739,7 +21748,7 @@ cron.schedule('20 9 * * 1-5', async () => {
         if (cGot) {
           await sendBrevoEmail({ email: cc.email, name: cc.company || 'Customer' },
             'All sorted - your leads are here ✅',
-            '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:16px"><h2 style="color:#34d399;margin:0 0 8px">All sorted ✅</h2><p style="font-size:15px;line-height:1.6;color:#cbd5e1">We\'ve resolved the technical issue and your fresh leads are now in your dashboard and inbox.</p><p style="font-size:15px;line-height:1.6;color:#cbd5e1">Thank you for your patience. Everything is working normally again. 🙏</p><p style="font-size:13px;color:#94a3b8;margin:16px 0 0">- The 9amLeads Team</p></div>');
+            wrapDarkEmailShell('<h2 style="color:#34d399;margin:0 0 10px;font-size:20px;font-weight:800">All sorted ✅</h2><p style="font-size:15px;line-height:1.6;color:#cbd5e1">We\'ve resolved the technical issue and your fresh leads are now in your dashboard and inbox.</p><p style="font-size:15px;line-height:1.6;color:#cbd5e1">Thank you for your patience. Everything is working normally again. 🙏</p><p style="font-size:13px;color:#94a3b8;margin:16px 0 0">- The 9amLeads Team</p>'));
           cNotified[cKey] = 'sorted';
           console.log('[09:20 STATUS] Sorted confirmation sent to ' + cc.email);
         }
@@ -22103,8 +22112,8 @@ cron.schedule('1 9 * * 1-5', async () => {
       // campaign, not delivery ops). Paused/cancelled/bounced also excluded.
       var wCustomers = (wDb.customers || []).filter(function(c){ return !isInternalAccount(c) && c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3) && !isLeadsPaused(c) && !trialExpiredUnpaid(c); });
       var wSubject = '🦥 Your leads had a lie-in - but they\'re on the way!';
-      var wBody = '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:16px">'
-        + '<h2 style="color:#fbbf24;margin:0 0 8px">Oops, the 9am alarm was a bit sleepy today 😴</h2>'
+      var wBody = '<div style="font-family:Inter,Arial,sans-serif">'
+        + '<h2 style="color:#fbbf24;margin:0 0 10px;font-size:20px;font-weight:800">Oops, the 9am alarm was a bit sleepy today 😴</h2>'
         + '<p style="font-size:15px;line-height:1.6;color:#cbd5e1">Nothing to worry about. Your <b>daily leads are on the way</b> right now. 🚚💨</p>'
         + '<p style="font-size:15px;line-height:1.6;color:#cbd5e1">Think of it like your leads decided to hit snooze, grab a coffee, and pop in a little later than usual. The system is being given a gentle nudge to get its act together, and your fresh opportunities will be with you <b>very shortly</b>.</p>'
         + '<p style="font-size:15px;line-height:1.6;color:#cbd5e1">Thanks so much for your patience. We really appreciate you! 🙏</p>'
@@ -22114,7 +22123,7 @@ cron.schedule('1 9 * * 1-5', async () => {
         var wKey = wc.id || wc.email;
         if (wNotified[wKey] === todayStr) continue; // already told today
         try {
-          await sendBrevoEmail({ email: wc.email, name: wc.company || 'Customer' }, wSubject, wBody);
+          await sendBrevoEmail({ email: wc.email, name: wc.company || 'Customer' }, wSubject, wrapDarkEmailShell(wBody));
           wNotified[wKey] = todayStr;
           console.log('[WATCHDOG] Delay notice sent to ' + wc.email);
         } catch(wnErr) { console.log('[WATCHDOG] Delay notice failed for ' + wc.email + ': ' + wnErr.message); }
@@ -22735,8 +22744,8 @@ app.post('/api/admin/send-all-customer-samples', adminAuth, async (req, res) => 
     // 4. Weekly follow-up (week 9 sample)
     await send('SAMPLE - Weekly follow-up (week 9)', buildWeeklyTrialTemplate(demoCustomer('moving'), 9, 'Moving Leads', '#0ea5e9', 'moving'));
     // 5. Status emails (delay + sorted)
-    var delayHtml = '<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:16px"><h2 style="color:#38bdf8;margin:0 0 8px">Your leads are on their way ✨</h2><p style="font-size:15px;line-height:1.6;color:#cbd5e1">Just a quick heads-up: today\'s fresh opportunities are still being delivered to your dashboard and inbox. They\'ll be with you very shortly.</p><p style="font-size:13px;color:#94a3b8;margin:16px 0 0">- The 9amLeads Team</p></div>';
-    var sortedHtml = '<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:16px"><h2 style="color:#34d399;margin:0 0 8px">All sorted ✅</h2><p style="font-size:15px;line-height:1.6;color:#cbd5e1">We\'ve resolved the technical issue and your fresh leads are now in your dashboard and inbox.</p><p style="font-size:13px;color:#94a3b8;margin:16px 0 0">- The 9amLeads Team</p></div>';
+    var delayHtml = wrapDarkEmailShell('<h2 style="color:#38bdf8;margin:0 0 10px;font-size:20px;font-weight:800">Your leads are on their way ✨</h2><p style="font-size:15px;line-height:1.6;color:#cbd5e1">Just a quick heads-up: today\'s fresh opportunities are still being delivered to your dashboard and inbox. They\'ll be with you very shortly.</p><p style="font-size:13px;color:#94a3b8;margin:16px 0 0">- The 9amLeads Team</p>');
+    var sortedHtml = wrapDarkEmailShell('<h2 style="color:#34d399;margin:0 0 10px;font-size:20px;font-weight:800">All sorted ✅</h2><p style="font-size:15px;line-height:1.6;color:#cbd5e1">We\'ve resolved the technical issue and your fresh leads are now in your dashboard and inbox.</p><p style="font-size:13px;color:#94a3b8;margin:16px 0 0">- The 9amLeads Team</p>');
     await send('SAMPLE - Status: leads on their way', delayHtml);
     await send('SAMPLE - Status: all sorted', sortedHtml);
     res.json({ success: true, emailed: to, count: sent.length, subjects: sent });
@@ -24265,8 +24274,8 @@ var _goodwillTimer = cron.schedule('0 8 * * *', async () => {
       var gc = gwCandidates[gi];
       if (gwLog[gc.email] && gwLog[gc.email] === 'sent') continue;
       allSent = false;
-      var html = '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px">'
-        + '<div style="font-size:20px;font-weight:800;color:#0f172a;margin-bottom:8px">Good news from 9amLeads</div>'
+      var html = '<div style="font-family:Inter,Arial,Helvetica,sans-serif">'
+        + '<h2 style="font-size:20px;font-weight:800;color:#0f172a;margin:0 0 10px">Good news from 9amLeads</h2>'
         + '<p style="font-size:14px;color:#334155;line-height:1.7">Hi ' + (gc.name || 'there') + ',</p>'
         + '<p style="font-size:14px;color:#334155;line-height:1.7">We hit a small technical issue with a few accounts over the past day, and as a <b>gesture of goodwill</b> we have <b>extended your free trial</b> so there is no interruption to your leads.</p>'
         + '<p style="font-size:14px;color:#334155;line-height:1.7">Your fresh 9am delivery is still scheduled as normal for this morning, and you will keep receiving your daily leads on us.</p>'
@@ -24275,7 +24284,7 @@ var _goodwillTimer = cron.schedule('0 8 * * *', async () => {
         + '<p style="font-size:13px;color:#64748b;line-height:1.6;margin-top:16px">Kind regards,<br>The 9amLeads team<br><a href="https://9amleads.com" style="color:#0ea5e9">9amleads.com</a></p>'
         + '</div>';
       try {
-        await sendBrevoEmail({ email: gc.email, name: gc.name }, 'Your 9amLeads trial has been extended', html);
+        await sendBrevoEmail({ email: gc.email, name: gc.name }, 'Your 9amLeads trial has been extended', wrapTrialEmailShell(html));
         gwLog[gc.email] = 'sent';
         console.log('[GOODWILL] Sent trial-extension email to ' + gc.email);
       } catch(ge) {
@@ -24907,9 +24916,7 @@ cron.schedule('30 8 * * 1', async () => {
       var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark"><style>:root{color-scheme:dark}@media only screen and (max-width:480px){.mob{padding-left:16px!important;padding-right:16px!important}.mobv{padding:20px 16px!important}.mobstat{display:block!important;width:100%!important;margin:0 0 10px!important}.mobspacer{display:none!important;width:0!important;height:0!important;font-size:0!important;line-height:0!important}}</style></head><body style="margin:0;padding:0;background:#0f111a;font-family:Inter,Arial,Helvetica,sans-serif;color:#e2e8f0">';
       html += '<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#0f111a"><tr><td align="center" style="padding:24px 16px">';
       html += '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">';
-      html += '<tr><td bgcolor="#0f111a" style="background-color:#0f111a;background-image:linear-gradient(135deg,#0f111a,#1a1b2e);padding:22px 30px 16px;border-radius:16px 16px 0 0;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06)">';
-      html += '<div style="font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:900;color:#fff">9am<span style="color:' + brand.light + '">Leads</span></div>';
-      html += '<div style="font-size:9px;color:#94a3b8;letter-spacing:1.5px;text-transform:uppercase;margin-top:3px;font-weight:600">Your Weekly Performance Summary</div></td></tr>';
+      html += buildEmailHeader('Your Weekly Performance Summary');
       html += '<tr><td class="mobv" bgcolor="#12141e" style="background:#12141e;padding:26px 30px 22px">';
       html += '<h2 style="font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:800;color:#f1f5f9;margin:0 0 6px">Here\'s your week, ' + (cc.company || 'there') + '</h2>';
       html += '<p style="color:#cbd5e1;font-size:13px;margin:0 0 18px">Your daily ' + leadTypeLabel.toLowerCase() + ' from ' + new Date(weekAgo).toLocaleDateString('en-GB', { day:'numeric', month:'short' }) + ' to today.</p>';
@@ -38145,8 +38152,8 @@ app.post('/api/admin/send-test-email', adminAuth, async (req, res) => {
 app.post('/api/admin/send-status-email-samples', adminAuth, async (req, res) => {
   try {
     var to = String((req.body && req.body.email) || 'hello@9amleads.com').trim();
-    var delayHtml = '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:16px"><h2 style="color:#38bdf8;margin:0 0 8px">Your leads are on their way ✨</h2><p style="font-size:15px;line-height:1.6;color:#cbd5e1">Just a quick heads-up: today\'s fresh opportunities are still being delivered to your dashboard and inbox. They\'ll be with you very shortly.</p><p style="font-size:15px;line-height:1.6;color:#cbd5e1">No action needed. Everything is being handled and your leads will arrive today as usual. 😊</p><p style="font-size:13px;color:#94a3b8;margin:16px 0 0">- The 9amLeads Team</p></div>';
-    var sortedHtml = '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0;border-radius:16px"><h2 style="color:#34d399;margin:0 0 8px">All sorted ✅</h2><p style="font-size:15px;line-height:1.6;color:#cbd5e1">We\'ve resolved the technical issue and your fresh leads are now in your dashboard and inbox.</p><p style="font-size:15px;line-height:1.6;color:#cbd5e1">Thank you for your patience. Everything is working normally again. 🙏</p><p style="font-size:13px;color:#94a3b8;margin:16px 0 0">- The 9amLeads Team</p></div>';
+    var delayHtml = wrapDarkEmailShell('<h2 style="color:#38bdf8;margin:0 0 10px;font-size:20px;font-weight:800">Your leads are on their way ✨</h2><p style="font-size:15px;line-height:1.6;color:#cbd5e1">Just a quick heads-up: today\'s fresh opportunities are still being delivered to your dashboard and inbox. They\'ll be with you very shortly.</p><p style="font-size:15px;line-height:1.6;color:#cbd5e1">No action needed. Everything is being handled and your leads will arrive today as usual. 😊</p><p style="font-size:13px;color:#94a3b8;margin:16px 0 0">- The 9amLeads Team</p>');
+    var sortedHtml = wrapDarkEmailShell('<h2 style="color:#34d399;margin:0 0 10px;font-size:20px;font-weight:800">All sorted ✅</h2><p style="font-size:15px;line-height:1.6;color:#cbd5e1">We\'ve resolved the technical issue and your fresh leads are now in your dashboard and inbox.</p><p style="font-size:15px;line-height:1.6;color:#cbd5e1">Thank you for your patience. Everything is working normally again. 🙏</p><p style="font-size:13px;color:#94a3b8;margin:16px 0 0">- The 9amLeads Team</p>');
     await sendBrevoEmail({ email: to, name: '9amLeads Owner' }, 'SAMPLE - Leads on their way (09:10 delay notice)', delayHtml);
     await sendBrevoEmail({ email: to, name: '9amLeads Owner' }, 'SAMPLE - All sorted (09:20 confirmation)', sortedHtml);
     res.json({ success: true, sent_to: to });
