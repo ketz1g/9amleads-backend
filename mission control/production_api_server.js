@@ -17471,8 +17471,10 @@ function _notifyAgent(subject, text) {
   try {
     // NEVER re-dispatch the agent for its own outcome / informational messages. Doing
     // so caused an infinite loop: agent -> "Auto-fixed" alert -> dispatch -> agent ...
+    // New sign-up alerts are celebratory/informational - there is nothing to
+    // investigate, so they must never spin up the auto-triage agent.
     var _subj = String(subject || '');
-    if (/auto[-\s]?fix|no change needed|agent (found|error)|areas auto-widened|scraper auto|^test alert|rollback/i.test(_subj)) return;
+    if (/auto[-\s]?fix|no change needed|agent (found|error)|areas auto-widened|scraper auto|^test alert|rollback|new .*sign[- ]?up/i.test(_subj)) return;
     var now = Date.now();
     if (!global.__agentNotifyAt) global.__agentNotifyAt = {};
     // RATE LIMIT 1 - per issue: at most one agent dispatch per subject per 30 minutes.
