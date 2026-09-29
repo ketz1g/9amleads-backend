@@ -29312,6 +29312,22 @@ _deliverDiag[cust.email].products = products;
             return true;
           });
           if (_removedP) { saveDb(); console.log('[PRODUCT-GATE] ' + cust.email + ' removed ' + _removedP + ' pending non-conforming row(s)'); }
+          // PROMOTE CONFORMING PENDING COMMERCIAL ROWS: some top-up passes create
+          // commercial rows in the DB without adding them to custLeads, so they were
+          // never delivered. Pull them in (up to the quota) so the customer actually
+          // receives the commercial leads that were found.
+          if (cust.product === 'commercial') {
+            (db.leads || []).forEach(function(l) {
+              if (custLeads.length >= totalNeeded) return;
+              if (l.customer_id !== cust.id || l.delivered || l.status === 'removed') return;
+              if ((l.product || cust.product) !== 'commercial') return;
+              if (custLeads.some(function(x) { return x.id === l.id; })) return;
+              var dd3 = null; try { dd3 = JSON.parse(l.data || '{}'); } catch(e) { dd3 = {}; }
+              if (!isCommercialLead(dd3)) return;
+              if (!_ukC && custAreas.length && !custAreas.some(function(x) { return extractPostcodeArea(x) === extractPostcodeArea(dd3.postcode || dd3.address || dd3.fullAddress || ''); })) return;
+              custLeads.push(l);
+            });
+          }
         } catch(ePg) {}
         if (custLeads.length > totalNeeded) {
           console.log('[DELIVERY-FINAL-CAP] ' + cust.email + ': hard-capped ' + custLeads.length + ' -> ' + totalNeeded + ' (email matches ledger)');
