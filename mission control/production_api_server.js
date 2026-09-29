@@ -6620,6 +6620,11 @@ app.post('/api/auth/signup', async (req, res) => {
     // ukwide coverage so the delivery knows to skip area matching on the next run.
     var ukAreas = areas.some(function(a){ return /all.?uk|uk.?wide|nationwide|whole.?uk/i.test(String(a)); });
     if (ukAreas || String(coverage || '').toLowerCase() === 'ukwide') { areas = ['All UK']; coverage = 'ukwide'; }
+    else if ((Array.isArray(req.body.products) ? req.body.products : [product]).indexOf('commercial') !== -1) {
+      // COMMERCIAL MOVES defaults to All-UK coverage: the commercial pool is national
+      // and in-area supply is thin, so widen by default to reliably deliver 1-3/day.
+      areas = ['All UK']; coverage = 'ukwide'; ukAreas = true;
+    }
     else {
       // MINIMUM AREAS: probate/tenders are shared, county-wide products where two
       // counties already cover a wide area (minimum 2). Every other product needs at
