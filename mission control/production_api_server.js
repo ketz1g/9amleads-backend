@@ -9670,7 +9670,7 @@ app.get('/api/admin/founder-dashboard', adminAuth, (req, res) => {
     const cancelledCustomers = customers.filter(c => c.plan === 'cancelled');
 
     // MRR calculation
-    const planPrices = { starter: 25, pro: 49, enterprise: 99, commercial: 99 };
+    const planPrices = { starter: 25, pro: 49, enterprise: 99, commercial: 50 };
     var mrr = activeCustomers.reduce(function(sum, c) { return sum + (planPrices[c.plan] || 0); }, 0);
     var weeklyRr = activeCustomers.reduce(function(sum, c) { return sum + (planPrices[c.plan] || 0); }, 0);
 
@@ -18114,9 +18114,10 @@ const LEAD_TYPE_RULES = {
     // 'commercial' = the COMMERCIAL MOVES plan: 1 EXCLUSIVE commercial/office relocation
     // lead per day, £99/week. Set price_commercial to the Stripe price id before
     // enabling self-serve checkout; until then it is provisioned by admin.
-    price_commercial: '',
-    weekly_est: { starter: 25, pro: 75, enterprise: 200, commercial: 99 },
-    monthly_est: { starter: 100, pro: 300, enterprise: 800, commercial: 396 }
+    // £50/week = ~£10 per commercial lead (1/day, 5/week), exclusive.
+    price_commercial: 'price_1UKyNPADspDnFpfBOhQXjV4H',
+    weekly_est: { starter: 25, pro: 75, enterprise: 200, commercial: 50 },
+    monthly_est: { starter: 100, pro: 300, enterprise: 800, commercial: 200 }
   },
   newbusiness: {
     name: 'New Business Alerts', key: 'newbusiness', local: true, model: 'daily',
@@ -22344,6 +22345,50 @@ async function warmUpDeliveryPaf() {
 }
 cron.schedule('20 7 * * 1-5', function() { try { warmUpDeliveryPaf(); } catch(e) { console.log('[PAF-WARMUP] error: ' + e.message); } }, { timezone: 'Europe/London' });
 app.post('/api/admin/paf-warmup', adminAuth, async (req, res) => { try { res.json(await warmUpDeliveryPaf()); } catch(e) { res.status(500).json({ error: e.message }); } });
+
+// ===== COMMERCIAL SUPPLY TEST (free scraper only, NO Apify) =====
+// Runs Rightmove's commercial scrape (offices/units/retail, sale + to-let) for a set
+// of areas and records the yield so we can measure REAL commercial supply before
+// enabling any paid source or selling Commercial Moves. Results are appended to
+// data/commercial-scrape-tests.json (last 60 runs). force_apify is always false, so
+// this never spends Apify credits.
+async function runCommercialScrapeTest(opts) {
+  opts = opts || {};
+  var areas = (Array.isArray(opts.areas) && opts.areas.length) ? opts.areas : ['SW','CR','KT','HA','EN','N','RM','AL','MK','WD','SL','UB','TW'];
+  var pages = parseInt(opts.pages || 3, 10);
+  var includeLet = opts.let !== false;
+  var t0 = Date.now();
+  var arr = [];
+  try { var r = await require('./rightmove_scraper_v2').collectCommercialLeads({ areas: areas, pages: pages, include_let: includeLet, force_apify: false }); arr = Array.isArray(r) ? r : ((r && r.leads) || []); } catch(e) { arr = []; }
+  var byArea = {}, mailable = 0;
+  arr.forEach(function(l) {
+    var a = String(l.postcode || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2) || 'none';
+    byArea[a] = (byArea[a] || 0) + 1;
+    var addr = String(l.fullAddress || l.address || ''); var pc = String(l.postcode || '');
+    if (/\d/.test(addr) && /[A-Z]{1,2}[0-9][0-9A-Z]?\s?[0-9][A-Z]{2}$/i.test(pc)) mailable++;
+  });
+  var rec = { at: new Date().toISOString(), areas: areas, pages: pages, total: arr.length, mailable: mailable, by_area: byArea, ms: Date.now() - t0, sample: arr.slice(0, 10).map(function(l) { return { address: l.fullAddress || l.address || '', postcode: l.postcode || '', url: l.url || '', let: !!l.commercial_let }; }) };
+  try {
+    var tf = path.join(DATA_DIR, 'commercial-scrape-tests.json');
+    var hist = []; try { hist = JSON.parse(fs.readFileSync(tf, 'utf-8')); } catch(e) { hist = []; }
+    if (!Array.isArray(hist)) hist = [];
+    hist.unshift(rec); if (hist.length > 60) hist = hist.slice(0, 60);
+    fs.writeFileSync(tf, JSON.stringify(hist, null, 2));
+  } catch(e) {}
+  console.log('[COMMERCIAL-TEST] ' + rec.total + ' commercial leads (' + rec.mailable + ' mailable) in ' + rec.ms + 'ms across ' + areas.join(','));
+  return rec;
+}
+// Daily background test (06:40 UK weekdays): measure free commercial supply WITHOUT
+// spending Apify credits, so we know real volume before we sell or scale it.
+cron.schedule('40 6 * * 1-5', function() { try { runCommercialScrapeTest({}); } catch(e) { console.log('[COMMERCIAL-TEST] error: ' + e.message); } }, { timezone: 'Europe/London' });
+// POST /api/admin/test-commercial-scrape { areas?, pages?, let? } - run it now.
+app.post('/api/admin/test-commercial-scrape', adminAuth, async (req, res) => {
+  try { res.json({ success: true, result: await runCommercialScrapeTest(req.body || {}) }); } catch(e) { res.status(500).json({ error: e.message }); }
+});
+// GET /api/admin/commercial-scrape-tests - history of the background tests.
+app.get('/api/admin/commercial-scrape-tests', adminAuth, (req, res) => {
+  try { res.json({ success: true, tests: JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'commercial-scrape-tests.json'), 'utf-8')) }); } catch(e) { res.json({ success: true, tests: [] }); }
+});
 // POST-DELIVERY STANNP NORMALISE (09:45 UK, weekdays): after the 9am send, normalise
 // every delivered non-tender lead's address so ALL dashboard leads are print & post
 // ready without manual fixes. Idempotent + self-healing - covers moving, probate,
@@ -31453,7 +31498,7 @@ app.get('/api/subscription', authMiddleware, (req, res) => {
   // OPTION 2: weekly price = SUM of every subscribed lead type at this tier
   // (e.g. Moving £25 + Probate £25 = £50/wk on Starter).
   var AMOUNT_BY_PRODUCT = {
-    moving: { starter: 25, pro: 49, enterprise: 99, commercial: 99 },
+    moving: { starter: 25, pro: 49, enterprise: 99, commercial: 50 },
     probate: { starter: 25, pro: 49, enterprise: 99 },
     newbusiness: { starter: 25, pro: 25, enterprise: 49 },
     planning: { starter: 49, pro: 99, enterprise: 99 },
@@ -31650,7 +31695,7 @@ app.get('/api/payments', authMiddleware, async (req, res) => {
     var product = customer.product || 'moving';
     // OPTION 2: weekly price = SUM of every subscribed lead type at this tier.
     var AMOUNT_BY_PRODUCT_P = {
-      moving: { starter: 25, pro: 49, enterprise: 99, commercial: 99 },
+      moving: { starter: 25, pro: 49, enterprise: 99, commercial: 50 },
       probate: { starter: 25, pro: 49, enterprise: 99 },
       newbusiness: { starter: 25, pro: 25, enterprise: 49 },
       planning: { starter: 49, pro: 99, enterprise: 99 },
@@ -42008,7 +42053,7 @@ app.get('/api/admin/metrics', adminAuth, (req, res) => {
       return /^test\./.test(em) || /@9amleads\.com$/.test(em) || /^demo/.test(em);
     }
     const customers = (db.customers || []).filter(function(c) { return !_isInternalM(c); });
-    const planPrices = { starter: 25, pro: 49, enterprise: 99, commercial: 99 };
+    const planPrices = { starter: 25, pro: 49, enterprise: 99, commercial: 50 };
     function isPaid(c) { return !!(c.plan && c.plan !== 'free_trial' && planPrices[String(c.plan).toLowerCase()]); }
     function trialActive(c) { return c.plan === 'free_trial' && c.trial_ends && new Date(c.trial_ends).getTime() > Date.now(); }
 
