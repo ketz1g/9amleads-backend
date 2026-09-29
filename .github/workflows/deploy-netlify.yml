@@ -18,7 +18,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Verify secret is set
         run: |
@@ -29,7 +29,7 @@ jobs:
           echo "Secret is set."
 
       - name: Deploy 9amwebsite to Netlify
-        run: npx --yes netlify-cli deploy --prod --dir=9amwebsite
+        run: npx --yes netlify-cli@17 deploy --prod --dir=9amwebsite
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ecdfca23-68e0-476b-a93d-7efb21b1f3c7
