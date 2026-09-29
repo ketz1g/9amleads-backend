@@ -24261,9 +24261,11 @@ async function trialAutoChargeCustomer(cust, opts) {
   return res2;
 }
 
-cron.schedule('0 * * * *', async () => {
+cron.schedule('30 0-7,10-23 * * *', async () => {
   // Runs HOURLY so an expired trial is charged within the hour (a single daily run
   // could be up to ~24h late, since trials end at signup-time + 7 days).
+  // Deliberately SKIPS 08:00-09:59 (hours 8 and 9) so this billing pass can never
+  // overlap the 9am delivery window or its pre-verify/guarantee passes.
   // KILL-SWITCH: TRIAL_AUTO_CHARGE_ENABLED must be explicitly 'true'.
   if (String(process.env.TRIAL_AUTO_CHARGE_ENABLED || 'false').toLowerCase() !== 'true') return;
   try {
