@@ -29282,7 +29282,8 @@ _deliverDiag[cust.email].products = products;
             var lp = l.product || cust.product;
             var ok = true;
             if (lp === 'commercial') {
-              if (!isCommercialLead(dd)) ok = false;
+              if (/\bchannel=RES_(BUY|LET|RENT)|RES_(BUY|LET|RENT)\b/i.test(String(dd.url || ''))) ok = false;
+              else if (!isCommercialLead(dd) && !/channel=COM_|commercial|COM_(BUY|LET|RENT)/i.test(String(dd.url || ''))) ok = false;
               else if (!_ukC && custAreas.length) {
                 var _a = extractPostcodeArea(dd.postcode || dd.address || dd.fullAddress || '');
                 if (!custAreas.some(function(x) { return extractPostcodeArea(x) === _a; })) ok = false;
@@ -29305,7 +29306,8 @@ _deliverDiag[cust.email].products = products;
             var lp2 = l.product || cust.product;
             var bad = false;
             if (lp2 === 'commercial') {
-              if (!isCommercialLead(dd2)) bad = true;
+              if (/\bchannel=RES_(BUY|LET|RENT)|RES_(BUY|LET|RENT)\b/i.test(String(dd2.url || ''))) bad = true;
+              else if (!isCommercialLead(dd2) && !/channel=COM_|commercial|COM_(BUY|LET|RENT)/i.test(String(dd2.url || ''))) bad = true;
               else if (!_ukC && custAreas.length && !custAreas.some(function(x) { return extractPostcodeArea(x) === extractPostcodeArea(dd2.postcode || dd2.address || dd2.fullAddress || ''); })) bad = true;
             } else if (lp2 === 'moving' && products.indexOf('commercial') !== -1 && isCommercialLead(dd2)) { bad = true; }
             if (bad) { _removedP++; return false; }
@@ -29323,7 +29325,8 @@ _deliverDiag[cust.email].products = products;
               if ((l.product || cust.product) !== 'commercial') return;
               if (custLeads.some(function(x) { return x.id === l.id; })) return;
               var dd3 = null; try { dd3 = JSON.parse(l.data || '{}'); } catch(e) { dd3 = {}; }
-              if (!isCommercialLead(dd3)) return;
+              if (/\bchannel=RES_(BUY|LET|RENT)|RES_(BUY|LET|RENT)\b/i.test(String(dd3.url || ''))) return;
+              if (!isCommercialLead(dd3) && !/channel=COM_|commercial|COM_(BUY|LET|RENT)/i.test(String(dd3.url || ''))) return;
               if (!_ukC && custAreas.length && !custAreas.some(function(x) { return extractPostcodeArea(x) === extractPostcodeArea(dd3.postcode || dd3.address || dd3.fullAddress || ''); })) return;
               custLeads.push(l);
             });
