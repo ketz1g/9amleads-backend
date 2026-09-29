@@ -33523,7 +33523,8 @@ function generateLeadEmailHTML(customer, leads) {  const brand = getProductBrand
       if (d.sicCode) chips.push({ icon: '\uD83D\uDCCA', text: d.sicCode.length > 40 ? 'SIC: ' + d.sicCode.substring(0, 40) : d.sicCode });
       if (d.incorporationDate) chips.push({ icon: '\uD83D\uDCC5', text: 'Incorporated ' + new Date(d.incorporationDate).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) });
       if (d.companyNumber && !d.generated) chips.push({ icon: '\uD83D\uDCB3', text: 'No: ' + d.companyNumber });
-      if (d.companyNumber && !d.generated) chips.push({ icon: '\uD83D\uDD0D', text: '<a href="https://find-and-update.company-information.service.gov.uk/company/' + d.companyNumber + '" target="_blank" style="color:#38bdf8;text-decoration:underline">View on Companies House</a>' });
+      // No external Companies House link here - source (with the company number above)
+      // is shown as a reference and the clickable link lives in the logged-in dashboard.
       if (d.enrichment && d.enrichment !== 'address only') chips.push({ icon: '\u2705', text: d.enrichment });
     } else if (leadProduct === 'planning') {
       if (d.freshnessBadge) chips.push({ icon: '\uD83D\uDFE2', text: d.freshnessBadge });
@@ -33560,7 +33561,7 @@ function generateLeadEmailHTML(customer, leads) {  const brand = getProductBrand
     // Contact info (incl. enriched tender contact name/email/phone)
     var contEmail = d.contactEmail || d.ownerEmail || d.buyerEmail || d.legalAdvisorEmail || d.email;
     var contPhone = d.contactPhone || d.phone || d.ownerPhone || d.buyerPhone || d.legalAdvisorPhone || d.mobile;
-    var hasWebsite = d.website || d.url;
+    var hasWebsite = d.website || '';   // never treat the raw source URL as the lead's "website"
     if (d.contactName || contEmail || contPhone || hasWebsite) {
       body += '<div style="border-top:1px solid #e2e8f0;padding-top:10px;margin-top:8px">';
       if (d.contactName) body += '<div style="font-size:12px;color:#1e293b;margin-bottom:3px">Contact: ' + d.contactName + '</div>';
@@ -33570,34 +33571,33 @@ function generateLeadEmailHTML(customer, leads) {  const brand = getProductBrand
       body += '</div>';
     }
 
-    // Action buttons - website / portal links
+    // ACTION BUTTONS: the DASHBOARD is the primary action (the enriched, logged-in view
+    // with notes, status tracking, Print & Post and drafted outreach). The raw public
+    // source is NOT a headline button: for public-record products we show the official
+    // reference as plain text and keep the clickable source link inside the logged-in
+    // dashboard, so the email proves authenticity without handing over a one-click
+    // route to the free source.
     var actionLinks = [];
+    var verifyHtml = '';
     if (leadProduct === 'planning') {
-      var planUrl = d.url || d.applicationUrl || d.detailsUrl || d.detailUrl || d.councilUrl || '';
-      if (planUrl) {
-        actionLinks.push({ url: planUrl, label: 'View application' });
-      } else {
-        var searchQ = (d.council || d.city || '') + ' planning application ' + (d.applicationRef || d.reference || d.address || '');
-        actionLinks.push({ url: 'https://www.google.com/search?q=' + encodeURIComponent(searchQ), label: 'Search planning application' });
-      }
-      if (d.estimatedValue) actionLinks.push({ url: _magicDashUrl, label: 'View on Dashboard' });
+      actionLinks.push({ url: _magicDashUrl, label: 'View on Dashboard' });
+      var planRef = d.applicationRef || d.reference || d.councilRef || d.applicationNumber || '';
+      verifyHtml = 'Source: council planning register' + (planRef ? ' &middot; Ref ' + planRef : (d.council ? ' &middot; ' + d.council : '')) + ' &middot; full source in your dashboard';
     } else if (leadProduct === 'moving') {
-      if (d.url) actionLinks.push({ url: d.url, label: 'Check Out This Property' });
-      else actionLinks.push({ url: 'https://www.rightmove.co.uk/property-for-sale/search.html?searchLocation=' + encodeURIComponent(d.postcode || d.city || ''), label: 'Search Similar' });
       actionLinks.push({ url: _magicDashUrl, label: 'View on Dashboard' });
+      if (d.url) verifyHtml = '<a href="' + d.url + '" target="_blank" style="color:#64748b;text-decoration:underline">View original listing</a>';
     } else if (leadProduct === 'newbusiness') {
-      if (d.companyNumber && !d.generated) actionLinks.push({ url: 'https://find-and-update.company-information.service.gov.uk/company/' + d.companyNumber, label: 'View on Companies House' });
-      if (d.name) actionLinks.push({ url: 'https://www.google.com/search?q=' + encodeURIComponent(d.name + ' contact email phone'), label: 'Find Contact Details' });
-    } else if (leadProduct === 'probate') {
-      if (d.noticeUrl) actionLinks.push({ url: d.noticeUrl, label: 'View on UK Gazette' });       else actionLinks.push({ url: 'https://www.gov.uk/search-will-probate', label: 'Search Probate Records' });
       actionLinks.push({ url: _magicDashUrl, label: 'View on Dashboard' });
+      verifyHtml = 'Source: Companies House' + (d.companyNumber && !d.generated ? ' &middot; Company ' + d.companyNumber : '') + ' &middot; full source in your dashboard';
+    } else if (leadProduct === 'probate') {
+      actionLinks.push({ url: _magicDashUrl, label: 'View on Dashboard' });
+      var probRef = d.noticeRef || d.reference || d.noticeId || '';
+      verifyHtml = 'Source: UK Gazette probate notices' + (probRef ? ' &middot; Ref ' + probRef : '') + ' &middot; full source in your dashboard';
     } else if (leadProduct === 'tenders') {
-      // Tenders are applied for ONLINE - the Apply Online button is the primary action
+      // Applying is the goal, so Apply Online stays a primary action; dashboard second.
       var tendApplyUrl = d.applyLink || d.pcsUrl || d.tenderUrl || d.portalUrl || d.url || (d.tenderNoticeId ? 'https://www.contractsfinder.service.gov.uk/notice/' + d.tenderNoticeId : '');
       if (tendApplyUrl && !d.generated) actionLinks.push({ url: tendApplyUrl, label: '\uD83D\uDCE8 Apply Online' });
-      else if (d.pcsUrl && !d.generated) actionLinks.push({ url: d.pcsUrl, label: 'View on PCS' });
-      else if (d.tenderNoticeId && !d.generated) actionLinks.push({ url: 'https://www.contractsfinder.service.gov.uk/notice/' + d.tenderNoticeId, label: 'View Tender' });
-      else actionLinks.push({ url: 'https://www.gov.uk/contracts-finder', label: 'Browse Tenders' });
+      actionLinks.push({ url: _magicDashUrl, label: 'View on Dashboard' });
     }
     if (actionLinks.length > 0) {
       body += '<div style="margin-top:12px;display:flex;gap:8px">';
@@ -33605,6 +33605,9 @@ function generateLeadEmailHTML(customer, leads) {  const brand = getProductBrand
         body += '<a href="' + actionLinks[ai].url + '" target="_blank" style="flex:1;display:block;text-align:center;padding:10px 8px;background-color:' + accent + ';background-image:linear-gradient(135deg,' + accent + ',rgba(99,102,241,0.6));color:#fff;text-decoration:none;border-radius:10px;font-size:12px;font-weight:600">' + actionLinks[ai].label + '</a>';
       }
       body += '</div>';
+    }
+    if (verifyHtml) {
+      body += '<div style="margin-top:8px;font-size:11px;color:#64748b;line-height:1.5">' + verifyHtml + '</div>';
     }
 
     body += '</div></div>';
