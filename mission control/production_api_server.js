@@ -8792,7 +8792,7 @@ app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
     (dbT.customers || []).forEach(function(cust) {
       // PROPERTY products that need a mailable (door-numbered) address for Print & Post.
       var prod = null;
-      if (cust.product === 'moving' || cust.product === 'probate') prod = cust.product;
+      if (cust.product === 'moving' || cust.product === 'probate' || cust.product === 'commercial') prod = cust.product;
       else if ((cust.biz_field3 || '').indexOf('moving') !== -1) prod = 'moving';
       if (!prod) return;
       if (cust.plan === 'cancelled') return;
@@ -8839,9 +8839,13 @@ app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
       function _inArea(l) {
         var pcArea = extractPostcodeArea(l.postcode || l.address || l.fullAddress || l.deceasedAddress || '');
         if (ukwide) return true;
-        if (prod === 'moving') {
+        if (prod === 'moving' || prod === 'commercial') {
           if (areas.some(function(a) { return String(a).toUpperCase() === pcArea; })) return true;
-          return isFallbackLeadAcceptable(l.postcode || l.address || l.fullAddress || '', areas);
+          if (isFallbackLeadAcceptable(l.postcode || l.address || l.fullAddress || '', areas)) return true;
+          // Commercial accounts may target counties/regions, not just postcode areas.
+          var ctyC = String(l.county || '').toLowerCase().replace(/[\s-]+/g, '-');
+          if (ctyC && areas.some(function(a) { return String(a).toLowerCase().replace(/[\s-]+/g, '-') === ctyC; })) return true;
+          return areas.some(function(a) { var m = COUNTY_POSTCODE_MAP[String(a).toLowerCase().replace(/[\s-]+/g, '-')]; return m ? m.indexOf(pcArea) !== -1 : false; });
         }
         var cty = String(l.county || '').toLowerCase().replace(/[\s-]+/g, '-');
         if (cty && areas.some(function(a) { return String(a).toLowerCase().replace(/[\s-]+/g, '-') === cty; })) return true;
@@ -8850,8 +8854,11 @@ app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
       for (var i = 0; i < poolForCust.length && assigned < need; i++) {
         var l = poolForCust[i];
         if (!_inArea(l)) continue;
-        if (prod === 'moving') {
-          if (custMovingType === 'residential' && isCommercialLead(l)) continue;
+        if (prod === 'commercial') {
+          if (!isCommercialLead(l)) continue;
+        } else if (prod === 'moving') {
+          var _tuHoldsCommAll = (cust.biz_field3 || '').indexOf('commercial') !== -1;
+          if ((_tuHoldsCommAll || custMovingType === 'residential') && isCommercialLead(l)) continue;
           if (custMovingType === 'commercial' && !isCommercialLead(l)) continue;
         }
         var fd = pickFreshDate(l);
@@ -8887,8 +8894,11 @@ app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
         for (var i3 = 0; i3 < poolForCust.length && assigned < need; i3++) {
           var l3 = poolForCust[i3];
           if (!_inArea(l3)) continue;
-          if (prod === 'moving') {
-            if (custMovingType === 'residential' && isCommercialLead(l3)) continue;
+          if (prod === 'commercial') {
+            if (!isCommercialLead(l3)) continue;
+          } else if (prod === 'moving') {
+            var _tuHoldsCommAll3 = (cust.biz_field3 || '').indexOf('commercial') !== -1;
+            if ((_tuHoldsCommAll3 || custMovingType === 'residential') && isCommercialLead(l3)) continue;
             if (custMovingType === 'commercial' && !isCommercialLead(l3)) continue;
           }
           var mAddr3 = l3.fullAddress || l3.address || l3.deceasedAddress || '';
@@ -9677,10 +9687,10 @@ app.get('/api/admin/founder-dashboard', adminAuth, (req, res) => {
     const trialCustomers = customers.filter(c => c.plan === 'free_trial');
     const cancelledCustomers = customers.filter(c => c.plan === 'cancelled');
 
-    // MRR calculation
-    const planPrices = { starter: 25, pro: 49, enterprise: 99, commercial: 50 };
-    var mrr = activeCustomers.reduce(function(sum, c) { return sum + (planPrices[c.plan] || 0); }, 0);
-    var weeklyRr = activeCustomers.reduce(function(sum, c) { return sum + (planPrices[c.plan] || 0); }, 0);
+    // MRR calculation (PRODUCT-AWARE + multi-product: Commercial Moves is
+    // £50/£99/£150, and a moving+commercial account is worth the sum of both).
+    var mrr = activeCustomers.reduce(function(sum, c) { return sum + customerWeeklyValue(c); }, 0);
+    var weeklyRr = mrr;
 
     // Trial conversion
     var everTrialled = customers.filter(c => c.plan === 'free_trial' || (c.created_at && (c.plan === 'starter' || c.plan === 'pro' || c.plan === 'enterprise')));
@@ -9691,11 +9701,16 @@ app.get('/api/admin/founder-dashboard', adminAuth, (req, res) => {
     var totalEver = customers.length;
     var churnRate = totalEver > 0 ? Math.round((cancelledCustomers.length / totalEver) * 100) : 0;
 
-    // Revenue by product
+    // Revenue by product (attributed per subscribed lead type, product-aware)
     var revenueByProduct = {};
     customers.forEach(function(c) {
-      if (!revenueByProduct[c.product]) revenueByProduct[c.product] = 0;
-      revenueByProduct[c.product] += planPrices[c.plan] || 0;
+      var _rbProds = [];
+      try { _rbProds = JSON.parse(c.biz_field3 || '[]'); } catch(e) { _rbProds = []; }
+      if (!Array.isArray(_rbProds) || !_rbProds.length) _rbProds = [c.product || 'moving'];
+      _rbProds.forEach(function(p) {
+        if (!revenueByProduct[p]) revenueByProduct[p] = 0;
+        revenueByProduct[p] += weeklyPriceFor(p, c.plan);
+      });
     });
 
     // Lead stats
@@ -11722,7 +11737,7 @@ app.get('/api/admin/billing', adminAuth, (req, res) => {
       return {
         email: c.email, company: c.company || '', plan: c.plan || '', product: c.product || '',
         paid: paid, status: status,
-        weekly_price: paid ? (weeklyPrice[planLc] || null) : 0,
+        weekly_price: paid ? customerWeeklyValue(c) : 0,
         next_due: (sub && _norm(sub.current_period_end)) ? sub.current_period_end : ((status === 'trial' && trialEnds) ? trialEnds : ''),
         last_payment_at: lp ? (lp.at || '') : '',
         last_payment_amount: lp ? (Number(lp.amount) || 0) : 0,
@@ -14631,7 +14646,10 @@ app.post('/api/admin/set-commercial', adminAuth, (req, res) => {
     var areasJson = c.target_areas || '[]';
     cfg.commercial.target_areas = areasJson;
     cfg.commercial.coverage = c.coverage || 'postcode';
-    cfg.moving.moving_type = enable ? 'commercial' : 'residential';
+    // Commercial-ONLY account: the moving pool feeds it commercial leads.
+    // ADD-ON account (add:true): MOVING must stay RESIDENTIAL so the moving feed
+    // and the commercial feed never filter each other to zero.
+    cfg.moving.moving_type = (enable && !addOn) ? 'commercial' : 'residential';
     var prods = []; try { prods = JSON.parse(c.biz_field3 || '[]'); } catch(e) {}
     if (!Array.isArray(prods) || !prods.length) prods = [c.product || 'moving'];
     if (enable) {
@@ -15119,9 +15137,27 @@ app.post('/api/admin/top-up-today', adminAuth, (req, res) => {
     (dbT.leads || []).forEach(function(l) { if (l.customer_id !== cust.id && l.delivered) { try { var dd = JSON.parse(l.data || '{}'); var du = _tuNormUrl(dd.url || ''); if (du) usedKeys['u:' + du] = 1; } catch(e) {} } });
     // Queue-only: also never queue a lead already queued to ANOTHER customer.
     if (queueOnly) { (dbT.leads || []).forEach(function(l) { if (l.customer_id !== cust.id && !l.delivered && l.status !== 'removed') { try { var dd = JSON.parse(l.data || '{}'); var du = _tuNormUrl(dd.url || ''); if (du) usedKeys['u:' + du] = 1; usedKeys['a:' + _tuAddrKey(dd.fullAddress || dd.address || '', dd.postcode || '')] = 1; } catch(e) {} } }); }
+    // PRODUCT IDENTITY for this top-up: commercial accounts must only receive
+    // commercial premises; moving accounts must respect their moving_type and never
+    // receive commercial leads when they also hold the Commercial Moves product.
+    // Without this the top-up bypasses the /api/admin/deliver product gate.
+    var _tuProducts = [];
+    try { _tuProducts = JSON.parse(cust.biz_field3 || '[]'); } catch(e) { _tuProducts = []; }
+    if (!Array.isArray(_tuProducts) || !_tuProducts.length) _tuProducts = [cust.product];
+    var _tuHoldsCommercial = _tuProducts.indexOf('commercial') !== -1;
+    var _tuMovingType = 'both';
+    try { var _tuCfg = JSON.parse(cust.product_config || '{}'); _tuMovingType = (_tuCfg.moving && _tuCfg.moving.moving_type) || cust.moving_type || 'both'; } catch(e) {}
     var picked = null;
     for (var ti = 0; ti < interleaved.length; ti++) {
       var pl = interleaved[ti];
+      // PRODUCT IDENTITY GATE (mirrors /api/admin/deliver): never store the wrong
+      // product on a customer, since this path writes leads as already delivered.
+      if (cust.product === 'commercial') { if (!isCommercialLead(pl)) continue; }
+      else if (cust.product === 'moving') {
+        var _plCommT = isCommercialLead(pl);
+        if ((_tuHoldsCommercial || _tuMovingType === 'residential') && _plCommT) continue;
+        if (_tuMovingType === 'commercial' && !_plCommT) continue;
+      }
       try { if (cust.product === 'moving') { var vrT = validateMovingLead({ fullAddress: pl.fullAddress || pl.address || '', postcode: pl.postcode || '', url: pl.url || '' }); if (vrT) continue; } } catch(e) { continue; }
       // STRICT MAILABLE GATE (all products except tenders): never top up with a lead
       // that lacks a FULL postcode or a door/flat number, so the auto-fill can never
@@ -18309,6 +18345,45 @@ function getPlanLimit(product, plan, coverage) {
   return planLimits[coverageKey] || planLimits.default || Object.values(planLimits)[0] || 5;
 }
 
+// ACTUAL weekly £ price per product/tier (the numbers customers pay). Do NOT use
+// LEAD_TYPE_RULES[*].weekly_est here - that field mixes lead-volume estimates with
+// prices and is not a price source. Everything is £25/£49/£99 except Commercial
+// Moves (£50/£99/£150). Single source for every MRR / billing display.
+const WEEKLY_PRICE_BY_PRODUCT = {
+  moving:      { starter: 25, pro: 49, enterprise: 99 },
+  commercial:  { starter: 50, pro: 99, enterprise: 150 },
+  probate:     { starter: 25, pro: 49, enterprise: 99 },
+  newbusiness: { starter: 25, pro: 49, enterprise: 99 },
+  planning:    { starter: 25, pro: 49, enterprise: 99 },
+  tenders:     { starter: 25, pro: 49, enterprise: 99 }
+};
+// Weekly £ for a product at a customer-facing plan (starter/pro/enterprise).
+function weeklyPriceFor(product, plan) {
+  var p = String(plan || '').toLowerCase();
+  if (!p || p === 'free_trial' || p === 'cancelled') return 0;
+  var tier = p === 'pro' ? 'pro' : (p === 'enterprise' ? 'enterprise' : 'starter');
+  try {
+    var map = WEEKLY_PRICE_BY_PRODUCT[product];
+    if (map && map[tier]) return map[tier];
+  } catch(e) {}
+  return (tier === 'starter' ? 25 : (tier === 'pro' ? 49 : 99));
+}
+// True weekly value of a customer = SUM of every subscribed lead type at their tier
+// (e.g. Moving £25 + Commercial £50 = £75/wk on Starter).
+function customerWeeklyValue(c) {
+  try {
+    if (!c) return 0;
+    var plan = String(c.plan || '').toLowerCase();
+    if (!plan || plan === 'free_trial' || plan === 'cancelled') return 0;
+    var products = [];
+    try { products = JSON.parse(c.biz_field3 || '[]'); } catch(e) { products = []; }
+    if (!Array.isArray(products) || !products.length) products = [c.product || 'moving'];
+    var sum = 0;
+    products.forEach(function(p) { sum += weeklyPriceFor(p, plan); });
+    return sum;
+  } catch(e) { return 0; }
+}
+
 // SINGLE SOURCE OF TRUTH for a customer's daily lead promise. Must match the
 // delivery engine's `totalDailyLimit` at the top of the /api/admin/deliver
 // customer block EXACTLY: plan limit for the primary product, summed across all
@@ -18362,6 +18437,27 @@ function applyPlan(cust, plan, product) {
     if (_liveP && plan !== 'free_trial' && !_liveP.paid_since) _liveP.paid_since = new Date().toISOString();
   } catch(e) {}
   saveDb();
+}
+
+// Upsert the local `subscriptions` row for a Stripe subscription so dashboard billing,
+// cancel and change-plan always have an accurate record (the 04:30 reconcile also
+// heals this, but the webhook should keep it current in real time).
+function upsertSubscriptionRow(customerId, stripeId, plan, status, pStartIso, pEndIso) {
+  try {
+    // Stripe sometimes expands the field to an object; normalise to its id string.
+    if (stripeId && typeof stripeId === 'object') stripeId = stripeId.id || '';
+    if (!customerId || !stripeId) return;
+    var nowIso = new Date().toISOString();
+    var existing = null;
+    try { existing = db.prepare('SELECT * FROM subscriptions WHERE stripe_id = ?').get(stripeId); } catch(e) {}
+    if (existing) {
+      db.prepare('UPDATE subscriptions SET customer_id = ?, plan = ?, status = ?, current_period_start = ?, current_period_end = ?, updated_at = ? WHERE stripe_id = ?')
+        .run(customerId, plan || existing.plan || 'starter', status || existing.status || 'active', pStartIso || existing.current_period_start || '', pEndIso || existing.current_period_end || '', nowIso, stripeId);
+    } else {
+      db.prepare('INSERT INTO subscriptions (id, customer_id, stripe_id, plan, status, current_period_start, current_period_end, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?)')
+        .run(uuidv4(), customerId, stripeId, plan || 'starter', status || 'active', pStartIso || nowIso, pEndIso || '', nowIso, nowIso);
+    }
+  } catch(e) { console.log('[STRIPE] subscription row upsert error:', e.message); }
 }
 
 // ===== TRIAL / CAMPAIGN CAMPAIGN EMAIL TEMPLATES =====
@@ -19270,7 +19366,7 @@ function buildTrialPersonalBlock(customer, template) {
     var dashboardUrl = PUBLIC_URL + '/portal/dashboard.html';
     var leadsUrl = PUBLIC_URL + '/portal/leads.html';
     var pricingUrl = PUBLIC_URL + '/pricing/';
-    var prodNames = { moving: 'Moving Leads', probate: 'Probate Leads', newbusiness: 'New Business Alerts', planning: 'Planning Permissions', tenders: 'Public Tenders' };
+    var prodNames = { moving: 'Moving Leads', commercial: 'Commercial Moves', probate: 'Probate Leads', newbusiness: 'New Business Alerts', planning: 'Planning Permissions', tenders: 'Public Tenders' };
     var prod = customer.product || 'moving';
     var _allProds = [customer.product];
     try { var _ex = JSON.parse(customer.biz_field3 || '[]'); if (Array.isArray(_ex) && _ex.length > 0) _allProds = _ex; } catch(e) {}
@@ -19281,9 +19377,8 @@ function buildTrialPersonalBlock(customer, template) {
     // signup is auto-charged at trial end, so the messaging MUST say so (a "nothing
     // will be charged" line to a card-holder is misleading and a chargeback risk).
     var _hasCard = !!customer.stripe_payment_method_id;
-    var _wk = { starter: 25, pro: 49, enterprise: 99 };
     var _plane = customer.selected_plan || 'starter';
-    var _amt = _wk[_plane] || 25;
+    var _amt = trialWeeklyAmount(customer);
     var _endLbl = '';
     try { _endLbl = fmtTrialEnd(customer) || ''; } catch(e) {}
     var noCardLine = _hasCard
@@ -23883,7 +23978,7 @@ async function trialAutoChargeCustomer(cust, opts) {
     // Use the customer's CHOSEN plan if they picked one (Starter/Pro/Enterprise),
     // otherwise default to Starter. This lets a customer select the package they
     // want at trial-end instead of always being charged Starter.
-    var prodKeyMap2 = { moving: 'mov', planning: 'plan', probate: 'prob', newbusiness: 'nb', tenders: 'tend' };
+    var prodKeyMap2 = { moving: 'mov', commercial: 'comm', planning: 'plan', probate: 'prob', newbusiness: 'nb', tenders: 'tend' };
     var chosenTier2 = (cust.selected_plan === 'pro') ? 'growth' : (cust.selected_plan === 'enterprise') ? 'power' : 'starter';
     var chosenLabel2 = (cust.selected_plan === 'pro') ? 'Pro' : (cust.selected_plan === 'enterprise') ? 'Enterprise' : 'Starter';
     // OPTION 2: charge one subscription item per subscribed lead type (biz_field3),
@@ -24318,8 +24413,9 @@ function trialHasSavedCard(c) {
   try { return !!(c && (c.stripe_payment_method_id || (c.stripe_subscription_id && String(c.stripe_subscription_id).toUpperCase() !== 'NULL'))); } catch(e) { return false; }
 }
 function trialWeeklyAmount(c) {
-  var wk = { starter: 25, pro: 49, enterprise: 99 };
-  try { return wk[String((c && c.selected_plan) || 'starter').toLowerCase()] || 25; } catch(e) { return 25; }
+  var plan = String((c && c.selected_plan) || 'starter').toLowerCase();
+  // PRODUCT-AWARE actual price: Commercial Moves is £50/£99/£150, others £25/£49/£99.
+  try { return weeklyPriceFor((c && c.product) || 'moving', plan) || 25; } catch(e) { return 25; }
 }
 function trialPlanLabel(c) {
   var p = String((c && c.selected_plan) || 'starter').toLowerCase();
@@ -27351,6 +27447,12 @@ _deliverDiag[cust.email].products = products;
       function findLeadForProductAndArea(prod, area, allLeads, excludeIds) {
         var areaCode = extractPostcodeArea(area);
         var areaNorm = String(area || '').toLowerCase().replace(/[\s-]+/g, '-');
+        // A short county/region NAME (e.g. "Kent") must NOT be treated as a postcode
+        // area: extractPostcodeArea() returns up to 4 letters, so "Kent" became "KENT"
+        // and the exact-match branch ran instead of the county map, so Kent (and other
+        // 1-4 letter county names) never matched in Round 1/2 per-area selection.
+        if (COUNTY_POSTCODE_MAP[areaNorm] || (typeof REGION_TO_POSTCODE_AREAS !== 'undefined' && REGION_TO_POSTCODE_AREAS[areaNorm])) areaCode = '';
+        else if (!/^[A-Z]{1,2}$/.test(areaCode)) areaCode = '';
         for (var fi = 0; fi < allLeads.length; fi++) {
           if (excludeIds.indexOf(allLeads[fi].id) !== -1) continue;
           if (allLeads[fi].product !== prod) continue;
@@ -27424,6 +27526,12 @@ _deliverDiag[cust.email].products = products;
           // is NOT fresh even if we only scraped it today. scrapedAt must not gate
           // freshness or old listings slip through as "fresh".
           var fv = pickFreshDate(ld2);
+          // COMMERCIAL EXCEPTION: commercial premises stay listed for months and carry
+          // no reliable 'first listed' date, so freshness = when we scraped them (the
+          // pool's freshness rule for commercial). Without this, long-listed commercial
+          // premises are rejected by the 24h/48h window and the commercial feed
+          // under-delivers while the pool still holds fresh commercial leads.
+          if (ld2.commercial || ld2.commercial_let) fv = ld2.scrapedAt || ld2.first_seen_at || fv;
           if (!fv) return false;
           // 24h PRIMARY, 48h FALLBACK (uniform across ALL products): the customer
           // promise is "fresh leads 24-48h max old". Leads are iterated fresh-first
@@ -29716,6 +29824,10 @@ app.post('/api/auth/change-plan', authMiddleware, async (req, res) => {
     var isDowngrade = curRank > rank[plan];
     var sub = db.prepare('SELECT * FROM subscriptions WHERE customer_id = ? ORDER BY updated_at DESC LIMIT 1').get(customer.id);
     var subId = sub && sub.stripe_id ? sub.stripe_id : '';
+    // Fallback to the customer record: the subscriptions row is written by the
+    // webhook/reconcile and may not exist yet. Without this, an upgrade/downgrade on
+    // a real subscriber fell through to a BRAND-NEW checkout - double-billing them.
+    if (!subId && customer.stripe_subscription_id && String(customer.stripe_subscription_id).indexOf('sub_') === 0) subId = customer.stripe_subscription_id;
     var productKeyMap = { moving: 'mov', commercial: 'comm', probate: 'prob', newbusiness: 'nb', planning: 'plan', tenders: 'tend' };
     var pm = { starter: 'starter', pro: 'growth', enterprise: 'power' };
     // OPTION 2: one price per subscribed lead type at the new tier.
@@ -29734,8 +29846,11 @@ app.post('/api/auth/change-plan', authMiddleware, async (req, res) => {
     }
     var newPrice = newPrices[0] || '';
     if (!newPrice) return res.status(400).json({ error: 'Pricing not found for this plan' });
-    if (isDowngrade && subId.indexOf('sub_') === 0) {
+    if (subId.indexOf('sub_') === 0) {
       // Update each existing subscription item to the new tier price (no payment now).
+      // Applies to UPGRADES too (previously only downgrades) so an existing subscriber
+      // is never given a second checkout/subscription and charged twice. Stripe
+      // prorates the difference onto the next invoice.
       var applied = false;
       try {
         var subObj = await stripeApiRequest('GET', 'subscriptions/' + encodeURIComponent(subId), null);
@@ -29768,12 +29883,14 @@ app.post('/api/auth/change-plan', authMiddleware, async (req, res) => {
       if (applied) {
         var dlimit = getPlanLimit(customer.product, plan);
         db.prepare('UPDATE customers SET plan = ?, leads_per_day = ?, selected_plan = ? WHERE id = ?').run(plan, dlimit, plan, customer.id);
-        db.prepare('UPDATE subscriptions SET plan = ?, status = ? WHERE id = ?').run(plan, 'active', sub.id);
+        // Upsert (not a raw update keyed on sub.id) because subId may have come from
+        // the customer record fallback when the local subscriptions row didn't exist.
+        upsertSubscriptionRow(customer.id, subId, plan, 'active', '', '');
         saveDb();
         return res.json({ success: true, applied: true, plan: plan, leads_per_day: dlimit, message: 'Plan updated - your next charge will be at the ' + plan + ' price and tomorrow\'s delivery matches it.' });
       }
     }
-    // Upgrade (or no subscription): payment checkout with one line item per product.
+    // No existing subscription: payment checkout with one line item per product.
     var baseUrl = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
     var chkBody = {
       mode: 'subscription', customer_email: customer.email,
@@ -30078,6 +30195,13 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
           db.prepare('UPDATE customers SET leads_paused = 0 WHERE id = ?').run(customer.id);
           if (session.customer) db.prepare('UPDATE customers SET stripe_customer_id = ? WHERE id = ?').run(session.customer, customer.id);
           if (session.subscription) db.prepare('UPDATE customers SET stripe_subscription_id = ? WHERE id = ?').run(session.subscription, customer.id);
+          // Record the subscription row immediately so dashboard billing / cancel /
+          // change-plan have an accurate record without waiting for the daily reconcile.
+          if (session.subscription) {
+            var _pStartW = (session.subscription_data && session.subscription_data.current_period_start) ? new Date(session.subscription_data.current_period_start * 1000).toISOString() : '';
+            var _pEndW = (session.subscription_data && session.subscription_data.current_period_end) ? new Date(session.subscription_data.current_period_end * 1000).toISOString() : '';
+            upsertSubscriptionRow(customer.id, session.subscription, plan, 'active', _pStartW, _pEndW);
+          }
           saveDb();
           // Send the paid welcome right away (don't wait for the campaign cron).
           try { sendPaidWelcomeOnce(customer); } catch(pwErr) {}
@@ -30210,6 +30334,13 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
         var invKeepPlan = invCustomer.plan || 'starter';
         db.prepare('UPDATE customers SET auto_send_paused = 0, leads_paused = 0, plan = ? WHERE id = ?').run(invKeepPlan, invCustomer.id);
         saveDb();
+        // Keep the subscription row's period + status current on every renewal.
+        try {
+          var _invSubId = inv.subscription || invCustomer.stripe_subscription_id || '';
+          var _invPStart = inv.period_start ? new Date(inv.period_start * 1000).toISOString() : '';
+          var _invPEnd = inv.period_end ? new Date(inv.period_end * 1000).toISOString() : '';
+          upsertSubscriptionRow(invCustomer.id, _invSubId, invKeepPlan, 'active', _invPStart, _invPEnd);
+        } catch(e) {}
         console.log('[STRIPE] Weekly renewal paid: ' + (invCustomer.email || invCustomer.id));
         // AFFILIATE: a referred customer earns their £25 sign-up commission once
         // they pay their SECOND subscription invoice (starter/pro/enterprise).
@@ -30285,6 +30416,7 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
         // recovers (invoice.paid / re-subscribe clears leads_paused).
         db.prepare('UPDATE customers SET auto_send_paused = 1, leads_paused = 1 WHERE id = ?').run(fCustomer.id);
         saveDb();
+        try { upsertSubscriptionRow(fCustomer.id, invF.subscription || fCustomer.stripe_subscription_id, fCustomer.plan, 'past_due', '', ''); } catch(e) {}
         recordFailedPayment(fCustomer.email, (invObj && invObj.last_payment_error && invObj.last_payment_error.message) || 'card_declined', invObj && invObj.amount_due);
         // Tell the owning partner: a referred customer has a payment problem (retention risk)
         try { var _pf = partnerForCustomer(fCustomer.id); if (_pf) partnerNotify(_pf.id, 'payment_failed', 'A customer you referred has a failed payment: ' + (fCustomer.company || fCustomer.email) + '. Their leads are paused until they update payment. Reach out to help keep them on board.', fCustomer.id); } catch(pfE) {}
@@ -30308,6 +30440,7 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
       if (subCustomer) {
         db.prepare('UPDATE customers SET plan = ?, leads_per_day = 0, auto_send_paused = 1, leads_paused = 1, cancelled_at = ?, cancel_wb_sent = ? WHERE id = ?').run('cancelled', new Date().toISOString(), '[]', subCustomer.id);
         saveDb();
+        try { upsertSubscriptionRow(subCustomer.id, sub.id || subCustomer.stripe_subscription_id, 'cancelled', 'canceled', '', ''); } catch(e) {}
         console.log('[STRIPE] Subscription cancelled for ' + (subCustomer.email || subCustomer.id));
         // Tell the owning partner so they know the customer cancelled (commission stops).
         var _pc = partnerForCustomer(subCustomer.id);
@@ -30331,6 +30464,13 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
         } else if (subU.status === 'active') {
           db.prepare('UPDATE customers SET leads_paused = 0, auto_send_paused = 0 WHERE id = ?').run(custU.id);
         }
+        // Keep the subscription row's status/period in sync (upgrade, dunning, cancel).
+        try {
+          var _usStatus = (subU.status === 'active') ? 'active' : (subU.status === 'past_due') ? 'past_due' : (subU.status === 'canceled') ? 'canceled' : (subU.status || '');
+          var _usPStart = subU.current_period_start ? new Date(subU.current_period_start * 1000).toISOString() : '';
+          var _usPEnd = subU.current_period_end ? new Date(subU.current_period_end * 1000).toISOString() : '';
+          upsertSubscriptionRow(custU.id, subU.id, custU.plan, _usStatus, _usPStart, _usPEnd);
+        } catch(e) {}
         saveDb();
       }
     }
@@ -31657,6 +31797,7 @@ app.get('/api/subscription', authMiddleware, (req, res) => {
   // (e.g. Moving £25 + Probate £25 = £50/wk on Starter).
   var AMOUNT_BY_PRODUCT = {
     moving: { starter: 25, pro: 49, enterprise: 99, commercial: 50 },
+    commercial: { starter: 50, pro: 99, enterprise: 150 },
     probate: { starter: 25, pro: 49, enterprise: 99 },
     newbusiness: { starter: 25, pro: 25, enterprise: 49 },
     planning: { starter: 49, pro: 99, enterprise: 99 },
@@ -31786,10 +31927,22 @@ app.post('/api/subscription/update', authMiddleware, async (req, res) => {
     // Build the correct Stripe price key using the short product prefix
     // (moving→mov, planning→plan, probate→prob, newbusiness→nb, tenders→tend)
     // and the tier (starter/growth/power).
-    var upgradeProdKeyMap = { moving: 'mov', planning: 'plan', probate: 'prob', newbusiness: 'nb', tenders: 'tend' };
-    var upgradePrefix = upgradeProdKeyMap[customer.product] || 'mov';
+    var upgradeProdKeyMap = { moving: 'mov', commercial: 'comm', planning: 'plan', probate: 'prob', newbusiness: 'nb', tenders: 'tend' };
     var upgradeTier = (plan === 'power') ? 'power' : (plan === 'growth') ? 'growth' : 'starter';
-    var upgradePriceId = getStripePriceId(customer.product, upgradePrefix + '-' + upgradeTier);
+    // MULTI-PRODUCT: resolve one price per subscribed lead type (biz_field3), so a
+    // moving+commercial account is upgraded on BOTH items, matching checkout billing.
+    var _upSubs = [];
+    try { _upSubs = JSON.parse(customer.biz_field3 || '[]'); } catch(e) { _upSubs = []; }
+    if (!Array.isArray(_upSubs) || !_upSubs.length) _upSubs = [customer.product || 'moving'];
+    if (_upSubs.indexOf(customer.product) === -1) _upSubs.unshift(customer.product);
+    var _upPriceByProduct = {};
+    var _upPrices = [];
+    for (var _ui = 0; _ui < _upSubs.length; _ui++) {
+      var _upk = upgradeProdKeyMap[_upSubs[_ui]] || _upSubs[_ui];
+      var _upid = getStripePriceId(_upSubs[_ui], _upk + '-' + upgradeTier);
+      if (_upid) { _upPriceByProduct[_upSubs[_ui]] = _upid; _upPrices.push(_upid); }
+    }
+    var upgradePriceId = _upPrices[0] || '';
     if (!upgradePriceId) { return res.status(400).json({ error: 'No price configured for ' + customer.product + ' ' + plan }); }
 
     // Map the API plan name to the customer-facing plan label + leads/day.
@@ -31800,16 +31953,32 @@ app.post('/api/subscription/update', authMiddleware, async (req, res) => {
     // (Stripe prorates and charges the difference). This replaces the old code that
     // created a SECOND subscription, which double-charged the customer.
     if (customer.stripe_subscription_id) {
-      // Get the subscription's current item id
+      // Update EVERY subscription item (multi-product safe), mapping each existing
+      // item's price back to its product.
       var existingSub = await stripeApiRequest('GET', 'subscriptions/' + customer.stripe_subscription_id, {});
-      var subItemId = existingSub && existingSub.items && existingSub.items.data && existingSub.items.data[0] && existingSub.items.data[0].id;
-      if (!subItemId) { return res.status(400).json({ error: 'Could not find existing subscription item to upgrade' }); }
-      var upd = await stripeApiRequest('POST', 'subscriptions/' + customer.stripe_subscription_id, {
-        'items[0][id]': subItemId,
-        'items[0][price]': upgradePriceId,
-        proration_behavior: 'create_prorations',
-        off_session: 'true'
+      var _upItems = (existingSub && existingSub.items && existingSub.items.data) || [];
+      if (!_upItems.length) { return res.status(400).json({ error: 'Could not find existing subscription item to upgrade' }); }
+      var _priceToProduct = {};
+      Object.keys(upgradeProdKeyMap).forEach(function(pr) {
+        ['starter', 'growth', 'power'].forEach(function(t) {
+          var rp = getStripePriceId(pr, upgradeProdKeyMap[pr] + '-' + t);
+          if (rp) _priceToProduct[rp] = pr;
+        });
       });
+      var _upParams = { proration_behavior: 'create_prorations', off_session: 'true' };
+      var _upCount = 0;
+      for (var _ii = 0; _ii < _upItems.length; _ii++) {
+        var _curPid = _upItems[_ii].price && _upItems[_ii].price.id;
+        var _prodName = _priceToProduct[_curPid] || (_ii === 0 ? customer.product : null);
+        var _newPid = _prodName ? _upPriceByProduct[_prodName] : null;
+        if (_upItems[_ii].id && _newPid) {
+          _upParams['items[' + _upCount + '][id]'] = _upItems[_ii].id;
+          _upParams['items[' + _upCount + '][price]'] = _newPid;
+          _upCount++;
+        }
+      }
+      if (!_upCount) { return res.status(400).json({ error: 'No matching subscription items to update' }); }
+      var upd = await stripeApiRequest('POST', 'subscriptions/' + customer.stripe_subscription_id, _upParams);
       if (!upd || !upd.id) { return res.status(400).json({ error: (upd && upd.error && upd.error.message) || 'Subscription upgrade failed' }); }
       // Update the account plan + leads_per_day immediately
       db.prepare('UPDATE customers SET plan = ?, selected_plan = ?, leads_per_day = ? WHERE id = ?').run(planLabel, planLabel, newLeadsPerDay, req.user.id);
@@ -31818,18 +31987,22 @@ app.post('/api/subscription/update', authMiddleware, async (req, res) => {
     }
 
     // No existing subscription - create a new one via checkout for the new plan
-    const result = await stripeApiRequest('POST', 'checkout/sessions', {
+    // (one line item per subscribed lead type, matching create-checkout).
+    var _upBody = {
       mode: 'subscription',
       customer_email: customer.email,
-      'line_items[0][price]': upgradePriceId,
-      'line_items[0][quantity]': '1',
       success_url: PUBLIC_URL + '/portal/dashboard.html?checkout=success',
       cancel_url: PUBLIC_URL + '/portal/dashboard.html?checkout=cancel',
       'metadata[customer_id]': customer.id,
       'metadata[product]': customer.product,
       'metadata[plan]': planLabel,
       'subscription_data[proration_behavior]': 'create_prorations',
-    });
+    };
+    for (var _lp = 0; _lp < _upPrices.length; _lp++) {
+      _upBody['line_items[' + _lp + '][price]'] = _upPrices[_lp];
+      _upBody['line_items[' + _lp + '][quantity]'] = '1';
+    }
+    const result = await stripeApiRequest('POST', 'checkout/sessions', _upBody);
 
     if (result.url) {
       res.json({ url: result.url });
@@ -39446,6 +39619,10 @@ function syncCustomers(product) {
     async function scrapeProduct(product, config, forceScrape) {
       try {
         if (onlyProduct && product !== onlyProduct) return;
+        // Commercial Moves draws from the moving pool: scrape it via the moving
+        // collector (the customer scan below flags commercial holders so
+        // mvWantCommercial is set). Keeps a single writer on moving-leads.json.
+        if (product === 'commercial') { product = 'moving'; config = PRODUCT_LEAD_FILES.moving; }
         if (wasScrapedToday(product) && !forceScrape) {
           var existingFile2 = path.join(DATA_DIR, config.file);
           var cachedLeads = [];
@@ -39937,18 +40114,26 @@ function syncCustomers(product) {
             // Gather the postcode areas of ALL moving customers so the scraper
             // targets every area they chose (not just London/whatever the old
             // region IDs happened to return).
-            var mvCusts = (getDb().customers || []).filter(function(c) { return c.product === 'moving' || ((c.biz_field3 || '').indexOf('moving') !== -1); });
+            var mvCusts = (getDb().customers || []).filter(function(c) { return c.product === 'moving' || c.product === 'commercial' || ((c.biz_field3 || '').indexOf('moving') !== -1) || ((c.biz_field3 || '').indexOf('commercial') !== -1); });
             var mvAreas = [];
             var mvWantCommercial = false;
             mvCusts.forEach(function(c) {
               var cfg = {};
               try { cfg = JSON.parse(c.product_config || '{}'); } catch(e) {}
+              // A customer "holds" Commercial Moves when it is their product or is in
+              // their subscribed list. Their commercial feed needs commercial-tagged
+              // leads in the pool, so ANY commercial holder forces the commercial scrape
+              // even when their moving_type is 'residential' (their moving feed).
+              var holdsCommercial = (c.product === 'commercial') || ((c.biz_field3 || '').indexOf('commercial') !== -1);
               var prim = cfg[c.product] || {};
               // moving_type: residential | commercial | both (default both if unset)
               var mt = (prim.moving_type) || c.moving_type || 'both';
-              if (mt === 'commercial' || mt === 'both') mvWantCommercial = true;
+              if (holdsCommercial || mt === 'commercial' || mt === 'both') mvWantCommercial = true;
               var cAreas = [];
-              try { cAreas = prim.target_areas ? JSON.parse(prim.target_areas) : JSON.parse(c.target_areas || '[]'); } catch(e) { cAreas = []; }
+              try {
+                var _areaRaw = prim.target_areas || (holdsCommercial && cfg.commercial && cfg.commercial.target_areas) || c.target_areas || '[]';
+                cAreas = JSON.parse(_areaRaw);
+              } catch(e) { cAreas = []; }
               // The moving scraper expects POSTCODE AREAS (SO, PO, SP, ...). County/region
               // targets ("Dorset", "Hampshire", "Wiltshire") must be EXPANDED to their
               // postcode areas first - otherwise the scraper can't map them and silently
@@ -40493,6 +40678,12 @@ function syncCustomers(product) {
     // process timeout (sequential moving was blocking the others).
     await Promise.all(Object.entries(PRODUCT_LEAD_FILES).map(function(entry) {
       var prod = entry[0], cfg = entry[1];
+      // Commercial Moves has NO separate source: it is the commercial subset of the
+      // moving pool (shared moving-leads.json). Skip it in a FULL run so it never runs
+      // a second, concurrent writer on moving-leads.json (which could drop the day's
+      // fresh moving leads). A targeted commercial scrape is still handled, because
+      // scrapeProduct() maps a 'commercial' scrape onto the moving collector.
+      if (!onlyProduct && prod === 'commercial') return Promise.resolve();
       if (onlyProduct && prod !== onlyProduct) return Promise.resolve();
       return scrapeProduct(prod, cfg, forceScrape);
     }));
@@ -42224,8 +42415,7 @@ app.get('/api/admin/metrics', adminAuth, (req, res) => {
       return /^test\./.test(em) || /@9amleads\.com$/.test(em) || /^demo/.test(em);
     }
     const customers = (db.customers || []).filter(function(c) { return !_isInternalM(c); });
-    const planPrices = { starter: 25, pro: 49, enterprise: 99, commercial: 50 };
-    function isPaid(c) { return !!(c.plan && c.plan !== 'free_trial' && planPrices[String(c.plan).toLowerCase()]); }
+    function isPaid(c) { return !!(c.plan && c.plan !== 'free_trial' && c.plan !== 'cancelled' && customerWeeklyValue(c) > 0); }
     function trialActive(c) { return c.plan === 'free_trial' && c.trial_ends && new Date(c.trial_ends).getTime() > Date.now(); }
 
     const paidCusts = customers.filter(isPaid);
@@ -42233,8 +42423,8 @@ app.get('/api/admin/metrics', adminAuth, (req, res) => {
     // Active = paying customers + live trials (mirrors the admin "Active" stat).
     const activeCount = paidCusts.length + activeTrials.length;
 
-    // MRR = sum of the actual plan prices of PAYING customers only.
-    var mrr = paidCusts.reduce(function(s, c) { return s + (planPrices[String(c.plan).toLowerCase()] || 0); }, 0);
+    // MRR = sum of the actual (product-aware, multi-product) weekly value of PAYING customers only.
+    var mrr = paidCusts.reduce(function(s, c) { return s + customerWeeklyValue(c); }, 0);
     var arpu = paidCusts.length > 0 ? Math.round(mrr / paidCusts.length) : 0;
 
     var totalDays = customers.filter(function(c) { return c.created_at; }).reduce(function(s, c) { return s + Math.round((Date.now() - new Date(c.created_at).getTime()) / 86400000); }, 0);
