@@ -29466,6 +29466,8 @@ pushToCrm(cust, crmPayload2, 'daily delivery');
 // All are weekly subscriptions (interval=week, confirmed live on Stripe).
 const STRIPE_PRICE_IDS = {
   'moving': { 'mov-starter': 'price_1UCHYtADspDnFpfBBd7QOcYI', 'mov-growth': 'price_1UCHYuADspDnFpfB393MTFG9', 'mov-power': 'price_1UCHYuADspDnFpfBcEfj4VQb' },
+  // COMMERCIAL MOVES: a single £50/week price for every tier (it's a flat product).
+  'commercial': { 'comm-starter': 'price_1UKyNPADspDnFpfBOhQXjV4H', 'comm-growth': 'price_1UKyNPADspDnFpfBOhQXjV4H', 'comm-power': 'price_1UKyNPADspDnFpfBOhQXjV4H' },
   'planning': { 'plan-starter': 'price_1UCHYzADspDnFpfBr5xlVz9b', 'plan-growth': 'price_1UCHYzADspDnFpfB93hxERUY', 'plan-power': 'price_1UCHZ0ADspDnFpfByi7gAIYX' },
   'newbusiness': { 'nb-starter': 'price_1UCHYxADspDnFpfBzoPTlNjN', 'nb-growth': 'price_1UCHYxADspDnFpfBPFAN12xE', 'nb-power': 'price_1UCHYyADspDnFpfBA5goep7L' },
   'probate': { 'prob-starter': 'price_1UCHYvADspDnFpfBtBbyRQc3', 'prob-growth': 'price_1UCHYvADspDnFpfBGBWMRaJ8', 'prob-power': 'price_1UCHYwADspDnFpfBPtzxOqnM' },
@@ -29620,7 +29622,7 @@ app.post('/api/auth/change-plan', authMiddleware, async (req, res) => {
     var isDowngrade = curRank > rank[plan];
     var sub = db.prepare('SELECT * FROM subscriptions WHERE customer_id = ? ORDER BY updated_at DESC LIMIT 1').get(customer.id);
     var subId = sub && sub.stripe_id ? sub.stripe_id : '';
-    var productKeyMap = { moving: 'mov', probate: 'prob', newbusiness: 'nb', planning: 'plan', tenders: 'tend' };
+    var productKeyMap = { moving: 'mov', commercial: 'comm', probate: 'prob', newbusiness: 'nb', planning: 'plan', tenders: 'tend' };
     var pm = { starter: 'starter', pro: 'growth', enterprise: 'power' };
     // OPTION 2: one price per subscribed lead type at the new tier.
     var subsC = [];
@@ -29744,7 +29746,7 @@ app.post('/api/create-checkout', authMiddleware, async (req, res) => {
       // subscription, so the weekly charge recurs at the SUM of every product's
       // price (e.g. Moving £25 + Probate £25 = £50/wk). The subscribed types are
       // stored in biz_field3 (set at signup from req.body.products).
-      var productKeyMap = { moving: 'mov', probate: 'prob', newbusiness: 'nb', planning: 'plan', tenders: 'tend' };
+      var productKeyMap = { moving: 'mov', commercial: 'comm', probate: 'prob', newbusiness: 'nb', planning: 'plan', tenders: 'tend' };
       var planMap = { starter: 'starter', pro: 'growth', enterprise: 'power' };
       var mappedPlan = planMap[plan] || plan;
       var subs = [];
@@ -31276,7 +31278,7 @@ app.post('/api/admin/stripe/test-setup', adminAuth, async (req, res) => {
       'tend-starter': 25, 'tend-growth': 49, 'tend-power': 99,
       'bld-package': 25, 'mkt-package': 25, 'prp-package': 25, 'mov-package': 25, 'pro-plan': 49
     };
-    var productKeyMap = { moving: 'mov', planning: 'plan', newbusiness: 'nb', probate: 'prob', tenders: 'tend' };
+    var productKeyMap = { moving: 'mov', commercial: 'comm', planning: 'plan', newbusiness: 'nb', probate: 'prob', tenders: 'tend' };
     var testPrices = {};
     // Reuse any existing test prices by nickname (idempotent re-runs)
     try {
