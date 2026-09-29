@@ -442,7 +442,11 @@ function openDeliveryPreview() {
     .then(function(r) { return r.json(); })
     .then(function(d) {
       if (d.error) { document.getElementById('dp-content').innerHTML = '<span style="color:#dc2626">' + d.error + '</span>'; return; }
-      var html = '<p style="font-size:11px;color:#64748b;margin-bottom:10px">Generated ' + (d.generated_at || '').replace('T', ' ').substring(0, 16) + ' UTC - ' + d.note + '</p>';
+      var _nextTxt = (d.next_run && d.next_run.date) ? (d.next_run.weekday + ' ' + d.next_run.date + ' 09:00 UK') : 'next weekday 09:00 UK';
+      var _phaseBanner = (d.phase === 'before_today_run')
+        ? '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:8px 12px;margin:0 0 10px;font-size:12px;color:#1e40af"><b>Snapshot for TODAY\'S 9am.</b> Not sent yet - it is finalised at 9am, and the overnight scrape refreshes the pool, so the list can still change.</div>'
+        : '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;margin:0 0 10px;font-size:12px;color:#334155"><b>Today\'s 9am has already been sent.</b> The pool leads below are <b>candidates for the next 9am (' + _nextTxt + ')</b> - they are not final and will change after the overnight scrape.</div>';
+      var html = '<p style="font-size:11px;color:#64748b;margin-bottom:8px">Live snapshot generated ' + (d.generated_at || '').replace('T', ' ').substring(0, 16) + ' UTC &middot; Next run: <b>' + _nextTxt + '</b></p>' + _phaseBanner;
       // FULFILMENT GUARANTEE STATUS (latest 07:15 / 07:45 check) - the FINAL, post-check
       // state so the founder sees the guaranteed outcome the moment they open this.
       if (d.guarantee) {
@@ -494,6 +498,7 @@ function openDeliveryPreview() {
           if (cx.door_fail) guar += ' · ' + cx.door_fail + ' replaced';
           html += '<div style="font-size:11px;color:#0f766e;background:#f0fdfa;border:1px solid #ccfbf1;border-radius:6px;padding:4px 8px;margin:0 0 6px">Guarantee: ' + guar + '. Every delivered lead has a full address + door number</div>';
         }
+        if ((cx.leads || []).length) html += '<div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin:6px 0 4px">Pool candidates for the next 9am (not final)</div>';
         (cx.leads || []).forEach(function(l) {
           // Display address without duplicating the postcode area (pool addresses
           // often end with the outward code, e.g. "Chester CH2" + postcode "CH2 1NN").

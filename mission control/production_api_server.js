@@ -12699,7 +12699,27 @@ app.get('/api/admin/delivery-preview', adminAuth, async (req, res) => {
     }
     var _ready = out.filter(function(x) { return x.status !== 'SHORT'; }).length;
     var _delivered = out.filter(function(x) { return x.status === 'DELIVERED'; }).length;
-    res.json({ success: true, generated_at: new Date().toISOString(), all_ready: (out.length > 0 && _ready === out.length), ready_count: _ready, short_count: out.length - _ready, delivered_count: _delivered, customer_count: out.length, note: 'Preview based on the current pool - run after the 6am scrape for the most accurate 9am preview.', last_preverify: dbP.seo_last_preverify || null, guarantee: dbP.fulfilment_guarantee || null, customers: out });
+    // Work out the NEXT 9am run (UK) and whether today's run has already happened, so the
+    // preview can clearly say "these are TODAY's already-sent leads" vs "these are the
+    // CANDIDATES for the next 9am (which the overnight scrape will change)".
+    var _nowUkParts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', weekday: 'short', hour: '2-digit', hour12: false }).formatToParts(new Date());
+    var _getUk = function(t) { var p = _nowUkParts.filter(function(x){ return x.type === t; })[0]; return p ? p.value : ''; };
+    var _wd = _getUk('weekday');
+    var _hr = parseInt(_getUk('hour'), 10);
+    var _isWeekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].indexOf(_wd) !== -1;
+    var _phase = (_isWeekday && _hr < 9) ? 'before_today_run' : 'after_today_run';
+    var _next = null;
+    var _startOff = (_isWeekday && _hr < 9) ? 0 : 1;
+    for (var _ni = 0; _ni < 8; _ni++) {
+      var _d = new Date(Date.now() + (_startOff + _ni) * 86400000);
+      var _p2 = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', weekday: 'short', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(_d);
+      var _g2 = function(t) { var p = _p2.filter(function(x){ return x.type === t; })[0]; return p ? p.value : ''; };
+      if (['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].indexOf(_g2('weekday')) !== -1) { _next = { date: _g2('year') + '-' + _g2('month') + '-' + _g2('day'), weekday: _g2('weekday') }; break; }
+    }
+    var _note = (_phase === 'before_today_run')
+      ? 'Live projection for TODAY\'S 9am delivery (finalised at 9am). The pool is refreshed by the overnight scrape and the pre-verify pass, so the exact leads can still change before sending.'
+      : 'Today\'s 9am delivery has ALREADY been sent (see "delivered today" per customer). The pool leads below are CANDIDATES for the NEXT 9am delivery - they are not final and will change after the overnight scrape.';
+    res.json({ success: true, generated_at: new Date().toISOString(), phase: _phase, next_run: _next, all_ready: (out.length > 0 && _ready === out.length), ready_count: _ready, short_count: out.length - _ready, delivered_count: _delivered, customer_count: out.length, note: _note, last_preverify: dbP.seo_last_preverify || null, guarantee: dbP.fulfilment_guarantee || null, customers: out });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
