@@ -670,8 +670,9 @@ function getSelectedLeadTypes() {
   for (var i = 0; i < els.length; i++) types.push(els[i].value);
   return types;
 }
-// County/area-based products (not postcode-based). planning, probate, tenders
-var COUNTY_BASED = ['planning', 'probate', 'tenders', 'newbusiness'];
+// County/area-based products (not postcode-based). planning, probate, tenders,
+// commercial (Commercial Moves is county/region-based, matching the backend).
+var COUNTY_BASED = ['planning', 'probate', 'tenders', 'newbusiness', 'commercial'];
 function isCountyBased() {
   var types = getSelectedLeadTypes();
   if (!types.length) return false;
@@ -700,7 +701,7 @@ function updatePostcodeLimit() {
    var areaLabel = document.getElementById('s-area-label');
    if (areaLabel) {
      if (limit >= 999) areaLabel.textContent = isCountyBased() ? '(unlimited counties/areas - add as many as you need)' : '(unlimited postcode areas - add the areas you cover or choose All UK)';
-     else areaLabel.textContent = isCountyBased() ? (getSelectedLeadTypes().indexOf('tenders') !== -1 || getSelectedLeadTypes().indexOf('probate') !== -1 ? '(select at least 2 counties/areas)' : '(select at least 3 counties/areas)') : '(choose at least 3 postcode areas - e.g. HA, EN, SW, B, CM)';
+     else areaLabel.textContent = isCountyBased() ? (getSelectedLeadTypes().indexOf('tenders') !== -1 || getSelectedLeadTypes().indexOf('probate') !== -1 || getSelectedLeadTypes().indexOf('commercial') !== -1 ? '(select at least 2 counties/areas)' : '(select at least 3 counties/areas)') : '(choose at least 3 postcode areas - e.g. HA, EN, SW, B, CM)';
    }
    renderSignupPostcodes();
    onLeadTypeChange();
@@ -929,7 +930,7 @@ function onLeadTypeChange() {
   var hasLocal = false;
   for (var lt = 0; lt < checked.length; lt++) {
     var v = checked[lt].value;
-    if (v === 'planning' || v === 'probate' || v === 'tenders') hasSpecialist = true;
+    if (v === 'planning' || v === 'probate' || v === 'tenders' || v === 'commercial') hasSpecialist = true;
     if (v === 'moving' || v === 'newbusiness') hasLocal = true;
   }
   // Toggle the county/area selector vs the postcode selector based on whether a
@@ -977,13 +978,13 @@ function populateCountySelect() {
   // customer the widest possible coverage instead of town/county-level limits.
   // PROBATE: counties + the official English regions the backend accepts (min 2).
   // Planning/newbusiness: counties + broad regions (min 3).
-  var regionOpts = prod === 'probate'
-    ? ['East Midlands','East of England','London','North East','North West','South East','South West','West Midlands','Yorkshire and the Humber']
+  var regionOpts = (prod === 'probate' || prod === 'commercial')
+    ? ['East Midlands','East of England','London','North East','North West','South East','South West','West Midlands','Yorkshire and the Humber','Scotland','Wales','Northern Ireland']
     : ['London','South England','East of England','West England','North England','Scotland','Wales','Northern Ireland'];
   var regionHtml = regionOpts.map(function(r) {
-    return '<option value="' + r + '">' + r + '  · ' + (prod === 'probate' ? 'region' : 'whole region') + '</option>';
+    return '<option value="' + r + '">' + r + '  · ' + ((prod === 'probate' || prod === 'commercial') ? 'region' : 'whole region') + '</option>';
   }).join('');
-  var minSpan = document.getElementById('s-county-min'); if (minSpan) minSpan.textContent = (prod === 'tenders' || prod === 'probate') ? '2' : '3';
+  var minSpan = document.getElementById('s-county-min'); if (minSpan) minSpan.textContent = (prod === 'tenders' || prod === 'probate' || prod === 'commercial') ? '2' : '3';
   if (prod === 'tenders') {
     sel.innerHTML = '<option value="">Choose a region...</option>' + regionHtml + '<option value="all-uk">All UK</option>';
   } else {
