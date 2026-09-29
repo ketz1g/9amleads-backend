@@ -27104,13 +27104,17 @@ _deliverDiag[cust.email].products = products;
         (cust.product === 'planning' && custLeadFilters.appTypes && custLeadFilters.appTypes.length > 0) ||
         (cust.product === 'newbusiness' && custLeadFilters.industries && custLeadFilters.industries.length > 0) ||
         (cust.product === 'tenders' && (((custLeadFilters.sectors && custLeadFilters.sectors.length) > 0) || (custLeadFilters.minContractVal > 0) || !!custLeadFilters.keywords));
-      function leadPassesFilters(ld2) {
+      function leadPassesFilters(ld2, forProduct) {
         try {
+          // PRODUCT-AWARE: forProduct is the product currently being drawn (a multi-product
+          // customer draws MOVING and COMMERCIAL from the SAME pool in one run). Defaults
+          // to the primary product, so single-product behaviour is unchanged.
+          var _prod = forProduct || cust.product;
           // RELAXED FILL: optional signup filters are skipped once the guaranteed-fill
           // tiers kick in (they only ever relax for a customer who is STILL SHORT).
-          // The moving residential/commercial split below still applies either way.
-          if (filterRelaxForFill && cust.product !== 'moving') return true;
-          if (cust.product === 'moving') {
+          // The moving/commercial split below still applies either way.
+          if (filterRelaxForFill && _prod !== 'moving' && _prod !== 'commercial') return true;
+          if (_prod === 'moving') {
             // MOVING: only the optional MAX-BEDROOMS filter applies (a removal company
             // may only move homes up to N beds). Min beds / max price / property type
             // filters are NOT used for moving - removal companies move any size home,
@@ -27119,10 +27123,9 @@ _deliverDiag[cust.email].products = products;
               var b = parseInt(ld2.bedrooms) || 0;
               if (custLeadFilters.maxBedrooms < 99 && b > custLeadFilters.maxBedrooms) return false;
             }
-            // COMMERCIAL FILTER: the COMMERCIAL MOVES product accepts commercial premises
-            // only. A MOVING customer accepts leads matching their moving_type; if they
-            // ALSO hold the separate Commercial Moves product, MOVING stays residential
-            // so the two products never overlap. Always enforced (never relaxed by fill).
+            // COMMERCIAL FILTER: if this customer ALSO holds the separate Commercial
+            // Moves product, MOVING stays residential so the two never overlap;
+            // otherwise MOVING honours their moving_type (residential/commercial/both).
             var _hasCommercialProduct = products.indexOf('commercial') !== -1;
             var _mt = 'both';
             try { var _pc2 = JSON.parse(cust.product_config || '{}'); _mt = (_pc2.moving && _pc2.moving.moving_type) || cust.moving_type || 'both'; } catch(e) {}
@@ -27131,11 +27134,11 @@ _deliverDiag[cust.email].products = products;
             if (_mt === 'commercial' && !isCommercialLead(ld2)) return false;
             return true;
           }
-          if (cust.product === 'commercial') {
+          if (_prod === 'commercial') {
             // Commercial Moves product: commercial premises only (identity-level rule).
             return isCommercialLead(ld2);
           }
-          if (cust.product === 'planning' && custLeadFilters.appTypes && custLeadFilters.appTypes.length) {
+          if (_prod === 'planning' && custLeadFilters.appTypes && custLeadFilters.appTypes.length) {
             // PLANNING: customer chose application-type GROUPS (Residential, Commercial &
             // Change of Use, Listed & Heritage, Adverts/Trees/Minor) or a legacy exact
             // type. If the lead has no type we can read, keep it (don't under-deliver).
@@ -27143,7 +27146,7 @@ _deliverDiag[cust.email].products = products;
             var appOk = custLeadFilters.appTypes.some(function(t) { return planningAppTypeMatches(t, at); });
             if (!appOk) return false;
           }
-          if (cust.product === 'newbusiness' && custLeadFilters.industries && custLeadFilters.industries.length) {
+          if (_prod === 'newbusiness' && custLeadFilters.industries && custLeadFilters.industries.length) {
             // NEWBUSINESS: customer chose industries (Tech, Construction, Retail, etc.).
             // Match by SIC code -> industry classification, plus company name keywords.
             var sic = String(ld2.sicCode || ld2.sic || ld2.companyNumber || '');
@@ -27164,7 +27167,7 @@ _deliverDiag[cust.email].products = products;
             });
             if (!indOk) return false;
           }
-          if (cust.product === 'tenders') {
+          if (_prod === 'tenders') {
             // TENDERS: min contract value + curated SECTOR match (legacy free-text
             // keywords still honoured for older accounts).
             var cv = parseTenderValueNum(ld2.contractValue || ld2.contractValueLabel);
@@ -27375,21 +27378,21 @@ _deliverDiag[cust.email].products = products;
       var freshCutoffNow = getFreshCutoffIso();
       var fresh24CutoffNow = new Date(Date.now() - 24 * 3600000).toISOString();
       var freshCutoff48 = new Date(Date.now() - 48 * 3600000).toISOString();
-      function isLeadFresh24(l, cut) {
+      function isLeadFresh24(l, cut, forProduct) {
         try {
           var ld2 = JSON.parse(l.data || '{}');
+          var _prodF = forProduct || cust.product;
           // NEVER deliver manual-test / user-created test leads to customers -
           // those are for the customer's own Print & Post / sample testing, not
           // their daily lead supply.
           if (ld2.source === 'manual-test' || ld2.source === 'manual_test') return false;
-          // COMMERCIAL FILTER: the COMMERCIAL MOVES product accepts commercial premises
-          // only. A MOVING customer accepts leads matching their moving_type; if they
-          // ALSO hold the separate Commercial Moves product, MOVING stays residential so
-          // the two products never overlap.
-          if (cust.product === 'commercial') {
+          // COMMERCIAL FILTER (product-aware): the COMMERCIAL MOVES product accepts
+          // commercial premises only; MOVING accepts its moving_type (and stays
+          // residential when the customer ALSO holds Commercial Moves).
+          if (_prodF === 'commercial') {
             if (!isCommercialLead(ld2)) return false;
           }
-          if (cust.product === 'moving') {
+          if (_prodF === 'moving') {
             var leadIsCommercial = isCommercialLead(ld2);
             if (products.indexOf('commercial') !== -1 && leadIsCommercial) return false;
             if (custMovingType === 'residential' && leadIsCommercial) return false;
@@ -27515,8 +27518,8 @@ _deliverDiag[cust.email].products = products;
           // out-of-area). The lead may exist as delivered=0 rows in the DB even after
           // being blocked - filter by the data flags so it can never be picked up again.
           try { var _pd = JSON.parse(l.data || '{}'); if (_pd.rejected || _pd.blocked || _pd.blocked_by_admin) return false; } catch(_pe) {}
-          if (!isLeadFresh24(l, freshCutoffForProduct(cust.product))) return false;
-          if (!leadPassesFilters((l && typeof l.data === 'string' && l.data) ? JSON.parse(l.data) : (l || {}))) return false;
+          if (!isLeadFresh24(l, freshCutoffForProduct(cust.product), p)) return false;
+          if (!leadPassesFilters((l && typeof l.data === 'string' && l.data) ? JSON.parse(l.data) : (l || {}), p)) return false;
           if (!notDeliveredBefore(l)) return false;
           return true;
         });
@@ -27537,8 +27540,8 @@ _deliverDiag[cust.email].products = products;
         var globalPool = (db.leads || []).filter(function(l) {
           if (l.delivered !== 0 || l.product !== p) return false;
           try { var _gd = JSON.parse(l.data || '{}'); if (_gd.rejected || _gd.blocked || _gd.blocked_by_admin) return false; } catch(_ge) {}
-          if (!isLeadFresh24(l, freshCutoffForProduct(p) || freshCutoff48)) return false;
-          if (!leadPassesFilters((l && typeof l.data === 'string' && l.data) ? JSON.parse(l.data) : (l || {}))) return false;
+          if (!isLeadFresh24(l, freshCutoffForProduct(p) || freshCutoff48, p)) return false;
+          if (!leadPassesFilters((l && typeof l.data === 'string' && l.data) ? JSON.parse(l.data) : (l || {}), p)) return false;
           if (!notDeliveredBefore(l)) return false;
           return true;
         });
@@ -27782,7 +27785,7 @@ _deliverDiag[cust.email].products = products;
                       var rlD = pickFreshDate(rl);
                       if (!rlD || rlD < _cut2) continue;
                      // DASHBOARD FILTERS: respect the customer bedroom/price/type filters.
-                     if (!leadPassesFilters(rl)) continue;
+                     if (!leadPassesFilters(rl, r2prod)) continue;
                     var areaOfPoolLead = extractPostcodeArea(rl.postcode || rl.address || rl.location || rl.name || rl.deceasedAddress || rl.fullAddress || '');
                     // Tenders/probate are national-fallback products: their leads often
                     // carry no postcode (tenders are opportunities, probate gazette
@@ -28099,7 +28102,7 @@ _deliverDiag[cust.email].products = products;
                 var _fgCut = freshCutoffNow || getFreshCutoffIso();
                 if (fgD < _fgCut) continue;
               }
-              if (!leadPassesFilters(fgLead)) continue;
+              if (!leadPassesFilters(fgLead, fgProd)) continue;
               var fgArea = extractPostcodeArea(fgLead.postcode || fgLead.address || fgLead.location || fgLead.name || '');
               // Tenders/probate are national-fallback products (no postcode on leads).
               if (!fgArea && !(fgProd === 'tenders' || fgProd === 'probate')) continue;
@@ -28291,7 +28294,7 @@ _deliverDiag[cust.email].products = products;
               if (_tlRef && custDeliveredRefs['r:' + _tlRef]) continue;
               var tlD = pickFreshDate(tl);;
               if (!tlD || tlD < freshCutoffNow) continue;
-              if (!leadPassesFilters(tl)) continue;
+              if (!leadPassesFilters(tl, tpProd)) continue;
               var tlArea = extractPostcodeArea(tl.postcode || tl.address || tl.location || tl.name || '');
               // Tenders/probate are national-fallback products (no postcode on leads).
               if (!tlArea && !(tpProd === 'tenders' || tpProd === 'probate')) continue;
@@ -28739,7 +28742,7 @@ _deliverDiag[cust.email].products = products;
                 if (alreadyDeliveredLead(fl)) continue;
                 var flD = pickFreshDate(fl);
                 if (!flD || flD < freshCutoffNow) continue;
-                if (!leadPassesFilters(fl)) continue;
+                if (!leadPassesFilters(fl, fprod)) continue;
                 if (pickedIds.indexOf(fl.id) !== -1) continue;
                 var farea = extractPostcodeArea(fl.postcode || fl.address || '');
                 // Tenders/probate are national-fallback products (no postcode on leads).
