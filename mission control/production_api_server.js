@@ -22743,6 +22743,34 @@ app.post('/api/admin/send-all-customer-samples', adminAuth, async (req, res) => 
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/send-trial-card-samples - email the card-capture / trial-ending emails
+// (day-4 add-card, day-6 final reminder, pre-charge) to the owner for review, wrapped in
+// the SAME branded shell customers now receive. Body: { email } (defaults to owner).
+app.post('/api/admin/send-trial-card-samples', adminAuth, async (req, res) => {
+  try {
+    var to = String((req.body && req.body.email) || 'ketzman1g@gmail.com').trim().toLowerCase();
+    var demo = { id: 'demo', email: to, product: 'moving', plan: 'free_trial', company: 'Demo Removal Co',
+      contact_name: 'Lee Smith', business_type: 'Removal Company', lead_type: 'Moving Leads',
+      target_areas: JSON.stringify(['HA', 'EN', 'N']), coverage: 'postcode',
+      trial_ends: new Date(Date.now() + 86400000).toISOString(), created_at: new Date(Date.now() - 6 * 86400000).toISOString(),
+      marketing_consent: 1, selected_plan: 'starter' };
+    var endStr = fmtTrialEnd(demo) || '30 Sept';
+    var items = [
+      ['trial_addcard', 'Keep your Moving Leads coming after ' + endStr + ' (no charge until then)', buildAddCardEmail(demo, endStr)],
+      ['trial_addcard6', 'SAMPLE - final reminder (day 6)', buildAddCardFinalEmail(demo, endStr)],
+      ['trial_precharge', 'Your Starter plan starts ' + endStr + ' - card charged \u00a3' + trialWeeklyAmount(demo) + '/week', buildTrialPrechargeEmail(demo, endStr, trialWeeklyAmount(demo), 'Starter')]
+    ];
+    res.json({ success: true, background: true, emailed: to, count: items.length, note: 'Sending in the background - check your inbox shortly.' });
+    (async function() {
+      for (var i = 0; i < items.length; i++) {
+        try { await sendBrevoEmail({ email: to, name: '9amLeads Owner' }, 'SAMPLE - ' + items[i][1], wrapTrialEmailShell(items[i][2])); }
+        catch(e) { console.log('[CARD-SAMPLE] error ' + items[i][0] + ': ' + e.message); }
+      }
+      console.log('[CARD-SAMPLE] sent ' + items.length + ' to ' + to);
+    })();
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/send-lead-sheet-samples - email ONLY the daily-lead sheet samples
 // (one per product) to the owner so they can review the corrected mobile lead layout.
 // Body: { email } defaults to ketzman1g@gmail.com. Sends in the BACKGROUND so the
