@@ -130,6 +130,7 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 <!-- Product selector tabs -->
 <div class="prod-tabs" id="prod-tabs">
 <button class="prod-tab active" data-prod="moving" onclick="switchProduct('moving')">Moving</button>
+<button class="prod-tab" data-prod="commercial" onclick="switchProduct('commercial')">Commercial Moves</button>
 <button class="prod-tab" data-prod="probate" onclick="switchProduct('probate')">Probate</button>
 <button class="prod-tab" data-prod="newbusiness" onclick="switchProduct('newbusiness')">New Business</button>
 <button class="prod-tab" data-prod="planning" onclick="switchProduct('planning')">Planning</button>
@@ -141,7 +142,7 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 <!-- Starter -->
 <div class="pricing-card">
 <div class="pricing-name">Starter</div>
-<div class="pricing-price">£25<span>/wk</span></div>
+<div class="pricing-price" id="price-starter">£25<span>/wk</span></div>
 <div class="pricing-leads" id="leads-starter"><strong>5</strong> leads/day · Mon-Fri</div>
 <ul class="pricing-features">
 <li><i class="fas fa-check"></i> <span id="feat-area-starter">5 postcode areas</span></li>
@@ -156,7 +157,7 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 <div class="pricing-card featured">
 <div class="pricing-badge">Most Popular</div>
 <div class="pricing-name">Pro</div>
-<div class="pricing-price">£49<span>/wk</span></div>
+<div class="pricing-price" id="price-pro">£49<span>/wk</span></div>
 <div class="pricing-leads" id="leads-pro"><strong>10</strong> leads/day · Mon-Fri</div>
 <ul class="pricing-features">
 <li><i class="fas fa-check"></i> <span id="feat-area-pro">Unlimited areas</span></li>
@@ -170,7 +171,7 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 <!-- Enterprise -->
 <div class="pricing-card">
 <div class="pricing-name">Enterprise</div>
-<div class="pricing-price">£99<span>/wk</span></div>
+<div class="pricing-price" id="price-enterprise">£99<span>/wk</span></div>
 <div class="pricing-leads" id="leads-enterprise"><strong>15</strong> leads/day · Mon-Fri</div>
 <ul class="pricing-features">
 <li><i class="fas fa-check"></i> <span id="feat-area-enterprise">All UK coverage</span></li>
@@ -253,22 +254,32 @@ footer{background:#020202;border-top:1px solid var(--border);padding:48px 0 24px
 
 <script>
 var productData = {
-  moving: { starter:'5', pro:'10', enterprise:'15', areaStarter:'5 postcode areas', areaPro:'Unlimited areas', areaEnterprise:'All UK coverage' },
-  probate: { starter:'1', pro:'3', enterprise:'5', areaStarter:'3 areas', areaPro:'Unlimited areas', areaEnterprise:'All UK' },
-  newbusiness: { starter:'5', pro:'10', enterprise:'15', areaStarter:'5 postcode areas', areaPro:'Unlimited areas', areaEnterprise:'All UK' },
-  planning: { starter:'1', pro:'3', enterprise:'5', areaStarter:'3 areas', areaPro:'Unlimited areas', areaEnterprise:'All UK' },
-  tenders: { starter:'1', pro:'3', enterprise:'5', areaStarter:'3 areas', areaPro:'Unlimited areas', areaEnterprise:'All UK' }
+  moving: { starter:'5', pro:'10', enterprise:'15', areaStarter:'5 postcode areas', areaPro:'Unlimited areas', areaEnterprise:'All UK coverage', prices:['£25','£49','£99'] },
+  probate: { starter:'1', pro:'3', enterprise:'5', areaStarter:'3 areas', areaPro:'Unlimited areas', areaEnterprise:'All UK', prices:['£25','£49','£99'] },
+  newbusiness: { starter:'5', pro:'10', enterprise:'15', areaStarter:'5 postcode areas', areaPro:'Unlimited areas', areaEnterprise:'All UK', prices:['£25','£49','£99'] },
+  planning: { starter:'1', pro:'3', enterprise:'5', areaStarter:'3 areas', areaPro:'Unlimited areas', areaEnterprise:'All UK', prices:['£25','£49','£99'] },
+  tenders: { starter:'1', pro:'3', enterprise:'5', areaStarter:'3 areas', areaPro:'Unlimited areas', areaEnterprise:'All UK', prices:['£25','£49','£99'] },
+  // COMMERCIAL MOVES: one flat plan - 3 exclusive commercial leads/day, £50/week.
+  commercial: { starter:'3', pro:'3', enterprise:'3', areaStarter:'Choose counties/regions', areaPro:'Choose counties/regions', areaEnterprise:'All UK (optional)', prices:['£50','£50','£50'], comm:true }
 };
 function switchProduct(prod) {
   document.querySelectorAll('.prod-tab').forEach(function(t){t.classList.remove('active');});
   document.querySelector('.prod-tab[data-prod="'+prod+'"]').classList.add('active');
   var d = productData[prod];
-  document.getElementById('leads-starter').innerHTML = '<strong>'+d.starter+'</strong> lead'+(d.starter==1?'':'s')+'/day &middot; Mon-Fri';
-  document.getElementById('leads-pro').innerHTML = '<strong>'+d.pro+'</strong> lead'+(d.pro==1?'':'s')+'/day &middot; Mon-Fri';
-  document.getElementById('leads-enterprise').innerHTML = '<strong>'+d.enterprise+'</strong> lead'+(d.enterprise==1?'':'s')+'/day &middot; Mon-Fri';
+  var comm = !!d.comm;
+  function leadTxt(n) { return '<strong>' + n + '</strong> ' + (comm ? ('exclusive commercial lead' + (n == 1 ? '' : 's') + '/day') : ('lead' + (n == 1 ? '' : 's') + '/day &middot; Mon-Fri')); }
+  document.getElementById('leads-starter').innerHTML = leadTxt(d.starter);
+  document.getElementById('leads-pro').innerHTML = leadTxt(d.pro);
+  document.getElementById('leads-enterprise').innerHTML = leadTxt(d.enterprise);
   document.getElementById('feat-area-starter').textContent = d.areaStarter;
   document.getElementById('feat-area-pro').textContent = d.areaPro;
   document.getElementById('feat-area-enterprise').textContent = d.areaEnterprise;
+  var names = comm ? ['Commercial Moves','Commercial Moves','Commercial Moves'] : ['Starter','Pro','Enterprise'];
+  var pr = d.prices || ['£25','£49','£99'];
+  ['starter','pro','enterprise'].forEach(function(t, i) {
+    var pe = document.getElementById('price-' + t); if (pe) pe.innerHTML = pr[i] + '<span>/wk</span>';
+    var ne = document.querySelectorAll('.pricing-name')[i]; if (ne) ne.textContent = names[i];
+  });
 }
 function toggleMobile(){
   var m=document.getElementById('mobileMenu'),o=document.getElementById('mobileOverlay'),h=document.getElementById('hamBtn');

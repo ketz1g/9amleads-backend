@@ -341,6 +341,32 @@ function calcTotal() {
   // Reflect lead-type changes in the area selector (postcode vs county) and filters
   onLeadTypeChange();
   updatePostcodeLimit();
+  try { updatePlanDisplay(); } catch(e) {}
+}
+function updatePlanDisplay() {
+  var types = getSelectedLeadTypes();
+  var hasComm = types.indexOf('commercial') !== -1;
+  var hasMove = types.indexOf('moving') !== -1;
+  var commOnly = hasComm && !hasMove;
+  function setPrice(id, html) { var el = document.querySelector('#' + id + ' .plan-p'); if (el) el.innerHTML = html; }
+  function setDesc(id, txt) { var el = document.querySelector('#' + id + ' .plan-d'); if (el) el.textContent = txt; }
+  var ft = document.querySelector('#plan-free_trial .plan-d');
+  if (commOnly) {
+    if (ft) ft.textContent = '3 exclusive commercial leads/day · 7-day trial · choose counties/regions';
+    setPrice('plan-starter', '£50<span class="pw">/wk</span>'); setDesc('plan-starter', '3 exclusive commercial leads/day · choose counties');
+    setPrice('plan-pro', '£50<span class="pw">/wk</span>'); setDesc('plan-pro', '3 exclusive commercial leads/day · choose counties');
+    setPrice('plan-enterprise', '£50<span class="pw">/wk</span>'); setDesc('plan-enterprise', '3 exclusive commercial leads/day · All UK');
+  } else if (hasComm && hasMove) {
+    if (ft) ft.textContent = '8 leads/day (5 moving + 3 commercial) · 7-day trial';
+    setPrice('plan-starter', '£75<span class="pw">/wk</span>'); setDesc('plan-starter', '5 moving + 3 commercial = 8 leads/day');
+    setPrice('plan-pro', '£99<span class="pw">/wk</span>'); setDesc('plan-pro', '10 moving + 3 commercial = 13 leads/day');
+    setPrice('plan-enterprise', '£149<span class="pw">/wk</span>'); setDesc('plan-enterprise', '15 moving + 3 commercial = 18 leads/day');
+  } else {
+    if (ft) ft.textContent = 'Up to 5 leads/day · 7-day trial · 3-5 postcode areas · any 1 type';
+    setPrice('plan-starter', '£25<span class="pw">/wk</span>'); setDesc('plan-starter', 'Up to 5 leads/day · any 1 lead type · 3-5 postcode areas');
+    setPrice('plan-pro', '£49<span class="pw">/wk</span>'); setDesc('plan-pro', 'Up to 10 leads/day · any types · unlimited areas');
+    setPrice('plan-enterprise', '£99<span class="pw">/wk</span>'); setDesc('plan-enterprise', 'Up to 15 leads/day · any types · All UK unlimited');
+  }
 }
 function updateMovingTypeLabel() {
   var sel = document.querySelector('#s-moving-type input[type=radio]:checked');
