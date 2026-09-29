@@ -4640,26 +4640,41 @@ function affiliateNurtureEmail(aff, day) {
   }
   var cta = '<div style="text-align:center;margin:20px 0 8px"><a href="https://9amleads.com/portal/affiliate.html" style="display:inline-block;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;padding:13px 28px;border-radius:10px;font-weight:700;font-size:14px;text-decoration:none">Open your dashboard</a></div>' +
     '<p style="color:#8a94a8;font-size:12px;text-align:center;margin:0">Your code: <b style="color:#c9d1de">' + code + '</b> - share it anywhere.</p>';
-  return top + body + cta + '<p style="color:#888;font-size:13px;margin-top:22px;border-top:1px solid #1e2030;padding-top:14px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>';
+  return affiliateLightEmail(top + body + cta + '<p style="color:#888;font-size:13px;margin-top:22px;border-top:1px solid #1e2030;padding-top:14px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>');
 }
 // Affiliate welcome (on register).
 function affiliateWelcomeEmail(name, code, rate, autoActivate) {
-  return '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto">' +
-    '<h1 style="font-family:Outfit,sans-serif;color:#0ea5e9;margin:0 0 10px">Welcome to the 9amLeads Affiliate Programme</h1>' +
-    '<p style="color:#ccc;line-height:1.7">Hi ' + escHtml(String(name || '').trim()) + ',</p>' +
-    '<p style="color:#ccc;line-height:1.7">Your affiliate application has been received' + (autoActivate ? ' and your account is now <strong style="color:#fff">active</strong>' : ' and is being reviewed') + '.</p>' +
-    '<p style="color:#ccc;line-height:1.7">Your unique referral code is <strong style="color:#0ea5e9">' + escHtml(String(code || '')) + '</strong>. Customers enter this at signup and you earn <strong style="color:#fff">&pound;' + (rate || 25) + '</strong> for every qualifying referral, once they pay their second invoice. We review and pay out weekly, so your money usually lands within a few weeks of them signing up.</p>' +
-    '<p style="color:#ccc;line-height:1.7">Log in to your dashboard to track referrals and earnings: <a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">9amleads.com/portal/affiliate.html</a></p>' +
-    '<p style="color:#888;font-size:13px;margin-top:24px">Questions? Reply to this email or contact hello@9amleads.com.</p>' +
-    '</div>';
+  return wrapTrialEmailShell(
+    '<h2 style="font-family:Outfit,Arial,sans-serif;font-size:22px;font-weight:800;color:#0f172a;margin:0 0 8px">Welcome to the 9amLeads Affiliate Programme</h2>' +
+    '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">Hi ' + escHtml(String(name || '').trim()) + ',</p>' +
+    '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 14px">Your affiliate application has been received' + (autoActivate ? ' and your account is now <strong style="color:#0f172a">active</strong>' : ' and is being reviewed') + '.</p>' +
+    '<div style="background:rgba(14,165,233,0.05);border:1px solid rgba(14,165,233,0.15);border-radius:12px;padding:16px 20px;margin:0 0 14px"><p style="color:#0369a1;font-size:13px;font-weight:800;margin:0 0 6px;text-transform:uppercase;letter-spacing:1px">Your referral code</p><p style="font-family:Outfit,Arial,sans-serif;font-weight:900;font-size:22px;letter-spacing:2px;color:#0369a1;margin:0 0 8px">' + escHtml(String(code || '')) + '</p><p style="color:#1e293b;font-size:13px;line-height:1.8;margin:0">Customers enter this at signup and you earn <strong>&pound;' + (rate || 25) + '</strong> for every qualifying referral, once they pay their second invoice. We review and pay out weekly, so your money usually lands within a few weeks of them signing up.</p></div>' +
+    '<p style="text-align:center;margin:18px 0 8px"><a href="https://9amleads.com/portal/affiliate.html" style="display:inline-block;background-color:#0ea5e9;background-image:linear-gradient(135deg,#0ea5e9,#2563eb);color:#ffffff;text-decoration:none;border-radius:50px;font-weight:800;font-size:14px;padding:13px 28px">Open my affiliate dashboard</a></p>' +
+    '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:14px 0 0">Any questions, just reply and I will answer personally.</p>' +
+    '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:12px 0 0">All the best,<br><strong>Ketz Mandalia</strong><br><span style="color:#64748b">Founder, 9amLeads</span></p>'
+  );
 }
 // Affiliate inactive warning (day 30, no referrals).
 function affiliateInactiveWarningEmail(aff) {
-  return '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="font-family:Outfit,sans-serif;color:#0ea5e9;margin:0 0 10px">Your affiliate account is about to close</h1><p style="color:#ccc;line-height:1.7">Hi ' + escHtml(String(aff.name || 'there')).trim() + ',</p><p style="color:#ccc;line-height:1.7">Your 9amLeads affiliate account has been active for over 30 days but we have not yet seen a single referral from your code <strong style="color:#0ea5e9">' + escHtml(String(aff.code || '')) + '</strong>.</p><p style="color:#ccc;line-height:1.7">Per our <a href="https://9amleads.com/affiliate-terms.html" style="color:#0ea5e9">Affiliate Terms</a>, accounts with no referrals within 30 days are closed. <strong style="color:#fff">Make one referral in the next 7 days to keep your account.</strong> Your dashboard has ready-made posts, scripts and a 14-day-free-trial code to make it easy.</p><p style="color:#ccc;line-height:1.7">If you cannot promote right now, reply to this email and we will pause your deadline - no problem.</p><p style="color:#ccc;line-height:1.7">Log in: <a href="https://9amleads.com/portal/affiliate.html" style="color:#0ea5e9">9amleads.com/portal/affiliate.html</a></p><p style="color:#888;font-size:13px;margin-top:24px">- The 9amLeads team &middot; hello@9amleads.com</p></div>';
+  return wrapTrialEmailShell(
+    '<h2 style="font-family:Outfit,Arial,sans-serif;font-size:22px;font-weight:800;color:#0f172a;margin:0 0 8px">Your affiliate account is about to close</h2>' +
+    '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">Hi ' + escHtml(String(aff.name || 'there')).trim() + ',</p>' +
+    '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">Your 9amLeads affiliate account has been active for over 30 days but we have not yet seen a single referral from your code <strong style="color:#0369a1">' + escHtml(String(aff.code || '')) + '</strong>.</p>' +
+    '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">Per our <a href="https://9amleads.com/affiliate-terms.html" style="color:#0ea5e9">Affiliate Terms</a>, accounts with no referrals within 30 days are closed. <strong>Make one referral in the next 7 days to keep your account.</strong> Your dashboard has ready-made posts, scripts and a 14-day-free-trial code to make it easy.</p>' +
+    '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">If you cannot promote right now, reply to this email and we will pause your deadline - no problem.</p>' +
+    '<p style="text-align:center;margin:18px 0 8px"><a href="https://9amleads.com/portal/affiliate.html" style="display:inline-block;background-color:#0ea5e9;background-image:linear-gradient(135deg,#0ea5e9,#2563eb);color:#ffffff;text-decoration:none;border-radius:50px;font-weight:800;font-size:14px;padding:13px 28px">Open my dashboard</a></p>' +
+    '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:14px 0 0">All the best,<br><strong>Ketz Mandalia</strong><br><span style="color:#64748b">Founder, 9amLeads</span></p>'
+  );
 }
 // Affiliate account closed (day 37, still no referrals).
 function affiliateClosedEmail(aff) {
-  return '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto"><h1 style="font-family:Outfit,sans-serif;color:#f87171;margin:0 0 10px">Your affiliate account has been closed</h1><p style="color:#ccc;line-height:1.7">Hi ' + escHtml(String(aff.name || 'there')).trim() + ',</p><p style="color:#ccc;line-height:1.7">As set out in our <a href="https://9amleads.com/affiliate-terms.html" style="color:#0ea5e9">Affiliate Terms</a>, your account has been closed because no referrals were made within 30 days of joining, and no referral was made after our 7-day warning.</p><p style="color:#ccc;line-height:1.7">You are very welcome to <a href="https://9amleads.com/portal/affiliate.html#register" style="color:#0ea5e9">re-apply any time</a> when you are ready to promote.</p><p style="color:#888;font-size:13px;margin-top:24px">- The 9amLeads team &middot; hello@9amleads.com</p></div>';
+  return wrapTrialEmailShell(
+    '<h2 style="font-family:Outfit,Arial,sans-serif;font-size:22px;font-weight:800;color:#0f172a;margin:0 0 8px">Your affiliate account has been closed</h2>' +
+    '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">Hi ' + escHtml(String(aff.name || 'there')).trim() + ',</p>' +
+    '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 12px">As set out in our <a href="https://9amleads.com/affiliate-terms.html" style="color:#0ea5e9">Affiliate Terms</a>, your account has been closed because no referrals were made within 30 days of joining, and no referral was made after our 7-day warning.</p>' +
+    '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0 0 14px">You are very welcome to <a href="https://9amleads.com/portal/affiliate.html#register" style="color:#0ea5e9">re-apply any time</a> when you are ready to promote.</p>' +
+    '<p style="color:#1e293b;font-size:14px;line-height:1.7;margin:0">All the best,<br><strong>Ketz Mandalia</strong><br><span style="color:#64748b">Founder, 9amLeads</span></p>'
+  );
 }
 function processAffiliateNurture() {
   try {
@@ -4692,7 +4707,7 @@ function processAffiliateNurture() {
 // earnings and haven't logged in recently. Deduped via 'reactivation_sent'.
 function affiliateReactivationEmail(aff) {
   var code = escHtml(aff.code || '');
-  return '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:600px;margin:0 auto">' +
+  return affiliateLightEmail('<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:600px;margin:0 auto">' +
     '<div style="text-align:center;margin-bottom:18px"><span style="background:rgba(14,165,233,.15);color:#0ea5e9;font-size:11px;font-weight:800;padding:5px 14px;border-radius:50px;letter-spacing:.5px">9amLeads AFFILIATE PROGRAMME</span></div>' +
     '<h1 style="font-family:Outfit,sans-serif;color:#0ea5e9;margin:0 0 8px;font-size:26px">Your code is still live</h1>' +
     '<p style="color:#c9d1de;line-height:1.8;margin:0 0 14px">Hi ' + escHtml(aff.name || 'there') + ',</p>' +
@@ -4715,7 +4730,7 @@ function affiliateReactivationEmail(aff) {
     '</div>' +
     '<div style="text-align:center;margin:20px 0 8px"><a href="https://9amleads.com/portal/affiliate.html" style="display:inline-block;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;padding:13px 28px;border-radius:10px;font-weight:700;font-size:14px;text-decoration:none">Open your dashboard</a></div>' +
     '<p style="color:#8a94a8;font-size:12px;text-align:center;margin:0">Your code: <b style="color:#c9d1de">' + code + '</b></p>' +
-    '<p style="color:#888;font-size:13px;margin-top:22px;border-top:1px solid #1e2030;padding-top:14px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>';
+    '<p style="color:#888;font-size:13px;margin-top:22px;border-top:1px solid #1e2030;padding-top:14px">Questions? Reply to this email or contact hello@9amleads.com.</p></div>');
 }
 function processAffiliateReactivation() {
   try {
@@ -19247,6 +19262,27 @@ function wrapDarkEmailShell(bodyHtml) {
   return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark"><style>:root{color-scheme:dark}@media only screen and (max-width:480px){.mob{padding-left:16px!important;padding-right:16px!important}}</style></head><body style="margin:0;padding:0;background:#07090f;font-family:Inter,Arial,sans-serif"><table width="100%" cellpadding="0" cellspacing="0" bgcolor="#07090f"><tr><td align="center" style="padding:24px 16px"><table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%">' + buildEmailHeader() +
     '<tr><td bgcolor="#0f172a" class="mob" style="background:#0f172a;padding:26px 30px">' + _body + '</td></tr>' +
     buildEmailFooter() + '</td></tr></table></td></tr></table></body></html>';
+}
+
+// Convert a dark-themed affiliate email body to the LIGHT branded house style (used by
+// the long nurture/reactivation emails) and wrap it in the standard shell, so affiliate
+// emails match the welcome/daily/campaign emails exactly.
+function affiliateLightEmail(bodyHtml) {
+  var h = String(bodyHtml == null ? '' : bodyHtml)
+    .replace(/background:#0a0a0a;?/g, '')
+    .replace(/color:#f5f5f5/g, 'color:#1e293b')
+    .replace(/background:rgba\(255,255,255,\.04\);border:1px solid #1e2030/g, 'background:rgba(14,165,233,0.05);border:1px solid rgba(14,165,233,0.15)')
+    .replace(/color:#c9d1de/g, 'color:#1e293b')
+    .replace(/color:#e2e8f0/g, 'color:#1e293b')
+    .replace(/color:#f1f5f9/g, 'color:#0f172a')
+    .replace(/<b style="color:#fff">/g, '<b style="color:#0f172a">')
+    .replace(/<strong style="color:#fff">/g, '<strong style="color:#0f172a">')
+    .replace(/color:#94a3b8/g, 'color:#64748b')
+    .replace(/color:#8a94a8/g, 'color:#64748b')
+    .replace(/color:#f59e0b/g, 'color:#b45309')
+    .replace(/color:#34d399/g, 'color:#047857')
+    .replace(/color:#0ea5e9/g, 'color:#0369a1');
+  return wrapTrialEmailShell(h);
 }
 
 // POST /api/admin/send-tip-sample - email a single paid/tip campaign template to
