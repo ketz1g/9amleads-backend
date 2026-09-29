@@ -5330,7 +5330,7 @@ function memberInviteHtml(orgName, refLink, trialDays, toName) {
     'CRM integration - every lead pushed straight into your CRM automatically',
     'Auto Print &amp; Post and bulk campaigns for quiet times',
     'No contract, cancel anytime'
-  ].map(function(t){ return '<tr><td style="padding:0 0 8px;color:#1f2937;font-size:14.5px;line-height:1.55"><span style="color:#16a34a;font-weight:800">&#10003;</span>&nbsp; ' + t + '</td></tr>'; }).join('');
+  ].map(function(t){ return '<tr><td style="padding:0 0 8px;color:#1f2937;font-size:14.5px;line-height:1.55"><span style="color:' + p.accent + ';font-weight:800">&#10003;</span>&nbsp; ' + t + '</td></tr>'; }).join('');
   return '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>'
     + '<body style="margin:0;padding:0;background:#f4f5f7">'
     + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f5f7"><tr><td align="center" style="padding:24px 12px">'
@@ -22902,25 +22902,25 @@ function buildWinbackEmailHTML(product, step) {
   var HOWITWORKS = 'https://www.9amleads.com/how-it-works/';
   var PRICING = 'https://www.9amleads.com/pricing/';
   function shell(subject, pre, inner) {
-    return '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + subject + '</title></head>'
-      + '<body style="margin:0;padding:0;background-color:' + PAGE + ';">'
+    // Standard branded shell (same header/footer as the welcome + daily emails).
+    return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"><style>:root{color-scheme:light}@media only screen and (max-width:480px){.mob{padding-left:16px!important;padding-right:16px!important}}</style></head>'
+      + '<body style="margin:0;padding:0;background:#f1f5f9;font-family:Inter,Arial,sans-serif;color:#1e293b">'
       + '<div style="display:none;max-height:0;overflow:hidden;opacity:0">' + pre + '</div>'
-      + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="' + PAGE + '" style="background-color:' + PAGE + '"><tr><td align="center" style="padding:24px 12px">'
-      + '<table role="presentation" width="600" cellpadding="0" cellspacing="0" bgcolor="#ffffff" style="width:600px;max-width:600px;background-color:#ffffff;border:1px solid ' + LINE + ';border-radius:8px">'
-      + '<tr><td style="height:4px;background-color:' + p.accent + ';font-size:0;line-height:0">&nbsp;</td></tr>' + inner + '</table></td></tr></table></body></html>';
+      + '<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f1f5f9"><tr><td align="center" style="padding:24px 16px"><table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%">'
+      + buildEmailHeader()
+      + '<tr><td bgcolor="#ffffff" class="mob" style="background:#ffffff;padding:8px 0 4px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">' + inner + '</table></td></tr>'
+      + buildEmailFooter()
+      + '</td></tr></table></td></tr></table></body></html>';
   }
-  var logo = '<tr><td style="padding:26px 34px 0"><p style="margin:0;font-size:18px;font-weight:800;color:' + INK + '"><a href="https://www.9amleads.com" style="color:' + INK + ';text-decoration:none">9am<span style="color:' + p.accent + '">Leads</span></a></p></td></tr>';
-  var footer = '<tr><td style="padding:18px 34px 26px"><p style="margin:0 0 12px;color:' + INK + ';font-size:14px;line-height:1.6">Any questions, just reply and I will answer personally.</p>'
-    + '<table role="presentation" cellpadding="0" cellspacing="0"><tr><td width="84" valign="middle" style="padding-right:12px"><img src="https://9amleads.com/assets/ketan-photo.jpeg" width="72" height="72" alt="Ketz Mandalia" style="display:block;width:72px;height:72px;border-radius:50%;border:0"></td>'
-    + '<td valign="middle" style="color:' + INK + ';font-size:14px;line-height:1.5">All the best,<br><strong>Ketz Mandalia</strong><br><span style="color:' + MUTED + ';font-size:13px">Founder, 9amLeads<br>hello@9amleads.com</span></td></tr></table></td></tr>'
-    + '<tr><td style="padding:0 34px 26px"><p style="margin:0 0 10px;color:#9ca3af;font-size:11px;line-height:1.7">9am Leads Ltd, Company No. 17402522, 66 Paul Street, London EC2A 4NA.</p><a href="{{ unsubscribe }}" style="color:' + MUTED + ';font-size:12px;text-decoration:underline">Unsubscribe</a></td></tr>';
+  var logo = '';
+  var footer = '<tr><td style="padding:6px 34px 24px"><p style="margin:0;color:#1e293b;font-size:14px;line-height:1.6">Any questions, just reply and I will answer personally.<br><br>All the best,<br><strong>Ketz Mandalia</strong><br><span style="color:#64748b">Founder, 9amLeads</span></p></td></tr>';
   function block(title, lines) {
     return '<tr><td style="padding:0 0 14px"><p style="margin:0 0 6px;font-size:14px;font-weight:800;color:' + INK + '">' + title + '</p>'
-      + lines.map(function (l) { return '<p style="margin:0 0 4px;font-size:13px;color:' + MUTED + ';line-height:1.55"><span style="color:#16a34a;font-weight:800">&#10003;</span>&nbsp; ' + l + '</p>'; }).join('') + '</td></tr>';
+      + lines.map(function (l) { return '<p style="margin:0 0 4px;font-size:13px;color:' + MUTED + ';line-height:1.55"><span style="color:' + p.accent + ';font-weight:800">&#10003;</span>&nbsp; ' + l + '</p>'; }).join('') + '</td></tr>';
   }
   function bullets(items) {
     return '<tr><td style="padding:6px 34px 4px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">'
-      + items.map(function (t) { return '<tr><td style="padding:0 0 7px;color:' + INK + ';font-size:14px;line-height:1.55"><span style="color:#16a34a;font-weight:800">&#10003;</span>&nbsp; ' + t + '</td></tr>'; }).join('') + '</table></td></tr>';
+      + items.map(function (t) { return '<tr><td style="padding:0 0 7px;color:' + INK + ';font-size:14px;line-height:1.55"><span style="color:' + p.accent + ';font-weight:800">&#10003;</span>&nbsp; ' + t + '</td></tr>'; }).join('') + '</table></td></tr>';
   }
   function cta(url, text, sub) {
     return '<tr><td align="center" style="padding:10px 34px 6px"><a href="' + url + '" style="display:inline-block;background-color:' + p.accent + ';color:#ffffff;text-decoration:none;padding:15px 38px;border-radius:6px;font-size:16px;font-weight:800">' + text + '</a>'
@@ -23023,21 +23023,21 @@ function buildCancelledWinbackEmail(product, step) {
   var INK = '#1f2937', MUTED = '#6b7280', LINE = '#e5e7eb', PAGE = '#f4f5f7';
   var PRICING = 'https://www.9amleads.com/pricing/';
   function shell(subject, pre, inner) {
-    return '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + subject + '</title></head>'
-      + '<body style="margin:0;padding:0;background-color:' + PAGE + ';">'
+    // Standard branded shell (same header/footer as the welcome + daily emails).
+    return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"><style>:root{color-scheme:light}@media only screen and (max-width:480px){.mob{padding-left:16px!important;padding-right:16px!important}}</style></head>'
+      + '<body style="margin:0;padding:0;background:#f1f5f9;font-family:Inter,Arial,sans-serif;color:#1e293b">'
       + '<div style="display:none;max-height:0;overflow:hidden;opacity:0">' + pre + '</div>'
-      + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="' + PAGE + '" style="background-color:' + PAGE + '"><tr><td align="center" style="padding:24px 12px">'
-      + '<table role="presentation" width="600" cellpadding="0" cellspacing="0" bgcolor="#ffffff" style="width:600px;max-width:600px;background-color:#ffffff;border:1px solid ' + LINE + ';border-radius:8px">'
-      + '<tr><td style="height:4px;background-color:' + p.accent + ';font-size:0;line-height:0">&nbsp;</td></tr>' + inner + '</table></td></tr></table></body></html>';
+      + '<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f1f5f9"><tr><td align="center" style="padding:24px 16px"><table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%">'
+      + buildEmailHeader()
+      + '<tr><td bgcolor="#ffffff" class="mob" style="background:#ffffff;padding:8px 0 4px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">' + inner + '</table></td></tr>'
+      + buildEmailFooter()
+      + '</td></tr></table></td></tr></table></body></html>';
   }
-  var logo = '<tr><td style="padding:26px 34px 0"><p style="margin:0;font-size:18px;font-weight:800;color:' + INK + '"><a href="https://www.9amleads.com" style="color:' + INK + ';text-decoration:none">9am<span style="color:' + p.accent + '">Leads</span></a></p></td></tr>';
-  var footer = '<tr><td style="padding:18px 34px 26px"><p style="margin:0 0 12px;color:' + INK + ';font-size:14px;line-height:1.6">Any questions, just reply and I will answer personally.</p>'
-    + '<table role="presentation" cellpadding="0" cellspacing="0"><tr><td width="84" valign="middle" style="padding-right:12px"><img src="https://9amleads.com/assets/ketan-photo.jpeg" width="72" height="72" alt="Ketz Mandalia" style="display:block;width:72px;height:72px;border-radius:50%;border:0"></td>'
-    + '<td valign="middle" style="color:' + INK + ';font-size:14px;line-height:1.5">All the best,<br><strong>Ketz Mandalia</strong><br><span style="color:' + MUTED + ';font-size:13px">Founder, 9amLeads<br>hello@9amleads.com</span></td></tr></table></td></tr>'
-    + '<tr><td style="padding:0 34px 26px"><p style="margin:0 0 10px;color:#9ca3af;font-size:11px;line-height:1.7">9am Leads Ltd, Company No. 17402522, 66 Paul Street, London EC2A 4NA.</p><a href="{{ unsubscribe }}" style="color:' + MUTED + ';font-size:12px;text-decoration:underline">Unsubscribe</a></td></tr>';
+  var logo = '';
+  var footer = '<tr><td style="padding:6px 34px 24px"><p style="margin:0;color:#1e293b;font-size:14px;line-height:1.6">Any questions, just reply and I will answer personally.<br><br>All the best,<br><strong>Ketz Mandalia</strong><br><span style="color:#64748b">Founder, 9amLeads</span></p></td></tr>';
   function block(title, lines) {
     return '<tr><td style="padding:0 0 14px"><p style="margin:0 0 6px;font-size:14px;font-weight:800;color:' + INK + '">' + title + '</p>'
-      + lines.map(function (l) { return '<p style="margin:0 0 4px;font-size:13px;color:' + MUTED + ';line-height:1.55"><span style="color:#16a34a;font-weight:800">&#10003;</span>&nbsp; ' + l + '</p>'; }).join('') + '</td></tr>';
+      + lines.map(function (l) { return '<p style="margin:0 0 4px;font-size:13px;color:' + MUTED + ';line-height:1.55"><span style="color:' + p.accent + ';font-weight:800">&#10003;</span>&nbsp; ' + l + '</p>'; }).join('') + '</td></tr>';
   }
   function cta(url, text, sub) {
     return '<tr><td align="center" style="padding:10px 34px 6px"><a href="' + url + '" style="display:inline-block;background-color:' + p.accent + ';color:#ffffff;text-decoration:none;padding:15px 38px;border-radius:6px;font-size:16px;font-weight:800">' + text + '</a>'
@@ -23102,8 +23102,7 @@ function crmSetupReminderEmail(cust, issue) {
     ? '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">When we tested your CRM webhook it returned an error' + (lp && lp.status ? ' (<strong>HTTP ' + escHtml(String(lp.status)) + '</strong>)' : '') + ', so your leads are not reaching your CRM yet. It is usually a quick fix.</p>'
     : '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">You have not connected a CRM yet, so your leads currently only go to your email and dashboard. Connecting one takes about two minutes.</p>';
   function step(n, t) { return '<tr><td style="padding:0 0 8px;color:' + INK + ';font-size:14px;line-height:1.6"><strong>' + n + '.</strong> ' + t + '</td></tr>'; }
-  var inner = '<tr><td style="padding:26px 34px 0"><p style="margin:0;font-size:18px;font-weight:800;color:' + INK + '">9am<span style="color:' + ACC + '">Leads</span></p></td></tr>'
-    + '<tr><td style="padding:14px 34px 6px">'
+  var inner = '<tr><td style="padding:14px 34px 6px">'
     + '<p style="margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:' + ACC + '">Get your leads into your CRM</p>'
     + '<h1 style="margin:0 0 14px;font-size:23px;line-height:1.3;font-weight:800;color:' + INK + '">Two minutes to connect your CRM</h1>'
     + '<p style="margin:0 0 12px;color:' + INK + ';font-size:15px;line-height:1.65">Hi ' + name + ',</p>'
@@ -23119,15 +23118,14 @@ function crmSetupReminderEmail(cust, issue) {
     + '<p style="margin:0 0 12px;color:' + MUTED + ';font-size:13px;line-height:1.65"><strong>If the test fails:</strong> a <strong>404</strong> means the URL is wrong or has expired - copy a fresh one from your CRM. A timeout means it must accept POST JSON and be publicly reachable.</p>'
     + '</td></tr>'
     + '<tr><td align="center" style="padding:8px 34px 6px"><a href="https://9amleads.com/portal/dashboard.html" style="display:inline-block;background-color:' + ACC + ';color:#ffffff;text-decoration:none;padding:15px 36px;border-radius:6px;font-size:16px;font-weight:700">Open Settings &rarr; CRM</a></td></tr>'
-    + '<tr><td style="padding:18px 34px 26px"><p style="margin:0 0 12px;color:' + INK + ';font-size:14px;line-height:1.6">Stuck? Just reply and I will walk you through it personally.</p>'
-    + '<table role="presentation" cellpadding="0" cellspacing="0"><tr><td width="84" valign="middle" style="padding-right:12px"><img src="https://9amleads.com/assets/ketan-photo.jpeg" width="72" height="72" alt="Ketz Mandalia" style="display:block;width:72px;height:72px;border-radius:50%;border:0"></td>'
-    + '<td valign="middle" style="color:' + INK + ';font-size:14px;line-height:1.5">All the best,<br><strong>Ketz Mandalia</strong><br><span style="color:' + MUTED + ';font-size:13px">Founder, 9amLeads<br>hello@9amleads.com</span></td></tr></table></td></tr>'
-    + '<tr><td style="padding:0 34px 26px"><p style="margin:0 0 10px;color:#9ca3af;font-size:11px;line-height:1.7">9am Leads Ltd, Company No. 17402522, 66 Paul Street, London EC2A 4NA.</p><a href="{{ unsubscribe }}" style="color:' + MUTED + ';font-size:12px;text-decoration:underline">Unsubscribe</a></td></tr>';
-  return '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Connect your CRM</title></head>'
-    + '<body style="margin:0;padding:0;background-color:' + PAGE + ';">'
-    + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="' + PAGE + '" style="background-color:' + PAGE + '"><tr><td align="center" style="padding:24px 12px">'
-    + '<table role="presentation" width="600" cellpadding="0" cellspacing="0" bgcolor="#ffffff" style="width:600px;max-width:600px;background-color:#ffffff;border:1px solid ' + LINE + ';border-radius:8px">'
-    + '<tr><td style="height:4px;background-color:' + ACC + ';font-size:0;line-height:0">&nbsp;</td></tr>' + inner + '</table></td></tr></table></body></html>';
+    + '<tr><td style="padding:6px 34px 24px"><p style="margin:0;color:#1e293b;font-size:14px;line-height:1.6">Stuck? Just reply and I will walk you through it personally.<br><br>All the best,<br><strong>Ketz Mandalia</strong><br><span style="color:#64748b">Founder, 9amLeads</span></p></td></tr>';
+  return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"><style>:root{color-scheme:light}@media only screen and (max-width:480px){.mob{padding-left:16px!important;padding-right:16px!important}}</style></head>'
+    + '<body style="margin:0;padding:0;background:#f1f5f9;font-family:Inter,Arial,sans-serif;color:#1e293b">'
+    + '<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f1f5f9"><tr><td align="center" style="padding:24px 16px"><table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%">'
+    + buildEmailHeader()
+    + '<tr><td bgcolor="#ffffff" class="mob" style="background:#ffffff;padding:8px 0 4px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">' + inner + '</table></td></tr>'
+    + buildEmailFooter()
+    + '</td></tr></table></td></tr></table></body></html>';
 }
 
 // GET /api/admin/email-library - every email a customer can receive, grouped by
