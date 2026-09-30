@@ -38502,7 +38502,15 @@ async function runDeliveryRehearsal(trigger, opts) {
           var have = (row.queued_mailable || 0) + (row.preview_count || 0);
           var status = row.status || (have >= expected ? 'OK' : 'SHORT');
           out.new_customers.push({ email: nc.email, product: nc.product, expected: expected, preview: have, status: status, areas: row.areas || [] });
-          if (status !== 'OK') out.problems.push('NEW SIGNUP ' + nc.email + ' (' + nc.product + ') would get ' + have + '/' + expected + ' - check their areas/product');
+          if (status !== 'OK') {
+            var _ncMsg = 'NEW SIGNUP ' + nc.email + ' (' + nc.product + ') would get ' + have + '/' + expected + ' - check their areas/product';
+            // NON-BLOCKING for the post-deploy smoke test: a single new customer's
+            // temporary area supply must not roll back an unrelated code deploy (the
+            // engine is fine). The 08:05 pre-9am rehearsal still treats it as a hard
+            // problem so the founder is alerted before 9am.
+            if (String(trigger) === 'post-deploy') { if (!out.warnings) out.warnings = []; out.warnings.push(_ncMsg); }
+            else out.problems.push(_ncMsg);
+          }
         });
         console.log('[REHEARSAL] new signups (48h): ' + out.new_customers.map(function(a){ return a.email + ' ' + a.preview + '/' + a.expected; }).join(' | '));
       } else {
