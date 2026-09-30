@@ -26344,7 +26344,8 @@ async function enrichArchiveFromSources(product, limit) {
     }
     var fixed = todo.filter(function(l) { return hasUsablePremiseAddress(String(l.fullAddress || l.address || l.deceasedAddress || ''), String(l.postcode)); }).length;
     if (fixed) writeArchive(product, arch);
-    return { fixed: fixed, attempted: todo.length, total: arch.length };
+    var diag = todo.slice(0, 3).map(function(l) { return { url: l.url, id: l.id, address: l.address, fullAddress: l.fullAddress, postcode: l.postcode, source: l.source, companyNumber: l.companyNumber, registrationNumber: l.registrationNumber }; });
+    return { fixed: fixed, attempted: todo.length, total: arch.length, diag: diag };
   } catch(e) { return { error: e.message }; }
 }
 
