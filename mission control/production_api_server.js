@@ -8634,6 +8634,14 @@ app.get('/api/admin/affiliates', adminAuth, (req, res) => {
       return {
         id: a.id, name: a.name, code: a.code, email: a.email, status: a.status, payout_rate: rate,
         association: a.association || '', recruited_by: a.recruited_by || '', commission_amount: a.commission_amount || null,
+        // PARTNER fields (a partner is not an affiliate: it has a partner_type and no
+        // affiliate survey/voice). Surfaced so the admin can show a partner review
+        // instead of the affiliate application form.
+        partner_type: a.partner_type || '', business_name: a.business_name || '', phone: a.phone || '',
+        sales_experience: a.sales_experience || '', preferred_sectors: a.preferred_sectors || [],
+        member_reach: a.member_reach || '', website: a.website || '',
+        terms_accepted_at: a.terms_accepted_at || null, compliance_acknowledged_at: a.compliance_acknowledged_at || null,
+        commission_type: a.commission_type || '',
         created_at: a.created_at, counts: counts,
         application: a.application || null,
         kyc: kycStatus(a),

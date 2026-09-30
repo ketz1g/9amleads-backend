@@ -1366,12 +1366,39 @@ function setAffAssociation(id, current) {
     .then(function(d) { if (d.success) { alert('Association set for ' + d.affiliate.name + '. Rate: £' + d.affiliate.commission_amount); loadAffiliates(); } else alert(d.error || 'Could not set association'); })
     .catch(function(e) { alert('Error: ' + e.message); });
 }
+// A record is a PARTNER (not an affiliate applicant) when it has a partner_type of
+// sales_partner/association, or it has no affiliate survey/voice at all. Partners are
+// NOT reviewed with the affiliate survey/voice/T&C form (2026-09-30).
+function _isPartnerRec(a) {
+  if (!a) return false;
+  if (a.partner_type === 'sales_partner' || a.partner_type === 'association') return true;
+  var app = a.application || {};
+  var hasSurvey = app.survey && typeof app.survey === 'object' && Object.keys(app.survey).length > 0;
+  var hasVoice = !!(app.voice && app.voice.audio);
+  return !hasSurvey && !hasVoice;
+}
+function renderPartnerReview(a) {
+  var typeLbl = a.partner_type === 'association' ? 'Trade Association' : (a.partner_type === 'sales_partner' ? 'Sales Partner' : 'Partner');
+  function row(label, val) { return '<div style="display:flex;gap:8px;font-size:12px;margin-bottom:6px"><div style="color:#64748b;min-width:150px">' + label + '</div><div style="color:#0f172a;font-weight:600">' + pEsc(val || '-') + '</div></div>'; }
+  var termsOk = !!(a.terms_accepted_at || (a.kyc && a.kyc.tc_accepted));
+  var h = '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#1e3a8a"><b>Partner application</b> &middot; ' + pEsc(typeLbl) + '</div>' +
+    row('Name', a.name) + row('Email', a.email) + row('Phone', a.phone) + row('Business', a.business_name) +
+    (a.partner_type === 'sales_partner' ? row('Sales experience', a.sales_experience) + row('Preferred sectors', (a.preferred_sectors || []).join(', ')) : '') +
+    (a.partner_type === 'association' ? row('Member reach', a.member_reach) + row('Website', a.website) : '') +
+    row('Applied', a.created_at ? new Date(a.created_at).toLocaleString('en-GB') : '') +
+    '<div style="font-size:12px;margin-top:6px;color:' + (termsOk ? '#166534' : '#b45309') + '">' + (termsOk ? '&#10003; Partner Terms accepted' : (a.partner_type ? '&#9888; Partner Terms not recorded' : 'No affiliate survey on file (partner/manual record)')) + '</div>' +
+    '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px"><input id="rv-note" placeholder="Optional note to email them" style="flex:1;min-width:160px;padding:9px 11px;border:1px solid #cbd5e1;border-radius:8px;font-size:12px">' +
+    '<button class="btn btn-primary btn-sm" onclick="decideApplication(\'' + a.id + '\',\'approve\')">&#10003; Approve</button>' +
+    '<button class="btn btn-sm" style="background:#ef4444;color:#fff" onclick="decideApplication(\'' + a.id + '\',\'reject\')">&#10007; Reject</button></div>';
+  showModal('Partner Review &middot; ' + pEsc(a.name), h, 620);
+}
 function reviewApplication(id) {
   fetch(API + '/api/admin/affiliates?t=' + Date.now(), { headers: adminHeaders() })
     .then(function(r) { return r.json(); })
     .then(function(d) {
       var a = (d.affiliates || []).find(function(x) { return x.id === id; });
       if (!a) { alert('Affiliate not found'); return; }
+      if (_isPartnerRec(a)) { renderPartnerReview(a); return; }
       var app = a.application || {};
       var s = app.survey || {};
       function q(n, v) { return '<div style="font-size:12px;margin-bottom:8px"><div style="color:#475569;font-weight:600">' + n + '</div><div style="color:#0f172a;margin-top:2px">' + pEsc(v || '-') + '</div></div>'; }
