@@ -22993,24 +22993,36 @@ async function runCommercialScrapeFill(opts) {
   var leads = [];
   try { leads = await require('./rightmove_scraper_v2').collectCommercialLeads({ areas: areas, pages: pages, include_let: includeLet, force_apify: false }); } catch(e) { leads = []; }
   if (!Array.isArray(leads)) leads = [];
-  var poolPath = path.join(DATA_DIR, (PRODUCT_LEAD_FILES['moving'] && PRODUCT_LEAD_FILES['moving'].file) || 'moving-leads.json');
-  var pool = [];
-  try {
-    var raw = JSON.parse(fs.readFileSync(poolPath, 'utf-8'));
-    pool = Array.isArray(raw) ? raw : (raw && typeof raw === 'object' ? Object.keys(raw).reduce(function(a, k) { if (k.charAt(0) !== '_' && Array.isArray(raw[k])) a = a.concat(raw[k]); return a; }, []) : []);
-  } catch(e) {}
-  var seen = {}; pool.forEach(function(l) { var k = l && (l.id || l.url); if (k) seen[k] = 1; });
-  var added = 0;
-  leads.forEach(function(l) { if (!l) return; l.commercial = true; var k = l.id || l.url; if (k && !seen[k]) { seen[k] = 1; pool.push(l); added++; } });
-  try { fs.writeFileSync(poolPath, JSON.stringify(pool, null, 2)); } catch(e) {}
+  // IMPORTANT: commercial leads are tagged commercial:true and go into the moving
+  // ARCHIVE only (which is the source of the Commercial Moves BULK pool). They must
+  // NOT go into the daily moving POOL - that feeds the residential 9am delivery, and
+  // commercial premises are not mail-ready for a residential feed.
+  leads.forEach(function(l) { if (l) l.commercial = true; });
+  var archBefore = 0;
+  try { archBefore = (readArchive('moving') || []).length; } catch(e) {}
   try { appendToArchive('moving', leads); } catch(e) {}
-  console.log('[COMMERCIAL-FILL] scraped ' + leads.length + ', added ' + added + ' to pool (total ' + pool.length + ') in ' + (Date.now() - t0) + 'ms');
-  return { scraped: leads.length, added_to_pool: added, pool_total: pool.length, areas: areas.length, pages: pages, ms: Date.now() - t0 };
+  var archAfter = archBefore;
+  try { archAfter = (readArchive('moving') || []).length; } catch(e) {}
+  console.log('[COMMERCIAL-FILL] scraped ' + leads.length + ', archive ' + archBefore + ' -> ' + archAfter + ' in ' + (Date.now() - t0) + 'ms');
+  return { scraped: leads.length, archive_before: archBefore, archive_after: archAfter, areas: areas.length, pages: pages, ms: Date.now() - t0 };
 }
 // POST /api/admin/scrape-commercial { areas?, pages?, let? } - manually fill the pool now.
 app.post('/api/admin/scrape-commercial', adminAuth, async (req, res) => {
   try { res.json({ success: true, result: await runCommercialScrapeFill(req.body || {}) }); } catch(e) { res.status(500).json({ error: e.message }); }
 });
+// Housekeeping: strip commercial premises from the DAILY moving pool (they belong in the
+// archive, not the residential 9am feed). Runs at boot and on demand.
+function cleanCommercialFromMovingPool() {
+  try {
+    var poolPath = path.join(DATA_DIR, (PRODUCT_LEAD_FILES['moving'] && PRODUCT_LEAD_FILES['moving'].file) || 'moving-leads.json');
+    var raw = JSON.parse(fs.readFileSync(poolPath, 'utf-8'));
+    var arr = Array.isArray(raw) ? raw : (raw && typeof raw === 'object' ? Object.keys(raw).reduce(function(a, k) { if (k.charAt(0) !== '_' && Array.isArray(raw[k])) a = a.concat(raw[k]); return a; }, []) : []);
+    var kept = arr.filter(function(l) { try { return !isCommercialLead(l); } catch(e) { return true; } });
+    if (kept.length !== arr.length) { fs.writeFileSync(poolPath, JSON.stringify(kept, null, 2)); console.log('[COMMERCIAL-CLEAN] removed ' + (arr.length - kept.length) + ' commercial leads from the moving pool'); }
+    return { removed: arr.length - kept.length, remaining: kept.length };
+  } catch(e) { return { error: e.message }; }
+}
+app.post('/api/admin/clean-commercial-pool', adminAuth, function(req, res) { try { res.json({ success: true, result: cleanCommercialFromMovingPool() }); } catch(e) { res.status(500).json({ error: e.message }); } });
 // Daily background test (06:40 UK weekdays): measure free commercial supply WITHOUT
 // spending Apify credits, so we know real volume before we sell or scale it.
 cron.schedule('40 6 * * 1-5', function() { try { runCommercialScrapeTest({}); } catch(e) { console.log('[COMMERCIAL-TEST] error: ' + e.message); } }, { timezone: 'Europe/London' });
@@ -45413,6 +45425,8 @@ app.listen(PORT, () => {
   // Refresh the Brevo suppression list on boot (non-blocking) so blocklisted addresses
   // are skipped from the first send after a restart.
   try { refreshBrevoSuppression(); } catch(e) { console.log('[BREVO] boot suppression error: ' + (e && e.message)); }
+  // Strip any commercial premises that leaked into the daily moving pool.
+  try { cleanCommercialFromMovingPool(); } catch(e) { console.log('[COMMERCIAL-CLEAN] boot error: ' + (e && e.message)); }
 
   // CAMPAIGN CATCH-UP ON BOOT: the scheduled trial/nurture run can be missed when the
   // service restarts around the run time (deploys/restarts). Sending is deduped by
