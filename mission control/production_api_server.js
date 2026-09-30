@@ -12960,30 +12960,37 @@ app.post('/api/admin/enrich-archive-sources', adminAuth, async (req, res) => {
 // the 1m/2m bands WITHOUT touching the fresh daily pool. Does NOT write the pool.
 async function backfillMovingArchive(opts) {
   opts = opts || {};
-  var pages = Math.max(1, Math.min(60, parseInt(opts.pages || '12', 10)));
   var rm = require('./rightmove_scraper_v2');
-  // Areas = every active moving/commercial customer area (falls back to defaults).
-  var areas = [];
-  try {
-    var seenA = {};
-    (getDb().customers || []).forEach(function(c) {
-      if (!(c.product === 'moving' || c.product === 'commercial' || ((c.biz_field3 || '').indexOf('moving') !== -1) || ((c.biz_field3 || '').indexOf('commercial') !== -1))) return;
-      var cfg = {}; try { cfg = JSON.parse(c.product_config || '{}'); } catch(e) {}
-      var prim = cfg[c.product] || {};
-      var raw = prim.target_areas || c.target_areas || '[]';
-      try { JSON.parse(raw).forEach(function(a) { var s = String(a || '').trim(); if (s && !seenA[s]) { seenA[s] = 1; areas.push(s); } }); } catch(e) {}
-    });
-  } catch(e) {}
-  var leads = [];
-  try { leads = await rm.collectMovingLeads({ areas: areas, pages: pages, include_let: false, commercial: false }); } catch(e) { leads = []; }
-  var added = 0;
-  try { if (Array.isArray(leads) && leads.length) { appendToArchive('moving', leads); added = leads.length; } } catch(e) {}
+  var _fullPcRe = /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i;
+  function dOf(l) { return l.sourceListedDate || l.firstVisibleDate || l.addedOn || l.publishedDate || l.incorporationDate || l.incorporated_on || l.updateDate || l.archivedAt || l.scrapedAt || ''; }
+  function bands(arch) {
+    var now = Date.now(); var b = { '0-2d': 0, '3-27d': 0, '28-35d': 0, '36-57d': 0, '58-65d': 0, 'older': 0, 'nodate': 0 };
+    arch.forEach(function(l) { var d = dOf(l); if (!d) { b.nodate++; return; } var days = (now - new Date(d).getTime()) / 86400000; if (days < 3) b['0-2d']++; else if (days < 28) b['3-27d']++; else if (days < 36) b['28-35d']++; else if (days < 58) b['36-57d']++; else if (days < 66) b['58-65d']++; else b.older++; });
+    return b;
+  }
+  // TARGET = aged (3-65d) archive leads that are NOT yet mailable and carry a source URL.
+  // Their Rightmove detail page publishes the full postcode + house number (free), which
+  // - once merged back - makes the 1m/2m bulk bands mailable without spending PAF credits.
   var arch = readArchive('moving');
   var now = Date.now();
-  function dOf(l) { return l.sourceListedDate || l.firstVisibleDate || l.addedOn || l.publishedDate || l.incorporationDate || l.incorporated_on || l.updateDate || l.archivedAt || l.scrapedAt || ''; }
-  var b = { '0-2d': 0, '3-27d': 0, '28-35d': 0, '36-57d': 0, '58-65d': 0, 'older': 0, 'nodate': 0 };
-  arch.forEach(function(l) { var d = dOf(l); if (!d) { b.nodate++; return; } var days = (now - new Date(d).getTime()) / 86400000; if (days < 3) b['0-2d']++; else if (days < 28) b['3-27d']++; else if (days < 36) b['28-35d']++; else if (days < 58) b['36-57d']++; else if (days < 66) b['58-65d']++; else b.older++; });
-  return { scraped: (leads || []).length, added: added, areas: areas.length, pages: pages, archive_total: arch.length, buckets: b };
+  var targets = arch.filter(function(l) {
+    if (!l || l.commercial || !l.url) return false;
+    var d = dOf(l); if (!d) return false;
+    var days = (now - new Date(d).getTime()) / 86400000;
+    if (days < 3 || days > 66) return false;
+    var pc = String(l.postcode || '').trim();
+    var addr = String(l.fullAddress || l.address || '');
+    if (_fullPcRe.test(pc) && hasUsablePremiseAddress(addr, pc, { acceptNamedPremise: true })) return false;
+    return true;
+  });
+  var cap = Math.max(1, Math.min(900, parseInt(opts.limit || '500', 10)));
+  targets = targets.slice(0, cap);
+  var enriched = [];
+  try { enriched = await rm.enrichMovingLeads(targets, 4); } catch(e) { enriched = []; }
+  var added = 0;
+  try { if (Array.isArray(enriched) && enriched.length) { appendToArchive('moving', enriched); added = enriched.length; } } catch(e) {}
+  var arch2 = readArchive('moving');
+  return { targeted: targets.length, enriched: (enriched || []).length, added: added, archive_total: arch2.length, buckets: bands(arch2) };
 }
 
 // POST /api/admin/backfill-archive - fill the moving bulk archive's 1m/2m bands by
@@ -12996,9 +13003,9 @@ app.post('/api/admin/backfill-archive', adminAuth, async (req, res) => {
       var _hp2 = _ukNow2.split(':'); var _mins2 = (parseInt(_hp2[0], 10) * 60) + parseInt(_hp2[1], 10);
       if (_mins2 >= 510 && _mins2 <= 545) return res.json({ success: true, skipped: true, reason: 'paused 08:30-09:05 UK' });
     } catch(e) {}
-    var _bfPages = (req.body && req.body.pages) || 12;
-    res.json({ success: true, background: true, pages: _bfPages, message: 'Backfill started in background (poll /api/admin/archive-diag?product=moving)' });
-    (async function() { try { var out = await backfillMovingArchive({ pages: _bfPages }); console.log('[BACKFILL] ' + JSON.stringify(out)); } catch(e) { console.log('[BACKFILL] error: ' + e.message); } })();
+    var _bfLimit = (req.body && req.body.limit) || 500;
+    res.json({ success: true, background: true, limit: _bfLimit, message: 'Backfill started in background (poll /api/admin/archive-diag?product=moving)' });
+    (async function() { try { var out = await backfillMovingArchive({ limit: _bfLimit }); console.log('[BACKFILL] ' + JSON.stringify(out)); } catch(e) { console.log('[BACKFILL] error: ' + e.message); } })();
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
