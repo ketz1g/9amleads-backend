@@ -39281,14 +39281,23 @@ var gscMod = null;
 function getGsc() { if (!gscMod) gscMod = require('./gsc_integration'); return gscMod; }
 
 // GET /api/admin/gsc/status - is GSC configured/connected, which property, last sync.
-app.get('/api/admin/gsc/status', adminAuth, function(req, res) {
+app.get('/api/admin/gsc/status', adminAuth, async function(req, res) {
   try {
     var g = getGsc();
     var cfg = g.loadConfig();
     var creds = g.getCredentials();
+    // Probe the token so the admin UI can show "Reconnect" the moment Google revokes or
+    // expires the refresh token (a Google OAuth app left in "Testing" mode expires
+    // refresh tokens after 7 days - that is what killed the connection on 22 Sep).
+    var tokenOk = false, tokenError = '';
+    if (g.isConnected()) {
+      try { await g.ensureToken(creds); tokenOk = true; } catch(te) { tokenOk = false; tokenError = (te && te.message) || String(te); }
+    }
     res.json({
       configured: g.isConfigured(creds),
       connected: g.isConnected(),
+      token_ok: tokenOk,
+      token_error: tokenError,
       client_id_set: !!(creds.client_id),
       redirect_uri: g.REDIRECT_URI,
       property: cfg.property || '',

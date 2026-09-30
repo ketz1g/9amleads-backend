@@ -234,6 +234,10 @@ function gscStatusHtml(st) {
     return '<div class="status-banner" style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.2);color:#fcd34d">' +
       '<b>Not configured.</b> Create an OAuth client in Google Cloud and set the GSC_CLIENT_ID + GSC_CLIENT_SECRET env vars, then press Connect.</div>';
   }
+  if (st.connected && st.token_ok === false) {
+    return '<div class="status-banner" style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.25);color:#fca5a5">' +
+      '<b>Google connection expired.</b> ' + esc(st.token_error || 'The authorisation is no longer valid.') + ' Press <b>Reconnect with Google</b> to restore live data.</div>';
+  }
   if (!st.connected) {
     return '<div class="status-banner" style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.2);color:#fcd34d">' +
       'Configured but <b>not connected</b>. Press Connect, sign in with the Google account that owns the verified 9amleads.com Search Console property, and approve access.</div>';
@@ -249,7 +253,10 @@ function renderGsc(st) {
   var refBtn = document.getElementById('gscRefreshBtn');
   if (!stEl) return;
   stEl.innerHTML = gscStatusHtml(st);
-  if (st.configured && !st.connected) {
+  if (st.connected && st.token_ok === false) {
+    if (connBtn) { connBtn.style.display = ''; connBtn.innerHTML = '<i class="fas fa-plug"></i> Reconnect with Google'; }
+    if (refBtn) refBtn.style.display = 'none';
+  } else if (st.configured && !st.connected) {
     if (connBtn) { connBtn.style.display = ''; connBtn.innerHTML = '<i class="fas fa-plug"></i> Connect with Google'; }
   } else if (st.connected) {
     if (connBtn) { connBtn.style.display = 'none'; }
