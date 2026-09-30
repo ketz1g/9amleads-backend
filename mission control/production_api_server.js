@@ -25533,6 +25533,10 @@ function postableLeadInfo(l, allowCompanyNoDoor) {
   }
   var bn = l && (l.buildingNumber || l.houseNumber || l.house_no || l.building_number || l.streetNumber || l.flatNumber || '');
   var hasDoor = !!(bn && String(bn).trim()) || /(^|\s)(\d{1,4}[a-z]?)(\s|,|$)/i.test(' ' + addr + ' ') || /(flat|apartment|unit|suite|office|block|building|business park|industrial estate)\s/iu.test(t);
+  // BULK: a named premise ("Pine Cottage", "The Whitehouse, Hockliffe Street") is a
+  // deliverable Royal Mail address even without a door number (business rule 2026-09-30).
+  // postableLeadInfo is bulk-only, so this never relaxes the delivery/email gate.
+  try { if (!hasDoor && ADDR_PREMISE.hasUsablePremiseAddress(addr, pc, { acceptNamedPremise: true, relaxMultiUnit: true })) hasDoor = true; } catch(e) {}
   var company = l && String(l.company || l.companyName || l.company_name || l.name || '').trim();
   var ok = hasDoor || (allowCompanyNoDoor && company);
   return { ok: !!ok, hasDoor: !!hasDoor, reason: ok ? 'ok' : 'No house/building number on address' };
@@ -25918,7 +25922,7 @@ app.post('/api/newbusiness/bulk/send', authMiddleware, async (req, res) => {
       .run(campaignId, c.id, 'Bulk Leads Pack (' + leads.length + ' UK leads)', mailType, 'paid', 'paid', nowIso, nowIso, '', String(leads.length), String(leads.length * 2));
     var insertR = db.prepare('INSERT INTO direct_mail_recipients (id,customer_id,campaign_id,name,company,address_line1,address_line2,city,postcode,country,lead_id,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)');
     leads.forEach(function(l) {
-      var rcpt = buildStannpRecipientFromLead(l);
+      var rcpt = buildStannpRecipientFromLead(l, { acceptNamedPremise: true });
       if (!rcpt || !rcpt.postcode) return;
       insertR.run(uuidv4(), c.id, campaignId, rcpt.name || 'Homeowner', rcpt.company || '', rcpt.address_line1 || '', '', rcpt.city || '', String(rcpt.postcode).toUpperCase(), 'United Kingdom', String(l.id || l.company_number || ''), 'pending', nowIso);
     });
@@ -26320,7 +26324,8 @@ async function enrichArchiveFromSources(product, limit) {
   try {
     var arch = readArchive(product);
     if (!arch.length) return { fixed: 0, total: 0 };
-    var todo = arch.filter(function(l) { return l && l.postcode && !hasUsablePremiseAddress(String(l.fullAddress || l.address || l.deceasedAddress || ''), String(l.postcode)); }).slice(0, limit || 120);
+    var _namedOpt = { acceptNamedPremise: true, relaxMultiUnit: true };
+    var todo = arch.filter(function(l) { return l && l.postcode && !hasUsablePremiseAddress(String(l.fullAddress || l.address || l.deceasedAddress || ''), String(l.postcode), _namedOpt); }).slice(0, limit || 120);
     if (!todo.length) return { fixed: 0, total: arch.length };
     if (product === 'probate') {
       for (var pj = 0; pj < todo.length; pj++) {
@@ -26329,7 +26334,7 @@ async function enrichArchiveFromSources(product, limit) {
         var nid = pm ? pm[1] : '';
         if (!nid) continue;
         var ga = await fetchGazetteNoticeAddress(nid);
-        if (ga && hasUsablePremiseAddress(ga, String(todo[pj].postcode || ''))) { todo[pj].deceasedAddress = ga; todo[pj].fullAddress = ga; todo[pj].address = ga; }
+        if (ga && hasUsablePremiseAddress(ga, String(todo[pj].postcode || ''), _namedOpt)) { todo[pj].deceasedAddress = ga; todo[pj].fullAddress = ga; todo[pj].address = ga; }
         await new Promise(function(r) { setTimeout(r, 2500); });
       }
     } else if (product === 'newbusiness') {
@@ -26339,10 +26344,10 @@ async function enrichArchiveFromSources(product, limit) {
         var cn = cm ? cm[1] : (todo[i].companyNumber || todo[i].registrationNumber || todo[i].company_number || '');
         if (!cn) continue;
         var a = await fetchCompaniesHouseAddress(cn);
-        if (a && hasUsablePremiseAddress(a, String(todo[i].postcode || ''))) { todo[i].address = a; todo[i].fullAddress = a; }
+        if (a && hasUsablePremiseAddress(a, String(todo[i].postcode || ''), _namedOpt)) { todo[i].address = a; todo[i].fullAddress = a; }
       }
     }
-    var fixed = todo.filter(function(l) { return hasUsablePremiseAddress(String(l.fullAddress || l.address || l.deceasedAddress || ''), String(l.postcode)); }).length;
+    var fixed = todo.filter(function(l) { return hasUsablePremiseAddress(String(l.fullAddress || l.address || l.deceasedAddress || ''), String(l.postcode), _namedOpt); }).length;
     if (fixed) writeArchive(product, arch);
     return { fixed: fixed, attempted: todo.length, total: arch.length };
   } catch(e) { return { error: e.message }; }
@@ -26714,7 +26719,7 @@ app.post('/api/boost/send', authMiddleware, async (req, res) => {
       .run(campaignId, c.id, 'Boost Pack (' + leads.length + ' ' + product + ' leads)', mailType, 'paid', 'paid', nowIso, nowIso, '', String(leads.length), String(leads.length * (BULK_MAIL_RATES[mailChoice] || 300) / 100));
     var insertR = db.prepare('INSERT INTO direct_mail_recipients (id,customer_id,campaign_id,name,company,address_line1,address_line2,city,postcode,country,lead_id,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)');
     leads.forEach(function(l) {
-      var rcpt = buildStannpRecipientFromLead(l);
+      var rcpt = buildStannpRecipientFromLead(l, { acceptNamedPremise: true });
       if (!rcpt || !rcpt.postcode) return;
       insertR.run(uuidv4(), c.id, campaignId, rcpt.name || (product === 'probate' ? 'The Executor of ' + (l.name || '') : 'Homeowner'), rcpt.company || '', rcpt.address_line1 || '', '', rcpt.city || '', String(rcpt.postcode).toUpperCase(), 'United Kingdom', String(l.id || l.url || ''), 'pending', nowIso);
     });
@@ -36365,8 +36370,17 @@ app.get('/api/direct-mail/leads', authMiddleware, (req, res) => {
 // CH4 7FG") with no separate city - we split it so Stannp gets street / town /
 // postcode separately (Stannp rejects a single-line "everything" address).
 // Property leads never use the address as the recipient name -> "Homeowner".
-function buildStannpRecipientFromLead(parsed) {
+function buildStannpRecipientFromLead(parsed, opts) {
   parsed = parsed || {};
+  // PROBATE NOISE: the Gazette fullAddress can carry "(previously of: ...)" - strip it
+  // so it never prints on the mailpiece.
+  try {
+    parsed = Object.assign({}, parsed);
+    var _cleanPrev = function(s) { return String(s || '').replace(/\s*\(previously of:[\s\S]*?\)/gi, '').replace(/\s{2,}/g, ' ').replace(/\s+,/g, ',').trim(); };
+    if (parsed.address) parsed.address = _cleanPrev(parsed.address);
+    if (parsed.fullAddress) parsed.fullAddress = _cleanPrev(parsed.fullAddress);
+    if (parsed.deceasedAddress) parsed.deceasedAddress = _cleanPrev(parsed.deceasedAddress);
+  } catch(e) {}
   function splitAddress(full) {
     var parts = String(full || '').split(',').map(function(s){ return s.trim(); }).filter(Boolean);
     var pc = String(parsed.postcode || '').toUpperCase().replace(/\s+/g, '');
@@ -36422,7 +36436,11 @@ function buildStannpRecipientFromLead(parsed) {
   // guards every direct-mail path (manual send, bulk, auto-send, repeat mailings)
   // so a non-mailable address can never reach Stannp.
   var _fullPc = /^[A-Z]{1,2}[0-9][A-Z0-9]?\s[0-9][A-Z]{2}$/i.test(postcode);
-  var _mailable = _fullPc && _hasNum(address_line1) && hasStreetName(address_line1);
+  // BULK opt-in: a named premise ("Pine Cottage", "The Whitehouse") is a deliverable
+  // Royal Mail address without a door number. Only bulk callers pass acceptNamedPremise,
+  // so the daily delivery gate still requires a door/flat number.
+  var _namedOk = !!(opts && opts.acceptNamedPremise) && /[A-Za-z]{3,}/.test(String(address_line1 || ''));
+  var _mailable = _fullPc && (_hasNum(address_line1) || _namedOk) && (hasStreetName(address_line1) || _namedOk);
   var name = parsed.company || (parsed.name && parsed.name !== parsed.address ? parsed.name : '') || 'Homeowner';
   return { address_line1: address_line1, city: city, postcode: postcode, name: name, company: parsed.company || '', mailable: _mailable };
 }

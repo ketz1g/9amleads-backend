@@ -53,6 +53,12 @@ function hasUsablePremiseAddress(addr, pc, opts) {
   //    (Business rule 2026-08-21: named building => needs door/flat/apartment number.)
   var BLOCK_WORDS_RE = /^(?:apartments?|block|tower|towers|court|courts|mansions|flats|wharf|point|heights|residence|residences|villas|chambers|studios?|suites?|place|square)$/i;
   if (BLOCK_WORDS_RE.test(last)) return false;
+  // 4b) NAMED PREMISE (opt-in, BULK print only): a first segment that is not a bare
+  //     street suffix ("Pine Cottage, Knighton, Alcester" / "The Whitehouse, Hockliffe
+  //     Street") IS a deliverable Royal Mail premise and is accepted when the caller
+  //     passes { acceptNamedPremise: true }. The delivery/email gate never sets this,
+  //     so it still requires a door/flat number (business rule 2026-08-21 unchanged).
+  if (opts && opts.acceptNamedPremise && /[A-Za-z]{3,}/.test(seg)) return true;
   // 5) No numeric premise identifier found anywhere -> reject (no usable premise).
   return false;
 }

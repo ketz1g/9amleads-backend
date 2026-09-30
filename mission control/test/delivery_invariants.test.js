@@ -29,6 +29,8 @@ ok('flat number accepted', ap.hasUsablePremiseAddress('Flat 2, Eaton Mansions', 
 ok('bare street rejected', ap.hasUsablePremiseAddress('Park Road', 'N11 2JD') === false);
 ok('named building without number rejected', ap.hasUsablePremiseAddress('The Old Rectory', 'GU21 4PU') === false);
 ok('tower block without flat number rejected', ap.hasUsablePremiseAddress('Landmark East Tower, 24 Marsh Wall', 'E14 9EG') === false);
+ok('named premise accepted for bulk (opt-in)', ap.hasUsablePremiseAddress('Pine Cottage, Knighton, Alcester', 'B49 5LU', { acceptNamedPremise: true }) === true);
+ok('named premise still rejected for delivery (default)', ap.hasUsablePremiseAddress('Pine Cottage, Knighton, Alcester', 'B49 5LU') === false);
 
 console.log('\n=== Freshness floor ===');
 ok('Monday floor = Friday 09:00 UK', fr.getFreshCutoffIso(new Date('2026-08-17T08:00:00Z').getTime()) === '2026-08-14T08:00:00.000Z');
