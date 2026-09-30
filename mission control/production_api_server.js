@@ -26384,6 +26384,21 @@ function getBoostArchiveLeads(product, ageKey, count, allowedAreas) {
   // Prefer the 65-day bulk archive; fall back to the live pool until it has filled.
   var _archProd = (product === 'commercial') ? 'moving' : product;
   var arr = readArchive(_archProd);
+  // AGED LIVE-POOL SUPPLEMENT (2026-09-30): fresh-dominated sources (Rightmove
+  // moving/commercial) keep the archive's aged band thin even though the live pool
+  // holds aged, mailable leads. Merge the pool in (dedup by id/url) so bulk inventory
+  // reflects the real aged supply. The age + mailable + area filters below still apply,
+  // so this never sells fresh leads or bypasses the print gate.
+  if (product === 'moving' || product === 'commercial') {
+    try {
+      var _pool = readPoolFile(_archProd) || [];
+      if (_pool.length) {
+        var _seenK = {};
+        (arr || []).forEach(function(l) { var k = l && (l.id || l.url); if (k) _seenK[k] = 1; });
+        _pool.forEach(function(l) { var k = l && (l.id || l.url); if (k && !_seenK[k]) { _seenK[k] = 1; arr.push(l); } });
+      }
+    } catch(eP) {}
+  }
   if (!arr || !arr.length) arr = readPoolFile(_archProd);
   // COMMERCIAL MOVES bulk pool: same archive file as moving, but only commercial
   // premises (offices/units/retail) - the pool commercial buyers actually want.
