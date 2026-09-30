@@ -27068,10 +27068,9 @@ app.get('/api/admin/bulk-pools', adminAuth, (req, res) => {
         var addr = l.fullAddress || l.address || l.deceasedAddress || '';
         if (!addr || addr.trim().length < 8) return;
         if (!postableLeadInfo(l, prod === 'newbusiness' || prod === 'commercial').ok) return;
-        // Age = the real LISTING date (not scrapedAt).
-        var d = (prod === 'commercial')
-        ? (l.sourceListedDate || l.firstVisibleDate || l.addedOn || l.publishedDate || l.updateDate || '')
-        : (l.sourceListedDate || pickFreshDate(l) || '');
+        // Age = the real LISTING date (SAME fallback chain as getBoostArchiveLeads so the
+        // bands match the customer view exactly).
+        var d = l.sourceListedDate || l.firstVisibleDate || l.addedOn || l.publishedDate || l.incorporationDate || l.incorporated_on || l.updateDate || String(l.scrapedAt || l.createdAt || '');
         var t = d ? new Date(d).getTime() : 0;
         if (!t) return;
         var age = (now - t) / 86400000;
