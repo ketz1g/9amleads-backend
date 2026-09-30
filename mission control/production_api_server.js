@@ -26282,7 +26282,20 @@ function appendToArchive(product, leads) {
         // (the enriched pool address with a door number replaces the raw, door-less one).
         var exAddr = String(ex.fullAddress || ex.address || ex.deceasedAddress || '');
         var newAddr = String(l.fullAddress || l.address || l.deceasedAddress || '');
-        if (newAddr.length > exAddr.length) { ex.address = l.address; ex.fullAddress = l.fullAddress; ex.deceasedAddress = l.deceasedAddress; }
+        // POSTCODE UPGRADE: raw list-view leads carry a partial ("KT2") or missing
+        // postcode; the enriched lead has the full one. Always prefer the full postcode
+        // so the archived lead can pass the mailable gate.
+        var _fullPcRe = /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i;
+        var exPc = String(ex.postcode || '').trim(), newPc = String(l.postcode || '').trim();
+        var _pcBetter = !!newPc && (!exPc || (_fullPcRe.test(newPc) && !_fullPcRe.test(exPc)));
+        if (newAddr.length > exAddr.length || _pcBetter) {
+          if (newAddr.length > exAddr.length) { ex.address = l.address; ex.fullAddress = l.fullAddress; ex.deceasedAddress = l.deceasedAddress; }
+          if (_pcBetter) ex.postcode = newPc;
+          if (l.street) ex.street = l.street;
+          if (l.buildingNumber) ex.buildingNumber = l.buildingNumber;
+          if (l.udprn) ex.udprn = l.udprn;
+          if (l.uprn) ex.uprn = l.uprn;
+        }
         return;
       }
       l.archivedAt = l.archivedAt || new Date().toISOString(); arch.push(l); seen[k] = l; addedLeads.push(l);
@@ -41168,6 +41181,11 @@ function syncCustomers(product) {
                 console.log('[SCRAPER] OnTheMarket: 0 leads');
               }
             } catch(otmErr) { console.log('[SCRAPER] OnTheMarket error:', otmErr.message); }
+            // RE-ARCHIVE the ENRICHED moving leads: the first appendToArchive (above) ran
+            // on the RAW list-view scrape (partial/empty postcodes). Now that door numbers
+            // + full postcodes are attached, merge them in so the 65-day archive holds
+            // mailable leads for the 1m/2m bulk bands (merge upgrades address + postcode).
+            try { appendToArchive('moving', leads); } catch(arE2) {}
             if (!leads || leads.length === 0) {  console.log('[SCRAPER] Rightmove: 0 real leads today'); }
           } catch(e) { console.log('[SCRAPER] Rightmove error:', e.message); leads = []; }
         } else if (product === 'probate') {
