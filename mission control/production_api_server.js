@@ -38184,6 +38184,38 @@ function checkBlogQueueLow() {
   }
 }
 
+// Daily: verify the Google Search Console refresh token still works and email the
+// founder BEFORE it silently stops syncing. A Google OAuth app left in "Testing"
+// mode expires refresh tokens after 7 days - this catches that automatically (once/day).
+async function checkGscToken() {
+  try {
+    var g = getGsc();
+    if (!g || typeof g.isConnected !== 'function' || !g.isConnected()) return;
+    var creds = g.getCredentials();
+    try { await g.ensureToken(creds); return; } // healthy
+    catch(te) {
+      var dbData = getDb();
+      var today = new Date().toISOString().split('T')[0];
+      if (dbData.seo_gsc_notified === today) return;
+      var html = '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:560px;margin:0 auto">' +
+        '<h1 style="font-family:Outfit,sans-serif;color:#ef4444;margin:0 0 8px">Google Search Console disconnected</h1>' +
+        '<p style="color:#ccc;line-height:1.7">Live Google search data has stopped syncing because the authorisation expired:</p>' +
+        '<p style="color:#fca5a5;font-size:13px">' + String((te && te.message) || te) + '</p>' +
+        '<p style="color:#ccc;line-height:1.7">Reconnect at <b>Admin &rarr; SEO &rarr; Reconnect with Google</b>. To stop this recurring, publish the OAuth app (Google Cloud Console &rarr; OAuth consent screen &rarr; Publish app).</p>' +
+        '<p style="color:#888;font-size:13px">Admin: <a href="https://9amleads.com/portal/seo.html" style="color:#0ea5e9">9amleads.com/portal/seo.html</a></p>' +
+        '</div>';
+      try {
+        await sendBrevoEmail({ email: 'hello@9amleads.com', name: '9amLeads Owner' }, '9amLeads: Google Search Console disconnected', html);
+        dbData.seo_gsc_notified = today;
+        fs.writeFileSync(DB_FILE, JSON.stringify(dbData, null, 2));
+        console.log('[GSC] Token-expired notification sent');
+      } catch(e2) { console.log('[GSC] token notif email failed: ' + (e2 && e2.message || e2)); }
+    }
+  } catch(e) { console.log('[GSC] token check error: ' + (e && e.message || e)); }
+}
+// 07:10 UK daily - before the 9am window, so a dead token is flagged in good time.
+cron.schedule('10 7 * * *', function() { try { checkGscToken(); } catch(e) { console.log('[GSC] cron error:', e.message); } }, { timezone: 'Europe/London' });
+
 // ===== AUTOMATED DELIVERY TEST (30-min) =====
 // Runs the REAL delivery against the test.* accounts every 30 min using today's pool,
 // builds a report (count, door-complete, full postcode, in-area, freshness) and emails
