@@ -8853,7 +8853,7 @@ app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
       if (prod === 'moving') return isCompleteMovingAddress(addr, pc);
       return hasUsablePremiseAddress(addr, pc) && _FULL_PC.test(String(pc).trim());
     }
-    (dbT.customers || []).forEach(function(cust) {
+    sortCustomersByAreaSpecificity(dbT.customers || []).forEach(function(cust) {
       // PROPERTY products that need a mailable (door-numbered) address for Print & Post.
       var prod = null;
       if (cust.product === 'moving' || cust.product === 'probate' || cust.product === 'commercial') prod = cust.product;
@@ -20977,6 +20977,25 @@ function _autoWidenAreas(c) {
   } catch(e) { console.log('[PREALLOC] widen error: ' + e.message); return []; }
 }
 
+// Allocate leads to the MOST SPECIFIC customers FIRST. A customer who chose a handful
+// of postcode areas (e.g. TW/KT/W/GU) is only served by those areas, whereas an
+// "All UK" or county customer will accept anything - so the specific customer must
+// claim its in-area leads before the broad ones consume them (exclusive delivery).
+// Higher score = served earlier. (2026-09-30)
+function areaSpecificityScore(c) {
+  var areas = [];
+  try { areas = JSON.parse(c.target_areas || '[]'); } catch(e) { areas = []; }
+  if (!Array.isArray(areas)) areas = [];
+  var txt = areas.join(' ').toLowerCase();
+  if (/all.?uk|uk.?wide|nationwide|whole.?uk/.test(txt)) return -1;          // broadest -> last
+  var hasNonPc = areas.some(function(a) { return !/^[A-Z]{1,2}[0-9]?$/i.test(String(a).trim()); });
+  if (hasNonPc) return 0;                                                    // county/region -> mid
+  return 1000 - areas.length;                                               // fewer areas -> earlier
+}
+function sortCustomersByAreaSpecificity(list) {
+  return (list || []).slice().sort(function(a, b) { return areaSpecificityScore(b) - areaSpecificityScore(a); });
+}
+
 // ===== PRE-ALLOCATION (08:30 UK weekdays) =====
 // Queue each real customer's promised count of mail-ready leads BEFORE 9am, so the
 // 9am run is a fast, deterministic "deliver the queue" and can never stall scanning
@@ -20987,7 +21006,7 @@ function preallocateDeliveryQueues() {
     // One fill pass: queue every real customer to their promised count from the pool.
     function runFill() {
       var dbA = getDb();
-      var real = (dbA.customers || []).filter(function(c) { return !isInternalAccount(c) && isEntitledForDelivery(c); });
+      var real = sortCustomersByAreaSpecificity((dbA.customers || []).filter(function(c) { return !isInternalAccount(c) && isEntitledForDelivery(c); }));
       var stillShort = [];
       var seen = {}; // shared across customers so the same lead is never queued twice
       var chain = Promise.resolve();
@@ -21112,6 +21131,9 @@ cron.schedule('35 7 * * 1-5', function() { try { preallocateDeliveryQueues(); } 
 // aren't starved). Daily catches weekend expiries; again at 07:25 before pre-allocation.
 cron.schedule('5 5 * * *', function() { try { releaseLeadsForInactiveCustomers(); } catch(e) { console.log('[RELEASE] cron error:', e.message); } }, { timezone: 'Europe/London' });
 cron.schedule('25 7 * * 1-5', function() { try { releaseLeadsForInactiveCustomers(); } catch(e) { console.log('[RELEASE] cron error:', e.message); } }, { timezone: 'Europe/London' });
+// Near-instant: a trial expires by clock, not by event, so poll every 15 min to free
+// its queue as soon as it lapses (and catch same-day cancellations/pauses).
+cron.schedule('*/15 * * * *', function() { try { releaseLeadsForInactiveCustomers(); } catch(e) { console.log('[RELEASE] cron error:', e.message); } }, { timezone: 'Europe/London' });
 
 // ===== 08:00 MORNING READINESS SUMMARY =====
 // ONE concise email every weekday, BEFORE the 9am run, telling the founder plainly
@@ -24743,6 +24765,9 @@ app.post('/api/cancel-trial', authMiddleware, async (req, res) => {
     if (customer.plan !== 'free_trial') return res.status(400).json({ error: 'Not on free trial' });
     db.prepare('UPDATE customers SET plan = \'cancelled\', leads_per_day = 0 WHERE id = ?').run(req.user.id);
     releasePostcodes(req.user.id);
+    // Free this account's undelivered queued leads straight away so it stops locking
+    // leads out of the pool for other customers in the same areas.
+    try { releaseLeadsForInactiveCustomers(); } catch(e2) {}
     res.json({ success: true, message: 'Your free trial has been cancelled.' });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
