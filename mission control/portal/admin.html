@@ -1090,7 +1090,8 @@ function loadPartnerAdmin(section){
     list.forEach(function(p){
       html += '<tr class="p-row" data-q="' + pEsc((p.full_name||'') + ' ' + (p.email||'') + ' ' + (p.referral_code||'')) + '" style="border-top:1px solid #eef2f7"><td style="padding:6px"><b>' + pEsc(p.full_name || p.email) + '</b><br><span style="color:#64748b">' + pEsc(p.email) + '</span></td><td>' + pEsc(p.partner_type) + '</td><td>' + pStatusTag(p.status) + '</td><td>' + pEsc(p.referral_code) + '</td><td>' + (p.commission_type === 'recurring' ? '£' + (p.commission_amount||25) + '/mo' : '£' + (p.commission_amount||25) + ' once') + '</td><td>' +
         '<select style="font-size:10px;padding:3px 6px" onchange="setPartnerStatus(\'' + p.id + '\', this.value)">' + ['active','pending','suspended','rejected','closed'].map(function(o){ return '<option value="' + o + '"' + (p.status === o ? ' selected' : '') + '>' + o + '</option>'; }).join('') + '</select> ' +
-        '<select style="font-size:10px;padding:3px 6px" onchange="setPartnerType(\'' + p.id + '\', this.value)">' + ['affiliate','sales_partner'].map(function(o){ return '<option value="' + o + '"' + (p.partner_type === o ? ' selected' : '') + '>' + o + '</option>'; }).join('') + '</select>' +
+        '<select style="font-size:10px;padding:3px 6px" onchange="setPartnerType(\'' + p.id + '\', this.value)">' + ['affiliate','sales_partner','association'].map(function(o){ return '<option value="' + o + '"' + (p.partner_type === o ? ' selected' : '') + '>' + o + '</option>'; }).join('') + '</select> ' +
+        '<button class="btn btn-outline btn-sm" onclick="viewPartnerDashboard(\'' + p.id + '\')" title="View this partner\'s dashboard"><i class="fas fa-eye"></i> View</button>' +
         '</td></tr>';
     });
     html += '</tbody></table>';
@@ -1220,9 +1221,12 @@ function loadAffiliates() {
   fetch(API + '/api/admin/affiliates?t=' + Date.now(), { headers: adminHeaders() })
     .then(function(r) { return r.json(); })
     .then(function(d) {
+      // AFFILIATES ONLY: sales partners + trade associations live in the Partner
+      // Programme section (filtered out here).
+      var affs = (d.affiliates || []).filter(function(a){ return a.partner_type !== 'sales_partner' && a.partner_type !== 'association'; });
       // Prominent "applications waiting for your decision" banner.
       if (pw) {
-        var pending = (d.affiliates || []).filter(function(a){ return a.status === 'pending'; });
+        var pending = affs.filter(function(a){ return a.status === 'pending'; });
         var hasVoice = function(a){ return a.application && a.application.voice && a.application.voice.audio; };
         var anyVoice = pending.some(hasVoice);
         if (pending.length) {
@@ -1243,9 +1247,9 @@ function loadAffiliates() {
         }
       }
       if (!d.success || !d.affiliates) { wrap.innerHTML = '<div class="empty">Could not load affiliates.</div>'; return; }
-      if (!d.affiliates.length) { wrap.innerHTML = '<div class="empty">No affiliates yet. Click "Add Affiliate" to create one.</div>'; return; }
+      if (!affs.length) { wrap.innerHTML = '<div class="empty">No affiliates yet. Click "Add Affiliate" to create one. (Sales partners and trade associations are in the Partner Programme section.)</div>'; return; }
       var h = '<table><thead><tr><th>Affiliate</th><th>Code</th><th>Status</th><th>Application</th><th>KYC</th><th>Association</th><th>Rate</th><th>Referrals</th><th>Pending</th><th>Ready to pay</th><th>Paid</th><th>Actions</th></tr></thead><tbody>';
-      d.affiliates.forEach(function(a) {
+      affs.forEach(function(a) {
         var st = a.status === 'pending' ? '<span class="badge badge-warn">Pending</span>' : a.status === 'rejected' ? '<span class="badge" style="background:#fef2f2;color:#ef4444">Rejected</span>' : a.status === 'paused' ? '<span class="badge">Paused</span>' : '<span class="badge badge-ok">Active</span>';
         var appCell = a.application ? '<button class="btn btn-outline btn-sm" onclick="reviewApplication(\'' + a.id + '\')">' + (a.status === 'pending' ? 'Review' : 'View') + '</button>' : '<span style="font-size:11px;color:#94a3b8">-</span>';
         var kycCell = '';
@@ -1525,6 +1529,15 @@ function viewAffiliateDashboard(id) {  fetch(API + '/api/admin/affiliate-imperso
     .then(function(d) {
       if (d.token) { window.open('/portal/affiliate.html?token=' + encodeURIComponent(d.token), '_blank'); }
       else alert(d.error || 'Could not view affiliate dashboard');
+    })
+    .catch(function(e) { alert('Error: ' + e.message); });
+}
+function viewPartnerDashboard(id) {
+  fetch(API + '/api/admin/partner-impersonate', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, adminHeaders()), body: JSON.stringify({ partner_id: id }) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.token) { window.open('/portal/partner.html?token=' + encodeURIComponent(d.token), '_blank'); }
+      else alert(d.error || 'Could not view partner dashboard');
     })
     .catch(function(e) { alert('Error: ' + e.message); });
 }

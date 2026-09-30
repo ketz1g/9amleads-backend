@@ -653,6 +653,11 @@ function showModal(html){
 }
 function closeModal(){ try { if (window._modal) window._modal.remove(); } catch(e) {} }
 (function init(){
+  // Admin preview / magic link: /portal/partner.html?token=... auto-logs in.
+  try {
+    var q = new URLSearchParams(window.location.search).get('token');
+    if (q) { setToken(q); try { history.replaceState(null, '', window.location.pathname); } catch(e) {} }
+  } catch(e) {}
   if (getToken()) { loadDash(); }
   else { document.getElementById('login-view').classList.remove('hidden'); }
 })();

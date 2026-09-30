@@ -5840,7 +5840,10 @@ app.get('/api/admin/partner/payouts', adminAuth, (req, res) => {
 app.get('/api/admin/partners', adminAuth, (req, res) => {
   try {
     var dbc = getDb();
-    var list = (dbc.affiliates || []).slice().sort(function(a,b){ return String(b.created_at || '') < String(a.created_at || '') ? -1 : 1; });
+    // PARTNERS ONLY: sales partners + trade associations. Plain affiliates live in
+    // the separate Affiliate Program section (filtered out here).
+    var list = (dbc.affiliates || []).filter(function(p){ var t = partnerTypeOf(p); return t === 'sales_partner' || t === 'association'; })
+      .slice().sort(function(a,b){ return String(b.created_at || '') < String(a.created_at || '') ? -1 : 1; });
     res.json({ success: true, partners: list.map(function(p){ return partnerDashboardSafe(p); }) });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -8789,6 +8792,24 @@ app.post('/api/admin/affiliate-impersonate', adminAuth, (req, res) => {
     db2.impersonation_logs.push({ id: uuidv4(), admin_email: (req.user && req.user.email) || 'admin', affiliate_id: aff.id, affiliate_email: aff.email, kind: 'affiliate', created_at: new Date().toISOString() });
     saveDb();
     res.json({ success: true, token: token, affiliate: { id: aff.id, email: aff.email, name: aff.name, code: aff.code } });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/partner-impersonate - let the admin view a PARTNER's dashboard.
+// Partner tokens share the affiliate auth shape (role:'affiliate', id), so this mints
+// the same token type and opens /portal/partner.html?token=...
+app.post('/api/admin/partner-impersonate', adminAuth, (req, res) => {
+  try {
+    var pid = req.body.partner_id;
+    if (!pid) return res.status(400).json({ error: 'Partner ID required' });
+    var p = (getDb().affiliates || []).find(function(a) { return a.id === pid; });
+    if (!p) return res.status(404).json({ error: 'Partner not found' });
+    var token = jwt.sign({ id: p.id, email: p.email, role: 'affiliate', admin_impersonating: true, impersonated_by: (req.user && req.user.email) || 'admin', impersonated_at: new Date().toISOString() }, JWT_SECRET, { expiresIn: '2h' });
+    var db2 = getDb();
+    if (!db2.impersonation_logs) db2.impersonation_logs = [];
+    db2.impersonation_logs.push({ id: uuidv4(), admin_email: (req.user && req.user.email) || 'admin', affiliate_id: p.id, affiliate_email: p.email, kind: 'partner', created_at: new Date().toISOString() });
+    saveDb();
+    res.json({ success: true, token: token, partner: { id: p.id, email: p.email, name: p.name, code: p.referral_code || p.code } });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
