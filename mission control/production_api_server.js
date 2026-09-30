@@ -11734,6 +11734,11 @@ app.get('/api/admin/payment-events', adminAuth, (req, res) => {
     (dbPE.payment_events || []).forEach(function(e) {
       if (e && e.type === 'paid' && e.event === 'checkout.session.completed' && !(Number(e.amount) > 0)) { e.type = 'setup'; _peChanged = true; }
     });
+    // PURGE test/internal events (e2e.*, loadtests, demo/test accounts) so the founder
+    // only ever sees REAL money events.
+    var _peBefore = (dbPE.payment_events || []).length;
+    dbPE.payment_events = (dbPE.payment_events || []).filter(function(e) { return !isTestPaymentEvent(e); });
+    if (dbPE.payment_events.length !== _peBefore) _peChanged = true;
     if (_peChanged) saveDb();
     var evs = (dbPE.payment_events || []).slice(-300).reverse();
     var failed = (dbPE.payment_events || []).filter(function(e) { return e.type === 'failed'; });
@@ -20818,6 +20823,17 @@ function isInternalAccount(c) {
   if (/^demo/.test(e)) return true;                      // demo-* accounts
   if (/^test\./.test(e)) return true;                    // test.* accounts
   if (c.demo === true) return true;                      // explicitly flagged demo
+  return false;
+}
+// Test / internal PAYMENT events (e2e.*, loadtests, demo/test accounts, our own inboxes)
+// are not real money and must never appear in the admin Payment Events list.
+function isTestPaymentEvent(e) {
+  if (!e) return true;
+  var em = String(e.email || e.customer_email || '').toLowerCase().trim();
+  if (!em) return false; // no email on the event - keep (e.g. a bare payment_intent.succeeded)
+  if (isInternalAccount({ email: em })) return true;
+  if (/^(e2e|loadtest|demo|test|qa|staging|sandbox|dummy|fake|noreply|no-reply)/.test(em)) return true;
+  if (/[+.]test@|@test\.|@example\.|@sandbox\.|e2e@/.test(em)) return true;
   return false;
 }
 // An account is "trial-expired" (and therefore NOT owed leads) when its 7-day trial
@@ -30953,6 +30969,7 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
       var _peDb = getDb();
       if (!Array.isArray(_peDb.payment_events)) _peDb.payment_events = [];
       var _peEmail = _pe.customer_email || _pe.receipt_email || (_pe.customer_details && _pe.customer_details.email) || (_pe.billing_details && _pe.billing_details.email) || '';
+      var _peIsTest = isTestPaymentEvent({ email: _peEmail });
       var _peAmt = 0;
       if (typeof _pe.amount_paid === 'number') _peAmt = _pe.amount_paid / 100;
       else if (typeof _pe.amount_due === 'number') _peAmt = _pe.amount_due / 100;
@@ -30965,10 +30982,14 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
       // looked like the customer was double-charged. Display uses stripe_at.
       var _peStripeTs = (_pe.status_transitions && _pe.status_transitions.paid_at) || _pe.created || event.created || 0;
       var _peStripeAt = _peStripeTs ? new Date(_peStripeTs * 1000).toISOString() : '';
-      _peDb.payment_events.push({ at: new Date().toISOString(), stripe_at: _peStripeAt, type: _peType, event: evType, email: _peEmail, customer: _pe.customer || '', amount: _peAmt, currency: (_pe.currency || 'gbp'), error: _peErr, event_id: (event.id || '') });
-      if (_peDb.payment_events.length > 1000) _peDb.payment_events = _peDb.payment_events.slice(-1000);
-      saveDb();
-      console.log('[PAYMENT-EVENT] ' + _peType + ' ' + evType + ' ' + _peEmail + ' ' + _peAmt.toFixed(2) + (_peErr ? ' err=' + _peErr : ''));
+      if (_peIsTest) {
+        console.log('[PAYMENT-EVENT] skipped test event ' + _peEmail + ' (' + evType + ')');
+      } else {
+        _peDb.payment_events.push({ at: new Date().toISOString(), stripe_at: _peStripeAt, type: _peType, event: evType, email: _peEmail, customer: _pe.customer || '', amount: _peAmt, currency: (_pe.currency || 'gbp'), error: _peErr, event_id: (event.id || '') });
+        if (_peDb.payment_events.length > 1000) _peDb.payment_events = _peDb.payment_events.slice(-1000);
+        saveDb();
+        console.log('[PAYMENT-EVENT] ' + _peType + ' ' + evType + ' ' + _peEmail + ' ' + _peAmt.toFixed(2) + (_peErr ? ' err=' + _peErr : ''));
+      }
     }
   } catch(ePe) {}
 
