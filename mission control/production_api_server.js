@@ -22993,6 +22993,16 @@ async function runCommercialScrapeFill(opts) {
   var leads = [];
   try { leads = await require('./rightmove_scraper_v2').collectCommercialLeads({ areas: areas, pages: pages, include_let: includeLet, force_apify: false }); } catch(e) { leads = []; }
   if (!Array.isArray(leads)) leads = [];
+  // ENRICH: the list view gives only a partial postcode ("N12", "M5"); fetch each
+  // listing's detail page (free) for the FULL postcode so more leads are mailable for
+  // commercial (company-at-address + full postcode = mailable). Bounded per run.
+  var enrichCap = parseInt(opts.enrich || '1500', 10);
+  try {
+    var _fullPc = /^[A-Z]{1,2}[0-9][A-Z0-9]?\s[0-9][A-Z]{2}$/i;
+    var need = leads.filter(function(l) { return l && l.url && !_fullPc.test(String(l.postcode || '').trim()); });
+    if (need.length > enrichCap) need = need.slice(0, enrichCap);
+    if (need.length) { console.log('[COMMERCIAL-FILL] enriching ' + need.length + ' leads via detail pages...'); await require('./rightmove_scraper_v2').enrichMovingLeads(need, 8); }
+  } catch(eE) { console.log('[COMMERCIAL-FILL] enrich error: ' + (eE && eE.message)); }
   // IMPORTANT: commercial leads are tagged commercial:true and go into the moving
   // ARCHIVE only (which is the source of the Commercial Moves BULK pool). They must
   // NOT go into the daily moving POOL - that feeds the residential 9am delivery, and
@@ -23006,9 +23016,12 @@ async function runCommercialScrapeFill(opts) {
   console.log('[COMMERCIAL-FILL] scraped ' + leads.length + ', archive ' + archBefore + ' -> ' + archAfter + ' in ' + (Date.now() - t0) + 'ms');
   return { scraped: leads.length, archive_before: archBefore, archive_after: archAfter, areas: areas.length, pages: pages, ms: Date.now() - t0 };
 }
-// POST /api/admin/scrape-commercial { areas?, pages?, let? } - manually fill the pool now.
-app.post('/api/admin/scrape-commercial', adminAuth, async (req, res) => {
-  try { res.json({ success: true, result: await runCommercialScrapeFill(req.body || {}) }); } catch(e) { res.status(500).json({ error: e.message }); }
+// POST /api/admin/scrape-commercial { areas?, pages?, let?, enrich? } - fill now.
+// Runs in the BACKGROUND (scrape + detail-page enrichment can take minutes).
+app.post('/api/admin/scrape-commercial', adminAuth, function(req, res) {
+  var opts = req.body || {};
+  res.json({ success: true, background: true, message: 'Commercial scrape + enrichment started. Check /api/admin/bulk-pools (commercial) in a few minutes.' });
+  (async function() { try { var r = await runCommercialScrapeFill(opts); console.log('[COMMERCIAL-FILL] done ' + JSON.stringify(r)); } catch(e) { console.log('[COMMERCIAL-FILL] error: ' + (e && e.message)); } })();
 });
 // Housekeeping: strip commercial premises from the DAILY moving pool (they belong in the
 // archive, not the residential 9am feed). Runs at boot and on demand.
