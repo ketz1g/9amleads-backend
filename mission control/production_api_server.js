@@ -39982,9 +39982,9 @@ app.get('/api/admin/seo/index-status', adminAuth, async function(req, res) {
       'https://9amleads.com/bulk.html',
       'https://9amleads.com/blog/'
     ];
-    var out = [];
-    for (var i = 0; i < pages.length; i++) {
-      var u = pages[i];
+    // Run the URL inspections in PARALLEL: 9 sequential GSC calls exceeded the proxy
+    // timeout and the UI received an empty body ("Unexpected end of JSON input").
+    var out = await Promise.all(pages.map(async function(u) {
       var row = {
         url: u, verdict: '', coverageState: '', lastCrawlTime: '', indexed: false, error: '',
         inspect_url: 'https://search.google.com/search-console/inspect?resource_id=' + encodeURIComponent(prop) + '&id=' + encodeURIComponent(u)
@@ -39996,8 +39996,8 @@ app.get('/api/admin/seo/index-status', adminAuth, async function(req, res) {
         row.lastCrawlTime = r.lastCrawlTime;
         row.indexed = /indexed/i.test(r.coverageState) && !/not indexed/i.test(r.coverageState) && !/unknown/i.test(r.coverageState);
       } catch(e) { row.error = e.message; }
-      out.push(row);
-    }
+      return row;
+    }));
 
     // Bing's view (last crawl + anchor/backlink count), fetched in parallel.
     var bingResults = await Promise.all(pages.map(function(u) { return bingGetUrlInfoAsync(u); }));
@@ -45613,10 +45613,14 @@ cron.schedule('0 4 * * *', async () => {
     var sitemapRes = writeSitemap();
     seoLog.push(sitemapRes.ok ? 'Sitemap refreshed: ' + sitemapRes.count + ' URLs' : 'Sitemap error: ' + (sitemapRes.error || ''));
 
-    // Ping search engines so new/updated content is picked up promptly
-    try { var http = require('http'); http.get('http://www.google.com/ping?sitemap=' + encodeURIComponent('https://9amleads.com/sitemap.xml'), function(gres) { gres.resume(); }); } catch(e1) {}
-    try { var https = require('https'); https.get('https://www.bing.com/ping?sitemap=' + encodeURIComponent('https://9amleads.com/sitemap.xml'), function(bres) { bres.resume(); }).on('error', function(){}); } catch(e2) {}
-    seoLog.push('Search engines pinged');
+    // REAL submission (fully automatic): IndexNow (unlimited) + Bing URL Submission
+    // (daily quota) + GSC sitemap re-submit. The old google/bing /ping?sitemap= calls
+    // were retired in 2023 and did nothing, so run the real push instead.
+    try {
+      var push = await httpCallLocal('POST', '/api/admin/seo/push-indexing', {}, 150000);
+      var pj = (push && push.json) || {};
+      seoLog.push('Pushed: IndexNow=' + (pj.indexnow_ok ? 'ok' : 'partial') + ', Bing sent=' + (pj.bing_sent || 0) + (pj.gsc_submit ? ', GSC sitemap=' + pj.gsc_submit.status : ''));
+    } catch(e3) { seoLog.push('Push error: ' + (e3 && e3.message || e3)); }
 
     dbData.seo_last_run = new Date().toISOString();
     fs.writeFileSync(DB_FILE, JSON.stringify(dbData, null, 2));

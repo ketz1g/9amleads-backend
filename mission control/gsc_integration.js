@@ -68,7 +68,57 @@ function isConfigured(creds) {
   creds = creds || getCredentials();
   return !!(creds.client_id && creds.client_secret);
 }
+// ---- Google SERVICE ACCOUNT (non-expiring) ----
+// Preferred over the OAuth refresh token: a service-account key NEVER expires, so the
+// connection stays live with no weekly reconnect. Configure with GSC_SERVICE_ACCOUNT_JSON
+// (the full key-file contents) or GSC_SERVICE_ACCOUNT_PATH (path to the key file), or
+// store the parsed key in the config as `service_account`. The service-account email
+// must be added as a user on the 9amleads.com Search Console property (Full/Owner).
+var _saToken = { token: '', exp: 0 };
+function getServiceAccount() {
+  if (process.env.GSC_SERVICE_ACCOUNT_JSON) {
+    try { return JSON.parse(process.env.GSC_SERVICE_ACCOUNT_JSON); } catch (e) {}
+  }
+  if (process.env.GSC_SERVICE_ACCOUNT_PATH) {
+    try { return JSON.parse(fs.readFileSync(process.env.GSC_SERVICE_ACCOUNT_PATH, 'utf-8')); } catch (e) {}
+  }
+  var cfg = loadConfig();
+  if (cfg.service_account && cfg.service_account.client_email) return cfg.service_account;
+  return null;
+}
+function hasServiceAccount() { return !!getServiceAccount(); }
+function _b64url(x) { return Buffer.from(x).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+function serviceAccountToken() {
+  return new Promise(function (resolve, reject) {
+    var sa = getServiceAccount();
+    if (!sa || !sa.client_email || !sa.private_key) return reject(new Error('No service account configured'));
+    if (_saToken.token && Date.now() < _saToken.exp - 60000) return resolve(_saToken.token);
+    try {
+      var iat = Math.floor(Date.now() / 1000);
+      var header = _b64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
+      var claims = _b64url(JSON.stringify({ iss: sa.client_email, scope: SCOPE, aud: 'https://oauth2.googleapis.com/token', iat: iat, exp: iat + 3600 }));
+      var signer = crypto.createSign('RSA-SHA256');
+      signer.update(header + '.' + claims);
+      var jwt = header + '.' + claims + '.' + _b64url(signer.sign(sa.private_key));
+      var data = require('querystring').stringify({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: jwt });
+      var req = https.request({ hostname: TOKEN_HOST, path: '/token', method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(data) } }, function (r) {
+        var b = ''; r.on('data', function (c) { b += c; }); r.on('end', function () {
+          var j = {}; try { j = JSON.parse(b); } catch (e) {}
+          if (r.statusCode !== 200 || !j.access_token) return reject(new Error('Service-account token failed (' + r.statusCode + '): ' + String(j.error_description || j.error || b).slice(0, 200)));
+          _saToken.token = j.access_token;
+          _saToken.exp = Date.now() + (parseInt(j.expires_in, 10) || 3600) * 1000;
+          resolve(j.access_token);
+        });
+      });
+      req.on('error', reject);
+      req.setTimeout(25000, function () { req.destroy(new Error('timeout')); });
+      req.write(data); req.end();
+    } catch (e) { reject(e); }
+  });
+}
+
 function isConnected() {
+  if (hasServiceAccount()) return true;
   var cfg = loadConfig();
   return !!(cfg.refresh_token && cfg.property);
 }
@@ -116,6 +166,8 @@ function refreshAccess(refreshToken, creds) {
 
 // Make sure we hold a valid (non-expired) access token, refreshing if needed.
 async function ensureToken(creds) {
+  // Service account (never expires) takes precedence over the OAuth refresh token.
+  if (hasServiceAccount()) return serviceAccountToken();
   creds = creds || getCredentials();
   var cfg = loadConfig();
   if (!cfg.access_token) throw new Error('Not connected to Google Search Console yet.');
@@ -321,6 +373,9 @@ module.exports = {
   getCredentials: getCredentials,
   isConfigured: isConfigured,
   isConnected: isConnected,
+  getServiceAccount: getServiceAccount,
+  hasServiceAccount: hasServiceAccount,
+  serviceAccountToken: serviceAccountToken,
   loadConfig: loadConfig,
   updateConfig: updateConfig,
   saveConfig: saveConfig,
