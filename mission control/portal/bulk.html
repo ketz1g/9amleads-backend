@@ -199,6 +199,19 @@ function load(){
 var BULK_MAIL = 'leaflet', BULK_RATES = { leaflet: 249, letter: 199, both: 399 }, BULK_SCOPE = 'uk', BULK_DATA = null;
 function updateScopeAvail(){
   var s = BULK_DATA; if (!s) return;
+  (function(){
+    var first = document.querySelector('.sbtn'); var seg = first ? first.parentNode : null; if (!seg) return;
+    var kind = s.area_kind || 'postcode';
+    if (BULK_SCOPE === 'county' && !s.wider_available) BULK_SCOPE = 'areas';
+    var areaLbl = kind === 'county' ? '&#127970; My counties' : kind === 'region' ? '&#127970; My region' : '&#127968; My areas';
+    var widerLbl = kind === 'county' ? 'My wider region' : 'My county + neighbours';
+    var base = 'padding:9px 16px;border-radius:9px;border:1px solid #e5e7eb;background:#fff;font-size:12.5px;font-weight:700;cursor:pointer;color:#6b7280';
+    var on = 'padding:9px 16px;border-radius:9px;border:1px solid #0ea5e9;background:#0ea5e9;font-size:12.5px;font-weight:700;cursor:pointer;color:#fff';
+    var html = '<button class="sbtn" data-s="areas" onclick="setBulkScope(\'areas\')" style="' + (BULK_SCOPE === 'areas' ? on : base) + '">' + areaLbl + '</button>';
+    if (s.wider_available) html += '<button class="sbtn" data-s="county" onclick="setBulkScope(\'county\')" style="' + (BULK_SCOPE === 'county' ? on : base) + '">' + widerLbl + '</button>';
+    html += '<button class="sbtn" data-s="uk" onclick="setBulkScope(\'uk\')" style="' + (BULK_SCOPE === 'uk' ? on : base) + '">&#127758; All UK (most leads)</button>';
+    seg.innerHTML = html;
+  })();
   var av = (s.available_by_scope && typeof s.available_by_scope[BULK_SCOPE] === 'number') ? s.available_by_scope[BULK_SCOPE] : (s.available || 0);
   var msg = { areas: 'your chosen areas', county: 'your wider county/region', uk: 'nationwide (All UK)' }[BULK_SCOPE] || '';
   var el = document.getElementById('scopeAvail');

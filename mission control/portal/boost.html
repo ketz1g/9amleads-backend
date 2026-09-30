@@ -135,7 +135,18 @@ function render(){
   var nm={moving:'Moving',commercial:'Commercial',probate:'Probate',planning:'Planning',newbusiness:'New Business'}[ST.product]||ST.product; 
   var _scopeAll = (D.available_by_scope && D.available_by_scope[ST.scope]) ? D.available_by_scope[ST.scope] : null;
   var a = (_scopeAll && _scopeAll[ST.product]) ? _scopeAll[ST.product] : (D.available[ST.product]||{tm:0,'1m':0,'2m':0});
-  document.querySelectorAll('#content .seg button[data-s]').forEach(function(b){b.classList.toggle('on',b.dataset.s===ST.scope);});
+  (function(){
+    var seg = document.getElementById('scopeSeg'); if (!seg) return;
+    var kind = D.area_kind || 'postcode';
+    if (ST.scope === 'county' && !D.wider_available) ST.scope = 'areas';
+    var areaLbl = kind === 'county' ? '&#127970; My counties' : kind === 'region' ? '&#127970; My region' : '&#127968; My areas';
+    var widerLbl = kind === 'county' ? 'My wider region' : 'My county + neighbours';
+    var btns = '<button data-s="areas" data-on="' + (ST.scope === 'areas' ? '1' : '') + '" onclick="setScope(\'areas\')">' + areaLbl + '</button>';
+    if (D.wider_available) btns += '<button data-s="county" data-on="' + (ST.scope === 'county' ? '1' : '') + '" onclick="setScope(\'county\')">' + widerLbl + '</button>';
+    btns += '<button data-s="uk" data-on="' + (ST.scope === 'uk' ? '1' : '') + '" onclick="setScope(\'uk\')">&#127758; All UK (most leads)</button>';
+    seg.innerHTML = btns;
+    seg.querySelectorAll('button').forEach(function(b){ var on = b.getAttribute('data-on') === '1'; b.classList.toggle('on', on); });
+  })();
   var _scopeTotal = ((a['tm']||0)+(a['1m']||0)+(a['2m']||0));
   var _scopeMsg = { areas:'your chosen areas', county:'your wider county/region', uk:'nationwide (All UK)' }[ST.scope]||'';
   var _scEl = document.getElementById('availScope');

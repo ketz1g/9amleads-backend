@@ -25730,6 +25730,7 @@ app.get('/api/newbusiness/bulk', authMiddleware, (req, res) => {
       sizes: NB_BULK_SIZES, mail_rates: BULK_MAIL_RATES,
       available: eligible ? getBulkEligibleLeads().length : 0,
       scopes: ['areas', 'county', 'uk'], min_count: BULK_MIN_COUNT,
+      wider_available: widerScopeDiffers(c), area_kind: customerAreaKind(c),
       available_by_scope: eligible ? { areas: getBulkEligibleLeads(areaSetForCustomer(c, 'areas')).length, county: getBulkEligibleLeads(areaSetForCustomer(c, 'county')).length, uk: getBulkEligibleLeads(null).length } : { areas: 0, county: 0, uk: 0 },
       // PRE-PAYMENT masked preview (never a mailable address) + full reserved leads
       // (only shown once a pack is purchased)
@@ -26053,25 +26054,71 @@ function areaSetForCustomer(cust, scope) {
     if (!Array.isArray(areas)) areas = [];
     var set = {};
     function addList(list) { (list || []).forEach(function(x) { if (x) set[String(x).toUpperCase()] = 1; }); }
-    function expand(norm) {
-      if (COUNTY_POSTCODE_MAP[norm]) { addList(COUNTY_POSTCODE_MAP[norm]); return true; }
-      if (typeof REGION_TO_POSTCODE_AREAS !== 'undefined' && REGION_TO_POSTCODE_AREAS[norm]) { addList(REGION_TO_POSTCODE_AREAS[norm]); return true; }
-      return false;
+    function isPcArea(a) { return /^[A-Z]{1,2}$/.test(a); }
+    function postcodesOf(norm) { // county/region name -> its postcode areas
+      if (COUNTY_POSTCODE_MAP[norm]) return COUNTY_POSTCODE_MAP[norm];
+      if (typeof REGION_TO_POSTCODE_AREAS !== 'undefined' && REGION_TO_POSTCODE_AREAS[norm]) return REGION_TO_POSTCODE_AREAS[norm];
+      return null;
+    }
+    // For a given set of postcode areas, the enclosing REGION(s) (N/S/E/W/Scotland/Wales/NI).
+    function regionsOfPcAreas(pcs) {
+      if (typeof REGION_TO_POSTCODE_AREAS === 'undefined') return [];
+      var out = {};
+      Object.keys(REGION_TO_POSTCODE_AREAS).forEach(function(k) { if ((REGION_TO_POSTCODE_AREAS[k] || []).some(function(p) { return pcs.indexOf(p) !== -1; })) out[k] = 1; });
+      return Object.keys(out);
     }
     areas.forEach(function(a) {
       var up = String(a || '').toUpperCase().trim();
       var norm = String(a || '').toLowerCase().replace(/[\s-]+/g, '-');
-      if (/^[A-Z]{1,2}$/.test(up)) {
-        if (scope === 'areas') { set[up] = 1; return; }
-        var matched = false;
-        Object.keys(COUNTY_POSTCODE_MAP).forEach(function(k) { if ((COUNTY_POSTCODE_MAP[k] || []).indexOf(up) !== -1) { addList(COUNTY_POSTCODE_MAP[k]); matched = true; } });
-        if (typeof REGION_TO_POSTCODE_AREAS !== 'undefined') { Object.keys(REGION_TO_POSTCODE_AREAS).forEach(function(k) { if ((REGION_TO_POSTCODE_AREAS[k] || []).indexOf(up) !== -1) { addList(REGION_TO_POSTCODE_AREAS[k]); matched = true; } }); }
-        if (!matched) set[up] = 1;
-      } else if (!expand(norm) && up) { set[up] = 1; }
+      if (scope === 'areas') {
+        // EXACTLY what they signed up for (postcode area, or a county/region expanded).
+        if (isPcArea(up)) set[up] = 1;
+        else addList(postcodesOf(norm));
+        return;
+      }
+      // scope 'county' = genuinely WIDER: postcode area -> its full county; county -> its full region.
+      if (isPcArea(up)) {
+        var counties = {};
+        Object.keys(COUNTY_POSTCODE_MAP).forEach(function(k) { if ((COUNTY_POSTCODE_MAP[k] || []).indexOf(up) !== -1) counties[k] = 1; });
+        var ck = Object.keys(counties);
+        if (ck.length) ck.forEach(function(ct) { addList(COUNTY_POSTCODE_MAP[ct]); });
+        else set[up] = 1;
+      } else {
+        var pcs = postcodesOf(norm);
+        if (pcs) {
+          var regs = regionsOfPcAreas(pcs);
+          if (regs.length) regs.forEach(function(rg) { addList(REGION_TO_POSTCODE_AREAS[rg]); });
+          else addList(pcs);
+        }
+      }
     });
     var out = Object.keys(set);
     return out.length ? out : null; // no known areas -> don't filter
   } catch(e) { return null; }
+}
+
+// Is the "wider" scope actually wider than the exact one for this customer? (For a
+// customer whose areas are already whole regions it is not, so we hide the option.)
+function widerScopeDiffers(cust) {
+  try {
+    var a = (areaSetForCustomer(cust, 'areas') || []).slice().sort().join(',');
+    var b = (areaSetForCustomer(cust, 'county') || []).slice().sort().join(',');
+    return a !== b;
+  } catch(e) { return false; }
+}
+
+// What kind of areas did the customer choose? (drives the scope labels in the UI)
+function customerAreaKind(cust) {
+  try {
+    var areas = [];
+    try { areas = JSON.parse((cust && cust.target_areas) || '[]'); } catch(e) { areas = []; }
+    if (!Array.isArray(areas) || !areas.length) return 'uk';
+    var hasRegion = areas.some(function(a) { var n = String(a || '').toLowerCase().replace(/[\s-]+/g, '-'); return typeof REGION_TO_POSTCODE_AREAS !== 'undefined' && REGION_TO_POSTCODE_AREAS[n]; });
+    if (hasRegion) return 'region';
+    var hasCounty = areas.some(function(a) { var n = String(a || '').toLowerCase().replace(/[\s-]+/g, '-'); return COUNTY_POSTCODE_MAP[n]; });
+    if (hasCounty) return 'county';
+    return 'postcode';
+  } catch(e) { return 'uk'; }
 }
 
 function getBoostArchiveLeads(product, ageKey, count, allowedAreas) {
@@ -26293,7 +26340,7 @@ app.get('/api/boost', authMiddleware, (req, res) => {
     });
     var pack = null;
     try { pack = c.boost_pack ? JSON.parse(c.boost_pack) : null; } catch(e) {}
-    res.json({ success: true, product: c.product, available: available, available_by_scope: availableByScope, scopes: ['areas', 'county', 'uk'], live_products: liveProducts, unavailable: unavailable, sizes: BOOST_PACK_SIZES, mail_rates: BULK_MAIL_RATES, mail_rates_by_product: { moving: BULK_MAIL_RATES, commercial: BULK_MAIL_RATES_COMMERCIAL, probate: BULK_MAIL_RATES, planning: BULK_MAIL_RATES, newbusiness: BULK_MAIL_RATES }, live: bulkPoolsLive(), pack: pack });
+    res.json({ success: true, product: c.product, available: available, available_by_scope: availableByScope, scopes: ['areas', 'county', 'uk'], wider_available: widerScopeDiffers(c), area_kind: customerAreaKind(c), live_products: liveProducts, unavailable: unavailable, sizes: BOOST_PACK_SIZES, mail_rates: BULK_MAIL_RATES, mail_rates_by_product: { moving: BULK_MAIL_RATES, commercial: BULK_MAIL_RATES_COMMERCIAL, probate: BULK_MAIL_RATES, planning: BULK_MAIL_RATES, newbusiness: BULK_MAIL_RATES }, live: bulkPoolsLive(), pack: pack });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
