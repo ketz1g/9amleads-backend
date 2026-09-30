@@ -971,7 +971,9 @@ async function collectMovingLeads(config) {
         const locKey = 'REGION%5E' + rid;
         if (!added[locKey]) {
           added[locKey] = true;
-          extraLocs.push({ id: locKey, name: key + ' area', pages: 2 });
+          // pages: caller may request DEEPER pagination (bulk-archive backfill needs the
+          // older, further-down listings whose firstVisibleDate lands in the 1m/2m bands).
+          extraLocs.push({ id: locKey, name: key + ' area', pages: (config.pages || 2) });
         }
       });
     });
