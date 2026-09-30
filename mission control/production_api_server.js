@@ -25461,7 +25461,8 @@ function postableLeadInfo(l, allowCompanyNoDoor) {
 }
 
 // Leads 3-7 days old, never delivered, Stannp-ready (valid postcode + usable address).
-function getBulkEligibleLeads() {
+var BULK_MIN_COUNT = 50; // smallest custom pack we will sell (area-limited or otherwise)
+function getBulkEligibleLeads(allowedAreas) {
   var arr = readPoolFile('newbusiness');
   var now = Date.now();
   var lo = now - 7 * 24 * 3600000, hi = now - 3 * 24 * 3600000;
@@ -25482,13 +25483,18 @@ function getBulkEligibleLeads() {
     if (!(/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(rcpt.postcode).trim()))) return;
     out.push(l);
   });
+  // AREA SCOPE: restrict to the customer's chosen areas / county when requested.
+  if (Array.isArray(allowedAreas) && allowedAreas.length) {
+    var _allowNB = {}; allowedAreas.forEach(function(a) { _allowNB[String(a).toUpperCase()] = 1; });
+    out = out.filter(function(l) { try { return _allowNB[extractPostcodeArea(l.postcode || '')]; } catch(e) { return false; } });
+  }
   return out;
 }
 
 // Reserve `count` eligible leads for a customer (marks them so the daily delivery +
 // other buyers never get them). Returns the reserved leads.
-function reserveBulkLeads(count, customerId) {
-  var eligible = getBulkEligibleLeads();
+function reserveBulkLeads(count, customerId, allowedAreas) {
+  var eligible = getBulkEligibleLeads(allowedAreas);
   if (eligible.length < count) return { ok: false, error: 'Not enough exclusive leads available right now. Try again in a day or two as new leads mature.', available: eligible.length };
   var chosen = eligible.slice(0, count);
   var f = PRODUCT_LEAD_FILES.newbusiness.file;
@@ -25706,6 +25712,8 @@ app.get('/api/newbusiness/bulk', authMiddleware, (req, res) => {
       live: bulkPoolsLive(),
       sizes: NB_BULK_SIZES, mail_rates: BULK_MAIL_RATES,
       available: eligible ? getBulkEligibleLeads().length : 0,
+      scopes: ['areas', 'county', 'uk'], min_count: BULK_MIN_COUNT,
+      available_by_scope: eligible ? { areas: getBulkEligibleLeads(areaSetForCustomer(c, 'areas')).length, county: getBulkEligibleLeads(areaSetForCustomer(c, 'county')).length, uk: getBulkEligibleLeads(null).length } : { areas: 0, county: 0, uk: 0 },
       // PRE-PAYMENT masked preview (never a mailable address) + full reserved leads
       // (only shown once a pack is purchased)
       preview: !pack ? maskedBulkPreview(6) : [],
@@ -25722,7 +25730,9 @@ app.post('/api/newbusiness/bulk/checkout', authMiddleware, async (req, res) => {
   try {
     var count = parseInt(req.body && req.body.count, 10);
     var mailType = String((req.body && req.body.mail_type) || 'leaflet');
-    if (NB_BULK_SIZES.indexOf(count) === -1) return res.status(400).json({ error: 'Choose a 100, 250, 500 or 1000 lead pack.' });
+    var scope = String((req.body && req.body.scope) || 'uk').toLowerCase();
+    if (['areas', 'county', 'uk'].indexOf(scope) === -1) scope = 'uk';
+    if (!(count >= BULK_MIN_COUNT)) return res.status(400).json({ error: 'Choose at least ' + BULK_MIN_COUNT + ' leads - any amount from ' + BULK_MIN_COUNT + ' up to what is available in your area.' });
     if (!BULK_MAIL_RATES[mailType]) return res.status(400).json({ error: 'Choose what to post: leaflet, letter, or leaflet + letter.' });
     var c = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
     if (!c) return res.status(404).json({ error: 'User not found' });
@@ -25732,8 +25742,9 @@ app.post('/api/newbusiness/bulk/checkout', authMiddleware, async (req, res) => {
     var pack = getCustomerBulkPack(c);
     if (pack && pack.status !== 'sent' && pack.status !== 'expired') return res.status(400).json({ error: 'You already have a pack waiting to be sent (' + pack.count + ' leads). Send it first, or it expires in 7 days.' });
     if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe not configured' });
-    var eligible = getBulkEligibleLeads();
-    if (eligible.length < count) return res.status(400).json({ error: 'Not enough exclusive leads available right now (' + eligible.length + ' ready). New leads mature into the archive within a few days - check back soon.', available: eligible.length });
+    var allowedAreas = areaSetForCustomer(c, scope);
+    var eligible = getBulkEligibleLeads(allowedAreas);
+    if (eligible.length < count) return res.status(400).json({ error: 'Only ' + eligible.length + ' leads available in your chosen area right now. Lower the pack size, or choose a wider area (county / All UK).', available: eligible.length });
     var amountPence = bulkPackTotal(count, mailType, 'newbusiness');
     var typeLabel = mailType === 'both' ? 'leaflet + letter' : mailType + ' only';
     var baseUrl = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
@@ -25750,7 +25761,8 @@ app.post('/api/newbusiness/bulk/checkout', authMiddleware, async (req, res) => {
       'metadata[customer_id]': c.id,
       'metadata[type]': 'bulk_leads',
       'metadata[bulk_count]': String(count),
-      'metadata[bulk_mail_type]': mailType
+      'metadata[bulk_mail_type]': mailType,
+      'metadata[bulk_scope]': scope
     };
     var session = await stripeApiRequest('POST', 'checkout/sessions', sessionBody);
     try { if (session.url) logActivity(req.user.id, 'bulk_buy', 'Started buying a bulk pack - ' + count + ' ' + typeLabel + ' leads (£' + (amountPence / 100).toFixed(2) + ')', { email: true, subject: 'Bulk pack purchase' }); } catch(e) {}
@@ -26282,7 +26294,7 @@ app.post('/api/boost/checkout', authMiddleware, async (req, res) => {
     var poolNow = getBoostArchiveLeads(product, age, 0).length;
     var minPack = Math.min.apply(null, (BOOST_PACK_SIZES[product] || [100]));
     if (poolNow < minPack) return res.status(400).json({ error: 'Lead pool being filled - packs will be available very soon.' });
-    if (!BOOST_PACK_SIZES[product] || BOOST_PACK_SIZES[product].indexOf(count) === -1) return res.status(400).json({ error: 'Choose a valid pack size for ' + product + '.' });
+    if (!(count >= BULK_MIN_COUNT)) return res.status(400).json({ error: 'Choose at least ' + BULK_MIN_COUNT + ' leads - any amount from ' + BULK_MIN_COUNT + ' up to what is available in your area.' });
     if (!BULK_MAIL_RATES[mailType]) return res.status(400).json({ error: 'Choose what to post: leaflet, letter, or leaflet + letter.' });
     if (['tm', '1m', '2m'].indexOf(age) === -1) return res.status(400).json({ error: 'Choose This month (up to a month old), 1 month old or 2 months old.' });
     var c = db.prepare('SELECT * FROM customers WHERE id = ?').get(req.user.id);
@@ -31228,7 +31240,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
         var bsScope = String(session.metadata?.boost_scope || 'uk').toLowerCase();
         if (['areas', 'county', 'uk'].indexOf(bsScope) === -1) bsScope = 'uk';
         var bsCust = db.prepare('SELECT * FROM customers WHERE id = ?').get(customerId);
-        if (bsCust && BOOST_PACK_SIZES[bsProd] && BOOST_PACK_SIZES[bsProd].indexOf(bsCount) !== -1 && BULK_MAIL_RATES[bsMail]) {
+        if (bsCust && bsCount >= BULK_MIN_COUNT && BULK_MAIL_RATES[bsMail]) {
           var reserve = reserveBoostLeads(bsProd, bsAge, bsCount, customerId, areaSetForCustomer(bsCust, bsScope));
           var bsPack = { product: bsProd, age: bsAge, count: bsCount, mail_type: bsMail, scope: bsScope, purchased_at: new Date().toISOString(), status: 'pending', sent: 0, reserved_count: reserve.ok ? reserve.leads.length : 0, note: reserve.ok ? '' : reserve.error };
           db.prepare('UPDATE customers SET boost_pack = ? WHERE id = ?').run(JSON.stringify(bsPack), customerId);
@@ -31244,13 +31256,15 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
         var bMail = String(session.metadata?.bulk_mail_type || 'leaflet');
         var bCust = db.prepare('SELECT * FROM customers WHERE id = ?').get(customerId);
         if (!bCust) return res.json({ received: true });
-        if (NB_BULK_SIZES.indexOf(bCount) === -1 || !BULK_MAIL_RATES[bMail]) { console.log('[WEBHOOK] Bad bulk params:', bCount, bMail); return res.json({ received: true }); }
-        var reserve = reserveBulkLeads(bCount, customerId);
+        var bScope = String(session.metadata?.bulk_scope || 'uk').toLowerCase();
+        if (['areas', 'county', 'uk'].indexOf(bScope) === -1) bScope = 'uk';
+        if (!(bCount >= BULK_MIN_COUNT) || !BULK_MAIL_RATES[bMail]) { console.log('[WEBHOOK] Bad bulk params:', bCount, bMail); return res.json({ received: true }); }
+        var reserve = reserveBulkLeads(bCount, customerId, areaSetForCustomer(bCust, bScope));
         if (!reserve.ok) {
           console.log('[WEBHOOK] Bulk reserve failed for ' + bCust.email + ': ' + reserve.error);
-          db.prepare('UPDATE customers SET bulk_pack = ? WHERE id = ?').run(JSON.stringify({ count: bCount, mail_type: bMail, purchased_at: new Date().toISOString(), status: 'pending', sent: 0, reserved_count: 0, note: reserve.error }), customerId);
+          db.prepare('UPDATE customers SET bulk_pack = ? WHERE id = ?').run(JSON.stringify({ count: bCount, mail_type: bMail, scope: bScope, purchased_at: new Date().toISOString(), status: 'pending', sent: 0, reserved_count: 0, note: reserve.error }), customerId);
         } else {
-          db.prepare('UPDATE customers SET bulk_pack = ? WHERE id = ?').run(JSON.stringify({ count: bCount, mail_type: bMail, purchased_at: new Date().toISOString(), status: 'pending', sent: 0, reserved_count: reserve.leads.length }), customerId);
+          db.prepare('UPDATE customers SET bulk_pack = ? WHERE id = ?').run(JSON.stringify({ count: bCount, mail_type: bMail, scope: bScope, purchased_at: new Date().toISOString(), status: 'pending', sent: 0, reserved_count: reserve.leads.length }), customerId);
           console.log('[WEBHOOK] Bulk pack granted: ' + bCust.email + ' (' + bCount + ' leads ' + bMail + ')');
         }
         saveDb();

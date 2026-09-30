@@ -167,7 +167,7 @@ function render(){
   });
   var box=document.getElementById('packsBox'); 
   var lbl={moving:'moving leads',commercial:'commercial leads',probate:'probate leads',planning:'planning permission leads',newbusiness:'new business leads'}[ST.product]||ST.product; 
-  box.innerHTML=sizes.map(function(cnt){
+  var _cards=sizes.map(function(cnt){
     var total=Math.round(cnt*rate)/100;
     var can = av >= cnt;
     var fmt = total % 1 === 0 ? total.toLocaleString('en-GB') : total.toFixed(2);
@@ -185,6 +185,21 @@ function render(){
       + canText
       + '</div>';
   }).join('');
+  if (av >= 50) {
+    var cTotal = Math.round(av * rate) / 100;
+    var cFmt = cTotal % 1 === 0 ? cTotal.toLocaleString('en-GB') : cTotal.toFixed(2);
+    var _scopeWord = ST.scope === 'uk' ? 'UK' : ST.scope === 'county' ? 'county' : 'area';
+    _cards += '<div class="pack" style="opacity:1;border-color:#0ea5e9;box-shadow:0 0 0 1px rgba(14,165,233,.35) inset">'
+      + '<div class="num">' + av + '</div>'
+      + '<div style="font-size:11.5px;font-weight:800;color:#0ea5e9;text-transform:uppercase;letter-spacing:.6px;margin:0 0 2px">Your ' + _scopeWord + '</div>'
+      + '<div style="font-size:13.5px;color:#374151;font-weight:700;margin:0 0 4px">every ' + lbl + ' available</div>'
+      + '<div style="font-size:12px;color:#6b7280;margin:0 0 12px">printed &amp; posted</div>'
+      + '<div style="font-size:27px;font-weight:800;color:#111827;letter-spacing:-.3px">&pound;' + cFmt + '</div>'
+      + '<div style="font-size:13px;color:#6b7280;margin:0 0 14px">one-time &middot; &pound;' + (rate / 100).toFixed(2) + ' per lead</div>'
+      + '<button class="btn btn-primary" onclick="buy(' + av + ')" style="width:100%;padding:12px 16px;font-size:15px;font-weight:800">Buy all ' + av + '</button>'
+      + '</div>';
+  }
+  box.innerHTML = _cards;
 }
 function buy(count){
   var _mt=ST.DATA.mail_rates_by_product&&ST.DATA.mail_rates_by_product[ST.product]?ST.DATA.mail_rates_by_product[ST.product]:ST.DATA.mail_rates;

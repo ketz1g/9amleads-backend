@@ -90,12 +90,22 @@ h3{font-size:15px;font-weight:700;margin-bottom:10px}
           <button class="mbtn" data-m="both" onclick="setBulkMail('both')" style="padding:9px 16px;border-radius:9px;border:1px solid #e5e7eb;background:#fff;font-size:12.5px;font-weight:700;cursor:pointer;color:#6b7280">&#128196;&#128230; Leaflet + Letter &middot; &pound;3.99/lead</button>
         </div>
       </div>
+      <div class="card" style="margin-top:16px">
+        <h3>Which area?</h3>
+        <div class="seg" style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="sbtn" data-s="areas" onclick="setBulkScope('areas')" style="padding:9px 16px;border-radius:9px;border:1px solid #e5e7eb;background:#fff;font-size:12.5px;font-weight:700;cursor:pointer;color:#6b7280">&#127968; My chosen areas</button>
+          <button class="sbtn" data-s="county" onclick="setBulkScope('county')" style="padding:9px 16px;border-radius:9px;border:1px solid #e5e7eb;background:#fff;font-size:12.5px;font-weight:700;cursor:pointer;color:#6b7280">&#127961; My wider county/region</button>
+          <button class="sbtn on" data-s="uk" onclick="setBulkScope('uk')" style="padding:9px 16px;border-radius:9px;border:1px solid #0ea5e9;background:#0ea5e9;font-size:12.5px;font-weight:700;cursor:pointer;color:#fff">&#127758; All UK (most leads)</button>
+        </div>
+        <div class="hint" id="scopeAvail" style="margin-top:8px"></div>
+      </div>
       <div class="packs" id="packsBox">
         <div class="pack"><div class="num">100</div><div class="lbl">exclusive UK leads<br>printed &amp; posted</div><div class="price" id="pr100">&pound;249</div><div class="per" id="pp100">one-time &middot; &pound;2.49 per lead</div><button class="btn btn-primary" onclick="buyBulk(100)">Buy 100 leads</button></div>
         <div class="pack featured"><div class="num">250</div><div class="lbl">exclusive UK leads<br>printed &amp; posted</div><div class="price" id="pr250">&pound;622.50</div><div class="per" id="pp250">one-time &middot; &pound;2.49 per lead</div><button class="btn btn-green" onclick="buyBulk(250)">Buy 250 leads</button></div>
         <div class="pack"><div class="num">500</div><div class="lbl">exclusive UK leads<br>printed &amp; posted</div><div class="price" id="pr500">&pound;1,245</div><div class="per" id="pp500">one-time &middot; &pound;2.49 per lead</div><button class="btn btn-primary" onclick="buyBulk(500)">Buy 500 leads</button></div>
         <div class="pack"><div class="num">1000</div><div class="lbl">exclusive UK leads<br>printed &amp; posted</div><div class="price" id="pr1000">&pound;2,490</div><div class="per" id="pp1000">one-time &middot; &pound;2.49 per lead</div><button class="btn btn-primary" onclick="buyBulk(1000)">Buy 1000 leads</button></div>
       </div>
+      <div class="packs" id="customPack" style="margin-top:12px"></div>
       <div class="card" style="margin-top:16px">
         <h3>How it works</h3>
         <div class="hint">
@@ -152,7 +162,7 @@ function load(){
       document.getElementById('upgradeMsg').textContent = s.upgrade_hint || 'Upgrade to Pro to unlock bulk postage packs.';
       return;
     }
-    document.getElementById('available').textContent = s.available + ' leads ready now';
+    BULK_DATA = s; updateScopeAvail();
     var hasPack = s.pack && s.pack.status !== 'sent';
     document.getElementById('buyBox').style.display = hasPack ? 'none' : 'block';
     document.getElementById('reviewBox').style.display = hasPack ? 'block' : 'none';
@@ -178,16 +188,38 @@ function load(){
   })
   .catch(function(){ lo.style.display='none'; co.style.display='block'; document.getElementById('upgradeBox').style.display='block'; document.getElementById('upgradeMsg').textContent='Could not load bulk postage. Please sign in again.'; });
 }
-var BULK_MAIL = 'leaflet', BULK_RATES = { leaflet: 249, letter: 199, both: 399 };
+var BULK_MAIL = 'leaflet', BULK_RATES = { leaflet: 249, letter: 199, both: 399 }, BULK_SCOPE = 'uk', BULK_DATA = null;
+function updateScopeAvail(){
+  var s = BULK_DATA; if (!s) return;
+  var av = (s.available_by_scope && typeof s.available_by_scope[BULK_SCOPE] === 'number') ? s.available_by_scope[BULK_SCOPE] : (s.available || 0);
+  var msg = { areas: 'your chosen areas', county: 'your wider county/region', uk: 'nationwide (All UK)' }[BULK_SCOPE] || '';
+  var el = document.getElementById('scopeAvail');
+  if (el) el.innerHTML = '<span style="color:' + (av > 0 ? '#16a34a' : '#fbbf24') + ';font-weight:800">' + av + ' leads</span> available in ' + msg + (BULK_SCOPE !== 'uk' ? ' &middot; switch to All UK for the most leads' : '');
+  var av2 = document.getElementById('available'); if (av2) av2.textContent = av + ' leads ready now';
+  var cp = document.getElementById('customPack');
+  if (cp) {
+    if (av >= 50) {
+      var rate = BULK_RATES[BULK_MAIL];
+      var total = (Math.round(av * rate) / 100);
+      cp.innerHTML = '<div class="pack" style="border-color:#0ea5e9"><div class="num">' + av + '</div><div class="lbl">every exclusive UK lead<br>available in this scope</div><div class="price">&pound;' + total.toLocaleString('en-GB') + '</div><div class="per">one-time &middot; &pound;' + (rate / 100).toFixed(2) + ' per lead</div><button class="btn btn-green" onclick="buyBulk(' + av + ')">Buy all ' + av + '</button></div>';
+    } else { cp.innerHTML = ''; }
+  }
+}
+function setBulkScope(sc){
+  BULK_SCOPE = sc;
+  document.querySelectorAll('.sbtn').forEach(function(b){ var on = b.dataset.s === sc; b.classList.toggle('on', on); b.style.background = on ? '#0ea5e9' : '#fff'; b.style.borderColor = on ? '#0ea5e9' : '#e5e7eb'; b.style.color = on ? '#fff' : '#6b7280'; });
+  updateScopeAvail();
+}
 function setBulkMail(m){
   BULK_MAIL = m;
   document.querySelectorAll('.mbtn').forEach(function(b){ b.classList.toggle('on', b.dataset.m === m); b.style.background = b.dataset.m === m ? '#0ea5e9' : '#fff'; b.style.borderColor = b.dataset.m === m ? '#0ea5e9' : '#e5e7eb'; b.style.color = b.dataset.m === m ? '#fff' : '#6b7280'; });
   var rate = BULK_RATES[m]; var gbp = (rate/100).toFixed(2);
   [100,250,500,1000].forEach(function(c){ var el=document.getElementById('pr'+c), pl=document.getElementById('pp'+c); if(el)el.textContent='\u00a3'+(c*rate/100).toLocaleString(); if(pl)pl.textContent='one-time \u00b7 \u00a3'+gbp+' per lead'; });
+  updateScopeAvail();
 }
 function buyBulk(count){
   if (!confirm('Buy ' + count + ' exclusive UK leads (' + BULK_MAIL + ') printed & posted for \u00a3' + (count * BULK_RATES[BULK_MAIL] / 100).toLocaleString() + '?')) return;
-  fetch(API + '/api/newbusiness/bulk/checkout', { method:'POST', headers:ah(), body: JSON.stringify({ count: count, mail_type: BULK_MAIL }) })
+  fetch(API + '/api/newbusiness/bulk/checkout', { method:'POST', headers:ah(), body: JSON.stringify({ count: count, mail_type: BULK_MAIL, scope: BULK_SCOPE }) })
   .then(function(r){ return r.json(); })
   .then(function(d){ if (d.checkout_url) window.location.href = d.checkout_url; else alert(d.error || 'Could not start checkout.'); })
   .catch(function(){ alert('Could not start checkout.'); });
