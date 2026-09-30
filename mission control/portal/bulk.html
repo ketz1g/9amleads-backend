@@ -158,6 +158,14 @@ function load(){
   .then(function(s){
     lo.style.display = 'none'; co.style.display = 'block';
     if (!s.eligible) {
+      // This is the New Business Exclusive Archive. If the signed-in account is a
+      // different product, send them to the correct bulk dashboard (boost.html), which
+      // handles moving / commercial / probate / planning - instead of a confusing
+      // "upgrade" message.
+      if (s.product && ['moving', 'commercial', 'probate', 'planning'].indexOf(String(s.product)) !== -1) {
+        window.location.href = '/portal/boost.html?product=' + encodeURIComponent(s.product);
+        return;
+      }
       document.getElementById('upgradeBox').style.display = 'block';
       document.getElementById('upgradeMsg').textContent = s.upgrade_hint || 'Upgrade to Pro to unlock bulk postage packs.';
       return;
