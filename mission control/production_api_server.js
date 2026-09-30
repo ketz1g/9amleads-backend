@@ -22993,28 +22993,29 @@ async function runCommercialScrapeFill(opts) {
   var leads = [];
   try { leads = await require('./rightmove_scraper_v2').collectCommercialLeads({ areas: areas, pages: pages, include_let: includeLet, force_apify: false }); } catch(e) { leads = []; }
   if (!Array.isArray(leads)) leads = [];
-  // ENRICH: the list view gives only a partial postcode ("N12", "M5"); fetch each
-  // listing's detail page (free) for the FULL postcode so more leads are mailable for
-  // commercial (company-at-address + full postcode = mailable). Bounded per run.
-  var enrichCap = parseInt(opts.enrich || '1500', 10);
-  try {
-    var _fullPc = /^[A-Z]{1,2}[0-9][A-Z0-9]?\s[0-9][A-Z]{2}$/i;
-    var need = leads.filter(function(l) { return l && l.url && !_fullPc.test(String(l.postcode || '').trim()); });
-    if (need.length > enrichCap) need = need.slice(0, enrichCap);
-    if (need.length) { console.log('[COMMERCIAL-FILL] enriching ' + need.length + ' leads via detail pages...'); await require('./rightmove_scraper_v2').enrichMovingLeads(need, 8); }
-  } catch(eE) { console.log('[COMMERCIAL-FILL] enrich error: ' + (eE && eE.message)); }
-  // IMPORTANT: commercial leads are tagged commercial:true and go into the moving
-  // ARCHIVE only (which is the source of the Commercial Moves BULK pool). They must
-  // NOT go into the daily moving POOL - that feeds the residential 9am delivery, and
-  // commercial premises are not mail-ready for a residential feed.
+  // Commercial leads are tagged commercial:true and go into the moving ARCHIVE only
+  // (the Commercial Moves BULK source). They must NOT enter the daily moving POOL (the
+  // residential 9am feed).
   leads.forEach(function(l) { if (l) l.commercial = true; });
-  var archBefore = 0;
-  try { archBefore = (readArchive('moving') || []).length; } catch(e) {}
+  var _fullPc = /^[A-Z]{1,2}[0-9][A-Z0-9]?\s[0-9][A-Z]{2}$/i;
+  var enrichCap = parseInt(opts.enrich || '600', 10);
+  var need = leads.filter(function(l) { return l && l.url && !_fullPc.test(String(l.postcode || '').trim()); }).slice(0, enrichCap);
+  var rm = require('./rightmove_scraper_v2');
+  var archBefore = 0; try { archBefore = (readArchive('moving') || []).length; } catch(e) {}
+  // Archive the RAW scraped leads first, so partial ones land immediately...
   try { appendToArchive('moving', leads); } catch(e) {}
-  var archAfter = archBefore;
-  try { archAfter = (readArchive('moving') || []).length; } catch(e) {}
-  console.log('[COMMERCIAL-FILL] scraped ' + leads.length + ', archive ' + archBefore + ' -> ' + archAfter + ' in ' + (Date.now() - t0) + 'ms');
-  return { scraped: leads.length, archive_before: archBefore, archive_after: archAfter, areas: areas.length, pages: pages, ms: Date.now() - t0 };
+  // ...then enrich in CHUNKS, re-archiving after each chunk, so the mailable commercial
+  // count grows INCREMENTALLY (and a single run stays bounded).
+  var CHUNK = 200, enriched = 0;
+  for (var ci = 0; ci < need.length; ci += CHUNK) {
+    var slice = need.slice(ci, ci + CHUNK);
+    try { await rm.enrichMovingLeads(slice, 8); appendToArchive('moving', slice); } catch(eE) { console.log('[COMMERCIAL-FILL] enrich chunk error: ' + (eE && eE.message)); }
+    enriched += slice.length;
+    console.log('[COMMERCIAL-FILL] enriched ' + enriched + '/' + need.length + ' ' + (Date.now() - t0) + 'ms');
+  }
+  var archAfter = archBefore; try { archAfter = (readArchive('moving') || []).length; } catch(e) {}
+  console.log('[COMMERCIAL-FILL] scraped ' + leads.length + ', enriched ' + enriched + ', archive ' + archBefore + ' -> ' + archAfter + ' in ' + (Date.now() - t0) + 'ms');
+  return { scraped: leads.length, enriched: enriched, archive_before: archBefore, archive_after: archAfter, areas: areas.length, pages: pages, ms: Date.now() - t0 };
 }
 // POST /api/admin/scrape-commercial { areas?, pages?, let?, enrich? } - fill now.
 // Runs in the BACKGROUND (scrape + detail-page enrichment can take minutes).
