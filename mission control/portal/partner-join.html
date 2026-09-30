@@ -30,16 +30,12 @@ label{font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bot
 <p class="muted" style="margin-bottom:18px">Earn by referring businesses to 9amLeads. Two ways to partner:</p>
 
 <div class="pick">
-<button type="button" id="pk-aff" class="active" onclick="pick('affiliate')">Affiliate<br><span style="font-weight:400;font-size:11px;color:var(--muted)">£25/month per active customer</span></button>
-<button type="button" id="pk-sales" onclick="pick('sales_partner')">Sales Partner<br><span style="font-weight:400;font-size:11px;color:var(--muted)">£25/month per active customer</span></button>
+<button type="button" id="pk-sales" class="active" onclick="pick('sales_partner')">Sales Partner<br><span style="font-weight:400;font-size:11px;color:var(--muted)">£25/month per active customer</span></button>
 <button type="button" id="pk-assoc" onclick="pick('association')">Trade Association<br><span style="font-weight:400;font-size:11px;color:var(--muted)">Co-branded page + recurring</span></button>
 </div>
 
 <div class="card">
-<div id="desc-aff">
-<p style="font-size:13px;margin-bottom:10px"><b>Become an Affiliate</b> - perfect for customers, contacts and content creators. You refer businesses and stay involved to help keep them on board. Referred customers get an extended <b>14-day free trial</b>. Once a referred business is a paying customer, you earn <b>£25 per month</b> for as long as they stay subscribed - so keeping your customers happy pays monthly. If they cancel, the monthly commission stops. You\u2019ll get a simple portfolio showing each customer\u2019s status and leads, with prompts to check in with them.</p>
-</div>
-<div id="desc-sales" class="hidden">
+<div id="desc-sales">
 <p style="font-size:13px;margin-bottom:10px"><b>Become a Sales Partner</b> - an independent, commission-based opportunity. Find businesses, contact them, help them onto trial and support them as customers. You earn a <b>£25 monthly recurring commission</b> per qualifying active paying customer (under current programme terms), with full sales resources and a partner dashboard.</p>
 <ul style="font-size:12px;color:var(--muted);margin:10px 0;padding-left:18px">
 <li>Remote / flexible - your own time and effort</li>
@@ -66,7 +62,7 @@ label{font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bot
 <input class="inp" id="f-phone" placeholder="Phone (optional)">
 <input class="inp" id="f-biz" placeholder="Business name (optional)">
 <input class="inp" id="f-pass" type="password" placeholder="Password (min 8 characters)">
-<div id="sales-fields" class="hidden">
+<div id="sales-fields">
 <label>Sales / relevant experience</label>
 <textarea class="inp" id="f-exp" rows="3" placeholder="Tell us about your sales experience"></textarea>
 <label>Preferred lead sectors</label>
@@ -78,7 +74,7 @@ label{font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bot
 <label>Website (optional)</label>
 <input class="inp" id="f-web" placeholder="https://">
 </div>
-<div id="terms-block" class="hidden">
+<div id="terms-block">
 <div class="terms"><b>Partner Terms (v1 - summary for your application)</b><br>
 Independent relationship · No guaranteed income · Commission only on qualifying paying customers · Customer attribution rules apply · Payment timing subject to clearance + admin payout · Cancellation/refund rules apply · You agree to comply with UK direct-marketing laws, use approved business outreach practices, respect do-not-contact requests, make no misleading claims (no guaranteed leads/jobs/results), not misrepresent yourself as an employee, use only approved product/pricing information, and not spam. Full terms wording is being finalised and will be provided before activation. See the full <a href="/portal/partner-terms.html" target="_blank">Partner Programme Agreement</a> and <a href="/portal/partner-privacy.html" target="_blank">Privacy Notice</a>.
 </div>
@@ -92,13 +88,11 @@ Independent relationship · No guaranteed income · Commission only on qualifyin
 </div>
 
 <script>
-var partner_type = 'affiliate';
+var partner_type = 'sales_partner';
 function pick(t){
   partner_type = t;
-  document.getElementById('pk-aff').classList.toggle('active', t === 'affiliate');
   document.getElementById('pk-sales').classList.toggle('active', t === 'sales_partner');
   document.getElementById('pk-assoc').classList.toggle('active', t === 'association');
-  document.getElementById('desc-aff').classList.toggle('hidden', t !== 'affiliate');
   document.getElementById('desc-sales').classList.toggle('hidden', t !== 'sales_partner');
   document.getElementById('desc-assoc').classList.toggle('hidden', t !== 'association');
   document.getElementById('sales-fields').classList.toggle('hidden', t !== 'sales_partner');
