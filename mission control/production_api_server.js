@@ -26277,9 +26277,32 @@ function fetchCompaniesHouseAddress(companyNumber) {
       var req = require('https').request({ hostname: 'find-and-update.company-information.service.gov.uk', path: '/company/' + encodeURIComponent(companyNumber), method: 'GET', headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html' } }, function(res) {
         var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
           if (res.statusCode !== 200) return resolve(null);
-          var m = body.match(/id="registered-office-address"[^>]*>([\s\S]*?)<\/(?:p|div)>/i);
+          var m = body.match(/id="roa-address"[^>]*>([\s\S]*?)<\/span>/i) || body.match(/id="registered-office-address"[^>]*>([\s\S]*?)<\/(?:p|div)>/i);
           if (!m) return resolve(null);
           var addr = m[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+          resolve(addr || null);
+        });
+      });
+      req.on('error', function() { resolve(null); });
+      req.setTimeout(30000, function() { req.destroy(); resolve(null); });
+      req.end();
+    } catch(e) { resolve(null); }
+  });
+}
+
+// Gazette notice detail address via the public HTML page (the linked-data
+// data.json endpoint rate-limits with 429; the HTML page carries the address in
+// the "Address of Deceased:" meta block). Rate-limit friendly: call with delays.
+function fetchGazetteNoticeAddress(noticeId) {
+  return new Promise(function(resolve) {
+    if (!noticeId) return resolve(null);
+    try {
+      var req = require('https').request({ hostname: 'www.thegazette.co.uk', path: '/notice/' + encodeURIComponent(noticeId), method: 'GET', headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html' } }, function(res) {
+        var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
+          if (res.statusCode !== 200) return resolve(null);
+          var m = body.match(/Address of Deceased:\s*([^"<]+)/i);
+          if (!m) return resolve(null);
+          var addr = m[1].replace(/,\s*Date of Claim Deadline[\s\S]*$/i, '').replace(/\s+/g, ' ').trim().replace(/[,\s]+$/, '');
           resolve(addr || null);
         });
       });
@@ -26300,11 +26323,14 @@ async function enrichArchiveFromSources(product, limit) {
     var todo = arch.filter(function(l) { return l && l.postcode && !hasUsablePremiseAddress(String(l.fullAddress || l.address || l.deceasedAddress || ''), String(l.postcode)); }).slice(0, limit || 120);
     if (!todo.length) return { fixed: 0, total: arch.length };
     if (product === 'probate') {
-      try {
-        var ps = require('./probate_leads_scraper');
-        var gz = todo.filter(function(l) { return l.id && String(l.id).indexOf('GAZ_') === 0; });
-        if (gz.length && typeof ps.enrichGazetteLeads === 'function') await ps.enrichGazetteLeads(gz, gz.length);
-      } catch(e) {}
+      for (var pj = 0; pj < todo.length; pj++) {
+        var pid = String(todo[pj].id || '');
+        var nid = (pid.indexOf('GAZ_') === 0) ? pid.slice(4) : (/^\d+$/.test(pid) ? pid : '');
+        if (!nid) continue;
+        var ga = await fetchGazetteNoticeAddress(nid);
+        if (ga && hasUsablePremiseAddress(ga, String(todo[pj].postcode || ''))) { todo[pj].deceasedAddress = ga; todo[pj].fullAddress = ga; todo[pj].address = ga; }
+        await new Promise(function(r) { setTimeout(r, 2500); });
+      }
     } else if (product === 'newbusiness') {
       for (var i = 0; i < todo.length; i++) {
         var cn = todo[i].companyNumber || todo[i].registrationNumber || todo[i].company_number || '';
