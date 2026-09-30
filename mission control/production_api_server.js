@@ -13123,6 +13123,18 @@ app.post('/api/admin/upload-epc-index', adminAuth, express.json({ limit: '80mb' 
 });
 
 // GET /api/admin/epc-status - is the EPC index loaded, and does a sample resolve?
+// POST /api/admin/epc-build-index - one-time: index the EPC SQLite DBs on postcode so
+// lookups become instant (without it, each lookup full-scans ~20m rows and times out,
+// which is why EPC was resolving 0 addresses).
+app.post('/api/admin/epc-build-index', adminAuth, (req, res) => {
+  try {
+    var dir = path.join(__dirname, 'data');
+    var r = EPC_INDEX.ensureIndexes(dir);
+    var l = EPC_INDEX.loadIndex(dir);
+    res.json({ success: true, indexes: r, reload: l });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/admin/epc-check?postcode=XX1+1AA - how many EPC addresses exist for a
 // postcode, with a sample. Lets us verify regional coverage with zero Postcoder spend.
 app.get('/api/admin/epc-check', adminAuth, (req, res) => {

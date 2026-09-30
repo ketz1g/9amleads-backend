@@ -112,6 +112,23 @@ function loadIndex(dataDir) {
   } catch (e) { INDEX = null; DB = null; return { ok: false, error: e.message }; }
 }
 
+// ONE-TIME: create the pc index on the SQLite DBs. Without it, every resolveFullAddress
+// full-scans ~20m rows (the table has no index) so lookups time out and fix nothing.
+function ensureIndexes(dataDir) {
+  var out = { england_wales: false, scotland: false };
+  function build(dbf) {
+    if (!DatabaseSync || !fs.existsSync(dbf)) return false;
+    var w = new DatabaseSync(dbf);
+    w.exec('PRAGMA journal_mode = OFF'); w.exec('PRAGMA synchronous = OFF');
+    w.exec('CREATE INDEX IF NOT EXISTS idx_pc ON addresses(pc)');
+    w.close();
+    return true;
+  }
+  try { out.england_wales = build(path.join(dataDir, 'epc-index.db')); } catch(e) { out.ew_error = e.message; }
+  try { out.scotland = build(path.join(dataDir, 'scot-epc.db')); } catch(e) { out.sc_error = e.message; }
+  return out;
+}
+
 function isLoaded() { return !!DB || !!DB2 || (!!INDEX && Object.keys(INDEX).length > 0); }
 function meta() { return INDEX_META; }
 
@@ -187,4 +204,4 @@ function sampleForPostcode(postcode, limit) {
   } catch (err) { return { pc: String(postcode || ''), count: 0, sample: [], error: err.message }; }
 }
 
-module.exports = { buildIndex: null, buildSqlite, loadIndex, resolveFullAddress, isLoaded, meta, pcKey, norm, sampleForPostcode };
+module.exports = { buildIndex: null, buildSqlite, loadIndex, ensureIndexes, resolveFullAddress, isLoaded, meta, pcKey, norm, sampleForPostcode };
