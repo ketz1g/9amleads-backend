@@ -26055,10 +26055,12 @@ function areaSetForCustomer(cust, scope) {
     var set = {};
     function addList(list) { (list || []).forEach(function(x) { if (x) set[String(x).toUpperCase()] = 1; }); }
     function isPcArea(a) { return /^[A-Z]{1,2}$/.test(a); }
-    function postcodesOf(norm) { // county/region name -> its postcode areas
-      if (COUNTY_POSTCODE_MAP[norm]) return COUNTY_POSTCODE_MAP[norm];
-      if (typeof REGION_TO_POSTCODE_AREAS !== 'undefined' && REGION_TO_POSTCODE_AREAS[norm]) return REGION_TO_POSTCODE_AREAS[norm];
-      return null;
+    function postcodesOf(norm) { // county/region name -> its postcode areas (union of both maps)
+      var o = {};
+      if (COUNTY_POSTCODE_MAP[norm]) COUNTY_POSTCODE_MAP[norm].forEach(function(x) { o[x] = 1; });
+      if (typeof REGION_TO_POSTCODE_AREAS !== 'undefined' && REGION_TO_POSTCODE_AREAS[norm]) REGION_TO_POSTCODE_AREAS[norm].forEach(function(x) { o[x] = 1; });
+      var a = Object.keys(o);
+      return a.length ? a : null;
     }
     // For a given set of postcode areas, the enclosing REGION(s) (N/S/E/W/Scotland/Wales/NI).
     function regionsOfPcAreas(pcs) {
