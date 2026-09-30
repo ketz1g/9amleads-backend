@@ -452,7 +452,16 @@ async function loadBacklinkTracker() {
         '<button class="btn btn-sm" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);padding:3px 7px;font-size:10px" onclick="delBacklinkItem(\'' + i.id + '\')"><i class="fas fa-trash"></i></button>' +
         '</div></div>';
     }
+    var total = (d.items || []).length;
+    var live = (d.counts && d.counts.live) || 0;
+    var pct = total ? Math.round(live / total * 100) : 0;
+    // "Do this next": first pending item, Tier 1 first.
+    var next = null;
+    [1, 2, 3, 0].some(function(t) { var it = groups[t].filter(function(x) { return (x.status || 'pending') === 'pending'; })[0]; if (it) { next = it; return true; } return false; });
     var out = '<div style="font-size:11px;color:#5c6480;margin-bottom:8px">' + summary + '</div>';
+    out += '<div style="height:6px;background:#1a1a1a;border-radius:4px;overflow:hidden;margin:8px 0 6px"><div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,#22c55e,#38bdf8)"></div></div>';
+    out += '<div style="font-size:10px;color:#5c6480;margin-bottom:10px">' + live + ' of ' + total + ' live (' + pct + '%)</div>';
+    if (next) { out += '<div style="font-size:11px;color:#fbbf24;margin-bottom:8px">&#128073; Do this next: <strong>' + esc(next.name) + '</strong>' + (next.url ? ' &mdash; <a href="' + esc(next.url) + '" target="_blank" style="color:#7dd3fc">open</a>' : '') + '</div>'; }
     [1, 2, 3, 0].forEach(function(t) {
       if (!groups[t].length) return;
       out += '<div style="font-size:11px;font-weight:700;color:#7dd3fc;margin:14px 0 2px">' + tierLabels[t] + ' <span style="color:#5c6480;font-weight:500">(' + groups[t].length + ')</span></div>';
