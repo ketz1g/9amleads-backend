@@ -26680,6 +26680,9 @@ function getBoostArchiveLeads(product, ageKey, count, allowedAreas) {
   // COMMERCIAL MOVES bulk pool: same archive file as moving, but only commercial
   // premises (offices/units/retail) - the pool commercial buyers actually want.
   if (product === 'commercial') arr = (arr || []).filter(function(l) { try { return isCommercialLead(l); } catch(e) { return false; } });
+  // Moving bulk = RESIDENTIAL only: exclude commercial premises (they are their own
+  // product). Without this, filling the commercial pool inflated the moving pool too.
+  else if (product === 'moving') arr = (arr || []).filter(function(l) { try { return !isCommercialLead(l); } catch(e) { return true; } });
   // AREA SCOPE: restrict to the customer's chosen areas / county when requested.
   if (Array.isArray(allowedAreas) && allowedAreas.length) {
     var _allow = {}; allowedAreas.forEach(function(a) { _allow[String(a).toUpperCase()] = 1; });
