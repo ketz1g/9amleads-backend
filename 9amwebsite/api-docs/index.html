@@ -288,4 +288,4 @@ function getAid(){try{if(window.__aid)return window.__aid;var v=localStorage.get
 function trackEvent(event,props){try{if(typeof props!=='object'||props===null)props={};fetch('/api/analytics/event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event:event,uid:getAid(),props:props})}).catch(function(){})}catch(e){}}
 </script>
 <script src="/assistant.js" defer></script>
-</body></html>
+<div style="max-width:1120px;margin:0 auto;padding:10px 20px 20px;text-align:center;font-size:13px"><a href="/portal/demo.html" style="color:#0ea5e9;font-weight:700;text-decoration:none"><i class="fas fa-desktop"></i> See the live dashboard</a></div></body></html>
