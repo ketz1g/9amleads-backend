@@ -38422,7 +38422,13 @@ async function runDeliveryRehearsal(trigger, opts) {
     var ids = {}; accounts.forEach(function(c) { ids[c.id] = 1; });
     d.leads = (d.leads || []).filter(function(l) { return !ids[l.customer_id]; });
     var _rtoday = new Date().toISOString().split('T')[0];
-    accounts.forEach(function(c) { c.last_email_date = ''; try { c.extra_lead_emailed_date = ''; _releaseDailyEmail(c.id, _rtoday); } catch(e) {} });
+    // RESET PERSISTENT DELIVERED-REFS too: the rehearsal account's delivered_refs
+    // grows with every test/rehearsal run (it is the SAME account the 15-min test
+    // cron keeps delivering to), so notDeliveredBefore() eventually rejects every
+    // mailable pool lead and the account falls short of its exact quota - the root
+    // cause of the flaky post-deploy smoke test. Clearing it (like clear-customer-leads
+    // already does for "clean test runs") makes the rehearsal a true clean slate.
+    accounts.forEach(function(c) { c.last_email_date = ''; c.delivered_refs = '[]'; try { c.extra_lead_emailed_date = ''; _releaseDailyEmail(c.id, _rtoday); } catch(e) {} });
     saveDb();
     // Run the REAL engine, test accounts only (force bypasses the before-9am guard;
     // sendBrevoEmail skips test addresses so no email actually leaves).
