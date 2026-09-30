@@ -14641,7 +14641,7 @@ function checkQuietAreas() {
       if (!isEntitledForDelivery(c)) return;
       if (typeof isInternalAccount === 'function' && isInternalAccount(c)) return;
       if (_qaSuppress.indexOf(String(c.email || '').toLowerCase()) !== -1) return;
-      if (c.bounced && parseInt(c.bounced, 10) >= 3) return;
+      if (c.bounced && parseInt(c.bounced, 10) >= 1) return;
       var areas = [];
       try { areas = JSON.parse(c.target_areas || '[]'); } catch(e) { areas = []; }
       if (!areas.length) { try { var pcq = JSON.parse(c.product_config || '{}'); areas = JSON.parse((pcq[c.product] || {}).target_areas || '[]'); } catch(e) { areas = []; } }
@@ -17554,13 +17554,19 @@ function sendBrevoEmail(to, subject, htmlContent) {
     var _rcpt = String((to && to.email) || '').trim().toLowerCase();
     var _isOwnerInbox = _rcpt === 'hello@9amleads.com' || /^(ketzman1g|ketan|hello)\+?.*@(gmail\.com|9amleads\.com)$/.test(_rcpt);
     if (_rcpt && !_isOwnerInbox) {
-      var _placeholder = /(^|\.)(test|demo|qa|bulk|cbc|payc|kyc)[0-9_.]*@/.test(_rcpt) || /^bulk\.test/.test(_rcpt) || /^test\./.test(_rcpt);
-      var _disposable = /@(example\.com|test\.com|yopmail\.com|mailinator\.com|tempmail\.com|fake\.com|sharklasers\.com|guerrillamail\.com)$/.test(_rcpt);
-      var _selfTestDomain = /@9amleads\.com$/.test(_rcpt);
-      if (_placeholder || _disposable || (_selfTestDomain && !/^(hello|support|noreply|no-reply|founder)@/.test(_rcpt))) {
-        console.log('[BREVO] Skipped un-deliverable test address ' + _rcpt + ' (' + String(subject||'').slice(0,50) + ')');
-        return;
-      }
+        var _placeholder = /(^|\.)(test|demo|qa|bulk|cbc|payc|kyc|signup|e2e|loadtest|probe|smoke)[0-9_.]*@/.test(_rcpt) || /^bulk\.test/.test(_rcpt) || /^test\./.test(_rcpt) || /^(signup|e2e|loadtest|probe|smoke)[._-]/.test(_rcpt);
+        var _disposable = /@(example\.com|test\.com|yopmail\.com|mailinator\.com|tempmail\.com|fake\.com|sharklasers\.com|guerrillamail\.com)$/.test(_rcpt);
+        var _selfTestDomain = /@9amleads\.com$/.test(_rcpt);
+        if (_placeholder || _disposable || (_selfTestDomain && !/^(hello|support|noreply|no-reply|founder)@/.test(_rcpt))) {
+          console.log('[BREVO] Skipped un-deliverable test address ' + _rcpt + ' (' + String(subject||'').slice(0,50) + ')');
+          return;
+        }
+        // BREVO BLOCKLIST: never re-attempt an address Brevo has blocklisted after a
+        // hard bounce / complaint (that is what produced the 56% "blocked" rate - every
+        // retry to a blocklisted address counts as blocked and damages reputation).
+        var _sup = [];
+        try { _sup = getDb().brevo_suppressed || []; } catch(e) {}
+        if (_sup.length && _sup.indexOf(_rcpt) !== -1) { console.log('[BREVO] Skipped Brevo-suppressed ' + _rcpt); return; }
     }
   } catch(_te) {}
   const https = require('https');
@@ -17637,6 +17643,56 @@ function sendBrevoEmail(to, subject, htmlContent) {
     attempt(1);
   });
 }
+
+// Pull Brevo's blocklist (hard bounces / complaints) into db.brevo_suppressed so we
+// NEVER re-attempt a blocklisted address. Re-attempts are what produced the 56%
+// "blocked" rate and the sender-reputation damage. Runs daily + on boot.
+async function refreshBrevoSuppression() {
+  if (!BREVO_API_KEY) return { added: 0, total: 0 };
+  var emails = [];
+  await new Promise(function(resolve) {
+    var done = false;
+    function finish() { if (!done) { done = true; resolve(); } }
+    function page(offset) {
+      var req = require('https').request({ hostname: 'api.brevo.com', path: '/v3/smtp/blockedContacts?limit=100&offset=' + offset, method: 'GET', headers: { 'api-key': BREVO_API_KEY, accept: 'application/json' }, timeout: 20000 }, function(r) {
+        var b = ''; r.on('data', function(c) { b += c; }); r.on('end', function() {
+          var n = 0;
+          try { var j = JSON.parse(b); var list = j.contacts || []; n = list.length; list.forEach(function(c) { if (c && c.email) emails.push(String(c.email).toLowerCase()); }); } catch(e) {}
+          if (n === 100 && offset < 5000) return page(offset + 100);
+          finish();
+        });
+      });
+      req.on('error', finish);
+      req.on('timeout', function() { try { req.destroy(); } catch(e) {} finish(); });
+      req.end();
+    }
+    page(0);
+  });
+  try {
+    var dbx = getDb();
+    dbx.brevo_suppressed = Array.isArray(dbx.brevo_suppressed) ? dbx.brevo_suppressed : [];
+    var set = {}; dbx.brevo_suppressed.forEach(function(e) { set[e] = 1; });
+    var added = 0;
+    emails.forEach(function(e) { if (e && !set[e]) { set[e] = 1; dbx.brevo_suppressed.push(e); added++; } });
+    if (added) fs.writeFileSync(DB_FILE, JSON.stringify(dbx, null, 2));
+    if (added) console.log('[BREVO] suppression list +' + added + ' (total ' + dbx.brevo_suppressed.length + ')');
+    return { added: added, total: dbx.brevo_suppressed.length };
+  } catch(e) { return { error: e.message }; }
+}
+// Refresh the suppression list daily (05:20 UK) so a fresh hard bounce is suppressed
+// before the next day's sends.
+cron.schedule('20 5 * * *', function() { try { refreshBrevoSuppression(); } catch(e) { console.log('[BREVO] suppression cron error:', e.message); } }, { timezone: 'Europe/London' });
+
+// GET /api/admin/brevo-suppression - suppression list size + a sample of addresses.
+app.get('/api/admin/brevo-suppression', adminAuth, function(req, res) {
+  try { var s = getDb().brevo_suppressed || []; res.json({ success: true, count: s.length, sample: s.slice(-20) }); }
+  catch(e) { res.status(500).json({ error: e.message }); }
+});
+// POST /api/admin/brevo-suppression - refresh from Brevo's blocklist now.
+app.post('/api/admin/brevo-suppression', adminAuth, async function(req, res) {
+  try { res.json({ success: true, result: await refreshBrevoSuppression() }); }
+  catch(e) { res.status(500).json({ error: e.message }); }
+});
 
 // ===== CUSTOMER EMAIL HISTORY =====
 // Every email successfully sent to a customer is recorded so the founder can see,
@@ -22423,7 +22479,7 @@ cron.schedule('1 9 * * 1-5', async () => {
       // EXCLUDE expired trials: they are not owed leads, so a "your leads are on
       // the way" delay notice must never reach them (that belongs to the re-join
       // campaign, not delivery ops). Paused/cancelled/bounced also excluded.
-      var wCustomers = (wDb.customers || []).filter(function(c){ return !isInternalAccount(c) && c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3) && !isLeadsPaused(c) && !trialExpiredUnpaid(c); });
+      var wCustomers = (wDb.customers || []).filter(function(c){ return !isInternalAccount(c) && c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 1) && !isLeadsPaused(c) && !trialExpiredUnpaid(c); });
       var wSubject = '🦥 Your leads had a lie-in - but they\'re on the way!';
       var wBody = '<div style="font-family:Inter,Arial,sans-serif">'
         + '<h2 style="color:#fbbf24;margin:0 0 10px;font-size:20px;font-weight:800">Oops, the 9am alarm was a bit sleepy today 😴</h2>'
@@ -23614,7 +23670,7 @@ cron.schedule('7 9 * * 1-5', async () => {
       // (which un-expired them for the next day). isEntitledForDelivery() applies the
       // SAME rule as the 9am run (plan + not paused + trial not expired).
       if (!isEntitledForDelivery(c)) return;
-      if (c.bounced && parseInt(c.bounced) >= 3) return;
+      if (c.bounced && parseInt(c.bounced) >= 1) return;
       var quota = getCustomerDailyQuota(c) || 5;
       var todayDelivered = (vDb.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered && l.delivered_at && l.delivered_at.startsWith(vToday); }).length;
       if (todayDelivered < quota) {
@@ -23899,7 +23955,7 @@ async function runAutoSend() {
   var dbJSON = getDb();
   var db = db_shim;
   var today = new Date().toISOString().split('T')[0];
-  var customers = (dbJSON.customers || []).filter(function(c) { return !isInternalAccount(c) && c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 3) && !isLeadsPaused(c) && !trialExpiredUnpaid(c); });
+  var customers = (dbJSON.customers || []).filter(function(c) { return !isInternalAccount(c) && c.plan && c.plan !== 'cancelled' && (!c.bounced || c.bounced < 1) && !isLeadsPaused(c) && !trialExpiredUnpaid(c); });
   var results = { checked: 0, enabled: 0, skipped: 0, sent: 0, failed: 0, total_spend: 0, details: [] };
   // Per-customer outcome recorder so the run result explains WHY each account was
   // skipped/failed (previously only totals were returned, so a skip was undiagnosable).
@@ -24909,7 +24965,7 @@ async function runCampaignEmails(dry) {
   if (!dry) { try { reconcileTrialPaidMarkers(); } catch(e) { console.log('[PAID-RECONCILE] error:', e.message); } }
   // Cancelled customers ARE included so they can receive the cancelled-customer
   // win-back (handled separately below) - but they never get trial or paid emails.
-  var customers = (getDb().customers || []).filter(function(c) { return c.plan && (!c.bounced || c.bounced < 3) && c.marketing_consent === 1; });
+  var customers = (getDb().customers || []).filter(function(c) { return c.plan && (!c.bounced || c.bounced < 1) && c.marketing_consent === 1; });
   var sent = 0;
   var log = [];
   var sendIt = async function (cust, template, subject, html) {
@@ -25204,7 +25260,7 @@ cron.schedule('30 8 * * 1', async () => {
   console.log('[DIGEST] Starting weekly digest...');
   var dbD = getDb();
   var customers = (dbD.customers || []).filter(function(c) {
-    if (!c.plan || c.plan === 'cancelled' || !c.email || (c.bounced && c.bounced >= 3)) return false;
+    if (!c.plan || c.plan === 'cancelled' || !c.email || (c.bounced && c.bounced >= 1)) return false;
     // An EXPIRED free trial must not receive nurture/digest emails after the trial
     // ends (they are re-engaged only through the payment/expiry flow, not weekly
     // summaries). This is what caused nawadi1655@mediseat.com to get a digest the
@@ -27848,7 +27904,7 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
     var onlyEmail = String((req.body && (req.body.customer_email || req.body.test_email)) || '').toLowerCase().trim();
     var testOnly = !!(req.body && req.body.test_only);
     var customers = (db.customers || []).filter(function(c) {
-      if (!c.plan || c.plan === 'cancelled' || (c.bounced && c.bounced >= 3)) return false;
+      if (!c.plan || c.plan === 'cancelled' || (c.bounced && c.bounced >= 1)) return false;
       if (onlyEmail && String(c.email || '').toLowerCase() !== onlyEmail) return false;
       var _isTest = /^test\./.test(String(c.email || '').toLowerCase());
       // INTERNAL / TEST / DEMO ISOLATION - the root cause of the recurring "leads
@@ -45310,6 +45366,9 @@ app.listen(PORT, () => {
   } catch(e) {
     console.log('[SEO] Startup blog seed error: ' + (e && e.message || e));
   }
+  // Refresh the Brevo suppression list on boot (non-blocking) so blocklisted addresses
+  // are skipped from the first send after a restart.
+  try { refreshBrevoSuppression(); } catch(e) { console.log('[BREVO] boot suppression error: ' + (e && e.message)); }
 
   // CAMPAIGN CATCH-UP ON BOOT: the scheduled trial/nurture run can be missed when the
   // service restarts around the run time (deploys/restarts). Sending is deduped by
