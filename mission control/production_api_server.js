@@ -27035,24 +27035,47 @@ app.get('/api/admin/bulk-pools', adminAuth, (req, res) => {
   try {
     var released = releaseStaleBoostReservations();
     function bands(prod) {
-      var arr = readPoolFile(prod) || [];
-      // Commercial Moves shares the moving archive file - count only the commercial
-      // subset so it is a true, separate bulk pool.
+      // ACCURATE sellable inventory: same SOURCE and MAILABLE GATE as the customer
+      // /api/boost view, so the admin card matches what a customer can actually buy.
+      // The 65-day archive (with the live-pool merge for moving/commercial) is filtered
+      // to mailable addresses (full postcode + usable premise/company) and excludes
+      // reserved/sold. (Previously this read the raw live pool with no mailable filter,
+      // so it overstated the "this month" bands and understated 1m/2m.)
+      var _archProd = (prod === 'commercial') ? 'moving' : prod;
+      var arr = readArchive(_archProd);
+      if (prod === 'moving' || prod === 'commercial') {
+        try {
+          var _pool = readPoolFile(_archProd) || [];
+          if (_pool.length) {
+            var _seenK = {};
+            (arr || []).forEach(function(l) { var k = l && (l.id || l.url); if (k) _seenK[k] = 1; });
+            _pool.forEach(function(l) { var k = l && (l.id || l.url); if (k && !_seenK[k]) { _seenK[k] = 1; arr.push(l); } });
+          }
+        } catch(eP) {}
+      }
+      if (!arr || !arr.length) arr = readPoolFile(_archProd) || [];
+      // Commercial Moves shares the moving archive file - count only the commercial subset.
       if (prod === 'commercial') { try { arr = arr.filter(function(l) { return isCommercialLead(l); }); } catch(e) { arr = []; } }
       var now = Date.now();
-      var out = { total: arr.length, '0-2d': 0, '3-7d': 0, tm: 0, '1m': 0, '2m': 0, reserved: 0, sold: 0 };
-      arr.forEach(function(l) {
+      var out = { total: 0, raw_total: arr.length, '0-2d': 0, '3-7d': 0, tm: 0, '1m': 0, '2m': 0, reserved: 0, sold: 0 };
+      (arr || []).forEach(function(l) {
         if (!l) return;
         if (l.boost_sold || l.bulk_sold) { out.sold++; return; }
         if (l.boost_reserved || l.bulk_reserved) { out.reserved++; return; }
-        // Age = the real LISTING date. Commercial premises must NOT use scrapedAt
-        // (their delivery freshness anchor) or every long-listed unit would look new.
+        // MAILABLE GATE (mirrors /api/boost): full postcode + usable premise/company.
+        var pc = String(l.postcode || '').toUpperCase().trim();
+        if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/.test(pc)) return;
+        var addr = l.fullAddress || l.address || l.deceasedAddress || '';
+        if (!addr || addr.trim().length < 8) return;
+        if (!postableLeadInfo(l, prod === 'newbusiness' || prod === 'commercial').ok) return;
+        // Age = the real LISTING date (not scrapedAt).
         var d = (prod === 'commercial')
-          ? (l.sourceListedDate || l.firstVisibleDate || l.addedOn || l.publishedDate || l.updateDate || '')
-          : (l.sourceListedDate || pickFreshDate(l) || '');
+        ? (l.sourceListedDate || l.firstVisibleDate || l.addedOn || l.publishedDate || l.updateDate || '')
+        : (l.sourceListedDate || pickFreshDate(l) || '');
         var t = d ? new Date(d).getTime() : 0;
         if (!t) return;
         var age = (now - t) / 86400000;
+        out.total++;
         if (prod === 'newbusiness') {
           // New Business bulk reserve is the 3-7 day window; no 1m/2m archive bands.
           if (age <= 2) out['0-2d']++;
@@ -27075,7 +27098,7 @@ app.get('/api/admin/bulk-pools', adminAuth, (req, res) => {
       probate: bands('probate'),
       planning: bands('planning'),
       newbusiness: bands('newbusiness'),
-      note: 'Moving/Commercial/Probate/Planning: tm = This month (3-27 days, never sent) · 1m = 28-35d · 2m = 58-65d. New Business: 3-7d = bulk reserve. Archive bands never touch the daily 24/48h fresh feed.' + (released ? ' Released ' + released + ' stale reservation(s).' : '')
+      note: 'Mailable, sellable bulk leads (reserved/sold excluded). Moving/Commercial/Probate/Planning: tm = 3-27 days, 1m = 28-35d, 2m = 58-65d. New Business: 3-7d = bulk reserve. total = mailable count in this pool; raw_total = full pool before the mailable filter.' + (released ? ' Released ' + released + ' stale reservation(s).' : '')
     });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
