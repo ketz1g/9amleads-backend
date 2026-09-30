@@ -26324,8 +26324,9 @@ async function enrichArchiveFromSources(product, limit) {
     if (!todo.length) return { fixed: 0, total: arch.length };
     if (product === 'probate') {
       for (var pj = 0; pj < todo.length; pj++) {
-        var pid = String(todo[pj].id || '');
-        var nid = (pid.indexOf('GAZ_') === 0) ? pid.slice(4) : (/^\d+$/.test(pid) ? pid : '');
+        var purl = String(todo[pj].url || '');
+        var pm = purl.match(/\/notice\/(\d+)/) || String(todo[pj].id || '').match(/(?:GAZ_)?(\d+)/);
+        var nid = pm ? pm[1] : '';
         if (!nid) continue;
         var ga = await fetchGazetteNoticeAddress(nid);
         if (ga && hasUsablePremiseAddress(ga, String(todo[pj].postcode || ''))) { todo[pj].deceasedAddress = ga; todo[pj].fullAddress = ga; todo[pj].address = ga; }
@@ -26333,7 +26334,9 @@ async function enrichArchiveFromSources(product, limit) {
       }
     } else if (product === 'newbusiness') {
       for (var i = 0; i < todo.length; i++) {
-        var cn = todo[i].companyNumber || todo[i].registrationNumber || todo[i].company_number || '';
+        var u = String(todo[i].url || '');
+        var cm = u.match(/\/company\/([A-Za-z0-9]+)/);
+        var cn = cm ? cm[1] : (todo[i].companyNumber || todo[i].registrationNumber || todo[i].company_number || '');
         if (!cn) continue;
         var a = await fetchCompaniesHouseAddress(cn);
         if (a && hasUsablePremiseAddress(a, String(todo[i].postcode || ''))) { todo[i].address = a; todo[i].fullAddress = a; }
