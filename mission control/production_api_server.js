@@ -864,14 +864,29 @@ function interleavePoolByAreas(poolArr, custAreas) {
   Object.keys(buckets).forEach(function(k){ if (order.indexOf(k) === -1) order.push(k); });
   var out = [];
   var idx = {}; order.forEach(function(k){ idx[k] = 0; });
-  var progressed = true;
-  while (out.length < poolArr.length && progressed) {
-    progressed = false;
-    for (var oi = 0; oi < order.length; oi++) {
-      var k = order[oi];
-      if (idx[k] < buckets[k].length) { out.push(buckets[k][idx[k]++]); progressed = true; }
+  // CHOSEN areas drain FIRST (round-robin among just those buckets), THEN all other
+  // areas. Previously a single pass across EVERY bucket meant a fallback-area lead was
+  // taken before a customer's OWN area's later leads - so a narrow-area customer got
+  // out-of-area leads even when in-area supply existed.
+  var chosenKeys = {};
+  custAreas.forEach(function(a) {
+    var k = areasAreCounties ? String(a).toLowerCase().replace(/[\s-]+/g, '-') : extractPostcodeArea(a);
+    if (k) chosenKeys[k] = 1;
+  });
+  var preferred = order.filter(function(k) { return chosenKeys[k]; });
+  var rest = order.filter(function(k) { return !chosenKeys[k]; });
+  function drain(keys) {
+    var progressed = true;
+    while (progressed) {
+      progressed = false;
+      for (var oi = 0; oi < keys.length; oi++) {
+        var k = keys[oi];
+        if (idx[k] < buckets[k].length) { out.push(buckets[k][idx[k]++]); progressed = true; }
+      }
     }
   }
+  drain(preferred);
+  drain(rest);
   return out;
 }
 
