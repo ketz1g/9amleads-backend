@@ -17646,9 +17646,15 @@ function logActivity(customerId, type, detail, opts) {
     if (d.customer_activity.length > 3000) d.customer_activity = d.customer_activity.slice(-3000);
     saveDb();
     if (opts && opts.email) {
-      var who = (cust && (cust.company || cust.contact_name || cust.email)) || customerId;
-      sendAdminAlert((opts.subject || 'Customer activity') + ': ' + who,
-        '<div style="font-size:14px;color:#e2e8f0;line-height:1.7"><b style="color:#fff">' + who + '</b> (' + ((cust && cust.email) || '') + ')<br><br>' + detail + '</div>');
+      // Internal/test accounts (rehearsal, demo, test.*, @9amleads.com) must never
+      // page the founder - they are automated checks, not real purchases.
+      var _internal = false;
+      try { _internal = typeof isInternalAccount === 'function' && isInternalAccount(cust); } catch(e) {}
+      if (!_internal) {
+        var who = (cust && (cust.company || cust.contact_name || cust.email)) || customerId;
+        sendAdminAlert((opts.subject || 'Customer activity') + ': ' + who,
+          '<div style="font-size:14px;color:#e2e8f0;line-height:1.7"><b style="color:#fff">' + who + '</b> (' + ((cust && cust.email) || '') + ')<br><br>' + detail + '</div>');
+      }
     }
     return entry;
   } catch(e) { console.log('[ACTIVITY] log error:', e.message); }

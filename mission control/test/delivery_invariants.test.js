@@ -107,6 +107,8 @@ ok('zero-value checkouts are logged as card-save, not PAID',
   has("_peType = 'setup'") && has('no charge'));
 ok('admin Print & Post view + auto-send activity logging exist',
   has("app.get('/api/admin/print-post'") && has("logActivity(cust.id, 'auto_send_sent'"));
+ok('customer activity email alerts skip internal/test accounts',
+  has('_internal = typeof isInternalAccount === \'function\' && isInternalAccount(cust)') && has('if (!_internal)'));
 ok('print-post view lists ALL customers + set-up counts',
   has('rows: rows, engaged_count') && has('needs_materials: rows.filter'));
 ok('admin can email a materials-help offer (deduped)',
