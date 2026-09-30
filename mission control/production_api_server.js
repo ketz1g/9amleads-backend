@@ -12942,6 +12942,18 @@ app.post('/api/admin/enrich-pool-epc', adminAuth, async (req, res) => {
   catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/rebuild-archive - re-feed the bulk archives from the (enriched) daily
+// pools so stored entries pick up their full door-numbered addresses (merge-on-existing).
+app.post('/api/admin/rebuild-archive', adminAuth, async (req, res) => {
+  try {
+    var out = {};
+    ['moving', 'probate', 'planning', 'newbusiness'].forEach(function(p) {
+      try { appendToArchive(p, readPoolFile(p) || []); out[p] = (readArchive(p) || []).length; } catch(e2) { out[p] = 'err:' + e2.message; }
+    });
+    res.json({ success: true, archiveSizes: out });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/enrich-archive-epc - EPC-resolve door numbers across the BULK archives
 // (free, local index) so the bulk packs are Stannp-mailable.
 app.post('/api/admin/enrich-archive-epc', adminAuth, async (req, res) => {
@@ -26172,12 +26184,21 @@ function appendToArchive(product, leads) {
     if (!Array.isArray(leads) || !leads.length) return;
     var arch = readArchive(product);
     var seen = {};
-    arch.forEach(function(l) { var k = l.id || l.url || l.title || l.address; if (k) seen[k] = 1; });
+    arch.forEach(function(l) { var k = l.id || l.url || l.title || l.address; if (k) seen[k] = l; });
     var addedLeads = [];
     leads.forEach(function(l) {
       if (!l) return;
-      var k = l.id || l.url || l.title || l.address; if (!k || seen[k]) return;
-      seen[k] = 1; l.archivedAt = l.archivedAt || new Date().toISOString(); arch.push(l); addedLeads.push(l);
+      var k = l.id || l.url || l.title || l.address; if (!k) return;
+      var ex = seen[k];
+      if (ex) {
+        // MERGE: overwrite a stored entry's address when the incoming one is FULLER
+        // (the enriched pool address with a door number replaces the raw, door-less one).
+        var exAddr = String(ex.fullAddress || ex.address || ex.deceasedAddress || '');
+        var newAddr = String(l.fullAddress || l.address || l.deceasedAddress || '');
+        if (newAddr.length > exAddr.length) { ex.address = l.address; ex.fullAddress = l.fullAddress; ex.deceasedAddress = l.deceasedAddress; }
+        return;
+      }
+      l.archivedAt = l.archivedAt || new Date().toISOString(); arch.push(l); seen[k] = l; addedLeads.push(l);
     });
     // EPC RESOLUTION (free, local index): turn the new listings' street+postcode into a
     // full door-numbered address so they are Stannp-mailable. Bounded to the NEW entries.
