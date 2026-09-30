@@ -17788,6 +17788,10 @@ function _notifyAgent(subject, text) {
     // New sign-up alerts are celebratory/informational - nothing to investigate, so
     // they must never spin up the auto-triage agent.
     if (/auto[-\s]?fix|no change needed|agent (found|error)|areas auto-widened|scraper auto|^test alert|rollback|new .*sign[- ]?u/i.test(_subj)) return;
+    // HIGH-SEVERITY ONLY: the agent only wakes for genuine failures (crash / deploy
+    // failure / outage / OOM). Informational alerts (sign-ups, readiness notes, digests,
+    // nudges) are still emailed by the caller, but must never spawn a bot run + draft PR.
+    if (!/(crash|unhandled|uncaught|unhandledrejection|deploy\/smoke|smoke[- ]?test|workflow failed|outage|panic|\bdown\b|failed to (start|boot)|econn|heap out of memory|\boom\b|fatal|crashloop)/i.test(_subj)) return;
     var now = Date.now();
     if (!global.__agentNotifyAt) global.__agentNotifyAt = {};
     // RATE LIMIT 1 - per issue: at most one agent dispatch per subject per 30 minutes.

@@ -101,7 +101,8 @@ jobs:
 
           if [ -z "$(git status --porcelain)" ]; then
             echo "No code changes produced by the agent."
-            notify "Auto-fix: no change needed (${SUBJECT})" "The agent investigated and found no code change was needed."
+            # NO notification here - "no change needed" is pure noise. Only ping the
+            # founder when there is an actual DRAFT PR to review (below).
             exit 0
           fi
 
