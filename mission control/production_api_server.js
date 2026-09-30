@@ -25442,6 +25442,27 @@ app.get('/api/admin/pool-leads', adminAuth, (req, res) => {
 });
 
 
+// GET /api/admin/pool-explain?product=moving&areas=TW,KT,W,GU - WHY can't in-area pool
+// leads be delivered? Shows the per-lead mailable breakdown for the first 25 in-area leads.
+app.get('/api/admin/pool-explain', adminAuth, (req, res) => {
+  try {
+    var prod = req.query.product || 'moving';
+    var areas = String(req.query.areas || '').toUpperCase().split(',').filter(Boolean);
+    var pool = loadProductPool(prod);
+    var inArea = pool.filter(function(l) { var a = extractPostcodeArea(l.postcode || l.address || l.fullAddress || l.deceasedAddress || ''); return a && areas.indexOf(a) !== -1; });
+    var sample = inArea.slice(0, 25).map(function(l) {
+      var addr = String(l.fullAddress || l.address || l.deceasedAddress || '');
+      var pc = String(l.postcode || '');
+      var tc = parseTownCountyFromAddress(addr, pc);
+      var premiseOk = false, streetOk = false;
+      try { premiseOk = ADDR_PREMISE.hasUsablePremiseAddress(addr, pc); } catch(e) {}
+      try { streetOk = hasStreetName(addr); } catch(e) {}
+      return { address: addr.slice(0, 55), postcode: pc, area: extractPostcodeArea(l.postcode || l.address || l.fullAddress || ''), premise: premiseOk, street: streetOk, town: tc.town, county: tc.county, complete: !!isCompleteMovingAddress(addr, pc), fresh: String(pickFreshDate(l)).slice(0, 10), source: l.source || '' };
+    });
+    res.json({ product: prod, areas: areas, inAreaCount: inArea.length, completeCount: inArea.filter(function(l) { return isCompleteMovingAddress(String(l.fullAddress || l.address || l.deceasedAddress || ''), String(l.postcode || '')); }).length, sample: sample });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // DIAGNOSTIC: dump raw lead data for matching delivered leads (email + address fragment)
 app.get('/api/admin/dump-lead-raw', adminAuth, (req, res) => {
   try {
