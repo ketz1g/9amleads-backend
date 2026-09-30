@@ -12942,6 +12942,16 @@ app.post('/api/admin/enrich-pool-epc', adminAuth, async (req, res) => {
   catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/enrich-archive-epc - EPC-resolve door numbers across the BULK archives
+// (free, local index) so the bulk packs are Stannp-mailable.
+app.post('/api/admin/enrich-archive-epc', adminAuth, async (req, res) => {
+  try {
+    var out = {};
+    ['moving', 'probate', 'planning', 'newbusiness'].forEach(function(p) { try { out[p] = enrichArchiveWithEpc(p); } catch(e2) { out[p] = { error: e2.message }; } });
+    res.json({ success: true, products: out });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/admin/lead-debug?email=X - show a customer's leads and EXACTLY why each
 // passes/fails the mailable-address gate (diagnoses "0 delivered" reports).
 app.get('/api/admin/lead-debug', adminAuth, (req, res) => {
@@ -26163,10 +26173,10 @@ function appendToArchive(product, leads) {
     // full door-numbered address so they are Stannp-mailable. Bounded to the NEW entries.
     var epcFixed = 0;
     try {
-      if (typeof EPC_INDEX !== 'undefined' && EPC_INDEX && EPC_INDEX.isLoaded() && addedLeads.length) {
-        for (var _ai = 0; _ai < addedLeads.length; _ai++) {
-          if (_ai > 0 && _ai % 500 === 0) { /* yield handled by sync sqlite */ }
-          var _al = addedLeads[_ai];
+      if (typeof EPC_INDEX !== 'undefined' && EPC_INDEX && EPC_INDEX.isLoaded() && arch.length) {
+        for (var _ai = 0; _ai < arch.length; _ai++) {
+          if (_ai > 0 && _ai % 2000 === 0) { /* sync sqlite; indexed so fast */ }
+          var _al = arch[_ai];
           var _apc = String(_al.postcode || '').trim();
           if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(_apc)) continue;
           var _aAddr = String(_al.fullAddress || _al.address || '');
@@ -26189,6 +26199,28 @@ function appendToArchive(product, leads) {
     if (added) console.log('[ARCHIVE] ' + product + ': +' + added + ' (epc +' + epcFixed + ') = ' + arch.length);
   } catch(e) { console.log('[ARCHIVE] ' + product + ' error: ' + e.message); }
 }
+// EPC-resolve door numbers across a whole archive file (free, local index).
+function enrichArchiveWithEpc(product) {
+  try {
+    if (!(typeof EPC_INDEX !== 'undefined' && EPC_INDEX && EPC_INDEX.isLoaded())) return { ok: false, reason: 'epc not loaded' };
+    var arch = readArchive(product);
+    if (!arch.length) return { fixed: 0, total: 0 };
+    var fixed = 0, scanned = 0;
+    for (var i = 0; i < arch.length; i++) {
+      var l = arch[i]; if (!l) continue;
+      var pc = String(l.postcode || '').trim();
+      if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(pc)) continue;
+      var addr = String(l.fullAddress || l.address || '');
+      if (hasStreetName(addr) && hasUsablePremiseAddress(addr, pc)) continue;
+      scanned++;
+      var full = EPC_INDEX.resolveFullAddress(addr, pc);
+      if (full && hasUsablePremiseAddress(full, pc)) { l.address = full; l.fullAddress = full; fixed++; }
+    }
+    if (fixed) writeArchive(product, arch);
+    return { fixed: fixed, scanned: scanned, total: arch.length };
+  } catch(e) { return { ok: false, error: e.message }; }
+}
+
 // Exclude an archive lead from further bulk sale (reserved/sold) by id/url.
 function markArchive(product, ids, fields) {
   try {
