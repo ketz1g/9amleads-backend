@@ -3265,6 +3265,7 @@ function buildEmailFooter(opts) {
   return '<tr><td class="mob" bgcolor="#0f172a" style="background-color:#0f172a;background-image:linear-gradient(135deg,#0f172a,#1e293b);padding:22px 30px 20px;border-radius:0 0 16px 16px;text-align:center;border-top:1px solid #0ea5e9">' +
     '<div style="font-family:Outfit,Arial,Helvetica,sans-serif;font-size:17px;font-weight:900;color:#38bdf8;text-align:center;margin-bottom:12px"><span style="display:inline-block;width:26px;height:26px;border-radius:8px;text-align:center;line-height:26px;font-size:13px;background-color:#0ea5e9;background-image:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;margin-right:6px;vertical-align:middle;font-family:Outfit,Arial,sans-serif">9</span><span style="vertical-align:middle">9amLeads</span></div>' +
     '<p style="color:#cbd5e1;font-size:11px;margin:0 0 8px">' + links + '</p>' +
+    '<p style="margin:0 0 8px"><a href="https://www.linkedin.com/in/9amleads" style="color:#38bdf8;text-decoration:none;font-size:11px;font-weight:700">Follow 9amLeads on LinkedIn</a></p>' +
     '<p style="color:#94a3b8;font-size:9px;margin:0;letter-spacing:.4px">Fresh opportunities delivered at 9am every morning &bull; 9amLeads.com</p>' +
     '</td></tr>';
 }
@@ -3286,7 +3287,7 @@ function dmEmailHTML(title, body, ctaText, ctaUrl) {
     '<div style="font-size:13px;color:#8890b0;line-height:1.7;font-family:Inter,Helvetica,Arial,sans-serif">' + body + '</div>' +
     (ctaText && ctaUrl ? '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:22px 0 4px"><a href="' + ctaUrl + '" style="display:inline-block;padding:13px 32px;background-color:#0ea5e9;background-image:linear-gradient(135deg,#0ea5e9,#2563eb);color:#ffffff;text-decoration:none;border-radius:50px;font-size:13px;font-weight:700;font-family:Inter,Helvetica,Arial,sans-serif">' + ctaText + '</a></td></tr></table>' : '') +
     // Footer
-    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td class="mob" style="padding:20px 0 0;border-top:1px solid #151929;font-size:11px;color:#94a3b8;text-align:center;font-family:Inter,Helvetica,Arial,sans-serif">9amLeads &middot; <a href="https://9amleads.com" style="color:' + accent + ';text-decoration:none">9amleads.com</a><br><span style="color:#64748b">hello@9amleads.com &middot; Fresh business leads every morning at 9am</span></td></tr></table>' +
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td class="mob" style="padding:20px 0 0;border-top:1px solid #151929;font-size:11px;color:#94a3b8;text-align:center;font-family:Inter,Helvetica,Arial,sans-serif">9amLeads &middot; <a href="https://9amleads.com" style="color:' + accent + ';text-decoration:none">9amleads.com</a><br><span style="color:#64748b">hello@9amleads.com &middot; Fresh business leads every morning at 9am</span><br><a href="https://www.linkedin.com/in/9amleads" style="color:' + accent + ';text-decoration:none">LinkedIn</a></td></tr></table>' +
     '</td></tr></table>' +
     '</td></tr></table></div></body></html>';
 }
