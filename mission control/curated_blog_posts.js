@@ -1445,6 +1445,335 @@ var CURATED_POSTS = [
         'Start free at the affiliate page and get your code in under a minute.'
       ]}
     ]
+  },
+  {
+    slug: 'corporate-relocation-removal-leads',
+    title: 'Corporate Relocation Leads: How Removal Companies Win Office and Company Moves',
+    description: 'How UK removal companies can win office relocations and commercial moves - where these leads come from, how to qualify them, price the job and turn one office move into a long-term account.',
+    category: 'moving', product_name: 'Moving Leads', categoryLabel: 'Moving Leads',
+    keywords: ['corporate relocation leads', 'office removals leads', 'commercial moving leads', 'company relocation contracts', 'office move removal company'],
+    date: '2026-09-30', reading_time: '8 min read', publish_delay_days: 1,
+    faqs: [
+      { q: 'What counts as a corporate relocation lead?', a: 'A commercial moving opportunity - an office, warehouse, workshop or business premises that is relocating. These are larger, higher-value jobs than most domestic moves and often come with recurring work such as storage, IT relocation and crate hire.' },
+      { q: 'Where do commercial moving leads come from?', a: 'Mainly commercial property listings, business rates and lease signals, planning and fit-out activity, and new company registrations. Watching these sources tells you which businesses are about to move before they publicly tender the job.' },
+      { q: 'How is quoting an office move different from a home move?', a: 'Access, phasing and downtime matter far more. You will usually quote out of hours, plan lift and loading access, protect IT and fragile equipment, and agree a run sheet with the office manager. Margin comes from planning, not from the hourly rate.' },
+      { q: 'Do I need special insurance for commercial moves?', a: 'Yes. Business contents values are higher and may include specialist equipment. Check your goods in transit and liability cover, and make sure your policy covers commercial premises and out-of-hours working.' }
+    ],
+    sections: [
+      { h: 'Why commercial moves are worth winning', body: [
+        'A single office relocation can be worth more than a month of domestic removals. The volumes are larger, the timelines are fixed, and the client is a business that values reliability over the lowest price.',
+        'The same company also tends to move again - office expansions, site consolidations and fit-outs create repeat work. Win the first move well and you become the default mover for that business.',
+        { cta: 'Get fresh moving and commercial relocation opportunities in your areas every morning at 9am - start a free trial at 9amLeads.' }
+      ]},
+      { h: 'Where corporate relocation leads come from', body: [
+        'Commercial moves rarely announce themselves. The signals appear weeks before the removal is booked:',
+        { ul: ['New commercial property listings and lease events', 'Fit-out, refurbishment and planning activity', 'Company expansions from new registrations and Companies House filings', 'Business rates changes and change of use applications', 'News of funding rounds, office expansions or relocations'] }
+      ]},
+      { h: 'Qualifying an office move before you quote', body: [
+        'Before you commit time to a survey, qualify the essentials on a short call. How many desks and workstations? Is there a server room or archive? When does the lease end and what is the hard move date? Who signs off the budget?',
+        'Ask about access at both ends: parking, loading bays, lifts, stairs and any building management rules. These details decide the crew size and whether you need a dedicated run sheet - and they are the difference between a profitable job and a loss.'
+      ]},
+      { h: 'Pricing a commercial relocation', body: [
+        'Price the whole project, not just the hours. Include crew, vans, crates, packing materials, specialist handling, out-of-hours premiums and contingency. A phased move over a weekend is cheaper for the client than downtime and should be presented that way.',
+        { table: [['Relocation size', 'Typical crew', 'Typical duration'], ['Small office (up to 20 desks)', '3-4 movers, 1-2 vans', '1 day'], ['Medium office (20-60 desks)', '5-8 movers, 3-4 vans', '1-2 days'], ['Warehouse / large site', 'Team plus project lead', 'Several days, phased']] }
+      ]},
+      { h: 'Running the move day', body: [
+        'The move day is won or lost in the briefing. Send a clear run sheet the day before: arrival time, access details, a named site contact, and the order each area is packed and loaded.',
+        'Label everything by department and destination, protect IT and fragile items, and keep one senior mover coordinating so the client always knows who to ask. A calm, organised commercial move is the best marketing you will ever do.',
+        { cta: 'Build a daily habit of contacting new commercial opportunities - start your free moving leads trial today.' }
+      ]},
+      { h: 'Turning one office move into an account', body: [
+        'After the job, send a short debrief, confirm everything arrived safely and ask for a review. Add the facilities manager and office manager to your contacts and check in a few months later about storage, archive moves or the next expansion.',
+        'Commercial clients buy from people they trust to protect their business. A fast, professional response to the first opportunity is how you start that relationship.'
+      ]}
+    ]
+  },
+  {
+    slug: 'selling-a-probate-property-guide',
+    title: 'Selling a Probate Property: A Practical Guide for Executors and Solicitors',
+    description: 'How the probate property sale process works, what executors need to do before a property can be sold, and how solicitors and estate agents can support the sale without delays.',
+    category: 'probate', product_name: 'Probate Leads', categoryLabel: 'Probate Leads',
+    keywords: ['probate property sale', 'selling a probate property', 'executor property sale', 'probate conveyancing', 'probate leads'],
+    date: '2026-09-30', reading_time: '8 min read', publish_delay_days: 1.5,
+    faqs: [
+      { q: 'Can you sell a property before probate is granted?', a: 'You can usually market a property and accept an offer before the grant is issued, but you cannot complete the sale until probate is granted and you have authority to sell as executor. Starting early avoids months of lost time.' },
+      { q: 'Who decides the asking price of a probate property?', a: 'The executors, usually with advice from a surveyor or estate agent. Their duty is to the estate and beneficiaries, so a realistic valuation and a documented decision protect them from later challenge.' },
+      { q: 'Do probate properties sell for less?', a: 'Not necessarily. They often need clearing, decorating or updating, which affects price, but well-presented probate properties sell close to market. The main risk is delay, not value.' },
+      { q: 'How do solicitors support a probate sale?', a: 'They obtain the grant, confirm the executors have authority, handle the conveyancing and coordinate with the estate agent and buyer. Being first to help an executor often wins the wider estate work too.' }
+    ],
+    sections: [
+      { h: 'What a probate property sale involves', body: [
+        'Selling a property during probate is a process, not a single event. The estate must be valued, inheritance tax dealt with, the grant of probate obtained, and only then can the sale complete - even if a buyer is already waiting.',
+        'Understanding the order of those steps is what stops an executor feeling lost and what lets professional advisers move the sale forward in parallel rather than in sequence.',
+        { cta: 'Reach executors early with fresh probate leads every morning - start a free trial at 9amLeads.' }
+      ]},
+      { h: 'Steps before the property can be sold', body: [
+        'The executors should secure and insure the property, clear valuables, arrange a valuation and gather the paperwork a conveyancer will need. Meanwhile the solicitor applies for the grant.',
+        { ul: ['Register the death and obtain the grant of probate', 'Value the estate for inheritance tax', 'Secure, insure and clear the property', 'Commission a market valuation and choose an agent', 'Instruct a conveyancer familiar with probate sales'] }
+      ]},
+      { h: 'Why timing matters more than price', body: [
+        'A probate sale often stalls for one reason: nobody started early. Marketing before the grant is issued, and preparing the conveyancing pack in advance, can save three to six months.',
+        'For the family, that time is the difference between a stressful, open-ended process and a clear path to closing the estate. Advisers who bring that clarity win the instruction.'
+      ]},
+      { h: 'Working with executors sensitively', body: [
+        'An executor is usually a family member dealing with loss while managing an unfamiliar process. Keep your language plain, set out the steps in writing, and follow up without pressure.',
+        { cta: 'Warm, timely contact wins probate work - get fresh executor opportunities daily with probate leads from 9amLeads.' }
+      ]},
+      { h: 'Where probate buyers and investors fit in', body: [
+        'Some estates need a fast, certain sale of a property that needs significant work. Property buyers and investors can be a good fit here, provided the executors understand the trade-off between speed and headline price.',
+        { table: [['Sale route', 'Speed', 'Typical outcome'], ['Open market', 'Slower', 'Highest price, more viewings'], ['Probate or investor buyer', 'Faster', 'Certain completion, lower price'], ['Auction', 'Fixed date', 'Mixed results, fees apply']] }
+      ]},
+      { h: 'Turning probate work into a pipeline', body: [
+        'One probate instruction frequently leads to estate administration, conveyancing, tax advice and the sale of other assets. The first helpful conversation is what earns the rest.',
+        'Build a consistent habit of contacting new grants quickly and respectfully, and the pipeline compounds.'
+      ]}
+    ]
+  },
+  {
+    slug: 'new-company-alerts-for-agencies',
+    title: 'New Company Alerts for Web Designers and Marketing Agencies',
+    description: 'How web design, SEO and marketing agencies can use new company registrations to win clients early - what to look for, how to reach out and how to follow up without wasting time.',
+    category: 'newbusiness', product_name: 'New Business Leads', categoryLabel: 'New Business Leads',
+    keywords: ['new company leads', 'web design leads', 'marketing agency leads', 'companies house leads', 'new business leads uk'],
+    date: '2026-09-30', reading_time: '7 min read', publish_delay_days: 2,
+    faqs: [
+      { q: 'Are newly registered companies good leads for agencies?', a: 'They are among the best. A new limited company has a name, an address, named directors and a SIC code describing what it does - and it almost always needs a website, branding and marketing in its first weeks.' },
+      { q: 'Where do new company alerts come from?', a: 'Companies House publishes new registrations daily, including the company name, registered address, directors and nature of business. 9amLeads turns that raw feed into clean, filtered business leads.' },
+      { q: 'How should I approach a brand new company?', a: 'Lead with something genuinely useful - a quick win, a compliance deadline or a free audit - rather than a generic pitch. New founders are busy and sceptical, but receptive to specific, low-risk help.' },
+      { q: 'What is the best offer to open with?', a: 'A fixed-price starter package: a fast one-page website, a Google Business profile and a basic local SEO setup. It removes the risk and gets you in before they sign with someone else.' }
+    ],
+    sections: [
+      { h: 'Why new companies need an agency first', body: [
+        'Every new limited company faces the same early problems: they need to look credible, be findable, and start winning customers. Most have not thought about a website, branding or SEO yet - which is exactly why the opportunity is wide open.',
+        'Being first with a specific, low-risk offer beats being the best quote that arrives three weeks later.',
+        { cta: 'Get fresh new company leads every morning, filtered by area and industry - start a free trial at 9amLeads.' }
+      ]},
+      { h: 'What to look for in a new company alert', body: [
+        'Not every new company is a customer. The SIC code tells you what they do, the registered address hints at scale, and the number and names of directors suggest ambition.',
+        { ul: ['SIC codes that match your ideal client (trades, professional services, e-commerce)', 'Companies with two or more directors tend to invest earlier', 'Registered office in a business or commercial address suggests intent to trade', 'Sectors with high search demand win fastest from SEO'] }
+      ]},
+      { h: 'The first-touch message that gets replies', body: [
+        'Open with a specific observation, not a template. Reference their industry and a problem you have solved for a similar business. Keep it short, make one clear offer, and ask a simple question.',
+        'A message like "You are new on Companies House - most new [trade] firms lose their first ten enquiries to competitors who rank locally. I can set you up with a one-page site and Google profile this week for a fixed fee. Interested?" converts far better than a price list.'
+      ]},
+      { h: 'A simple starter package that sells', body: [
+        'Package what a new company needs on day one. It should be easy to say yes to and profitable to deliver.',
+        { table: [['Package', 'What is included', 'Purpose'], ['Starter', 'One-page site, Google Business profile, basic SEO', 'Get them visible in week one'], ['Growth', 'Multi-page site, on-page SEO, review system', 'Turn visibility into enquiries'], ['Care plan', 'Updates, hosting, monthly reporting', 'Recurring revenue for you']] }
+      ]},
+      { h: 'Follow up like a professional', body: [
+        'Most new founders will not reply to the first message. That is normal. Plan three touches over two weeks, each adding value rather than chasing.',
+        { cta: 'Turn a steady stream of new companies into clients - get new business leads daily from 9amLeads.' }
+      ]},
+      { h: 'Build a repeatable system', body: [
+        'Pick your best sectors, contact a fixed number of new companies each morning, and track your reply and conversion rates. Small, consistent effort beats sporadic bursts.',
+        'Because new companies appear every single day, a daily outreach habit quietly builds a full pipeline.'
+      ]}
+    ]
+  },
+  {
+    slug: 'change-of-use-planning-applications-guide',
+    title: 'Change of Use Planning Applications: A Guide for Business Owners and Trades',
+    description: 'What change of use means, when a UK business needs planning permission to change how a building is used, and how trades and consultants can win change of use projects.',
+    category: 'planning', product_name: 'Planning Leads', categoryLabel: 'Planning Leads',
+    keywords: ['change of use planning', 'change of use application', 'planning permission business', 'use classes order', 'planning leads'],
+    date: '2026-09-30', reading_time: '7 min read', publish_delay_days: 2.5,
+    faqs: [
+      { q: 'What is change of use planning permission?', a: 'It is permission to change how a building or land is used - for example turning a shop into a cafe, an office into flats, or a house into an HMO. Use classes group similar uses, and moving between them may or may not need an application.' },
+      { q: 'When do I need planning permission for change of use?', a: 'You need permission when the new use falls outside permitted development rights for the existing use class. Some changes between classes are allowed automatically; others require a full application.' },
+      { q: 'How long does a change of use application take?', a: 'Usually eight to thirteen weeks for a straightforward application, longer if there are objections, listed building issues or highways and environmental considerations.' },
+      { q: 'Who can help with a change of use application?', a: 'Planning consultants and experienced trades prepare the drawings, statements and supporting reports. Getting the application right first time avoids costly refusals and appeals.' }
+    ],
+    sections: [
+      { h: 'Why change of use matters to business owners', body: [
+        'Anyone opening a business, converting a building or expanding into a new use runs into change of use. Get it wrong and the project stops; get it right and everything else - fit-out, recruitment, trading - can proceed.',
+        'Understanding the use classes and what is permitted development is the first step in deciding whether an application is needed at all.',
+        { cta: 'Be first to spot planning activity in your area - get planning leads every morning at 9am with 9amLeads.' }
+      ]},
+      { h: 'How the use classes work in practice', body: [
+        'Use classes group land and buildings by activity. Moving within the same class usually needs no permission; moving between classes may need an application or may be allowed under permitted development.',
+        { ul: ['Shops, cafes and services have distinct classes', 'Offices, light industrial and storage sit in their own classes', 'Residential conversions from commercial often need permission', 'Some changes have automatic permitted development rights, some do not'] }
+      ]},
+      { h: 'Building a strong application', body: [
+        'A good change of use application answers the concerns a planner will raise before they raise them: parking, noise, traffic, hours of use and impact on neighbours.',
+        'Include clear floor plans, a supporting statement explaining the proposal and its benefits, and any specialist reports the site requires. Applications that address concerns up front face far fewer delays.'
+      ]},
+      { h: 'Where the work comes from for trades and consultants', body: [
+        'Change of use projects need drawings, structural advice, fit-out and often a planning consultant to shepherd the application. Trades that spot applications early can quote before competitors know the project exists.',
+        { table: [['Project type', 'Typical professional input', 'Typical trade input'], ['Shop to cafe', 'Planning statement, drawings', 'Fit-out, services, seating'], ['Office to flats', 'Architect, planners, building control', 'Conversion, M&E, kitchens'], ['House to HMO', 'Planning, licensing knowledge', 'Fire doors, partitions, services']] }
+      ]},
+      { h: 'Pitfalls that sink applications', body: [
+        'The most common failure is not checking permitted development rights before assuming permission is needed - or assuming it is not, and finding out the hard way. Others include inadequate parking provision, overlooking and noise concerns left unaddressed.',
+        { cta: 'Win more planning projects with fresh planning-approval leads delivered daily - start your free trial at 9amLeads.' }
+      ]},
+      { h: 'Turning planning activity into a pipeline', body: [
+        'Planning applications are public and are submitted every day. Watching the ones that match your skills lets you approach the applicant early, while plans are still forming.',
+        'A consistent habit of reviewing new applications in your area builds a pipeline of projects long before they reach a tender.'
+      ]}
+    ]
+  },
+  {
+    slug: 'how-to-find-uk-public-sector-tenders',
+    title: 'How to Find UK Public Sector Tenders in 2026',
+    description: 'Where UK public sector contract opportunities are published, how to filter them for your business, and how to build a reliable tendering pipeline that wins work.',
+    category: 'tenders', product_name: 'Tender Opportunities', categoryLabel: 'Tender Opportunities',
+    keywords: ['uk public sector tenders', 'find tenders', 'public sector contracts', 'tender opportunities uk', 'government contracts smes'],
+    date: '2026-09-30', reading_time: '7 min read', publish_delay_days: 3,
+    faqs: [
+      { q: 'Where are UK public sector tenders published?', a: 'The main national portal is Find a Tender, alongside Contracts Finder for England, Sell2Wales, Public Contracts Scotland and eTendersNI. Many councils and NHS trusts also list on their own websites.' },
+      { q: 'Do I need to be a big company to bid?', a: 'No. Local councils and public bodies actively want SME suppliers, and a large share of contracts are below the thresholds that trigger full EU-style processes. Many are reserved or broken into lots that suit smaller firms.' },
+      { q: 'How far in advance should I start?', a: 'Set up daily alerts and start gathering your policies and references now. A typical bid needs a financial statement, insurance certificates, method statements and often a social value section prepared in advance.' },
+      { q: 'Is tendering worth it for a small business?', a: 'Yes, when you filter to work you can actually deliver. Winning one local authority contract can provide reliable, repeatable revenue for years.' }
+    ],
+    sections: [
+      { h: 'The opportunity most small firms miss', body: [
+        'Public bodies spend billions every year on cleaning, maintenance, construction, transport, catering and professional services. Most of it is published openly - yet many SMEs never look.',
+        'With a daily routine and the right filters, a small business can build a dependable pipeline of public sector work that pays predictable invoices and often leads to extensions.',
+        { cta: 'Get filtered tender opportunities delivered every morning - start a free trial with tender leads at 9amLeads.' }
+      ]},
+      { h: 'Where tenders are published', body: [
+        'Start with the national portals and add the local sources that matter to you.',
+        { ul: ['Find a Tender - the UK-wide main portal', 'Contracts Finder - England and cross-border', 'Sell2Wales, Public Contracts Scotland and eTendersNI', 'Individual council, NHS and housing association websites'] }
+      ]},
+      { h: 'Filtering to work you can win', body: [
+        'The fastest route to winning is relevance. Filter by category, location, contract value and duration, then check the evaluation criteria before you invest time.',
+        'Be honest about capacity and references. It is better to bid on fewer, well-matched opportunities than to submit weak bids everywhere.'
+      ]},
+      { h: 'What a winning bid needs', body: [
+        'Buyers score the same things repeatedly: understanding of the brief, a credible method, evidence of experience, compliance with policies and clear value for money. Prepare a reusable bid library so each bid starts from a strong base.',
+        { table: [['Bid element', 'What the buyer scores', 'Prepare in advance'], ['Method statement', 'How you will deliver', 'Templates by service'], ['Compliance', 'Insurance, policies, H&S', 'Certificates on file'], ['References', 'Proven experience', 'Case studies ready'], ['Social value', 'Community benefit', 'A clear offer']] }
+      ]},
+      { h: 'Common mistakes to avoid', body: [
+        'Missing the deadline, failing to answer the actual question, and ignoring the weighting of each section are the three most common reasons good firms lose. Read the instructions twice and score your own draft against the criteria.',
+        { cta: 'Build a steady tendering habit with fresh opportunities every morning - try tender leads from 9amLeads.' }
+      ]},
+      { h: 'From first bid to framework', body: [
+        'Once you win a contract and deliver it well, you become a known, trusted supplier. That leads to extensions, repeat awards and eventually framework places that bring a stream of work with far less effort.',
+        'The first win is the hardest. A consistent, filtered pipeline makes it far more likely.'
+      ]}
+    ]
+  },
+  {
+    slug: 'van-size-crew-planning-removals',
+    title: 'Van Size and Crew Planning: A Practical Guide for Removal Companies',
+    description: 'How to match vans and crews to each removal job so you quote accurately, avoid overruns and protect your margin - a practical guide for UK removal companies.',
+    category: 'moving', product_name: 'Moving Leads', categoryLabel: 'Moving Leads',
+    keywords: ['van size removals', 'removal crew planning', 'removal company pricing', 'moving leads', 'removals quote guide'],
+    date: '2026-09-30', reading_time: '7 min read', publish_delay_days: 3.5,
+    faqs: [
+      { q: 'How many movers do I need per van?', a: 'Two movers per van is the standard for domestic work: one drives and loads, the other carries and handles fragile items. For larger homes or awkward access add a third mover rather than a second van.' },
+      { q: 'What van size suits a typical UK home?', a: 'A 3.5-tonne Luton with a tail lift covers most three-bedroom homes. Small flats suit a short-wheelbase van, while large family homes often need the Luton plus a second vehicle.' },
+      { q: 'How do I avoid overruns on quote day?', a: 'Assess volume honestly, add time for stairs, parking and garden access, and agree the scope in writing. Most overruns come from under-estimating volume and access, not from slow movers.' },
+      { q: 'Should I charge by the hour or a fixed price?', a: 'Fixed prices win more work when your assessment is accurate, but they carry risk. Hourly rates protect you on uncertain jobs. Many firms quote fixed for straightforward jobs and hourly for complex ones.' }
+    ],
+    sections: [
+      { h: 'Why van and crew planning decides your profit', body: [
+        'The single biggest driver of removal-company margin is matching the vehicle and crew to the job. Too small and you make multiple runs; too large and you have wasted capacity.',
+        'Accurate planning means confident fixed quotes, happy customers and a van that is back on the road earning again.',
+        { cta: 'Fill your diary with well-matched jobs - get fresh moving leads every morning at 9am with 9amLeads.' }
+      ]},
+      { h: 'Choosing the right van for the job', body: [
+        'Match the vehicle to the volume and access, not just the number of bedrooms.',
+        { ul: ['Short-wheelbase van: studio or one-bed flat, tight access', 'Long-wheelbase van: two-bed home, city streets', '3.5t Luton with tail lift: most three-bed homes', 'Luton plus second van: four-bed plus, or long-distance'] }
+      ]},
+      { h: 'Sizing the crew', body: [
+        'Two movers per van is the default. Add a third for large or heavy jobs, awkward stairs, or when speed matters. A well-sized crew works faster, damages less and finishes on time - which is what protects your reputation and your margin.',
+        'On long-distance moves, plan a second driver so the vehicle is not sitting idle while one person rests.'
+      ]},
+      { h: 'The pre-move survey checklist', body: [
+        'A short, structured survey prevents surprises. Confirm volume, access, parking, stairs, lift restrictions and any specialist items before you commit to a price.',
+        { table: [['Check', 'Why it matters', 'Impact on price'], ['Volume', 'Vehicle and crew size', 'High'], ['Access and stairs', 'Extra time and labour', 'High'], ['Parking', 'Permits and delays', 'Medium'], ['Specialist items', 'Equipment and insurance', 'Medium']] }
+      ]},
+      { h: 'Pricing to protect your margin', body: [
+        'Build your price from crew hours, vehicle time, mileage, materials and a contingency for the unexpected. Then present it clearly so the customer understands what they are getting.',
+        { cta: 'Turn accurate planning into repeat business - start your free moving leads trial with 9amLeads.' }
+      ]},
+      { h: 'Learning from every job', body: [
+        'After each move, note how long it actually took versus your estimate and why. Over a few weeks these notes turn guesswork into reliable planning.',
+        'Removal companies that measure their jobs quote faster, win more and waste less than those that rely on instinct alone.'
+      ]}
+    ]
+  },
+  {
+    slug: 'new-business-website-week-one',
+    title: 'Why New Businesses Need a Website in Week One',
+    description: 'New companies without a website lose work before they start. How web designers and agencies can win that business early using new company alerts and a simple, high-converting offer.',
+    category: 'newbusiness', product_name: 'New Business Leads', categoryLabel: 'New Business Leads',
+    keywords: ['new business website', 'web design leads', 'new company leads', 'win web design clients', 'agency lead generation'],
+    date: '2026-09-30', reading_time: '7 min read', publish_delay_days: 4,
+    faqs: [
+      { q: 'Do new companies really need a website immediately?', a: 'Yes. Most customers check a business online before calling, and a new company with no web presence looks temporary or untrustworthy. A simple, credible site is often the difference between winning and losing the first enquiries.' },
+      { q: 'How can I find newly formed companies to approach?', a: 'Companies House publishes new registrations daily with the name, address, directors and industry. New business leads from 9amLeads deliver these filtered and ready to contact every morning.' },
+      { q: 'What should I offer a brand new company?', a: 'A fixed-price starter package: a fast one-page website, a Google Business profile and basic local SEO. Low risk, quick to deliver, and it puts you in front of the client from day one.' },
+      { q: 'How do I follow up without being pushy?', a: 'Add value each time - a quick audit, a competitor comparison, a deadline reminder. Three useful touches over two weeks convert far better than repeated chasing.' }
+    ],
+    sections: [
+      { h: 'A new company has a short window to look credible', body: [
+        'When a business registers, it has a name and little else. Customers, suppliers and even the bank will look it up. Without a website or a Google presence, a new company struggles to be taken seriously.',
+        'That gap is a web designer or agency opportunity. The founder needs visibility now, and they will choose the person who offers a clear, low-risk way to get it.',
+        { cta: 'Spot new companies the day they register - get new business leads every morning at 9am with 9amLeads.' }
+      ]},
+      { h: 'What a new company actually needs first', body: [
+        'Keep the first deliverable small and fast. It should make the business look real and findable within days.',
+        { ul: ['A clean, mobile-friendly one-page website', 'A claimed and complete Google Business profile', 'Basic local SEO so nearby customers find them', 'A simple way for customers to call or book', 'Consistent branding across their listings'] }
+      ]},
+      { h: 'Positioning your offer', body: [
+        'New founders are cautious about spending. Remove the risk by quoting a fixed price, a fast turnaround and a clear outcome. Compare it to the cost of losing even one customer.',
+        'Frame your price against the value: if the site wins two jobs, it has paid for itself several times over.'
+      ]},
+      { h: 'A package priced to sell', body: [
+        'Productise your service so it is easy to say yes to and profitable to deliver.',
+        { table: [['Package', 'Includes', 'Best for'], ['Starter site', 'One page, Google profile', 'Day-one credibility'], ['Growth site', 'Multi-page, SEO, reviews', 'Winning enquiries'], ['Care plan', 'Hosting, updates, reporting', 'Recurring revenue']] }
+      ]},
+      { h: 'Reaching out the right way', body: [
+        'Two days after a company registers is the ideal time to make contact. Lead with a specific, helpful observation and a simple question, not a generic pitch.',
+        { cta: 'Build a pipeline of brand new companies with daily new business leads - start a free trial at 9amLeads.' }
+      ]},
+      { h: 'From one project to an ongoing client', body: [
+        'A website is the start of the relationship, not the end. Add SEO, content, ads and support over time as the business grows - the recurring work is where the real value sits.',
+        'Because new companies appear every day, a consistent outreach habit turns into a steady stream of starter projects that grow into retainers.'
+      ]}
+    ]
+  },
+  {
+    slug: 'listed-building-planning-permission-guide',
+    title: 'Listed Buildings and Planning Permission: A Guide for Trades and Developers',
+    description: 'What listed building consent involves, how it differs from planning permission, and how trades, architects and developers can win listed building projects.',
+    category: 'planning', product_name: 'Planning Leads', categoryLabel: 'Planning Leads',
+    keywords: ['listed building consent', 'listed building planning permission', 'heritage renovation', 'planning leads', 'listed building renovation'],
+    date: '2026-09-30', reading_time: '7 min read', publish_delay_days: 4.5,
+    faqs: [
+      { q: 'Do I need planning permission to alter a listed building?', a: 'You usually need listed building consent for any works that affect the building character, and often planning permission as well if the work changes its use or appearance. Consent is separate from planning permission and both may be required.' },
+      { q: 'What happens if I do work without consent?', a: 'Unauthorised works to a listed building are a criminal offence. Authorities can require you to reverse the work and can prosecute. Always get consent in writing before starting.' },
+      { q: 'Who should prepare a listed building application?', a: 'Use an architect or heritage consultant experienced with listed buildings, supported by trades who understand traditional materials and methods. Specialist input dramatically improves approval odds.' },
+      { q: 'Is listed building work more profitable?', a: 'It can be. Specialist skills are in demand, competition is lower and clients expect higher costs, so margins are often better than standard renovation - provided the work is done correctly.' }
+    ],
+    sections: [
+      { h: 'Why listed buildings are a specialist opportunity', body: [
+        'Listed buildings need care, experience and respect for traditional materials. That deters general builders, which means less competition for firms that specialise - and clients who value quality over the lowest price.',
+        'The work is technical and the rules are strict, but done well it is some of the most rewarding and profitable renovation work available.',
+        { cta: 'Find planning activity in your area early - get planning leads every morning at 9am with 9amLeads.' }
+      ]},
+      { h: 'Consent vs planning permission', body: [
+        'It is a common mistake to think one covers the other. Listed building consent protects the building special interest, while planning permission controls use and development. Many projects need both.',
+        { ul: ['Listed building consent for works affecting the building', 'Planning permission for changes of use or appearance', 'Building regulations approval for the construction itself', 'Separate consent for works in a conservation area'] }
+      ]},
+      { h: 'Getting approval first time', body: [
+        'A strong application shows you understand the building and its history. Include a heritage statement, detailed drawings, a schedule of materials and a clear justification for each change.',
+        'Engage the conservation officer early. A pre-application discussion often saves months and shapes a design that will be approved.'
+      ]},
+      { h: 'Materials and methods that matter', body: [
+        'Traditional buildings need traditional materials: lime mortars, breathable finishes and sympathetic repairs. Using modern, non-breathable products can cause lasting damage and fail inspection.',
+        { table: [['Element', 'Preferred approach', 'Avoid'], ['Mortar', 'Lime-based, breathable', 'Hard cement mortars'], ['Timber', 'Like-for-like repair', 'Wholesale replacement'], ['Windows', 'Repair and draught-proof', 'uPVC replacements'], ['Walls', 'Breathable finishes', 'Sealed modern paints']] }
+      ]},
+      { h: 'Where the projects come from', body: [
+        'Listed building applications, conservation area consents and heritage planning activity are all public. Watching them lets specialist trades and consultants approach owners while plans are still forming.',
+        { cta: 'Be first to heritage and planning projects in your area - try planning leads from 9amLeads.' }
+      ]},
+      { h: 'Building a heritage specialism', body: [
+        'Document your heritage projects, build relationships with conservation officers and architects, and show your work publicly. Specialists win by reputation, and reputation grows with every well-handled listed building job.',
+        'A steady stream of planning leads keeps that specialism fully booked.'
+      ]}
+    ]
   }
 ];
 
