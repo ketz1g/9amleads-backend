@@ -12942,6 +12942,18 @@ app.post('/api/admin/enrich-pool-epc', adminAuth, async (req, res) => {
   catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/enrich-archive-sources?limit=N - fill missing door numbers in the bulk
+// archives from the SOURCE detail pages (Gazette / Companies House), bounded per run.
+app.post('/api/admin/enrich-archive-sources', adminAuth, async (req, res) => {
+  try {
+    var lim = parseInt((req.body && req.body.limit) || '120', 10);
+    var out = {};
+    var prods = ['probate', 'newbusiness'];
+    for (var i = 0; i < prods.length; i++) { try { out[prods[i]] = await enrichArchiveFromSources(prods[i], lim); } catch(e2) { out[prods[i]] = { error: e2.message }; } }
+    res.json({ success: true, products: out });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/rebuild-archive - re-feed the bulk archives from the (enriched) daily
 // pools so stored entries pick up their full door-numbered addresses (merge-on-existing).
 app.post('/api/admin/rebuild-archive', adminAuth, async (req, res) => {
@@ -24335,9 +24347,14 @@ async function trialAutoChargeCustomer(cust, opts) {
 // stay Stannp-mailable as new leads land. Well clear of the 9am delivery window.
 cron.schedule('45 4 * * *', async () => {
   try {
-    ['moving', 'probate', 'planning', 'newbusiness'].forEach(function(p) {
-      try { var r = enrichArchiveWithEpc(p); if (r && r.fixed) console.log('[ARCHIVE-EPC] ' + p + ' fixed ' + r.fixed + '/' + r.scanned); } catch(e2) {}
-    });
+    var prodsA = ['moving', 'probate', 'planning', 'newbusiness'];
+    for (var ai = 0; ai < prodsA.length; ai++) {
+      try { var r = enrichArchiveWithEpc(prodsA[ai]); if (r && r.fixed) console.log('[ARCHIVE-EPC] ' + prodsA[ai] + ' fixed ' + r.fixed + '/' + r.scanned); } catch(e2) {}
+    }
+    // Then fill remaining gaps from the SOURCE detail pages (Gazette / Companies House).
+    for (var si = 0; si < prodsA.length; si++) {
+      try { var rs = await enrichArchiveFromSources(prodsA[si], 200); if (rs && rs.fixed) console.log('[ARCHIVE-SRC] ' + prodsA[si] + ' fixed ' + rs.fixed + '/' + rs.attempted); } catch(e3) {}
+    }
   } catch(e) { console.log('[ARCHIVE-EPC] cron error: ' + e.message); }
 }, { timezone: 'Europe/London' });
 
@@ -26250,6 +26267,56 @@ function enrichArchiveWithEpc(product) {
     if (fixed) writeArchive(product, arch);
     return { fixed: fixed, scanned: scanned, total: arch.length };
   } catch(e) { return { ok: false, error: e.message }; }
+}
+
+// Best-effort Companies House registered-office address from the free public page.
+function fetchCompaniesHouseAddress(companyNumber) {
+  return new Promise(function(resolve) {
+    if (!companyNumber) return resolve(null);
+    try {
+      var req = require('https').request({ hostname: 'find-and-update.company-information.service.gov.uk', path: '/company/' + encodeURIComponent(companyNumber), method: 'GET', headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html' } }, function(res) {
+        var body = ''; res.on('data', function(c) { body += c; }); res.on('end', function() {
+          if (res.statusCode !== 200) return resolve(null);
+          var m = body.match(/id="registered-office-address"[^>]*>([\s\S]*?)<\/(?:p|div)>/i);
+          if (!m) return resolve(null);
+          var addr = m[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+          resolve(addr || null);
+        });
+      });
+      req.on('error', function() { resolve(null); });
+      req.setTimeout(30000, function() { req.destroy(); resolve(null); });
+      req.end();
+    } catch(e) { resolve(null); }
+  });
+}
+
+// Fill missing door numbers in a BULK ARCHIVE from the SOURCE detail pages (bounded):
+//   probate -> the Gazette notice detail page ("Address of Deceased")
+//   newbusiness -> the Companies House registered-office address
+async function enrichArchiveFromSources(product, limit) {
+  try {
+    var arch = readArchive(product);
+    if (!arch.length) return { fixed: 0, total: 0 };
+    var todo = arch.filter(function(l) { return l && l.postcode && !hasUsablePremiseAddress(String(l.fullAddress || l.address || l.deceasedAddress || ''), String(l.postcode)); }).slice(0, limit || 120);
+    if (!todo.length) return { fixed: 0, total: arch.length };
+    if (product === 'probate') {
+      try {
+        var ps = require('./probate_leads_scraper');
+        var gz = todo.filter(function(l) { return l.id && String(l.id).indexOf('GAZ_') === 0; });
+        if (gz.length && typeof ps.enrichGazetteLeads === 'function') await ps.enrichGazetteLeads(gz, gz.length);
+      } catch(e) {}
+    } else if (product === 'newbusiness') {
+      for (var i = 0; i < todo.length; i++) {
+        var cn = todo[i].companyNumber || todo[i].registrationNumber || todo[i].company_number || '';
+        if (!cn) continue;
+        var a = await fetchCompaniesHouseAddress(cn);
+        if (a && hasUsablePremiseAddress(a, String(todo[i].postcode || ''))) { todo[i].address = a; todo[i].fullAddress = a; }
+      }
+    }
+    var fixed = todo.filter(function(l) { return hasUsablePremiseAddress(String(l.fullAddress || l.address || l.deceasedAddress || ''), String(l.postcode)); }).length;
+    if (fixed) writeArchive(product, arch);
+    return { fixed: fixed, attempted: todo.length, total: arch.length };
+  } catch(e) { return { error: e.message }; }
 }
 
 // Exclude an archive lead from further bulk sale (reserved/sold) by id/url.
