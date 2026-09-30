@@ -2114,6 +2114,8 @@ document.querySelectorAll('.modal').forEach(function(m){
       var _sessData = { token: _urlToken, clientId: _urlEmail, email: _urlEmail, name: _urlEmail, plan: 'free_trial', product: 'moving', products: ['moving'] };
       try { localStorage.setItem('mld_portal_session', JSON.stringify(_sessData)); } catch(e) {}
       try { history.replaceState(null, '', window.location.pathname); } catch(e) {}
+      // Optional ?next=/portal/... (used by the short /portal/test/:who links)
+      try { var _next = _qp.get('next'); if (_next && _next.indexOf('/portal/') === 0) { window.location.href = _next; return; } } catch(e) {}
     }
   } catch(e) {}
   var sd = localStorage.getItem('mld_portal_session');

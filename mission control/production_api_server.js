@@ -33411,6 +33411,24 @@ app.get('/api/buyer-scrape/status', (req, res) => {
   }
 });
 
+// GET /portal/test/:who - short owner convenience link to open a TEST account's
+// dashboard (and optionally its bulk dashboard) without pasting a long magic token.
+// Only maps to isolated test.* accounts, which hold no real customer data.
+app.get('/portal/test/:who', (req, res) => {
+  try {
+    var _who = String(req.params.who || '').toLowerCase();
+    var _map = {
+      moving: { id: 'c40ce6ca-a045-4ec0-9316-2cb69169ec2e', email: 'test.rehearsal@9amleads.com', product: 'moving', next: '/portal/boost.html' },
+      commercial: { id: 'adb23e6a-73ee-4cb7-a409-28187ff31eed', email: 'test.commercial1@9amleads.com', product: 'commercial', next: '/portal/boost.html?product=commercial' },
+      newbusiness: { id: 'f97d65b6-7ba3-40c4-a489-db5be1dea541', email: 'test.rehearsal.nb@9amleads.com', product: 'newbusiness', next: '/portal/bulk.html' }
+    };
+    var _t = _map[_who];
+    if (!_t) return res.status(404).send('Unknown test account.');
+    var _tok = jwt.sign({ id: _t.id, email: _t.email, product: _t.product }, JWT_SECRET, { expiresIn: '6h' });
+    return res.redirect('/portal/dashboard.html?token=' + encodeURIComponent(_tok) + '&email=' + encodeURIComponent(_t.email) + '&next=' + encodeURIComponent(_t.next));
+  } catch(e) { res.status(500).send('error'); }
+});
+
 app.get('/api/health', (req, res) => {
   // FAST PATH: Render's health check hits this every few seconds. The full-table
   // COUNT queries below scan the whole DB and were timing out (5s) under scrape
