@@ -12954,6 +12954,24 @@ app.post('/api/admin/enrich-archive-sources', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/admin/archive-diag?product=moving - age distribution + date fields (debug aid)
+app.get('/api/admin/archive-diag', adminAuth, (req, res) => {
+  try {
+    var product = String(req.query.product || 'moving');
+    var arch = readArchive(product);
+    var now = Date.now();
+    function dOf(l) { return l.sourceListedDate || l.firstVisibleDate || l.addedOn || l.publishedDate || l.incorporationDate || l.incorporated_on || l.updateDate || l.archivedAt || l.scrapedAt || ''; }
+    var buckets = { '0-2d': 0, '3-27d': 0, '28-35d': 0, '36-57d': 0, '58-65d': 0, 'older': 0, 'nodate': 0 };
+    arch.forEach(function(l) {
+      var d = dOf(l); if (!d) { buckets.nodate++; return; }
+      var days = (now - new Date(d).getTime()) / 86400000;
+      if (days < 3) buckets['0-2d']++; else if (days < 28) buckets['3-27d']++; else if (days < 36) buckets['28-35d']++; else if (days < 58) buckets['36-57d']++; else if (days < 66) buckets['58-65d']++; else buckets.older++;
+    });
+    var sample = arch.slice(0, 5).map(function(l) { return { id: l.id, url: l.url, postcode: l.postcode, address: String(l.fullAddress || l.address || '').slice(0, 45), sourceListedDate: l.sourceListedDate, firstVisibleDate: l.firstVisibleDate, updateDate: l.updateDate, archivedAt: l.archivedAt, scrapedAt: l.scrapedAt, used: dOf(l) }; });
+    res.json({ product: product, total: arch.length, buckets: buckets, sample: sample });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/rebuild-archive - re-feed the bulk archives from the (enriched) daily
 // pools so stored entries pick up their full door-numbered addresses (merge-on-existing).
 app.post('/api/admin/rebuild-archive', adminAuth, async (req, res) => {
