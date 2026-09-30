@@ -33,6 +33,18 @@ function save() {
   } catch(e) {}
 }
 
+// first_seen_at must be strictly monotonic: two different properties scraped in the
+// same millisecond must NOT share a first_seen_at, otherwise a fresh property can be
+// mistaken for a re-seen one (and vice-versa) when first_seen_at is the freshness
+// fallback.
+var _lastFirstSeenMs = 0;
+function _freshFirstSeenIso() {
+  var ms = Date.now();
+  if (ms <= _lastFirstSeenMs) ms = _lastFirstSeenMs + 1;
+  _lastFirstSeenMs = ms;
+  return new Date(ms).toISOString();
+}
+
 // Record that a property id was seen. On first sight sets first_seen_at; on every
 // sight updates last_seen_at. NEVER overwrites an existing first_seen_at.
 function recordSeen(id, opts) {
@@ -42,7 +54,7 @@ function recordSeen(id, opts) {
   var now = new Date().toISOString();
   var entry = store[key];
   if (!entry) {
-    entry = { first_seen_at: now, last_seen_at: now };
+    entry = { first_seen_at: _freshFirstSeenIso(), last_seen_at: now };
     if (opts && opts.product) entry.product = opts.product;
     store[key] = entry;
     save();

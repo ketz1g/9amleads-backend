@@ -17624,7 +17624,7 @@ function sendBrevoEmail(to, subject, htmlContent) {
   const data = JSON.stringify({
     sender: { name: senderName, email: senderFrom },
     replyTo: to.replyTo ? { email: to.replyTo.email, name: to.replyTo.name || 'Customer' } : { email: 'hello@9amleads.com', name: '9amLeads Support' },
-    to: [{ email: to.email, name: to.name }],
+    to: [{ email: to.email, name: to.name || 'Customer' }],
     subject,
     htmlContent,
     headers: {
@@ -17785,7 +17785,9 @@ function _notifyAgent(subject, text) {
     // NEVER re-dispatch the agent for its own outcome / informational messages. Doing
     // so caused an infinite loop: agent -> "Auto-fixed" alert -> dispatch -> agent ...
     var _subj = String(subject || '');
-    if (/auto[-\s]?fix|no change needed|agent (found|error)|areas auto-widened|scraper auto|^test alert|rollback/i.test(_subj)) return;
+    // New sign-up alerts are celebratory/informational - nothing to investigate, so
+    // they must never spin up the auto-triage agent.
+    if (/auto[-\s]?fix|no change needed|agent (found|error)|areas auto-widened|scraper auto|^test alert|rollback|new .*sign[- ]?u/i.test(_subj)) return;
     var now = Date.now();
     if (!global.__agentNotifyAt) global.__agentNotifyAt = {};
     // RATE LIMIT 1 - per issue: at most one agent dispatch per subject per 30 minutes.
@@ -17863,9 +17865,15 @@ function logActivity(customerId, type, detail, opts) {
     if (d.customer_activity.length > 3000) d.customer_activity = d.customer_activity.slice(-3000);
     saveDb();
     if (opts && opts.email) {
-      var who = (cust && (cust.company || cust.contact_name || cust.email)) || customerId;
-      sendAdminAlert((opts.subject || 'Customer activity') + ': ' + who,
-        '<div style="font-size:14px;color:#e2e8f0;line-height:1.7"><b style="color:#fff">' + who + '</b> (' + ((cust && cust.email) || '') + ')<br><br>' + detail + '</div>');
+      // Internal/test accounts (rehearsal, demo, test.*, @9amleads.com) must never page
+      // the founder - they are automated checks, not real customer purchases.
+      var _internalAct = false;
+      try { _internalAct = typeof isInternalAccount === 'function' && isInternalAccount(cust); } catch(e) {}
+      if (!_internalAct) {
+        var who = (cust && (cust.company || cust.contact_name || cust.email)) || customerId;
+        sendAdminAlert((opts.subject || 'Customer activity') + ': ' + who,
+          '<div style="font-size:14px;color:#e2e8f0;line-height:1.7"><b style="color:#fff">' + who + '</b> (' + ((cust && cust.email) || '') + ')<br><br>' + detail + '</div>');
+      }
     }
     return entry;
   } catch(e) { console.log('[ACTIVITY] log error:', e.message); }
