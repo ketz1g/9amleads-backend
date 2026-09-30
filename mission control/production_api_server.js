@@ -12674,21 +12674,25 @@ app.get('/api/admin/delivery-preview', adminAuth, async (req, res) => {
     var _previewSeen = {};
     for (var pi = 0; pi < customers.length; pi++) {
       var pv = await deliveryPreviewForCustomer(customers[pi], _previewSeen);
-      var dNow = (pv.leads || []).filter(function(l) { return l.has_door_number; }).length;
-      var dPaf = (pv.leads || []).filter(function(l) { return l.paf_candidate; }).length;
-      var dFail = (pv.leads || []).filter(function(l) { return l.paf_failed; }).length;
-      // RESERVED: leads already queued (undelivered, mailable) for this customer by the
-      // 08:30 pre-allocation. This is the GUARANTEED part of the 9am delivery, so the
-      // admin preview can show the truth instead of an optimistic pool projection.
-      var _qReserved = 0;
+      // ACTUAL SEND: the 9am run PROMOTES the customer's queued leads first (the 07:35
+      // pre-allocation), then fills any gap from the pool. So show the queued leads -
+      // what will really be sent - rather than the live pool projection (which can be
+      // momentarily 1 short and made the preview disagree with the actual delivery).
+      var _queueLeads = [];
       try {
-        _qReserved = (dbP.leads || []).filter(function(l) {
+        _queueLeads = (dbP.leads || []).filter(function(l) {
           if (l.customer_id !== customers[pi].id || l.delivered || l.status === 'removed') return false;
           var _dd = {}; try { _dd = JSON.parse(l.data || '{}'); } catch(e) { _dd = {}; }
           if (_dd.rejected || _dd.blocked || _dd.blocked_by_admin) return false;
           return true;
-        }).length;
+        }).map(function(l) {
+          var _d = {}; try { _d = JSON.parse(l.data || '{}'); } catch(e) { _d = {}; }
+          var _addr = _d.fullAddress || _d.address || _d.deceasedAddress || l.address || '';
+          var _pc = _d.postcode || l.postcode || '';
+          return { address: _addr, postcode: _pc, name: _d.name || _d.companyName || '', has_door_number: hasUsablePremiseAddress(_addr, _pc), paf_candidate: false, paf_failed: false, url: _d.url || '', verified_link: _d.url || '', area: extractPostcodeArea(_pc), in_area: true };
+        });
       } catch(e) {}
+      var _qReserved = _queueLeads.length;
       // TODAY state + a single clear STATUS per customer:
       //   DELIVERED  - already has the full count today (inbox + dashboard)
       //   READY      - full quota already queued for the 9am delivery
@@ -12698,12 +12702,19 @@ app.get('/api/admin/delivery-preview', adminAuth, async (req, res) => {
       var _deliveredToday = (dbP.leads || []).filter(function(l) { return l.customer_id === customers[pi].id && l.delivered && l.delivered_at && l.delivered_at.indexOf(_todayP) === 0; }).length;
       var _emailedToday = (String(customers[pi].last_email_date || '') === _todayP);
       var _promised = pv.promised || getPlanLimit(customers[pi].product, customers[pi].plan, customers[pi].coverage) || 0;
+      // What will ACTUALLY be sent = queued leads (up to the promise); if the queue
+      // can't cover it, fall back to the pool picks so we still show the real shape.
+      var _sendLeads = (_queueLeads.length >= _promised && _promised > 0) ? _queueLeads.slice(0, _promised) : (_queueLeads.length ? _queueLeads : (pv.leads || []));
+      var _sendCount = _sendLeads.length;
+      var dNow = _sendLeads.filter(function(l) { return l.has_door_number; }).length;
+      var dPaf = _sendLeads.filter(function(l) { return l.paf_candidate; }).length;
+      var dFail = _sendLeads.filter(function(l) { return l.paf_failed; }).length;
       var _status;
       if (_deliveredToday >= _promised && _promised > 0) _status = 'DELIVERED';
       else if (_qReserved >= _promised && _promised > 0) _status = 'READY';
       else if ((_qReserved + pv.count) >= _promised && _promised > 0) _status = 'READY_POOL';
       else _status = 'SHORT';
-      out.push({ email: pv.email, company: pv.company, product: pv.product, plan: pv.plan, areas: pv.areas, promised: _promised, preview_count: pv.count, queued_mailable: _qReserved, delivered_today: _deliveredToday, emailed_today: _emailedToday, status: _status, fallback_count: pv.fallback_count, fallback_note: pv.fallback_note, door_now: dNow, door_paf: dPaf, door_fail: dFail, leads: pv.leads, error: pv.error || '', debug: pv.debug });
+      out.push({ email: pv.email, company: pv.company, product: pv.product, plan: pv.plan, areas: pv.areas, promised: _promised, preview_count: _sendCount, queued_mailable: _qReserved, delivered_today: _deliveredToday, emailed_today: _emailedToday, status: _status, fallback_count: pv.fallback_count, fallback_note: pv.fallback_note, door_now: dNow, door_paf: dPaf, door_fail: dFail, leads: _sendLeads, error: pv.error || '', debug: pv.debug });
     }
     var _ready = out.filter(function(x) { return x.status !== 'SHORT'; }).length;
     var _delivered = out.filter(function(x) { return x.status === 'DELIVERED'; }).length;
