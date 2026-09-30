@@ -40403,6 +40403,7 @@ function syncCustomers(product) {
               else if (planFilt.applicationType) planFilters = planFilters.concat(planFilt.applicationType);
             });
             leads = await withTimeout(planScraper.collectPlanningLeads({ postcodeAreas: planAreas.length ? planAreas : undefined, filters: planFilters, maxItems: parseInt(process.env.PLANNING_MAX_ITEMS || '1000', 10) }), 8 * 60000, 'Planning scrape');
+            try { appendToArchive('planning', leads); } catch(arE) {}
             if (leads && leads.length > 0) {
               // Planning leads are freshly scraped - no additional freshness filter
               // (brownfield/application data is current at scrape time).
@@ -40568,6 +40569,10 @@ function syncCustomers(product) {
               var _apifyCommercialOn = String(process.env.APIFY_COMMERCIAL_ENABLED || 'false').toLowerCase() === 'true';
               leads = await withTimeout(rmScraper.collectMovingLeads({ areas: mvAreas, commercial: mvWantCommercial, commercial_let: true, commercial_force_apify: _apifyCommercialOn }), 10 * 60000, 'Rightmove moving scrape');
               console.log('[SCRAPER] Moving: ' + (leads||[]).length + ' total (Rightmove fresh source)');
+              // Feed the RAW scraped listings (fresh + older) into the 65-day BULK ARCHIVE
+              // so the bulk bands (this month / 1m / 2m) have real supply. Bulk-only; the
+              // daily delivery still uses the freshness-filtered pool below.
+              try { appendToArchive('moving', leads); } catch(arE) {}
               try { lastScrape.moving_raw = (leads||[]).length; lastScrape.moving_at = new Date().toISOString(); lastScrape.moving_areas = (mvAreas||[]).length; fs.writeFileSync(lastScrapeFile, JSON.stringify(lastScrape)); } catch(lsE) {}
               // COLLECTION-TIME ADDRESS ENRICHMENT (free): Rightmove's list view hides
               // house numbers. Fetch each fresh lead's free Rightmove detail page to
@@ -40886,6 +40891,7 @@ function syncCustomers(product) {
             // fall back to the paid Apify Gazette actor if the free scrape returns 0
             // (the free path can be blocked from some datacenter IPs).
             leads = await probateScraper.collectProbateLeads({ maxItems: 100, useApifyFirst: false });
+            try { appendToArchive('probate', leads); } catch(arE) {}
             // PRUNE NON-DECEASED NOTICES that slipped through (company/solicitor
             // notices from the Apify actor/feed are NOT probate leads - a probate
             // lead is a deceased PERSON). The scraper filters these too, but this
