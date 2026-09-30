@@ -27,33 +27,7 @@ label{font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bot
 </head><body>
 <div class="container">
 <h1 style="font-size:24px;margin-bottom:4px">Join the 9amLeads <span style="color:var(--accent)">Partner Programme</span></h1>
-<p class="muted" style="margin-bottom:18px">Earn by referring businesses to 9amLeads. Two ways to partner:</p>
-
-<div class="pick">
-<button type="button" id="pk-sales" class="active" onclick="pick('sales_partner')">Sales Partner<br><span style="font-weight:400;font-size:11px;color:var(--muted)">£25/month per active customer</span></button>
-<button type="button" id="pk-assoc" onclick="pick('association')">Trade Association<br><span style="font-weight:400;font-size:11px;color:var(--muted)">Co-branded page + recurring</span></button>
-</div>
-
-<div class="card">
-<div id="desc-sales">
-<p style="font-size:13px;margin-bottom:10px"><b>Become a Sales Partner</b> - an independent, commission-based opportunity. Find businesses, contact them, help them onto trial and support them as customers. You earn a <b>£25 monthly recurring commission</b> per qualifying active paying customer (under current programme terms), with full sales resources and a partner dashboard.</p>
-<ul style="font-size:12px;color:var(--muted);margin:10px 0;padding-left:18px">
-<li>Remote / flexible - your own time and effort</li>
-<li>Build a portfolio + recurring monthly income</li>
-<li>Full sales resources, approved outreach copy + customer dashboard</li>
-<li>No guaranteed income - commission is performance-based</li>
-</ul>
-</div>
-<div id="desc-assoc" class="hidden">
-<p style="font-size:13px;margin-bottom:10px"><b>Become a Trade Association Partner</b> - for associations, networks and member bodies. We give your members a <b>14-day free trial</b> of fresh 9am moving leads through a dedicated, co-branded page, and you earn a <b>£25 monthly recurring commission</b> for every member who becomes a paying customer - that is <b>£2,500 per month for every 100 active members</b>. We handle onboarding, support and delivery; you simply introduce your members.</p>
-<ul style="font-size:12px;color:var(--muted);margin:10px 0;padding-left:18px">
-<li>No cost, no risk and nothing to manage on your side</li>
-<li>Co-branded landing page, tracked link and a partner dashboard</li>
-<li>Recurring income that compounds as your members stay</li>
-<li>No guaranteed income - commission is performance-based</li>
-</ul>
-</div>
-</div>
+<p class="muted" style="margin-bottom:18px">Earn £25 per month, per active customer, by referring businesses to 9amLeads. Apply below and we'll review your details.</p>
 
 <div class="card">
 <h2 style="font-size:16px;margin-bottom:12px">Application</h2>
@@ -62,18 +36,6 @@ label{font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bot
 <input class="inp" id="f-phone" placeholder="Phone (optional)">
 <input class="inp" id="f-biz" placeholder="Business name (optional)">
 <input class="inp" id="f-pass" type="password" placeholder="Password (min 8 characters)">
-<div id="sales-fields">
-<label>Sales / relevant experience</label>
-<textarea class="inp" id="f-exp" rows="3" placeholder="Tell us about your sales experience"></textarea>
-<label>Preferred lead sectors</label>
-<input class="inp" id="f-sectors" placeholder="e.g. removals, probate, planning, new business, tenders">
-</div>
-<div id="assoc-fields" class="hidden">
-<label>Approx. members / businesses you represent (optional)</label>
-<input class="inp" id="f-reach" placeholder="e.g. 250">
-<label>Website (optional)</label>
-<input class="inp" id="f-web" placeholder="https://">
-</div>
 <div id="terms-block">
 <div class="terms"><b>Partner Terms (v1 - summary for your application)</b><br>
 Independent relationship · No guaranteed income · Commission only on qualifying paying customers · Customer attribution rules apply · Payment timing subject to clearance + admin payout · Cancellation/refund rules apply · You agree to comply with UK direct-marketing laws, use approved business outreach practices, respect do-not-contact requests, make no misleading claims (no guaranteed leads/jobs/results), not misrepresent yourself as an employee, use only approved product/pricing information, and not spam. Full terms wording is being finalised and will be provided before activation. See the full <a href="/portal/partner-terms.html" target="_blank">Partner Programme Agreement</a> and <a href="/portal/partner-privacy.html" target="_blank">Privacy Notice</a>.
@@ -88,36 +50,22 @@ Independent relationship · No guaranteed income · Commission only on qualifyin
 </div>
 
 <script>
-var partner_type = 'sales_partner';
-function pick(t){
-  partner_type = t;
-  document.getElementById('pk-sales').classList.toggle('active', t === 'sales_partner');
-  document.getElementById('pk-assoc').classList.toggle('active', t === 'association');
-  document.getElementById('desc-sales').classList.toggle('hidden', t !== 'sales_partner');
-  document.getElementById('desc-assoc').classList.toggle('hidden', t !== 'association');
-  document.getElementById('sales-fields').classList.toggle('hidden', t !== 'sales_partner');
-  document.getElementById('assoc-fields').classList.toggle('hidden', t !== 'association');
-  document.getElementById('terms-block').classList.toggle('hidden', t !== 'sales_partner' && t !== 'association');
-}
 function msg(m, ok){ var el = document.getElementById('msg'); el.className = 'msg ' + (ok ? 'ok' : 'err'); el.textContent = m; el.classList.remove('hidden'); }
 function apply(){
-  var body = { partner_type: partner_type, full_name: document.getElementById('f-name').value.trim(), email: document.getElementById('f-email').value.trim(), phone: document.getElementById('f-phone').value.trim(), business_name: document.getElementById('f-biz').value.trim(), password: document.getElementById('f-pass').value };
-  if (partner_type === 'sales_partner') {
-    body.sales_experience = document.getElementById('f-exp').value;
-    body.preferred_sectors = document.getElementById('f-sectors').value.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
-    body.terms_accepted = document.getElementById('f-terms').checked;
-    body.compliance_acknowledged = document.getElementById('f-compliance').checked;
-    body.terms_version = 'v1';
-    if (!body.terms_accepted || !body.compliance_acknowledged) { msg('Please tick the Terms and Compliance boxes to apply as a Sales Partner.', false); return; }
-  }
-  if (partner_type === 'association') {
-    body.member_reach = document.getElementById('f-reach').value.trim();
-    body.website = document.getElementById('f-web').value.trim();
-    body.terms_accepted = document.getElementById('f-terms').checked;
-    body.compliance_acknowledged = document.getElementById('f-compliance').checked;
-    body.terms_version = 'v1';
-    if (!body.terms_accepted || !body.compliance_acknowledged) { msg('Please tick the Terms and Compliance boxes to apply as a Trade Association.', false); return; }
-  }
+  // Single partner application - no type picker. The admin assigns the partner type
+  // (sales partner / trade association) after reviewing. Defaults to sales_partner.
+  var body = {
+    partner_type: 'sales_partner',
+    full_name: document.getElementById('f-name').value.trim(),
+    email: document.getElementById('f-email').value.trim(),
+    phone: document.getElementById('f-phone').value.trim(),
+    business_name: document.getElementById('f-biz').value.trim(),
+    password: document.getElementById('f-pass').value,
+    terms_accepted: document.getElementById('f-terms').checked,
+    compliance_acknowledged: document.getElementById('f-compliance').checked,
+    terms_version: 'v1'
+  };
+  if (!body.terms_accepted || !body.compliance_acknowledged) { msg('Please tick the Terms and Compliance boxes to apply.', false); return; }
   var x = new XMLHttpRequest(); x.open('POST', '/api/partner/apply', true); x.setRequestHeader('Content-Type', 'application/json');
   x.onload = function(){ var d = null; try { d = JSON.parse(x.responseText); } catch(e) {} if (d && d.success) { msg(d.message || 'Application received.', true); document.querySelector('.card:last-of-type .btn').style.display = 'none'; } else { msg((d && d.error) || 'Something went wrong.', false); } };
   x.send(JSON.stringify(body));
