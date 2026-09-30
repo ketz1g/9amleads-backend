@@ -27035,58 +27035,36 @@ app.get('/api/admin/bulk-pools', adminAuth, (req, res) => {
   try {
     var released = releaseStaleBoostReservations();
     function bands(prod) {
-      // ACCURATE sellable inventory: same SOURCE and MAILABLE GATE as the customer
-      // /api/boost view, so the admin card matches what a customer can actually buy.
-      // The 65-day archive (with the live-pool merge for moving/commercial) is filtered
-      // to mailable addresses (full postcode + usable premise/company) and excludes
-      // reserved/sold. (Previously this read the raw live pool with no mailable filter,
-      // so it overstated the "this month" bands and understated 1m/2m.)
-      var _archProd = (prod === 'commercial') ? 'moving' : prod;
-      var arr = readArchive(_archProd);
-      if (prod === 'moving' || prod === 'commercial') {
-        try {
-          var _pool = readPoolFile(_archProd) || [];
-          if (_pool.length) {
-            var _seenK = {};
-            (arr || []).forEach(function(l) { var k = l && (l.id || l.url); if (k) _seenK[k] = 1; });
-            _pool.forEach(function(l) { var k = l && (l.id || l.url); if (k && !_seenK[k]) { _seenK[k] = 1; arr.push(l); } });
-          }
-        } catch(eP) {}
-      }
-      if (!arr || !arr.length) arr = readPoolFile(_archProd) || [];
-      // Commercial Moves shares the moving archive file - count only the commercial subset.
-      if (prod === 'commercial') { try { arr = arr.filter(function(l) { return isCommercialLead(l); }); } catch(e) { arr = []; } }
-      var now = Date.now();
-      var out = { total: 0, raw_total: arr.length, '0-2d': 0, '3-7d': 0, tm: 0, '1m': 0, '2m': 0, reserved: 0, sold: 0 };
-      (arr || []).forEach(function(l) {
-        if (!l) return;
-        if (l.boost_sold || l.bulk_sold) { out.sold++; return; }
-        if (l.boost_reserved || l.bulk_reserved) { out.reserved++; return; }
-        // MAILABLE GATE (mirrors /api/boost): full postcode + usable premise/company.
-        var pc = String(l.postcode || '').toUpperCase().trim();
-        if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/.test(pc)) return;
-        var addr = l.fullAddress || l.address || l.deceasedAddress || '';
-        if (!addr || addr.trim().length < 8) return;
-        if (!postableLeadInfo(l, prod === 'newbusiness' || prod === 'commercial').ok) return;
-        // Age = the real LISTING date (SAME fallback chain as getBoostArchiveLeads so the
-        // bands match the customer view exactly).
-        var d = l.sourceListedDate || l.firstVisibleDate || l.addedOn || l.publishedDate || l.incorporationDate || l.incorporated_on || l.updateDate || String(l.scrapedAt || l.createdAt || '');
-        var t = d ? new Date(d).getTime() : 0;
-        if (!t) return;
-        var age = (now - t) / 86400000;
-        out.total++;
+      // ACCURATE: call the SAME functions the customer /api/boost view uses
+      // (getBoostArchiveLeads for moving/commercial/probate/planning; getBulkEligibleLeads
+      // for new business) so the admin card can NEVER drift from what a customer can buy.
+      var out = { total: 0, raw_total: 0, '0-2d': 0, '3-7d': 0, tm: 0, '1m': 0, '2m': 0, reserved: 0, sold: 0 };
+      try {
         if (prod === 'newbusiness') {
-          // New Business bulk reserve is the 3-7 day window; no 1m/2m archive bands.
-          if (age <= 2) out['0-2d']++;
-          else if (age <= 7) out['3-7d']++;
+          out['3-7d'] = getBulkEligibleLeads(null).length;
+          out.total = out['3-7d'];
         } else {
-          // Moving / Probate boost bands: this month (3-27d) + 1 month + 2 months.
-          if (age <= 2) out['0-2d']++;
-          else if (age < 28) out.tm++;
-          else if (age <= 35) out['1m']++;
-          else if (age >= 58 && age <= 65) out['2m']++;
+          out.tm = getBoostArchiveLeads(prod, 'tm', 0).length;
+          out['1m'] = getBoostArchiveLeads(prod, '1m', 0).length;
+          out['2m'] = getBoostArchiveLeads(prod, '2m', 0).length;
+          out.total = out.tm + out['1m'] + out['2m'];
         }
-      });
+      } catch(eB) {}
+      // Informational raw counts (whole live pool, before the mailable filter).
+      try {
+        var _ap = (prod === 'commercial') ? 'moving' : prod;
+        var _pool = readPoolFile(_ap) || [];
+        out.raw_total = _pool.length;
+        var _now = Date.now();
+        _pool.forEach(function(l) {
+          if (!l) return;
+          if (l.boost_sold || l.bulk_sold) { out.sold++; return; }
+          if (l.boost_reserved || l.bulk_reserved) { out.reserved++; return; }
+          if (prod === 'commercial') { try { if (!isCommercialLead(l)) return; } catch(e) { return; } }
+          var _pf = pickFreshDate(l); var _t = _pf ? new Date(_pf).getTime() : 0;
+          if (_t && (_now - _t) <= 2 * 86400000) out['0-2d']++;
+        });
+      } catch(eP2) {}
       return out;
     }
     res.json({
