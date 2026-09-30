@@ -22979,9 +22979,43 @@ async function runCommercialScrapeTest(opts) {
   console.log('[COMMERCIAL-TEST] ' + rec.total + ' commercial leads (' + rec.mailable + ' mailable) in ' + rec.ms + 'ms across ' + areas.join(','));
   return rec;
 }
+// FILL the moving/commercial pool + 65-day archive from the free Rightmove commercial
+// scraper. (The diagnostic test above never fed the pool, which is why the Commercial
+// Moves bulk pool stayed tiny even though the scraper finds thousands.) Commercial
+// leads are tagged commercial:true so they are excluded from the residential daily feed.
+async function runCommercialScrapeFill(opts) {
+  opts = opts || {};
+  var areas = (Array.isArray(opts.areas) && opts.areas.length) ? opts.areas
+    : ['SW', 'SE', 'CR', 'KT', 'HA', 'EN', 'N', 'RM', 'AL', 'MK', 'WD', 'SL', 'UB', 'TW', 'EC', 'WC', 'E', 'W', 'NW', 'M', 'B', 'L', 'LS', 'BS', 'CF', 'EH', 'G', 'NE', 'S', 'NG', 'SO', 'OX', 'RG', 'BN', 'PO', 'HP', 'LU', 'CM', 'CO', 'IP'];
+  var pages = parseInt(opts.pages || 3, 10);
+  var includeLet = opts.let !== false;
+  var t0 = Date.now();
+  var leads = [];
+  try { leads = await require('./rightmove_scraper_v2').collectCommercialLeads({ areas: areas, pages: pages, include_let: includeLet, force_apify: false }); } catch(e) { leads = []; }
+  if (!Array.isArray(leads)) leads = [];
+  var poolPath = path.join(DATA_DIR, (PRODUCT_LEAD_FILES['moving'] && PRODUCT_LEAD_FILES['moving'].file) || 'moving-leads.json');
+  var pool = [];
+  try {
+    var raw = JSON.parse(fs.readFileSync(poolPath, 'utf-8'));
+    pool = Array.isArray(raw) ? raw : (raw && typeof raw === 'object' ? Object.keys(raw).reduce(function(a, k) { if (k.charAt(0) !== '_' && Array.isArray(raw[k])) a = a.concat(raw[k]); return a; }, []) : []);
+  } catch(e) {}
+  var seen = {}; pool.forEach(function(l) { var k = l && (l.id || l.url); if (k) seen[k] = 1; });
+  var added = 0;
+  leads.forEach(function(l) { if (!l) return; l.commercial = true; var k = l.id || l.url; if (k && !seen[k]) { seen[k] = 1; pool.push(l); added++; } });
+  try { fs.writeFileSync(poolPath, JSON.stringify(pool, null, 2)); } catch(e) {}
+  try { appendToArchive('moving', leads); } catch(e) {}
+  console.log('[COMMERCIAL-FILL] scraped ' + leads.length + ', added ' + added + ' to pool (total ' + pool.length + ') in ' + (Date.now() - t0) + 'ms');
+  return { scraped: leads.length, added_to_pool: added, pool_total: pool.length, areas: areas.length, pages: pages, ms: Date.now() - t0 };
+}
+// POST /api/admin/scrape-commercial { areas?, pages?, let? } - manually fill the pool now.
+app.post('/api/admin/scrape-commercial', adminAuth, async (req, res) => {
+  try { res.json({ success: true, result: await runCommercialScrapeFill(req.body || {}) }); } catch(e) { res.status(500).json({ error: e.message }); }
+});
 // Daily background test (06:40 UK weekdays): measure free commercial supply WITHOUT
 // spending Apify credits, so we know real volume before we sell or scale it.
 cron.schedule('40 6 * * 1-5', function() { try { runCommercialScrapeTest({}); } catch(e) { console.log('[COMMERCIAL-TEST] error: ' + e.message); } }, { timezone: 'Europe/London' });
+// 06:55 UK weekdays: actually FILL the commercial pool from the free scraper.
+cron.schedule('55 6 * * 1-5', function() { try { runCommercialScrapeFill({}); } catch(e) { console.log('[COMMERCIAL-FILL] error: ' + e.message); } }, { timezone: 'Europe/London' });
 // POST /api/admin/test-commercial-scrape { areas?, pages?, let? } - run it now.
 app.post('/api/admin/test-commercial-scrape', adminAuth, async (req, res) => {
   try { res.json({ success: true, result: await runCommercialScrapeTest(req.body || {}) }); } catch(e) { res.status(500).json({ error: e.message }); }
