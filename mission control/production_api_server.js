@@ -39061,21 +39061,38 @@ var BLOG_QUEUE_TARGET = BLOG_POSTS_PER_DAY * 5;          // keep ~5 days queued
 var BLOG_QUEUE_TOPUP = BLOG_POSTS_PER_DAY * 2;           // generate 2 days of posts per run
 var BLOG_PUBLISH_GAP_MS = Math.floor(24 * 60 * 60 * 1000 / BLOG_POSTS_PER_DAY); // 12h for 2/day
 
-function callOpenAIChat(messages) {
+// One chat call to a given OpenAI-compatible provider.
+function _chatOnce(p, messages) {
   return new Promise(function(resolve, reject) {
-    var key = process.env.OPENAI_API_KEY;
-    if (!key) return reject(new Error('OPENAI_API_KEY not set'));
     var https = require('https');
-    var body = JSON.stringify({ model: 'gpt-4o-mini', messages: messages, temperature: 0.8, max_tokens: 3800, response_format: { type: 'json_object' } });
-    var req = https.request({ hostname: 'api.openai.com', path: '/v1/chat/completions', method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key, 'Content-Length': Buffer.byteLength(body) } }, function(r) {
+    var body = JSON.stringify({ model: p.model, messages: messages, temperature: 0.8, max_tokens: 3800, response_format: { type: 'json_object' } });
+    var req = https.request({ hostname: p.host, path: p.path, method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + p.key, 'Content-Length': Buffer.byteLength(body) } }, function(r) {
       var b = ''; r.on('data', function(c) { b += c; }); r.on('end', function() {
-        if (r.statusCode < 300) { try { resolve(JSON.parse(b)); } catch(e) { reject(new Error('bad response json')); } }
-        else reject(new Error('OpenAI ' + r.statusCode + ': ' + b.substring(0, 200)));
+        if (r.statusCode < 300) { try { resolve(JSON.parse(b)); } catch(e) { reject(new Error(p.name + ' bad response json')); } }
+        else reject(new Error(p.name + ' ' + r.statusCode + ': ' + b.substring(0, 200)));
       });
     });
     req.on('error', function(e) { reject(e); });
     req.write(body); req.end();
   });
+}
+// Provider-agnostic chat (name kept for callers). Tries DEEPSEEK first (cheap,
+// OpenAI-compatible) then OPENAI, so blog generation keeps working even if one
+// provider has no credits. Set BLOG_AI_PROVIDER=openai to force OpenAI first.
+function callOpenAIChat(messages) {
+  var prefersOpenAI = String(process.env.BLOG_AI_PROVIDER || '').toLowerCase() === 'openai';
+  var list = [];
+  if (process.env.DEEPSEEK_API_KEY) list.push({ name: 'deepseek', host: 'api.deepseek.com', path: '/chat/completions', model: process.env.DEEPSEEK_MODEL || 'deepseek-chat', key: process.env.DEEPSEEK_API_KEY });
+  if (process.env.OPENAI_API_KEY) list.push({ name: 'openai', host: 'api.openai.com', path: '/v1/chat/completions', model: 'gpt-4o-mini', key: process.env.OPENAI_API_KEY });
+  if (!list.length) return Promise.reject(new Error('No AI key configured (set DEEPSEEK_API_KEY or OPENAI_API_KEY)'));
+  if (prefersOpenAI) list.sort(function(a) { return a.name === 'openai' ? -1 : 1; });
+  var idx = 0;
+  function attempt() {
+    if (idx >= list.length) return Promise.reject(new Error('all AI providers failed'));
+    var p = list[idx++];
+    return _chatOnce(p, messages).catch(function(e) { console.log('[AI] ' + p.name + ' failed: ' + e.message); return attempt(); });
+  }
+  return attempt();
 }
 
 function normalizeBodyPart(part) {
