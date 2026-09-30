@@ -24319,6 +24319,16 @@ async function trialAutoChargeCustomer(cust, opts) {
   return res2;
 }
 
+// 04:45 UK DAILY: EPC-resolve the bulk archives (free, local index) so the bulk packs
+// stay Stannp-mailable as new leads land. Well clear of the 9am delivery window.
+cron.schedule('45 4 * * *', async () => {
+  try {
+    ['moving', 'probate', 'planning', 'newbusiness'].forEach(function(p) {
+      try { var r = enrichArchiveWithEpc(p); if (r && r.fixed) console.log('[ARCHIVE-EPC] ' + p + ' fixed ' + r.fixed + '/' + r.scanned); } catch(e2) {}
+    });
+  } catch(e) { console.log('[ARCHIVE-EPC] cron error: ' + e.message); }
+}, { timezone: 'Europe/London' });
+
 cron.schedule('30 0-7,10-23 * * *', async () => {
   // Runs HOURLY so an expired trial is charged within the hour (a single daily run
   // could be up to ~24h late, since trials end at signup-time + 7 days).
