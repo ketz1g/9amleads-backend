@@ -10545,21 +10545,10 @@ app.post('/api/assistant/ask', optionalAuth, async (req, res) => {
       'plan=' + plan + ', lead type=' + leadType + ', products=' + (products.join(', ') || 'n/a') + ', areas=' + areas + ', trial ends=' + trialEnds + ', current page=' + page + '.',
       'Use this context to give specific answers where you can, for example their plan or lead type.'
     ].join('\n');
-    var OPENAI_KEY = process.env.OPENAI_API_KEY;
     var answer = '';
-    if (OPENAI_KEY) {
-      var reqBody = JSON.stringify({ model: 'gpt-4o-mini', temperature: 0.3, max_tokens: 650,
-        messages: [{ role: 'system', content: sys }].concat(msgs) });
-      var result = await new Promise(function(resolve) {
-        var https = require('https');
-        var r = https.request({ hostname: 'api.openai.com', path: '/v1/chat/completions', method: 'POST',
-          headers: { 'Authorization': 'Bearer ' + OPENAI_KEY, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(reqBody) } },
-          function(rr) { var b = ''; rr.on('data', function(c) { b += c; }); rr.on('end', function() { try { resolve(JSON.parse(b)); } catch(e) { resolve({ error: { message: e.message } }); } }); });
-        r.on('error', function(e) { resolve({ error: { message: e.message } }); });
-        r.write(reqBody); r.end();
-      });
-      answer = (result && result.choices && result.choices[0] && result.choices[0].message && result.choices[0].message.content) || '';
-    }
+    try {
+      answer = await aiChat([{ role: 'system', content: sys }].concat(msgs), { temperature: 0.3, maxTokens: 650 });
+    } catch(aiErr) { answer = ''; }
     if (!answer) answer = faqFallback(question);
     res.json({ answer: String(answer).trim(), suggested: suggestionsFor(question) });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -12076,8 +12065,7 @@ app.post('/api/ai/generate-image', async (req, res) => {
 // POST /api/ai/generate-letter - Generate introduction letter via 9am Leads AI Marketing Builder
 app.post('/api/ai/generate-letter', authMiddleware, async (req, res) => {
   try {
-    const OPENAI_KEY = process.env.OPENAI_API_KEY;
-    if (!OPENAI_KEY) return res.status(400).json({ error: 'AI Marketing Builder is not configured yet. Please contact support.' });
+    if (!_aiProviderList().length) return res.status(400).json({ error: 'AI Marketing Builder is not configured yet. Please contact support.' });
 
     // Use business profile data if not explicitly provided
     var businessData = req.body;
@@ -12147,26 +12135,9 @@ app.post('/api/ai/generate-letter', authMiddleware, async (req, res) => {
     var letters = [];
 
     for (var pi = 0; pi < prompts.length; pi++) {
-      var requestBody = JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: prompts[pi] }],
-        max_tokens: 1000,
-        temperature: 0.7
-      });
-      var result = await new Promise(function(resolve) {
-        const https = require('https');
-        var req = https.request({
-          hostname: 'api.openai.com', path: '/v1/chat/completions', method: 'POST',
-          headers: { 'Authorization': 'Bearer ' + OPENAI_KEY, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(requestBody) }
-        }, function(r) { var b = ''; r.on('data', function(c) { b += c; }); r.on('end', function() { try { resolve(JSON.parse(b)); } catch(e) { resolve({ error: { message: 'Failed to parse response' } }); } }); });
-        req.on('error', function(e) { resolve({ error: { message: e.message } }); });
-        req.write(requestBody); req.end();
-      });
-      if (result && result.choices && result.choices[0] && result.choices[0].message) {
-        letters.push(cleanMailText(result.choices[0].message.content));
-      } else {
-        letters.push(''); // Fallback empty on error for individual variant
-      }
+      var _letterTxt = '';
+      try { _letterTxt = await aiChat([{ role: 'user', content: prompts[pi] }], { temperature: 0.7, maxTokens: 1000 }); } catch(aiErr) { _letterTxt = ''; }
+      letters.push(_letterTxt ? cleanMailText(_letterTxt) : '');
     }
 
     // Build the response object. For a single-version request, only that field
@@ -12194,8 +12165,7 @@ app.post('/api/ai/generate-letter', authMiddleware, async (req, res) => {
 // POST /api/ai/generate-flyer - Generate flyer content via 9am Leads AI Marketing Builder
 app.post('/api/ai/generate-flyer', authMiddleware, async (req, res) => {
   try {
-    const OPENAI_KEY = process.env.OPENAI_API_KEY;
-    if (!OPENAI_KEY) return res.status(400).json({ error: 'AI Marketing Builder is not configured yet. Please contact support.' });
+    if (!_aiProviderList().length) return res.status(400).json({ error: 'AI Marketing Builder is not configured yet. Please contact support.' });
 
     var businessData = req.body;
     if (!businessData.company_name || !businessData.business_type) {
@@ -12235,22 +12205,8 @@ app.post('/api/ai/generate-flyer', authMiddleware, async (req, res) => {
       'SLOGAN:\n(A short, memorable slogan for the company, max 8 words)\n\n' +
       'Include contact details naturally where relevant: Phone: ' + (businessData.phone || 'N/A') + ', Website: ' + (businessData.website || 'N/A');
 
-    var requestBody = JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: 1500,
-      temperature: 0.7
-    });
-
-    var result = await new Promise(function(resolve) {
-      const https = require('https');
-      var req = https.request({
-        hostname: 'api.openai.com', path: '/v1/chat/completions', method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + OPENAI_KEY, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(requestBody) }
-      }, function(r) { var b = ''; r.on('data', function(c) { b += c; }); r.on('end', function() { try { resolve(JSON.parse(b)); } catch(e) { resolve({ error: { message: 'Failed to parse response' } }); } }); });
-      req.on('error', function(e) { resolve({ error: { message: e.message } }); });
-      req.write(requestBody); req.end();
-    });
+    var result = { choices: [] };
+    try { result = { choices: [{ message: { content: await aiChat([{ role: 'user', content: prompt }], { temperature: 0.7, maxTokens: 1500 }) } }] }; } catch(aiErr) { result = { choices: [] }; }
 
     if (result && result.choices && result.choices[0] && result.choices[0].message) {
       var content = result.choices[0].message.content;
@@ -12285,8 +12241,7 @@ app.post('/api/ai/generate-flyer', authMiddleware, async (req, res) => {
 // POST /api/ai/generate-offers - Generate offer ideas
 app.post('/api/ai/generate-offers', authMiddleware, async (req, res) => {
   try {
-    var key = process.env.OPENAI_API_KEY;
-    if (!key) return res.status(400).json({ error: 'AI Marketing Builder not configured.' });
+    if (!_aiProviderList().length) return res.status(400).json({ error: 'AI Marketing Builder not configured.' });
     var bd = req.body;
     if (!bd.company_name || !bd.business_type) {
       var p = db.prepare('SELECT * FROM customer_business_profiles WHERE customer_id = ?').get(req.user.id);
@@ -12294,12 +12249,8 @@ app.post('/api/ai/generate-offers', authMiddleware, async (req, res) => {
       bd = { company_name: p.company_name || '', business_type: p.business_type || '', services: p.services_offered || '', service_area: p.service_areas || '', phone: p.phone || '', website: p.website || '' };
     }
     var promptTxt = 'Generate 7 marketing offers for a ' + (bd.business_type || 'business') + ' company "' + (bd.company_name || '') + '". Services: ' + (bd.services || '') + '. Area: ' + (bd.service_area || '') + '. For each offer provide: OFFER TITLE, OFFER TYPE (Free quote/Free inspection/No call-out fee/Limited-time discount/First job discount/Seasonal offer/Bundle offer/Local customer offer), SHORT EXPLANATION, FLYER WORDING, LETTER WORDING, CALL TO ACTION, TERMS. Separate with "=== OFFER ===".';
-    var reqBody = JSON.stringify({ model: 'gpt-4o-mini', messages: [{ role: 'user', content: promptTxt }], max_tokens: 2500, temperature: 0.8 });
-    var result = await new Promise(function(resolve) {
-      var https = require('https');
-      var r = https.request({ hostname: 'api.openai.com', path: '/v1/chat/completions', method: 'POST', headers: { 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(reqBody) } }, function(resp) { var b = ''; resp.on('data', function(c) { b += c; }); resp.on('end', function() { try { resolve(JSON.parse(b)); } catch(e) { resolve({ error: { message: 'Parse error' } }); } }); });
-      r.on('error', function(e) { resolve({ error: { message: e.message } }); }); r.write(reqBody); r.end();
-    });
+    var result = { choices: [] };
+    try { result = { choices: [{ message: { content: await aiChat([{ role: 'user', content: promptTxt }], { temperature: 0.8, maxTokens: 2500 }) } }] }; } catch(aiErr) { result = { choices: [] }; }
     if (result && result.choices && result.choices[0] && result.choices[0].message) {
       var content = result.choices[0].message.content;
       var offers = [];
@@ -12342,19 +12293,14 @@ app.post('/api/ai/generate-offers', authMiddleware, async (req, res) => {
 // POST /api/ai/review-content - AI Marketing Advisor: review flyer/letter content
 app.post('/api/ai/review-content', authMiddleware, async (req, res) => {
   try {
-    var key = process.env.OPENAI_API_KEY;
-    if (!key) return res.status(400).json({ error: 'AI Marketing Builder not configured.' });
+    if (!_aiProviderList().length) return res.status(400).json({ error: 'AI Marketing Builder not configured.' });
     var content = req.body.content || '';
     var type = req.body.type || 'flyer';
     var businessType = req.body.business_type || '';
     if (!content) return res.status(400).json({ error: 'Content required' });
     var promptTxt = 'You are a professional marketing advisor. Review this ' + type + ' content for a ' + (businessType || 'business') + ' company.\n\nContent to review:\n' + content.substring(0, 3000) + '\n\nEvaluate: headline strength, offer quality, CTA clarity, phone/website presence, business name, grammar, spelling, tone, length, readability, contact visibility, professional appearance.\n\nRespond in this exact format:\nSCORE: (number between 0-100)\nSTRENGTHS: (list key strengths)\nSUGGESTIONS: (numbered list of specific improvements)\nRAW_SCORE: (just the number)';
-    var reqBody = JSON.stringify({ model: 'gpt-4o-mini', messages: [{ role: 'user', content: promptTxt }], max_tokens: 1000, temperature: 0.3 });
-    var result = await new Promise(function(resolve) {
-      var https = require('https');
-      var r = https.request({ hostname: 'api.openai.com', path: '/v1/chat/completions', method: 'POST', headers: { 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(reqBody) } }, function(resp) { var b = ''; resp.on('data', function(c) { b += c; }); resp.on('end', function() { try { resolve(JSON.parse(b)); } catch(e) { resolve({ error: { message: 'Parse error' } }); } }); });
-      r.on('error', function(e) { resolve({ error: { message: e.message } }); }); r.write(reqBody); r.end();
-    });
+    var result = { choices: [] };
+    try { result = { choices: [{ message: { content: await aiChat([{ role: 'user', content: promptTxt }], { temperature: 0.3, maxTokens: 1000 }) } }] }; } catch(aiErr) { result = { choices: [] }; }
     if (result && result.choices && result.choices[0] && result.choices[0].message) {
       var text = result.choices[0].message.content;
       var scoreMatch = text.match(/SCORE:\s*(\d+)/i);
@@ -23845,9 +23791,9 @@ cron.schedule('0 0 * * *', async () => {
 
     // 9. Expiring API keys (check env vars)
     var allKeys = process.env.STRIPE_SECRET_KEY ? 1 : 0;
-    allKeys += process.env.OPENAI_API_KEY ? 1 : 0;
+    allKeys += (process.env.OPENAI_API_KEY || process.env.DEEPSEEK_API_KEY) ? 1 : 0;
     allKeys += STANNP_API_KEY ? 1 : 0;
-    var configuredKeys = (process.env.STRIPE_SECRET_KEY ? 1 : 0) + (process.env.OPENAI_API_KEY ? 1 : 0) + (STANNP_API_KEY ? 1 : 0);
+    var configuredKeys = (process.env.STRIPE_SECRET_KEY ? 1 : 0) + ((process.env.OPENAI_API_KEY || process.env.DEEPSEEK_API_KEY) ? 1 : 0) + (STANNP_API_KEY ? 1 : 0);
     report.results.api_keys = { configured: configuredKeys, total_checked: 3, status: configuredKeys >= 2 ? 'passed' : 'warning' };
 
     // Count statuses
@@ -39061,38 +39007,45 @@ var BLOG_QUEUE_TARGET = BLOG_POSTS_PER_DAY * 5;          // keep ~5 days queued
 var BLOG_QUEUE_TOPUP = BLOG_POSTS_PER_DAY * 2;           // generate 2 days of posts per run
 var BLOG_PUBLISH_GAP_MS = Math.floor(24 * 60 * 60 * 1000 / BLOG_POSTS_PER_DAY); // 12h for 2/day
 
-// One chat call to a given OpenAI-compatible provider.
-function _chatOnce(p, messages) {
+// Ordered AI chat providers for ALL text generation. DEEPSEEK is preferred (cheaper);
+// OPENAI is the fallback. Both are OpenAI-compatible chat APIs. Set AI_PROVIDER=openai
+// to flip the priority. (Image generation still needs OpenAI DALL-E - see /api/ai/generate-image.)
+function _aiProviderList() {
+  var list = [];
+  if (process.env.DEEPSEEK_API_KEY) list.push({ name: 'deepseek', host: 'api.deepseek.com', path: '/chat/completions', model: process.env.DEEPSEEK_MODEL || 'deepseek-chat', key: process.env.DEEPSEEK_API_KEY });
+  if (process.env.OPENAI_API_KEY) list.push({ name: 'openai', host: 'api.openai.com', path: '/v1/chat/completions', model: 'gpt-4o-mini', key: process.env.OPENAI_API_KEY });
+  if (String(process.env.AI_PROVIDER || 'deepseek').toLowerCase() === 'openai') list.sort(function(a) { return a.name === 'openai' ? -1 : 1; });
+  return list;
+}
+function _aiOnce(p, messages, opts) {
+  opts = opts || {};
   return new Promise(function(resolve, reject) {
-    var https = require('https');
-    var body = JSON.stringify({ model: p.model, messages: messages, temperature: 0.8, max_tokens: 3800, response_format: { type: 'json_object' } });
-    var req = https.request({ hostname: p.host, path: p.path, method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + p.key, 'Content-Length': Buffer.byteLength(body) } }, function(r) {
+    var payload = { model: p.model, messages: messages, temperature: (opts.temperature != null ? opts.temperature : 0.8), max_tokens: (opts.maxTokens || 2000) };
+    if (opts.json) payload.response_format = { type: 'json_object' };
+    var body = JSON.stringify(payload);
+    var req = require('https').request({ hostname: p.host, path: p.path, method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + p.key, 'Content-Length': Buffer.byteLength(body) } }, function(r) {
       var b = ''; r.on('data', function(c) { b += c; }); r.on('end', function() {
-        if (r.statusCode < 300) { try { resolve(JSON.parse(b)); } catch(e) { reject(new Error(p.name + ' bad response json')); } }
-        else reject(new Error(p.name + ' ' + r.statusCode + ': ' + b.substring(0, 200)));
+        if (r.statusCode < 300) { try { var j = JSON.parse(b); resolve((j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || ''); } catch(e) { reject(new Error(p.name + ' bad response json')); } }
+        else reject(new Error(p.name + ' ' + r.statusCode + ': ' + b.substring(0, 160)));
       });
     });
     req.on('error', function(e) { reject(e); });
     req.write(body); req.end();
   });
 }
-// Provider-agnostic chat (name kept for callers). Tries DEEPSEEK first (cheap,
-// OpenAI-compatible) then OPENAI, so blog generation keeps working even if one
-// provider has no credits. Set BLOG_AI_PROVIDER=openai to force OpenAI first.
-function callOpenAIChat(messages) {
-  var prefersOpenAI = String(process.env.BLOG_AI_PROVIDER || '').toLowerCase() === 'openai';
-  var list = [];
-  if (process.env.DEEPSEEK_API_KEY) list.push({ name: 'deepseek', host: 'api.deepseek.com', path: '/chat/completions', model: process.env.DEEPSEEK_MODEL || 'deepseek-chat', key: process.env.DEEPSEEK_API_KEY });
-  if (process.env.OPENAI_API_KEY) list.push({ name: 'openai', host: 'api.openai.com', path: '/v1/chat/completions', model: 'gpt-4o-mini', key: process.env.OPENAI_API_KEY });
+// Provider-agnostic chat -> resolves the assistant message content (string).
+function aiChat(messages, opts) {
+  var list = _aiProviderList();
   if (!list.length) return Promise.reject(new Error('No AI key configured (set DEEPSEEK_API_KEY or OPENAI_API_KEY)'));
-  if (prefersOpenAI) list.sort(function(a) { return a.name === 'openai' ? -1 : 1; });
-  var idx = 0;
-  function attempt() {
-    if (idx >= list.length) return Promise.reject(new Error('all AI providers failed'));
-    var p = list[idx++];
-    return _chatOnce(p, messages).catch(function(e) { console.log('[AI] ' + p.name + ' failed: ' + e.message); return attempt(); });
+  function tryAt(i) {
+    if (i >= list.length) return Promise.reject(new Error('all AI providers failed'));
+    return _aiOnce(list[i], messages, opts).catch(function(e) { console.log('[AI] ' + list[i].name + ' failed: ' + e.message); return tryAt(i + 1); });
   }
-  return attempt();
+  return tryAt(0);
+}
+// Blog generator expects an OpenAI-style response object.
+function callOpenAIChat(messages) {
+  return aiChat(messages, { json: true }).then(function(content) { return { choices: [{ message: { content: content } }] }; });
 }
 
 function normalizeBodyPart(part) {
@@ -44184,16 +44137,17 @@ app.get('/api/admin/platform-health', adminAuth, async (req, res) => {
       }
     } catch(e) { results.stripe = { status: 'offline', last_ok: null, error: e.message }; }
 
-    // 3. OpenAI check
+    // 3. AI provider check (DeepSeek preferred, OpenAI fallback)
     try {
-      var openaiKey = process.env.OPENAI_API_KEY;
-      if (openaiKey) {
-        var openaiCheck = await new Promise(function(resolve) {
+      var _aiProv = _aiProviderList()[0];
+      if (_aiProv) {
+        var aiPath = _aiProv.name === 'deepseek' ? '/models' : '/v1/models';
+        var aiCheck = await new Promise(function(resolve) {
           var https = require('https');
-          var req = https.request({ hostname: 'api.openai.com', path: '/v1/models', method: 'GET', headers: { 'Authorization': 'Bearer ' + openaiKey } }, function(r) { var b = ''; r.on('data', function(c) { b += c; }); r.on('end', function() { try { resolve(JSON.parse(b)); } catch(e) { resolve({ error: 'Parse error' }); } }); });
+          var req = https.request({ hostname: _aiProv.host, path: aiPath, method: 'GET', headers: { 'Authorization': 'Bearer ' + _aiProv.key } }, function(r) { var b = ''; r.on('data', function(c) { b += c; }); r.on('end', function() { try { resolve(JSON.parse(b)); } catch(e) { resolve({ error: 'Parse error' }); } }); });
           req.on('error', function(e) { resolve({ error: e.message }); }); req.end();
         });
-        results.openai = { status: openaiCheck && openaiCheck.data ? 'healthy' : 'warning', last_ok: new Date().toISOString(), error: openaiCheck && openaiCheck.error ? (typeof openaiCheck.error === 'string' ? openaiCheck.error : openaiCheck.error.message || 'Unknown') : null };
+        results.openai = { status: aiCheck && (aiCheck.data || aiCheck.object) ? 'healthy' : 'warning', last_ok: new Date().toISOString(), provider: _aiProv.name, error: aiCheck && aiCheck.error ? (typeof aiCheck.error === 'string' ? aiCheck.error : aiCheck.error.message || 'Unknown') : null };
       } else { results.openai = { status: 'warning', last_ok: null, error: 'Not configured' }; }
     } catch(e) { results.openai = { status: 'offline', last_ok: null, error: e.message }; }
 
