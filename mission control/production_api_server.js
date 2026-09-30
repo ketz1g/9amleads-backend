@@ -20828,9 +20828,15 @@ function isInternalAccount(c) {
   if (e.indexOf('@9amleads.com') !== -1) return true;   // our own inboxes
   if (e === 'ketzman1g@gmail.com') return true;          // owner
   if (e.indexOf('@example.com') !== -1) return true;     // reserved for examples
-  if (/^demo/.test(e)) return true;                      // demo-* accounts
-  if (/^test\./.test(e)) return true;                    // test.* accounts
-  if (c.demo === true) return true;                      // explicitly flagged demo
+  if (/^demo/.test(e)) return true; // demo-* accounts
+  if (/^test\./.test(e)) return true; // test.* accounts
+  // E2E / signup-test accounts (9amtest.*, e2e.*, signup.*, loadtest.*, probe.*, smoke.*)
+  // and the old timestamped +aliases (moving+1699...@9amleads.com). These were being
+  // treated as real customers, emailed, hard-bounced and then blocklisted (the main
+  // source of the 56% "blocked" rate). Never treat them as customers.
+  if (/^(9amtest|e2e|signup|probe|smoke|loadtest)[._-]/.test(e)) return true;
+  if (/^[a-z]+\+\d{8,}@/.test(e)) return true; // timestamped plus-address test signups
+  if (c.demo === true) return true; // explicitly flagged demo
   return false;
 }
 // Test / internal PAYMENT events (e2e.*, loadtests, demo/test accounts, our own inboxes)
