@@ -38482,7 +38482,7 @@ async function runDeliveryRehearsal(trigger, opts) {
           var have = (row.queued_mailable || 0) + (row.preview_count || 0);
           var status = row.status || (have >= expected ? 'OK' : 'SHORT');
           out.new_customers.push({ email: nc.email, product: nc.product, expected: expected, preview: have, status: status, areas: row.areas || [] });
-          if (status !== 'OK') out.problems.push('NEW SIGNUP ' + nc.email + ' (' + nc.product + ') would get ' + have + '/' + expected + ' - check their areas/product');
+          if (status === 'SHORT' || status === 'ERROR') out.problems.push('NEW SIGNUP ' + nc.email + ' (' + nc.product + ') would get ' + have + '/' + expected + ' - check their areas/product');
         });
         console.log('[REHEARSAL] new signups (48h): ' + out.new_customers.map(function(a){ return a.email + ' ' + a.preview + '/' + a.expected; }).join(' | '));
       } else {
