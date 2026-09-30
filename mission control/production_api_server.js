@@ -26123,8 +26123,56 @@ function customerAreaKind(cust) {
   } catch(e) { return 'uk'; }
 }
 
+// ===== BULK ARCHIVE (bulk-only) =====
+// A separate 65-day store of NEVER-SENT leads so the bulk/boost packs have real supply.
+// The live daily pool only holds ~48h of fresh leads, which starved the bulk archive
+// bands (this month / 1 month / 2 months). This accumulates scraped leads (deduped) and
+// is read ONLY by the bulk/boost code - the freshness-gated daily delivery is untouched.
+function archivePathFor(product) { return path.join(DATA_DIR, product + '-archive.json'); }
+function readArchive(product) {
+  try { var a = JSON.parse(fs.readFileSync(archivePathFor(product), 'utf-8')); return Array.isArray(a) ? a : []; } catch(e) { return []; }
+}
+function writeArchive(product, arr) {
+  try { fs.mkdirSync(DATA_DIR, { recursive: true }); fs.writeFileSync(archivePathFor(product), JSON.stringify(arr, null, 2)); } catch(e) {}
+}
+function appendToArchive(product, leads) {
+  try {
+    if (!Array.isArray(leads) || !leads.length) return;
+    var arch = readArchive(product);
+    var seen = {};
+    arch.forEach(function(l) { var k = l.id || l.url || l.title || l.address; if (k) seen[k] = 1; });
+    var added = 0;
+    leads.forEach(function(l) {
+      if (!l) return;
+      var k = l.id || l.url || l.title || l.address; if (!k || seen[k]) return;
+      seen[k] = 1; l.archivedAt = l.archivedAt || new Date().toISOString(); arch.push(l); added++;
+    });
+    var cutoff = Date.now() - 65 * 86400000;
+    arch = arch.filter(function(l) {
+      if (l.boost_sold || l.bulk_sold) return false;
+      var d = l.sourceListedDate || l.firstVisibleDate || l.addedOn || l.publishedDate || l.incorporationDate || l.incorporated_on || l.updateDate || l.archivedAt || l.scrapedAt || '';
+      var t = d ? new Date(d).getTime() : 0;
+      return !t || t >= cutoff;
+    });
+    if (arch.length > 30000) arch = arch.slice(-30000);
+    writeArchive(product, arch);
+    if (added) console.log('[ARCHIVE] ' + product + ': +' + added + ' = ' + arch.length);
+  } catch(e) { console.log('[ARCHIVE] ' + product + ' error: ' + e.message); }
+}
+// Exclude an archive lead from further bulk sale (reserved/sold) by id/url.
+function markArchive(product, ids, fields) {
+  try {
+    var arch = readArchive(product); var changed = false;
+    arch.forEach(function(l) { if (ids[l.id] || (l.url && ids[l.url])) { Object.keys(fields).forEach(function(k) { l[k] = fields[k]; }); changed = true; } });
+    if (changed) writeArchive(product, arch);
+  } catch(e) {}
+}
+
 function getBoostArchiveLeads(product, ageKey, count, allowedAreas) {
-  var arr = readPoolFile(product);
+  // Prefer the 65-day bulk archive; fall back to the live pool until it has filled.
+  var _archProd = (product === 'commercial') ? 'moving' : product;
+  var arr = readArchive(_archProd);
+  if (!arr || !arr.length) arr = readPoolFile(_archProd);
   // COMMERCIAL MOVES bulk pool: same archive file as moving, but only commercial
   // premises (offices/units/retail) - the pool commercial buyers actually want.
   if (product === 'commercial') arr = (arr || []).filter(function(l) { try { return isCommercialLead(l); } catch(e) { return false; } });
@@ -26218,6 +26266,8 @@ function reserveBoostLeads(product, ageKey, count, customerId, allowedAreas) {
   function mark(l) { if (l && ids[l.id || l.url || l.company_number || 1]) { l.boost_reserved = 1; l.boost_reserved_by = customerId; l.boost_reserved_at = new Date().toISOString(); } }
   if (Array.isArray(raw)) { raw.forEach(mark); fs.writeFileSync(file, JSON.stringify(raw, null, 2)); }
   else if (raw && typeof raw === 'object') { Object.keys(raw).forEach(function(k) { if (Array.isArray(raw[k])) raw[k].forEach(mark); }); fs.writeFileSync(file, JSON.stringify(raw, null, 2)); }
+  // Also mark the BULK ARCHIVE so these reserved leads can't be re-offered from it.
+  try { markArchive((product === 'commercial') ? 'moving' : product, ids, { boost_reserved: 1, boost_reserved_by: customerId, boost_reserved_at: new Date().toISOString() }); } catch(eM) {}
   // Kick off background PAF verification of the reserved pack (uncertain leads only).
   try {
     var f2 = path.join(DATA_DIR, PRODUCT_LEAD_FILES[product].file);
@@ -41017,6 +41067,9 @@ function syncCustomers(product) {
           leads = _mergedP;
         }
         fs.writeFileSync(poolPath, JSON.stringify(leads, null, 2));
+        // Mirror the scraped pool into the 65-day BULK ARCHIVE (bulk-only; deduped;
+        // excludes sold). This is what gives the bulk packs real supply over time.
+        try { appendToArchive(product, leads); } catch(arE) {}
         // Only mark "scraped today" if we actually got leads. If a source returns
         // 0 (e.g. PLOTA key not yet configured, Gazette blocked), DON'T lock the
         // product out for the rest of the day - a later scrape (or after the user
