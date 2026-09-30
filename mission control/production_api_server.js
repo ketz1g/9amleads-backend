@@ -26141,12 +26141,30 @@ function appendToArchive(product, leads) {
     var arch = readArchive(product);
     var seen = {};
     arch.forEach(function(l) { var k = l.id || l.url || l.title || l.address; if (k) seen[k] = 1; });
-    var added = 0;
+    var addedLeads = [];
     leads.forEach(function(l) {
       if (!l) return;
       var k = l.id || l.url || l.title || l.address; if (!k || seen[k]) return;
-      seen[k] = 1; l.archivedAt = l.archivedAt || new Date().toISOString(); arch.push(l); added++;
+      seen[k] = 1; l.archivedAt = l.archivedAt || new Date().toISOString(); arch.push(l); addedLeads.push(l);
     });
+    // EPC RESOLUTION (free, local index): turn the new listings' street+postcode into a
+    // full door-numbered address so they are Stannp-mailable. Bounded to the NEW entries.
+    var epcFixed = 0;
+    try {
+      if (typeof EPC_INDEX !== 'undefined' && EPC_INDEX && EPC_INDEX.isLoaded() && addedLeads.length) {
+        for (var _ai = 0; _ai < addedLeads.length; _ai++) {
+          if (_ai > 0 && _ai % 500 === 0) { /* yield handled by sync sqlite */ }
+          var _al = addedLeads[_ai];
+          var _apc = String(_al.postcode || '').trim();
+          if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(_apc)) continue;
+          var _aAddr = String(_al.fullAddress || _al.address || '');
+          if (hasStreetName(_aAddr) && hasUsablePremiseAddress(_aAddr, _apc)) continue;
+          var _aFull = EPC_INDEX.resolveFullAddress(_aAddr, _apc);
+          if (_aFull && hasUsablePremiseAddress(_aFull, _apc)) { _al.address = _aFull; _al.fullAddress = _aFull; epcFixed++; }
+        }
+      }
+    } catch(eEpc) {}
+    var added = addedLeads.length;
     var cutoff = Date.now() - 65 * 86400000;
     arch = arch.filter(function(l) {
       if (l.boost_sold || l.bulk_sold) return false;
@@ -26156,7 +26174,7 @@ function appendToArchive(product, leads) {
     });
     if (arch.length > 30000) arch = arch.slice(-30000);
     writeArchive(product, arch);
-    if (added) console.log('[ARCHIVE] ' + product + ': +' + added + ' = ' + arch.length);
+    if (added) console.log('[ARCHIVE] ' + product + ': +' + added + ' (epc +' + epcFixed + ') = ' + arch.length);
   } catch(e) { console.log('[ARCHIVE] ' + product + ' error: ' + e.message); }
 }
 // Exclude an archive lead from further bulk sale (reserved/sold) by id/url.
@@ -40403,6 +40421,7 @@ function syncCustomers(product) {
               else if (planFilt.applicationType) planFilters = planFilters.concat(planFilt.applicationType);
             });
             leads = await withTimeout(planScraper.collectPlanningLeads({ postcodeAreas: planAreas.length ? planAreas : undefined, filters: planFilters, maxItems: parseInt(process.env.PLANNING_MAX_ITEMS || '1000', 10) }), 8 * 60000, 'Planning scrape');
+            try { appendToArchive('planning', leads); } catch(arE) {}
             if (leads && leads.length > 0) {
               // Planning leads are freshly scraped - no additional freshness filter
               // (brownfield/application data is current at scrape time).
@@ -40568,6 +40587,9 @@ function syncCustomers(product) {
               var _apifyCommercialOn = String(process.env.APIFY_COMMERCIAL_ENABLED || 'false').toLowerCase() === 'true';
               leads = await withTimeout(rmScraper.collectMovingLeads({ areas: mvAreas, commercial: mvWantCommercial, commercial_let: true, commercial_force_apify: _apifyCommercialOn }), 10 * 60000, 'Rightmove moving scrape');
               console.log('[SCRAPER] Moving: ' + (leads||[]).length + ' total (Rightmove fresh source)');
+              // Feed ALL live scraped listings into the 65-day BULK ARCHIVE (bulk-only); it
+              // EPC-resolves door numbers for free so the archive bands have mailable leads.
+              try { appendToArchive('moving', leads); } catch(arE) {}
               try { lastScrape.moving_raw = (leads||[]).length; lastScrape.moving_at = new Date().toISOString(); lastScrape.moving_areas = (mvAreas||[]).length; fs.writeFileSync(lastScrapeFile, JSON.stringify(lastScrape)); } catch(lsE) {}
               // COLLECTION-TIME ADDRESS ENRICHMENT (free): Rightmove's list view hides
               // house numbers. Fetch each fresh lead's free Rightmove detail page to
@@ -40886,6 +40908,7 @@ function syncCustomers(product) {
             // fall back to the paid Apify Gazette actor if the free scrape returns 0
             // (the free path can be blocked from some datacenter IPs).
             leads = await probateScraper.collectProbateLeads({ maxItems: 100, useApifyFirst: false });
+            try { appendToArchive('probate', leads); } catch(arE) {}
             // PRUNE NON-DECEASED NOTICES that slipped through (company/solicitor
             // notices from the Apify actor/feed are NOT probate leads - a probate
             // lead is a deceased PERSON). The scraper filters these too, but this
