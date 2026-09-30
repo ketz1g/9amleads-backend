@@ -10956,6 +10956,43 @@ app.post('/api/admin/clear-bulk-pack', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// Release the UNDELIVERED queued leads of any customer who is no longer entitled to
+// leads (expired trial / cancelled / paused). The delivery enforces GLOBAL queue
+// exclusivity (a lead queued to any customer is held out of the pool - see the
+// top-up's `alreadyAssignedOther` and queueOnly checks), so an ended trial silently
+// locks those leads and starves new/other customers in the same areas. Delivered
+// leads are KEPT (history / financials). Released leads return to the pool.
+function releaseLeadsForInactiveCustomers() {
+  try {
+    var db = getDb();
+    var inactive = {};
+    (db.customers || []).forEach(function(c) {
+      if (!c || isInternalAccount(c)) return;
+      if (isEntitledForDelivery(c)) return;   // still owed leads - do NOT touch
+      inactive[c.id] = 1;
+    });
+    var ids = Object.keys(inactive);
+    if (!ids.length) return { freed: 0, customers: 0 };
+    var before = (db.leads || []).length;
+    db.leads = (db.leads || []).filter(function(l) {
+      if (!inactive[l.customer_id]) return true;
+      if (l.delivered) return true;            // keep delivered history
+      if (l.status === 'removed') return true;
+      return false;                            // drop undelivered queued lead -> back to pool
+    });
+    var freed = before - db.leads.length;
+    if (freed) { saveDb(); console.log('[RELEASE] freed ' + freed + ' queued lead(s) from ' + ids.length + ' inactive customer(s)'); }
+    return { freed: freed, customers: ids.length };
+  } catch(e) { console.log('[RELEASE] error: ' + e.message); return { error: e.message }; }
+}
+
+// POST /api/admin/release-inactive-leads - free queued leads held by expired
+// trials / cancelled / paused accounts so other customers can receive them.
+app.post('/api/admin/release-inactive-leads', adminAuth, (req, res) => {
+  try { res.json({ success: true, result: releaseLeadsForInactiveCustomers() }); }
+  catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/admin/rejected-leads - admin review queue of all customer-rejected leads.
 app.get('/api/admin/rejected-leads', adminAuth, (req, res) => {
   try {
@@ -21070,6 +21107,11 @@ app.post('/api/admin/preallocate', adminAuth, async (req, res) => {
   catch(e) { res.status(500).json({ error: e.message }); }
 });
 cron.schedule('35 7 * * 1-5', function() { try { preallocateDeliveryQueues(); } catch(e) { console.log('[PREALLOC] cron error:', e.message); } }, { timezone: 'Europe/London' });
+// Free queued leads held by expired trials / cancelled / paused accounts BEFORE the
+// queue is built, so the day's delivery can reuse them (new members in those areas
+// aren't starved). Daily catches weekend expiries; again at 07:25 before pre-allocation.
+cron.schedule('5 5 * * *', function() { try { releaseLeadsForInactiveCustomers(); } catch(e) { console.log('[RELEASE] cron error:', e.message); } }, { timezone: 'Europe/London' });
+cron.schedule('25 7 * * 1-5', function() { try { releaseLeadsForInactiveCustomers(); } catch(e) { console.log('[RELEASE] cron error:', e.message); } }, { timezone: 'Europe/London' });
 
 // ===== 08:00 MORNING READINESS SUMMARY =====
 // ONE concise email every weekday, BEFORE the 9am run, telling the founder plainly
