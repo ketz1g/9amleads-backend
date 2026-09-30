@@ -6372,6 +6372,12 @@ app.get('/blog', (req, res) => {
     var cards = posts.map(function(p) {
       return '<a href="/blog/' + p.slug + '" style="display:block;text-decoration:none;color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:0;margin-bottom:16px;background:rgba(255,255,255,0.03);overflow:hidden"><img src="https://9amleads.com/blog/img/' + p.slug + '.png" alt="' + (p.title || '') + '" loading="lazy" style="width:100%;height:200px;object-fit:cover;display:block"><div style="padding:16px"><div style="font-size:11px;color:#0ea5e9;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;font-weight:700">' + (p.product_name || p.category || '') + '</div><div style="font-weight:700;margin-bottom:6px;font-size:18px;line-height:1.35">' + p.title + '</div><div style="font-size:13px;color:#999">' + (p.description || '') + '</div><div style="font-size:12px;color:#0ea5e9;margin-top:10px;font-weight:600">Read guide &rarr;</div></div></a>';
     }).join('') || '<p style="color:#888">No posts yet.</p>';
+    // Unique intro + contextual internal links to the product pages (helps /blog get
+    // indexed: fresh content + a stronger link graph into the service pages).
+    var intro = 'Practical guides for UK business owners who use leads to win work - removal companies, solicitors, accountants, builders and tender bidders. Learn how to find, respond to and convert fresh opportunities across moving, probate, new business, planning permission and public-sector tenders.';
+    var svc = '<div style="display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 24px">' +
+      [['/movingleadsdaily/', 'Moving Leads'], ['/probateleads/', 'Probate Leads'], ['/newbusinessalert/', 'New Business Leads'], ['/planningleads/', 'Planning Leads'], ['/tenders/', 'Tender Opportunities'], ['/pricing/', 'Pricing']].map(function(x) { return '<a href="' + x[0] + '" style="display:inline-block;padding:8px 14px;border:1px solid rgba(14,165,233,.35);border-radius:999px;color:#38bdf8;text-decoration:none;font-size:13px;font-weight:600">' + x[1] + '</a>'; }).join('') + '</div>';
+    var _blogLd = '<script type="application/ld+json">' + JSON.stringify({ '@context': 'https://schema.org', '@type': 'Blog', name: '9amLeads Blog', url: 'https://9amleads.com/blog', description: intro, publisher: { '@type': 'Organization', name: '9amLeads', url: 'https://9amleads.com' }, blogPost: posts.slice(0, 20).map(function(p) { return { '@type': 'BlogPosting', headline: p.title, url: 'https://9amleads.com/blog/' + p.slug, datePublished: p.created_at }; }) }) + '</scr' + 'ipt>';
     var html = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
       '<title>UK Business Leads Blog | 9amLeads</title>' +
       '<meta name="description" content="Guides and strategies for winning more work with fresh UK leads - moving, probate, new business, planning permission and public sector tenders.">' +
@@ -6381,7 +6387,7 @@ app.get('/blog', (req, res) => {
       '<meta property="og:title" content="UK Business Leads Blog | 9amLeads">' +
       '<meta property="og:description" content="Guides and strategies for winning more work with fresh UK leads.">' +
       '<meta property="og:url" content="https://9amleads.com/blog">' +
-      '<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><style>body{font-family:Inter,sans-serif;background:#000;color:#fff;max-width:800px;margin:0 auto;padding:24px;line-height:1.8}a{color:#0ea5e9}</style></head><body><h1 style="font-family:Outfit,sans-serif">9amLeads Blog</h1>' + cards + '</body></html>';
+      '<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><style>body{font-family:Inter,sans-serif;background:#000;color:#fff;max-width:800px;margin:0 auto;padding:24px;line-height:1.8}a{color:#0ea5e9}</style></head><body><h1 style="font-family:Outfit,sans-serif">9amLeads Blog</h1><p style="color:#aaa;font-size:15px;line-height:1.7">' + intro + '</p>' + svc + cards + _blogLd + '</body></html>';
     res.type('html').send(html);
   } catch(e) { res.status(500).send('Error loading blog'); }
 });
