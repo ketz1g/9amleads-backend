@@ -26011,11 +26011,50 @@ function boostAgeName(ageKey) {
 
 // Archive leads for a product: 'tm' = this month (up to ~1 month old, never sent),
 // '1m' = ~1 month (~28-34d) or '2m' = ~2 months (~58-64d).
-function getBoostArchiveLeads(product, ageKey, count) {
+// Postcode areas allowed for a bulk/boost pack SCOPE:
+//   'uk'     -> null (no filter, nationwide - most supply)
+//   'areas'  -> the customer's chosen areas (postcode areas, or counties/regions expanded)
+//   'county' -> the customer's chosen areas EXPANDED to their full county/region
+function areaSetForCustomer(cust, scope) {
+  try {
+    scope = String(scope || 'uk').toLowerCase();
+    if (scope === 'uk') return null;
+    var areas = [];
+    try { areas = JSON.parse((cust && cust.target_areas) || '[]'); } catch(e) { areas = []; }
+    if (!Array.isArray(areas)) areas = [];
+    var set = {};
+    function addList(list) { (list || []).forEach(function(x) { if (x) set[String(x).toUpperCase()] = 1; }); }
+    function expand(norm) {
+      if (COUNTY_POSTCODE_MAP[norm]) { addList(COUNTY_POSTCODE_MAP[norm]); return true; }
+      if (typeof REGION_TO_POSTCODE_AREAS !== 'undefined' && REGION_TO_POSTCODE_AREAS[norm]) { addList(REGION_TO_POSTCODE_AREAS[norm]); return true; }
+      return false;
+    }
+    areas.forEach(function(a) {
+      var up = String(a || '').toUpperCase().trim();
+      var norm = String(a || '').toLowerCase().replace(/[\s-]+/g, '-');
+      if (/^[A-Z]{1,2}$/.test(up)) {
+        if (scope === 'areas') { set[up] = 1; return; }
+        var matched = false;
+        Object.keys(COUNTY_POSTCODE_MAP).forEach(function(k) { if ((COUNTY_POSTCODE_MAP[k] || []).indexOf(up) !== -1) { addList(COUNTY_POSTCODE_MAP[k]); matched = true; } });
+        if (typeof REGION_TO_POSTCODE_AREAS !== 'undefined') { Object.keys(REGION_TO_POSTCODE_AREAS).forEach(function(k) { if ((REGION_TO_POSTCODE_AREAS[k] || []).indexOf(up) !== -1) { addList(REGION_TO_POSTCODE_AREAS[k]); matched = true; } }); }
+        if (!matched) set[up] = 1;
+      } else if (!expand(norm) && up) { set[up] = 1; }
+    });
+    var out = Object.keys(set);
+    return out.length ? out : null; // no known areas -> don't filter
+  } catch(e) { return null; }
+}
+
+function getBoostArchiveLeads(product, ageKey, count, allowedAreas) {
   var arr = readPoolFile(product);
   // COMMERCIAL MOVES bulk pool: same archive file as moving, but only commercial
   // premises (offices/units/retail) - the pool commercial buyers actually want.
   if (product === 'commercial') arr = (arr || []).filter(function(l) { try { return isCommercialLead(l); } catch(e) { return false; } });
+  // AREA SCOPE: restrict to the customer's chosen areas / county when requested.
+  if (Array.isArray(allowedAreas) && allowedAreas.length) {
+    var _allow = {}; allowedAreas.forEach(function(a) { _allow[String(a).toUpperCase()] = 1; });
+    arr = (arr || []).filter(function(l) { try { return _allow[extractPostcodeArea(l.postcode || '')]; } catch(e) { return false; } });
+  }
   var now = Date.now();
   var range = BOOST_AGE_RANGES[ageKey];
   var lo, hi;
@@ -26087,8 +26126,8 @@ async function verifyBulkLeadPostable(l, product) {
   } catch(e) { try { if (l) l.paf_failed = true; } catch(_) {} return null; }
 }
 
-function reserveBoostLeads(product, ageKey, count, customerId) {
-  var eligible = getBoostArchiveLeads(product, ageKey, 0);
+function reserveBoostLeads(product, ageKey, count, customerId, allowedAreas) {
+  var eligible = getBoostArchiveLeads(product, ageKey, 0, allowedAreas);
   if (eligible.length < count) return { ok: false, available: eligible.length, error: 'Not enough archive leads in this age band right now (' + eligible.length + ' available). Choose another age or pack, or try again in a few days.' };
   // Reserve synchronously (reservation is what the webhook records). PAF verification
   // of the uncertain minority + auto-swap runs afterwards in the background so the
@@ -26115,7 +26154,8 @@ function reserveBoostLeads(product, ageKey, count, customerId) {
         else if (raw2 && typeof raw2 === 'object') { Object.keys(raw2).forEach(function(k){ if (k.indexOf('_')===0) return; if (Array.isArray(raw2[k])) raw2[k].forEach(function(x){ rows.push({ isCont:true, key:k, x:x }); }); }); }
         var finalKept = []; // verified reserved rows (container meta separate)
         var reserved = rows.filter(function(e){ return e.x && e.x.boost_reserved_by === customerId && !e.x.boost_sold; });
-        var extras = rows.filter(function(e){ return e.x && !e.x.boost_reserved && !e.x.boost_sold && !e.x.bulk_reserved && !e.x.bulk_sold; });
+        var _allowBg = (Array.isArray(allowedAreas) && allowedAreas.length) ? (function(){ var m = {}; allowedAreas.forEach(function(a){ m[String(a).toUpperCase()] = 1; }); return m; })() : null;
+        var extras = rows.filter(function(e){ if (!(e.x && !e.x.boost_reserved && !e.x.boost_sold && !e.x.bulk_reserved && !e.x.bulk_sold)) return false; if (_allowBg) { try { return _allowBg[extractPostcodeArea(e.x.postcode || '')]; } catch(er) { return false; } } return true; });
         var need = count;
         var verified = [], failures = [];
         for (var vi = 0; vi < reserved.length && need > 0; vi++) {
@@ -26212,9 +26252,19 @@ app.get('/api/boost', authMiddleware, (req, res) => {
     ['moving', 'commercial', 'probate', 'planning', 'newbusiness'].forEach(function(p) { if (liveProducts.indexOf(p) === -1) unavailable[p] = 'Currently unavailable - we are filling the pool. New Business packs are available now.'; });
     var available = {};
     ['moving', 'commercial', 'probate', 'planning', 'newbusiness'].forEach(function(p) { available[p] = { 'tm': getBoostArchiveLeads(p, 'tm', 0).length, '1m': getBoostArchiveLeads(p, '1m', 0).length, '2m': getBoostArchiveLeads(p, '2m', 0).length }; });
+    // AVAILABILITY BY AREA SCOPE so the customer sees what they can actually get in
+    // their patch ('areas'), their wider county/region ('county') or nationwide ('uk').
+    var availableByScope = {};
+    ['areas', 'county', 'uk'].forEach(function(sc) {
+      var _aa = areaSetForCustomer(c, sc);
+      availableByScope[sc] = {};
+      ['moving', 'commercial', 'probate', 'planning', 'newbusiness'].forEach(function(p) {
+        availableByScope[sc][p] = { 'tm': getBoostArchiveLeads(p, 'tm', 0, _aa).length, '1m': getBoostArchiveLeads(p, '1m', 0, _aa).length, '2m': getBoostArchiveLeads(p, '2m', 0, _aa).length };
+      });
+    });
     var pack = null;
     try { pack = c.boost_pack ? JSON.parse(c.boost_pack) : null; } catch(e) {}
-    res.json({ success: true, product: c.product, available: available, live_products: liveProducts, unavailable: unavailable, sizes: BOOST_PACK_SIZES, mail_rates: BULK_MAIL_RATES, mail_rates_by_product: { moving: BULK_MAIL_RATES, commercial: BULK_MAIL_RATES_COMMERCIAL, probate: BULK_MAIL_RATES, planning: BULK_MAIL_RATES, newbusiness: BULK_MAIL_RATES }, live: bulkPoolsLive(), pack: pack });
+    res.json({ success: true, product: c.product, available: available, available_by_scope: availableByScope, scopes: ['areas', 'county', 'uk'], live_products: liveProducts, unavailable: unavailable, sizes: BOOST_PACK_SIZES, mail_rates: BULK_MAIL_RATES, mail_rates_by_product: { moving: BULK_MAIL_RATES, commercial: BULK_MAIL_RATES_COMMERCIAL, probate: BULK_MAIL_RATES, planning: BULK_MAIL_RATES, newbusiness: BULK_MAIL_RATES }, live: bulkPoolsLive(), pack: pack });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -26245,7 +26295,11 @@ app.post('/api/boost/checkout', authMiddleware, async (req, res) => {
     }
     if (!_bpOK) return res.status(400).json({ error: 'Boost packs are for your own lead type. Switch your product or ask support.' });
     if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe not configured' });
-    var avail = getBoostArchiveLeads(product, age, 0).length;
+    // AREA SCOPE: 'areas' (their chosen areas) / 'county' (their wider county/region) / 'uk'.
+    var scope = String((req.body && req.body.scope) || 'uk').toLowerCase();
+    if (['areas', 'county', 'uk'].indexOf(scope) === -1) scope = 'uk';
+    var allowedAreas = areaSetForCustomer(c, scope);
+    var avail = getBoostArchiveLeads(product, age, 0, allowedAreas).length;
     if (avail < count) return res.status(400).json({ error: 'Not enough archive leads for that size yet. The pool is being filled - please try again shortly.' });
     var amountPence = bulkPackTotal(count, mailType, product);
     var baseUrl = process.env.PUBLIC_URL || 'http://localhost:' + PORT;
@@ -26266,6 +26320,7 @@ app.post('/api/boost/checkout', authMiddleware, async (req, res) => {
       'metadata[boost_age]': age,
       'metadata[boost_count]': String(count),
       'metadata[boost_mail_type]': mailType,
+      'metadata[boost_scope]': scope,
       'metadata[customer_id]': c.id
     };
     var session = await stripeApiRequest('POST', 'checkout/sessions', sessionBody);
@@ -31170,10 +31225,12 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
         var bsAge = String(session.metadata?.boost_age || '1m');
         var bsCount = parseInt(session.metadata?.boost_count, 10) || 0;
         var bsMail = String(session.metadata?.boost_mail_type || 'leaflet');
+        var bsScope = String(session.metadata?.boost_scope || 'uk').toLowerCase();
+        if (['areas', 'county', 'uk'].indexOf(bsScope) === -1) bsScope = 'uk';
         var bsCust = db.prepare('SELECT * FROM customers WHERE id = ?').get(customerId);
         if (bsCust && BOOST_PACK_SIZES[bsProd] && BOOST_PACK_SIZES[bsProd].indexOf(bsCount) !== -1 && BULK_MAIL_RATES[bsMail]) {
-          var reserve = reserveBoostLeads(bsProd, bsAge, bsCount, customerId);
-          var bsPack = { product: bsProd, age: bsAge, count: bsCount, mail_type: bsMail, purchased_at: new Date().toISOString(), status: 'pending', sent: 0, reserved_count: reserve.ok ? reserve.leads.length : 0, note: reserve.ok ? '' : reserve.error };
+          var reserve = reserveBoostLeads(bsProd, bsAge, bsCount, customerId, areaSetForCustomer(bsCust, bsScope));
+          var bsPack = { product: bsProd, age: bsAge, count: bsCount, mail_type: bsMail, scope: bsScope, purchased_at: new Date().toISOString(), status: 'pending', sent: 0, reserved_count: reserve.ok ? reserve.leads.length : 0, note: reserve.ok ? '' : reserve.error };
           db.prepare('UPDATE customers SET boost_pack = ? WHERE id = ?').run(JSON.stringify(bsPack), customerId);
           saveDb();
           console.log('[WEBHOOK] Boost pack granted: ' + bsCust.email + ' ' + bsProd + ' ' + bsAge + ' x' + bsCount + ' ' + bsMail + (reserve.ok ? '' : ' (reserve short)'));

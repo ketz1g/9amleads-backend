@@ -77,20 +77,27 @@ h3{font-size:15px;font-weight:700;margin-bottom:10px}
       <h3>1. Choose your lead type</h3>
       <div class="seg"><button class="on" data-p="moving" onclick="setProduct('moving')">&#128230; Moving</button><button data-p="commercial" onclick="setProduct('commercial')">&#127970; Commercial</button><button data-p="probate" onclick="setProduct('probate')">&#9878;&#65039; Probate</button><button data-p="planning" onclick="setProduct('planning')">&#127959;&#65039; Planning</button><button data-p="newbusiness" onclick="setProduct('newbusiness')">&#127963;&#65039; New Business</button></div>
       <div id="availMoving" class="avail"></div>
-      <h3 style="margin-top:6px">2. Choose how fresh</h3>
+      <h3 style="margin-top:6px">2. Choose your area</h3>
+      <div class="seg" id="scopeSeg">
+        <button data-s="areas" onclick="setScope('areas')">&#127968; My chosen areas</button>
+        <button data-s="county" onclick="setScope('county')">&#127961; My wider county/region</button>
+        <button class="on" data-s="uk" onclick="setScope('uk')">&#127758; All UK (most leads)</button>
+      </div>
+      <div id="availScope" class="avail"></div>
+      <h3 style="margin-top:6px">3. Choose how fresh</h3>
       <div class="seg">
         <button class="on" data-a="tm" onclick="setAge('tm')">This month</button>
         <button data-a="1m" onclick="setAge('1m')">1 month old</button>
         <button data-a="2m" onclick="setAge('2m')">2 months old</button>
       </div>
       <div id="availAge" class="avail"></div>
-      <h3 style="margin-top:6px">3. What should we post?</h3>
+      <h3 style="margin-top:6px">4. What should we post?</h3>
       <div class="seg">
         <button class="on" data-m="leaflet" onclick="setMail('leaflet')">&#128230; A5 Leaflet &middot; &pound;2.49/lead</button>
         <button data-m="letter" onclick="setMail('letter')">&#128196; A4 Letter &middot; &pound;1.99/lead</button>
         <button data-m="both" onclick="setMail('both')">&#128196;&#128230; Leaflet + Letter &middot; &pound;3.99/lead</button>
       </div>
-      <h3 style="margin-top:6px">4. Pick your pack (printed &amp; posted)</h3>
+      <h3 style="margin-top:6px">5. Pick your pack (printed &amp; posted)</h3>
       <div class="packs" id="packsBox"></div>
     </div>
     <div id="reviewBox" class="card" style="display:none">
@@ -111,7 +118,7 @@ var API = window.location.hostname === 'localhost' ? 'http://localhost:8012' : '
 function tok(){ try { var s = localStorage.getItem('mld_portal_session') || localStorage.getItem('9am_token') || ''; if (!s) return ''; if (s.charAt(0) === '{') { var o = JSON.parse(s); if (o && o.token) return o.token; } return s; } catch (e) { return s || ''; } }
 function ah(){ return { 'Content-Type':'application/json', 'Authorization':'Bearer ' + tok() }; }
 function esc(s){ return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
-var ST = { product:'moving', age:'tm', mail:'leaflet', DATA:null, PACK:null };
+var ST = { product:'moving', age:'tm', mail:'leaflet', scope:'uk', DATA:null, PACK:null };
 (function(){ try {
   var qp = new URLSearchParams(window.location.search);
   try { var _qp = qp.get('product'); if (['moving','commercial','probate','planning','newbusiness'].indexOf(_qp) !== -1) ST.product = _qp; } catch(e2) {}
@@ -121,11 +128,18 @@ var ST = { product:'moving', age:'tm', mail:'leaflet', DATA:null, PACK:null };
 function ageName(a){ return a==='tm' ? 'this month' : a==='1m' ? '1 month old' : '2 months old'; }
 function setProduct(p){ if(ST.DATA && ST.DATA.live_products && ST.DATA.live_products.indexOf(p) === -1){ alert(ST.DATA.unavailable && ST.DATA.unavailable[p] ? ST.DATA.unavailable[p] : 'Currently unavailable - we are filling the pool.'); return; } ST.product=p; document.querySelectorAll('#content .seg button[data-p]').forEach(function(b){b.classList.toggle('on',b.dataset.p===p);}); render(); }
 function setAge(a){ ST.age=a; document.querySelectorAll('#content .seg button[data-a]').forEach(function(b){b.classList.toggle('on',b.dataset.a===a);}); render(); }
+function setScope(s){ ST.scope=s; document.querySelectorAll('#content .seg button[data-s]').forEach(function(b){b.classList.toggle('on',b.dataset.s===s);}); render(); }
 function setMail(m){ ST.mail=m; document.querySelectorAll('#content .seg button[data-m]').forEach(function(b){b.classList.toggle('on',b.dataset.m===m);}); render(); }
 function render(){ 
   var D=ST.DATA; if(!D)return; 
   var nm={moving:'Moving',commercial:'Commercial',probate:'Probate',planning:'Planning',newbusiness:'New Business'}[ST.product]||ST.product; 
-  var a=D.available[ST.product]||{tm:0,'1m':0,'2m':0}; 
+  var _scopeAll = (D.available_by_scope && D.available_by_scope[ST.scope]) ? D.available_by_scope[ST.scope] : null;
+  var a = (_scopeAll && _scopeAll[ST.product]) ? _scopeAll[ST.product] : (D.available[ST.product]||{tm:0,'1m':0,'2m':0});
+  document.querySelectorAll('#content .seg button[data-s]').forEach(function(b){b.classList.toggle('on',b.dataset.s===ST.scope);});
+  var _scopeTotal = ((a['tm']||0)+(a['1m']||0)+(a['2m']||0));
+  var _scopeMsg = { areas:'your chosen areas', county:'your wider county/region', uk:'nationwide (All UK)' }[ST.scope]||'';
+  var _scEl = document.getElementById('availScope');
+  if (_scEl) _scEl.innerHTML = '<span style="color:' + (_scopeTotal>0?'#16a34a':'#fbbf24') + ';font-weight:800">' + _scopeTotal + ' leads</span> available in ' + _scopeMsg + (ST.scope!=='uk' ? ' &middot; switch to All UK for the most leads' : ''); 
   document.getElementById('availMoving').innerHTML='';
   var av=a[ST.age];
   // Stamp live stock onto each age button (e.g. "1 month old &middot; 0 ready").
@@ -175,7 +189,7 @@ function render(){
 function buy(count){
   var _mt=ST.DATA.mail_rates_by_product&&ST.DATA.mail_rates_by_product[ST.product]?ST.DATA.mail_rates_by_product[ST.product]:ST.DATA.mail_rates;
   if(!confirm('Buy '+count+' '+ageName(ST.age)+' '+ST.product+' archive leads ('+ST.mail+') printed & posted for £'+(Math.round(count*((_mt[ST.mail])||249)/100)/1).toFixed(2)+'?'))return;
-  fetch(API+'/api/boost/checkout',{method:'POST',headers:ah(),body:JSON.stringify({product:ST.product,age:ST.age,count:count,mail_type:ST.mail})})
+  fetch(API+'/api/boost/checkout',{method:'POST',headers:ah(),body:JSON.stringify({product:ST.product,age:ST.age,count:count,mail_type:ST.mail,scope:ST.scope})})
   .then(function(r){return r.json();}).then(function(d){ if(d.checkout_url)window.location.href=d.checkout_url; else alert(d.error||'Could not start checkout.'); })
   .catch(function(){alert('Could not start checkout.');});
 }
