@@ -1486,11 +1486,17 @@ function getDb() {
 function loadDb() {
   // BULLETPROOF: if the DB file is missing/corrupt, restore from the newest backup
   // before returning empty (which would otherwise look like a wiped database).
-  if (!fs.existsSync(DB_FILE) || (function(){ try { JSON.parse(fs.readFileSync(DB_FILE, 'utf-8')); return false; } catch(e) { return true; } })()) {
-    try { restoreDbFromBackup(); } catch(e) { console.log('[DB] Restore attempt failed:', e.message); }
+  // SINGLE-PASS READ+PARSE: the DB is ~22MB; the old shape parsed the whole file a
+  // second time purely to test validity, doubling the event-loop stall on every
+  // reload. Read + parse once, and only re-read if that first attempt fails.
+  var _parsed = null;
+  try { _parsed = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8')); }
+  catch (readErr) {
+    try { restoreDbFromBackup(); _parsed = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8')); }
+    catch (restoreErr) { console.log('[DB] Restore attempt failed:', restoreErr.message); }
   }
   try {
-    var _parsed = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
+    if (!_parsed) throw new Error('database.json could not be read or parsed');
     // VALID-BUT-WIPED GUARD: only auto-restore when the live DB is EMPTY or
     // NEAR-EMPTY (0-2 customers) while a backup clearly has real customers. This
     // catches a deploy/reset that wiped the DB, but does NOT revert a legitimately
@@ -1541,6 +1547,18 @@ function _putBlob(file, value) {
   } catch(e) { return false; }
 }
 function _getBlob(file) { try { return fs.readFileSync(file, "utf-8"); } catch(e) { return ""; } }
+
+// LAZY PROOF LOADING: proof-of-posting PDFs are ~42MB across 37 campaigns. They are
+// NOT rehydrated on load (see _rehydrateMaterialData) - they are pulled from disk
+// only when a customer actually opens a proof, so that payload never sits resident
+// in memory. Falls back to "" when the blob file is gone, which sends the caller to
+// the stored proof_url instead (same behaviour as a campaign with no local copy).
+function _campaignProofPdf(c) {
+  if (!c) return "";
+  if (c.proof_pdf) return c.proof_pdf;
+  if (c.__proof_ref) return _getBlob(c.__proof_ref);
+  return "";
+}
 
 function _stripMaterialData(db) {
   try {
@@ -1599,10 +1617,13 @@ function _rehydrateMaterialData(db) {
       });
     }
 
+    // PROOFS STAY ON DISK (lazy): loading them here would pull ~42MB of base64 into
+    // memory on every reload for PDFs that are opened rarely. Readers fetch them on
+    // demand via _campaignProofPdf(c), which reads __proof_ref straight from disk.
     if (Array.isArray(db.direct_mail_campaigns)) {
       db.direct_mail_campaigns.forEach(function(c) {
         if (!c) return;
-        if (!c.proof_pdf && c.__proof_ref) c.proof_pdf = _getBlob(c.__proof_ref);
+        if (c.proof_pdf && c.__proof_ref) delete c.proof_pdf;
       });
     }
 
@@ -36349,12 +36370,14 @@ app.get('/api/direct-mail/campaigns/:id/proof', authMiddleware, async (req, res)
     var campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ? AND customer_id = ?').get(req.params.id, req.user.id);
     if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
     if (!campaign.provider_campaign_id) return res.status(400).json({ error: 'Campaign has not been sent to a provider yet' });
-    // Serve the stored proof PDF directly if we have a local copy (never expires)
-    if (campaign.proof_pdf) {
+    // Serve the stored proof PDF directly if we have a local copy (never expires).
+    // Loaded on demand from disk - proofs are not kept resident in memory.
+    var localProof = _campaignProofPdf(campaign);
+    if (localProof) {
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', 'inline; filename="proof-of-posting-' + campaign.provider_campaign_id + '.pdf"');
       res.setHeader('Cache-Control', 'private, max-age=3600');
-      return res.send(Buffer.from(campaign.proof_pdf, 'base64'));
+      return res.send(Buffer.from(localProof, 'base64'));
     }
     // Return the stored proof URL if we captured it at dispatch time
     if (campaign.proof_url) {
@@ -36379,11 +36402,12 @@ app.get('/api/direct-mail/lead/:id/proof', authMiddleware, async (req, res) => {
     if (orderId) campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE customer_id = ? AND provider_campaign_id LIKE ? ORDER BY created_at DESC LIMIT 1').get(req.user.id, orderId + '%');
     if (!campaign) campaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE customer_id = ? ORDER BY created_at DESC LIMIT 1').get(req.user.id);
     if (!campaign) return res.status(404).json({ error: 'No campaign found for this lead' });
-    if (campaign.proof_pdf) {
+    var localProof = _campaignProofPdf(campaign);
+    if (localProof) {
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', 'inline; filename="proof-of-posting.pdf"');
       res.setHeader('Cache-Control', 'private, max-age=3600');
-      return res.send(Buffer.from(campaign.proof_pdf, 'base64'));
+      return res.send(Buffer.from(localProof, 'base64'));
     }
     if (campaign.proof_url) return res.json({ success: true, proof_url: campaign.proof_url });
     var provider = getDirectMailProvider();
