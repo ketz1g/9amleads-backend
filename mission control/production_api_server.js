@@ -9176,6 +9176,8 @@ app.post('/api/admin/add-test-lead', adminAuth, (req, res) => {
     var fullAddress = String((req.body && req.body.full_address) || '').trim();
     var postcode = String((req.body && req.body.postcode) || '').toUpperCase().trim();
     if (!fullAddress || !postcode) return res.status(400).json({ error: 'full_address and postcode required' });
+    var _prod = String((req.body && req.body.product) || 'moving').toLowerCase();
+    var _delivered = !!(req.body && req.body.delivered);
     var today = new Date().toISOString().split('T')[0];
     var nowIso = new Date().toISOString();
     var data = {
@@ -9194,9 +9196,9 @@ app.post('/api/admin/add-test-lead', adminAuth, (req, res) => {
       updateDate: nowIso,
       scrapedAt: nowIso
     };
-    dbL.leads.push({ id: uuidv4(), customer_id: cust.id, product: 'moving', data: JSON.stringify(data), status: 'new', delivered: 0, created_at: nowIso, delivered_at: null, release_at: today + 'T09:00:00.000Z' });
+    dbL.leads.push({ id: uuidv4(), customer_id: cust.id, product: _prod, data: JSON.stringify(data), status: _delivered ? 'delivered' : 'new', delivered: _delivered ? 1 : 0, created_at: nowIso, delivered_at: _delivered ? nowIso : null, release_at: today + 'T09:00:00.000Z' });
     saveDb();
-    res.json({ success: true, email: email, lead_id: dbL.leads[dbL.leads.length - 1].id, address: fullAddress, postcode: postcode });
+    res.json({ success: true, email: email, lead_id: dbL.leads[dbL.leads.length - 1].id, address: fullAddress, postcode: postcode, product: _prod, delivered: _delivered ? 1 : 0 });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -21471,24 +21473,41 @@ cron.schedule('55 7 * * 1-5', function() { try { preDeliveryReadinessCheck(); } 
 function removeNonBuildingLeads() {
   try {
     var dbx = getDb(); var removed = 0;
+    var _lostDelivered = {}; // customer_id -> lost a DELIVERED lead today (needs a refill)
     (dbx.leads || []).forEach(function(l) {
       if (!l || l.status === 'removed') return;
       var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
       var addr = d.fullAddress || d.address || d.deceasedAddress || '';
-      if (isNonBuildingPremise(addr)) { l.status = 'removed'; l.removed_reason = 'non-building premise (land/plot/site)'; removed++; return; }
+      var _purge = function(reason) {
+        // A delivered lead that fails cleanup must also be UN-COUNTED so it no longer
+        // pads the customer's "delivered today" total (its row is hidden from the
+        // dashboard either way), and the customer is flagged for a replacement.
+        if (l.delivered) { l.delivered = 0; l.delivered_at = null; _lostDelivered[l.customer_id] = 1; }
+        l.status = 'removed'; l.removed_reason = reason; removed++;
+      };
+      if (isNonBuildingPremise(addr)) { _purge('non-building premise (land/plot/site)'); return; }
       // COMMERCIAL: mailable = full postcode + (door/unit OR company-at-address OR named
       // premise). Anything else (e.g. "Delamere Street, Chester" or a partial "WN1")
       // is not mailable and must not sit on a customer's dashboard.
       if (l.product === 'commercial') {
-        var pc = String(d.postcode || '').trim();
-        var fullpc = /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(pc);
-        var ok = commercialMailable(d);
-        if (!ok) { l.status = 'removed'; l.removed_reason = 'commercial unmailable'; removed++; }
+        if (!commercialMailable(d)) _purge('commercial unmailable');
       }
     });
+    // RELEASE THE DAILY CLAIM for any customer who just LOST a delivered lead: without
+    // this the account stays short all day and can never be refilled (the claim blocks
+    // the watchdog/top-up from delivering a replacement).
+    var _released = 0;
+    Object.keys(_lostDelivered).forEach(function(cid) {
+      try {
+        var cu = (dbx.customers || []).find(function(c) { return c.id === cid; });
+        if (cu) cu.last_email_date = null;
+        _releaseDailyEmail(cid, new Date().toISOString().split('T')[0]);
+        _released++;
+      } catch(eR) {}
+    });
     if (removed) saveDb();
-    if (removed) console.log('[CLEANUP] removed ' + removed + ' unmailable lead(s) from customer queues');
-    return { removed: removed };
+    if (removed) console.log('[CLEANUP] removed ' + removed + ' unmailable lead(s) from customer queues' + (_released ? ' (' + _released + ' customer(s) released for refill)' : ''));
+    return { removed: removed, released: _released };
   } catch(e) { return { error: e.message }; }
 }
 
@@ -28060,6 +28079,11 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
     function leadMailableAddress(ld, prod) {
       if (prod === 'tenders') return true;
       if (!ld) return false;
+      // COMMERCIAL: use the SAME single rule as the cleanup (commercialMailable) so a
+      // lead that removeNonBuildingLeads would later purge is NEVER delivered in the
+      // first place. (The old gate was looser, so a bad commercial lead was emailed,
+      // then removed by cleanup, leaving the customer short for the day.)
+      if (prod === 'commercial') return commercialMailable(ld);
       // PROBATE: the pool lead's `address` field can hold the DECEASED PERSON'S NAME
       // (the real street address lives in `deceasedAddress`). Pick whichever field
       // actually looks like a street address, else fall back to the first non-empty.
