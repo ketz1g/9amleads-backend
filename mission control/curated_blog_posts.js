@@ -9,6 +9,49 @@ function esc(s) {
     .replace(/"/g, '&quot;');
 }
 
+// Keep <title> <= 60 and meta description <= 160 so search results are not truncated.
+function cutTo(s, max) {
+  if (s.length <= max) return s;
+  var cut = s.slice(0, max);
+  var minOk = Math.floor(max * 0.55);
+  var types = [
+    [cut.lastIndexOf('. '), 2], [cut.lastIndexOf('! '), 2], [cut.lastIndexOf('? '), 2],
+    [cut.lastIndexOf(': '), 2], [cut.lastIndexOf(', '), 2], [cut.lastIndexOf(' - '), 3],
+    [cut.lastIndexOf(' '), 1]
+  ].filter(function(t) { return t[0] >= minOk && t[0] + t[1] <= max; });
+  var idx = -1;
+  if (types.length) {
+    var deepest = Math.max.apply(null, types.map(function(t) { return t[0]; }));
+    var strong = types.filter(function(t) { return t[0] >= deepest - 15; })[0];
+    idx = strong ? strong[0] : deepest;
+  }
+  if (idx <= 0) idx = cut.lastIndexOf(' ');
+  var out = idx > 0 ? cut.slice(0, idx) : cut;
+  return out.replace(/[\s,:;|\-–—&]+$/, '');
+}
+
+function headTitleFor(title) {
+  var t = String(title == null ? '' : title).trim();
+  var suffix = ' | 9amLeads Blog';
+  if (t.length + suffix.length <= 60) return t + suffix;
+  if (t.length <= 60) return t;
+  return cutTo(t, 60);
+}
+
+function descMetaFor(desc) {
+  var d = String(desc == null ? '' : desc).trim();
+  if (d.length <= 160) return d;
+  var w = d.slice(0, 160);
+  var ends = [];
+  for (var i = 0; i < w.length; i++) {
+    var c = w.charAt(i), n = w.charAt(i + 1);
+    if ((c === '.' || c === '!' || c === '?') && (n === ' ' || n === '')) ends.push(i);
+  }
+  var good = ends.filter(function(i) { return i + 1 >= 80; });
+  if (good.length) return w.slice(0, good[good.length - 1] + 1);
+  return cutTo(d, 160);
+}
+
 var CAT_PAGE = { moving: 'https://9amleads.com/who-we-serve/', probate: 'https://9amleads.com/who-we-serve/', newbusiness: 'https://9amleads.com/who-we-serve/', planning: 'https://9amleads.com/who-we-serve/', tenders: 'https://9amleads.com/who-we-serve/', general: 'https://9amleads.com/how-it-works/' };
 var CAT_NAME = { moving: 'Moving Leads', probate: 'Probate Leads', newbusiness: 'New Business Leads', planning: 'Planning Permission Leads', tenders: 'Tender Opportunities', general: 'Business Leads' };
 var CAT_COLOR = { moving: '#FF6B35', probate: '#A855F7', newbusiness: '#06B6D4', planning: '#10B981', tenders: '#6366F1', general: '#0EA5E9' };
@@ -26,7 +69,7 @@ function relatedPosts(p, max) {
 }
 
 function buildPostHTML(p) {
-  var headTitle = p.title + ' | 9amLeads Blog';
+  var headTitle = headTitleFor(p.title);
   var canonical = 'https://9amleads.com/blog/' + p.slug;
   var pageUrl = (p.ctaUrl || CAT_PAGE[p.category] || 'https://9amleads.com/');
   var heroImg = p.heroImg || 'https://9amleads.com/blog/img/' + p.slug + '.png';
@@ -88,7 +131,7 @@ function buildPostHTML(p) {
 
   return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
     '<title>' + esc(headTitle) + '</title>' +
-    '<meta name="description" content="' + esc(p.description) + '">' +
+    '<meta name="description" content="' + esc(descMetaFor(p.description)) + '">' +
     '<meta property="og:title" content="' + esc(p.title) + '">' +
     '<meta property="og:description" content="' + esc(p.description) + '">' +
     '<meta property="og:url" content="' + canonical + '">' +

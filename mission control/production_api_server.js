@@ -6445,6 +6445,55 @@ app.get('/blog', (req, res) => {
 });
 
 // GET /blog/:slug - serve a generated post (public, no auth)
+// Posts are baked HTML; fitBlogSeoMeta keeps <title> <= 60 chars and the meta
+// description <= 160 at serve time so legacy/generated posts are not truncated in SERPs.
+function blogCutTo(s, max) {
+  if (s.length <= max) return s;
+  var cut = s.slice(0, max);
+  var minOk = Math.floor(max * 0.55);
+  var types = [
+    [cut.lastIndexOf('. '), 2], [cut.lastIndexOf('! '), 2], [cut.lastIndexOf('? '), 2],
+    [cut.lastIndexOf(': '), 2], [cut.lastIndexOf(', '), 2], [cut.lastIndexOf(' - '), 3],
+    [cut.lastIndexOf(' '), 1]
+  ].filter(function(t) { return t[0] >= minOk && t[0] + t[1] <= max; });
+  var idx = -1;
+  if (types.length) {
+    var deepest = Math.max.apply(null, types.map(function(t) { return t[0]; }));
+    var strong = types.filter(function(t) { return t[0] >= deepest - 15; })[0];
+    idx = strong ? strong[0] : deepest;
+  }
+  if (idx <= 0) idx = cut.lastIndexOf(' ');
+  var out = idx > 0 ? cut.slice(0, idx) : cut;
+  return out.replace(/[\s,:;|\-–—&]+$/, '');
+}
+function fitBlogSeoMeta(html) {
+  if (typeof html !== 'string' || !html) return html;
+  var out = html;
+  var tm = out.match(/<title>([\s\S]*?)<\/title>/i);
+  if (tm && tm[1].trim().length > 60) {
+    var raw = tm[1].trim(), suf = ' | 9amLeads Blog', fixed = raw;
+    var si = raw.lastIndexOf(suf);
+    if (si > 0) {
+      var main = raw.slice(0, si).trim();
+      fixed = (main.length + suf.length <= 60) ? main + suf : (main.length <= 60 ? main : blogCutTo(main, 60));
+    } else {
+      fixed = blogCutTo(raw, 60);
+    }
+    out = out.replace(tm[0], function() { return '<title>' + fixed + '</title>'; });
+  }
+  var dm = out.match(/<meta\s+name="description"\s+content="([^"]*)"/i);
+  if (dm && dm[1].length > 160) {
+    var d = dm[1], w = d.slice(0, 160), ends = [];
+    for (var j = 0; j < w.length; j++) {
+      var c = w.charAt(j), n = w.charAt(j + 1);
+      if ((c === '.' || c === '!' || c === '?') && (n === ' ' || n === '')) ends.push(j);
+    }
+    var good = ends.filter(function(j) { return j + 1 >= 80; });
+    var nd = good.length ? w.slice(0, good[good.length - 1] + 1) : blogCutTo(d, 160);
+    out = out.replace(dm[0], function() { return '<meta name="description" content="' + nd + '"'; });
+  }
+  return out;
+}
 app.get('/blog/:slug', (req, res) => {
   try {
     promoteDueScheduledPosts();
@@ -6457,7 +6506,7 @@ app.get('/blog/:slug', (req, res) => {
     if (!post) {
       return res.status(404).send('<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Post not found</title></head><body style="background:#000;color:#fff;font-family:Inter,sans-serif;padding:40px;text-align:center"><h1>Post not found</h1><a href="/blog" style="color:#0ea5e9">Back to Blog</a></body></html>');
     }
-    res.type('html').send(post.html);
+    res.type('html').send(fitBlogSeoMeta(post.html));
   } catch(e) { res.status(500).send('Error loading post'); }
 });
 
