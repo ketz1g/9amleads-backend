@@ -31653,100 +31653,8 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
           } catch(attErr) {}
         }
       }
+      // (removed) repeat-series + direct-mail handling - those checkout types (metadata.type=direct_mail_campaign) are forwarded to the second webhook route; see Route 2.
 
-      // Repeat mailing series: mark ALL campaigns in the group as paid so the
-      // cron can dispatch each scheduled follow-up on its due date.
-      var repeatGroup = session.metadata && session.metadata.repeat_group;
-      if (repeatGroup) {
-        try {
-          var repeatCams = db.prepare('SELECT id FROM direct_mail_campaigns WHERE notes = ?').all('Repeat mailing ' + repeatGroup);
-          repeatCams.forEach(function(rc) {
-            db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_status = ?, stripe_payment_id = ?, updated_at = ? WHERE id = ?')
-              .run('paid', session.payment_intent || session.id || 'repeat', new Date().toISOString(), rc.id);
-          });
-          saveDb();
-          console.log('[STRIPE] Repeat series paid: ' + repeatGroup + ' (' + repeatCams.length + ' mailings)');
-        } catch(repErr) { console.log('[STRIPE] Repeat group mark error:', repErr.message); }
-      }
-
-      // SINGLE Print & Post payment (metadata.type = direct_mail_campaign): complete
-      // the campaign here - mark paid, send to Stannp, email receipt, mark lead posted.
-      // (The second /api/stripe/webhook route also handles this, but Express routes
-      // match in order, so the FIRST route must process it or it is dropped.)
-      if (metaType === 'direct_mail_campaign' || (session.metadata && session.metadata.type === 'direct_mail_campaign')) {
-        try {
-          var dmCampaignId = session.metadata.campaign_id;
-          if (dmCampaignId) {
-            var dmCampaign = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ?').get(dmCampaignId);
-            if (dmCampaign && dmCampaign.stripe_payment_status !== 'paid') {
-              var dmPaymentId = session.payment_intent || session.id || 'paid';
-              db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_id = ?, stripe_payment_status = ?, status = ?, updated_at = ? WHERE id = ?').run(dmPaymentId, 'paid', 'paid', new Date().toISOString(), dmCampaignId);
-              db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), dmCampaign.customer_id, dmCampaignId, dmCampaign.status, 'paid', 'system', 'Payment received: ' + dmPaymentId, new Date().toISOString());
-              saveDb();
-              console.log('[STRIPE] DM campaign paid: ' + dmCampaignId + ' ' + dmPaymentId);
-              // Send to Stannp
-              var dmSend = null;
-              try { dmSend = await sendDmCampaign(dmCampaignId, dmCampaign.customer_id); } catch(e) { dmSend = { success: false, error: e.message }; }
-              // Mark lead posted + receipt
-              try {
-                var dmRecips = db.prepare('SELECT lead_id FROM direct_mail_recipients WHERE campaign_id = ? AND customer_id = ?').all(dmCampaignId, dmCampaign.customer_id);
-                dmRecips.forEach(function(rp) {
-                  if (!rp.lead_id) return;
-                  var lr = db.prepare('SELECT * FROM leads WHERE id = ? AND customer_id = ?').get(rp.lead_id, dmCampaign.customer_id);
-                  if (lr) { var ld = {}; try { ld = JSON.parse(lr.data || '{}'); } catch(e) {} ld.post_status = dmSend && dmSend.success ? 'posted' : 'payment_received_pending_send'; ld.post_order_id = (dmSend && dmSend.provider_campaign_id) ? String(dmSend.provider_campaign_id) : ''; ld.posted_at = new Date().toISOString(); db.prepare('UPDATE leads SET data = ? WHERE id = ?').run(JSON.stringify(ld), rp.lead_id); }
-                });
-                saveDb();
-              } catch(dmLeadErr) { console.log('[STRIPE] DM lead update error:', dmLeadErr.message); }
-              // Receipt email + dashboard notify
-              try {
-                var dmCust = db.prepare('SELECT * FROM customers WHERE id = ?').get(dmCampaign.customer_id);
-                var dmOrderId = (dmSend && dmSend.provider_campaign_id) ? String(dmSend.provider_campaign_id) : '';
-                var dmAmt = session.amount_total ? '£' + (session.amount_total / 100).toFixed(2) : ('£' + (dmCampaign.budget || 0).toFixed(2));
-                if (dmCust && dmCust.email) {
-                  // List all recipients (leads) sent in this campaign
-                  var dmRecipRows = '';
-                  try {
-                    var dmAllRecips = db.prepare('SELECT * FROM direct_mail_recipients WHERE campaign_id = ? AND customer_id = ?').all(dmCampaignId, dmCampaign.customer_id);
-                    dmAllRecips.forEach(function(rr) {
-                      var rName = rr.name || rr.company || 'Lead';
-                      var rAddr = [rr.address_line1, rr.address_line2, rr.city, rr.postcode].filter(Boolean).join(', ');
-                      dmRecipRows += '<tr><td style="padding:7px 12px;border:1px solid #1b2233;border-radius:8px;background:#0d1322">' +
-                        '<div style="font-size:12px;font-weight:700;color:#dce2f0">' + rName + '</div>' +
-                        '<div style="font-size:11px;color:#8890b0;margin-top:2px">' + (rAddr || 'Address on file') + '</div>' +
-                        '</td></tr>';
-                    });
-                  } catch(rcErr2) { console.log('[STRIPE] DM receipt recipients error:', rcErr2.message); }
-                  // Schedule summary if this is part of a repeat series
-                  var dmScheduleNote = '';
-                  if (session.metadata && session.metadata.repeat_group) {
-                    dmScheduleNote = '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Series</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0">Send now + 2 weeks + 1 month (all leads)</td></tr>';
-                  }
-                  var dmBody =
-                    '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">Your Print &amp; Post order is confirmed and paid. Here\'s everything that was sent:</p>' +
-                    '<div style="background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.2);border-radius:12px;padding:16px 20px;margin:0 0 16px">' +
-                    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:3px 0;font-size:13px;color:#8890b0;width:40%">Order</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">' + (dmCampaign.name || 'Print &amp; Post') + '</td></tr>' +
-                    '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Amount paid</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">' + dmAmt + '</td></tr>' +
-                    '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Recipients</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">' + (dmAllRecips ? dmAllRecips.length : 0) + ' lead(s)</td></tr>' +
-                    '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Status</td><td style="padding:3px 0;font-size:13px;color:#34d399;font-weight:700">' + (dmSend && dmSend.success ? 'Sent to print' : 'Payment received') + '</td></tr>' +
-                    (dmOrderId ? '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Print order ref</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">' + dmOrderId + '</td></tr>' : '') +
-                    (dmScheduleNote || '') +
-                    '<tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Delivery</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0">1-3 working days via Royal Mail</td></tr></table>' +
-                    '</div>' +
-                    (dmRecipRows ? '<div style="font-size:13px;font-weight:700;color:#dce2f0;margin:0 0 8px">&#128230; Sent to these leads:</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0">' + dmRecipRows + '</table>' : '') +
-                    (dmScheduleNote ? '<p style="color:#94a3b8;font-size:12px;line-height:1.7;margin-top:14px">You\'ll get a confirmation email for each follow-up batch (2 weeks and 1 month) as it is sent.</p>' : '') +
-                    '<p style="color:#94a3b8;font-size:12px;line-height:1.7;margin-top:14px">Your items are being printed and will be posted. Track each lead\'s "Posted" status in your dashboard.</p>';
-                  try { await sendDMNotification(dmCampaign.customer_id, 'dm_payment_receipt', 'Print & Post Confirmation: ' + (dmCampaign.name || 'Order'), '✅ Payment received', dmBody, 'View Print & Post', PUBLIC_URL + '/portal/dashboard.html?page=direct-mail'); } catch(e2) {}
-                  // Persist "invoice paid" receipt for the dashboard billing history
-                  try {
-                    var dmCustRec = dmCampaign.customer_id ? db.prepare('SELECT * FROM customers WHERE id = ?').get(dmCampaign.customer_id) : null;
-                    storePaymentReceipt({ customerId: dmCampaign.customer_id, customerEmail: (dmCustRec && dmCustRec.email) || '', company: (dmCustRec && dmCustRec.company) || '', amount: (session.amount_total ? session.amount_total / 100 : 0), currency: (session.currency || 'gbp'), stripeId: session.payment_intent || session.id || '', number: (dmCampaign.name || 'Print & Post'), description: 'Print & Post: ' + (dmCampaign.name || 'order'), product: 'direct_mail', cardLast4: '' });
-                  } catch(prDm) { console.log('[STRIPE] DM receipt store error:', prDm.message); }
-                }
-              } catch(dmCErr) { console.log('[STRIPE] DM receipt error:', dmCErr.message); }
-            }
-          }
-        } catch(dmErr) { console.log('[STRIPE] DM completion error:', dmErr.message); }
-      }
     }
 
     // Weekly renewal succeeded - keep plan active (Stripe handles billing)
@@ -31756,6 +31664,23 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
       var invCustomer = inv.customer ? db.prepare('SELECT * FROM customers WHERE stripe_customer_id = ?').get(inv.customer) : null;
       if (!invCustomer && invCustEmail) invCustomer = db.prepare('SELECT * FROM customers WHERE email = ?').get(invCustEmail);
       if (invCustomer) {
+        // FOUNDER VISIBILITY: alert once per invoice that a customer has PAID. This used
+        // to live in the (now-dead) second webhook route, so successful payments were
+        // invisible unless the founder opened Stripe.
+        try {
+          var _invIdA = inv.id;
+          var _pdbA = getDb();
+          if (!_pdbA.paid_invoice_alerts) _pdbA.paid_invoice_alerts = [];
+          if (_invIdA && _pdbA.paid_invoice_alerts.indexOf(_invIdA) === -1) {
+            _pdbA.paid_invoice_alerts.push(_invIdA);
+            if (_pdbA.paid_invoice_alerts.length > 500) _pdbA.paid_invoice_alerts = _pdbA.paid_invoice_alerts.slice(-500);
+            saveDb();
+            var _amtA = inv.total ? (inv.total / 100).toFixed(2) : (inv.amount_paid ? (inv.amount_paid / 100).toFixed(2) : '?');
+            var _isFirstA = inv.billing_reason === 'subscription_create';
+            sendAdminAlert('\uD83D\uDCB0 Payment received: £' + _amtA + (_isFirstA ? ' (new subscription)' : ' (renewal)'),
+              '<div style="font-size:13px;color:#e2e8f0;line-height:1.7"><b>' + escHtml(invCustomer.company || invCustomer.email) + '</b> paid <b>£' + _amtA + '</b>.<br>Plan: ' + (invCustomer.plan || 'n/a') + '<br><span style="color:#94a3b8;font-size:12px">Invoice ' + escHtml(inv.number || inv.id) + ' &middot; ' + escHtml(inv.billing_reason || '') + '</span></div>');
+          }
+        } catch(paA) { console.log('[STRIPE] payment alert error:', paA.message); }
         // No COALESCE - the JSON DB shim doesn't support it, which silently broke
         // this UPDATE and left leads_paused stuck at 1 after a recovery.
         // Determine the plan from selected_plan first: a declined first charge leaves the
@@ -31924,6 +31849,15 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
         db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_status = ?, status = ?, updated_at = ? WHERE id = ?').run('refunded', 'cancelled', new Date().toISOString(), campR.id);
         try { db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), campR.customer_id, campR.id, prevR, 'cancelled', 'system', 'Payment refunded', new Date().toISOString()); } catch(e) {}
         console.log('[STRIPE] Campaign refunded: ' + campR.name);
+        // Notify the customer their payment was refunded.
+        try {
+          var refundCust = db.prepare('SELECT * FROM customers WHERE id = ?').get(campR.customer_id);
+          if (refundCust && refundCust.email) {
+            var refundAmount = chR.amount_refunded ? '£' + (chR.amount_refunded / 100).toFixed(2) : 'unknown';
+            var refundBody = '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">We\'ve refunded your Print &amp; Post order.</p><div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);border-radius:12px;padding:16px 20px;margin:0 0 16px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:3px 0;font-size:13px;color:#8890b0;width:45%">Order</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">' + (campR.name || 'Print &amp; Post') + '</td></tr><tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Amount refunded</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">' + refundAmount + '</td></tr><tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Status</td><td style="padding:3px 0;font-size:13px;color:#34d399;font-weight:700">Refunded</td></tr></table></div><p style="color:#94a3b8;font-size:12px;line-height:1.7;margin:0">The refund has been processed back to your original payment method. It may take a few days to appear on your statement.</p>';
+            await sendDMNotification(refundCust.id, 'dm_refund', 'Refund Confirmation: ' + (campR.name || 'Order'), '✅ Refund processed', refundBody, 'View Billing', PUBLIC_URL + '/portal/dashboard.html?page=settings&tab=subscription');
+          }
+        } catch(re) { console.log('[STRIPE] Refund email error:', re.message); }
       }
     }
     // CHARGEBACK / DISPUTE opened - money at risk and a compliance event. Alert the
@@ -31956,6 +31890,32 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
         sendAdminAlert('9amLeads DISPUTE closed: ' + dpOutcome,
           '<div style="font-family:Inter,Arial,sans-serif;font-size:14px;color:#0f172a;line-height:1.7"><p>Dispute <b>' + escHtml(dp2.id || '') + '</b> is now <b>' + escHtml(dpOutcome) + '</b>.' + (dpOutcome === 'won' ? ' <span style="color:#166534">Won - you keep the funds.</span>' : (dpOutcome === 'lost' ? ' <span style="color:#b91c1c">Lost - funds returned to the customer.</span>' : '')) + '</p><p>If it was won, you can un-pause the customer in Admin if appropriate.</p></div>');
       } catch(e) {}
+    }
+
+    // Successful one-off payment intents (off-session Auto Print & Post / sequence steps)
+    // - persist a receipt. Moved here from the dead second webhook route.
+    else if (evType === 'payment_intent.succeeded') {
+      try {
+        var pi = event.data.object || {};
+        if (pi && pi.metadata) {
+          var piCustomerId = pi.metadata.customer_id || '';
+          if (!piCustomerId && pi.customer) {
+            var piCustByStripe = db.prepare('SELECT * FROM customers WHERE stripe_customer_id = ?').get(pi.customer);
+            if (piCustByStripe) piCustomerId = piCustByStripe.id;
+          }
+          if (piCustomerId) {
+            var piCustomer = db.prepare('SELECT * FROM customers WHERE id = ?').get(piCustomerId);
+            var piAlready = pi.id ? db.prepare('SELECT * FROM payments WHERE stripe_id = ?').get(pi.id) : null;
+            if (piCustomer && !piAlready) {
+              var piType = pi.metadata.type || '';
+              var piDesc = piType === 'sequence_step' ? 'Print & Post sequence step' : (piType === 'auto_send' ? 'Auto Print & Post' : 'Print & Post payment');
+              var piCampaignName = '';
+              if (pi.metadata.campaign_id) { var piC = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ?').get(pi.metadata.campaign_id); piCampaignName = (piC && piC.name) || ''; }
+              await recordPaymentReceipt({ customerId: piCustomer.id, customerEmail: piCustomer.email, company: piCustomer.company || '', amount: pi.amount ? pi.amount / 100 : 0, currency: pi.currency || 'gbp', stripeId: pi.id, number: pi.id, description: piCampaignName ? piDesc + ': ' + piCampaignName : piDesc, plan: '', product: 'direct_mail', cardLast4: '' });
+            }
+          }
+        }
+      } catch(piErr) { console.log('[STRIPE] PI receipt error:', piErr.message); }
     }
 
     res.json({ received: true });
@@ -32600,202 +32560,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
       console.log('[WEBHOOK] Payment confirmed:', customer.email, '→', plan, '(product:', product + ')');
     }
 
-    // Handle subscription updates (upgrades, downgrades, cancellation at period end)
-    if (event.type === 'customer.subscription.updated') {
-      const sub = event.data.object;
-      const subId = sub.id;
-      const status = sub.status === 'active' ? 'active' : sub.status === 'past_due' ? 'past_due' : sub.status === 'canceled' ? 'canceled' : sub.status === 'trialing' ? 'trialing' : 'inactive';
-
-      const existingSub = db.prepare('SELECT * FROM subscriptions WHERE stripe_id = ?').get(subId);
-      if (existingSub) {
-        const periodEnd = sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : existingSub.current_period_end;
-        db.prepare(`UPDATE subscriptions SET status = ?, current_period_start = ?, current_period_end = ?,
-          cancel_at_period_end = ?, updated_at = datetime('now') WHERE stripe_id = ?`)
-          .run(status, sub.current_period_start ? new Date(sub.current_period_start * 1000).toISOString() : existingSub.current_period_start,
-            periodEnd, sub.cancel_at_period_end || false, subId);
-
-        // If cancelled at period end, let customer finish the month
-        if (status === 'canceled' || (sub.cancel_at_period_end && sub.status === 'active')) {
-          db.prepare('UPDATE customers SET plan = ? WHERE id = ?')
-            .run(sub.cancel_at_period_end ? existingSub.plan : 'cancelled', existingSub.customer_id);
-          if (!sub.cancel_at_period_end) {
-            db.prepare('UPDATE customers SET leads_per_day = 0, cancelled_at = ?, cancel_wb_sent = ? WHERE id = ?').run(new Date().toISOString(), '[]', existingSub.customer_id);
-          }
-        }
-        console.log('[WEBHOOK] Subscription updated:', subId, '→', status);
-      }
-    }
-
-    // Handle subscription deletion (immediate cancellation)
-    if (event.type === 'customer.subscription.deleted') {
-      const delSub = event.data.object;
-      const delSubId = delSub.id;
-      const existingSub = db.prepare('SELECT * FROM subscriptions WHERE stripe_id = ?').get(delSubId);
-      if (existingSub) {
-        db.prepare('UPDATE subscriptions SET status = \'canceled\', canceled_at = datetime(\'now\'), updated_at = datetime(\'now\') WHERE stripe_id = ?').run(delSubId);
-        db.prepare('UPDATE customers SET plan = \'cancelled\', leads_per_day = 0, cancelled_at = ?, cancel_wb_sent = ? WHERE id = ?').run(new Date().toISOString(), '[]', existingSub.customer_id);
-        console.log('[WEBHOOK] Subscription cancelled for customer', existingSub.customer_id);
-      }
-    }
-
-    // Handle successful invoice payment (monthly renewal)
-    if (event.type === 'invoice.payment_succeeded') {
-      const invoice = event.data.object;
-      const invSubId = invoice.subscription;
-      // FOUNDER VISIBILITY: tell the founder (once per invoice) that a customer has
-      // PAID. Previously only payment FAILURES alerted, so successful payments were
-      // invisible unless the founder opened Stripe - which caused "how come I can't
-      // see they paid?". Deduped by invoice id so retries can't double-email.
-      try {
-        var _invId = invoice.id;
-        var _pdb = getDb();
-        if (!_pdb.paid_invoice_alerts) _pdb.paid_invoice_alerts = [];
-        if (_invId && _pdb.paid_invoice_alerts.indexOf(_invId) === -1) {
-          _pdb.paid_invoice_alerts.push(_invId);
-          if (_pdb.paid_invoice_alerts.length > 500) _pdb.paid_invoice_alerts = _pdb.paid_invoice_alerts.slice(-500);
-          saveDb();
-          var _payCust = null;
-          try { _payCust = db.prepare('SELECT * FROM customers WHERE (stripe_subscription_id = ? AND ? <> \'\') OR (stripe_customer_id = ? AND ? <> \'\') LIMIT 1').get(invSubId || '', invSubId || '', invoice.customer || '', invoice.customer || ''); } catch(pe1) {}
-          if (!_payCust && invoice.customer_email) { try { _payCust = db.prepare('SELECT * FROM customers WHERE email = ? LIMIT 1').get(String(invoice.customer_email).toLowerCase()); } catch(pe2) {} }
-          var _amt = invoice.total ? (invoice.total / 100).toFixed(2) : (invoice.amount_paid ? (invoice.amount_paid / 100).toFixed(2) : '?');
-          var _isFirst = invoice.billing_reason === 'subscription_create';
-          sendAdminAlert('\uD83D\uDCB0 Payment received: £' + _amt + (_isFirst ? ' (new subscription)' : ' (renewal)'),
-            '<div style="font-size:13px;color:#e2e8f0;line-height:1.7"><b>' + ((_payCust && (_payCust.company || _payCust.email)) || invoice.customer_email || 'A customer') + '</b> paid <b>£' + _amt + '</b>.<br>Plan: ' + ((_payCust && _payCust.plan) || 'n/a') + '<br><span style="color:#94a3b8;font-size:12px">Invoice ' + (invoice.number || invoice.id) + ' &middot; ' + (invoice.billing_reason || '') + '</span></div>');
-        }
-      } catch(paErr2) { console.log('[WEBHOOK] payment alert error:', paErr2.message); }
-      // Paid WELCOME on a new subscription (covers subscriptions not started via a
-      // checkout.session.completed event). Deduped, so it won't double with that path.
-      try {
-        if (invoice.billing_reason === 'subscription_create') {
-          var _pwCust = null;
-          try { _pwCust = db.prepare('SELECT * FROM customers WHERE (stripe_subscription_id = ? AND ? <> \'\') OR (stripe_customer_id = ? AND ? <> \'\') LIMIT 1').get(invSubId || '', invSubId || '', invoice.customer || '', invoice.customer || ''); } catch(e) {}
-          if (!_pwCust && invoice.customer_email) { try { _pwCust = db.prepare('SELECT * FROM customers WHERE email = ? LIMIT 1').get(String(invoice.customer_email).toLowerCase()); } catch(e) {} }
-          if (_pwCust) sendPaidWelcomeOnce(_pwCust);
-        }
-      } catch(pwInvErr) {}
-      if (invSubId) {
-        const invSub = db.prepare('SELECT * FROM subscriptions WHERE stripe_id = ?').get(invSubId);
-        if (invSub) {
-          const periodEnd = invoice.period_end ? new Date(invoice.period_end * 1000).toISOString() : new Date(Date.now() + 30 * 86400000).toISOString();
-          const amount = invoice.total ? '£' + (invoice.total / 100).toFixed(2) : 'unknown';
-          // Reset fail_count on successful payment
-          db.prepare('UPDATE subscriptions SET current_period_end = ?, status = \'active\', fail_count = 0, updated_at = datetime(\'now\') WHERE stripe_id = ?').run(periodEnd, invSubId);
-          // Reactivate customer if they were in cancelled state
-          db.prepare('UPDATE customers SET plan = ?, leads_per_day = ?, cancelled_at = ?, cancel_wb_sent = ? WHERE id = ? AND plan = \'cancelled\'')
-            .run(invSub.plan, getPlanLimit(invSub.product || 'moving', invSub.plan), '', '[]', invSub.customer_id);
-          console.log('[WEBHOOK] Payment succeeded:', invSub.customer_id, '-', invSub.plan, '-', amount);
-          // Persist an "invoice paid" receipt + email the customer a receipt.
-          try {
-            var custForRec = db.prepare('SELECT * FROM customers WHERE id = ?').get(invSub.customer_id);
-            if (custForRec) {
-              await recordPaymentReceipt({
-                customerId: custForRec.id,
-                customerEmail: custForRec.email,
-                company: custForRec.company || '',
-                amount: invoice.total ? invoice.total / 100 : (invoice.amount_paid ? invoice.amount_paid / 100 : 0),
-                currency: invoice.currency || 'gbp',
-                stripeId: invoice.id,
-                number: invoice.number || invoice.id,
-                description: (invSub.plan || 'Subscription') + ' plan, weekly payment',
-                plan: invSub.plan || 'starter',
-                product: invSub.product || 'moving',
-                cardLast4: '',
-                invoicePdf: invoice.invoice_pdf || '',
-                hostedInvoiceUrl: invoice.hosted_invoice_url || '',
-                periodStart: invoice.period_start ? new Date(invoice.period_start * 1000).toISOString() : '',
-                periodEnd: periodEnd
-              });
-            }
-          } catch(prErr) { console.log('[WEBHOOK] payment_succeeded receipt error:', prErr.message); }
-        }
-      }
-    }
-
-    // Handle refunds (direct mail campaigns)
-    if (event.type === 'charge.refunded') {
-      var refundCharge = event.data.object;
-      var refundPaymentId = refundCharge.payment_intent || refundCharge.id || '';
-      var refundCamp = db.prepare('SELECT * FROM direct_mail_campaigns WHERE stripe_payment_id = ?').get(refundPaymentId);
-      if (refundCamp) {
-        var prevStatus = refundCamp.status;
-        var refundAmount = refundCharge.amount_refunded ? '£' + (refundCharge.amount_refunded / 100).toFixed(2) : 'unknown';
-        db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_status = ?, status = ?, updated_at = ? WHERE id = ?').run('refunded', 'cancelled', new Date().toISOString(), refundCamp.id);
-        db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), refundCamp.customer_id, refundCamp.id, prevStatus, 'cancelled', 'system', 'Payment refunded: ' + refundAmount, new Date().toISOString());
-        console.log('[WEBHOOK] Campaign refunded:', refundCamp.name, refundAmount);
-        // Notify the customer that their payment was refunded
-        try {
-          var refundCust = db.prepare('SELECT * FROM customers WHERE id = ?').get(refundCamp.customer_id);
-          if (refundCust && refundCust.email) {
-            var refundBody = '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">We\'ve refunded your Print &amp; Post order.</p><div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);border-radius:12px;padding:16px 20px;margin:0 0 16px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:3px 0;font-size:13px;color:#8890b0;width:45%">Order</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">' + (refundCamp.name || 'Print &amp; Post') + '</td></tr><tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Amount refunded</td><td style="padding:3px 0;font-size:13px;color:#e2e8f0;font-weight:700">' + refundAmount + '</td></tr><tr><td style="padding:3px 0;font-size:13px;color:#8890b0">Status</td><td style="padding:3px 0;font-size:13px;color:#34d399;font-weight:700">Refunded</td></tr></table></div><p style="color:#94a3b8;font-size:12px;line-height:1.7;margin:0">The refund has been processed back to your original payment method. It may take a few days to appear on your statement.</p>';
-            await sendDMNotification(refundCust.id, 'dm_refund', 'Refund Confirmation: ' + (refundCamp.name || 'Order'), '✅ Refund processed', refundBody, 'View Billing', PUBLIC_URL + '/portal/dashboard.html?page=settings&tab=subscription');
-          }
-        } catch(re) { console.log('[WEBHOOK] Refund email error:', re.message); }
-      }
-      res.json({ received: true }); return;
-    }
-
-    // Handle failed invoice payment
-    if (event.type === 'invoice.payment_failed') {
-      const failInvoice = event.data.object;
-      const failSubId = failInvoice.subscription;
-      if (failSubId) {
-        const failSub = db.prepare('SELECT * FROM subscriptions WHERE stripe_id = ?').get(failSubId);
-        if (failSub) {
-          db.prepare('UPDATE subscriptions SET status = \'past_due\', updated_at = datetime(\'now\') WHERE stripe_id = ?').run(failSubId);
-          const failCount = (failSub.fail_count || 0) + 1;
-          db.prepare('UPDATE subscriptions SET fail_count = ? WHERE stripe_id = ?').run(failCount, failSubId);
-          if (failCount >= 3) {
-            db.prepare('UPDATE customers SET plan = \'cancelled\', leads_per_day = 0 WHERE id = ?').run(failSub.customer_id);
-            console.log('[WEBHOOK] Payment failed 3 times - disabled customer', failSub.customer_id);
-          }
-          console.log('[WEBHOOK] Payment failed for', failSub.customer_id, '(attempt ' + failCount + ')');
-          // Email the customer so they know to update their card
-          try {
-            var failCust = db.prepare('SELECT * FROM customers WHERE id = ?').get(failSub.customer_id);
-            if (failCust && failCust.email) {
-              var failEmailBody2 = '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">We could not take your weekly subscription payment. To keep your leads and Print &amp; Post running, please update your payment method.</p><div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="font-size:13px;color:#e2e8f0;margin:0"><strong>Payment failed</strong> (attempt ' + failCount + '). If this continues, your account will be paused.</p></div><p style="color:#94a3b8;font-size:12px;line-height:1.7;margin:0">You can update your card any time from the Billing section of your dashboard.</p>';
-              await sendDMNotification(failCust.id, 'payment_failed_email', 'Action Needed: Payment Failed', '⚠️ Payment failed', failEmailBody2, 'Update Payment Method', PUBLIC_URL + '/portal/dashboard.html?page=settings&tab=subscription');
-            }
-          } catch(fe) { console.log('[WEBHOOK] Payment-failed email error:', fe.message); }
-        }
-      }
-    }
-
-    // Handle successful one-off payment intents (off-session direct charges:
-    // auto Print & Post, sequence steps) - ensure a persisted receipt is recorded.
-    if (event.type === 'payment_intent.succeeded') {
-      const pi = event.data.object;
-      if (pi && pi.metadata) {
-        var piCustomerId = pi.metadata.customer_id || '';
-        var piType = pi.metadata.type || '';
-        if (!piCustomerId && pi.customer) {
-          var piCustByStripe = db.prepare('SELECT * FROM customers WHERE stripe_customer_id = ?').get(pi.customer);
-          if (piCustByStripe) piCustomerId = piCustByStripe.id;
-        }
-        if (piCustomerId) {
-          var piCustomer = db.prepare('SELECT * FROM customers WHERE id = ?').get(piCustomerId);
-          var piAlready = pi.id ? db.prepare('SELECT * FROM payments WHERE stripe_id = ?').get(pi.id) : null;
-          if (piCustomer && !piAlready) {
-            var piDesc = piType === 'sequence_step' ? 'Print & Post sequence step' : (piType === 'auto_send' ? 'Auto Print & Post' : 'Print & Post payment');
-            var piCampaignName = '';
-            if (pi.metadata.campaign_id) { var piC = db.prepare('SELECT * FROM direct_mail_campaigns WHERE id = ?').get(pi.metadata.campaign_id); piCampaignName = (piC && piC.name) || ''; }
-            await recordPaymentReceipt({
-              customerId: piCustomer.id,
-              customerEmail: piCustomer.email,
-              company: piCustomer.company || '',
-              amount: pi.amount ? pi.amount / 100 : 0,
-              currency: pi.currency || 'gbp',
-              stripeId: pi.id,
-              number: pi.id,
-              description: piCampaignName ? piDesc + ': ' + piCampaignName : piDesc,
-              plan: '',
-              product: 'direct_mail',
-              cardLast4: ''
-            });
-          }
-        }
-      }
-    }
+    // NOTE: the former subscription/invoice/refund/payment_intent handlers here were DEAD CODE (Express matched the first /api/stripe/webhook route) - those events are handled there. Only the forwarded one-time checkout handling above is live in this route.
 
     res.json({ received: true });
   } catch (e) {
@@ -32815,7 +32580,7 @@ app.post('/api/admin/stripe/setup-webhook', adminAuth, async (req, res) => {
     var listResp = await stripeApiRequest('GET', 'webhook_endpoints?limit=100', null);
     var existing = (listResp.data || []).filter(function(w) { return w.url.indexOf('/api/stripe/webhook') !== -1; });
     var endpoint = existing[0] || null;
-    var events = ['checkout.session.completed', 'invoice.payment_succeeded', 'invoice.payment_failed', 'payment_intent.succeeded'];
+    var events = ['checkout.session.completed', 'invoice.paid', 'invoice.payment_succeeded', 'invoice.payment_failed', 'payment_intent.succeeded', 'payment_intent.payment_failed', 'charge.failed', 'charge.refunded', 'charge.dispute.created', 'charge.dispute.closed', 'customer.subscription.updated', 'customer.subscription.deleted'];
     // FORCE RECREATE: Stripe only returns the signing secret in the CREATE response.
     // If we created the endpoint earlier but didn't capture the secret, delete it
     // and create fresh so the secret is returned and saved for signature verification.
