@@ -26867,8 +26867,10 @@ function isBadCommercialPremise(addr) {
   if (!a.trim()) return false;
   if (/\b(flat|apartment|maisonette)\b/i.test(a) || /\b\d+\s*-?\s*bed(room)?s?\b/i.test(a) || /\bbedrooms?\b/i.test(a)) return true;
   var seg0 = String(addr || '').split(',')[0].trim();
-  if (seg0 && !/\d/.test(seg0) && !/\b(unit|flat|apartment|suite|office|block|building|works|mill|lodge|depot|warehouse|store|house|court)\b/i.test(seg0)) {
-    if (/(industrial estate|trading estate|business park|trade park|retail park|office park|industrial park|business centre|retail centre|enterprise park|distribution park|shopping centre|business quarter|shopping parade|parade|arcade|precinct|market square|market place|high street|the green)/i.test(seg0)) return true;
+  // Only a NUMBER or a unit/suite/office keyword rescues an address from being a generic
+  // location - a building word (Court/House/...) does not, so "Court Parade" is rejected.
+  if (seg0 && !/\d/.test(seg0) && !/\b(unit|flat|apartment|suite|office|block)\b/i.test(seg0)) {
+    if (/(industrial estate|trading estate|business park|trade park|retail park|office park|industrial park|business centre|retail centre|enterprise park|distribution park|shopping centre|business quarter|shopping parade|parade|arcade|precinct|market square|market place|the green)\b/i.test(seg0)) return true;
   }
   return false;
 }
