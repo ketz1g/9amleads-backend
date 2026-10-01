@@ -40415,6 +40415,8 @@ app.post('/api/admin/seo/push-indexing', adminAuth, async function(req, res) {
         bingQuotaHit = true;
       } else { break; }
     }
+    // Report the remaining quota AFTER this run's submissions.
+    if (typeof bingRemaining === 'number') bingRemaining = Math.max(0, bingRemaining - bingSent);
 
     var gscSubmit = null, gscSitemaps = null, gscError = '';
     try {
