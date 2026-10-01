@@ -78,4 +78,17 @@
 /pricing-config.js  /404.html  404!
 /stripe_handler.js  /404.html  404!
 /chat.js  /404.html  404!
+# Internal docs / agent configs / marketing + email assets are markdown-only and unlinked
+/*.md  /404.html  404!
+# Internal email campaigns, creatives and deployment config
+/email_campaigns/*  /404.html  404!
+/creative/*  /404.html  404!
+/render.yaml  /404.html  404!
+/_netlify_deploy_force.txt  /404.html  404!
+# Raw data/JSON (configs, lead dumps, demo accounts). The /data/*-email-demo*.html
+# sample emails ARE public and intentionally linked, so only JSON is blocked.
+/data/*.json  /404.html  404!
+/data/businesses/*  /404.html  404!
+# Orphaned cookie-consent fragment (not referenced anywhere)
+/assets/cookie-consent.html  /404.html  404!
 /*  /404.html  404
