@@ -40306,6 +40306,35 @@ function submitBingUrlsAsync(urls) {
   });
 }
 
+// Remaining Bing URL-submission quota for TODAY (the API returns how many URLs are
+// still allowed). Used so we never send a batch bigger than the quota and waste it -
+// Bing rejects the WHOLE batch (ErrorCode 8) if it exceeds the remaining quota.
+function getBingQuotaAsync() {
+  return new Promise(function(resolve) {
+    try {
+      var key = process.env.BING_API_KEY;
+      if (!key) return resolve({ ok: false, remaining: null, error: 'BING_API_KEY not set' });
+      var https = require('https');
+      var path = '/webmaster/api.svc/json/GetUrlSubmissionQuota?apikey=' + encodeURIComponent(key) + '&siteUrl=' + encodeURIComponent('https://9amleads.com/');
+      var req = https.request({ hostname: 'ssl.bing.com', path: path, method: 'GET', headers: { 'Accept': 'application/json' }, timeout: 15000 }, function(r) {
+        var b = ''; r.on('data', function(c) { b += c; }); r.on('end', function() {
+          var remaining = null;
+          try {
+            var j = JSON.parse(b); var d = j.d || j;
+            var v = (d.DailyQuota != null ? d.DailyQuota : (d.dailyQuota != null ? d.dailyQuota : (d.Quota != null ? d.Quota : null)));
+            if (v != null) remaining = parseInt(v, 10);
+          } catch(e) {}
+          var ok = r.statusCode >= 200 && r.statusCode < 300 && remaining != null;
+          resolve({ ok: ok, remaining: remaining, status: r.statusCode, error: ok ? '' : ('HTTP ' + r.statusCode + ' ' + b.substring(0, 120)) });
+        });
+      });
+      req.on('error', function(e) { resolve({ ok: false, remaining: null, error: e.message }); });
+      req.setTimeout(15000, function() { req.destroy(new Error('Bing quota timeout')); });
+      req.end();
+    } catch(e) { resolve({ ok: false, remaining: null, error: e.message }); }
+  });
+}
+
 // Fire-and-forget GSC sitemap re-submission (used whenever the sitemap changes).
 function gscResubmitSitemap() {
   try {
@@ -40353,14 +40382,38 @@ app.post('/api/admin/seo/push-indexing', adminAuth, async function(req, res) {
     urls.forEach(function(u) { if (bingPriority.indexOf(u) === -1) bingQueue.push(u); });
 
     var bing = [];
-    var bingSent = 0, bingQuotaHit = false;
+    var bingSent = 0, bingQuotaHit = false, bingRemaining = null;
+    // QUOTA-AWARE: check the remaining daily quota FIRST and only queue that many URLs,
+    // in batches no larger than the remaining amount. Bing rejects the ENTIRE batch
+    // (ErrorCode 8) if it would exceed the quota - the old fixed 40-URL batch failed
+    // outright whenever fewer than 40 remained, submitting nothing and wasting the day.
+    var _bq = await getBingQuotaAsync();
+    if (_bq.ok && typeof _bq.remaining === 'number') {
+      bingRemaining = _bq.remaining;
+      if (bingRemaining <= 0) bingQuotaHit = true;
+      else bingQueue = bingQueue.slice(0, bingRemaining);
+    }
     var BING_CHUNK = 40;
     for (var bi = 0; bi < bingQueue.length && !bingQuotaHit; bi += BING_CHUNK) {
-      var br = await submitBingUrlsAsync(bingQueue.slice(bi, bi + BING_CHUNK));
+      var _chunk = bingQueue.slice(bi, bi + BING_CHUNK);
+      if (typeof bingRemaining === 'number') _chunk = _chunk.slice(0, Math.max(0, bingRemaining - bingSent));
+      if (!_chunk.length) { bingQuotaHit = true; break; }
+      var br = await submitBingUrlsAsync(_chunk);
       bing.push(br);
       if (br.ok) { bingSent += br.sent; }
-      else if (/ErrorCode\D*8\b|Quota/i.test(br.error || '')) { bingQuotaHit = true; }
-      else { break; }
+      else if (/ErrorCode\D*8\b|Quota/i.test(br.error || '')) {
+        // Batch bigger than the remaining quota. Parse the real remaining and retry ONCE
+        // with exactly that many so the rest of today's quota isn't wasted.
+        var _qm = /Quota remaining for today:\s*(\d+)/i.exec(br.error || '');
+        var _rem = _qm ? parseInt(_qm[1], 10) : 0;
+        if (_rem > 0) {
+          var _retry = await submitBingUrlsAsync(bingQueue.slice(bi, bi + _rem));
+          bing.push(_retry);
+          if (_retry.ok) { bingSent += _retry.sent; }
+        }
+        bingRemaining = 0;
+        bingQuotaHit = true;
+      } else { break; }
     }
 
     var gscSubmit = null, gscSitemaps = null, gscError = '';
@@ -40383,6 +40436,7 @@ app.post('/api/admin/seo/push-indexing', adminAuth, async function(req, res) {
       bing_ok: bingOk,
       bing_sent: bingSent,
       bing_quota_hit: bingQuotaHit,
+      bing_remaining: bingRemaining,
       gsc_submit: gscSubmit,
       gsc_sitemaps: gscSitemaps,
       gsc_error: gscError,
