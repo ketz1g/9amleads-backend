@@ -22567,9 +22567,19 @@ cron.schedule('*/5 * * * *', function() {
 // is a manual step on the gov site (no public API), so we email the owner the steps.
 cron.schedule('0 8 1 * *', function() {
   try {
+    // Only nudge when the index is GENUINELY STALE (> 45 days) so a healthy index does
+    // not generate a monthly nag. Age is the newest mtime of the EPC index files.
+    var _epcDir = path.join(__dirname, 'data');
+    var _newest = 0;
+    ['epc-index.db', 'epc-index.tsv.gz', 'epc-index.json', 'scot-epc.db'].forEach(function(fn) {
+      try { var st = fs.statSync(path.join(_epcDir, fn)); if (st.mtimeMs > _newest) _newest = st.mtimeMs; } catch(e) {}
+    });
+    var _ageDays = _newest ? Math.round((Date.now() - _newest) / 86400000) : null;
+    if (_ageDays !== null && _ageDays <= 45) { console.log('[EPC-REFRESH] index ' + _ageDays + 'd old - reminder suppressed'); return; }
     sendAdminAlert('Monthly EPC address-index refresh due',
       '<div style="font-family:Inter,Arial,sans-serif;font-size:13px;color:#e2e8f0;line-height:1.7">'
       + '<b style="color:#38bdf8">Time to refresh the EPC address index</b> (used to give moving leads their house numbers).'
+      + (_ageDays !== null ? ' <span style="color:#94a3b8">(current index is ' + _ageDays + ' days old)</span>' : '')
       + '<ol style="padding-left:18px;margin:8px 0">'
       + '<li>Download the latest <b>domestic EPC CSV zip</b> from https://epc.opendatacommunities.org (free).</li>'
       + '<li>Rebuild the gzipped index: <code>node build_epc_index.js &lt;zip&gt; data &lt;areas&gt;</code></li>'
