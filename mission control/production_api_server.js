@@ -13487,7 +13487,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen, opts) {
       // preview shows the same count the guaranteed-fill delivery will actually send.
       if (previewFilterRelax && cust.product !== 'moving' && cust.product !== 'commercial') return true;
       // COMMERCIAL MOVES product: commercial premises only (mirror delivery).
-      if (cust.product === 'commercial') return isCommercialLead(ld2);
+      if (cust.product === 'commercial') return !!(ld2 && (ld2.commercial || ld2.commercial_let));
       if (cust.product === 'moving') {
         if (!previewFilterRelax) {
           var b = parseInt(ld2.bedrooms) || 0;
@@ -15389,7 +15389,7 @@ app.post('/api/admin/top-up-today', adminAuth, (req, res) => {
       var pl = interleaved[ti];
       // PRODUCT IDENTITY GATE (mirrors /api/admin/deliver): never store the wrong
       // product on a customer, since this path writes leads as already delivered.
-      if (cust.product === 'commercial') { if (!isCommercialLead(pl)) continue; }
+      if (cust.product === 'commercial') { if (!(pl && (pl.commercial || pl.commercial_let))) continue; }
       else if (cust.product === 'moving') {
         var _plCommT = isCommercialLead(pl);
         if ((_tuHoldsCommercial || _tuMovingType === 'residential') && _plCommT) continue;
@@ -26826,7 +26826,10 @@ function getBoostArchiveLeads(product, ageKey, count, allowedAreas) {
   if (!arr || !arr.length) arr = readPoolFile(_archProd);
   // COMMERCIAL MOVES bulk pool: same archive file as moving, but only commercial
   // premises (offices/units/retail) - the pool commercial buyers actually want.
-  if (product === 'commercial') arr = (arr || []).filter(function(l) { try { return isCommercialLead(l); } catch(e) { return false; } });
+  // COMMERCIAL = genuine commercial PREMISES only (offices/warehouses/units/retail) i.e.
+  // leads the commercial scrape tagged commercial:true. NOT the broad isCommercialLead
+  // keyword heuristic, which let residential neighbours ("14 Rhiwbina Hill") through.
+  if (product === 'commercial') arr = (arr || []).filter(function(l) { try { return !!(l && (l.commercial || l.commercial_let)); } catch(e) { return false; } });
   // Moving bulk = RESIDENTIAL only: exclude commercial premises (they are their own
   // product). Without this, filling the commercial pool inflated the moving pool too.
   else if (product === 'moving') arr = (arr || []).filter(function(l) { try { return !isCommercialLead(l); } catch(e) { return true; } });
