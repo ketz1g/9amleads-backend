@@ -15350,6 +15350,15 @@ app.post('/api/admin/top-up-today', adminAuth, (req, res) => {
     try { areas = JSON.parse(cust.target_areas || '[]'); } catch(e) { areas = []; }
     if (!areas.length) { try { var cfgT = JSON.parse(cust.product_config || '{}'); areas = (cfgT[cust.product] && cfgT[cust.product].target_areas) ? JSON.parse(cfgT[cust.product].target_areas) : []; } catch(e2) { areas = []; } }
     var pool = loadProductPool(cust.product);
+    // COMMERCIAL: commercial premises (offices/warehouses/units) live in the 65-day
+    // commercial ARCHIVE (they are long-lived listings), NOT the daily moving pool.
+    // Source them from there so commercial accounts actually receive leads.
+    if (cust.product === 'commercial') {
+      try {
+        var _cArch = [].concat(getBoostArchiveLeads('commercial', 'tm', 0), getBoostArchiveLeads('commercial', '1m', 0), getBoostArchiveLeads('commercial', '2m', 0));
+        if (_cArch.length) pool = _cArch;
+      } catch(eC) {}
+    }
     var interleaved = interleavePoolByAreas(pool, areas);
     var nowIso = new Date().toISOString();
     var freshCutoff = getFreshCutoffIso();
