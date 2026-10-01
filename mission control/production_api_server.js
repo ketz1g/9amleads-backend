@@ -23112,7 +23112,7 @@ async function runCommercialScrapeTest(opts) {
 async function runCommercialScrapeFill(opts) {
   opts = opts || {};
   var areas = (Array.isArray(opts.areas) && opts.areas.length) ? opts.areas
-    : ['SW', 'SE', 'CR', 'KT', 'HA', 'EN', 'N', 'RM', 'AL', 'MK', 'WD', 'SL', 'UB', 'TW', 'EC', 'WC', 'E', 'W', 'NW', 'M', 'B', 'L', 'LS', 'BS', 'CF', 'EH', 'G', 'NE', 'S', 'NG', 'SO', 'OX', 'RG', 'BN', 'PO', 'HP', 'LU', 'CM', 'CO', 'IP'];
+    : ['SW', 'SE', 'CR', 'KT', 'SM', 'RH', 'HA', 'EN', 'N', 'RM', 'AL', 'MK', 'WD', 'SL', 'UB', 'TW', 'EC', 'WC', 'E', 'W', 'NW', 'ME', 'CT', 'TN', 'DA', 'CM', 'CO', 'IG', 'SS', 'M', 'B', 'CV', 'WS', 'WV', 'DY', 'L', 'LS', 'BS', 'CF', 'EH', 'G', 'NE', 'S', 'NG', 'SO', 'PO', 'GU', 'SP', 'BH', 'OX', 'RG', 'BN', 'HP', 'LU', 'IP'];
   var pages = parseInt(opts.pages || 3, 10);
   var includeLet = opts.let !== false;
   var t0 = Date.now();
