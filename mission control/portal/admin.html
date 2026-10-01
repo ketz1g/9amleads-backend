@@ -130,6 +130,10 @@ tbody tr:hover td{background:#f8fafc}
 <div class="hero"><div class="hero-text"><h1>&#128179; Payment Events</h1><p>Every Stripe money event - payments and failures - so you can see what happened without opening Stripe. Failed payments also email the customer and pause Auto Send if enabled.</p></div>
 <div class="hero-actions"><button class="btn btn-outline" onclick="loadPayments()"><i class="fas fa-rotate"></i> Refresh</button></div></div>
 <div id="payBody"><div class="loading">Loading payment events...</div></div>
+
+<div class="hero" style="margin-top:18px"><div class="hero-text"><h1>&#9993; Email anomalies</h1><p>Wrong-email detector: duplicate same-day sends, paid emails to non-paying customers, and mistimed trial emails. Also checked automatically each morning at 09:30 and emailed to you if anything looks wrong.</p></div>
+<div class="hero-actions"><button class="btn btn-outline" onclick="loadEmailAnomalies()"><i class="fas fa-rotate"></i> Check</button></div></div>
+<div id="anomBody"><div class="loading">Click Check to scan the last 14 days.</div></div>
 </div>
 
 <!-- ============ BILLING ============ -->
@@ -683,6 +687,25 @@ function loadPayments() {
       b.innerHTML = h + '</table>';
     })
     .catch(function() { b.innerHTML = '<div class="loading">Could not load payment events.</div>'; });
+}
+
+function loadEmailAnomalies() {
+  var b = document.getElementById('anomBody');
+  if (!b) return;
+  b.innerHTML = '<div class="loading">Scanning...</div>';
+  fetch(API + '/api/admin/email-anomalies?days=14&t=' + Date.now(), { headers: adminHeaders() })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var tot = (d && d.total_anomalies) || 0;
+      var h = '<div style="margin-bottom:10px;font-size:13px">Checked <b>' + ((d && d.checked) || 0) + '</b> emails &middot; <b style="color:' + (tot ? '#ef4444' : '#16a34a') + '">' + tot + '</b> anomalies</div>';
+      if (!tot) { b.innerHTML = h + '<div style="padding:14px;color:#16a34a">No anomalies - all emails look correct.</div>'; return; }
+      h += '<table class="table"><tr><th>Type</th><th>Detail</th></tr>';
+      (d.duplicates || []).forEach(function(x) { h += '<tr><td style="color:#ef4444;font-weight:700;white-space:nowrap">Duplicate &times;' + x.count + '</td><td style="font-size:12px">' + esc(x.key) + '</td></tr>'; });
+      (d.paid_to_unpaid || []).forEach(function(x) { h += '<tr><td style="color:#ef4444;font-weight:700">Paid email</td><td style="font-size:12px">' + esc(x.email) + ' &middot; ' + esc(x.subject) + '</td></tr>'; });
+      (d.day7_wrong || []).forEach(function(x) { h += '<tr><td style="color:#f59e0b;font-weight:700">Mistimed</td><td style="font-size:12px">' + esc(x.email) + ' &middot; "ends tomorrow" at ' + esc(x.at) + ' (trial ends ' + esc(x.trial_ends) + ')</td></tr>'; });
+      b.innerHTML = h + '</table>';
+    })
+    .catch(function() { b.innerHTML = '<div class="loading">Could not load anomalies.</div>'; });
 }
 
 // ===== BILLING: who's paid + next payment due =====
