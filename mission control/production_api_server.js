@@ -17882,6 +17882,65 @@ app.get('/api/admin/customer-emails', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ===== EMAIL ANOMALY SCAN =====
+// Flags customer emails that look WRONG so issues are caught automatically:
+//  - the same subject emailed to one customer more than once on the same day
+//    (duplicate daily sheets / campaign resends),
+//  - a "paid/receipt" email sent to a customer who isn't actually paying,
+//  - "your free trial ends tomorrow" sent on the wrong day.
+// Intentional repeats (verification resends, the manual shortfall apology) are excluded.
+function scanEmailAnomalies(days) {
+  days = days || 14;
+  var out = { checked: 0, duplicates: [], paid_to_unpaid: [], day7_wrong: [] };
+  try {
+    var d = getDb();
+    var cutoff = Date.now() - days * 86400000;
+    var custByEmail = {};
+    (d.customers || []).forEach(function(c) { custByEmail[String(c.email || '').toLowerCase()] = c; });
+    var counts = {};
+    (d.email_log || []).forEach(function(e) {
+      var at = e && e.at ? new Date(e.at).getTime() : 0;
+      if (!at || at < cutoff) return;
+      var em = String(e.email || '').toLowerCase();
+      if (!em || isInternalAccount({ email: em })) return;
+      out.checked++;
+      var subj = String(e.subject || '');
+      var day = String(e.at).split('T')[0];
+      // Duplicate same-day sends (ignore intentional repeats)
+      if (!/verify your|more leads for you|one more lead for you|on their way|all sorted/i.test(subj)) {
+        var k = em + '|' + subj + '|' + day;
+        counts[k] = (counts[k] || 0) + 1;
+      }
+      var c = custByEmail[em];
+      // Paid/receipt email to a non-paying account
+      if (/payment receipt|welcome to your .*plan|your .* plan is active|subscription confirmed/i.test(subj)) {
+        var paidNow = !!(c && (c.stripe_subscription_id || (c.paid_since && String(c.plan || '') !== 'free_trial')));
+        if (!paidNow) out.paid_to_unpaid.push({ email: em, subject: subj, at: e.at });
+      }
+      // "ends tomorrow" must be sent the day before the trial ends
+      if (/free trial ends tomorrow/i.test(subj) && c && c.trial_ends) {
+        try {
+          var sent = new Date(e.at);
+          var teDay = _ukDay(new Date(c.trial_ends));
+          var nextDay = _ukDay(new Date(sent.getTime() + 86400000));
+          if (teDay !== nextDay) out.day7_wrong.push({ email: em, at: e.at, trial_ends: c.trial_ends });
+        } catch(e2) {}
+      }
+    });
+    Object.keys(counts).forEach(function(k) { if (counts[k] > 1) out.duplicates.push({ key: k, count: counts[k] }); });
+  } catch(e) { out.error = e.message; }
+  return out;
+}
+app.get('/api/admin/email-anomalies', adminAuth, (req, res) => {
+  try {
+    var days = req.query && req.query.days ? parseInt(req.query.days, 10) : 14;
+    var rep = scanEmailAnomalies(days);
+    rep.success = true;
+    rep.total_anomalies = rep.duplicates.length + rep.paid_to_unpaid.length + rep.day7_wrong.length;
+    res.json(rep);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/admin/customer-email?id=X - fetch ONE email's full content for viewing
 app.get('/api/admin/customer-email', adminAuth, (req, res) => {
   try {
@@ -25726,6 +25785,23 @@ async function runCampaignEmails(dry) {
 // (which is why some trials only ever got trial_day1 and then went silent).
 cron.schedule('0 10,14,18 * * *', async () => {
   try { await runCampaignEmails(false); } catch (e) { console.log('[CAMPAIGN] cron error: ' + e.message); }
+}, { timezone: 'Europe/London' });
+// 09:30 UK (after the 9am delivery): scan for wrong customer emails and alert the
+// founder so email faults are caught automatically instead of by chance.
+cron.schedule('30 9 * * *', async () => {
+  try {
+    var _anom = scanEmailAnomalies(2);
+    var _tot = _anom.duplicates.length + _anom.paid_to_unpaid.length + _anom.day7_wrong.length;
+    console.log('[EMAIL-ANOMALY] checked=' + _anom.checked + ' anomalies=' + _tot);
+    if (_tot > 0) {
+      var _rows = '';
+      _anom.duplicates.slice(0, 15).forEach(function(x) { _rows += '<li>DUPLICATE x' + x.count + ': ' + escHtml(x.key) + '</li>'; });
+      _anom.paid_to_unpaid.slice(0, 10).forEach(function(x) { _rows += '<li>PAID EMAIL to non-paying ' + escHtml(x.email) + ': ' + escHtml(x.subject) + '</li>'; });
+      _anom.day7_wrong.slice(0, 10).forEach(function(x) { _rows += '<li>WRONG "ends tomorrow" for ' + escHtml(x.email) + ' (trial ends ' + escHtml(x.trial_ends) + ')</li>'; });
+      sendAdminAlert('⚠️ Email anomalies detected (' + _tot + ')',
+        '<div style="font-family:Inter,Arial,sans-serif;font-size:13px;color:#0f172a;line-height:1.7"><p>The daily email check found <b>' + _tot + '</b> possible wrong-email issue(s) in the last 48h:</p><ul>' + _rows + '</ul><p>Review at Admin → Email anomalies.</p></div>');
+    }
+  } catch(e) { console.log('[EMAIL-ANOMALY] cron error: ' + e.message); }
 }, { timezone: 'Europe/London' });
 app.post('/api/admin/run-campaigns', adminAuth, async (req, res) => {
   try { res.json(await runCampaignEmails(!!(req.body && req.body.dry))); }
