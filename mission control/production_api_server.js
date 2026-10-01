@@ -21421,10 +21421,20 @@ function removeNonBuildingLeads() {
       if (!l || l.status === 'removed') return;
       var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
       var addr = d.fullAddress || d.address || d.deceasedAddress || '';
-      if (isNonBuildingPremise(addr)) { l.status = 'removed'; l.removed_reason = 'non-building premise (land/plot/site)'; removed++; }
+      if (isNonBuildingPremise(addr)) { l.status = 'removed'; l.removed_reason = 'non-building premise (land/plot/site)'; removed++; return; }
+      // COMMERCIAL: mailable = full postcode + (door/unit OR company-at-address OR named
+      // premise). Anything else (e.g. "Delamere Street, Chester" or a partial "WN1")
+      // is not mailable and must not sit on a customer's dashboard.
+      if (l.product === 'commercial') {
+        var pc = String(d.postcode || '').trim();
+        var fullpc = /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(pc);
+        var company = String(d.company || d.companyName || d.company_name || d.name || '').trim();
+        var ok = fullpc && (hasUsablePremiseAddress(addr, pc, { acceptNamedPremise: true }) || !!company);
+        if (!ok) { l.status = 'removed'; l.removed_reason = 'commercial unmailable'; removed++; }
+      }
     });
     if (removed) saveDb();
-    if (removed) console.log('[CLEANUP] removed ' + removed + ' non-building lead(s) from customer queues');
+    if (removed) console.log('[CLEANUP] removed ' + removed + ' unmailable lead(s) from customer queues');
     return { removed: removed };
   } catch(e) { return { error: e.message }; }
 }
