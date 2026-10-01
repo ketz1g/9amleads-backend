@@ -31618,7 +31618,7 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
         var _spInv = String(invCustomer.selected_plan || '').toLowerCase();
         var invKeepPlan = (_spInv === 'pro' || _spInv === 'enterprise' || _spInv === 'starter') ? _spInv
           : ((invCustomer.plan && invCustomer.plan !== 'free_trial' && invCustomer.plan !== 'cancelled') ? invCustomer.plan : 'starter');
-        db.prepare('UPDATE customers SET auto_send_paused = 0, leads_paused = 0, plan = ? WHERE id = ?').run(invKeepPlan, invCustomer.id);
+        db.prepare('UPDATE customers SET auto_send_paused = 0, leads_paused = 0, plan = ?, leads_per_day = ? WHERE id = ?').run(invKeepPlan, getPlanLimit(invCustomer.product || 'moving', invKeepPlan, invCustomer.coverage || 'postcode'), invCustomer.id);
         saveDb();
         // Keep the subscription row's period + status current on every renewal.
         try {
