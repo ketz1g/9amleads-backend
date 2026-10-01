@@ -45741,8 +45741,9 @@ app.get('/api/demo/login', (req, res) => {
 // The investor affiliate demo (demo-affiliate + demo.ref*@example.com) is unchanged.
 
 app.listen(PORT, () => {
-  // Product demo accounts are seeded on demand by /api/demo/login, not at boot.
-  try { seedDemoAffiliate(); } catch(e) { console.log('[DEMO-AFF] boot seed error: ' + (e && e.message)); }
+  // Product demo accounts AND the affiliate demo are seeded ON DEMAND (by /api/demo/login
+  // and /api/affiliate/demo-login) - never at boot - so no demo/test account lingers in
+  // the customer list, gets delivered, or shows up in reports/delivery.
   try {
     purgeCorruptBackups();
     writeLocalBackup();   // write a good backup immediately so one always exists
