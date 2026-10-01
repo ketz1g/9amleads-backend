@@ -8880,7 +8880,7 @@ app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
       if (prod === 'moving') return isCompleteMovingAddress(addr, pc);
       // COMMERCIAL: accept a unit/building-name premise (commercial premises often have
       // no street number, e.g. "Unit G04.4 Ink Court", "Fitzrovia House").
-      if (prod === 'commercial') return hasUsablePremiseAddress(addr, pc, { acceptNamedPremise: true });
+      if (prod === 'commercial') return !isResidentialPremise(addr) && hasUsablePremiseAddress(addr, pc, { acceptNamedPremise: true });
       return hasUsablePremiseAddress(addr, pc);
     }
     sortCustomersByAreaSpecificity(dbT.customers || []).forEach(function(cust) {
@@ -13117,7 +13117,7 @@ app.get('/api/admin/lead-debug', adminAuth, (req, res) => {
       var mailable;
       if (prod === 'tenders') mailable = true;
       else if (prod === 'moving') mailable = isCompleteMovingAddress(addr, pc);
-      else if (prod === 'commercial') mailable = fullpc && !isNonBuildingPremise(addr) && hasUsablePremiseAddress(addr, pc, { acceptNamedPremise: true });
+      else if (prod === 'commercial') mailable = fullpc && !isNonBuildingPremise(addr) && !isResidentialPremise(addr) && hasUsablePremiseAddress(addr, pc, { acceptNamedPremise: true });
       else mailable = fullpc && street && premise && !isNonBuildingPremise(addr);
       return { product: prod, delivered: l.delivered, addr: addr.slice(0, 90), pc: pc, fullpc: fullpc, street: street, premise: premise, mailable: mailable, source: d.source || '', publishedDate: d.publishedDate || '', grantDate: d.grantDate || '' };
     });
@@ -13554,7 +13554,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen, opts) {
   var candidateErrors = (cust.email === 'info@afsremovals.com') ? [] : null;
   // A property lead is only deliverable (Print & Post) with a confirmed door number
   // AND a full postcode - mirrors the delivery door-number gate exactly.
-    function mailOK(addr, pc) { if (isNonBuildingPremise(addr)) return false; if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(pc || '').trim())) return false; if (cust.product === 'commercial') return hasUsablePremiseAddress(addr, pc, { acceptNamedPremise: true }); return hasUsablePremiseAddress(addr, pc, cust.product === 'probate' ? { relaxMultiUnit: true } : undefined); }
+    function mailOK(addr, pc) { if (isNonBuildingPremise(addr)) return false; if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(pc || '').trim())) return false; if (cust.product === 'commercial') return !isResidentialPremise(addr) && hasUsablePremiseAddress(addr, pc, { acceptNamedPremise: true }); return hasUsablePremiseAddress(addr, pc, cust.product === 'probate' ? { relaxMultiUnit: true } : undefined); }
   // A moving lead without a door number is STILL deliverable when it has a full
   // postcode + a street name: the delivery's PAF pass resolves the exact door number
   // before the mailable-address gate. Counting these makes the preview match what the
@@ -15425,7 +15425,7 @@ app.post('/api/admin/top-up-today', adminAuth, (req, res) => {
         if (cust.product === 'moving') { if (!isCompleteMovingAddress(pl.fullAddress || pl.address || '', _tuPc)) continue; }
         // COMMERCIAL: commercial premises often have a unit/building name, not a street
         // number, so accept a named premise (e.g. "Unit G04.4 Ink Court", "Fitzrovia House").
-        else if (cust.product === 'commercial') { if (!hasUsablePremiseAddress(pl.fullAddress || pl.address || '', _tuPc, { acceptNamedPremise: true })) continue; }
+        else if (cust.product === 'commercial') { if (isResidentialPremise(pl.fullAddress || pl.address || '') || !hasUsablePremiseAddress(pl.fullAddress || pl.address || '', _tuPc, { acceptNamedPremise: true })) continue; }
         else if (!hasUsablePremiseAddress(pl.fullAddress || pl.address || '', _tuPc)) continue;
       }
       var pcAreaT = extractPostcodeArea(pl.postcode || pl.address || pl.fullAddress || '');
@@ -21453,7 +21453,7 @@ function removeNonBuildingLeads() {
         var pc = String(d.postcode || '').trim();
         var fullpc = /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(pc);
         var company = String(d.company || d.companyName || d.company_name || d.name || '').trim();
-        var ok = fullpc && (hasUsablePremiseAddress(addr, pc, { acceptNamedPremise: true }) || !!company);
+        var ok = fullpc && !isResidentialPremise(addr) && (hasUsablePremiseAddress(addr, pc, { acceptNamedPremise: true }) || !!company);
         if (!ok) { l.status = 'removed'; l.removed_reason = 'commercial unmailable'; removed++; }
       }
     });
@@ -26828,6 +26828,14 @@ function isNonBuildingPremise(addr) {
   if (!a.trim()) return false;
   return /(^|[\s,(\/-])(land|plot|plots|site|sites|car ?park|car ?parking|parking|yard|yards|compound|adjoining|adjacent|vacant|demolition|redevelopment|development site|amenity land|open space|rear of|front of|back of|side of|garages? at|garage block|garage site|parking area)\b/i.test(a);
 }
+// Residential premises (flats/apartments/maisonettes/"N bed") must NEVER appear in the
+// COMMERCIAL pool - those are home moves, not business/office/warehouse moves. (Rightmove
+// lists some flats under its "commercial" channel - e.g. "Flat 2, 196 Fore Street".)
+function isResidentialPremise(addr) {
+  var a = ' ' + String(addr || '').replace(/\s+/g, ' ');
+  if (!a.trim()) return false;
+  return /\b(flat|apartment|maisonette)\b/i.test(a) || /\b\d+\s*-?\s*bed(room)?s?\b/i.test(a) || /\bbedrooms?\b/i.test(a);
+}
 function getBoostArchiveLeads(product, ageKey, count, allowedAreas) {
   // Prefer the 65-day bulk archive; fall back to the live pool until it has filled.
   var _archProd = (product === 'commercial') ? 'moving' : product;
@@ -26853,7 +26861,7 @@ function getBoostArchiveLeads(product, ageKey, count, allowedAreas) {
   // COMMERCIAL = genuine commercial PREMISES only (offices/warehouses/units/retail) i.e.
   // leads the commercial scrape tagged commercial:true. NOT the broad isCommercialLead
   // keyword heuristic, which let residential neighbours ("14 Rhiwbina Hill") through.
-  if (product === 'commercial') arr = (arr || []).filter(function(l) { try { return !!(l && (l.commercial || l.commercial_let)); } catch(e) { return false; } });
+  if (product === 'commercial') arr = (arr || []).filter(function(l) { try { return !!(l && (l.commercial || l.commercial_let)) && !isResidentialPremise(l.fullAddress || l.address || l.deceasedAddress || ''); } catch(e) { return false; } });
   // Moving bulk = RESIDENTIAL only: exclude commercial premises (they are their own
   // product). Without this, filling the commercial pool inflated the moving pool too.
   else if (product === 'moving') arr = (arr || []).filter(function(l) { try { return !isCommercialLead(l); } catch(e) { return true; } });
