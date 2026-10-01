@@ -615,6 +615,7 @@ function isLeadMailableForSend(ld, prod) {
   if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(pc)) return false;
   if (isNonBuildingPremise(addr)) return false; // land / plots / sites / car parks
   if (prod === 'moving') return isCompleteMovingAddress(addr, pc);
+  if (prod === 'commercial') return hasUsablePremiseAddress(addr, pc, { acceptNamedPremise: true });
   return hasUsablePremiseAddress(addr, pc) && hasStreetName(addr);
 }
 // Return the MOST COMPLETE of a lead's address fields (the one that actually passes the
@@ -8873,9 +8874,14 @@ app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
     function _mailable(ld, prod) {
       var addr = ld.fullAddress || ld.address || ld.deceasedAddress || '';
       var pc = ld.postcode || '';
+      if (isNonBuildingPremise(addr)) return false; // land/plots/sites not mailable
+      if (!_FULL_PC.test(String(pc).trim())) return false;
       // MOVING must carry number + street + TOWN + full postcode (founder requirement).
       if (prod === 'moving') return isCompleteMovingAddress(addr, pc);
-      return hasUsablePremiseAddress(addr, pc) && _FULL_PC.test(String(pc).trim());
+      // COMMERCIAL: accept a unit/building-name premise (commercial premises often have
+      // no street number, e.g. "Unit G04.4 Ink Court", "Fitzrovia House").
+      if (prod === 'commercial') return hasUsablePremiseAddress(addr, pc, { acceptNamedPremise: true });
+      return hasUsablePremiseAddress(addr, pc);
     }
     sortCustomersByAreaSpecificity(dbT.customers || []).forEach(function(cust) {
       // PROPERTY products that need a mailable (door-numbered) address for Print & Post.
@@ -8915,6 +8921,9 @@ app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
       try { var pcfg = JSON.parse(cust.product_config || '{}'); custMovingType = (pcfg.moving && pcfg.moving.moving_type) || cust.moving_type || 'both'; } catch(e) { custMovingType = cust.moving_type || 'both'; }
       var ukwide = /all.?uk|uk.?wide|nationwide|whole.?uk/i.test((areas || []).join(' '));
       var pool = loadProductPool(prod);
+      // COMMERCIAL leads live in the commercial ARCHIVE (long-lived premises), not the
+      // daily moving pool - source them from there.
+      if (prod === 'commercial') { try { var _cArch = [].concat(getBoostArchiveLeads('commercial', 'tm', 0), getBoostArchiveLeads('commercial', '1m', 0), getBoostArchiveLeads('commercial', '2m', 0)); if (_cArch.length) pool = _cArch; } catch(eC) {} }
       var poolForCust = interleavePoolByAreas(pool, areas);
       var used = {};
       // already-assigned to this customer (avoid re-adding) - key on URL AND
@@ -8943,7 +8952,7 @@ app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
         var l = poolForCust[i];
         if (!_inArea(l)) continue;
         if (prod === 'commercial') {
-          if (!isCommercialLead(l)) continue;
+          if (!(l && (l.commercial || l.commercial_let))) continue;
         } else if (prod === 'moving') {
           var _tuHoldsCommAll = (cust.biz_field3 || '').indexOf('commercial') !== -1;
           if ((_tuHoldsCommAll || custMovingType === 'residential') && isCommercialLead(l)) continue;
@@ -8983,7 +8992,7 @@ app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
           var l3 = poolForCust[i3];
           if (!_inArea(l3)) continue;
           if (prod === 'commercial') {
-            if (!isCommercialLead(l3)) continue;
+            if (!(l3 && (l3.commercial || l3.commercial_let))) continue;
           } else if (prod === 'moving') {
             var _tuHoldsCommAll3 = (cust.biz_field3 || '').indexOf('commercial') !== -1;
             if ((_tuHoldsCommAll3 || custMovingType === 'residential') && isCommercialLead(l3)) continue;
