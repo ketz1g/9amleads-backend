@@ -25050,6 +25050,10 @@ app.post('/api/admin/test/billing-webhook-sim', adminAuth, async (req, res) => {
     var eventObj;
     if (scenario === 'recover') {
       eventObj = { id: 'evt_sim_' + Date.now(), type: 'invoice.paid', created: nowSec, data: { object: { id: 'in_sim_' + Date.now(), object: 'invoice', customer: c.stripe_customer_id, subscription: c.stripe_subscription_id, paid: true, status: 'paid', amount_paid: 2500, amount_due: 0, currency: 'gbp', period_start: nowSec, period_end: nowSec + 604800 } } };
+    } else if (scenario === 'extra_area') {
+      // Proves the Route1->Route2 FORWARD path + the corrected signature (a one-time
+      // checkout whose metadata.type is in the forwarded set).
+      eventObj = { id: 'evt_sim_' + Date.now(), type: 'checkout.session.completed', created: nowSec, data: { object: { id: 'cs_sim_' + Date.now(), object: 'checkout.session', mode: 'payment', customer: c.stripe_customer_id, metadata: { type: 'extra_area', customer_id: c.id } } } };
     } else {
       eventObj = { id: 'evt_sim_' + Date.now(), type: 'invoice.payment_failed', created: nowSec, data: { object: { id: 'in_sim_' + Date.now(), object: 'invoice', customer: c.stripe_customer_id, subscription: c.stripe_subscription_id, amount_due: 2500, amount_paid: 0, currency: 'gbp', status: 'open', hosted_invoice_url: 'https://invoice.stripe.com/sim', last_payment_error: { message: 'Your card was declined.' } } } };
     }
@@ -25064,7 +25068,7 @@ app.post('/api/admin/test/billing-webhook-sim', adminAuth, async (req, res) => {
       rq.write(bodyStr); rq.end();
     });
     var after = (getDb().customers || []).find(function(x) { return x.id === c.id; }) || {};
-    res.json({ success: true, scenario: scenario, email: email, webhook_response: postRes, customer_after: { plan: after.plan, selected_plan: after.selected_plan, leads_paused: after.leads_paused, auto_send_paused: after.auto_send_paused } });
+    res.json({ success: true, scenario: scenario, email: email, webhook_response: postRes, customer_after: { plan: after.plan, selected_plan: after.selected_plan, leads_paused: after.leads_paused, auto_send_paused: after.auto_send_paused, extra_postcodes: after.extra_postcodes } });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 // Cleanup a simulator customer.
@@ -31567,7 +31571,12 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
       // direct-mail campaigns) to the dedicated handler below. Without this the
       // subscription handler consumed the event and pack purchases never unlocked.
       var _oneTimeTypes = ['bulk_leads', 'boost_leads', 'extra_area', 'direct_mail_campaign'];
-      if (_oneTimeTypes.indexOf(metaType) !== -1) return next();
+      if (_oneTimeTypes.indexOf(metaType) !== -1) {
+        // Don't let Route 1's idempotency block claim this event before Route 2 has
+        // fulfilled it - otherwise a transient Route 2 failure could never be retried.
+        try { var _dbII = getDb(); if (_dbII.processed_webhook_events) { _dbII.processed_webhook_events = _dbII.processed_webhook_events.filter(function(x) { return x !== event.id; }); saveDb(); } } catch(eII) {}
+        return next();
+      }
 
       // Handle setup mode (trial card save)
       if (session.mode === 'setup' || metaType === 'trial_card_setup') {
@@ -32325,7 +32334,12 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
       const crypto = require('crypto');
       const sig = req.headers['stripe-signature'];
       if (!sig) return res.status(400).json({ error: 'No signature' });
-      const payload = req.body.toString();
+      // The global express.json() has ALREADY consumed the stream, so req.body is a
+      // parsed object and req.body.toString() === '[object Object]' - which broke the
+      // signature and rejected EVERY forwarded one-time purchase (bulk/boost/extra-area/
+      // direct-mail). Use the RAW body captured by the global parser's verify() hook.
+      const payload = (typeof req.rawBody === 'string' && req.rawBody) ? req.rawBody
+        : (Buffer.isBuffer(req.body) ? req.body.toString() : JSON.stringify(req.body));
       const parts = sig.split(',').reduce((acc, p) => {
         const [k, v] = p.trim().split('=');
         acc[k] = v; return acc;
@@ -32337,29 +32351,30 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
       if (computedSig !== expectedSig) {
         return res.status(400).json({ error: 'Invalid signature' });
       }
-      event = JSON.parse(payload);
+      event = (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) ? req.body : JSON.parse(payload);
     } else {
       // FAIL CLOSED: if the webhook secret isn't configured we must NOT accept the
       // event - otherwise a forged webhook could flip a customer to paid. Reject.
       return res.status(503).json({ error: 'Webhook verification not configured' });
     }
+    // IDEMPOTENCY for forwarded one-time events (Route 1 deliberately un-claims these
+    // before forwarding so a failure here can be retried by Stripe).
+    try {
+      if (event && event.id) {
+        var _dbW2 = getDb();
+        if (!Array.isArray(_dbW2.processed_webhook_events)) _dbW2.processed_webhook_events = [];
+        if (_dbW2.processed_webhook_events.indexOf(event.id) !== -1) return res.json({ received: true, duplicate: true });
+        _dbW2.processed_webhook_events.push(event.id);
+        if (_dbW2.processed_webhook_events.length > 500) _dbW2.processed_webhook_events = _dbW2.processed_webhook_events.slice(-500);
+        saveDb();
+      }
+    } catch(eIdem) {}
 
     if (event.type === 'checkout.session.completed') {
-      try {
-        var mSess = event.data.object || {};
-        var mMeta = mSess.metadata || {};
-        if (mMeta.type === 'extra_area' && mMeta.customer_id && mMeta.area) {
-          var eCust = db.prepare('SELECT * FROM customers WHERE id = ?').get(mMeta.customer_id);
-          if (eCust) {
-            var extraList = [];
-            try { extraList = JSON.parse(eCust.extra_postcodes || '[]'); } catch(e2) { extraList = []; }
-            if (extraList.indexOf(mMeta.area) === -1) extraList.push(mMeta.area);
-            db.prepare('UPDATE customers SET extra_postcodes = ? WHERE id = ?').run(JSON.stringify(extraList), eCust.id);
-            saveDb();
-            console.log('[STRIPE] extra_area purchased for ' + eCust.email + ': ' + mMeta.area);
-          }
-        }
-      } catch(me) { console.log('[STRIPE] extra_area error:', me.message); }
+      // NOTE: a block here used to write extra_postcodes as a JSON ARRAY, but the whole
+      // rest of the app treats extra_postcodes as an INTEGER COUNT (parseInt everywhere),
+      // and the integer block below overwrote it anyway. Removed - the integer increment
+      // is the single source of truth.
 
       const session = event.data.object;
       const customerId = session.metadata?.customer_id;
