@@ -20826,7 +20826,11 @@ function isInternalAccount(c) {
   if (!c) return true;
   var e = String(c.email || '').toLowerCase();
   if (!e) return true;
-  if (e.indexOf('@9amleads.com') !== -1) return true;   // our own inboxes
+  // EXCEPTION: the 5 commercial MONITORING accounts behave like REAL customers (served by
+  // the real 9am delivery + shown in the customer list) so the founder can watch
+  // commercial lead quality across regions. Still labelled test.commercial1-5.
+  if (/^test\.commercial[1-5]@9amleads\.com$/.test(e)) return false;
+  if (e.indexOf('@9amleads.com') !== -1) return true; // our own inboxes
   if (e === 'ketzman1g@gmail.com') return true;          // owner
   if (e.indexOf('@example.com') !== -1) return true;     // reserved for examples
   if (/^demo/.test(e)) return true; // demo-* accounts
