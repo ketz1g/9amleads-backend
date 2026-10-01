@@ -3401,6 +3401,11 @@ async function recordPaymentReceipt(opts) {
     if (/^sub_/.test(_sidGuard)) {
       var _subGuard = await stripeApiRequest('GET', 'subscriptions/' + _sidGuard, null);
       var _subOk = _subGuard && !_subGuard.error && (_subGuard.status === 'active' || _subGuard.status === 'trialing');
+      // Status can briefly lag right after a successful charge - also accept when the
+      // subscription's latest invoice is genuinely PAID.
+      if (!_subOk && _subGuard && _subGuard.latest_invoice) {
+        try { var _giGuard = await stripeApiRequest('GET', 'invoices/' + _subGuard.latest_invoice, null); if (_giGuard && (_giGuard.paid || _giGuard.status === 'paid')) _subOk = true; } catch(eGi) {}
+      }
       if (!_subOk) {
         console.log('[PAYMENT-RECEIPT] BLOCKED receipt for non-active subscription ' + _sidGuard + ' (' + (opts.customerEmail || opts.customerId || '') + ') status=' + (_subGuard && _subGuard.status || 'unknown'));
         try {
