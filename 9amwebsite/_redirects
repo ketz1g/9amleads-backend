@@ -66,4 +66,16 @@
 /scripts/*  /404.html  404!
 /package.json  /404.html  404!
 /package-lock.json  /404.html  404!
+# Server/scraper source shipped in the site dir must never be served publicly
+/production_api_server.js  /404.html  404!
+/lead_distributor.js  /404.html  404!
+/moving_leads_scraper.js  /404.html  404!
+/probate_leads_scraper.js  /404.html  404!
+/newbusiness_scraper.js  /404.html  404!
+/planning_scraper.js  /404.html  404!
+/tenders_scraper.js  /404.html  404!
+/multi_lead_engine.js  /404.html  404!
+/pricing-config.js  /404.html  404!
+/stripe_handler.js  /404.html  404!
+/chat.js  /404.html  404!
 /*  /404.html  404
