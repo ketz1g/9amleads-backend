@@ -10601,6 +10601,12 @@ app.get('/api/leads', authMiddleware, (req, res) => {
   ).all(req.user.id);
 
   const nowIso = new Date().toISOString();
+  // NON-EXCLUSIVE (shared) products: count how many customers each lead has gone to, so
+  // the dashboard can reassure the customer ("sent to N subscribers" / "only you").
+  const _leadKeyL = function(ld) { try { var d = JSON.parse(ld.data || '{}'); var u = String(d.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim(); if (u) return 'u:' + u; var a = String(d.fullAddress || d.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 28); var pc = String(d.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); return 'a:' + a + '|' + pc; } catch(e) { return ''; } };
+  var _sharedProd = isSharedLeadProduct(customer ? customer.product : '');
+  var _shareMap = {};
+  if (_sharedProd) { try { db.prepare('SELECT * FROM leads').all().forEach(function(l2) { if (l2.status === 'removed') return; var k = _leadKeyL(l2); if (!k) return; (_shareMap[k] = _shareMap[k] || {})[l2.customer_id] = 1; }); } catch(eSM) {} }
   const visible = leads.filter(function(l) {
     // Hide rejected leads from the customer dashboard (they're queued for replacement).
     var d0 = {}; try { d0 = JSON.parse(l.data || '{}'); } catch(e) {}
@@ -10771,7 +10777,7 @@ app.get('/api/leads', authMiddleware, (req, res) => {
     const scored = attachOpportunityScore(parsed, customer?.product || l.product);
     // DIAGNOSTIC: expose the raw lead id + customer_id so the direct-mail payment
     // path can be debugged against the exact ids the dashboard hands to send-lead.
-    var dRow = { ...l, data: parsed, opportunity_score: scored.score, opportunity_category: scored.category, opportunity_label: scored.label, opportunity_reasons: scored.reasons };
+    var dRow = { ...l, data: parsed, opportunity_score: scored.score, opportunity_category: scored.category, opportunity_label: scored.label, opportunity_reasons: scored.reasons, shared: _sharedProd, sent_to: _sharedProd ? Object.keys(_shareMap[_leadKeyL(l)] || {}).length : 1 };
     if (l.id && l.id.toString().indexOf('17de6e99') !== -1) {
       dRow._diag = { lead_id: l.id, customer_id: l.customer_id, session_customer_id: customer ? customer.id : null, has_data: !!l.data, postcode: parsed.postcode };
     }
@@ -34556,6 +34562,18 @@ function generateLeadEmailHTML(customer, leads) {  const brand = getProductBrand
   body += '</td></tr>';
 
   // Lead cards
+  // NON-EXCLUSIVE (shared) products: prep how many customers each lead went to so each
+  // email card can reassure the recipient it is not being blasted to the whole market.
+  var _sharedProd = isSharedLeadProduct(customer.product);
+  var _sharedCountFor = function() { return 1; };
+  if (_sharedProd) {
+    try {
+      var _lk = function(x) { try { var dd = x.data; if (typeof dd === 'string') dd = JSON.parse(dd || '{}'); dd = dd || {}; var u = String(dd.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim(); if (u) return 'u:' + u; var a = String(dd.fullAddress || dd.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 28); var pc = String(dd.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); return 'a:' + a + '|' + pc; } catch(e) { return ''; } };
+      var _sm = {};
+      db.prepare('SELECT * FROM leads').all().forEach(function(x) { if (x.status === 'removed') return; var k = _lk(x); if (!k) return; (_sm[k] = _sm[k] || {})[x.customer_id] = 1; });
+      _sharedCountFor = function(ld) { var k = _lk(ld); return k ? Object.keys(_sm[k] || {}).length : 1; };
+    } catch(eSH) {}
+  }
   body += '<tr><td style="background:#12141e;padding:8px 28px 28px">';
   for (var i = 0; i < leads.length; i++) {
     var l = leads[i];
@@ -34644,6 +34662,7 @@ function generateLeadEmailHTML(customer, leads) {  const brand = getProductBrand
     body += '<td style="vertical-align:top;width:100%"><div style="font-size:16px;font-weight:700;color:#1e293b;line-height:1.3;word-break:break-word">' + (title || 'Opportunity') + '</div>';
     if (subtitle) body += '<div style="font-size:13px;color:#1e293b;margin-top:4px">' + subtitle + '</div>';
     if (emailSendOn) body += '<div style="font-size:11px;color:#3f3f46;margin-top:6px;font-weight:600">' + emailSendOn + '</div>';
+    if (_sharedProd) { var _st = _sharedCountFor(l); if (_st > 0) body += '<div style="font-size:11px;font-weight:700;margin-top:5px;color:' + (_st <= 1 ? '#16a34a' : '#d97706') + '">' + (_st <= 1 ? '&#10003; Only sent to you' : 'Shared with ' + (_st - 1) + ' other firm' + (_st - 1 === 1 ? '' : 's')) + '</div>'; }
     body += '</td></tr></table></div>';
 
     // Details as badge chips

@@ -366,6 +366,8 @@ function renderLeadList(dayLeads, noGroup) {
     // EVERY product card so the customer always knows the day a lead arrived.
     var sentOn = l.delivered_at ? 'Sent ' + new Date(l.delivered_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : (l.created_at ? 'Added ' + new Date(l.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '');
     var sentOnHtml = sentOn ? '<div style="font-size:10px;color:var(--muted);margin-top:3px;text-align:right">' + sentOn + '</div>' : '';
+    // NON-EXCLUSIVE products: reassure the customer how many firms this lead went to.
+    var shareHtml = (l.shared && l.sent_to) ? '<div style="font-size:10px;font-weight:700;margin-top:3px;text-align:right;color:' + (l.sent_to <= 1 ? '#16a34a' : '#d97706') + '">' + (l.sent_to <= 1 ? '&#10003; Only sent to you' : 'Shared with ' + (l.sent_to - 1) + ' other firm' + (l.sent_to - 1 === 1 ? '' : 's')) + '</div>' : '';
     var score = scoreLead(l, d, product);
     var scoreBadge = score ? '<span style="display:inline-block;margin-left:6px;padding:2px 8px;border-radius:5px;font-size:10px;font-weight:800;background:' + score.color + '22;color:' + score.color + '"> ' + score.value + '/100</span>' : '';
     var replacedBadge = d.is_replacement
@@ -399,7 +401,7 @@ function renderLeadList(dayLeads, noGroup) {
         '<div class="addr">' + biz + '</div>' +
         '<div class="meta">' + nbFull + '</div>' +
         '<div class="meta">' + metaParts.join(' \u00b7 ') + (chLink ? ' \u00b7 ' + chLink : '') + '</div></div>' +
-        '<div class="right"><span class="badge">' + status + '</span>' + postBadge(d, l.id) + sentOnHtml + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:4px">' + mailBtn(l.id, d) + rejectBtn(l.id, d) + '</div>' + outcomeBtn(l.id, l) + '</div></div>';
+        '<div class="right"><span class="badge">' + status + '</span>' + postBadge(d, l.id) + sentOnHtml + shareHtml + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:4px">' + mailBtn(l.id, d) + rejectBtn(l.id, d) + '</div>' + outcomeBtn(l.id, l) + '</div></div>';
     } else if (product === 'probate') {
       var pName = d.deceasedName || d.name || 'Probate Estate';
       var pAddr = d.deceasedAddress || d.address || '';
@@ -419,7 +421,7 @@ function renderLeadList(dayLeads, noGroup) {
         '<div class="addr">' + pName + '</div>' +
         '<div class="meta">' + pFullAddr + '</div>' +
         '<div class="meta">' + pMeta.join(' \u00b7 ') + '</div></div>' +
-        '<div class="right"><span class="badge">' + status + '</span>' + postBadge(d, l.id) + (pSrcLink ? pSrcLink : '') + sentOnHtml + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:4px">' + mailBtn(l.id, d) + rejectBtn(l.id, d) + '</div>' + outcomeBtn(l.id, l) + '</div></div>';
+        '<div class="right"><span class="badge">' + status + '</span>' + postBadge(d, l.id) + (pSrcLink ? pSrcLink : '') + sentOnHtml + shareHtml + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:4px">' + mailBtn(l.id, d) + rejectBtn(l.id, d) + '</div>' + outcomeBtn(l.id, l) + '</div></div>';
     } else if (product === 'planning') {
       var planTitle = cleanPlanAddr(d.address) || (d.description||'').substring(0,40) || 'Planning Application';
       var planDate = d.dateSubmitted || d.receivedDate || d.date_received || l.created_at || '';
@@ -433,7 +435,7 @@ function renderLeadList(dayLeads, noGroup) {
       html += '<div class="lead' + selClass + '">' + chk + '<div style="flex:1"><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' + replacedBadge +
         '<div class="addr">' + planTitle + '</div>' +
         '<div class="meta">' + planMeta.join(' \u00b7 ') + (planLink ? ' \u00b7 ' + planLink : '') + '</div>' + planDesc + planApplicant + '</div>' +
-        '<div class="right"><span class="badge">' + status + '</span>' + sentOnHtml + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:4px">' + mailBtn(l.id) + rejectBtn(l.id, null) + '</div>' + outcomeBtn(l.id, l) + '</div></div>';
+        '<div class="right"><span class="badge">' + status + '</span>' + sentOnHtml + shareHtml + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:4px">' + mailBtn(l.id) + rejectBtn(l.id, null) + '</div>' + outcomeBtn(l.id, l) + '</div></div>';
     } else if (product === 'tenders') {
       // Tenders are applied for ONLINE (portal/email), not via post, so show the
       // buyer contact + apply button instead of a Print & Post button.
@@ -450,7 +452,7 @@ function renderLeadList(dayLeads, noGroup) {
       html += '<div class="lead' + selClass + '">' + chk + '<div style="flex:1"><div style="display:inline-block;padding:2px 8px;border-radius:5px;background:' + badgeColor + '14;color:' + badgeColor + ';font-size:9px;font-weight:700;margin-bottom:4px">' + badge + '</div>' + replacedBadge +
         '<div class="addr">' + tendTitle + '</div>' +
         '<div class="meta">' + tendMeta.join(' \u00b7 ') + (tendLink ? ' \u00b7 ' + tendLink : '') + '</div>' + tendDesc + tendContactHtml + '</div>' +
-        '<div class="right"><span class="badge">' + status + '</span>' + sentOnHtml + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:4px">' + applyBtn + rejectBtn(l.id, d) + '</div>' + outcomeBtn(l.id, l) + '</div></div>';
+        '<div class="right"><span class="badge">' + status + '</span>' + sentOnHtml + shareHtml + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:4px">' + applyBtn + rejectBtn(l.id, d) + '</div>' + outcomeBtn(l.id, l) + '</div></div>';
     } else {
       // moving / default
       var addr = d.address || d.title || 'Property';
