@@ -11815,20 +11815,22 @@ app.post('/api/admin/purge-test-payments', adminAuth, (req, res) => {
     var custIds = {};
     (d.customers || []).forEach(function(c) { custIds[c.id] = 1; });
     var removedReceipts = [];
-    d.payments = (d.payments || []).filter(function(p) {
+    var _keepReceipts = [];
+    (d.payments || []).forEach(function(p) {
       var sid = String(p.stripe_id || '');
       var cid = String(p.customer_id || '');
       var email = String(p.customer_email || '').toLowerCase();
       var sim = /_sim_|testbilling_|whsim_/.test(sid) || /^testbilling_|^whsim_/.test(cid);
       var orphan = !!cid && !custIds[cid]; // receipt for a customer that no longer exists
       var testEm = !!email && (/@9amleads\.com$/.test(email) || /^(e2e|loadtest|demo|test|qa|staging|sandbox|dummy|fake)/.test(email) || /[+.]test@|@test\.|@example\./.test(email));
-      if (sim || orphan || testEm) { removedReceipts.push({ id: p.id, stripe_id: sid, customer_id: cid, email: email, amount: p.amount }); return false; }
-      return true;
+      if (sim || orphan || testEm) { removedReceipts.push({ id: p.id, stripe_id: sid, customer_id: cid, email: email, amount: p.amount }); return; }
+      _keepReceipts.push(p);
     });
-    var beforeE = (d.payment_events || []).length;
-    d.payment_events = (d.payment_events || []).filter(function(e) { return !isTestPaymentEvent(e); });
-    var removedEvents = beforeE - d.payment_events.length;
-    if (!dry) saveDb();
+    var removedEvents = 0;
+    var _keepEvents = [];
+    (d.payment_events || []).forEach(function(e) { if (isTestPaymentEvent(e)) removedEvents++; else _keepEvents.push(e); });
+    // DRY RUN MUST NOT MUTATE: only reassign + persist when actually purging.
+    if (!dry) { d.payments = _keepReceipts; d.payment_events = _keepEvents; saveDb(); }
     res.json({ success: true, dry_run: dry, removed_receipt_count: removedReceipts.length, removed_receipts: removedReceipts, removed_event_count: removedEvents });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
