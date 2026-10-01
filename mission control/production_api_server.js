@@ -6437,6 +6437,8 @@ app.get('/blog', (req, res) => {
       '<meta property="og:title" content="UK Business Leads Blog | 9amLeads">' +
       '<meta property="og:description" content="Guides and strategies for winning more work with fresh UK leads.">' +
       '<meta property="og:url" content="https://9amleads.com/blog">' +
+      '<meta property="og:image" content="https://9amleads.com/og-image.png">' +
+      '<meta name="twitter:card" content="summary_large_image">' +
       '<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><style>body{font-family:Inter,sans-serif;background:#000;color:#fff;max-width:800px;margin:0 auto;padding:24px;line-height:1.8}a{color:#0ea5e9}</style></head><body><h1 style="font-family:Outfit,sans-serif">9amLeads Blog</h1><p style="color:#aaa;font-size:15px;line-height:1.7">' + intro + '</p>' + svc + cards + _blogLd + '</body></html>';
     res.type('html').send(html);
   } catch(e) { res.status(500).send('Error loading blog'); }
@@ -44353,6 +44355,11 @@ app.use(function(err, req, res, next) {
   global.__lastErrors.push({ at: new Date().toISOString(), url: (req && req.method + ' ' + (req.originalUrl || req.url || '')) || '', message: msg, stack: stack.substring(0, 1200) });
   if (global.__lastErrors.length > 20) global.__lastErrors.shift();
   console.error('[ERROR] Unhandled error:', msg, (err && err.stack ? '\n' + err.stack.substring(0, 800) : ''));
+  // A malformed / oversized JSON body is a CLIENT error (body-parser sets type/status),
+  // not a server fault - answering 500 made every bad request look like an outage.
+  if (err && (err.type === 'entity.parse.failed' || err.type === 'entity.too.large' || err.status === 400 || err.statusCode === 400)) {
+    return res.status(400).json({ error: err.type === 'entity.parse.failed' ? 'Invalid JSON body' : 'Invalid request body' });
+  }
   res.status(500).json({ error: 'Internal server error' });
 });
 
