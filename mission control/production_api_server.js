@@ -21411,6 +21411,24 @@ async function preDeliveryReadinessCheck() {
 }
 cron.schedule('55 7 * * 1-5', function() { try { preDeliveryReadinessCheck(); } catch(e) {} }, { timezone: 'Europe/London' });
 
+// Remove any already-queued/delivered lead whose address is NOT a building (vacant land,
+// plot, site, car park) - these are not mailable and must not appear in any customer's
+// dashboard. Marks them 'removed' so history/audits are preserved.
+function removeNonBuildingLeads() {
+  try {
+    var dbx = getDb(); var removed = 0;
+    (dbx.leads || []).forEach(function(l) {
+      if (!l || l.status === 'removed') return;
+      var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
+      var addr = d.fullAddress || d.address || d.deceasedAddress || '';
+      if (isNonBuildingPremise(addr)) { l.status = 'removed'; l.removed_reason = 'non-building premise (land/plot/site)'; removed++; }
+    });
+    if (removed) saveDb();
+    if (removed) console.log('[CLEANUP] removed ' + removed + ' non-building lead(s) from customer queues');
+    return { removed: removed };
+  } catch(e) { return { error: e.message }; }
+}
+
 // Detect any lead delivered to the SAME customer on more than one day (a repeat). The
 // delivery already dedupes per-customer, but this proves it and flags any regression.
 function findDuplicateDeliveries(days) {
@@ -21540,6 +21558,10 @@ app.get('/api/admin/delivery-preflight', adminAuth, async (req, res) => {
 app.get('/api/admin/duplicate-deliveries', adminAuth, function(req, res) {
   try { res.json({ success: true, days: parseInt(req.query.days || '14', 10), duplicates: findDuplicateDeliveries(parseInt(req.query.days || '14', 10)) }); }
   catch(e) { res.status(500).json({ error: e.message }); }
+});
+// POST /api/admin/remove-non-building-leads - purge land/plot/site leads from all queues.
+app.post('/api/admin/remove-non-building-leads', adminAuth, function(req, res) {
+  try { res.json({ success: true, result: removeNonBuildingLeads() }); } catch(e) { res.status(500).json({ error: e.message }); }
 });
 function deliveryPreflightAlert(label, r) {
   try {
@@ -45576,6 +45598,8 @@ app.listen(PORT, () => {
   try { refreshBrevoSuppression(); } catch(e) { console.log('[BREVO] boot suppression error: ' + (e && e.message)); }
   // Strip any commercial premises that leaked into the daily moving pool.
   try { cleanCommercialFromMovingPool(); } catch(e) { console.log('[COMMERCIAL-CLEAN] boot error: ' + (e && e.message)); }
+  // Purge any non-building (land/plot/site) leads from customer queues.
+  try { removeNonBuildingLeads(); } catch(e) { console.log('[CLEANUP] boot error: ' + (e && e.message)); }
 
   // CAMPAIGN CATCH-UP ON BOOT: the scheduled trial/nurture run can be missed when the
   // service restarts around the run time (deploys/restarts). Sending is deduped by
