@@ -24763,7 +24763,7 @@ async function trialAutoChargeCustomer(cust, opts) {
     // DUNNING: if a previous attempt left an INCOMPLETE subscription with an OPEN invoice,
     // retry THAT invoice with the saved card FIRST instead of creating a duplicate
     // subscription. This is how a declined first payment is retried automatically (the
-    // 6-hourly trial-charge cron drives it) until it succeeds or the dunning window ends.
+    // trial-charge cron retries ONCE A DAY for 7 days) until it succeeds or the window ends.
     if (cust.stripe_subscription_id) {
       try {
         var _prevSub = await stripeApiRequest('GET', 'subscriptions/' + cust.stripe_subscription_id, null);
@@ -24930,11 +24930,11 @@ cron.schedule('30 0-7,10-23 * * *', async () => {
       if (cust.trial_cancelled) continue;
       if (!cust.trial_ends || new Date(cust.trial_ends) > new Date()) continue;
       if (!cust.stripe_payment_method_id || !cust.stripe_customer_id) continue;
-      // Dunning WINDOW: stop auto-retrying 14 days after the trial ended so a permanently
+      // Dunning WINDOW: stop auto-retrying 7 days after the trial ended so a permanently
       // dead card is not hammered forever (the customer can still pay via the link).
-      if (cust.trial_ends && (Date.now() - new Date(cust.trial_ends).getTime()) > 14 * 86400000) continue;
-      // Retry throttle: never hammer a failing card - retry at most every 6 hours.
-      if (cust.trial_charge_last_attempt && (Date.now() - new Date(cust.trial_charge_last_attempt).getTime() < 6 * 3600000)) continue;
+      if (cust.trial_ends && (Date.now() - new Date(cust.trial_ends).getTime()) > 7 * 86400000) continue;
+      // Retry throttle: retry once a DAY (not more) - never hammer a failing card.
+      if (cust.trial_charge_last_attempt && (Date.now() - new Date(cust.trial_charge_last_attempt).getTime() < 24 * 3600000)) continue;
       cust.trial_charge_last_attempt = new Date().toISOString();
       attempted++;
       var cres = await trialAutoChargeCustomer(cust, { dryRun: false });
