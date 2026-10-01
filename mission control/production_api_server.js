@@ -42261,6 +42261,42 @@ app.post('/api/admin/pause-customer', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/correct-false-charge - undo the artifacts of a trial auto-charge that
+// was WRONGLY treated as successful (the old bug, since fixed): the persisted fake
+// "paid" receipt (stripe_id === the subscription id) and the paid_* onboarding emails.
+// Precise by design: only removes receipts whose stripe_id EXACTLY matches the customer's
+// subscription id (real invoices use in_ ids, so genuine payments are never touched).
+// Body: { email, stripe_id? }
+app.post('/api/admin/correct-false-charge', adminAuth, (req, res) => {
+  try {
+    var email = String((req.body && req.body.email) || '').toLowerCase().trim();
+    if (!email) return res.status(400).json({ error: 'email required' });
+    var d = getDb();
+    var c = (d.customers || []).find(function(x) { return String(x.email || '').toLowerCase() === email; });
+    if (!c) return res.status(404).json({ error: 'Customer not found' });
+    var subId = String((req.body && req.body.stripe_id) || c.stripe_subscription_id || '');
+    var removedReceipts = [];
+    if (subId) {
+      d.payments = (d.payments || []).filter(function(p) {
+        if (String(p.stripe_id || '') === subId && String(p.customer_id || '') === c.id) {
+          removedReceipts.push({ id: p.id, stripe_id: p.stripe_id, amount: p.amount, number: p.number, created_at: p.created_at });
+          return false;
+        }
+        return true;
+      });
+    }
+    var removedLifecycle = [];
+    try {
+      var cs = JSON.parse(c.campaign_sent || '[]');
+      cs = cs.filter(function(k) { if (/^paid_/.test(k)) { removedLifecycle.push(k); return false; } return true; });
+      c.campaign_sent = JSON.stringify(cs);
+      (d.customers || []).forEach(function(x) { if (x.id === c.id) x.campaign_sent = c.campaign_sent; });
+    } catch(eCs) {}
+    saveDb();
+    res.json({ success: true, email: email, subscription_id: subId, removed_receipts: removedReceipts, removed_lifecycle: removedLifecycle });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/admin/test-daily', adminAuth, async (req, res) => {
   try {
     const toEmail = req.body.email || 'ketzman1g@gmail.com';
