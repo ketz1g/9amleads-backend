@@ -1,3 +1,4 @@
+# Publish the current 9amwebsite source directly (no build step).
 [build]
   publish = "9amwebsite"
 
@@ -10,6 +11,20 @@
 [[redirects]]
   from = "/portal/*"
   to = "https://nineamleads-backend.onrender.com/portal/:splat"
+  status = 200
+  force = true
+
+# Short admin URLs (the admin app links to /admin/ internally, and it's the easy URL
+# to remember). Serve the admin page directly from the backend.
+[[redirects]]
+  from = "/admin"
+  to = "https://nineamleads-backend.onrender.com/portal/admin.html"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/admin/"
+  to = "https://nineamleads-backend.onrender.com/portal/admin.html"
   status = 200
   force = true
 
@@ -43,32 +58,9 @@
   status = 200
   force = true
 
-# Legacy single-product sub-sites now live under the main 9amLeads brand
-[[redirects]]
-  from = "/movingleadsdaily/*"
-  to = "/who-we-serve/"
-  status = 301
-  force = true
-[[redirects]]
-  from = "/probateleads/*"
-  to = "/who-we-serve/"
-  status = 301
-  force = true
-[[redirects]]
-  from = "/newbusinessalert/*"
-  to = "/who-we-serve/"
-  status = 301
-  force = true
-[[redirects]]
-  from = "/planningleads/*"
-  to = "/who-we-serve/"
-  status = 301
-  force = true
-[[redirects]]
-  from = "/tenders/*"
-  to = "/who-we-serve/"
-  status = 301
-  force = true
+# NOTE: the five product lead pages below are live and are linked from marketing
+# emails and flyers. Do NOT redirect them to /who-we-serve/ — that breaks the links.
+#   /movingleadsdaily/  /probateleads/  /newbusinessalert/  /planningleads/  /tenders/
 [[redirects]]
   from = "/planningpermission"
   to = "/who-we-serve/"
@@ -138,7 +130,7 @@
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' https://images.unsplash.com data:; connect-src 'self' https://nineamleads-backend.onrender.com"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com;     img-src 'self' data:; connect-src 'self' https://nineamleads-backend.onrender.com"
 
 # Never cache API responses at the edge — they're dynamic (auth tokens, freshly
 # baked artwork, live delivery data). Caching proxied API images (e.g. /final-print)
