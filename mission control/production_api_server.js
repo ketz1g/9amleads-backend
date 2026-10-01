@@ -17290,7 +17290,7 @@ app.get('/api/admin/customers', adminAuth, (req, res) => {
   // (oathxxx, AFS Removals, Essex bros, etc.) are hidden on later pages.
   const _includeInternal = req.query.include_internal === '1' || req.query.include_internal === 'true';
   const allCustomers = db.prepare('SELECT * FROM customers').all()
-    .filter(function(c) { if (_includeInternal) return true; var e = String(c.email || '').toLowerCase(); return !(e.indexOf('@9amleads.com') !== -1 || e === 'ketzman1g@gmail.com' || /^test\./.test(e) || /^demo/.test(e)); })
+    .filter(function(c) { if (_includeInternal) return true; var e = String(c.email || '').toLowerCase(); if (/^test\.commercial[1-5]@/.test(e)) return true; return !(e.indexOf('@9amleads.com') !== -1 || e === 'ketzman1g@gmail.com' || /^test\./.test(e) || /^demo/.test(e)); })
     .sort(function(a, b) {
       function isTest(x) {
         var e = String(x.email || '').toLowerCase();
