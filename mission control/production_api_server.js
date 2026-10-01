@@ -11805,6 +11805,34 @@ app.get('/api/admin/payment-events', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/admin/purge-test-payments - remove test/orphan payment RECEIPTS (db.payments)
+// and test payment EVENTS left by our test tooling (billing-webhook-sim, trial-charge
+// test-mode) or by throwaway customers that no longer exist. Body: { dry_run? }
+app.post('/api/admin/purge-test-payments', adminAuth, (req, res) => {
+  try {
+    var d = getDb();
+    var dry = !!(req.body && req.body.dry_run);
+    var custIds = {};
+    (d.customers || []).forEach(function(c) { custIds[c.id] = 1; });
+    var removedReceipts = [];
+    d.payments = (d.payments || []).filter(function(p) {
+      var sid = String(p.stripe_id || '');
+      var cid = String(p.customer_id || '');
+      var email = String(p.customer_email || '').toLowerCase();
+      var sim = /_sim_|testbilling_|whsim_/.test(sid) || /^testbilling_|^whsim_/.test(cid);
+      var orphan = !!cid && !custIds[cid]; // receipt for a customer that no longer exists
+      var testEm = !!email && (/@9amleads\.com$/.test(email) || /^(e2e|loadtest|demo|test|qa|staging|sandbox|dummy|fake)/.test(email) || /[+.]test@|@test\.|@example\./.test(email));
+      if (sim || orphan || testEm) { removedReceipts.push({ id: p.id, stripe_id: sid, customer_id: cid, email: email, amount: p.amount }); return false; }
+      return true;
+    });
+    var beforeE = (d.payment_events || []).length;
+    d.payment_events = (d.payment_events || []).filter(function(e) { return !isTestPaymentEvent(e); });
+    var removedEvents = beforeE - d.payment_events.length;
+    if (!dry) saveDb();
+    res.json({ success: true, dry_run: dry, removed_receipt_count: removedReceipts.length, removed_receipts: removedReceipts, removed_event_count: removedEvents });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== STRIPE SUBSCRIPTION RECONCILE (self-heal) =====
 // The billing webhooks create a local `subscriptions` row and clear the signup
 // trial_ends when someone subscribes. If a webhook is missed (deploy/downtime/misconfig)
@@ -20934,6 +20962,10 @@ function isInternalAccount(c) {
 // are not real money and must never appear in the admin Payment Events list.
 function isTestPaymentEvent(e) {
   if (!e) return true;
+  // Simulator / throwaway markers (our /api/admin/test/* tools + test customers and their
+  // receipts). Catch these even when there is no email, otherwise test rows linger.
+  var _ids = String(e.customer || '') + ' ' + String(e.event_id || e.id || '') + ' ' + String(e.stripe_id || '') + ' ' + String(e.customer_id || '');
+  if (/_sim_|testbilling_|whsim_/.test(_ids)) return true;
   var em = String(e.email || e.customer_email || '').toLowerCase().trim();
   if (!em) return false; // no email on the event - keep (e.g. a bare payment_intent.succeeded)
   if (isInternalAccount({ email: em })) return true;
@@ -31556,7 +31588,7 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
       var _peDb = getDb();
       if (!Array.isArray(_peDb.payment_events)) _peDb.payment_events = [];
       var _peEmail = _pe.customer_email || _pe.receipt_email || (_pe.customer_details && _pe.customer_details.email) || (_pe.billing_details && _pe.billing_details.email) || '';
-      var _peIsTest = isTestPaymentEvent({ email: _peEmail });
+      var _peIsTest = isTestPaymentEvent({ email: _peEmail, customer: _pe.customer, event_id: (event && event.id) || '' });
       // AMOUNT: prefer amount_due when > 0. A FAILED/open invoice has amount_paid = 0 but a
       // real amount_due, so it used to be logged as £0.00 (the amount was fine - only the
       // display was wrong). Fall back to amount_paid (paid invoices), then the PI/charge
