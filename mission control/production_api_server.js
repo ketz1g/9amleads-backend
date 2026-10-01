@@ -25528,7 +25528,13 @@ async function runCampaignEmails(dry) {
               break;
             }
           }
-          if (!dry) { cust.cancel_wb_sent = JSON.stringify(_cwSent); try { saveDb(); } catch(e) {} }
+          if (!dry) {
+            try {
+              var _cwDb2 = getDb(); var _cwC2 = (_cwDb2.customers || []).find(function(x) { return String(x.id) === String(cust.id); });
+              if (_cwC2) _cwC2.cancel_wb_sent = JSON.stringify(_cwSent); else cust.cancel_wb_sent = JSON.stringify(_cwSent);
+            } catch(cwbe) { cust.cancel_wb_sent = JSON.stringify(_cwSent); }
+            try { saveDb(); } catch(e) {}
+          }
         }
       } else if (!isPaidNow && trialEnds) {
         // Not paid (regardless of the plan label they picked at signup) -> the trial
@@ -25687,7 +25693,15 @@ async function runCampaignEmails(dry) {
         }
       }
       if (campaignSent.length > 0 && !dry) {
-        cust.campaign_sent = JSON.stringify(campaignSent);
+        // RE-ATTACH before persisting: any route that sets _dbData = null invalidates the
+        // in-memory cache mid-run, detaching `cust` and silently LOSING this campaign_sent
+        // update - which made the campaign engine resend the same template next run
+        // (the "Last chance"/win-back duplicates). Write to the CURRENT cache object.
+        try {
+          var _csDb = getDb();
+          var _csC = (_csDb.customers || []).find(function(x) { return String(x.id) === String(cust.id); });
+          if (_csC) _csC.campaign_sent = JSON.stringify(campaignSent); else cust.campaign_sent = JSON.stringify(campaignSent);
+        } catch(reAt) { cust.campaign_sent = JSON.stringify(campaignSent); }
         saveDb();
       }
     } catch(e) { console.log('[CAMPAIGN] Error for', cust.email, e.message); }
@@ -29212,14 +29226,18 @@ _deliverDiag[cust.email].products = products;
         // So when already at quota but NOT yet emailed AND not silent, still send
         // the email with today's already-delivered leads. NEVER sends in silent
         // mode (no_email) - the 15-min test cron's founder delivery must not email.
-        if (!alreadyEmailedToday && !_noEmailSkip) {
+        // DURABLE CLAIM: use the persistent _claimDailyEmail - NOT just last_email_date,
+        // which the delivery's own comment (below) notes can be LOST when the in-memory
+        // cache is invalidated mid-run. Without this a backstop/auto-heal re-run re-sent
+        // the daily email (the cause of the duplicate daily sheets on 15-24 Sep).
+        if (!alreadyEmailedToday && !_noEmailSkip && _claimDailyEmail(cust.id, today)) {
           var skipEmailLeads = (db.leads || []).filter(function(l) { return l.customer_id === cust.id && l.delivered && l.delivered_at && l.delivered_at.indexOf(today) === 0; });
           if (skipEmailLeads.length > 0) {
             console.log('[DELIVERY] ' + cust.email + ': at quota (' + alreadyDeliveredToday + '/day) but NOT yet emailed - sending email with today\'s ' + skipEmailLeads.length + ' lead(s)');
             custLeads = skipEmailLeads;
             try { cust.last_email_date = today; } catch(leErr2) {}
             var skSubj = '9amLeads \u2022 Your Daily Opportunities on ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-            emailQueue.push({ email: cust.email, name: cust.company || 'Customer', subject: skSubj, html: generateLeadEmailHTML(cust, skipEmailLeads) });
+            emailQueue.push({ email: cust.email, name: cust.company || 'Customer', subject: skSubj, html: generateLeadEmailHTML(cust, skipEmailLeads), custId: cust.id, day: today });
             // #11: optional SMS alert when sms_delivery_enabled + phone + SMS key present.
             try {
               var _smsOn = partnerConfig().sms_delivery_enabled && process.env.BREVO_SMS_API_KEY;
@@ -31081,7 +31099,7 @@ pushToCrm(cust, crmPayload2, 'daily delivery');
     // customer's daily email goes out even if the batch flush didn't fill to 15.
     if (emailQueue.length > 0) {
       var finalBatch = emailQueue.splice(0, emailQueue.length);
-      await Promise.all(finalBatch.map(function(m) { return sendBrevoEmail({ email: m.email, name: m.name }, m.subject, m.html).catch(function(e) { console.log('[DELIVERY] Email failed ' + m.email + ': ' + e.message); }); }));
+      await Promise.all(finalBatch.map(function(m) { return sendBrevoEmail({ email: m.email, name: m.name }, m.subject, m.html).catch(function(e) { console.log('[DELIVERY] Email failed ' + m.email + ': ' + e.message); if (m.custId && m.day) { try { _releaseDailyEmail(m.custId, m.day); } catch(relE) {} } }); }));
       console.log('[DELIVERY] Flushed final email batch: ' + finalBatch.length);
       // RE-ATTACH + PERSIST: the in-memory cache can be invalidated mid-run (auto-heal
       // cron / 09:05 backstop re-run), which detaches the customer objects the loop
