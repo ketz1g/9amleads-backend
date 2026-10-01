@@ -13108,6 +13108,7 @@ app.get('/api/admin/lead-debug', adminAuth, (req, res) => {
       var mailable;
       if (prod === 'tenders') mailable = true;
       else if (prod === 'moving') mailable = isCompleteMovingAddress(addr, pc);
+      else if (prod === 'commercial') mailable = fullpc && !isNonBuildingPremise(addr) && hasUsablePremiseAddress(addr, pc, { acceptNamedPremise: true });
       else mailable = fullpc && street && premise && !isNonBuildingPremise(addr);
       return { product: prod, delivered: l.delivered, addr: addr.slice(0, 90), pc: pc, fullpc: fullpc, street: street, premise: premise, mailable: mailable, source: d.source || '', publishedDate: d.publishedDate || '', grantDate: d.grantDate || '' };
     });
@@ -13544,7 +13545,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen, opts) {
   var candidateErrors = (cust.email === 'info@afsremovals.com') ? [] : null;
   // A property lead is only deliverable (Print & Post) with a confirmed door number
   // AND a full postcode - mirrors the delivery door-number gate exactly.
-    function mailOK(addr, pc) { return !isNonBuildingPremise(addr) && hasUsablePremiseAddress(addr, pc, cust.product === 'probate' ? { relaxMultiUnit: true } : undefined) && /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(pc || '').trim()); }
+    function mailOK(addr, pc) { if (isNonBuildingPremise(addr)) return false; if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(pc || '').trim())) return false; if (cust.product === 'commercial') return hasUsablePremiseAddress(addr, pc, { acceptNamedPremise: true }); return hasUsablePremiseAddress(addr, pc, cust.product === 'probate' ? { relaxMultiUnit: true } : undefined); }
   // A moving lead without a door number is STILL deliverable when it has a full
   // postcode + a street name: the delivery's PAF pass resolves the exact door number
   // before the mailable-address gate. Counting these makes the preview match what the
@@ -15404,6 +15405,9 @@ app.post('/api/admin/top-up-today', adminAuth, (req, res) => {
         if (!/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(_tuPc)) continue;
         // MOVING: number + street + town + full postcode (founder requirement).
         if (cust.product === 'moving') { if (!isCompleteMovingAddress(pl.fullAddress || pl.address || '', _tuPc)) continue; }
+        // COMMERCIAL: commercial premises often have a unit/building name, not a street
+        // number, so accept a named premise (e.g. "Unit G04.4 Ink Court", "Fitzrovia House").
+        else if (cust.product === 'commercial') { if (!hasUsablePremiseAddress(pl.fullAddress || pl.address || '', _tuPc, { acceptNamedPremise: true })) continue; }
         else if (!hasUsablePremiseAddress(pl.fullAddress || pl.address || '', _tuPc)) continue;
       }
       var pcAreaT = extractPostcodeArea(pl.postcode || pl.address || pl.fullAddress || '');
