@@ -10606,7 +10606,20 @@ app.get('/api/leads', authMiddleware, (req, res) => {
   const _leadKeyL = function(ld) { try { var d = JSON.parse(ld.data || '{}'); var u = String(d.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim(); if (u) return 'u:' + u; var a = String(d.fullAddress || d.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 28); var pc = String(d.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); return 'a:' + a + '|' + pc; } catch(e) { return ''; } };
   var _sharedProd = isSharedLeadProduct(customer ? customer.product : '');
   var _shareMap = {};
-  if (_sharedProd) { try { db.prepare('SELECT * FROM leads').all().forEach(function(l2) { if (l2.status === 'removed') return; var k = _leadKeyL(l2); if (!k) return; (_shareMap[k] = _shareMap[k] || {})[l2.customer_id] = 1; }); } catch(eSM) {} }
+  if (_sharedProd) {
+    try {
+      // Only count REAL customers - a delivery to a test/monitor account must never
+      // inflate a paying customer's "shared with N firms" count.
+      var _shareInternal = {};
+      try { db.prepare('SELECT * FROM customers').all().forEach(function(c2) { if (isInternalAccount(c2)) _shareInternal[c2.id] = 1; }); } catch(eSI) {}
+      db.prepare('SELECT * FROM leads').all().forEach(function(l2) {
+        if (l2.status === 'removed') return;
+        if (_shareInternal[l2.customer_id]) return;
+        var k = _leadKeyL(l2); if (!k) return;
+        (_shareMap[k] = _shareMap[k] || {})[l2.customer_id] = 1;
+      });
+    } catch(eSM) {}
+  }
   const visible = leads.filter(function(l) {
     // Hide rejected leads from the customer dashboard (they're queued for replacement).
     var d0 = {}; try { d0 = JSON.parse(l.data || '{}'); } catch(e) {}
@@ -34570,7 +34583,9 @@ function generateLeadEmailHTML(customer, leads) {  const brand = getProductBrand
     try {
       var _lk = function(x) { try { var dd = x.data; if (typeof dd === 'string') dd = JSON.parse(dd || '{}'); dd = dd || {}; var u = String(dd.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim(); if (u) return 'u:' + u; var a = String(dd.fullAddress || dd.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 28); var pc = String(dd.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); return 'a:' + a + '|' + pc; } catch(e) { return ''; } };
       var _sm = {};
-      db.prepare('SELECT * FROM leads').all().forEach(function(x) { if (x.status === 'removed') return; var k = _lk(x); if (!k) return; (_sm[k] = _sm[k] || {})[x.customer_id] = 1; });
+      var _smInternal = {};
+      try { db.prepare('SELECT * FROM customers').all().forEach(function(c2) { if (isInternalAccount(c2)) _smInternal[c2.id] = 1; }); } catch(eSmI) {}
+      db.prepare('SELECT * FROM leads').all().forEach(function(x) { if (x.status === 'removed') return; if (_smInternal[x.customer_id]) return; var k = _lk(x); if (!k) return; (_sm[k] = _sm[k] || {})[x.customer_id] = 1; });
       _sharedCountFor = function(ld) { var k = _lk(ld); return k ? Object.keys(_sm[k] || {}).length : 1; };
     } catch(eSH) {}
   }
@@ -42101,6 +42116,27 @@ app.post('/api/admin/send-daily-email', adminAuth, async (req, res) => {
     await sendBrevoEmail({ email: custS.email, name: custS.company || 'Customer' }, '9amLeads • Your Daily Opportunities for ' + (custS.coverage ? (COVERAGE_LABELS[custS.coverage] || custS.coverage) : 'your area') + ' on ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }), htmlS);
     try { custS.last_email_date = new Date().toISOString().split('T')[0]; dbS.customers.forEach(function(cc){ if (cc.id === custS.id) cc.last_email_date = custS.last_email_date; }); saveDb(); } catch(e) {}
     res.json({ success: true, sent: true, email: custS.email, leads: custLeads.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/reset-daily-email - support tool: clear a customer's daily-email
+// claim + last_email_date so the next delivery run can (re)send today's email and mark
+// the batch delivered. Needed when a delivered batch was later purged (e.g. a
+// commercial lead that failed a cleanup) leaving the customer stuck at 0 for the day.
+app.post('/api/admin/reset-daily-email', adminAuth, (req, res) => {
+  try {
+    var email = String((req.body && req.body.email) || '').toLowerCase().trim();
+    if (!email) return res.status(400).json({ error: 'email required' });
+    var d = getDb();
+    var c = (d.customers || []).find(function(x) { return String(x.email || '').toLowerCase() === email; });
+    if (!c) return res.status(404).json({ error: 'Customer not found' });
+    var prev = c.last_email_date || '';
+    c.last_email_date = null;
+    if (d.daily_email_claims) delete d.daily_email_claims[c.id];
+    try { delete __dailyEmailClaimed[c.id + '|' + prev]; } catch(e0) {}
+    try { delete __dailyEmailClaimed[c.id + '|' + new Date().toISOString().split('T')[0]]; } catch(e1) {}
+    saveDb();
+    res.json({ success: true, email: email, cleared_last_email_date: prev });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
