@@ -38633,7 +38633,7 @@ var REHEARSAL_ACCOUNTS = [
   // HIGH-SUPPLY areas (London + major cities): the moving rehearsal must never be
   // flaky for want of leads - a thin area set made the post-deploy smoke test fail
   // ~50% of the time and roll back otherwise-good deploys.
-  { email: 'test.rehearsal@9amleads.com',    product: 'moving',      plan: 'starter', coverage: 'postcode', areas: ['N','NW','SW','SE','E','W','EC','WC','EN','HA','KT','CR','RM','BR','DA','IG','SM','TW','M','B','L','LS','BS','NE','S','CF','EH','G','NG','LE'] },
+  { email: 'test.rehearsal@9amleads.com',    product: 'moving',      plan: 'starter', coverage: 'postcode', moving_type: 'residential', areas: ['N','NW','SW','SE','E','W','EC','WC','EN','HA','KT','CR','RM','BR','DA','IG','SM','TW','M','B','L','LS','BS','NE','S','CF','EH','G','NG','LE'] },
   { email: 'test.rehearsal.nb@9amleads.com', product: 'newbusiness', plan: 'starter', coverage: 'county',   areas: ['Kent','London'] },
   // PROBATE is OPTIONAL: grants are published infrequently, so a thin fresh pool must
   // NOT page the founder - but it still exercises the probate path (selection, deceased
@@ -38650,14 +38650,18 @@ function _ensureRehearsalAccounts() {
         // Sync the account's areas/coverage with the config so a supply-driven change
         // (e.g. broadening the moving rehearsal's areas) takes effect on the existing row.
         try {
-          var _cfg = {}; _cfg[a.product] = { target_areas: JSON.stringify(a.areas), coverage: a.coverage };
+          var _pc = { target_areas: JSON.stringify(a.areas), coverage: a.coverage };
+          if (a.moving_type) _pc.moving_type = a.moving_type;
+          var _cfg = {}; _cfg[a.product] = _pc;
           db.prepare('UPDATE customers SET target_areas = ?, coverage = ?, product_config = ? WHERE id = ?')
             .run(JSON.stringify(a.areas), a.coverage, JSON.stringify(_cfg), existing.id);
         } catch(ue) { console.log('[REHEARSAL] area sync error:', ue.message); }
         return;
       }
       var cid = uuidv4();
-      var cfg = {}; cfg[a.product] = { target_areas: JSON.stringify(a.areas), coverage: a.coverage };
+      var _pc = { target_areas: JSON.stringify(a.areas), coverage: a.coverage };
+      if (a.moving_type) _pc.moving_type = a.moving_type;
+      var cfg = {}; cfg[a.product] = _pc;
       db.prepare('INSERT INTO customers (id, email, company, name, plan, product, coverage, target_areas, product_config, password_hash, created_at, signup_ip) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)')
         .run(cid, a.email, 'Rehearsal ' + a.product, 'Rehearsal', a.plan, a.product, a.coverage, JSON.stringify(a.areas), JSON.stringify(cfg), 'testhash', new Date().toISOString(), 'rehearsal');
       created++;
