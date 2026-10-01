@@ -24760,6 +24760,39 @@ async function trialAutoChargeCustomer(cust, opts) {
 
     // Actually create the subscription (charges the card now)
     var finalPlan = (cust.selected_plan === 'pro' || cust.selected_plan === 'enterprise') ? cust.selected_plan : 'starter';
+    // DUNNING: if a previous attempt left an INCOMPLETE subscription with an OPEN invoice,
+    // retry THAT invoice with the saved card FIRST instead of creating a duplicate
+    // subscription. This is how a declined first payment is retried automatically (the
+    // 6-hourly trial-charge cron drives it) until it succeeds or the dunning window ends.
+    if (cust.stripe_subscription_id) {
+      try {
+        var _prevSub = await stripeApiRequest('GET', 'subscriptions/' + cust.stripe_subscription_id, null);
+        if (_prevSub && !_prevSub.error && _prevSub.status === 'incomplete' && _prevSub.latest_invoice) {
+          var _prevInv = await stripeApiRequest('GET', 'invoices/' + _prevSub.latest_invoice, null);
+          if (_prevInv && !_prevInv.error && _prevInv.paid) {
+            // Already paid (e.g. the customer paid the hosted invoice) - just activate.
+            db.prepare('UPDATE customers SET plan = ?, stripe_subscription_id = ?, trial_ends = NULL, selected_plan = ?, leads_per_day = ?, leads_paused = 0, auto_send_paused = 0 WHERE id = ?').run(finalPlan, _prevSub.id, finalPlan, getPlanLimit(cust.product || 'moving', finalPlan === 'pro' ? 'pro' : (finalPlan === 'enterprise' ? 'enterprise' : 'starter'), cust.coverage), cust.id);
+            saveDb(); res2.status = 'charged'; res2.subscription_id = _prevSub.id; res2.message = 'Open invoice already paid - ' + chosenLabel2 + ' active.'; return res2;
+          }
+          if (_prevInv && !_prevInv.error && _prevInv.status !== 'void') {
+            var _prevPay = await stripeApiRequest('POST', 'invoices/' + _prevInv.id + '/pay', { off_session: 'true' });
+            if (!_prevPay.error && (_prevPay.paid || _prevPay.status === 'paid')) {
+              db.prepare('UPDATE customers SET plan = ?, stripe_subscription_id = ?, trial_ends = NULL, selected_plan = ?, leads_per_day = ?, leads_paused = 0, auto_send_paused = 0 WHERE id = ?').run(finalPlan, _prevSub.id, finalPlan, getPlanLimit(cust.product || 'moving', finalPlan === 'pro' ? 'pro' : (finalPlan === 'enterprise' ? 'enterprise' : 'starter'), cust.coverage), cust.id);
+              saveDb();
+              res2.status = 'charged'; res2.subscription_id = _prevSub.id; res2.message = 'Retry collected the open invoice - ' + chosenLabel2 + ' active.';
+              try { await recordPaymentReceipt({ customerId: cust.id, customerEmail: cust.email, company: cust.company || '', amount: (_prevInv.amount_due ? _prevInv.amount_due / 100 : (pv && pv.unit_amount ? pv.unit_amount / 100 : 25)), currency: (_prevInv.currency || 'gbp'), stripeId: _prevSub.id, number: (_prevSub.id || '') + '-01', description: chosenLabel2 + ' plan, retry payment', plan: finalPlan, product: cust.product || 'moving', cardLast4: res2.card_last4 || '', periodStart: _prevSub.current_period_start ? new Date(_prevSub.current_period_start * 1000).toISOString() : '', periodEnd: _prevSub.current_period_end ? new Date(_prevSub.current_period_end * 1000).toISOString() : '' }); } catch(eR) {}
+              console.log('[TRIAL AUTO-CHARGE] Retry collected open invoice for ' + cust.email + ' (' + _prevSub.id + ')');
+              return res2;
+            }
+            res2.status = 'payment_failed'; res2.subscription_id = _prevSub.id; res2.invoice_url = _prevInv.hosted_invoice_url || '';
+            res2.message = 'Retry declined (' + ((_prevPay.error && _prevPay.error.message) || 'card_declined') + '). Account held.';
+            db.prepare('UPDATE customers SET leads_paused = 1, auto_send_paused = 1 WHERE id = ?').run(cust.id);
+            saveDb();
+            return res2;
+          }
+        }
+      } catch(ePrev) { console.log('[TRIAL AUTO-CHARGE] dunning check note:', ePrev.message); }
+    }
     var subBody2 = {
       customer: cust.stripe_customer_id,
       'default_payment_method': cust.stripe_payment_method_id,
@@ -24836,7 +24869,7 @@ async function trialAutoChargeCustomer(cust, opts) {
         // PAYMENT NOT COLLECTED: do NOT grant the paid plan, do NOT clear the trial, and
         // pause the account. Email a "pay now / update card" recovery link (deduped so the
         // Stripe webhook doesn't send a second copy for the same invoice).
-        db.prepare('UPDATE customers SET stripe_subscription_id = ?, selected_plan = ?, leads_paused = 1, auto_send_paused = 1 WHERE id = ?').run(subResult.id, finalPlan, cust.id);
+        db.prepare('UPDATE customers SET stripe_subscription_id = ?, selected_plan = ?, trial_ends = ?, leads_paused = 1, auto_send_paused = 1 WHERE id = ?').run(subResult.id, finalPlan, (cust.trial_ends || new Date().toISOString()), cust.id);
         saveDb();
         res2.status = 'payment_failed';
         res2.subscription_id = subResult.id;
@@ -24897,6 +24930,9 @@ cron.schedule('30 0-7,10-23 * * *', async () => {
       if (cust.trial_cancelled) continue;
       if (!cust.trial_ends || new Date(cust.trial_ends) > new Date()) continue;
       if (!cust.stripe_payment_method_id || !cust.stripe_customer_id) continue;
+      // Dunning WINDOW: stop auto-retrying 14 days after the trial ended so a permanently
+      // dead card is not hammered forever (the customer can still pay via the link).
+      if (cust.trial_ends && (Date.now() - new Date(cust.trial_ends).getTime()) > 14 * 86400000) continue;
       // Retry throttle: never hammer a failing card - retry at most every 6 hours.
       if (cust.trial_charge_last_attempt && (Date.now() - new Date(cust.trial_charge_last_attempt).getTime() < 6 * 3600000)) continue;
       cust.trial_charge_last_attempt = new Date().toISOString();
@@ -24939,6 +24975,60 @@ app.post('/api/admin/trial-charge/run', adminAuth, async (req, res) => {
     var result = await trialAutoChargeCustomer(cust, { dryRun: false });
     res.json({ success: true, result: result });
   } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/trial-charge/test-mode-run - END-TO-END billing test in Stripe TEST mode,
+// scoped to THIS call only (the global key is restored in `finally`). It creates a
+// THROWAWAY customer + Stripe TEST customer with a DECLINING or SUCCEEDING test card and
+// runs the real trialAutoChargeCustomer logic, proving:
+//   decline -> subscription incomplete, account HELD (payment_failed, leads paused)
+//   success -> plan active, account unpaused
+// A follow-up call with the SAME temp email + decline:false exercises the DUNNING retry of
+// the open invoice. Body: { decline: true|false, email? }
+app.post('/api/admin/trial-charge/test-mode-run', adminAuth, async (req, res) => {
+  var _prevMode = process.env.STRIPE_TEST_MODE;
+  var _tempId = null;
+  try {
+    process.env.STRIPE_TEST_MODE = 'true';
+    var decline = !(req.body && req.body.decline === false);
+    var d = getDb();
+    var email = String((req.body && req.body.email) || ('test.billing.' + Date.now() + '@9amleads.com')).toLowerCase();
+    // Reuse an existing matching temp customer (so a 2nd call exercises dunning), else create.
+    var temp = (d.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
+    if (!temp) {
+      _tempId = 'testbilling_' + Date.now();
+      temp = { id: _tempId, email: email, company: 'Billing Test', contact_name: 'Billing Test', product: 'moving', coverage: 'postcode', plan: 'free_trial', selected_plan: 'starter', trial_ends: new Date(Date.now() - 60000).toISOString(), biz_field3: '["moving"]', leads_per_day: 5, target_areas: '["M"]', created_at: new Date().toISOString() };
+      d.customers.push(temp);
+    }
+    // Reuse the temp's Stripe customer on a RETRY call (so the SAME subscription is
+    // retried), else create a fresh TEST customer.
+    var tCust;
+    if (temp.stripe_customer_id) { tCust = { id: temp.stripe_customer_id }; }
+    else {
+      tCust = await stripeApiRequest('POST', 'customers', { email: email, 'metadata[test]': '1' });
+      if (!tCust || tCust.error) { process.env.STRIPE_TEST_MODE = _prevMode; return res.status(500).json({ error: 'test customer failed', detail: tCust && tCust.error }); }
+    }
+    var cardNum = decline ? '4000000000000341' : '4242424242424242';
+    var pm = await stripeApiRequest('POST', 'payment_methods', { type: 'card', 'card[number]': cardNum, 'card[exp_month]': 12, 'card[exp_year]': 2030, 'card[cvc]': '123' });
+    if (!pm || pm.error) { process.env.STRIPE_TEST_MODE = _prevMode; return res.status(500).json({ error: 'test card failed', detail: pm && pm.error }); }
+    await stripeApiRequest('POST', 'payment_methods/' + pm.id + '/attach', { customer: tCust.id });
+    // If a subscription already exists, point it at the new card (mirrors the Billing
+    // Portal updating the card) so a dunning retry can succeed on the 2nd call.
+    if (temp.stripe_subscription_id) {
+      try { await stripeApiRequest('POST', 'subscriptions/' + temp.stripe_subscription_id, { default_payment_method: pm.id }); } catch(eUp) {}
+    }
+    temp.stripe_customer_id = tCust.id;
+    temp.stripe_payment_method_id = pm.id;
+    temp.trial_charge_last_attempt = '';
+    saveDb();
+    var result = await trialAutoChargeCustomer(temp, { dryRun: false });
+    res.json({ success: true, test_mode: true, decline: decline, email: email, test_customer: tCust.id, test_pm: pm.id, result: result, db_customer: { plan: temp.plan, selected_plan: temp.selected_plan, leads_paused: temp.leads_paused, auto_send_paused: temp.auto_send_paused, stripe_subscription_id: temp.stripe_subscription_id } });
+    // Cleanup the throwaway customer ONLY when asked (so a 2nd call can exercise dunning).
+    if (req.body && req.body.cleanup === true) {
+      try { var d2 = getDb(); d2.customers = (d2.customers || []).filter(function(c) { return String(c.email || '').toLowerCase() !== email; }); d2.leads = (d2.leads || []).filter(function(l) { return l.customer_id !== temp.id; }); saveDb(); } catch(eClean) {}
+    }
+  } catch(e) { res.status(500).json({ error: e.message }); }
+  finally { process.env.STRIPE_TEST_MODE = _prevMode; }
 });
 
 // // // // TRIAL GOODWILL EMAIL (ONE-OFF): explains the extension. Sends a single 8am
