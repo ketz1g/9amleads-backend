@@ -25859,7 +25859,10 @@ function getBulkEligibleLeads(allowedAreas) {
   var out = [];
   (arr || []).forEach(function(l) {
     if (!l || l.bulk_reserved || l.bulk_sold) return;
-    var d = pickFreshDate(l) || '';
+    // AGE from the COMPANY'S incorporation date (the scraper stores it as
+    // `dateIncorporated`), NOT pickFreshDate (which does not know that field and so
+    // left the 3-7 day bulk window permanently empty). Fall back to other date fields.
+    var d = l.dateIncorporated || l.incorporationDate || l.incorporated_on || l.created || pickFreshDate(l) || '';
     var t = toIsoDate(d) ? new Date(d).getTime() : 0;
     if (!(t >= lo && t <= hi)) return;
     var pc = String(l.postcode || '').toUpperCase().trim();
