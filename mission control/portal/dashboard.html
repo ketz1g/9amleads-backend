@@ -2328,10 +2328,10 @@ document.querySelectorAll('.modal').forEach(function(m){
             }
             // Show the day each lead was delivered so the customer can see when it arrived.
             var _when = l.delivered_at ? new Date(l.delivered_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '';
-            return { addr: _addr, when: _when };
+            return { addr: _addr, when: _when, shared: l.shared, sent_to: l.sent_to };
           }).filter(function(x){ return x.addr; });
           if (_items.length) {
-            _pv.innerHTML = '<div style="color:#64748b;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Delivered today</div>' + _items.map(function(x){ return '<div style="padding:6px 2px;border-bottom:1px dashed #e2e8f0;display:flex;justify-content:space-between;gap:10px"><span>' + x.addr + '</span>' + (x.when ? '<span style="color:#94a3b8;font-size:11px;white-space:nowrap">Sent ' + x.when + '</span>' : '') + '</div>'; }).join('') + '<div style="padding:6px 2px"><a href="/portal/leads.html?range=today" style="color:var(--accent);font-weight:700">See all today\u2019s leads \u2192</a></div>';
+            _pv.innerHTML = '<div style="color:#64748b;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Delivered today</div>' + _items.map(function(x){ var _sh = (x.shared && x.sent_to) ? '<span style="color:' + (x.sent_to <= 1 ? '#16a34a' : '#d97706') + ';font-size:10px;font-weight:700;white-space:nowrap">' + (x.sent_to <= 1 ? 'Only you' : 'Shared with ' + (x.sent_to - 1)) + '</span>' : ''; return '<div style="padding:6px 2px;border-bottom:1px dashed #e2e8f0;display:flex;justify-content:space-between;gap:10px"><span>' + x.addr + '</span>' + _sh + (x.when ? '<span style="color:#94a3b8;font-size:11px;white-space:nowrap">Sent ' + x.when + '</span>' : '') + '</div>'; }).join('') + '<div style="padding:6px 2px"><a href="/portal/leads.html?range=today" style="color:var(--accent);font-weight:700">See all today\u2019s leads \u2192</a></div>';
           } else {
             _pv.innerHTML = '<div style="background:#f8fafc;border:1px dashed #cbd5e1;border-radius:10px;padding:14px 16px;color:#64748b">Your next delivery is <b>tomorrow at 9am</b>. Today\u2019s leads, once delivered, appear here.</div>';
           }
