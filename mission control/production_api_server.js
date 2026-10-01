@@ -17374,7 +17374,10 @@ app.get('/api/admin/customers', adminAuth, (req, res) => {
     // PAYING = has a Stripe subscription. Their signup trial_ends is stale and must
     // NEVER be shown as "Expired" (the admin was showing a red "Expired (date)" for
     // paying subscribers because a subscription webhook had not cleared trial_ends).
-    const paid = !!(c.stripe_subscription_id && String(c.stripe_subscription_id).toUpperCase() !== 'NULL');
+    // PAYING = has a Stripe subscription AND is actually on a PAID plan. A declined
+    // first charge now leaves the customer on free_trial with leads paused, which must
+    // NOT show as "paid". Free-trial and cancelled plans are never "paid".
+    const paid = !!(c.stripe_subscription_id && String(c.stripe_subscription_id).toUpperCase() !== 'NULL' && c.plan && c.plan !== 'free_trial' && c.plan !== 'cancelled');
     return Object.assign({}, c, {
       // The SQL shim stores a JS null as the string "NULL". Show the trial end date
       // for ANY plan that has a valid one - unless they are PAYING (then it's stale).
@@ -24671,6 +24674,24 @@ app.post('/api/direct-mail/auto-simulate', authMiddleware, async (req, res) => {
 // lands the moment the trial ends (Stripe bills immediately on subscription
 // creation for a past-due first period). Returns a per-customer result record.
 // dryRun=true validates every prerequisite against Stripe WITHOUT charging.
+// In-process dedupe so the SAME failed invoice is only emailed ONCE (both the Stripe
+// invoice.payment_failed webhook and the trial auto-charge try to notify on it).
+var __pfEmailedInvoices = {};
+function _paymentFailEmailOnce(invId) {
+  invId = String(invId || '');
+  if (!invId) return true;
+  if (__pfEmailedInvoices[invId]) return false;
+  __pfEmailedInvoices[invId] = 1;
+  return true;
+}
+// Create a Stripe Billing Portal session URL so a customer can update their card.
+async function createBillingPortalUrl(customerId, returnUrl) {
+  try {
+    var r = await stripeApiRequest('POST', 'billing_portal/sessions', { customer: customerId, return_url: returnUrl || (PUBLIC_URL + '/portal/dashboard.html?page=settings&tab=subscription') });
+    return (r && r.url) || '';
+  } catch(e) { return ''; }
+}
+
 async function trialAutoChargeCustomer(cust, opts) {
   opts = opts || {};
   var dryRun = !!opts.dryRun;
@@ -24755,39 +24776,82 @@ async function trialAutoChargeCustomer(cust, opts) {
     if (priceIds2.length > 1) subBody2['metadata[subscribed_products]'] = subs2.join(',');
     var subResult = await stripeApiRequest('POST', 'subscriptions', subBody2);
     if (subResult && subResult.id) {
-      // Ensure the FIRST invoice is paid immediately (auto-charge the saved card)
-      // off-session. allow_incomplete can leave the first invoice open if the card
-      // needs confirmation; finalising + paying it collects the charge so the
-      // subscription becomes ACTIVE and weekly billing continues automatically.
+      // Collect the FIRST invoice immediately (off-session, saved card). If the card is
+      // declined the subscription stays 'incomplete' and Stripe will NOT retry it - so we
+      // must NEVER grant the paid plan or leads. Capture the hosted invoice URL for a
+      // recovery link and HOLD the account (leads paused) until a charge actually succeeds.
+      var _firstInvId = subResult.latest_invoice || '';
+      var _decline = '';
       try {
-        if (subResult.latest_invoice && subResult.status === 'incomplete') {
-          await stripeApiRequest('POST', 'invoices/' + subResult.latest_invoice + '/finalize', {});
-          await stripeApiRequest('POST', 'invoices/' + subResult.latest_invoice + '/pay', { off_session: 'true' });
+        if (_firstInvId && subResult.status === 'incomplete') {
+          var _fin = await stripeApiRequest('POST', 'invoices/' + _firstInvId + '/finalize', {});
+          if (_fin && _fin.error) _decline = _fin.error.message || _decline;
+          var _payRes = await stripeApiRequest('POST', 'invoices/' + _firstInvId + '/pay', { off_session: 'true' });
+          if (_payRes && _payRes.error) _decline = _payRes.error.message || _decline;
         }
-      } catch(payErr) { console.log('[TRIAL AUTO-CHARGE] First-invoice pay note:', payErr.message); }
-      db.prepare('UPDATE customers SET plan = ?, stripe_subscription_id = ?, trial_ends = NULL, selected_plan = ?, leads_per_day = ? WHERE id = ?').run(finalPlan, subResult.id, finalPlan, getPlanLimit(cust.product || 'moving', finalPlan === 'pro' ? 'pro' : (finalPlan === 'enterprise' ? 'enterprise' : 'starter'), cust.coverage), cust.id);
-      saveDb();
-      res2.status = 'charged';
-      res2.subscription_id = subResult.id;
-      res2.message = 'Charged - ' + chosenLabel2 + ' subscription ' + subResult.id + ' created (weekly)';
-      console.log('[TRIAL AUTO-CHARGE] Charged ' + cust.email + ', upgraded to ' + finalPlan + ' (' + subResult.id + ')');
-      // Persist an "invoice paid" receipt + email a confirmation receipt.
-      var recOpts = {
-        customerId: cust.id,
-        customerEmail: cust.email,
-        company: cust.company || '',
-        amount: (pv && pv.unit_amount ? pv.unit_amount / 100 : 25),
-        currency: (pv && pv.currency ? pv.currency : 'gbp'),
-        stripeId: subResult.id,
-        number: (subResult.id || '') + '-01',
-        description: chosenLabel2 + ' plan, first weekly payment',
-        plan: finalPlan,
-        product: cust.product || 'moving',
-        cardLast4: res2.card_last4 || '',
-        periodStart: subResult.current_period_start ? new Date(subResult.current_period_start * 1000).toISOString() : '',
-        periodEnd: subResult.current_period_end ? new Date(subResult.current_period_end * 1000).toISOString() : ''
-      };
-      try { await recordPaymentReceipt(recOpts); } catch(emErr) { console.log('[TRIAL AUTO-CHARGE] Receipt error:', emErr.message); }
+      } catch(payErr) { _decline = _decline || (payErr && payErr.message) || ''; }
+      // Confirm the REAL outcome before granting anything.
+      var _invPaid = false, _invUrl = '';
+      try {
+        if (_firstInvId) {
+          var _invChk = await stripeApiRequest('GET', 'invoices/' + _firstInvId, null);
+          if (_invChk && !_invChk.error) {
+            _invPaid = !!(_invChk.paid || _invChk.status === 'paid');
+            _invUrl = _invChk.hosted_invoice_url || '';
+            _decline = _decline || ((_invChk.last_payment_error && _invChk.last_payment_error.message) || '');
+          }
+        }
+        if (!_invPaid && subResult.status === 'active') _invPaid = true;
+        if (!_invPaid) {
+          var _subChk = await stripeApiRequest('GET', 'subscriptions/' + subResult.id, null);
+          if (_subChk && _subChk.status === 'active') _invPaid = true;
+        }
+      } catch(eChk) {}
+
+      if (_invPaid) {
+        db.prepare('UPDATE customers SET plan = ?, stripe_subscription_id = ?, trial_ends = NULL, selected_plan = ?, leads_per_day = ?, leads_paused = 0, auto_send_paused = 0 WHERE id = ?').run(finalPlan, subResult.id, finalPlan, getPlanLimit(cust.product || 'moving', finalPlan === 'pro' ? 'pro' : (finalPlan === 'enterprise' ? 'enterprise' : 'starter'), cust.coverage), cust.id);
+        saveDb();
+        res2.status = 'charged';
+        res2.subscription_id = subResult.id;
+        res2.message = 'Charged - ' + chosenLabel2 + ' subscription ' + subResult.id + ' created (weekly)';
+        console.log('[TRIAL AUTO-CHARGE] Charged ' + cust.email + ', upgraded to ' + finalPlan + ' (' + subResult.id + ')');
+        // Persist an "invoice paid" receipt + email a confirmation receipt.
+        var recOpts = {
+          customerId: cust.id,
+          customerEmail: cust.email,
+          company: cust.company || '',
+          amount: (pv && pv.unit_amount ? pv.unit_amount / 100 : 25),
+          currency: (pv && pv.currency ? pv.currency : 'gbp'),
+          stripeId: subResult.id,
+          number: (subResult.id || '') + '-01',
+          description: chosenLabel2 + ' plan, first weekly payment',
+          plan: finalPlan,
+          product: cust.product || 'moving',
+          cardLast4: res2.card_last4 || '',
+          periodStart: subResult.current_period_start ? new Date(subResult.current_period_start * 1000).toISOString() : '',
+          periodEnd: subResult.current_period_end ? new Date(subResult.current_period_end * 1000).toISOString() : ''
+        };
+        try { await recordPaymentReceipt(recOpts); } catch(emErr) { console.log('[TRIAL AUTO-CHARGE] Receipt error:', emErr.message); }
+      } else {
+        // PAYMENT NOT COLLECTED: do NOT grant the paid plan, do NOT clear the trial, and
+        // pause the account. Email a "pay now / update card" recovery link (deduped so the
+        // Stripe webhook doesn't send a second copy for the same invoice).
+        db.prepare('UPDATE customers SET stripe_subscription_id = ?, selected_plan = ?, leads_paused = 1, auto_send_paused = 1 WHERE id = ?').run(subResult.id, finalPlan, cust.id);
+        saveDb();
+        res2.status = 'payment_failed';
+        res2.subscription_id = subResult.id;
+        res2.invoice_url = _invUrl;
+        res2.message = 'Card not charged (' + (_decline || 'payment failed') + '). Account held until payment - recovery link sent.';
+        console.log('[TRIAL AUTO-CHARGE] Payment NOT collected for ' + cust.email + ': ' + (_decline || 'unknown') + ' invoice=' + _firstInvId);
+        if (_paymentFailEmailOnce(_firstInvId)) {
+          try {
+            var _portalUrl = await createBillingPortalUrl(cust.stripe_customer_id);
+            var _payLink = _invUrl || _portalUrl || (PUBLIC_URL + '/portal/dashboard.html?page=settings&tab=subscription');
+            var _pfBody = '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">We tried to start your 9amLeads subscription but your card was declined' + (_decline ? ' (<b>' + _decline + '</b>)' : '') + '. Your leads are paused so you are not charged again until this is resolved.</p><div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="font-size:13px;color:#e2e8f0;margin:0"><strong>Action needed:</strong> pay the open invoice or update your card to resume your leads immediately.</p></div><p style="color:#94a3b8;font-size:12px;line-height:1.7;margin:0">Your leads and Print &amp; Post resume automatically the moment payment succeeds.' + (_portalUrl ? ' You can also update your card securely here: ' + _portalUrl : '') + '</p>';
+            await sendDMNotification(cust.id, 'payment_failed_email', 'Action Needed: Payment Failed', '⚠️ Payment failed', _pfBody, 'Pay now / update card', _payLink);
+          } catch(pfEm) { console.log('[TRIAL AUTO-CHARGE] recovery email error:', pfEm.message); }
+        }
+      }
     } else {
       res2.status = 'failed';
       res2.message = 'Subscription creation returned no id: ' + (subResult && subResult.error ? subResult.error.message : 'unknown');
@@ -31548,7 +31612,12 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
       if (invCustomer) {
         // No COALESCE - the JSON DB shim doesn't support it, which silently broke
         // this UPDATE and left leads_paused stuck at 1 after a recovery.
-        var invKeepPlan = invCustomer.plan || 'starter';
+        // Determine the plan from selected_plan first: a declined first charge leaves the
+        // customer on free_trial (never upgraded), so on a later successful payment we must
+        // restore the TIER they chose (selected_plan), not the stale free_trial plan.
+        var _spInv = String(invCustomer.selected_plan || '').toLowerCase();
+        var invKeepPlan = (_spInv === 'pro' || _spInv === 'enterprise' || _spInv === 'starter') ? _spInv
+          : ((invCustomer.plan && invCustomer.plan !== 'free_trial' && invCustomer.plan !== 'cancelled') ? invCustomer.plan : 'starter');
         db.prepare('UPDATE customers SET auto_send_paused = 0, leads_paused = 0, plan = ? WHERE id = ?').run(invKeepPlan, invCustomer.id);
         saveDb();
         // Keep the subscription row's period + status current on every renewal.
@@ -31634,15 +31703,22 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
         db.prepare('UPDATE customers SET auto_send_paused = 1, leads_paused = 1 WHERE id = ?').run(fCustomer.id);
         saveDb();
         try { upsertSubscriptionRow(fCustomer.id, invF.subscription || fCustomer.stripe_subscription_id, fCustomer.plan, 'past_due', '', ''); } catch(e) {}
-        recordFailedPayment(fCustomer.email, (invObj && invObj.last_payment_error && invObj.last_payment_error.message) || 'card_declined', invObj && invObj.amount_due);
+        // NOTE: `invObj` was NEVER declared (a copy/paste leftover), so this line threw a
+        // ReferenceError and aborted the whole handler before the notification email - the
+        // real reason a failed payment sometimes didn't pause/email. Use the invoice object.
+        recordFailedPayment(fCustomer.email, (invF.last_payment_error && invF.last_payment_error.message) || 'card_declined', invF.amount_due);
         // Tell the owning partner: a referred customer has a payment problem (retention risk)
         try { var _pf = partnerForCustomer(fCustomer.id); if (_pf) partnerNotify(_pf.id, 'payment_failed', 'A customer you referred has a failed payment: ' + (fCustomer.company || fCustomer.email) + '. Their leads are paused until they update payment. Reach out to help keep them on board.', fCustomer.id); } catch(pfE) {}
         try { dmDashboardNotify(fCustomer.id, 'payment_failed', '⚠️ Payment failed', 'Your weekly subscription payment failed. Update your payment method to keep your leads and Print & Post running.', ''); } catch(ne) {}
-        // Also email the customer so they know to update their card
-        try {
-          var failEmailBody = '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">We could not take your weekly subscription payment. To keep your leads and Print &amp; Post running, please update your payment method.</p><div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="font-size:13px;color:#e2e8f0;margin:0"><strong>Payment failed</strong>. your card could not be charged. If this continues, your account will be paused.</p></div><p style="color:#94a3b8;font-size:12px;line-height:1.7;margin:0">You can update your card any time from the Billing section of your dashboard.</p>';
-          await sendDMNotification(fCustomer.id, 'payment_failed_email', 'Action Needed: Payment Failed', '⚠️ Payment failed', failEmailBody, 'Pay now or update your card', ((invF && invF.hosted_invoice_url) ? invF.hosted_invoice_url : (PUBLIC_URL + '/portal/dashboard.html?page=settings&tab=subscription')));
-        } catch(ne2) { console.log('[STRIPE] Payment-failed email error:', ne2.message); }
+        // Email the customer a recovery link (deduped vs the trial auto-charge path).
+        if (_paymentFailEmailOnce(invF.id)) {
+          try {
+            var _pfPortal = await createBillingPortalUrl(fCustomer.stripe_customer_id);
+            var _pfCta = (invF && invF.hosted_invoice_url) || _pfPortal || (PUBLIC_URL + '/portal/dashboard.html?page=settings&tab=subscription');
+            var failEmailBody = '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">We could not take your weekly subscription payment. To keep your leads and Print &amp; Post running, please update your payment method.</p><div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="font-size:13px;color:#e2e8f0;margin:0"><strong>Payment failed</strong>. your card could not be charged. Your leads are paused until this is resolved.</p></div><p style="color:#94a3b8;font-size:12px;line-height:1.7;margin:0">Pay the open invoice or update your card to resume immediately.' + (_pfPortal ? ' Update your card securely here: ' + _pfPortal : '') + '</p>';
+            await sendDMNotification(fCustomer.id, 'payment_failed_email', 'Action Needed: Payment Failed', '⚠️ Payment failed', failEmailBody, 'Pay now / update card', _pfCta);
+          } catch(ne2) { console.log('[STRIPE] Payment-failed email error:', ne2.message); }
+        }
         console.log('[STRIPE] Payment failed for ' + (fCustomer.email || fCustomer.id));
       }
     }
@@ -42225,6 +42301,22 @@ app.post('/api/admin/reset-daily-email', adminAuth, (req, res) => {
     try { delete __dailyEmailClaimed[c.id + '|' + new Date().toISOString().split('T')[0]]; } catch(e1) {}
     saveDb();
     res.json({ success: true, email: email, cleared_last_email_date: prev });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/pause-customer - hold or resume a customer's daily delivery + Auto Send
+// (support tool: e.g. hold an account until a failed payment is resolved).
+app.post('/api/admin/pause-customer', adminAuth, (req, res) => {
+  try {
+    var email = String((req.body && req.body.email) || '').toLowerCase().trim();
+    if (!email) return res.status(400).json({ error: 'email required' });
+    var _pause = !(req.body && (req.body.paused === false || req.body.paused === 0 || req.body.paused === '0' || req.body.paused === 'false'));
+    var d = getDb();
+    var c = (d.customers || []).find(function(x) { return String(x.email || '').toLowerCase() === email; });
+    if (!c) return res.status(404).json({ error: 'Customer not found' });
+    db.prepare('UPDATE customers SET leads_paused = ?, auto_send_paused = ? WHERE id = ?').run(_pause ? 1 : 0, _pause ? 1 : 0, c.id);
+    saveDb();
+    res.json({ success: true, email: email, leads_paused: _pause ? 1 : 0, auto_send_paused: _pause ? 1 : 0 });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
