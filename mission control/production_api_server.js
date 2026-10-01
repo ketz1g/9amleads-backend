@@ -42137,6 +42137,9 @@ app.post('/api/admin/send-daily-email', adminAuth, async (req, res) => {
       return { ...l, data: p };
     });
     var htmlS = generateLeadEmailHTML(custS, parsedLeads);
+    // PREVIEW: return the exact email HTML without sending (support/QA). Lets us verify
+    // the daily email renders correctly (e.g. the shared-lead indicator) for any account.
+    if (req.body && req.body.preview) return res.json({ success: true, preview: true, email: custS.email, leads: custLeads.length, html: htmlS });
     await sendBrevoEmail({ email: custS.email, name: custS.company || 'Customer' }, '9amLeads • Your Daily Opportunities for ' + (custS.coverage ? (COVERAGE_LABELS[custS.coverage] || custS.coverage) : 'your area') + ' on ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }), htmlS);
     try { custS.last_email_date = new Date().toISOString().split('T')[0]; dbS.customers.forEach(function(cc){ if (cc.id === custS.id) cc.last_email_date = custS.last_email_date; }); saveDb(); } catch(e) {}
     res.json({ success: true, sent: true, email: custS.email, leads: custLeads.length });
