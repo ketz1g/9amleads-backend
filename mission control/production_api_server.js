@@ -17819,14 +17819,23 @@ app.post('/api/admin/brevo-suppression', adminAuth, async function(req, res) {
 // recent 1500 entries) and surfaced on the admin customer view.
 function emailTypeFromSubject(subject) {
   var s = String(subject || '');
-  if (/9amLeads|Daily Opportunities|lead sheet/i.test(s) && /Daily/i.test(s)) return 'daily_lead';
-  if (/print.?post|mailing|posted|on the way|dispatched|delivered/i.test(s)) return 'print_post';
-  if (/alert|failed|error|warning|reserve ready/i.test(s)) return 'alert';
+  // Daily lead sheet
+  if (/Daily Opportunities|lead sheet/i.test(s)) return 'daily_lead';
+  // Billing / receipts
+  if (/invoice|payment|receipt|billing|subscription|refund|card charged/i.test(s)) return 'billing';
+  // Delivery status (leads on their way / sorted / extra leads)
+  if (/lie-in|all sorted|leads are here|more leads for you|one more lead for you|are on (their|the) way/i.test(s)) return 'delivery';
+  // Alerts / incidents
+  if (/alert|failed|error|warning|reserve ready|needs a quick fix|technical/i.test(s)) return 'alert';
+  // Trial / onboarding nurture (checked BEFORE print-post so "Start your Print & Post
+  // this week" reads as onboarding, matching the trial sequence it belongs to)
+  if (/free trial|trial|welcome|keep your .*coming|last chance|ends tomorrow|opportunities looking|convert more leads|first.?win|first win|print & post this week|verify your|into your crm|start your|your leads start/i.test(s)) return 'onboarding';
+  // Win-back / re-engagement marketing (post-trial)
+  if (/leaflet|3-week test|stop chasing|quiet week|still want work|one month on|upload your flyer|let us get your flyer|flyer through their door|come to you|bulk send/i.test(s)) return 'marketing';
+  // Print & Post transactional (order / printer / dispatch)
+  if (/print.?post|mailing|posted|dispatched|printer|doorstep/i.test(s)) return 'print_post';
   if (/bulk postage|bulk\b|exclusive lead/i.test(s)) return 'bulk';
-  if (/preview|tomorrow/i.test(s)) return 'preview';
-  if (/welcome|trial|started/i.test(s)) return 'onboarding';
-  if (/invoice|payment|receipt|billing|subscription/i.test(s)) return 'billing';
-  if (/prospect|outreach/i.test(s)) return 'marketing';
+  if (/preview/i.test(s)) return 'preview';
   return 'other';
 }
 function logCustomerEmail(to, subject, htmlContent) {
@@ -17865,7 +17874,9 @@ app.get('/api/admin/customer-emails', adminAuth, (req, res) => {
       var k = e.subject + '|' + String(e.at || '').substring(0, 16);
       if (seen[k]) return;
       seen[k] = 1;
-      out.push({ id: e.id, subject: e.subject, type: e.type, at: e.at, has_html: !!e.html });
+      // Recompute the type from the subject so improved classification also applies to
+    // HISTORICAL entries (the stored type is only a snapshot from send-time).
+    out.push({ id: e.id, subject: e.subject, type: emailTypeFromSubject(e.subject) || e.type, at: e.at, has_html: !!e.html });
     });
     res.json({ success: true, email: em, count: out.length, emails: out.slice(0, 80) });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -17879,7 +17890,7 @@ app.get('/api/admin/customer-email', adminAuth, (req, res) => {
     var dbF = getDb();
     var e = (dbF.email_log || []).find(function(x) { return x.id === id; });
     if (!e) return res.status(404).json({ error: 'Email not found' });
-    res.json({ success: true, email: e.email, subject: e.subject, type: e.type, at: e.at, html: e.html || '' });
+    res.json({ success: true, email: e.email, subject: e.subject, type: emailTypeFromSubject(e.subject) || e.type, at: e.at, html: e.html || '' });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
