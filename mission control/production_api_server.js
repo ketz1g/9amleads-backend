@@ -25008,9 +25008,10 @@ app.post('/api/admin/trial-charge/test-mode-run', adminAuth, async (req, res) =>
       tCust = await stripeApiRequest('POST', 'customers', { email: email, 'metadata[test]': '1' });
       if (!tCust || tCust.error) { process.env.STRIPE_TEST_MODE = _prevMode; return res.status(500).json({ error: 'test customer failed', detail: tCust && tCust.error }); }
     }
-    var cardNum = decline ? '4000000000000341' : '4242424242424242';
-    var pm = await stripeApiRequest('POST', 'payment_methods', { type: 'card', 'card[number]': cardNum, 'card[exp_month]': 12, 'card[exp_year]': 2030, 'card[cvc]': '123' });
-    if (!pm || pm.error) { process.env.STRIPE_TEST_MODE = _prevMode; return res.status(500).json({ error: 'test card failed', detail: pm && pm.error }); }
+    // Server-side raw card numbers are blocked by Stripe, so use the built-in test
+    // PaymentMethod token (always succeeds). The DECLINE + recovery flow is proven
+    // separately by /api/admin/test/billing-webhook-sim (a validly-signed event).
+    var pm = { id: 'pm_card_visa' };
     await stripeApiRequest('POST', 'payment_methods/' + pm.id + '/attach', { customer: tCust.id });
     // If a subscription already exists, point it at the new card (mirrors the Billing
     // Portal updating the card) so a dunning retry can succeed on the 2nd call.
@@ -25029,6 +25030,52 @@ app.post('/api/admin/trial-charge/test-mode-run', adminAuth, async (req, res) =>
     }
   } catch(e) { res.status(500).json({ error: e.message }); }
   finally { process.env.STRIPE_TEST_MODE = _prevMode; }
+});
+
+// POST /api/admin/test/billing-webhook-sim - prove the payment-failure -> hold and the
+// payment -> recover flows through the REAL /api/stripe/webhook handler, by sending it a
+// correctly-signed synthetic event (no Stripe charge). Body: { scenario:'decline'|'recover', email? }
+app.post('/api/admin/test/billing-webhook-sim', adminAuth, async (req, res) => {
+  try {
+    var scenario = String((req.body && req.body.scenario) || 'decline');
+    var email = String((req.body && req.body.email) || ('test.whsim.' + Date.now() + '@9amleads.com')).toLowerCase();
+    var d = getDb();
+    var c = (d.customers || []).find(function(x) { return String(x.email || '').toLowerCase() === email; });
+    if (!c) {
+      c = { id: 'whsim_' + Date.now(), email: email, company: 'Webhook Sim', product: 'moving', plan: 'free_trial', selected_plan: 'starter', coverage: 'postcode', leads_per_day: 5, created_at: new Date().toISOString(), stripe_customer_id: 'cus_sim_' + Date.now(), stripe_subscription_id: 'sub_sim_' + Date.now() };
+      d.customers.push(c);
+      saveDb();
+    }
+    var nowSec = Math.floor(Date.now() / 1000);
+    var eventObj;
+    if (scenario === 'recover') {
+      eventObj = { id: 'evt_sim_' + Date.now(), type: 'invoice.paid', created: nowSec, data: { object: { id: 'in_sim_' + Date.now(), object: 'invoice', customer: c.stripe_customer_id, subscription: c.stripe_subscription_id, paid: true, status: 'paid', amount_paid: 2500, amount_due: 0, currency: 'gbp', period_start: nowSec, period_end: nowSec + 604800 } } };
+    } else {
+      eventObj = { id: 'evt_sim_' + Date.now(), type: 'invoice.payment_failed', created: nowSec, data: { object: { id: 'in_sim_' + Date.now(), object: 'invoice', customer: c.stripe_customer_id, subscription: c.stripe_subscription_id, amount_due: 2500, amount_paid: 0, currency: 'gbp', status: 'open', hosted_invoice_url: 'https://invoice.stripe.com/sim', last_payment_error: { message: 'Your card was declined.' } } } };
+    }
+    var bodyStr = JSON.stringify(eventObj);
+    var t = Math.floor(Date.now() / 1000);
+    var secret = process.env.STRIPE_WEBHOOK_SECRET || '';
+    var v1 = require('crypto').createHmac('sha256', secret).update(t + '.' + bodyStr).digest('hex');
+    var https = require('https');
+    var postRes = await new Promise(function(resolve) {
+      var rq = https.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, path: '/api/stripe/webhook', method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyStr), 'Stripe-Signature': 't=' + t + ',v1=' + v1 } }, function(r2) { var b = ''; r2.on('data', function(c2) { b += c2; }); r2.on('end', function() { resolve({ status: r2.statusCode, body: b.substring(0, 200) }); }); });
+      rq.on('error', function(e) { resolve({ status: 0, body: e.message }); });
+      rq.write(bodyStr); rq.end();
+    });
+    var after = (getDb().customers || []).find(function(x) { return x.id === c.id; }) || {};
+    res.json({ success: true, scenario: scenario, email: email, webhook_response: postRes, customer_after: { plan: after.plan, selected_plan: after.selected_plan, leads_paused: after.leads_paused, auto_send_paused: after.auto_send_paused } });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+// Cleanup a simulator customer.
+app.post('/api/admin/test/billing-webhook-sim-cleanup', adminAuth, (req, res) => {
+  try {
+    var email = String((req.body && req.body.email) || '').toLowerCase();
+    var d = getDb();
+    d.customers = (d.customers || []).filter(function(c) { return String(c.email || '').toLowerCase() !== email; });
+    saveDb();
+    res.json({ success: true, removed: email });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // // // // TRIAL GOODWILL EMAIL (ONE-OFF): explains the extension. Sends a single 8am
