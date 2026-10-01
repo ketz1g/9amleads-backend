@@ -1,4 +1,4 @@
-/api/*  https://nineamleads-backend.onrender.com/api/:splat  200
+﻿/api/*  https://nineamleads-backend.onrender.com/api/:splat  200
 /portal/*  https://nineamleads-backend.onrender.com/portal/:splat  200
 /portal  https://nineamleads-backend.onrender.com/portal/  200
 /admin  https://nineamleads-backend.onrender.com/portal/admin.html  200
@@ -78,17 +78,58 @@
 /pricing-config.js  /404.html  404!
 /stripe_handler.js  /404.html  404!
 /chat.js  /404.html  404!
-# Internal docs / agent configs / marketing + email assets are markdown-only and unlinked
+# Internal docs / agent configs / marketing (markdown-only dirs) - Netlify splats only match at end
+/_docs/*  /404.html  404!
+/agent/*  /404.html  404!
+/agents/*  /404.html  404!
+/trading/*  /404.html  404!
+/marketing/*  /404.html  404!
+/integrations/apify/*  /404.html  404!
+/integrations/brevo/*  /404.html  404!
+/integrations/facebook/*  /404.html  404!
+/integrations/microsoft/*  /404.html  404!
+/integrations/openai/*  /404.html  404!
+/investors/9amLeads-Business-Plan.md  /404.html  404!
 /*.md  /404.html  404!
+# Raw data/JSON (configs, lead dumps, demo accounts). /data/*-email-demo*.html stays public.
+/data/data.json  /404.html  404!
+/data/database.json  /404.html  404!
+/data/global.json  /404.html  404!
+/data/image-library.json  /404.html  404!
+/data/latest-report.json  /404.html  404!
+/data/launch-checklist.json  /404.html  404!
+/data/movealert-research.json  /404.html  404!
+/data/moving-leads-customers.json  /404.html  404!
+/data/moving-leads-delivery.json  /404.html  404!
+/data/moving-leads.json  /404.html  404!
+/data/movingleadsdaily-research.json  /404.html  404!
+/data/multi-lead-research.json  /404.html  404!
+/data/newbusiness-customers.json  /404.html  404!
+/data/newbusiness-delivery.json  /404.html  404!
+/data/newbusiness-leads.json  /404.html  404!
+/data/planning-customers.json  /404.html  404!
+/data/planning-delivery.json  /404.html  404!
+/data/planning-leads.json  /404.html  404!
+/data/postcode-assignments.json  /404.html  404!
+/data/probate-customers.json  /404.html  404!
+/data/probate-delivery.json  /404.html  404!
+/data/probate-leads.json  /404.html  404!
+/data/report-2026-05-03.json  /404.html  404!
+/data/stripe-config.json  /404.html  404!
+/data/tenders-customers.json  /404.html  404!
+/data/tenders-delivery.json  /404.html  404!
+/data/tenders-leads.json  /404.html  404!
+/data/trade_categories.json  /404.html  404!
+/data/trading-settings.json  /404.html  404!
+/data/uk-postcode-areas.json  /404.html  404!
+/data/uk-postcode-districts.json  /404.html  404!
+/data/businesses/*  /404.html  404!
 # Internal email campaigns, creatives and deployment config
 /email_campaigns/*  /404.html  404!
 /creative/*  /404.html  404!
 /render.yaml  /404.html  404!
 /_netlify_deploy_force.txt  /404.html  404!
-# Raw data/JSON (configs, lead dumps, demo accounts). The /data/*-email-demo*.html
-# sample emails ARE public and intentionally linked, so only JSON is blocked.
-/data/*.json  /404.html  404!
-/data/businesses/*  /404.html  404!
+
 # Orphaned cookie-consent fragment (not referenced anywhere)
 /assets/cookie-consent.html  /404.html  404!
 /*  /404.html  404
