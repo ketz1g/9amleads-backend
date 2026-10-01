@@ -32260,6 +32260,16 @@ app.post('/api/direct-mail/verify-payment', authMiddleware, async (req, res) => 
     var paymentId = matched.payment_intent || matched.id || 'paid_via_verify';
     db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_id = ?, stripe_payment_status = ?, status = ?, updated_at = ? WHERE id = ?').run(paymentId, 'paid', 'paid', new Date().toISOString(), campaignId);
     db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), req.user.id, campaignId, campaign.status, 'paid', 'system', 'Payment verified via dashboard: ' + paymentId, new Date().toISOString());
+    // REPEAT SERIES: mark the whole group paid too (client-side fallback must match the
+    // webhook), so the scheduled follow-ups actually dispatch.
+    try {
+      var _vRepGroup = matched.metadata && matched.metadata.repeat_group;
+      if (_vRepGroup) {
+        var _vRepCams = db.prepare('SELECT id FROM direct_mail_campaigns WHERE notes = ?').all('Repeat mailing ' + _vRepGroup);
+        _vRepCams.forEach(function(rc) { db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_status = ?, stripe_payment_id = ?, updated_at = ? WHERE id = ?').run('paid', paymentId, new Date().toISOString(), rc.id); });
+        console.log('[VERIFY-PAYMENT] Repeat series paid: ' + _vRepGroup + ' (' + _vRepCams.length + ' mailings)');
+      }
+    } catch(vRepErr) { console.log('[VERIFY-PAYMENT] Repeat group mark error:', vRepErr.message); }
     saveDb();
     // Send to Stannp
     var sendResult = null;
@@ -32449,6 +32459,20 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
           db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_id = ?, stripe_payment_status = ?, status = ?, updated_at = ? WHERE id = ?').run(paymentId, 'paid', 'paid', new Date().toISOString(), campaignId);
           db.prepare('INSERT INTO direct_mail_status_history (id,customer_id,campaign_id,from_status,to_status,changed_by,notes,created_at) VALUES (?,?,?,?,?,?,?,?)').run(uuidv4(), customerId, campaignId, 'approved', 'paid', 'system', 'Payment received: ' + paymentId, new Date().toISOString());
           console.log('[WEBHOOK] Campaign payment received:', campaignRecord.name, 'ID:', paymentId);
+          // REPEAT SERIES: a single payment covers the WHOLE group, so mark every campaign
+          // in the group paid - otherwise the dispatch cron only ever sends the first
+          // mailing and the 2-week / 1-month follow-ups are silently dropped.
+          try {
+            var _repGroup = session.metadata && session.metadata.repeat_group;
+            if (_repGroup) {
+              var _repCams = db.prepare('SELECT id FROM direct_mail_campaigns WHERE notes = ?').all('Repeat mailing ' + _repGroup);
+              _repCams.forEach(function(rc) {
+                db.prepare('UPDATE direct_mail_campaigns SET stripe_payment_status = ?, stripe_payment_id = ?, updated_at = ? WHERE id = ?').run('paid', paymentId || ('repeat-' + _repGroup), new Date().toISOString(), rc.id);
+              });
+              saveDb();
+              console.log('[WEBHOOK] Repeat series paid: ' + _repGroup + ' (' + _repCams.length + ' mailings)');
+            }
+          } catch(repErr) { console.log('[WEBHOOK] Repeat group mark error:', repErr.message); }
           // Auto-send to Stannp so the lead is printed + posted immediately
           var sendResult = null;
           try {
