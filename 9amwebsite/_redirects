@@ -45,6 +45,8 @@
 /removals/  /movingleadsdaily/  301
 /probate/  /probateleads/  301
 /probate-leads/  /probateleads/  301
+/removal-leads  /movingleadsdaily/  301
+/removal-leads/  /movingleadsdaily/  301
 /new-business/  /newbusinessalert/  301
 /new-business-leads/  /newbusinessalert/  301
 /planning/  /planningleads/  301

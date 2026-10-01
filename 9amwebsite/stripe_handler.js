@@ -1,4 +1,4 @@
-// Stripe Payment Handler — Powers subscriptions for all 4 businesses
+﻿// Stripe Payment Handler â€” Powers subscriptions for all 4 businesses
 // Usage: node stripe_handler.js --setup  (first time)
 //        node stripe_handler.js --webhook (run as webhook server)
 //        node stripe_handler.js --checkout <biz> <plan> <email>  Create checkout link
@@ -22,7 +22,7 @@ function loadData() {
 }
 function saveData(d) { fs.writeFileSync(DATA_FILE, JSON.stringify(d, null, 2)); }
 
-// Product definitions — loaded from central pricing config
+// Product definitions â€” loaded from central pricing config
 // Prices vary per product. Plan names: Starter, Growth, Power
 const PRICING_DATA = {
   moving: [
@@ -117,7 +117,7 @@ async function setupStripeProducts(apiKey) {
         } catch {
           product = await stripeRequest('POST', 'products', {
             name: plan.name, id: plan.id,
-            description: (plan.leads > 0 ? plan.leads + ' leads/day' : 'Unlimited leads') + ' — ' + business
+            description: (plan.leads > 0 ? plan.leads + ' leads/day' : 'Unlimited leads') + ' â€” ' + business
           }, apiKey);
           console.log('  Created product: ' + plan.name);
         }
@@ -154,15 +154,15 @@ async function createCheckout(apiKey, business, planId, customerEmail, successUr
     customer_email: customerEmail,
     'line_items[0][price]': plan.stripePriceId,
     'line_items[0][quantity]': '1',
-    'success_url': successUrl || 'http://localhost:8006/portal/dashboard.html?checkout=success',
-    'cancel_url': cancelUrl || 'http://localhost:8006/portal/dashboard.html?checkout=cancel',
+    'success_url': successUrl || 'https://9amleads.com/portal/dashboard.html?checkout=success',
+    'cancel_url': cancelUrl || 'https://9amleads.com/portal/dashboard.html?checkout=cancel',
     'metadata[business]': business,
     'metadata[planId]': planId
   }, apiKey);
   return session;
 }
 
-// Webhook server — receives Stripe event forwards to the API server
+// Webhook server â€” receives Stripe event forwards to the API server
 function startWebhookServer(apiKey, webhookSecret, targetUrl) {
   const PORT = parseInt(process.env.WEBHOOK_PORT) || 8008;
   
@@ -267,7 +267,7 @@ async function main() {
     const apiKey = await new Promise(r => readline.question('Stripe Secret Key (sk_live_...): ', r));
     readline.close();
     
-    if (!apiKey || !apiKey.startsWith('sk_')) { console.log('Invalid key — must start with sk_'); return; }
+    if (!apiKey || !apiKey.startsWith('sk_')) { console.log('Invalid key â€” must start with sk_'); return; }
     saveConfig({ ...config, apiKey });
     await setupStripeProducts(apiKey);
     

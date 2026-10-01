@@ -10618,8 +10618,16 @@ app.post('/api/assistant/ask', optionalAuth, async (req, res) => {
       'Use this context to give specific answers where you can, for example their plan or lead type.'
     ].join('\n');
     var answer = '';
+    // Hard ceiling for the whole AI attempt: providers fail over sequentially, so two
+    // 15s timeouts could still push past the ~28s edge/proxy limit and 504 the request.
+    // Race the model against a shorter budget and fall back to the static FAQ answer.
     try {
-      answer = await aiChat([{ role: 'system', content: sys }].concat(msgs), { temperature: 0.3, maxTokens: 650 });
+      var _aiP = aiChat([{ role: 'system', content: sys }].concat(msgs), { temperature: 0.3, maxTokens: 650 });
+      _aiP.catch(function() {});
+      answer = await Promise.race([
+        _aiP,
+        new Promise(function(res) { setTimeout(function() { res(''); }, 18000); })
+      ]);
     } catch(aiErr) { answer = ''; }
     if (!answer) answer = faqFallback(question);
     res.json({ answer: String(answer).trim(), suggested: suggestionsFor(question) });
@@ -39701,17 +39709,35 @@ function _aiProviderList() {
 }
 function _aiOnce(p, messages, opts) {
   opts = opts || {};
+  // Hard wall-clock budget per provider. Without this a stalled connection hangs
+  // the request forever: /api/assistant/ask never responded (Netlify 504'd at ~28s)
+  // and every AI feature behind it blocked. Fail fast, fall through to the next
+  // provider, then to the caller's static fallback.
+  var AI_TIMEOUT_MS = 15000;
   return new Promise(function(resolve, reject) {
+    var settled = false, timer = null, req = null;
+    function done(err, val) {
+      if (settled) return;
+      settled = true;
+      if (timer) clearTimeout(timer);
+      if (err) reject(err); else resolve(val);
+    }
     var payload = { model: p.model, messages: messages, temperature: (opts.temperature != null ? opts.temperature : 0.8), max_tokens: (opts.maxTokens || 2000) };
     if (opts.json) payload.response_format = { type: 'json_object' };
     var body = JSON.stringify(payload);
-    var req = require('https').request({ hostname: p.host, path: p.path, method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + p.key, 'Content-Length': Buffer.byteLength(body) } }, function(r) {
+    timer = setTimeout(function() {
+      try { if (req) req.destroy(); } catch(e) {}
+      done(new Error(p.name + ' timeout after ' + AI_TIMEOUT_MS + 'ms'));
+    }, AI_TIMEOUT_MS);
+    req = require('https').request({ hostname: p.host, path: p.path, method: 'POST', timeout: AI_TIMEOUT_MS, headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + p.key, 'Content-Length': Buffer.byteLength(body) } }, function(r) {
       var b = ''; r.on('data', function(c) { b += c; }); r.on('end', function() {
-        if (r.statusCode < 300) { try { var j = JSON.parse(b); resolve((j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || ''); } catch(e) { reject(new Error(p.name + ' bad response json')); } }
-        else reject(new Error(p.name + ' ' + r.statusCode + ': ' + b.substring(0, 160)));
+        if (r.statusCode < 300) { try { var j = JSON.parse(b); done(null, (j.choices && j.choices[0] && j.choices[0].message.content) || ''); } catch(e) { done(new Error(p.name + ' bad response json')); } }
+        else done(new Error(p.name + ' ' + r.statusCode + ': ' + b.substring(0, 160)));
       });
+      r.on('error', function(e) { done(e); });
     });
-    req.on('error', function(e) { reject(e); });
+    req.on('timeout', function() { try { req.destroy(); } catch(e) {} done(new Error(p.name + ' socket timeout')); });
+    req.on('error', function(e) { done(e); });
     req.write(body); req.end();
   });
 }
@@ -43809,6 +43835,32 @@ const TRACKING_SNIPPET = `<script>
 </script>`;
 
 // ===== ENQUIRY FORM API =====
+// POST /api/contact - the /contact/ page form (and site.js) post {name,email,subject,message}.
+// Kept as a thin alias so the public contact form never hits "Cannot POST /api/contact".
+app.post('/api/contact', async (req, res) => {
+  try {
+    const b = req.body || {};
+    const name = String(b.name || '').trim();
+    const email = String(b.fromEmail || b.email || '').trim();
+    const subject = String(b.subject || '').trim() || 'Website contact form enquiry';
+    const message = String(b.details || b.message || '').trim();
+    if (!name || !email || !message) return res.status(400).json({ error: 'Name, email and message are required' });
+    const esc = function(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
+    const html = '<div style="font-family:Inter,sans-serif;background:#0a0a0f;padding:32px">'
+      + '<div style="max-width:560px;margin:0 auto;background:#11131f;border:1px solid #1e2030;border-radius:16px;padding:24px">'
+      + '<h1 style="font-size:18px;color:#fff;margin:0 0 12px">Website Contact Enquiry</h1>'
+      + '<p style="color:#94a3b8;font-size:13px;margin:0 0 4px">From <strong style="color:#f1f5f9">' + esc(name) + '</strong> &lt;<a href="mailto:' + esc(email) + '" style="color:#0ea5e9">' + esc(email) + '</a>&gt;</p>'
+      + '<p style="color:#94a3b8;font-size:13px;margin:0 0 16px">Topic: ' + esc(subject) + '</p>'
+      + '<div style="padding:16px;background:#0f111a;border:1px solid #1e2030;border-radius:8px;color:#e2e8f0;font-size:13px;line-height:1.7;white-space:pre-wrap">' + esc(message) + '</div>'
+      + '</div></div>';
+    await sendBrevoEmail({ email: 'hello@9amleads.com', name: '9amLeads Sales' }, subject, html);
+    res.json({ success: true, message: 'Message sent' });
+  } catch (err) {
+    console.error('[CONTACT ERROR]', err.message);
+    res.status(500).json({ error: 'Failed to send message' });
+  }
+});
+
 app.post('/api/send-enquiry', async (req, res) => {
   try {
     const { to, subject, name, company, fromEmail, phone, leadType, services, details } = req.body;

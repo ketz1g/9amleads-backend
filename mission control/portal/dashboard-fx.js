@@ -98,7 +98,10 @@
     var box = d.createElement('div');
     box.className = 'dfx-render';
     box.setAttribute('aria-hidden', 'true');
-    box.innerHTML = '<img src="/assets/refresh/3d/' + name + '.webp" alt="" width="150" height="131" loading="lazy">' +
+    // Absolute site URL: this file is served by the backend (/portal/*), where the
+    // local /assets mount is empty and Express returns the HTML homepage for the
+    // .webp (broken image). The artwork lives only in the 9amwebsite assets folder.
+    box.innerHTML = '<img src="https://9amleads.com/assets/refresh/3d/' + name + '.webp" alt="" width="150" height="131" loading="lazy">' +
       '<span class="dfx-orbit"><span class="dfx-orbit-ring"></span><span class="dfx-orbit-ring dfx-orbit-ring2"></span></span>';
     var anchor = host.lastElementChild;
     var isFlex = (window.getComputedStyle(host).display || '').indexOf('flex') !== -1;
