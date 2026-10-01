@@ -21441,8 +21441,17 @@ async function runDeliveryPreflight(opts) {
     brevoOk = acct.code === 200;
     brevoDetail = 'account HTTP ' + acct.code;
     if (opts.send) {
-      try { await sendBrevoEmail({ email: 'hello@9amleads.com', name: 'Preflight' }, '9amLeads pre-flight test', '<p>Pre-flight test email - delivery path OK.</p>'); brevoOk = true; brevoDetail += ', test send OK'; }
-      catch(se) { brevoOk = false; brevoDetail += ', test send FAILED: ' + se.message; }
+      // The real test send must NOT land in the founder's inbox every morning (that was
+      // the recurring "pre-flight ... delivery OK" email). Send it to PREFLIGHT_TEST_EMAIL
+      // if configured (e.g. a filtered address/folder), otherwise skip the email and rely
+      // on the account probe - failures still raise the normal pre-flight alert.
+      var _pfTo = String(process.env.PREFLIGHT_TEST_EMAIL || '').trim();
+      if (_pfTo) {
+        try { await sendBrevoEmail({ email: _pfTo, name: 'Preflight' }, '9amLeads pre-flight test', '<p>Pre-flight test email - delivery path OK.</p>'); brevoOk = true; brevoDetail += ', test send OK'; }
+        catch(se) { brevoOk = false; brevoDetail += ', test send FAILED: ' + se.message; }
+      } else {
+        brevoDetail += ', real test-send skipped (set PREFLIGHT_TEST_EMAIL to route it off your inbox)';
+      }
     }
   }
   add('Email provider (Brevo)', brevoOk, brevoDetail);
