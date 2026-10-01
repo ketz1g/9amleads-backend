@@ -599,6 +599,7 @@ function isCompleteMovingAddress(addr, pc) {
   if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(pc || '').trim())) return false;
   if (!hasUsablePremiseAddress(a, pc)) return false;
   if (!hasStreetName(a)) return false;
+  if (isNonBuildingPremise(a)) return false; // vacant land / plots / sites are not mailable
   var tc = parseTownCountyFromAddress(a, pc);
   return !!(tc.town || tc.city || tc.county);
 }
@@ -612,6 +613,7 @@ function isLeadMailableForSend(ld, prod) {
   var addr = String(ld.fullAddress || ld.address || ld.deceasedAddress || '').trim();
   var pc = String(ld.postcode || '').trim();
   if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(pc)) return false;
+  if (isNonBuildingPremise(addr)) return false; // land / plots / sites / car parks
   if (prod === 'moving') return isCompleteMovingAddress(addr, pc);
   return hasUsablePremiseAddress(addr, pc) && hasStreetName(addr);
 }
@@ -13106,7 +13108,7 @@ app.get('/api/admin/lead-debug', adminAuth, (req, res) => {
       var mailable;
       if (prod === 'tenders') mailable = true;
       else if (prod === 'moving') mailable = isCompleteMovingAddress(addr, pc);
-      else mailable = fullpc && street && premise;
+      else mailable = fullpc && street && premise && !isNonBuildingPremise(addr);
       return { product: prod, delivered: l.delivered, addr: addr.slice(0, 90), pc: pc, fullpc: fullpc, street: street, premise: premise, mailable: mailable, source: d.source || '', publishedDate: d.publishedDate || '', grantDate: d.grantDate || '' };
     });
     res.json({ success: true, email: email, product: c.product, plan: c.plan, areas: c.target_areas, count: out.length, leads: out });
@@ -13542,7 +13544,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen, opts) {
   var candidateErrors = (cust.email === 'info@afsremovals.com') ? [] : null;
   // A property lead is only deliverable (Print & Post) with a confirmed door number
   // AND a full postcode - mirrors the delivery door-number gate exactly.
-    function mailOK(addr, pc) { return hasUsablePremiseAddress(addr, pc, cust.product === 'probate' ? { relaxMultiUnit: true } : undefined) && /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(pc || '').trim()); }
+    function mailOK(addr, pc) { return !isNonBuildingPremise(addr) && hasUsablePremiseAddress(addr, pc, cust.product === 'probate' ? { relaxMultiUnit: true } : undefined) && /^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(pc || '').trim()); }
   // A moving lead without a door number is STILL deliverable when it has a full
   // postcode + a street name: the delivery's PAF pass resolves the exact door number
   // before the mailable-address gate. Counting these makes the preview match what the
@@ -25901,6 +25903,7 @@ function postableLeadInfo(l, allowCompanyNoDoor) {
   var pc = String((l && (l.postcode || l.registered_postcode || '')) || '').toUpperCase().trim();
   if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/.test(pc)) return { ok: false, reason: 'No valid UK postcode' };
   var addr = String(l && (l.fullAddress || l.address || l.deceasedAddress || l.registered_address || '') || '').trim();
+  if (isNonBuildingPremise(addr)) return { ok: false, reason: 'Non-building premise (land/plot/site)' };
   var words = addr.replace(/,/g, ' ').trim().split(/\s+/);
   if (!addr || words.length < 3) return { ok: false, reason: 'Address too short' };
   var t = addr.toLowerCase();
