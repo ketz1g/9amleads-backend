@@ -209,7 +209,6 @@ tbody tr:hover td{background:#f8fafc}
 <!-- ============ CUSTOMERS ============ -->
 <div class="tab-panel" id="tab-customers">
 <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px"><div style="font-size:15px;font-weight:800;font-family:'Outfit',sans-serif">All Customers <span id="custCountLabel" style="font-size:12px;font-weight:600;color:#64748b">-</span></div></div>
-<div id="commercialTestPanel" style="margin-bottom:16px"></div>
 <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
 <input type="text" id="searchInput" placeholder="Search by name, email or company..." oninput="filterCustomers()" class="input" style="flex:1;min-width:200px">
 <select id="filterPlan" onchange="filterCustomers()" class="input"><option value="">All Plans</option><option value="free_trial">Free Trial</option><option value="starter">Starter</option><option value="pro">Pro</option><option value="enterprise">Enterprise</option><option value="cancelled">Cancelled</option></select>
@@ -1794,7 +1793,6 @@ async function loadData() {
     renderExpiredCustomers(expiredCustomers);
     renderCustomers(allCustomers);
     renderPlanBreakdown(allCustomers);
-    loadCommercialTestAccounts();
     try { var _lu = document.getElementById('lastUpdated'); if (_lu) _lu.textContent = 'updated ' + new Date().toLocaleTimeString('en-GB'); } catch(e) {}
     loadLeadMonitor();
     loadRejectedLeads();
@@ -2395,23 +2393,6 @@ function showImpersonationLogs() {
     h += '</table>';
     showModal('Impersonation Logs', h, '700px');
   });
-}
-// Live monitoring panel: the 5 commercial test accounts (N/S/E/W/Scot-Wales-NI) with a
-// one-click view of exactly which leads they received and when.
-async function loadCommercialTestAccounts() {
-  var el = document.getElementById('commercialTestPanel'); if (!el) return;
-  try {
-    var r = await fetch(API + '/api/admin/customers?include_internal=1&limit=500&t=' + Date.now(), { headers: adminHeaders() });
-    var d = await r.json();
-    var accts = (d.customers || []).filter(function(c) { return /^test\.commercial[1-5]@/i.test(String(c.email || '')); }).sort(function(a, b) { return String(a.email).localeCompare(String(b.email)); });
-    if (!accts.length) { el.innerHTML = ''; return; }
-    var rows = accts.map(function(c) {
-      var areas = c.areas || c.target_areas || '';
-      return '<tr style="border-top:1px solid #eef2f7"><td style="padding:6px 8px">' + esc(c.email) + '</td><td style="padding:6px 8px;font-size:11px;color:#475569">' + esc(String(areas)) + '</td><td style="padding:6px 8px;text-align:center">' + (c.lead_count || 0) + '</td><td style="padding:6px 8px"><button class="btn btn-outline btn-sm" onclick="viewCustomerLeads(\'' + c.email + '\')"><i class="fas fa-eye"></i> View leads</button></td></tr>';
-    }).join('');
-    el.innerHTML = '<div class="card" style="border:1px solid #bae6fd;background:#f0f9ff"><div class="card-title" style="margin-bottom:8px;color:#0369a1"><i class="fas fa-vial"></i> Commercial test accounts - live monitoring</div>' +
-      '<table style="width:100%;border-collapse:collapse"><thead><tr style="text-align:left;color:#64748b;font-size:10px;text-transform:uppercase;letter-spacing:.4px"><th style="padding:4px 8px">Account</th><th style="padding:4px 8px">Areas</th><th style="padding:4px 8px;text-align:center">Leads</th><th style="padding:4px 8px"></th></tr></thead><tbody>' + rows + '</tbody></table></div>';
-  } catch (e) { el.innerHTML = ''; }
 }
 async function viewCustomerLeads(email) {
   function buildModal(title, content, width) {
