@@ -25880,10 +25880,18 @@ function getBulkEligibleLeads(allowedAreas) {
     if (!addr || addr.trim().length < 8) return;
     var pi = postableLeadInfo(l, true); // new business: company-at-address counts as a door
     if (!pi.ok) return;
+    if (isNonBuildingPremise(addr)) return; // land / plots / sites / car parks are not mailable
     var rcpt = buildStannpRecipientFromLead(l);
     if (!rcpt || !rcpt.address_line1 || !rcpt.postcode) return;
-    if (!(/[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(rcpt.postcode).trim()))) return;
+    if (!(/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(String(rcpt.postcode).trim()))) return;
     out.push(l);
+  });
+  // DEDUPE by property (normalised address + postcode).
+  var _seenNB = {};
+  out = out.filter(function(l) {
+    var pc = String(l.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    var a = String(l.fullAddress || l.address || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 70);
+    if (!a) return true; var k = pc + '|' + a; if (_seenNB[k]) return false; _seenNB[k] = 1; return true;
   });
   // AREA SCOPE: restrict to the customer's chosen areas / county when requested.
   if (Array.isArray(allowedAreas) && allowedAreas.length) {
@@ -26695,6 +26703,13 @@ function markArchive(product, ids, fields) {
   } catch(e) {}
 }
 
+// Vacant land / plots / sites / car parks are NOT mailable to a business or occupier,
+// so they must never be sold as a bulk lead (e.g. "Land Adjacent to 44 Garfield Road").
+function isNonBuildingPremise(addr) {
+  var a = ' ' + String(addr || '').replace(/\s+/g, ' ');
+  if (!a.trim()) return false;
+  return /(^|[\s,(\/-])(land|plot|plots|site|sites|car ?park|car ?parking|parking|yard|yards|compound|adjoining|adjacent|vacant|demolition|redevelopment|development site|amenity land|open space|rear of|front of|back of|side of|garages? at|garage block|garage site|parking area)\b/i.test(a);
+}
 function getBoostArchiveLeads(product, ageKey, count, allowedAreas) {
   // Prefer the 65-day bulk archive; fall back to the live pool until it has filled.
   var _archProd = (product === 'commercial') ? 'moving' : product;
@@ -26753,7 +26768,19 @@ function getBoostArchiveLeads(product, ageKey, count, allowedAreas) {
     // Residential (moving/probate) needs a house number; new business (B2B) accepts a
     // company at a real address. Anything else is flagged and excluded pre-Stannp.
     if (!postableLeadInfo(l, product === 'newbusiness' || product === 'commercial').ok) return;
+    if (isNonBuildingPremise(addr)) return;   // land / plots / sites / car parks are not mailable
     out.push(l);
+  });
+  // DEDUPE by property (normalised address + postcode) so the same listing appearing from
+  // different URLs is only counted/sold once.
+  var _seenProp = {};
+  out = out.filter(function(l) {
+    var pc = String(l.postcode || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    var a = String(l.fullAddress || l.address || l.deceasedAddress || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 70);
+    if (!a) return true;
+    var k = pc + '|' + a;
+    if (_seenProp[k]) return false;
+    _seenProp[k] = 1; return true;
   });
   return out.slice(0, count || out.length);
 }
