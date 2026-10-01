@@ -21405,6 +21405,38 @@ async function preDeliveryReadinessCheck() {
 }
 cron.schedule('55 7 * * 1-5', function() { try { preDeliveryReadinessCheck(); } catch(e) {} }, { timezone: 'Europe/London' });
 
+// Detect any lead delivered to the SAME customer on more than one day (a repeat). The
+// delivery already dedupes per-customer, but this proves it and flags any regression.
+function findDuplicateDeliveries(days) {
+  days = days || 14;
+  try {
+    var dbx = getDb();
+    var cut = Date.now() - days * 86400000;
+    var byCust = {};
+    (dbx.leads || []).forEach(function(l) {
+      if (!l || !l.delivered || !l.delivered_at) return;
+      var t = new Date(l.delivered_at).getTime();
+      if (!(t >= cut)) return;
+      var d = {}; try { d = JSON.parse(l.data || '{}'); } catch(e) {}
+      var key = String(d.url || d.id || l.id || '').trim();
+      if (!key) return;
+      var day = String(l.delivered_at).slice(0, 10);
+      byCust[l.customer_id] = byCust[l.customer_id] || {};
+      byCust[l.customer_id][key] = byCust[l.customer_id][key] || {};
+      byCust[l.customer_id][key][day] = 1;
+    });
+    var out = [];
+    Object.keys(byCust).forEach(function(cid) {
+      var cust = (dbx.customers || []).find(function(c) { return c.id === cid; });
+      Object.keys(byCust[cid]).forEach(function(key) {
+        var dayz = Object.keys(byCust[cid][key]).sort();
+        if (dayz.length > 1) out.push({ email: (cust && cust.email) || cid, product: (cust && cust.product) || '', key: key, days: dayz });
+      });
+    });
+    return out;
+  } catch(e) { return []; }
+}
+
 // ===== HARD PRE-FLIGHT: verify EVERYTHING the 9am delivery needs, before 9am =====
 // Runs at 07:30 and 08:40 UK (Mon-Fri) and is available on demand at
 // GET /api/admin/delivery-preflight. Alerts the founder if ANY check fails so we
@@ -21484,11 +21516,21 @@ async function runDeliveryPreflight(opts) {
     } catch(pe) { short.push(custs[i].email + ' (preview error)'); }
   }
   add('All customers covered', short.length === 0, short.length ? 'SHORT: ' + short.join(', ') : 'all ' + total + ' covered');
+  // 8) No lead delivered twice to the same customer in the last 14 days.
+  try {
+    var _dupes = findDuplicateDeliveries(14);
+    add('No duplicate deliveries (14d)', _dupes.length === 0, _dupes.length ? _dupes.slice(0, 5).map(function(d) { return d.email + ' (' + d.days.join('/') + ')'; }).join(' | ') : 'none');
+  } catch(e) { add('No duplicate deliveries (14d)', true, 'n/a'); }
   var failed = checks.filter(function(c) { return !c.ok; });
   return { pass: failed.length === 0, passed: checks.length - failed.length, total: checks.length, checks: checks };
 }
 app.get('/api/admin/delivery-preflight', adminAuth, async (req, res) => {
   try { res.json(await runDeliveryPreflight({ send: req.query.send === '1' })); } catch(e) { res.status(500).json({ error: e.message }); }
+});
+// GET /api/admin/duplicate-deliveries?days=14 - any lead delivered to a customer twice.
+app.get('/api/admin/duplicate-deliveries', adminAuth, function(req, res) {
+  try { res.json({ success: true, days: parseInt(req.query.days || '14', 10), duplicates: findDuplicateDeliveries(parseInt(req.query.days || '14', 10)) }); }
+  catch(e) { res.status(500).json({ error: e.message }); }
 });
 function deliveryPreflightAlert(label, r) {
   try {
