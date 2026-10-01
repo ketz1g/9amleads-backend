@@ -25567,7 +25567,12 @@ async function runCampaignEmails(dry) {
           // roughly one day before it ends - not after it ends (which is what the
           // old logic did and made the subject misleading). The subject is card-aware
           // (see abPickSubject) so a card-holder is never told their leads pause.
-          if (daysToTrialEnd > 0 && daysToTrialEnd <= 2 && !campaignSent.includes('trial_day7')) {
+          // "ends tomorrow" must be TRUE: only send when the trial ends on the NEXT UK
+          // calendar day. (The old <=2-day window sent it up to TWO days early, so the
+          // date in the subject was wrong - e.g. sent on 26 Sept for a 28 Sept trial.)
+          var _teUkDay = _ukDay(trialEnds);
+          var _tomorrowUkDay = _ukDay(new Date(Date.now() + 86400000));
+          if (_teUkDay === _tomorrowUkDay && !campaignSent.includes('trial_day7')) {
             campaignSent.push('trial_day7');
             await sendIt(cust, 'trial_day7', getEditedCampaignSubject('trial_day7', 'Your free trial ends tomorrow'), getCampaignEmailHTMLWithEdits(cust, 'trial_day7'));
             sent++;
