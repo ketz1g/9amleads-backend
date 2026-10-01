@@ -3391,6 +3391,26 @@ async function sendPaymentReceiptEmail(rec, opts) {
 
 // Record + email a payment receipt in one call.
 async function recordPaymentReceipt(opts) {
+  // SAFETY NET: a receipt whose Stripe id is a SUBSCRIPTION id (sub_...) must only be
+  // recorded when that subscription is genuinely active. This is EXACTLY the bug that
+  // emailed a receipt to a customer whose trial charge was declined. If the subscription
+  // is not active/trialing we block the receipt and alert the founder instead of billing
+  // the customer's inbox. (Invoice/PI receipts use in_/pi_ ids and are unaffected.)
+  try {
+    var _sidGuard = String((opts && opts.stripeId) || '');
+    if (/^sub_/.test(_sidGuard)) {
+      var _subGuard = await stripeApiRequest('GET', 'subscriptions/' + _sidGuard, null);
+      var _subOk = _subGuard && !_subGuard.error && (_subGuard.status === 'active' || _subGuard.status === 'trialing');
+      if (!_subOk) {
+        console.log('[PAYMENT-RECEIPT] BLOCKED receipt for non-active subscription ' + _sidGuard + ' (' + (opts.customerEmail || opts.customerId || '') + ') status=' + (_subGuard && _subGuard.status || 'unknown'));
+        try {
+          sendAdminAlert('Blocked a false payment receipt',
+            '<div style="font-family:Inter,Arial,sans-serif;font-size:13px;color:#0f172a;line-height:1.7"><p>A payment receipt was about to be emailed to <b>' + escHtml(opts.customerEmail || opts.customerId || '') + '</b> for a subscription that is <b>not active</b> (status: ' + escHtml(String((_subGuard && _subGuard.status) || 'unknown')) + ').</p><p>It was <b>blocked</b> and no receipt was sent. Please check the trial auto-charge.</p></div>');
+        } catch(eAlert) {}
+        return null;
+      }
+    }
+  } catch(eGuard) { /* if Stripe can’t be reached, fall through (invoice/PI paths don’t hit this) */ }
   var rec = storePaymentReceipt(opts);
   if (rec) { try { await sendPaymentReceiptEmail(rec, opts); } catch(e) { console.log('[PAYMENT-RECEIPT] Send error:', e.message); } }
   return rec;
