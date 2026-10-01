@@ -70,7 +70,7 @@ h3{font-size:15px;font-weight:700;margin-bottom:10px}
     <div class="banner">
       <div class="ic">&#128640;</div>
       <div><b>Archive lead packs</b>
-        <div class="hint">These leads have <b>never been sold on to another subscriber (rare shares possible at high demand)</b>. Because they're older archive leads, other buyers may receive the same ones too - so act fast and be first to respond.</div>
+        <div class="hint" id="archiveHint">These archive leads give you a first-mover edge, and we aim to keep them never-sent. At high demand a lead may be shared with another subscriber, so act fast and be first to respond.</div>
       </div>
     </div>
     <div class="card">
@@ -122,11 +122,12 @@ var ST = { product:'moving', age:'tm', mail:'leaflet', scope:'uk', DATA:null, PA
 (function(){ try {
   var qp = new URLSearchParams(window.location.search);
   try { var _qp = qp.get('product'); if (['moving','commercial','probate','planning','newbusiness'].indexOf(_qp) !== -1) ST.product = _qp; } catch(e2) {}
+  if (ST.product === 'commercial') { try { var _ai = document.getElementById('archiveHint'); if (_ai) _ai.innerHTML = 'These are <b>shared commercial opportunities</b> - because there are fewer commercial movers, other commercial firms in your area may receive the same premises. So respond fast and be first to win the work.'; } catch(e3) {} }
   var a = qp.get('age');
   if (a === 'tm' || a === '1m' || a === '2m') ST.age = a;
 } catch(e){} })();
 function ageName(a){ return a==='tm' ? 'this month' : a==='1m' ? '1 month old' : '2 months old'; }
-function setProduct(p){ if(ST.DATA && ST.DATA.live_products && ST.DATA.live_products.indexOf(p) === -1){ alert(ST.DATA.unavailable && ST.DATA.unavailable[p] ? ST.DATA.unavailable[p] : 'Currently unavailable - we are filling the pool.'); return; } ST.product=p; document.querySelectorAll('#content .seg button[data-p]').forEach(function(b){b.classList.toggle('on',b.dataset.p===p);}); render(); }
+function setProduct(p){ if(ST.DATA && ST.DATA.live_products && ST.DATA.live_products.indexOf(p) === -1){ alert(ST.DATA.unavailable && ST.DATA.unavailable[p] ? ST.DATA.unavailable[p] : 'Currently unavailable - we are filling the pool.'); return; } ST.product=p; document.querySelectorAll('#content .seg button[data-p]').forEach(function(b){b.classList.toggle('on',b.dataset.p===p);}); var _ah=document.getElementById('archiveHint'); if(_ah){ _ah.innerHTML = (p==='commercial') ? 'These are <b>shared commercial opportunities</b> - because there are fewer commercial movers, other commercial firms in your area may receive the same premises. So respond fast and be first to win the work.' : 'These archive leads give you a first-mover edge, and we aim to keep them never-sent. At high demand a lead may be shared with another subscriber, so act fast and be first to respond.'; } render(); }
 function setAge(a){ ST.age=a; document.querySelectorAll('#content .seg button[data-a]').forEach(function(b){b.classList.toggle('on',b.dataset.a===a);}); render(); }
 function setScope(s){ ST.scope=s; document.querySelectorAll('#content .seg button[data-s]').forEach(function(b){b.classList.toggle('on',b.dataset.s===s);}); render(); }
 function setMail(m){ ST.mail=m; document.querySelectorAll('#content .seg button[data-m]').forEach(function(b){b.classList.toggle('on',b.dataset.m===m);}); render(); }
