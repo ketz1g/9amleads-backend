@@ -31327,12 +31327,17 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
       if (!Array.isArray(_peDb.payment_events)) _peDb.payment_events = [];
       var _peEmail = _pe.customer_email || _pe.receipt_email || (_pe.customer_details && _pe.customer_details.email) || (_pe.billing_details && _pe.billing_details.email) || '';
       var _peIsTest = isTestPaymentEvent({ email: _peEmail });
-      var _peAmt = 0;
-      if (typeof _pe.amount_paid === 'number') _peAmt = _pe.amount_paid / 100;
-      else if (typeof _pe.amount_due === 'number') _peAmt = _pe.amount_due / 100;
-      else if (typeof _pe.amount === 'number') _peAmt = _pe.amount / 100;
-      else if (typeof _pe.amount_total === 'number') _peAmt = _pe.amount_total / 100;
-      var _peErr = (_pe.last_payment_error && _pe.last_payment_error.message) || '';
+      // AMOUNT: prefer amount_due when > 0. A FAILED/open invoice has amount_paid = 0 but a
+      // real amount_due, so it used to be logged as £0.00 (the amount was fine - only the
+      // display was wrong). Fall back to amount_paid (paid invoices), then the PI/charge
+      // amount, then the Checkout total.
+      var _peAmtPence = 0;
+      if (typeof _pe.amount_due === 'number' && _pe.amount_due > 0) _peAmtPence = _pe.amount_due;
+      else if (typeof _pe.amount_paid === 'number' && _pe.amount_paid > 0) _peAmtPence = _pe.amount_paid;
+      else if (typeof _pe.amount === 'number') _peAmtPence = _pe.amount;
+      else if (typeof _pe.amount_total === 'number') _peAmtPence = _pe.amount_total;
+      var _peAmt = _peAmtPence / 100;
+      var _peErr = (_pe.last_payment_error && _pe.last_payment_error.message) || (_pe.last_finalization_error && _pe.last_finalization_error.message) || '';
       // Store the ACTUAL Stripe event/charge time (stripe_at) as well as when our webhook
       // processed it. A delayed/retried webhook (deploy or downtime) used to make a weekly
       // charge appear as if it was collected days later - the admin billing view then
