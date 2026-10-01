@@ -21428,6 +21428,9 @@ function findDuplicateDeliveries(days) {
     var out = [];
     Object.keys(byCust).forEach(function(cid) {
       var cust = (dbx.customers || []).find(function(c) { return c.id === cid; });
+      // Test/demo accounts are deliberately re-fed by the automated test cron, so their
+      // repeats are expected - only REAL customers must never get a lead twice.
+      if (cust && isInternalAccount(cust)) return;
       Object.keys(byCust[cid]).forEach(function(key) {
         var dayz = Object.keys(byCust[cid][key]).sort();
         if (dayz.length > 1) out.push({ email: (cust && cust.email) || cid, product: (cust && cust.product) || '', key: key, days: dayz });
