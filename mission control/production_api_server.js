@@ -8925,10 +8925,11 @@ app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
       // daily moving pool - source them from there.
       if (prod === 'commercial') { try { var _cArch = [].concat(getBoostArchiveLeads('commercial', 'tm', 0), getBoostArchiveLeads('commercial', '1m', 0), getBoostArchiveLeads('commercial', '2m', 0)); if (_cArch.length) pool = _cArch; } catch(eC) {} }
       var poolForCust = interleavePoolByAreas(pool, areas);
-      // COMMERCIAL: newest-listed first (fresh premises = a business about to move);
-      // older ones only fill the remaining quota.
+      // COMMERCIAL: in-area FIRST, then newest-listed (fresh premises = a business about
+      // to move). Older ones only fill the remaining quota.
       if (prod === 'commercial') {
-        poolForCust = poolForCust.slice().sort(function(a, b) { var da = a.sourceListedDate || a.firstVisibleDate || a.updateDate || ''; var db = b.sourceListedDate || b.firstVisibleDate || b.updateDate || ''; return String(db).localeCompare(String(da)); });
+        var _inA2 = function(l) { var a2 = extractPostcodeArea(l.postcode || l.address || l.fullAddress || ''); return (ukwide || areas.indexOf(a2) !== -1) ? 0 : 1; };
+        poolForCust = poolForCust.slice().sort(function(a, b) { var ia = _inA2(a), ib = _inA2(b); if (ia !== ib) return ia - ib; var da = a.sourceListedDate || a.firstVisibleDate || a.updateDate || ''; var db = b.sourceListedDate || b.firstVisibleDate || b.updateDate || ''; return String(db).localeCompare(String(da)); });
       }
       var used = {};
       // already-assigned to this customer (avoid re-adding) - key on URL AND
@@ -15374,9 +15375,10 @@ app.post('/api/admin/top-up-today', adminAuth, (req, res) => {
       } catch(eC) {}
     }
     var interleaved = interleavePoolByAreas(pool, areas);
-    // COMMERCIAL: newest-listed premises first (fresh = a business about to move).
+    // COMMERCIAL: in-area FIRST, then newest-listed (fresh = a business about to move).
     if (cust.product === 'commercial') {
-      interleaved = interleaved.slice().sort(function(a, b) { var da = a.sourceListedDate || a.firstVisibleDate || a.updateDate || ''; var db = b.sourceListedDate || b.firstVisibleDate || b.updateDate || ''; return String(db).localeCompare(String(da)); });
+      var _inA3 = function(l) { var a3 = extractPostcodeArea(l.postcode || l.address || l.fullAddress || ''); return areas.indexOf(a3) !== -1 ? 0 : 1; };
+      interleaved = interleaved.slice().sort(function(a, b) { var ia = _inA3(a), ib = _inA3(b); if (ia !== ib) return ia - ib; var da = a.sourceListedDate || a.firstVisibleDate || a.updateDate || ''; var db = b.sourceListedDate || b.firstVisibleDate || b.updateDate || ''; return String(db).localeCompare(String(da)); });
     }
     var nowIso = new Date().toISOString();
     var freshCutoff = getFreshCutoffIso();
