@@ -600,11 +600,36 @@ async function loadBulkPoolPage() {
         cell('Fresh 0-2d (daily)', fresh, 0) + cell('Reserved', res, 0) + cell('Sold', sold, 0) +
         '</div>' +
         '<div style="margin-top:8px;font-size:12px;font-weight:800;color:' + readyColor + '">' + readyTxt + '</div>' +
+        '<button class="btn btn-outline btn-sm" style="margin-top:8px" onclick="showBulkLeads(\'' + p + '\')"><i class="fas fa-eye"></i> View leads</button>' +
         '</div>';
     }).join('');
     el.innerHTML = '<div style="font-size:11px;color:#64748b;margin-bottom:10px">Last updated: ' + updated + ' · This month = 3-27 days old (never sent) · 1m = 28-35 days old · 2m = 58-65 days old · archive bands never enter the 24/48h subscription delivery.</div>' + cards +
       '<button class="btn btn-outline btn-sm" onclick="loadBulkPoolPage()" style="margin-top:4px"><i class="fas fa-refresh"></i> Refresh</button>';
   } catch (e) { el.innerHTML = '<div style="color:#ef4444;font-size:13px">Error loading bulk pool: ' + esc(e.message) + '</div>'; }
+}
+// View the actual leads inside a bulk pool (same sellable set the customer buys).
+function showBulkLeads(product) {
+  var bands = product === 'newbusiness' ? [['3-7d', 'Bulk 3-7d']] : [['tm', 'This month'], ['1m', '1 month'], ['2m', '2 months'], ['all', 'All bands']];
+  var html = '<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">' +
+    bands.map(function(b, i) { return '<button id="blTab_' + b[0] + '" class="btn btn-sm ' + (i === 0 ? 'btn-primary' : 'btn-outline') + '" onclick="loadBulkLeads(\'' + product + '\',\'' + b[0] + '\')">' + b[1] + '</button>'; }).join('') +
+    '</div><div id="blBody" style="font-size:12px;color:#64748b">Loading...</div>';
+  showModal('Bulk pool leads - ' + product, html, 960);
+  loadBulkLeads(product, bands[0][0]);
+}
+async function loadBulkLeads(product, band) {
+  var el = document.getElementById('blBody'); if (!el) return;
+  ['tm', '1m', '2m', '3-7d', 'all'].forEach(function(b) { var t = document.getElementById('blTab_' + b); if (t) { t.className = 'btn btn-sm ' + (b === band ? 'btn-primary' : 'btn-outline'); } });
+  el.style.color = '#64748b'; el.innerHTML = 'Loading...';
+  try {
+    var r = await (await fetch(API + '/api/admin/bulk-pool-leads?product=' + encodeURIComponent(product) + '&band=' + encodeURIComponent(band) + '&limit=300', { headers: adminHeaders() })).json();
+    if (!r.success) { el.innerHTML = 'Error loading leads.'; return; }
+    var rows = (r.leads || []).map(function(l) {
+      return '<tr style="border-top:1px solid #eef2f7"><td style="padding:6px 8px">' + esc(l.name || '') + '</td><td style="padding:6px 8px">' + esc(l.address || '') + '</td><td style="padding:6px 8px;white-space:nowrap">' + esc(l.postcode || '') + '</td><td style="padding:6px 8px;white-space:nowrap">' + (l.age === '' ? '-' : l.age + 'd') + '</td><td style="padding:6px 8px;white-space:nowrap">' + esc(l.source || '') + '</td><td style="padding:6px 8px">' + (l.url ? '<a href="' + esc(l.url) + '" target="_blank" style="color:#0ea5e9">link</a>' : '') + '</td></tr>';
+    }).join('');
+    el.style.color = '#0f172a';
+    el.innerHTML = '<div style="font-size:11px;color:#64748b;margin-bottom:6px">' + r.total + ' leads' + (r.total > (r.leads || []).length ? ' (showing first ' + r.leads.length + ')' : '') + '</div>' +
+      '<div style="max-height:62vh;overflow:auto"><table style="width:100%;border-collapse:collapse"><thead><tr style="text-align:left;color:#64748b;font-size:10px;text-transform:uppercase;letter-spacing:.4px"><th style="padding:4px 8px">Name</th><th style="padding:4px 8px">Address</th><th style="padding:4px 8px">Postcode</th><th style="padding:4px 8px">Age</th><th style="padding:4px 8px">Source</th><th style="padding:4px 8px"></th></tr></thead><tbody>' + (rows || '<tr><td colspan="6" style="padding:10px;color:#64748b">No leads in this band.</td></tr>') + '</tbody></table></div>';
+  } catch (e) { el.innerHTML = 'Error: ' + esc(e.message); }
 }
 function switchTab(name) {
   document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });

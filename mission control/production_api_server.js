@@ -27106,6 +27106,36 @@ function fireBoostSend(c, pack, campaignId, leads) {
 
 // GET /api/admin/bulk-pools - availability in every bulk/archive pool so the founder
 // can monitor Boost (moving/probate 1m/2m) and New Business bulk (3-7d) inventory.
+// GET /api/admin/bulk-pool-leads?product=moving&band=tm|1m|2m|all&limit=200&offset=0
+// Lists the actual sellable bulk leads (same source + mailable gate as /api/boost).
+app.get('/api/admin/bulk-pool-leads', adminAuth, function(req, res) {
+  try {
+    var product = String(req.query.product || 'moving').toLowerCase();
+    var band = String(req.query.band || 'tm').toLowerCase();
+    var limit = Math.min(500, parseInt(req.query.limit || '200', 10));
+    var offset = Math.max(0, parseInt(req.query.offset || '0', 10));
+    var arr = [];
+    try {
+      if (product === 'newbusiness') arr = getBulkEligibleLeads(null);
+      else if (band === 'all') arr = [].concat(getBoostArchiveLeads(product, 'tm', 0), getBoostArchiveLeads(product, '1m', 0), getBoostArchiveLeads(product, '2m', 0));
+      else arr = getBoostArchiveLeads(product, band, 0);
+    } catch(eB) {}
+    function ageOf(l) {
+      var d = l.sourceListedDate || l.firstVisibleDate || l.addedOn || l.publishedDate || l.incorporationDate || l.incorporated_on || l.dateIncorporated || l.updateDate || String(l.scrapedAt || l.createdAt || '');
+      var t = d ? new Date(d).getTime() : 0; return t ? Math.round((Date.now() - t) / 86400000) : '';
+    }
+    var total = arr.length;
+    var leads = arr.slice(offset, offset + limit).map(function(l) {
+      return {
+        name: l.company || l.companyName || l.name || l.deceasedName || '',
+        address: String(l.fullAddress || l.address || l.deceasedAddress || '').slice(0, 120),
+        postcode: l.postcode || '', age: ageOf(l),
+        source: l.source || l.sourceProvider || '', commercial: !!l.commercial, url: l.url || ''
+      };
+    });
+    res.json({ success: true, product: product, band: band, total: total, offset: offset, limit: limit, leads: leads });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 app.get('/api/admin/bulk-pools', adminAuth, (req, res) => {
   try {
     var released = releaseStaleBoostReservations();
