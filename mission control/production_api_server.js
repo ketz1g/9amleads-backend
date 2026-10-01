@@ -15445,7 +15445,9 @@ app.post('/api/admin/top-up-today', adminAuth, (req, res) => {
       // allow_older (admin catch-up after a scrape came up empty in a customer's area),
       // any never-sent IN-AREA lead qualifies - used to honour the daily promise when
       // fresh supply for that county is genuinely 0 that day.
-      if (fvT < freshCutoff && !(req.body && req.body.allow_older)) continue;
+      // COMMERCIAL: premises-for-sale/to-let are long-lived (weeks), so the 24/48h
+      // freshness window does not apply - accept any mailable in-area commercial lead.
+      if (cust.product !== 'commercial' && fvT < freshCutoff && !(req.body && req.body.allow_older)) continue;
       // Check BOTH the url key AND the address key: a pool lead may carry a different
       // portal URL than the copy already delivered, but the SAME property address -
       // the address key (postcode/region-normalised) catches that cross-source dup.
