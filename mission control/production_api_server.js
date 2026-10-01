@@ -25057,9 +25057,9 @@ app.post('/api/admin/test/billing-webhook-sim', adminAuth, async (req, res) => {
     var t = Math.floor(Date.now() / 1000);
     var secret = process.env.STRIPE_WEBHOOK_SECRET || '';
     var v1 = require('crypto').createHmac('sha256', secret).update(t + '.' + bodyStr).digest('hex');
-    var https = require('https');
+    var http = require('http');
     var postRes = await new Promise(function(resolve) {
-      var rq = https.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, path: '/api/stripe/webhook', method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyStr), 'Stripe-Signature': 't=' + t + ',v1=' + v1 } }, function(r2) { var b = ''; r2.on('data', function(c2) { b += c2; }); r2.on('end', function() { resolve({ status: r2.statusCode, body: b.substring(0, 200) }); }); });
+      var rq = http.request({ hostname: '127.0.0.1', port: process.env.PORT || 8012, path: '/api/stripe/webhook', method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyStr), 'Stripe-Signature': 't=' + t + ',v1=' + v1 } }, function(r2) { var b = ''; r2.on('data', function(c2) { b += c2; }); r2.on('end', function() { resolve({ status: r2.statusCode, body: b.substring(0, 200) }); }); });
       rq.on('error', function(e) { resolve({ status: 0, body: e.message }); });
       rq.write(bodyStr); rq.end();
     });
