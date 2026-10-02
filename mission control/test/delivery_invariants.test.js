@@ -100,7 +100,7 @@ ok('Postcoder daily cap reported as self-imposed (not an error / credit balance)
 ok('paying customers are flagged paid (never shown as expired trial)',
   has('const paid = !!(c.stripe_subscription_id') && has('paid: paid,'));
 ok('successful subscription payments alert the founder (deduped)',
-  has('Payment received: £') && has('_pdb.paid_invoice_alerts'));
+  has('Payment received: £') && has('_pdbA.paid_invoice_alerts'));
 ok('stripe subscription reconcile self-heals missed webhooks',
   has('async function reconcileStripeSubscriptions') && has('cleared_trial_ends') && has('/api/admin/reconcile-subscriptions'));
 ok('admin billing section (who paid + next due) exists',
@@ -118,7 +118,7 @@ ok('card-capture: day-4/day-6 nudge + direct addcard link',
 ok('card/help emails explain WHY Print & Post works + give it time',
   has('Why Print &amp; Post works') && has('It works - but it needs a few weeks to show') && has('Give it 2-4 weeks.'));
 ok('day-6 add-card email is a distinct urgent "last chance" version',
-  has('function buildAddCardFinalEmail') && has('Last chance - your ') && has("_cardTpl === 'trial_addcard6'"));
+  has('function buildAddCardFinalEmail') && has('Last chance to keep your ') && has("_cardTpl === 'trial_addcard6'"));
 ok('Print & Post proof (2-4 weeks, flyer through the post) referenced widely',
   has('function buildPrintPostProofBlock') && has('Post consistently for <strong>2-4 weeks</strong>') && has("template.indexOf('paid_') === 0 ? buildPrintPostProofBlock()"));
 ok('admin can connect/edit/disconnect a customer CRM webhook',
@@ -143,7 +143,7 @@ ok('CRM payload carries tracking (status/notes/values)',
 ok('dashboard reports conversion rate + why-lost',
   has('conversion_rate: contacted.length') && has('loss_reasons: (function()'));
 ok('admin booked/lost counts derived from lead_status',
-  has("booked_count: (db.leads || []).filter") && has("lost_count: (db.leads || []).filter"));
+  has('booked_count: _leadsArr.filter') && has('lost_count: _leadsArr.filter'));
 ok('trial nurture is self-healing (3 daily runs + boot catch-up)',
   has("cron.schedule('0 10,14,18 * * *'") && has('CAMPAIGN CATCH-UP ON BOOT'));
 ok('paid welcome is sent immediately on subscribe (deduped)',
@@ -151,7 +151,11 @@ ok('paid welcome is sent immediately on subscribe (deduped)',
 ok('paid tip cadence counts from payment (paid_since)',
   has('cust.paid_since ? new Date(cust.paid_since).getTime()'));
 ok('paid emails require real payment (not just a pre-selected plan)',
-  has('var isPaidNow = _hasSub || !!cust.paid_since;'));
+  has('var isPaidNow = _hasSub || (!!cust.paid_since && String(cust.plan || \'\') !== \'free_trial\')'));
+ok('paid tip subjects carry no raw HTML entities (render "&", never "&amp;")',
+  !/subject:\s*'[^']*&amp;/.test(SRC) && has("subject: 'Tip #3: Print & Post Every Lead In Minutes'"));
+ok('paid tip / check-in emails are classified (not left as "other")',
+  has('tip #?\\d|how to get even more from your leads') && has('the second letter wins/i.test(s)'));
 ok('quiet-area emails skip ended trials / non-entitled customers',
   has("if (!isEntitledForDelivery(c)) return;") && has('EXPIRED TRIALS - an ended trial'));
 ok('quiet-area alert is one consolidated email per customer',

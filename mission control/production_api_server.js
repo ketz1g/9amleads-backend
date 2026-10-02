@@ -18080,6 +18080,10 @@ function emailTypeFromSubject(subject) {
   if (/lie-in|all sorted|leads are here|more leads for you|one more lead for you|are on (their|the) way/i.test(s)) return 'delivery';
   // Alerts / incidents
   if (/alert|failed|error|warning|reserve ready|needs a quick fix|technical/i.test(s)) return 'alert';
+  // Paid-customer lifecycle: the weekly "Tip #n" series + later check-ins sent AFTER a
+  // real subscription starts. Legitimate paid nurture - label them so they never show
+  // as unexplained "other" and get mistaken for mis-routed mail.
+  if (/^tip #?\d|how to get even more from your leads|months in.*scale|the second letter wins/i.test(s)) return 'onboarding';
   // Trial / onboarding nurture (checked BEFORE print-post so "Start your Print & Post
   // this week" reads as onboarding, matching the trial sequence it belongs to)
   if (/free trial|trial|welcome|keep your .*coming|last chance|ends tomorrow|opportunities looking|convert more leads|first.?win|first win|print & post this week|verify your|into your crm|start your|your leads start/i.test(s)) return 'onboarding';
@@ -19387,7 +19391,7 @@ const PAID_EMAIL_SERIES = [
   { week: 0, subject: 'Welcome to 9amLeads. Your opportunities arrive tomorrow at 9am!', template: 'paid_welcome' },
   { week: 1, subject: 'Tip #1: Get More Replies With Print & Post', template: 'paid_tip1' },
   { week: 2, subject: 'Tip #2: Never Miss A Lead With Auto Send', template: 'paid_tip2' },
-  { week: 3, subject: 'Tip #3: Print &amp; Post Every Lead In Minutes', template: 'paid_tip3' },
+  { week: 3, subject: 'Tip #3: Print & Post Every Lead In Minutes', template: 'paid_tip3' },
   { week: 4, subject: 'Tip #4: Follow Up By Post. The Second Letter Wins', template: 'paid_tip4' },
   { week: 8, subject: 'How to get even more from your leads', template: 'paid_checkin1' },
   { week: 12, subject: '3 months in. Here\u2019s how to scale', template: 'paid_checkin2' }
@@ -20046,7 +20050,7 @@ app.post('/api/admin/send-tip-sample', adminAuth, async (req, res) => {
       try {
         var cust = __emailDemoCustomer('moving');
         var html = getCampaignEmailHTMLWithEdits(cust, tmpl);
-        var subj = getEditedCampaignSubject(tmpl, 'Tip #3: Print &amp; Post Every Lead In Minutes');
+        var subj = getEditedCampaignSubject(tmpl, 'Tip #3: Print & Post Every Lead In Minutes');
         await sendBrevoEmail({ email: to, name: '9amLeads Owner' }, 'TEST - ' + tmpl + ' - ' + String(subj || '').replace(/<[^>]+>/g, ''), html);
         console.log('[TIP-SAMPLE] Sent ' + tmpl + ' to ' + to);
       } catch(_e) { console.log('[TIP-SAMPLE] error: ' + _e.message); }
