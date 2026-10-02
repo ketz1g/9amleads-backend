@@ -9035,15 +9035,38 @@ app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
       try { var pcfg = JSON.parse(cust.product_config || '{}'); custMovingType = (pcfg.moving && pcfg.moving.moving_type) || cust.moving_type || 'both'; } catch(e) { custMovingType = cust.moving_type || 'both'; }
       var ukwide = /all.?uk|uk.?wide|nationwide|whole.?uk/i.test((areas || []).join(' '));
       var pool = loadProductPool(prod);
-      // COMMERCIAL leads live in the commercial ARCHIVE (long-lived premises), not the
-      // daily moving pool - source them from there.
-      if (prod === 'commercial') { try { var _cArch = [].concat(getBoostArchiveLeads('commercial', 'tm', 0), getBoostArchiveLeads('commercial', '1m', 0), getBoostArchiveLeads('commercial', '2m', 0)); if (_cArch.length) pool = _cArch; } catch(eC) {} }
+      // COMMERCIAL: the daily feed is FRESH commercial premises (first-seen within the
+      // standard 24h/48h/Monday window), NOT the 3-65 day bulk bands. Same freshness
+      // promise as every other product.
+      if (prod === 'commercial') {
+        try { pool = getFreshCommercialPool(); } catch(eC) {}
+        // SELF-HEAL: queues built before this rule can hold long-listed premises that
+        // were re-stamped 'scrapedAt = now' at queue time. Drop any pending commercial
+        // lead whose premises is not in the current fresh set, then refill fresh below.
+        try {
+          var _freshUrl = {};
+          pool.forEach(function(fl) { try { var u0 = String(fl.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim(); if (u0) _freshUrl[u0] = 1; } catch(eU) {} });
+          var _dropped = 0;
+          dbT.leads = (dbT.leads || []).filter(function(l) {
+            if (l.customer_id !== cust.id || l.delivered || l.product !== 'commercial' || l.status === 'removed') return true;
+            try { var dd0 = JSON.parse(l.data || '{}'); var u1 = String(dd0.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim(); if (u1 && _freshUrl[u1]) return true; } catch(e0) {}
+            _dropped++; return false;
+          });
+          if (_dropped) {
+            cur = (dbT.leads || []).filter(function(l) { if (l.customer_id !== cust.id || l.status === 'removed' || l.delivered) return false; var _ld2 = {}; try { _ld2 = JSON.parse(l.data || '{}'); } catch(e3) { _ld2 = {}; } if (_ld2.rejected || _ld2.blocked || _ld2.blocked_by_admin) return false; return _mailable(_ld2, prod); }).length;
+            need = cap - cur;
+            entry.current = cur; entry.need = Math.max(0, need);
+            console.log('[COMMERCIAL-FRESH] ' + cust.email + ': dropped ' + _dropped + ' stale pending lead(s)');
+            if (need <= 0) { summary.push(entry); return; }
+          }
+        } catch(eSH) {}
+      }
       var poolForCust = interleavePoolByAreas(pool, areas);
       // COMMERCIAL: in-area FIRST, then newest-listed (fresh premises = a business about
       // to move). Older ones only fill the remaining quota.
       if (prod === 'commercial') {
         var _inA2 = function(l) { var a2 = extractPostcodeArea(l.postcode || l.address || l.fullAddress || ''); return (ukwide || areas.indexOf(a2) !== -1) ? 0 : 1; };
-        poolForCust = poolForCust.slice().sort(function(a, b) { var ia = _inA2(a), ib = _inA2(b); if (ia !== ib) return ia - ib; var da = a.sourceListedDate || a.firstVisibleDate || a.updateDate || ''; var db = b.sourceListedDate || b.firstVisibleDate || b.updateDate || ''; return String(db).localeCompare(String(da)); });
+        poolForCust = poolForCust.slice().sort(function(a, b) { var ia = _inA2(a), ib = _inA2(b); if (ia !== ib) return ia - ib; return String(pickFreshDate(b) || '').localeCompare(String(pickFreshDate(a) || '')); });
       }
       var used = {};
       // already-assigned to this customer (avoid re-adding) - key on URL AND
@@ -9097,7 +9120,9 @@ app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
         var _bestA = bestMailableAddress(dT);
         if (_bestA) { dT.fullAddress = _bestA; dT.address = _bestA; }
         if (prod !== 'tenders' && !isLeadMailableForSend(dT, prod)) continue;
-        dT.scrapedAt = nowIso;
+        // PRESERVE the source lead's scrapedAt (commercial first-seen). Re-stamping it
+        // "now" made long-listed commercial premises look fresh forever.
+        dT.scrapedAt = dT.scrapedAt || nowIso;
         if (!dT.firstVisibleDate) dT.firstVisibleDate = nowIso;
         dbT.leads.push({ id: uuidv4(), customer_id: cust.id, product: prod, data: JSON.stringify(dT), status: 'new', delivered: 0, created_at: nowIso, delivered_at: null, release_at: todayStr + 'T09:00:00.000Z' });
         assigned++; entry.added++;
@@ -13687,6 +13712,9 @@ async function deliveryPreviewForCustomer(cust, sharedSeen, opts) {
     } catch(e) {}
   });
   var pool = loadProductPool(cust.product);
+  // COMMERCIAL daily feed uses FRESH commercial premises (first-seen), matching the
+  // delivery gate - so preview / pre-allocation / delivery all agree.
+  if (cust.product === 'commercial') { try { pool = getFreshCommercialPool(); } catch(eCP) {} }
   var maxBedsF = 99;
   try { var f2P = JSON.parse(cust.biz_field2 || '{}'); var fPP = f2P.moving || f2P; maxBedsF = parseInt(fPP['f-maxbeds'] || fPP['f-bed-max'] || fPP.maxBedrooms) || 99; } catch(e) { maxBedsF = 99; }
   // CUSTOMER FILTERS (same parsing as the 9am delivery) so the preview applies the
@@ -15507,7 +15535,7 @@ app.post('/api/admin/set-customer-lead-total', adminAuth, async (req, res) => {
         var key = _plUrl ? ('u:' + _plUrl) : ('a:' + _stNormAddr(pl.address || pl.fullAddress || '', pl.postcode || ''));
         if (usedKeys[key]) continue;
         usedKeys[key] = 1;
-        var dS = { address: pl.address || pl.fullAddress || '', fullAddress: pl.fullAddress || pl.address || '', postcode: pl.postcode || '', url: pl.url || '', street: pl.street || '', building_number: pl.building_number || '', source: pl.source || '', firstVisibleDate: pl.firstVisibleDate || nowIso, scrapedAt: nowIso };
+        var dS = { address: pl.address || pl.fullAddress || '', fullAddress: pl.fullAddress || pl.address || '', postcode: pl.postcode || '', url: pl.url || '', street: pl.street || '', building_number: pl.building_number || '', source: pl.source || '', firstVisibleDate: pl.firstVisibleDate || nowIso, scrapedAt: pl.scrapedAt || nowIso };
         // Carry the parsed town/county through to the delivered lead (the pool now
         // back-fills these from the full address; keep them on the delivered lead).
         if (!dS.town && pl.town) dS.town = pl.town;
@@ -15575,20 +15603,16 @@ app.post('/api/admin/top-up-today', adminAuth, (req, res) => {
     try { areas = JSON.parse(cust.target_areas || '[]'); } catch(e) { areas = []; }
     if (!areas.length) { try { var cfgT = JSON.parse(cust.product_config || '{}'); areas = (cfgT[cust.product] && cfgT[cust.product].target_areas) ? JSON.parse(cfgT[cust.product].target_areas) : []; } catch(e2) { areas = []; } }
     var pool = loadProductPool(cust.product);
-    // COMMERCIAL: commercial premises (offices/warehouses/units) live in the 65-day
-    // commercial ARCHIVE (they are long-lived listings), NOT the daily moving pool.
-    // Source them from there so commercial accounts actually receive leads.
+    // COMMERCIAL: source FRESH commercial premises (first-seen within the standard
+    // 24h/48h/Monday window) - the same freshness promise as every other product.
     if (cust.product === 'commercial') {
-      try {
-        var _cArch = [].concat(getBoostArchiveLeads('commercial', 'tm', 0), getBoostArchiveLeads('commercial', '1m', 0), getBoostArchiveLeads('commercial', '2m', 0));
-        if (_cArch.length) pool = _cArch;
-      } catch(eC) {}
+      try { pool = getFreshCommercialPool(); } catch(eC) {}
     }
     var interleaved = interleavePoolByAreas(pool, areas);
     // COMMERCIAL: in-area FIRST, then newest-listed (fresh = a business about to move).
     if (cust.product === 'commercial') {
       var _inA3 = function(l) { var a3 = extractPostcodeArea(l.postcode || l.address || l.fullAddress || ''); return areas.indexOf(a3) !== -1 ? 0 : 1; };
-      interleaved = interleaved.slice().sort(function(a, b) { var ia = _inA3(a), ib = _inA3(b); if (ia !== ib) return ia - ib; var da = a.sourceListedDate || a.firstVisibleDate || a.updateDate || ''; var db = b.sourceListedDate || b.firstVisibleDate || b.updateDate || ''; return String(db).localeCompare(String(da)); });
+      interleaved = interleaved.slice().sort(function(a, b) { var ia = _inA3(a), ib = _inA3(b); if (ia !== ib) return ia - ib; return String(pickFreshDate(b) || '').localeCompare(String(pickFreshDate(a) || '')); });
     }
     var nowIso = new Date().toISOString();
     var freshCutoff = getFreshCutoffIso();
@@ -15675,9 +15699,10 @@ app.post('/api/admin/top-up-today', adminAuth, (req, res) => {
       // allow_older (admin catch-up after a scrape came up empty in a customer's area),
       // any never-sent IN-AREA lead qualifies - used to honour the daily promise when
       // fresh supply for that county is genuinely 0 that day.
-      // COMMERCIAL: premises-for-sale/to-let are long-lived (weeks), so the 24/48h
-      // freshness window does not apply - accept any mailable in-area commercial lead.
-      if (cust.product !== 'commercial' && fvT < freshCutoff && !(req.body && req.body.allow_older)) continue;
+      // Freshness now applies to commercial too (same 24/48h/Monday window as every
+      // product): commercial premises are sourced fresh by first-seen, so a stale
+      // queued lead is never topped up. allow_older (admin catch-up) still bypasses.
+      if (fvT < freshCutoff && !(req.body && req.body.allow_older)) continue;
       // Check BOTH the url key AND the address key: a pool lead may carry a different
       // portal URL than the copy already delivered, but the SAME property address -
       // the address key (postcode/region-normalised) catches that cross-source dup.
@@ -15688,7 +15713,7 @@ app.post('/api/admin/top-up-today', adminAuth, (req, res) => {
       break;
     }
     if (!picked) return res.status(400).json({ error: 'No fresh in-area lead available to top up today. Try again later.' });
-    var dT = { address: picked.fullAddress || picked.address || '', fullAddress: picked.fullAddress || picked.address || '', postcode: picked.postcode || '', url: picked.url || '', street: picked.street || '', building_number: picked.building_number || '', source: picked.source || '', firstVisibleDate: picked.firstVisibleDate || nowIso, scrapedAt: nowIso };
+    var dT = { address: picked.fullAddress || picked.address || '', fullAddress: picked.fullAddress || picked.address || '', postcode: picked.postcode || '', url: picked.url || '', street: picked.street || '', building_number: picked.building_number || '', source: picked.source || '', firstVisibleDate: picked.firstVisibleDate || nowIso, scrapedAt: picked.scrapedAt || nowIso };
     // PRESERVE product-specific fields. The old fixed field set above dropped the
     // company name (newbusiness), deceased name (probate), proposal (planning) and
     // tender details (tenders), so any lead added by a top-up rendered as a generic
@@ -27436,6 +27461,33 @@ function isBadCommercialPremise(addr) {
   }
   return false;
 }
+// FRESH commercial premises for the DAILY subscription feed - the commercial equivalent
+// of the fresh pool that moving/probate/planning/tenders use. Commercial premises stay
+// listed for months, so their freshness is "when WE first scraped it" (scrapedAt /
+// archivedAt, which appendToArchive never refreshes on re-sight) - i.e. genuinely NEW
+// commercial listings discovered, NOT how long the premises has been on the market.
+// Restricting the feed to this set is what makes it obey the standard freshness window
+// (24h primary / 48h fallback; Sat-Sun-Mon back to Friday 09:00, i.e. up to ~72h on
+// Monday). The 3-65 day bands (getBoostArchiveLeads) are for BULK/Boost packs only and
+// must NOT feed the daily subscription.
+function getFreshCommercialPool(cutoffIso) {
+  var cut = cutoffIso || getFreshCutoffIso();
+  var arch = [];
+  try { arch = readArchive('moving') || []; } catch(eA) { return []; }
+  var out = [];
+  for (var i = 0; i < arch.length; i++) {
+    var l = arch[i];
+    if (!(l && (l.commercial || l.commercial_let))) continue;
+    try { if (!commercialMailable(l)) continue; } catch(eM) { continue; }
+    var fv = pickFreshDate(l);
+    if (!fv || fv < cut) continue;
+    out.push(l);
+  }
+  // Freshest-first: prefer premises first-seen within 24h; 24-48h (or Monday back to
+  // Friday 09:00) only fills the gaps.
+  try { out.sort(function(a, b) { return String(pickFreshDate(b) || '').localeCompare(String(pickFreshDate(a) || '')); }); } catch(eS) {}
+  return out;
+}
 function getBoostArchiveLeads(product, ageKey, count, allowedAreas) {
   // Prefer the 65-day bulk archive; fall back to the live pool until it has filled.
   var _archProd = (product === 'commercial') ? 'moving' : product;
@@ -28672,6 +28724,10 @@ app.post('/api/admin/deliver', adminAuth, async (req, res) => {
     var _deliveryPoolCache = {};
     function getDeliveryPool(prod) {
       if (_deliveryPoolCache[prod]) return _deliveryPoolCache[prod];
+      // COMMERCIAL premises are not in the daily moving pool (residential-only) - use
+      // the FRESH commercial archive so the 9am top-up can fill commercial shortfalls
+      // with fresh premises, exactly like the other products fill from their pools.
+      if (prod === 'commercial') { var _cfP = []; try { _cfP = getFreshCommercialPool(); } catch(eCf) { _cfP = []; } _deliveryPoolCache[prod] = _cfP; return _cfP; }
       var f = path.join(DATA_DIR, PRODUCT_LEAD_FILES[prod] ? PRODUCT_LEAD_FILES[prod].file : 'moving-leads.json');
       var raw = null;
       try { raw = JSON.parse(fs.readFileSync(f, 'utf-8')); } catch(e2) { raw = null; }
