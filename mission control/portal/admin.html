@@ -703,6 +703,8 @@ function loadEmailAnomalies() {
       (d.duplicates || []).forEach(function(x) { h += '<tr><td style="color:#ef4444;font-weight:700;white-space:nowrap">Duplicate &times;' + x.count + '</td><td style="font-size:12px">' + esc(x.key) + '</td></tr>'; });
       (d.paid_to_unpaid || []).forEach(function(x) { h += '<tr><td style="color:#ef4444;font-weight:700">Paid email</td><td style="font-size:12px">' + esc(x.email) + ' &middot; ' + esc(x.subject) + '</td></tr>'; });
       (d.day7_wrong || []).forEach(function(x) { h += '<tr><td style="color:#f59e0b;font-weight:700">Mistimed</td><td style="font-size:12px">' + esc(x.email) + ' &middot; "ends tomorrow" at ' + esc(x.at) + ' (trial ends ' + esc(x.trial_ends) + ')</td></tr>'; });
+      (d.premature_nurture || []).forEach(function(x) { h += '<tr><td style="color:#ef4444;font-weight:700;white-space:nowrap">Too soon</td><td style="font-size:12px">' + esc(x.email) + ' &middot; ' + esc(x.subject) + ' sent ' + (x.age_hours || 0) + 'h after signup</td></tr>'; });
+      (d.verify_too_soon || []).forEach(function(x) { h += '<tr><td style="color:#f59e0b;font-weight:700;white-space:nowrap">Verify chase</td><td style="font-size:12px">' + esc(x.email) + ' &middot; verification reminder ' + (x.age_hours || 0) + 'h after signup</td></tr>'; });
       b.innerHTML = h + '</table>';
     })
     .catch(function() { b.innerHTML = '<div class="loading">Could not load anomalies.</div>'; });

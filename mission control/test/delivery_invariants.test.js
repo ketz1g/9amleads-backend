@@ -174,6 +174,24 @@ ok('quiet-area emails skip ended trials / non-entitled customers',
   has("if (!isEntitledForDelivery(c)) return;") && has('EXPIRED TRIALS - an ended trial'));
 ok('quiet-area alert is one consolidated email per customer',
   has('var quietCodes = [];') && has("No leads in ' + _qaCodes"));
+ok('quiet-area alert skips accounts younger than the quiet window',
+  has('cannot have a 4-day quiet spell') && has('if (_signupMs && (Date.now() - _signupMs) < days * 86400000) return;'));
+ok('verification reminder waits until the account is a day old',
+  has('var _vAgeMs = c.created_at ? (Date.now() - new Date(c.created_at).getTime()) : Infinity;') && has('if (_vAgeMs < 24 * 3600000) return false;'));
+ok('monthly ROI recap only goes to customers who predate the month',
+  has('var _createdYm = c.created_at ? String(c.created_at).slice(0, 7) : \'\';') && has('if (!_createdYm || _createdYm >= ym) return;'));
+ok('campaign engine never emails internal/owner accounts or blank addresses',
+  has('never nurture test/owner/internal inboxes') && has('need a real destination'));
+ok('area-health honours its own notified marker (no weekly repeat)',
+  has('HONOUR THE MARKER') && has('var _ahLast = ahDb.__area_health_notified[c.id];'));
+ok('weekly digest excludes internal accounts and honours opt-out',
+  has('never digest test/owner/internal inboxes') && has('honour opt-out (the comment promises this)'));
+ok('classifier labels Print & Post (with ampersand) as print_post',
+  has('print\\s*(?:&|and)?\\s*post'));
+ok('classifier labels quiet-area/area-health as alerts and ROI/digest as onboarding',
+  has('update your postcode areas|top up your areas|daily leads are guaranteed') && has('your 9amleads in |weekly .*summary'));
+ok('anomaly scan flags premature nurture + early verify chases',
+  has('premature_nurture') && has('verify_too_soon') && has('out.premature_nurture.push'));
 ok('morning readiness summary is digest-mode (silent when all ready)',
   has("all ' + rows.length + ' ready - no email (digest mode)"));
 ok('early readiness + guarantee do not send duplicate pre-9am emails',

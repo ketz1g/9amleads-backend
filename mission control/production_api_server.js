@@ -4655,6 +4655,11 @@ function runMonthlyRoiSummary(opts) {
         if (isInternalAccount(c)) return;
         if (!isEntitledForDelivery(c)) return;
         if (c.last_roi_month === ym) return;
+        // Only recap a customer who was with us BEFORE the reported month began.
+        // A signup on the last day of the month otherwise gets a "[month] in review"
+        // the next morning, which reads as spam and proves nothing.
+        var _createdYm = c.created_at ? String(c.created_at).slice(0, 7) : '';
+        if (!_createdYm || _createdYm >= ym) return;
         var mine = (db2.leads || []).filter(function(l){ return l.customer_id === c.id && l.created_at && String(l.created_at).slice(0, 7) === ym; });
         if (!mine.length) return;
         candidates++;
@@ -7276,6 +7281,10 @@ async function sendVerificationReminders() {
         if (typeof trialExpiredUnpaid === 'function' && trialExpiredUnpaid(c)) return false;
         if (Number(c.email_verified) === 1) return false;
         if (c.verify_reminded_at) return false;
+        // Give a brand-new signup at least a day to use the verification email we
+        // sent at signup - never chase the very next morning with a duplicate.
+        var _vAgeMs = c.created_at ? (Date.now() - new Date(c.created_at).getTime()) : Infinity;
+        if (_vAgeMs < 24 * 3600000) return false;
         if (!c.email) return false;
         return true;
       } catch(e) { return false; }
@@ -18182,17 +18191,25 @@ function emailTypeFromSubject(subject) {
   if (/lie-in|all sorted|leads are here|more leads for you|one more lead for you|are on (their|the) way/i.test(s)) return 'delivery';
   // Alerts / incidents
   if (/alert|failed|error|warning|reserve ready|needs a quick fix|technical/i.test(s)) return 'alert';
+  // Area-coverage alerts: we detected a quiet/under-filled area and asked them to
+  // refresh it (the quiet-area nudge + the weekly area-health top-up). These are
+  // system alerts about supply, not marketing, so they must never show as "other".
+  if (/update your postcode areas|top up your areas|daily leads are guaranteed/i.test(s)) return 'alert';
   // Paid-customer lifecycle: the weekly "Tip #n" series + later check-ins sent AFTER a
   // real subscription starts. Legitimate paid nurture - label them so they never show
   // as unexplained "other" and get mistaken for mis-routed mail.
   if (/^tip #?\d|how to get even more from your leads|months in.*scale|the second letter wins/i.test(s)) return 'onboarding';
   // Trial / onboarding nurture (checked BEFORE print-post so "Start your Print & Post
-  // this week" reads as onboarding, matching the trial sequence it belongs to)
-  if (/free trial|trial|welcome|keep your .*coming|last chance|ends tomorrow|opportunities looking|convert more leads|first.?win|first win|print & post this week|verify your|into your crm|start your|your leads start/i.test(s)) return 'onboarding';
-  // Win-back / re-engagement marketing (post-trial)
-  if (/leaflet|3-week test|stop chasing|quiet week|still want work|one month on|upload your flyer|let us get your flyer|flyer through their door|come to you|bulk send/i.test(s)) return 'marketing';
-  // Print & Post transactional (order / printer / dispatch)
-  if (/print.?post|mailing|posted|dispatched|printer|doorstep/i.test(s)) return 'print_post';
+  // this week" reads as onboarding, matching the trial sequence it belongs to).
+  // Also covers the monthly ROI recap + weekly performance digest (lifecycle/value).
+  if (/free trial|trial|welcome|keep your .*coming|last chance|ends tomorrow|opportunities looking|convert more leads|first.?win|first win|print & post this week|verify your|into your crm|start your|your leads start|opportunities start tomorrow|leads have paused|your 9amleads in |weekly .*summary/i.test(s)) return 'onboarding';
+  // Win-back / re-engagement marketing (post-trial): the at-risk nudge, the win-back
+  // sequence and the long weekly follow-ups (weeks 5-26) all belong here.
+  if (/leaflet|3-week test|stop chasing|quiet week|still want work|one month on|upload your flyer|let us get your flyer|flyer through their door|come to you|bulk send|fresh leads waiting|still waiting|still on the fence|not too late|restart|saved leads|competitors|one click away|on hold for you/i.test(s)) return 'marketing';
+  // Print & Post transactional (order / printer / dispatch). Match the literal
+  // "Print & Post" too - the old /print.?post/ allowed only ONE char between the
+  // words, so the real "Print & Post" subject fell through to "other".
+  if (/print\s*(?:&|and)?\s*post|mailing|posted|dispatched|printer|doorstep/i.test(s)) return 'print_post';
   if (/bulk postage|bulk\b|exclusive lead/i.test(s)) return 'bulk';
   if (/preview/i.test(s)) return 'preview';
   return 'other';
@@ -18250,7 +18267,7 @@ app.get('/api/admin/customer-emails', adminAuth, (req, res) => {
 // Intentional repeats (verification resends, the manual shortfall apology) are excluded.
 function scanEmailAnomalies(days) {
   days = days || 14;
-  var out = { checked: 0, duplicates: [], paid_to_unpaid: [], day7_wrong: [] };
+  var out = { checked: 0, duplicates: [], paid_to_unpaid: [], day7_wrong: [], premature_nurture: [], verify_too_soon: [] };
   try {
     var d = getDb();
     var cutoff = Date.now() - days * 86400000;
@@ -18303,6 +18320,21 @@ function scanEmailAnomalies(days) {
           if (teDay !== nextDay) out.day7_wrong.push({ email: em, at: e.at, trial_ends: c.trial_ends });
         } catch(e2) {}
       }
+      // NURTURE TOO SOON: a lifecycle/marketing email (ROI recap, area nudge, first-win,
+      // at-risk, win-back) must never hit a brand-new account - that is the "email I
+      // shouldn't have got" class. The signup verify is expected; only a REMINDER inside
+      // the first 24h (but after the immediate signup send) is flagged.
+      if (c && c.created_at) {
+        var _createdAt = new Date(c.created_at).getTime();
+        if (_createdAt > 0 && at >= _createdAt) {
+          var _ageMs = at - _createdAt;
+          if (/verify your/i.test(subj)) {
+            if (_ageMs > 3600000 && _ageMs < 24 * 3600000) out.verify_too_soon.push({ email: em, subject: subj, age_hours: Math.round(_ageMs / 3600000), at: e.at });
+          } else if (_ageMs < 2 * 86400000 && /your 9amleads in |update your postcode areas|top up your areas|fresh leads waiting|first win|restart|still waiting/i.test(subj)) {
+            out.premature_nurture.push({ email: em, subject: subj, age_hours: Math.round(_ageMs / 3600000), at: e.at });
+          }
+        }
+      }
     });
     Object.keys(counts).forEach(function(k) { if (counts[k] > 1) out.duplicates.push({ key: k, count: counts[k] }); });
   } catch(e) { out.error = e.message; }
@@ -18313,7 +18345,7 @@ app.get('/api/admin/email-anomalies', adminAuth, (req, res) => {
     var days = req.query && req.query.days ? parseInt(req.query.days, 10) : 14;
     var rep = scanEmailAnomalies(days);
     rep.success = true;
-    rep.total_anomalies = rep.duplicates.length + rep.paid_to_unpaid.length + rep.day7_wrong.length;
+    rep.total_anomalies = rep.duplicates.length + rep.paid_to_unpaid.length + rep.day7_wrong.length + rep.premature_nurture.length + rep.verify_too_soon.length;
     res.json(rep);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -22754,11 +22786,16 @@ async function runAreaHealthSuggestions(options) {
           'The good news: nearby areas have more supply. Adding any of these to your areas usually fills you to the full daily count every day:<br><ul style="margin:6px 0;padding-left:18px">' + (suggestHtml || '<li>adding a couple of neighbouring postcode areas / counties</li>') + '</ul>' +
           'You can update your areas in <a href="https://www.9amleads.com/portal/dashboard.html" style="color:#38bdf8">your dashboard in under a minute</a> . We\u2019ll start delivering from the new mix the very next morning.<br><br>' +
           'We want you getting the full value every single day. Happy to help adjust anything. Just reply to this email.<br><br>Team 9amLeads</div>';
+        if (!ahDb.__area_health_notified) ahDb.__area_health_notified = {};
+        // HONOUR THE MARKER: it is written below, so it must be read too. Without this
+        // a customer who is still under-filled got the same "top up your areas" email
+        // every single week. Cooldown = 30 days (a monthly reminder is enough).
+        var _ahLast = ahDb.__area_health_notified[c.id];
+        if (_ahLast && (now.getTime() - new Date(_ahLast).getTime()) < 30 * 86400000) continue;
         __report.push({ email: c.email, name: c.company || 'Customer', product: c.product, promised: promised, delivered: delivered, expected: expected, fillRate: fillRate, areas: areas, suggestions: better });
         if (!__dryRun) {
           sendBrevoEmail({ email: c.email, name: c.company || 'Customer' }, 'Your daily leads are guaranteed. Let\u2019s top up your areas', buildAdminStyleEmail(emailHtml));
-          // mark so we don't nag weekly
-          if (!ahDb.__area_health_notified) ahDb.__area_health_notified = {};
+          // mark so we don't nag weekly (read back above)
           ahDb.__area_health_notified[c.id] = new Date().toISOString();
           saveDb();
           sent++;
@@ -25991,7 +26028,11 @@ async function runCampaignEmails(dry) {
   if (!dry) { try { reconcileTrialPaidMarkers(); } catch(e) { console.log('[PAID-RECONCILE] error:', e.message); } }
   // Cancelled customers ARE included so they can receive the cancelled-customer
   // win-back (handled separately below) - but they never get trial or paid emails.
-  var customers = (getDb().customers || []).filter(function(c) { return c.plan && (!c.bounced || c.bounced < 1) && c.marketing_consent === 1; });
+  var customers = (getDb().customers || []).filter(function(c) {
+    if (!c || !c.email) return false;              // need a real destination
+    if (isInternalAccount(c)) return false;        // never nurture test/owner/internal inboxes
+    return c.plan && (!c.bounced || c.bounced < 1) && c.marketing_consent === 1;
+  });
   var sent = 0;
   var log = [];
   var sendIt = async function (cust, template, subject, html) {
@@ -26339,6 +26380,8 @@ cron.schedule('30 8 * * 1', async () => {
   var dbD = getDb();
   var customers = (dbD.customers || []).filter(function(c) {
     if (!c.plan || c.plan === 'cancelled' || !c.email || (c.bounced && c.bounced >= 1)) return false;
+    if (isInternalAccount(c)) return false;      // never digest test/owner/internal inboxes
+    if (c.marketing_consent !== 1) return false;  // honour opt-out (the comment promises this)
     // An EXPIRED free trial must not receive nurture/digest emails after the trial
     // ends (they are re-engaged only through the payment/expiry flow, not weekly
     // summaries). This is what caused nawadi1655@mediseat.com to get a digest the
