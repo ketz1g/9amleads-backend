@@ -56,6 +56,31 @@ function getFreshCutoffIso(nowMs) {
   return new Date(nowMs - FRESH_HOURS * 3600000).toISOString();
 }
 
+// 24h PRIMARY floor for the first lead-selection pass - the "fresh within 24 hours"
+// promise. Same weekend grace as the 48h fallback: SAT/SUN/MON floor back to the most
+// recent FRIDAY 09:00 UK, so Monday can reach back up to 72h. Normal days = now-24h.
+// The delivery uses this for its first pass and getFreshCutoffIso (48h / Friday 09:00)
+// as the fallback, giving "24h primary, 48h fallback, up to 72h on Mondays".
+function getFreshCutoffIso24(nowMs) {
+  nowMs = nowMs || Date.now();
+  try {
+    var offMin = ukOffsetMin(nowMs);
+    var ukMs = nowMs + offMin * 60000;
+    var ukD = new Date(ukMs);
+    var dow = ukD.getUTCDay(); // 0=Sun, 1=Mon, 6=Sat
+    if (dow === 6 || dow === 0 || dow === 1) {
+      var back = dow === 1 ? 3 : (dow === 6 ? 1 : 2); // Mon->Fri, Sat->Fri, Sun->Fri
+      var fri = new Date(ukMs);
+      fri.setUTCDate(fri.getUTCDate() - back);
+      fri.setUTCHours(9, 0, 0, 0);
+      var friIso = new Date(fri.getTime() - offMin * 60000).toISOString();
+      var hoursIso = new Date(nowMs - 24 * 3600000).toISOString();
+      return friIso < hoursIso ? friIso : hoursIso; // earlier (more inclusive) wins
+    }
+  } catch(e) {}
+  return new Date(nowMs - 24 * 3600000).toISOString();
+}
+
 // POOL PRUNE CUTOFF: leads older than this are deleted from the pools so we never
 // build a backlog of unused leads (we scrape daily). Floor = 72h (3 days). On
 // MONDAYS it extends back to Friday 09:00 UK so Saturday/Sunday/Friday-afternoon
@@ -80,4 +105,4 @@ function getPruneCutoffIso(nowMs) {
   return new Date(nowMs - PRUNE_HOURS * 3600000).toISOString();
 }
 
-module.exports = { ukOffsetMin: ukOffsetMin, getFreshCutoffIso: getFreshCutoffIso, isMondayUK: isMondayUK, getPruneCutoffIso: getPruneCutoffIso };
+module.exports = { ukOffsetMin: ukOffsetMin, getFreshCutoffIso: getFreshCutoffIso, getFreshCutoffIso24: getFreshCutoffIso24, isMondayUK: isMondayUK, getPruneCutoffIso: getPruneCutoffIso };

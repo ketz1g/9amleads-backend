@@ -1048,6 +1048,9 @@ function loadProductPool(prod) {
 // 00:00 so weekend-scraped leads fill Monday's accounts). See freshness.js.
 var FRESHNESS = require('./freshness');
 function getFreshCutoffIso(nowMs) { return FRESHNESS.getFreshCutoffIso(nowMs); }
+// 24h PRIMARY cutoff (48h fallback still uses getFreshCutoffIso above). Monday ->
+// Friday 09:00, so the primary window reaches up to 72h on Mondays.
+function getFreshCutoffIso24(nowMs) { return FRESHNESS.getFreshCutoffIso24(nowMs); }
 
 // Returns the first ISO-format date field on a lead. Skips human-readable dates
 // (e.g. probate grantDate "19 August 2026") which break ISO string comparisons and
@@ -13683,6 +13686,8 @@ async function deliveryPreviewForCustomer(cust, sharedSeen, opts) {
   try { var _bxP = JSON.parse(cust.biz_field3 || '[]'); if (Array.isArray(_bxP) && _bxP.length) products = _bxP; } catch(eBx) {}
   var dbV = getDb();
   var freshCutoff = getFreshCutoffIso();
+  // 24h PRIMARY cutoff for tier-0 ranking (Monday -> Friday 09:00, i.e. up to 72h).
+  var freshCutoff24p = getFreshCutoffIso24();
   var freshCutoff48p = new Date(Date.now() - 48 * 3600000).toISOString();
   // 48h fallback bound = the EARLIER of (24h/weekend-grace cutoff, 48h ago). On a
   // Monday freshCutoff is Friday 9am (weekend grace), earlier than 48h ago, so the
@@ -13876,7 +13881,7 @@ async function deliveryPreviewForCustomer(cust, sharedSeen, opts) {
     // (tier 0) sorts ahead of 48h (tier 1). Nearest-area 24h then 48h are added by
     // the fallback pass below. Order:
     //   chosen area 24h -> chosen area 48h -> nearest area 24h -> nearest area 48h.
-    var _pvFresh24 = (fv >= freshCutoff);
+    var _pvFresh24 = (fv >= freshCutoff24p);
     if (fv < _cut48) continue;
     if (cust.product === 'moving' && maxBedsF < 99 && (parseInt(l.bedrooms, 10) || 99) > maxBedsF) continue;
     // APPLY THE CUSTOMER'S SIGNUP FILTERS in the preview too (mirrors the 9am
@@ -29283,8 +29288,8 @@ _deliverDiag[cust.email].products = products;
       // accumulated pool leads are ever used - the promise is "fresh within 24
       // hours", with a 48h fallback so quiet areas aren't starved. Delivery
       // prefers the freshest (24h) leads first via the sorting below.
-      var freshCutoffNow = getFreshCutoffIso();
-      var fresh24CutoffNow = new Date(Date.now() - 24 * 3600000).toISOString();
+      var freshCutoffNow = getFreshCutoffIso();          // 48h fallback / Friday 09:00 (Monday)
+      var fresh24CutoffNow = getFreshCutoffIso24();      // 24h PRIMARY / Friday 09:00 (Monday, up to 72h)
       var freshCutoff48 = new Date(Date.now() - 48 * 3600000).toISOString();
       function isLeadFresh24(l, cut, forProduct) {
         try {
@@ -29432,7 +29437,7 @@ _deliverDiag[cust.email].products = products;
           // out-of-area). The lead may exist as delivered=0 rows in the DB even after
           // being blocked - filter by the data flags so it can never be picked up again.
           try { var _pd = JSON.parse(l.data || '{}'); if (_pd.rejected || _pd.blocked || _pd.blocked_by_admin) return false; } catch(_pe) {}
-          if (!isLeadFresh24(l, freshCutoffForProduct(cust.product), p)) return false;
+          if (!isLeadFresh24(l, freshCutoffForProduct(cust.product) || fresh24CutoffNow, p)) return false;
           if (!leadPassesFilters((l && typeof l.data === 'string' && l.data) ? JSON.parse(l.data) : (l || {}), p)) return false;
           if (!notDeliveredBefore(l)) return false;
           return true;
@@ -29454,7 +29459,9 @@ _deliverDiag[cust.email].products = products;
         var globalPool = (db.leads || []).filter(function(l) {
           if (l.delivered !== 0 || l.product !== p) return false;
           try { var _gd = JSON.parse(l.data || '{}'); if (_gd.rejected || _gd.blocked || _gd.blocked_by_admin) return false; } catch(_ge) {}
-          if (!isLeadFresh24(l, freshCutoffForProduct(p) || freshCutoff48, p)) return false;
+          // FALLBACK tier: 48h / Friday 09:00 (Monday -> up to 72h), only used when the
+          // 24h primary pool above cannot fill the promised count.
+          if (!isLeadFresh24(l, freshCutoffForProduct(p) || freshCutoffNow, p)) return false;
           if (!leadPassesFilters((l && typeof l.data === 'string' && l.data) ? JSON.parse(l.data) : (l || {}), p)) return false;
           if (!notDeliveredBefore(l)) return false;
           return true;
