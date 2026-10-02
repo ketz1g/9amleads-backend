@@ -156,6 +156,10 @@ ok('paid tip subjects carry no raw HTML entities (render "&", never "&amp;")',
   !/subject:\s*'[^']*&amp;/.test(SRC) && has("subject: 'Tip #3: Print & Post Every Lead In Minutes'"));
 ok('paid tip / check-in emails are classified (not left as "other")',
   has('tip #?\\d|how to get even more from your leads') && has('the second letter wins/i.test(s)'));
+ok('paid nurture stops for past_due/unpaid (blocked) subscriptions',
+  has('PAID-MARKETING GATE') && has('_paidMarketingActive = false') && has("['past_due', 'unpaid', 'incomplete'"));
+ok('payment-failure email detects a Stripe block and says "try a different card"',
+  has('async function detectStripeBlock') && has('Payment blocked by the payment processor') && has('not a problem with your funds'));
 ok('quiet-area emails skip ended trials / non-entitled customers',
   has("if (!isEntitledForDelivery(c)) return;") && has('EXPIRED TRIALS - an ended trial'));
 ok('quiet-area alert is one consolidated email per customer',

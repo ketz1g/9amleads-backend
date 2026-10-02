@@ -12133,7 +12133,7 @@ app.post('/api/admin/resend-payment-recovery', adminAuth, async (req, res) => {
     var dbR = getDb();
     var cu = (dbR.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
     if (!cu) return res.status(404).json({ error: 'Customer not found' });
-    var payLink = '', decline = '', invId = '', subId = String(cu.stripe_subscription_id || '');
+    var payLink = '', decline = '', invId = '', subId = String(cu.stripe_subscription_id || ''), _blockedR = false;
     if (subId && /^sub_/.test(subId)) {
       try {
         var sub = await stripeApiRequest('GET', 'subscriptions/' + subId, null);
@@ -12143,6 +12143,7 @@ app.post('/api/admin/resend-payment-recovery', adminAuth, async (req, res) => {
           if (inv && !inv.error) {
             payLink = inv.hosted_invoice_url || '';
             decline = (inv.last_payment_error && inv.last_payment_error.message) || '';
+            _blockedR = await detectStripeBlock(inv);
           }
         }
       } catch(eS) {}
@@ -12150,7 +12151,7 @@ app.post('/api/admin/resend-payment-recovery', adminAuth, async (req, res) => {
     var portalUrl = '';
     if (cu.stripe_customer_id) { try { portalUrl = await createBillingPortalUrl(cu.stripe_customer_id); } catch(eP) {} }
     if (!payLink) payLink = portalUrl || (PUBLIC_URL + '/portal/dashboard.html?page=settings&tab=subscription');
-    var body = '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">We tried to start your 9amLeads subscription but your card was declined' + (decline ? ' (<b>' + decline + '</b>)' : '') + '. Your leads are paused so you are not charged again until this is resolved.</p><div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="font-size:13px;color:#e2e8f0;margin:0"><strong>Action needed:</strong> pay the open invoice or update your card to resume your leads immediately.</p></div><p style="color:#94a3b8;font-size:12px;line-height:1.7;margin:0">Your leads and Print &amp; Post resume automatically the moment payment succeeds.' + (portalUrl ? ' You can also update your card securely here: ' + portalUrl : '') + '</p>';
+    var body = '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">We tried to take your 9amLeads subscription payment but it did not go through. Your leads are paused so you are not charged again until this is resolved.</p>' + paymentFailureReasonHtml(decline, _blockedR) + '<p style="color:#94a3b8;font-size:12px;line-height:1.7;margin:0">Pay the open invoice or update your card to resume immediately. Your leads and Print &amp; Post resume automatically the moment payment succeeds.' + (portalUrl ? ' You can also update your card securely here: ' + portalUrl : '') + '</p>';
     await sendDMNotification(cu.id, 'payment_failed_email', 'Action Needed: Payment Failed', '\u26a0\ufe0f Payment failed', body, 'Pay now / update card', payLink, { skipDedup: true });
     return res.json({ success: true, email: cu.email, hosted_invoice: payLink, portal_url: portalUrl, invoice_id: invId });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -21168,6 +21169,45 @@ function recordFailedPayment(custEmail, reason, amountPence) {
     saveDb();
   } catch(e) {}
 }
+// ===== PAYMENT-FAILURE GUIDANCE =====
+// Distinguish a Stripe-initiated BLOCK (Stripe's own risk engine stopped the payment)
+// from a normal bank/card decline, so the recovery email tells the customer the truth.
+// A block is NOT a funds problem and retrying the same card usually fails again, so we
+// point them at a different card. Best-effort: if Stripe cannot be reached we fall back
+// to neutral decline wording (which still suggests trying another card).
+async function detectStripeBlock(invOrPiId) {
+  try {
+    var piId = '';
+    if (typeof invOrPiId === 'string') piId = invOrPiId;
+    else if (invOrPiId && typeof invOrPiId === 'object') {
+      var _pe = invOrPiId.last_payment_error || {};
+      if (/blocked|highest risk|stripe blocked/i.test(String(_pe.message || ''))) return true;
+      piId = _pe.payment_intent || invOrPiId.payment_intent || '';
+    }
+    if (!piId) return false;
+    var pi = await stripeApiRequest('GET', 'payment_intents/' + piId, null);
+    if (!pi || pi.error) return false;
+    var lpe = pi.last_payment_error || {};
+    if (/blocked|highest risk|stripe blocked/i.test(String(lpe.message || ''))) return true;
+    var chargeId = pi.latest_charge || (pi.charges && pi.charges.data && pi.charges.data[0] && pi.charges.data[0].id) || '';
+    if (!chargeId) return false;
+    var ch = await stripeApiRequest('GET', 'charges/' + chargeId, null);
+    var outcome = (ch && !ch.error && ch.outcome) || null;
+    if (outcome && (outcome.type === 'blocked' || /blocked/i.test(String(outcome.seller_message || '')))) return true;
+    return false;
+  } catch(e) { return false; }
+}
+// Reusable middle section of the payment-failed email. When isBlocked, the customer is
+// told plainly it was not their funds and to try a different card.
+function paymentFailureReasonHtml(declineText, isBlocked) {
+  if (isBlocked) {
+    return '<div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:12px;padding:16px 20px;margin:0 0 16px">'
+      + '<p style="font-size:13px;color:#e2e8f0;margin:0 0 6px"><strong>Payment blocked by the payment processor</strong></p>'
+      + '<p style="font-size:13px;color:#e2e8f0;margin:0">This is <strong>not a problem with your funds</strong> - the payment was stopped by Stripe, our payment processor, for security reasons (independently of your bank). Retrying the same card normally fails again, so please <strong>pay the open invoice with a different card</strong>. If you believe this is a mistake, contact your bank or Stripe support. Your leads stay paused until a payment succeeds.</p></div>';
+  }
+  return '<div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:12px;padding:16px 20px;margin:0 0 16px">'
+    + '<p style="font-size:13px;color:#e2e8f0;margin:0"><strong>Payment failed</strong> - your card could not be charged' + (declineText ? ' (' + escHtml(String(declineText)) + ')' : '') + '. If this was not a funds issue, <strong>try a different card</strong>; otherwise update your card or ask your bank. Your leads are paused until this is resolved.</p></div>';
+}
 function checkPaymentHealth() {
   try {
     var dbc = getDb();
@@ -25317,7 +25357,8 @@ async function trialAutoChargeCustomer(cust, opts) {
           try {
             var _portalUrl = await createBillingPortalUrl(cust.stripe_customer_id);
             var _payLink = _invUrl || _portalUrl || (PUBLIC_URL + '/portal/dashboard.html?page=settings&tab=subscription');
-            var _pfBody = '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">We tried to start your 9amLeads subscription but your card was declined' + (_decline ? ' (<b>' + _decline + '</b>)' : '') + '. Your leads are paused so you are not charged again until this is resolved.</p><div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="font-size:13px;color:#e2e8f0;margin:0"><strong>Action needed:</strong> pay the open invoice or update your card to resume your leads immediately.</p></div><p style="color:#94a3b8;font-size:12px;line-height:1.7;margin:0">Your leads and Print &amp; Post resume automatically the moment payment succeeds.' + (_portalUrl ? ' You can also update your card securely here: ' + _portalUrl : '') + '</p>';
+            var _blockedT = await detectStripeBlock(_invChk || {});
+            var _pfBody = '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">We tried to take your 9amLeads subscription payment but it did not go through. Your leads are paused so you are not charged again until this is resolved.</p>' + paymentFailureReasonHtml(_decline, _blockedT) + '<p style="color:#94a3b8;font-size:12px;line-height:1.7;margin:0">Pay the open invoice or update your card to resume your leads immediately. Your leads and Print &amp; Post resume automatically the moment payment succeeds.' + (_portalUrl ? ' You can also update your card securely here: ' + _portalUrl : '') + '</p>';
             await sendDMNotification(cust.id, 'payment_failed_email', 'Action Needed: Payment Failed', '⚠️ Payment failed', _pfBody, 'Pay now / update card', _payLink);
           } catch(pfEm) { console.log('[TRIAL AUTO-CHARGE] recovery email error:', pfEm.message); }
         }
@@ -25883,6 +25924,22 @@ async function runCampaignEmails(dry) {
       // NOT trigger the paid series (that sent a false "welcome to your paid plan" to
       // a trial user who had only saved a card).
       var isPaidNow = _hasSub || (!!cust.paid_since && String(cust.plan || '') !== 'free_trial');
+      // PAID-MARKETING GATE: isPaidNow means "has ever subscribed", NOT "is paying this
+      // week". A past_due/unpaid/incomplete subscription - e.g. the weekly charge was
+      // DECLINED or BLOCKED by Stripe - must stop the paid "Tip #n" series: leads are
+      // paused and the customer is not paying, so nothing should congratulate them as a
+      // live paid member. The series resumes automatically on the next successful payment
+      // (invoice.paid clears leads_paused and re-activates the subscription row).
+      var _paidMarketingActive = isPaidNow;
+      if (_paidMarketingActive) {
+        var _subStatM = '';
+        try {
+          var _subRowM = (getDb().subscriptions || []).find(function(s) { return s && String(s.customer_id) === String(cust.id); });
+          if (_subRowM) _subStatM = String(_subRowM.status || '').toLowerCase();
+        } catch(eSM) {}
+        var _deadSub = ['past_due', 'unpaid', 'incomplete', 'incomplete_expired', 'canceled', 'cancelled'].indexOf(_subStatM) !== -1;
+        if (_deadSub || !isEntitledForDelivery(cust)) _paidMarketingActive = false;
+      }
 
       var isCancelledNow = String(cust.plan || '') === 'cancelled';
       if (isCancelledNow) {
@@ -26055,7 +26112,7 @@ async function runCampaignEmails(dry) {
             }
           }
         }
-      } else if (isPaidNow) {
+      } else if (_paidMarketingActive) {
         // Paid customer: send paid email series weekly. Count weeks from when they PAID
         // (paid_since) if known, else fall back to signup age.
         var _paidBaseTs = cust.paid_since ? new Date(cust.paid_since).getTime() : (createdDate ? createdDate.getTime() : Date.now());
@@ -32310,7 +32367,9 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
           try {
             var _pfPortal = await createBillingPortalUrl(fCustomer.stripe_customer_id);
             var _pfCta = (invF && invF.hosted_invoice_url) || _pfPortal || (PUBLIC_URL + '/portal/dashboard.html?page=settings&tab=subscription');
-            var failEmailBody = '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">We could not take your weekly subscription payment. To keep your leads and Print &amp; Post running, please update your payment method.</p><div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="font-size:13px;color:#e2e8f0;margin:0"><strong>Payment failed</strong>. your card could not be charged. Your leads are paused until this is resolved.</p></div><p style="color:#94a3b8;font-size:12px;line-height:1.7;margin:0">Pay the open invoice or update your card to resume immediately.' + (_pfPortal ? ' Update your card securely here: ' + _pfPortal : '') + '</p>';
+            var _pfBlocked = await detectStripeBlock(invF);
+            var _pfDecline = (invF.last_payment_error && invF.last_payment_error.message) || '';
+            var failEmailBody = '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">We could not take your weekly subscription payment. To keep your leads and Print &amp; Post running, please update your payment method.</p>' + paymentFailureReasonHtml(_pfDecline, _pfBlocked) + '<p style="color:#94a3b8;font-size:12px;line-height:1.7;margin:0">Pay the open invoice or update your card to resume immediately.' + (_pfPortal ? ' Update your card securely here: ' + _pfPortal : '') + '</p>';
             await sendDMNotification(fCustomer.id, 'payment_failed_email', 'Action Needed: Payment Failed', '⚠️ Payment failed', failEmailBody, 'Pay now / update card', _pfCta);
           } catch(ne2) { console.log('[STRIPE] Payment-failed email error:', ne2.message); }
         }
