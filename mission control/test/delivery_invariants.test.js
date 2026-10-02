@@ -163,6 +163,9 @@ ok('payment-failure email detects a Stripe block and says "try a different card"
 ok('subscription receipts require a genuinely PAID latest invoice (no false receipts)',
   has('BLOCKED unconfirmed subscription receipt') && has("_giGuard.paid || _giGuard.status === 'paid'")
   && !has("_subGuard.status === 'active' || _subGuard.status === 'trialing'"));
+ok('admin can list + void a false receipt (hidden from billing totals + affiliate)',
+  has("app.get('/api/admin/customer-receipts'") && has("app.post('/api/admin/void-payment-receipt'")
+  && has("_isVoid ? 'void' : 'paid'") && has('if (r.voided) return;'));
 ok('quiet-area emails skip ended trials / non-entitled customers',
   has("if (!isEntitledForDelivery(c)) return;") && has('EXPIRED TRIALS - an ended trial'));
 ok('quiet-area alert is one consolidated email per customer',

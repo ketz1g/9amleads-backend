@@ -7653,6 +7653,7 @@ function referralSubscriptionPayments(dbc, c) {
   var paid = [];
   try {
     (dbc.payments || []).forEach(function(r) {
+      if (r.voided) return; // a voided (false/revoked) receipt is not a real payment
       if (r.product && r.product === 'direct_mail') return;
       var subj = String((r.description || '') + ' ' + (r.plan || '') + ' ' + (r.product || '')).toLowerCase();
       if (/(one-?off|top-?up|boost|bulk|direct.?mail|print.?post|single)/.test(subj)) return;
@@ -11981,6 +11982,49 @@ app.post('/api/admin/purge-test-payments', adminAuth, (req, res) => {
     // DRY RUN MUST NOT MUTATE: only reassign + persist when actually purging.
     if (!dry) { d.payments = _keepReceipts; d.payment_events = _keepEvents; saveDb(); }
     res.json({ success: true, dry_run: dry, removed_receipt_count: removedReceipts.length, removed_receipts: removedReceipts, removed_event_count: removedEvents });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/customer-receipts?email=X - list every persisted payment receipt for a
+// customer (including voided ones) so the founder can find a suspect receipt by its own
+// id. Read-only.
+app.get('/api/admin/customer-receipts', adminAuth, (req, res) => {
+  try {
+    var em = String((req.query && req.query.email) || '').toLowerCase().trim();
+    if (!em) return res.status(400).json({ error: 'email required' });
+    var d = getDb();
+    var rows = (d.payments || []).filter(function(p) { return String(p.customer_email || '').toLowerCase() === em; });
+    res.json({ success: true, email: em, count: rows.length, receipts: rows.map(function(p) {
+      return { id: p.id, stripe_id: p.stripe_id || '', number: p.number || '', amount: p.amount || 0, description: p.description || '', plan: p.plan || '', product: p.product || '', created_at: p.created_at || '', voided: !!p.voided, voided_at: p.voided_at || '' };
+    }) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/void-payment-receipt - mark a persisted receipt VOID without deleting it
+// (audit trail kept). Body: { email?, receipt_id? , stripe_id?, number?, reason? }. Match on
+// any one identifier; email narrows a stripe_id/number match. A voided receipt is hidden
+// from the customer's billing history/totals and from affiliate/commission counting.
+app.post('/api/admin/void-payment-receipt', adminAuth, (req, res) => {
+  try {
+    var b = req.body || {};
+    var em = String(b.email || '').toLowerCase().trim();
+    var rid = String(b.receipt_id || '').trim();
+    var sid = String(b.stripe_id || '').trim();
+    var num = String(b.number || '').trim();
+    if (!rid && !sid && !num) return res.status(400).json({ error: 'one of receipt_id, stripe_id or number is required' });
+    var d = getDb();
+    var voided = [];
+    (d.payments || []).forEach(function(p) {
+      var emailOk = !em || String(p.customer_email || '').toLowerCase() === em;
+      var match = (rid && String(p.id || '') === rid) || (sid && emailOk && String(p.stripe_id || '') === sid) || (num && emailOk && String(p.number || '') === num);
+      if (!match) return;
+      p.voided = true;
+      p.voided_at = new Date().toISOString();
+      p.void_reason = String(b.reason || 'voided by admin').substring(0, 200);
+      voided.push({ id: p.id, number: p.number || p.stripe_id || p.id, stripe_id: p.stripe_id || '', amount: p.amount || 0 });
+    });
+    if (voided.length) saveDb();
+    res.json({ success: true, voided_count: voided.length, voided: voided });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -32305,6 +32349,7 @@ app.post('/api/stripe/webhook', async (req, res, next) => {
             var _pmtCount = 0;
             try {
               var _pmts = (getDb().payments || []).filter(function(r){
+                if (r.voided) return false; // a voided (false) receipt is not a real payment
                 if (r.product && r.product === 'direct_mail') return false; // Print & Post orders are not subscription payments
                 // Also ignore one-off purchases (lead top-ups, Boost/Bulk packs, single
                 // Print & Post) - only real subscription payments should count toward the
@@ -33998,14 +34043,19 @@ app.get('/api/payments', authMiddleware, async (req, res) => {
           if (rec.stripe_id && knownStripeIds[rec.stripe_id]) return;
           if (rec.stripe_id) knownStripeIds[rec.stripe_id] = true;
           var recAmt = Number(rec.amount || 0);
-          totalSpendThisMonth += recAmt;
-          totalSpendAllTime += recAmt;
+          // A VOIDED receipt (a false/revoked charge) is shown as void and is NOT counted
+          // toward spend - so a customer never sees a phantom "paid" line.
+          var _isVoid = !!rec.voided;
+          if (!_isVoid) {
+            totalSpendThisMonth += recAmt;
+            totalSpendAllTime += recAmt;
+          }
           invoices.push({
             id: rec.stripe_id || rec.id,
             number: rec.number || rec.stripe_id || rec.id,
-            status: 'paid',
-            amount: recAmt,
-            amount_paid: recAmt,
+            status: _isVoid ? 'void' : 'paid',
+            amount: _isVoid ? 0 : recAmt,
+            amount_paid: _isVoid ? 0 : recAmt,
             currency: rec.currency || 'gbp',
             period_start: rec.period_start || '',
             period_end: rec.period_end || '',
