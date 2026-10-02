@@ -9043,7 +9043,11 @@ app.post('/api/admin/top-up-all', adminAuth, (req, res) => {
         // SELF-HEAL: queues built before this rule can hold long-listed premises that
         // were re-stamped 'scrapedAt = now' at queue time. Drop any pending commercial
         // lead whose premises is not in the current fresh set, then refill fresh below.
+        // GUARD: only when we actually have a fresh pool to replace them with - an empty
+        // pool (transient archive read failure / genuinely no fresh supply) must never
+        // wipe a queue.
         try {
+          if (!pool.length) throw new Error('no fresh commercial pool - skip self-heal');
           var _freshUrl = {};
           pool.forEach(function(fl) { try { var u0 = String(fl.url || '').split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase().trim(); if (u0) _freshUrl[u0] = 1; } catch(eU) {} });
           var _dropped = 0;
