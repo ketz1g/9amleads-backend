@@ -3291,7 +3291,24 @@ function getDirectMailProvider() {
 
 
 // ===== DIRECT MAIL NOTIFICATIONS =====
-var DM_NOTIFIED = {}; // In-memory dedup cache
+var DM_NOTIFIED = {}; // In-memory dedup cache (fast path)
+// PERSISTENT DEDUP: the in-memory cache above is wiped on every deploy/restart, which
+// let the SAME email be sent again after a restart - the reason a customer received two
+// "Action Needed: Payment Failed" emails in one morning. Mirror every dedup key into the
+// JSON DB (pruned to a few days) so dedup survives restarts and we never over-email.
+function _dmDedupSeen(key) {
+  try { var d = getDb(); return !!(d.dm_notified_keys && d.dm_notified_keys[key]); } catch(e) { return false; }
+}
+function _dmDedupMark(key) {
+  try {
+    var d = getDb();
+    if (!d.dm_notified_keys || typeof d.dm_notified_keys !== 'object') d.dm_notified_keys = {};
+    d.dm_notified_keys[key] = Date.now();
+    var cutoff = Date.now() - 5 * 86400000;
+    Object.keys(d.dm_notified_keys).forEach(function(k) { if (Number(d.dm_notified_keys[k]) < cutoff) delete d.dm_notified_keys[k]; });
+    saveDb();
+  } catch(e) {}
+}
 
 // Shared branded email header + footer (dark deep-navy with sky-blue 9amLeads wordmark).
 // Used by all customer-facing emails so every email matches the daily lead email design.
@@ -3341,8 +3358,9 @@ function dmDashboardNotify(customerId, type, title, message, link) {
     var db2 = getDb();
     if (!db2.dm_notifications) db2.dm_notifications = [];
     var dedupKey = customerId + '_' + type + '_' + new Date().toISOString().split('T')[0];
-    if (DM_NOTIFIED[dedupKey]) return; // Dedup same type per customer per day
+    if (DM_NOTIFIED[dedupKey] || _dmDedupSeen(dedupKey)) return; // Dedup same type per customer per day (survives restarts)
     DM_NOTIFIED[dedupKey] = true;
+    _dmDedupMark(dedupKey);
     db2.dm_notifications.push({ id: uuidv4(), customer_id: customerId, type: type, title: title, message: message, link: link || '', read: 0, created_at: new Date().toISOString() });
     saveDb();
   } catch(e) { console.log('[DM-NOTIF] Dashboard notify error:', e.message); }
@@ -3359,8 +3377,9 @@ async function sendDMNotification(customerId, type, subject, title, body, ctaTex
     // earlier in the day were blocking real receipts).
     var skipDedup = opts.skipDedup === true || type === 'dm_payment_receipt' || type === 'dm_refund';
     var dedupKey = customerId + '_email_' + type + '_' + new Date().toISOString().split('T')[0];
-    if (!skipDedup && DM_NOTIFIED[dedupKey]) { console.log('[DM-NOTIF] Duplicate email blocked:', type, cust.email); return; }
+    if (!skipDedup && (DM_NOTIFIED[dedupKey] || _dmDedupSeen(dedupKey))) { console.log('[DM-NOTIF] Duplicate email blocked:', type, cust.email); return; }
     DM_NOTIFIED[dedupKey] = true;
+    _dmDedupMark(dedupKey);
     // Add to dashboard
     dmDashboardNotify(customerId, type, title, body, ctaUrl);
     // Send email
@@ -12209,6 +12228,33 @@ app.post('/api/admin/resend-payment-recovery', adminAuth, async (req, res) => {
     var body = '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">We tried to take your 9amLeads subscription payment but it did not go through. Your leads are paused so you are not charged again until this is resolved.</p>' + paymentFailureReasonHtml(decline, _blockedR) + '<p style="color:#94a3b8;font-size:12px;line-height:1.7;margin:0">Pay the open invoice or update your card to resume immediately. Your leads and Print &amp; Post resume automatically the moment payment succeeds.' + (portalUrl ? ' You can also update your card securely here: ' + portalUrl : '') + '</p>';
     await sendDMNotification(cu.id, 'payment_failed_email', 'Action Needed: Payment Failed', '\u26a0\ufe0f Payment failed', body, 'Pay now / update card', payLink, { skipDedup: true });
     return res.json({ success: true, email: cu.email, hosted_invoice: payLink, portal_url: portalUrl, invoice_id: invId });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/send-receipt-correction { email } - send a ONE-OFF, plain correction to
+// a customer who received a FALSE "Payment Receipt" (e.g. a charge that Stripe blocked and
+// never collected). Guarded to AT MOST ONCE PER CUSTOMER PER DAY (persisted) so a retry or
+// an operator double-click can never flood the inbox. Body: { email, force? }
+app.post('/api/admin/send-receipt-correction', adminAuth, async (req, res) => {
+  try {
+    var email = String((req.body && req.body.email) || '').toLowerCase().trim();
+    if (!email) return res.status(400).json({ error: 'email required' });
+    var dbC = getDb();
+    var cu = (dbC.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
+    if (!cu) return res.status(404).json({ error: 'Customer not found' });
+    var _key = 'receipt_correction_' + cu.id + '_' + new Date().toISOString().split('T')[0];
+    if (!(req.body && req.body.force === true) && _dmDedupSeen(_key)) {
+      return res.json({ success: false, already_sent_today: true, email: cu.email });
+    }
+    var body = '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">Hi,</p>'
+      + '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">A quick correction from us: you may have received an automatic <strong>"Payment Receipt"</strong> email earlier. <strong>Please ignore it - no payment was taken.</strong> The charge was stopped by Stripe, our payment processor, before it reached your bank, so nothing has left your account and you have not been charged.</p>'
+      + '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">Your leads are paused and there is nothing you need to do unless you would like to restart. To resume, please pay the open invoice using <strong>a different card</strong> - the original card was blocked by the processor (this is not a funds issue, and re-trying the same card normally fails again).</p>'
+      + '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">Sorry for the confusion, and thank you for your patience.</p>'
+      + '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">All the best,<br><strong>Ketz Mandalia</strong><br><span style="color:#94a3b8">Founder, 9amLeads</span></p>';
+    await sendDMNotification(cu.id, 'receipt_correction', 'Correction: no payment was taken', '\u2139\ufe0f Correction - no payment taken', body, 'Restart your leads', PUBLIC_URL + '/portal/dashboard.html?page=settings&tab=subscription', { skipDedup: true });
+    _dmDedupMark(_key);
+    saveDb();
+    return res.json({ success: true, email: cu.email });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -25212,8 +25258,9 @@ var __pfEmailedInvoices = {};
 function _paymentFailEmailOnce(invId) {
   invId = String(invId || '');
   if (!invId) return true;
-  if (__pfEmailedInvoices[invId]) return false;
+  if (__pfEmailedInvoices[invId] || _dmDedupSeen('pfemail_' + invId)) return false;
   __pfEmailedInvoices[invId] = 1;
+  _dmDedupMark('pfemail_' + invId);
   return true;
 }
 // Create a Stripe Billing Portal session URL so a customer can update their card.

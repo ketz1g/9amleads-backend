@@ -166,6 +166,10 @@ ok('subscription receipts require a genuinely PAID latest invoice (no false rece
 ok('admin can list + void a false receipt (hidden from billing totals + affiliate)',
   has("app.get('/api/admin/customer-receipts'") && has("app.post('/api/admin/void-payment-receipt'")
   && has("_isVoid ? 'void' : 'paid'") && has('if (r.voided) return;'));
+ok('notification dedup survives restarts (persisted, not just in-memory)',
+  has('function _dmDedupSeen') && has('function _dmDedupMark') && has("_dmDedupSeen('pfemail_' + invId)"));
+ok('one-off receipt correction email is guarded to once per customer per day',
+  has("app.post('/api/admin/send-receipt-correction'") && has("receipt_correction_' + cu.id"));
 ok('quiet-area emails skip ended trials / non-entitled customers',
   has("if (!isEntitledForDelivery(c)) return;") && has('EXPIRED TRIALS - an ended trial'));
 ok('quiet-area alert is one consolidated email per customer',
