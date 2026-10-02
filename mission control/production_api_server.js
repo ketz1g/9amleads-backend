@@ -12084,7 +12084,9 @@ app.get('/api/admin/billing', adminAuth, (req, res) => {
         email: c.email, company: c.company || '', plan: c.plan || '', product: c.product || '',
         paid: paid, status: status,
         weekly_price: paid ? customerWeeklyValue(c) : 0,
-        next_due: (sub && _norm(sub.current_period_end)) ? sub.current_period_end : ((status === 'trial' && trialEnds) ? trialEnds : ''),
+        // next_due only for accounts actually paying; an unpaid/incomplete subscription
+        // must not advertise a future charge. Trials show their trial end instead.
+        next_due: (paid && sub && _norm(sub.current_period_end)) ? sub.current_period_end : ((status === 'trial' && trialEnds) ? trialEnds : ''),
         last_payment_at: lp ? (lp.at || '') : '',
         last_payment_amount: lp ? (Number(lp.amount) || 0) : 0,
         trial_ends: trialEnds,
