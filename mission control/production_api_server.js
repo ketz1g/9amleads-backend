@@ -14944,6 +14944,22 @@ function quietAreaAlertedDate(cust, areaCode) {
 function setQuietAreaAlerted(cust, areaCode, dateStr) {
   try { var m = JSON.parse(cust.area_alerts || '{}'); m[areaCode] = dateStr; cust.area_alerts = JSON.stringify(m); } catch(e) {}
 }
+// Number of SCHEDULED delivery days (Mon-Fri, 09:00) whose delivery moment falls
+// inside [fromMs, toMs]. Leads are only delivered on weekdays, so a raw day count
+// would overstate how many days a customer could have received leads (and make an
+// on-target customer look short over a window that includes a weekend).
+function quietWindowDeliveryDays(fromMs, toMs) {
+  var n = 0;
+  var start = new Date(fromMs);
+  start.setUTCHours(0, 0, 0, 0);
+  for (var t = start.getTime(); t <= toMs; t += 86400000) {
+    var dow = new Date(t).getUTCDay();
+    if (dow === 0 || dow === 6) continue;
+    var at = t + 9 * 3600000;
+    if (at >= fromMs && at <= toMs) n++;
+  }
+  return n;
+}
 function checkQuietAreas() {
   try {
     var dbq = getDb();
@@ -14960,6 +14976,15 @@ function checkQuietAreas() {
       if (typeof isInternalAccount === 'function' && isInternalAccount(c)) return;
       if (_qaSuppress.indexOf(String(c.email || '').toLowerCase()) !== -1) return;
       if (c.bounced && parseInt(c.bounced, 10) >= 1) return;
+      // NEVER tell a newer customer "no leads for the last N days": a 2-day-old account
+      // cannot have a 4-day quiet spell. The window reached back past signup, so we
+      // claimed a gap longer than they had even been a customer.
+      var _signupMs = c.created_at ? new Date(c.created_at).getTime() : 0;
+      if (!(_signupMs > 0)) _signupMs = 0;
+      if (_signupMs && (Date.now() - _signupMs) < days * 86400000) return;
+      // Clamp the look-back to signup so the count never includes pre-signup days.
+      var _cSince = since;
+      if (_signupMs && _signupMs > new Date(since).getTime()) _cSince = new Date(_signupMs).toISOString();
       var areas = [];
       try { areas = JSON.parse(c.target_areas || '[]'); } catch(e) { areas = []; }
       if (!areas.length) { try { var pcq = JSON.parse(c.product_config || '{}'); areas = JSON.parse((pcq[c.product] || {}).target_areas || '[]'); } catch(e) { areas = []; } }
@@ -14968,8 +14993,10 @@ function checkQuietAreas() {
       // full outward code (SW18) and the area letters (SW) so area-level choices
       // (e.g. "SW" or "L") match leads from any outward code in that area.
       var perOut = {}, perLtr = {};
+      var _deliveredInWindow = 0;
       (dbq.leads || []).forEach(function(l) {
-        if (l.customer_id === c.id && l.delivered && l.delivered_at && l.delivered_at >= since) {
+        if (l.customer_id === c.id && l.delivered && l.delivered_at && l.delivered_at >= _cSince) {
+          if (!_leadIsRejected(l)) _deliveredInWindow++;
           try {
             var d = JSON.parse(l.data || '{}');
             var pcS = d.postcode || d.address || d.deceasedAddress || '';
@@ -14980,6 +15007,12 @@ function checkQuietAreas() {
           } catch(e) {}
         }
       });
+      // If the customer is already receiving their full promised count across the
+      // window, there is nothing to fix - do not email them to "add another area".
+      // The quiet-area nudge is only for customers who are genuinely short of leads.
+      var _quota = getCustomerDailyQuota(c) || 0;
+      var _deliveryDays = quietWindowDeliveryDays(new Date(_cSince).getTime(), Date.now());
+      if (_quota > 0 && _deliveryDays > 0 && _deliveredInWindow >= _quota * _deliveryDays) return;
       // Collect this customer's quiet areas first, then send ONE consolidated email.
       // De-duping was per-area, so a customer with two quiet areas received TWO
       // separate "Update your postcode areas" emails in the same run.
@@ -22540,7 +22573,11 @@ cron.schedule('0 10 * * 2', async () => {
     var cutoff14 = new Date(now - 14 * 86400000).toISOString();
     var custs = (ahDb.customers || []).filter(function(c) {
       if (isInternalAccount(c)) return false;
-      if (c.plan === 'cancelled' || isLeadsPaused(c)) return false;
+      // Entitled = not cancelled, not paused, not an ENDED unpaid trial. This email
+      // promises "your daily leads are guaranteed" and suggests new areas, so it must
+      // only go to customers who are ACTUALLY receiving leads. Previously only
+      // cancelled/paused were skipped, so expired free-trials received it wrongly.
+      if (!isEntitledForDelivery(c)) return false;
       if (!c.created_at || c.created_at > cutoff14) return false; // only customers 2+ weeks in
       return true;
     });
@@ -22548,10 +22585,14 @@ cron.schedule('0 10 * * 2', async () => {
     for (var ai = 0; ai < custs.length; ai++) {
       var c = custs[ai];
       try {
-        var promised = parseInt(c.leads_per_day, 10) || 5;
+        var promised = getCustomerDailyQuota(c) || parseInt(c.leads_per_day, 10) || 5;
         var myLeads = (ahDb.leads || []).filter(function(l) { return l.customer_id === c.id && l.delivered_at && l.delivered_at >= cutoff7; });
         var delivered = myLeads.length;
-        var expected = promised * 7;
+        // Leads are delivered Mon-Fri only, so a 7-day window contains ~5 delivery
+        // days. Using *7 overstated the expected count and emailed customers who were
+        // actually receiving their full quota. Count scheduled delivery days instead.
+        var expectedDays = quietWindowDeliveryDays(new Date(cutoff7).getTime(), now.getTime());
+        var expected = promised * Math.max(1, expectedDays);
         var fillRate = expected > 0 ? Math.round((delivered / expected) * 100) : 100;
         if (fillRate >= 80) continue;
         // Low fill -> suggest nearby areas + reassure the exact-count guarantee.
