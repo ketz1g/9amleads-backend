@@ -13256,6 +13256,42 @@ app.get('/api/admin/archive-diag', adminAuth, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET /api/admin/commercial-freshness - how much FRESH commercial supply exists in the
+// moving archive under the standard freshness rule (pickFreshDate), i.e. the supply the
+// daily commercial feed would have if it were freshness-gated like every other product.
+// Freshness for commercial is "when WE first scraped the premises" (scrapedAt/archivedAt,
+// which appendToArchive never refreshes on re-sight), so it measures genuinely NEW
+// commercial listings discovered, not long-lived premises we have seen for weeks.
+app.get('/api/admin/commercial-freshness', adminAuth, (req, res) => {
+  try {
+    var arch = readArchive('moving') || [];
+    var now = Date.now();
+    var freshCut = new Date(getFreshCutoffIso(now)).getTime();
+    var cut24 = now - 24 * 3600000;
+    var cut48 = now - 48 * 3600000;
+    var out = { archive_total: arch.length, commercial_total: 0, mailable: 0, fresh_window: new Date(freshCut).toISOString(), mailable_24h: 0, mailable_48h: 0, mailable_window: 0, by_area_window: {}, buckets: {} };
+    arch.forEach(function(l) {
+      if (!(l && (l.commercial || l.commercial_let))) return;
+      out.commercial_total++;
+      var fv = pickFreshDate(l); var t = fv ? new Date(fv).getTime() : 0;
+      var days = t ? (now - t) / 86400000 : null;
+      var key = (days === null) ? 'nodate' : days < 2 ? '0-2d' : days < 28 ? '3-27d' : days < 36 ? '28-35d' : days < 58 ? '36-57d' : days < 66 ? '58-65d' : 'older';
+      out.buckets[key] = (out.buckets[key] || 0) + 1;
+      var mail = false; try { mail = commercialMailable(l); } catch(e) { mail = false; }
+      if (!mail) return;
+      out.mailable++;
+      if (t && t >= cut24) out.mailable_24h++;
+      if (t && t >= cut48) out.mailable_48h++;
+      if (t && t >= freshCut) {
+        out.mailable_window++;
+        var a = extractPostcodeArea(l.postcode || l.address || l.fullAddress || '') || '?';
+        out.by_area_window[a] = (out.by_area_window[a] || 0) + 1;
+      }
+    });
+    res.json(out);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/admin/rebuild-archive - re-feed the bulk archives from the (enriched) daily
 // pools so stored entries pick up their full door-numbered addresses (merge-on-existing).
 app.post('/api/admin/rebuild-archive', adminAuth, async (req, res) => {
