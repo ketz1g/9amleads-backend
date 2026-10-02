@@ -676,28 +676,37 @@ function getPoolSupply() {
   if (_poolSupplyCache.data && (now - _poolSupplyCache.at) < 300000) return _poolSupplyCache.data;
   var cutoff = getFreshCutoffIso();
   var out = {};
-  // 'commercial' is a first-class product that draws from the SAME moving-leads.json
-  // pool but only serves the commercial-tagged subset. It MUST be listed here: omitting
-  // it left sup.commercial undefined, so the health alert reported "commercial pool
-  // supply low: 0 fresh vs N needed" every run even when commercial leads were plentiful.
-  var prods = ['moving', 'commercial', 'probate', 'newbusiness', 'planning', 'tenders'];
+  var prods = ['moving', 'probate', 'newbusiness', 'planning', 'tenders'];
   for (var pi = 0; pi < prods.length; pi++) {
     var prod = prods[pi];
     var fn = path.join(DATA_DIR, PRODUCT_LEAD_FILES[prod] ? PRODUCT_LEAD_FILES[prod].file : (prod + '-leads.json'));
     var arr = [];
     try { var raw = JSON.parse(fs.readFileSync(fn, 'utf-8')); if (Array.isArray(raw)) arr = raw; else if (raw && typeof raw === 'object') Object.keys(raw).forEach(function(k){ if (k.indexOf('_') !== 0 && Array.isArray(raw[k])) arr = arr.concat(raw[k]); }); } catch(e) {}
-    var total = 0;
     var fresh = 0;
     for (var i = 0; i < arr.length; i++) {
       var l = arr[i];
-      // Commercial Moves serves only the commercial-tagged subset of the moving pool.
-      if (prod === 'commercial' && !l.commercial) continue;
-      total++;
       var d = pickFreshDate(l); // freshness dateteSubmitted || l.incorporationDate || l.updateDate || l.createdAt || l.created_at || l.scrapedAt || '';
       if (d && d >= cutoff) fresh++;
     }
-    out[prod] = { total: total, fresh_48h: fresh };
+    out[prod] = { total: arr.length, fresh_48h: fresh };
   }
+  // COMMERCIAL is a first-class product, but its leads do NOT live in the daily moving
+  // pool (that is residential-only; commercial premises are stripped out and stored in
+  // the moving ARCHIVE, long-lived listings with no 48h freshness window). Reading the
+  // pool left sup.commercial at 0, so the health alert reported "commercial pool supply
+  // low: 0 fresh vs N needed" every run even though ~1,400 mailable premises were
+  // available. Count the real commercial archive supply instead.
+  try {
+    var _cArch = readArchive('moving') || [];
+    var _cTotal = 0;
+    for (var ci = 0; ci < _cArch.length; ci++) {
+      var cl = _cArch[ci];
+      if (!(cl && (cl.commercial || cl.commercial_let))) continue;
+      try { if (!commercialMailable(cl)) continue; } catch(eC) { continue; }
+      _cTotal++;
+    }
+    out.commercial = { total: _cTotal, fresh_48h: _cTotal };
+  } catch(e) { out.commercial = { total: 0, fresh_48h: 0 }; }
   _poolSupplyCache = { at: now, data: out };
   return out;
 }
@@ -13666,8 +13675,9 @@ async function deliveryPreviewForCustomer(cust, sharedSeen, opts) {
       // this customer has optional filters, the 48h fallback relaxes them so the
       // preview shows the same count the guaranteed-fill delivery will actually send.
       if (previewFilterRelax && cust.product !== 'moving' && cust.product !== 'commercial') return true;
-      // COMMERCIAL MOVES product: commercial premises only (mirror delivery).
-      if (cust.product === 'commercial') return !!(ld2 && (ld2.commercial || ld2.commercial_let));
+      // COMMERCIAL MOVES product: commercial premises only (mirror delivery). Also
+      // reject land/plots/development/residential types the commercial channel returns.
+      if (cust.product === 'commercial') return !!(ld2 && (ld2.commercial || ld2.commercial_let) && !isNonPremiseCommercialType(ld2.propertyType || ld2.property_type));
       if (cust.product === 'moving') {
         if (!previewFilterRelax) {
           var b = parseInt(ld2.bedrooms) || 0;
@@ -23387,6 +23397,12 @@ async function runCommercialScrapeFill(opts) {
   var leads = [];
   try { leads = await require('./rightmove_scraper_v2').collectCommercialLeads({ areas: areas, pages: pages, include_let: includeLet, force_apify: false }); } catch(e) { leads = []; }
   if (!Array.isArray(leads)) leads = [];
+  // DROP LAND / PLOTS / DEVELOPMENT SITES / RESIDENTIAL types the Rightmove commercial
+  // channel returns (they are not business premises). Filtered here so they never enter
+  // the archive at all; the commercialMailable gate is the backstop.
+  var _leadsBefore = leads.length;
+  leads = leads.filter(function(l) { try { return l && !isNonPremiseCommercialType(l.propertyType); } catch(e) { return !!l; } });
+  if (leads.length !== _leadsBefore) console.log('[COMMERCIAL-FILL] dropped ' + (_leadsBefore - leads.length) + ' non-premise types (land/plot/development/residential)');
   // Commercial leads are tagged commercial:true and go into the moving ARCHIVE only
   // (the Commercial Moves BULK source). They must NOT enter the daily moving POOL (the
   // residential 9am feed).
@@ -27334,6 +27350,18 @@ function isNonBuildingPremise(addr) {
   if (!a.trim()) return false;
   return /(^|[\s,(\/-])(land|plot|plots|site|sites|car ?park|car ?parking|parking|yard|yards|compound|adjoining|adjacent|vacant|demolition|redevelopment|development site|amenity land|open space|rear of|front of|back of|side of|garages? at|garage block|garage site|parking area)\b/i.test(a);
 }
+// Rightmove's COMMERCIAL channel also lists LAND, PLOTS and DEVELOPMENT sites (and the
+// odd garage/parking or residential unit) under propertySubType. These are not premises a
+// business relocates INTO, and the address alone hides it (e.g. "401a Purley Way, Croydon"
+// is LAND; "7b Birchwood Avenue, Tunbridge Wells" is a PLOT). Reject by the type Rightmove
+// gives us so land/houses never reach a commercial customer. "Warehouse" is safe: \bhouse\b
+// has no word boundary inside it.
+var NON_PREMISE_COMMERCIAL_TYPE_RE = /\b(land|plot|plots|development|residential|house|detached|semi-detached|terraced|bungalow|flat|apartment|maisonette|parking|car ?park|garage|petrol|barn|farm|woodland|acre|acreage)\b/i;
+function isNonPremiseCommercialType(pt) {
+  var t = String(pt || '').trim();
+  if (!t) return false;
+  return NON_PREMISE_COMMERCIAL_TYPE_RE.test(t);
+}
 // A premise that must NEVER appear in the COMMERCIAL (office/warehouse/business) pool:
 //  * residential - flats/apartments/maisonettes/"N bed" (home moves, and Rightmove lists
 //    some flats under its "commercial" channel, e.g. "Flat 2, 196 Fore Street"); OR
@@ -27352,6 +27380,8 @@ function commercialMailable(ld) {
   var addr = String(ld.fullAddress || ld.address || ld.deceasedAddress || ld.registered_address || '').trim();
   var pc = String(ld.postcode || '').trim();
   if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}$/i.test(pc)) return false;
+  // Land / plots / development sites / residential units are never commercial premises.
+  if (isNonPremiseCommercialType(ld.propertyType || ld.property_type)) return false;
   if (isNonBuildingPremise(addr)) return false;
   if (hasUsablePremiseAddress(addr, pc, { acceptNamedPremise: true }) && !isBadCommercialPremise(addr)) return true;
   var company = String(ld.company || ld.companyName || ld.company_name || ld.name || ld.registered_name || '').trim();

@@ -271,6 +271,16 @@ function fetchCommercialRightmovePage(locationId, locationName, pageIndex, isLet
   });
 }
 
+// Rightmove's commercial channel mixes in LAND, PLOTS, DEVELOPMENT sites and the odd
+// residential unit. Those are not business premises, so drop them by propertySubType
+// before they ever reach the archive/pool. Mirrors isNonPremiseCommercialType() in the
+// server (kept local so the scraper has no server dependency). "Warehouse" is safe.
+var NON_PREMISE_COMMERCIAL_TYPE_RE = /\b(land|plot|plots|development|residential|house|detached|semi-detached|terraced|bungalow|flat|apartment|maisonette|parking|car ?park|garage|petrol|barn|farm|woodland|acre|acreage)\b/i;
+function isNonPremiseCommercialType(pt) {
+  var t = String(pt || '').trim();
+  if (!t) return false;
+  return NON_PREMISE_COMMERCIAL_TYPE_RE.test(t);
+}
 // Collect commercial leads for a list of locations. `config`:
 //   { areas: [postcode area codes], locations: [...], include_let: bool, pages: n }
 async function collectCommercialLeads(config) {
@@ -287,7 +297,7 @@ async function collectCommercialLeads(config) {
         console.log('[RIGHTMOVE-COMMERCIAL] Using Apify (datacenter mode) for ' + apAreas.join(','));
         var apifyLeads = await fetchRightmoveApifyCommercial(apAreas, (config.pages || 3) * 24);
         var seenA = {};
-        var outA = (apifyLeads || []).filter(function(p) { if (seenA[p.id]) return false; seenA[p.id] = true; return true; });
+        var outA = (apifyLeads || []).filter(function(p) { if (seenA[p.id]) return false; seenA[p.id] = true; return true; }).filter(function(p) { return !isNonPremiseCommercialType(p.propertyType); });
         console.log('[RIGHTMOVE-COMMERCIAL] Apify total: ' + outA.length + ' commercial properties');
         return outA;
       }
@@ -362,7 +372,7 @@ async function collectCommercialLeads(config) {
     } catch (apifyErr) { console.log('[RIGHTMOVE-COMMERCIAL] Apify fallback error: ' + apifyErr.message); }
     }
   }
-  return deduped;
+  return deduped.filter(function(p) { return !isNonPremiseCommercialType(p.propertyType); });
 }
 
 // Look up the full address (house number + street + postcode) via Postcoder
