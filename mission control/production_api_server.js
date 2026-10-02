@@ -18117,6 +18117,17 @@ function scanEmailAnomalies(days) {
     var cutoff = Date.now() - days * 86400000;
     var custByEmail = {};
     (d.customers || []).forEach(function(c) { custByEmail[String(c.email || '').toLowerCase()] = c; });
+    // Real-paid detection (same rule as /api/admin/billing): a live subscription, a
+    // paid_since stamp on a paid plan, or a real (>GBP0) payment event - NOT merely the
+    // presence of a stripe_subscription_id. An 'incomplete' declined trial charge has an
+    // id, which is how the false "Payment Receipt" slipped past this check.
+    var subsByCust = {};
+    (d.subscriptions || []).forEach(function(s) { if (s && s.customer_id != null) subsByCust[String(s.customer_id)] = s; });
+    var paidEmails = {};
+    (d.payment_events || []).forEach(function(ev) {
+      if (!ev || ev.type !== 'paid' || !(Number(ev.amount) > 0)) return;
+      var pe = String(ev.email || '').toLowerCase(); if (pe) paidEmails[pe] = 1;
+    });
     var counts = {};
     (d.email_log || []).forEach(function(e) {
       var at = e && e.at ? new Date(e.at).getTime() : 0;
@@ -18134,7 +18145,14 @@ function scanEmailAnomalies(days) {
       var c = custByEmail[em];
       // Paid/receipt email to a non-paying account
       if (/payment receipt|welcome to your .*plan|your .* plan is active|subscription confirmed/i.test(subj)) {
-        var paidNow = !!(c && (c.stripe_subscription_id || (c.paid_since && String(c.plan || '') !== 'free_trial')));
+        var paidNow = false;
+        if (c) {
+          var _sub = subsByCust[String(c.id)];
+          var _ss = _sub ? String(_sub.status || '').toLowerCase() : '';
+          if (_ss === 'active' || _ss === 'trialing' || _ss === 'past_due') paidNow = true;
+          else if (c.paid_since && String(c.plan || '') !== 'free_trial') paidNow = true;
+          else if (paidEmails[em]) paidNow = true;
+        }
         if (!paidNow) out.paid_to_unpaid.push({ email: em, subject: subj, at: e.at });
       }
       // "ends tomorrow" must be sent the day before the trial ends
