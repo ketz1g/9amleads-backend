@@ -12061,18 +12061,25 @@ app.get('/api/admin/billing', adminAuth, (req, res) => {
       if (!lastPay[e] || String(ev.at || '') > String(lastPay[e].at || '')) lastPay[e] = ev;
     });
     var rows = (dbb.customers || []).filter(function(c) { return !(typeof isInternalAccount === 'function' && isInternalAccount(c)); }).map(function(c) {
-      var paid = !!_norm(c.stripe_subscription_id);
       var sub = subsByCust[String(c.id)] || null;
+      var subStatus = (sub && _norm(sub.status)) ? String(sub.status).toLowerCase() : '';
+      var lp = lastPay[String(c.email || '').toLowerCase()] || null;
+      var planLc = String(c.plan || '').toLowerCase();
+      var onPaidPlan = (planLc === 'starter' || planLc === 'pro' || planLc === 'enterprise');
+      // PAID means money was actually collected: a live subscription OR a real (>£0)
+      // payment on a paid plan. Merely HAVING a stripe_subscription_id is NOT enough -
+      // an 'incomplete' declined/abandoned trial charge must never read as paid.
+      var paid = (subStatus === 'active' || subStatus === 'trialing' || subStatus === 'past_due')
+              || (!!lp && onPaidPlan);
       var trialEnds = '';
       try { if (_norm(c.trial_ends) && !isNaN(new Date(c.trial_ends).getTime())) trialEnds = c.trial_ends; } catch(e) {}
-      var planLc = String(c.plan || '').toLowerCase();
       var status;
-      if (paid) status = (sub && sub.status) || 'active';
+      if (paid) status = subStatus || 'active';
       else if (planLc === 'cancelled') status = 'cancelled';
+      else if (subStatus && subStatus !== 'active' && subStatus !== 'trialing') status = subStatus; // e.g. incomplete / inactive / unpaid
       else if (trialEnds && new Date(trialEnds).getTime() < Date.now()) status = 'trial_expired';
       else if (trialEnds) status = 'trial';
       else status = 'none';
-      var lp = lastPay[String(c.email || '').toLowerCase()] || null;
       return {
         email: c.email, company: c.company || '', plan: c.plan || '', product: c.product || '',
         paid: paid, status: status,
@@ -12101,6 +12108,40 @@ app.get('/api/admin/billing', adminAuth, (req, res) => {
       return String(a.next_due || '9999').localeCompare(String(b.next_due || '9999'));
     });
     res.json({ success: true, generated_at: new Date().toISOString(), summary: summary, rows: rows });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/resend-payment-recovery { email } - re-send the "payment failed /
+// pay now" recovery email (hosted invoice + billing-portal link) to a customer whose
+// subscription charge failed. Needed when the auto-charge failure branch didn't run
+// (e.g. a falsely-recorded payment) so the customer still gets a way to pay.
+app.post('/api/admin/resend-payment-recovery', adminAuth, async (req, res) => {
+  try {
+    var email = String((req.body && req.body.email) || '').toLowerCase().trim();
+    if (!email) return res.status(400).json({ error: 'email required' });
+    var dbR = getDb();
+    var cu = (dbR.customers || []).find(function(c) { return String(c.email || '').toLowerCase() === email; });
+    if (!cu) return res.status(404).json({ error: 'Customer not found' });
+    var payLink = '', decline = '', invId = '', subId = String(cu.stripe_subscription_id || '');
+    if (subId && /^sub_/.test(subId)) {
+      try {
+        var sub = await stripeApiRequest('GET', 'subscriptions/' + subId, null);
+        if (sub && !sub.error && sub.latest_invoice) {
+          invId = sub.latest_invoice;
+          var inv = await stripeApiRequest('GET', 'invoices/' + invId, null);
+          if (inv && !inv.error) {
+            payLink = inv.hosted_invoice_url || '';
+            decline = (inv.last_payment_error && inv.last_payment_error.message) || '';
+          }
+        }
+      } catch(eS) {}
+    }
+    var portalUrl = '';
+    if (cu.stripe_customer_id) { try { portalUrl = await createBillingPortalUrl(cu.stripe_customer_id); } catch(eP) {} }
+    if (!payLink) payLink = portalUrl || (PUBLIC_URL + '/portal/dashboard.html?page=settings&tab=subscription');
+    var body = '<p style="font-size:14px;line-height:1.7;color:#e2e8f0">We tried to start your 9amLeads subscription but your card was declined' + (decline ? ' (<b>' + decline + '</b>)' : '') + '. Your leads are paused so you are not charged again until this is resolved.</p><div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:12px;padding:16px 20px;margin:0 0 16px"><p style="font-size:13px;color:#e2e8f0;margin:0"><strong>Action needed:</strong> pay the open invoice or update your card to resume your leads immediately.</p></div><p style="color:#94a3b8;font-size:12px;line-height:1.7;margin:0">Your leads and Print &amp; Post resume automatically the moment payment succeeds.' + (portalUrl ? ' You can also update your card securely here: ' + portalUrl : '') + '</p>';
+    await sendDMNotification(cu.id, 'payment_failed_email', 'Action Needed: Payment Failed', '\u26a0\ufe0f Payment failed', body, 'Pay now / update card', payLink, { skipDedup: true });
+    return res.json({ success: true, email: cu.email, hosted_invoice: payLink, portal_url: portalUrl, invoice_id: invId });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
