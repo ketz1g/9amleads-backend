@@ -6160,7 +6160,11 @@ app.post('/api/admin/affiliates/:id/review', adminAuth, (req, res) => {
     }
     saveDb();
     partnerAudit('affiliate_review_' + decision, { affiliate_id: aff.id, email: aff.email, note: aff.application.review_note, admin: (req.user && req.user.email) || 'admin' });
-    // Notify the affiliate of the decision.
+    // Notify the affiliate of the decision ONCE per decision. A double-submit / retry of
+    // the review must not email the same decision twice (which the anomaly scan would
+    // flag as a duplicate send).
+    var _alreadyEmailedDecision = !!(aff.application && aff.application.decision_email_decision === decision);
+    if (!_alreadyEmailedDecision) {
     try {
       var emHtml = '<div style="font-family:Inter,sans-serif;background:#0a0a0a;color:#f5f5f5;padding:32px;max-width:600px;margin:0 auto">' +
         '<div style="text-align:center;margin-bottom:18px"><span style="background:rgba(52,211,153,.15);color:#34d399;font-size:11px;font-weight:800;padding:5px 14px;border-radius:50px;letter-spacing:.5px">9amLeads AFFILIATE PROGRAMME</span></div>' +
@@ -6178,9 +6182,14 @@ app.post('/api/admin/affiliates/:id/review', adminAuth, (req, res) => {
         var _cfgOn = partnerConfig(); var _tdOn = Number(_cfgOn.sales_partner_trial_days) || 14;
         sendBrevoEmail({ email: aff.email, name: aff.name || 'Partner' }, 'Welcome to the 9amLeads Partner Programme - your code and next steps', partnerOnboardingEmail(aff, _tdOn));
       } else {
-        sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' }, decision === 'approve' ? 'Welcome to the 9amLeads Affiliate Programme' : '9amLeads Affiliate application update', wrapDarkEmailShell(emHtml));
+        // DISTINCT SUBJECT on approval: the application acknowledgement uses "Welcome to
+        // the 9amLeads Affiliate Programme", so reusing it here made a same-day
+        // apply+approve look like a duplicate send. Approval now reads clearly.
+        sendBrevoEmail({ email: aff.email, name: aff.name || 'Affiliate' }, decision === 'approve' ? "You're approved - 9amLeads Affiliate Programme" : '9amLeads Affiliate application update', wrapDarkEmailShell(emHtml));
       }
     } catch(e) { console.log('[AFFILIATE] review email error:', e.message); }
+    try { aff.application.decision_email_decision = decision; aff.application.decision_email_sent_at = new Date().toISOString(); saveDb(); } catch(eMk) {}
+    }
     res.json({ success: true, affiliate: { id: aff.id, name: aff.name, status: aff.status, application: aff.application } });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
