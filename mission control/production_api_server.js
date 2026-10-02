@@ -676,19 +676,27 @@ function getPoolSupply() {
   if (_poolSupplyCache.data && (now - _poolSupplyCache.at) < 300000) return _poolSupplyCache.data;
   var cutoff = getFreshCutoffIso();
   var out = {};
-  var prods = ['moving', 'probate', 'newbusiness', 'planning', 'tenders'];
+  // 'commercial' is a first-class product that draws from the SAME moving-leads.json
+  // pool but only serves the commercial-tagged subset. It MUST be listed here: omitting
+  // it left sup.commercial undefined, so the health alert reported "commercial pool
+  // supply low: 0 fresh vs N needed" every run even when commercial leads were plentiful.
+  var prods = ['moving', 'commercial', 'probate', 'newbusiness', 'planning', 'tenders'];
   for (var pi = 0; pi < prods.length; pi++) {
     var prod = prods[pi];
     var fn = path.join(DATA_DIR, PRODUCT_LEAD_FILES[prod] ? PRODUCT_LEAD_FILES[prod].file : (prod + '-leads.json'));
     var arr = [];
     try { var raw = JSON.parse(fs.readFileSync(fn, 'utf-8')); if (Array.isArray(raw)) arr = raw; else if (raw && typeof raw === 'object') Object.keys(raw).forEach(function(k){ if (k.indexOf('_') !== 0 && Array.isArray(raw[k])) arr = arr.concat(raw[k]); }); } catch(e) {}
+    var total = 0;
     var fresh = 0;
     for (var i = 0; i < arr.length; i++) {
       var l = arr[i];
+      // Commercial Moves serves only the commercial-tagged subset of the moving pool.
+      if (prod === 'commercial' && !l.commercial) continue;
+      total++;
       var d = pickFreshDate(l); // freshness dateteSubmitted || l.incorporationDate || l.updateDate || l.createdAt || l.created_at || l.scrapedAt || '';
       if (d && d >= cutoff) fresh++;
     }
-    out[prod] = { total: arr.length, fresh_48h: fresh };
+    out[prod] = { total: total, fresh_48h: fresh };
   }
   _poolSupplyCache = { at: now, data: out };
   return out;
@@ -34710,9 +34718,11 @@ app.get('/api/health', (req, res) => {
           (dbS.customers || []).forEach(function(c) {
       if (!c.plan || c.plan === 'cancelled' || isLeadsPaused(c)) return;
       // Never alert on internal/test accounts or EXPIRED free trials - they are not
-      // owed leads, so "no leads in X" is expected and not actionable.
+      // owed leads, so "no leads in X" is expected and not actionable. isInternalAccount
+      // already excludes test/demo EXCEPT the 5 commercial monitoring accounts, which the
+      // real health alert DOES count - so do NOT additionally drop e-mail starting "test."
+      // here, or /api/health silently hides the very commercial row the alert reports on.
       if (isInternalAccount(c)) return;
-      if (String(c.email || '').indexOf('test.') === 0) return;
       if (c.plan === 'free_trial' && c.trial_ends) { try { var teQ = new Date(c.trial_ends); if (!isNaN(teQ.getTime()) && new Date() > teQ) return; } catch(e) {} }
             if (c.trial_ends && new Date(c.trial_ends) <= new Date()) return; // expired trial
             var p = c.product || 'moving';
