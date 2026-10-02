@@ -160,6 +160,9 @@ ok('paid nurture stops for past_due/unpaid (blocked) subscriptions',
   has('PAID-MARKETING GATE') && has('_paidMarketingActive = false') && has("['past_due', 'unpaid', 'incomplete'"));
 ok('payment-failure email detects a Stripe block and says "try a different card"',
   has('async function detectStripeBlock') && has('Payment blocked by the payment processor') && has('not a problem with your funds'));
+ok('subscription receipts require a genuinely PAID latest invoice (no false receipts)',
+  has('BLOCKED unconfirmed subscription receipt') && has("_giGuard.paid || _giGuard.status === 'paid'")
+  && !has("_subGuard.status === 'active' || _subGuard.status === 'trialing'"));
 ok('quiet-area emails skip ended trials / non-entitled customers',
   has("if (!isEntitledForDelivery(c)) return;") && has('EXPIRED TRIALS - an ended trial'));
 ok('quiet-area alert is one consolidated email per customer',

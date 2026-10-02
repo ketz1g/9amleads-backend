@@ -3432,31 +3432,42 @@ async function sendPaymentReceiptEmail(rec, opts) {
 
 // Record + email a payment receipt in one call.
 async function recordPaymentReceipt(opts) {
-  // SAFETY NET: a receipt whose Stripe id is a SUBSCRIPTION id (sub_...) must only be
-  // recorded when that subscription is genuinely active. This is EXACTLY the bug that
-  // emailed a receipt to a customer whose trial charge was declined. If the subscription
-  // is not active/trialing we block the receipt and alert the founder instead of billing
-  // the customer's inbox. (Invoice/PI receipts use in_/pi_ ids and are unaffected.)
-  try {
-    var _sidGuard = String((opts && opts.stripeId) || '');
-    if (/^sub_/.test(_sidGuard)) {
+  // SAFETY NET: a receipt whose Stripe id is a SUBSCRIPTION id (sub_...) is only sent when
+  // money was ACTUALLY collected for that subscription. "Status is active/trialing" is NOT
+  // enough: a carried-over trial, or a first charge BLOCKED by Stripe, leaves the
+  // subscription active/trialing with an unpaid (later void) invoice - which is exactly
+  // how a false "Payment Receipt: Starter / £25 paid" reached a customer whose invoice was
+  // void and never paid. We now require the subscription's latest invoice to be genuinely
+  // PAID, and we FAIL CLOSED: if Stripe cannot be reached we block the receipt and alert
+  // the founder rather than bill the customer's inbox for money that was never taken.
+  // (Invoice/PI receipts use in_/pi_ ids and are unaffected - those are only emitted on a
+  // real payment event.)
+  var _sidGuard = String((opts && opts.stripeId) || '');
+  if (/^sub_/.test(_sidGuard)) {
+    var _subOk = false, _subStatus = 'unknown', _invStatus = 'none';
+    try {
       var _subGuard = await stripeApiRequest('GET', 'subscriptions/' + _sidGuard, null);
-      var _subOk = _subGuard && !_subGuard.error && (_subGuard.status === 'active' || _subGuard.status === 'trialing');
-      // Status can briefly lag right after a successful charge - also accept when the
-      // subscription's latest invoice is genuinely PAID.
-      if (!_subOk && _subGuard && _subGuard.latest_invoice) {
-        try { var _giGuard = await stripeApiRequest('GET', 'invoices/' + _subGuard.latest_invoice, null); if (_giGuard && (_giGuard.paid || _giGuard.status === 'paid')) _subOk = true; } catch(eGi) {}
+      if (_subGuard && !_subGuard.error) {
+        _subStatus = String(_subGuard.status || 'unknown');
+        var _liId = _subGuard.latest_invoice || '';
+        if (_liId) {
+          var _giGuard = await stripeApiRequest('GET', 'invoices/' + _liId, null);
+          if (_giGuard && !_giGuard.error) {
+            _invStatus = String(_giGuard.status || 'unknown') + (_giGuard.paid ? '/paid' : '');
+            _subOk = !!(_giGuard.paid || _giGuard.status === 'paid');
+          }
+        }
       }
-      if (!_subOk) {
-        console.log('[PAYMENT-RECEIPT] BLOCKED receipt for non-active subscription ' + _sidGuard + ' (' + (opts.customerEmail || opts.customerId || '') + ') status=' + (_subGuard && _subGuard.status || 'unknown'));
-        try {
-          sendAdminAlert('Blocked a false payment receipt',
-            '<div style="font-family:Inter,Arial,sans-serif;font-size:13px;color:#0f172a;line-height:1.7"><p>A payment receipt was about to be emailed to <b>' + escHtml(opts.customerEmail || opts.customerId || '') + '</b> for a subscription that is <b>not active</b> (status: ' + escHtml(String((_subGuard && _subGuard.status) || 'unknown')) + ').</p><p>It was <b>blocked</b> and no receipt was sent. Please check the trial auto-charge.</p></div>');
-        } catch(eAlert) {}
-        return null;
-      }
+    } catch(eGuard) { _subOk = false; }
+    if (!_subOk) {
+      console.log('[PAYMENT-RECEIPT] BLOCKED unconfirmed subscription receipt ' + _sidGuard + ' (' + (opts.customerEmail || opts.customerId || '') + ') sub=' + _subStatus + ' invoice=' + _invStatus);
+      try {
+        sendAdminAlert('Blocked a false payment receipt',
+          '<div style="font-family:Inter,Arial,sans-serif;font-size:13px;color:#0f172a;line-height:1.7"><p>A payment receipt was about to be emailed to <b>' + escHtml(opts.customerEmail || opts.customerId || '') + '</b> for subscription <b>' + escHtml(_sidGuard) + '</b>, but no genuinely PAID invoice could be confirmed (subscription: ' + escHtml(_subStatus) + ', latest invoice: ' + escHtml(_invStatus) + ').</p><p>It was <b>blocked</b> and no receipt was sent. Check the trial auto-charge / Stripe for this customer.</p></div>');
+      } catch(eAlert) {}
+      return null;
     }
-  } catch(eGuard) { /* if Stripe can’t be reached, fall through (invoice/PI paths don’t hit this) */ }
+  }
   var rec = storePaymentReceipt(opts);
   if (rec) { try { await sendPaymentReceiptEmail(rec, opts); } catch(e) { console.log('[PAYMENT-RECEIPT] Send error:', e.message); } }
   return rec;
