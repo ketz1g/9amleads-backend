@@ -22565,7 +22565,9 @@ setTimeout(function() {
 // consistently under-delivering (fill < 80% over the last 7 days), email them a
 // helpful, psychology-aware nudge suggesting nearby areas/postcodes with more
 // supply - so they keep getting their full daily count and stay subscribed.
-cron.schedule('0 10 * * 2', async () => {
+async function runAreaHealthSuggestions(options) {
+  var __dryRun = !!(options && options.dryRun);
+  var __report = [];
   try {
     var ahDb = getDb();
     var now = new Date();
@@ -22607,17 +22609,34 @@ cron.schedule('0 10 * * 2', async () => {
           'The good news: nearby areas have more supply. Adding any of these to your areas usually fills you to the full daily count every day:<br><ul style="margin:6px 0;padding-left:18px">' + (suggestHtml || '<li>adding a couple of neighbouring postcode areas / counties</li>') + '</ul>' +
           'You can update your areas in <a href="https://www.9amleads.com/portal/dashboard.html" style="color:#38bdf8">your dashboard in under a minute</a> . We\u2019ll start delivering from the new mix the very next morning.<br><br>' +
           'We want you getting the full value every single day. Happy to help adjust anything. Just reply to this email.<br><br>Team 9amLeads</div>';
-        sendBrevoEmail({ email: c.email, name: c.company || 'Customer' }, 'Your daily leads are guaranteed. Let\u2019s top up your areas', buildAdminStyleEmail(emailHtml));
-        // mark so we don't nag weekly
-        if (!ahDb.__area_health_notified) ahDb.__area_health_notified = {};
-        ahDb.__area_health_notified[c.id] = new Date().toISOString();
-        saveDb();
-        sent++;
+        __report.push({ email: c.email, name: c.company || 'Customer', product: c.product, promised: promised, delivered: delivered, expected: expected, fillRate: fillRate, areas: areas, suggestions: better });
+        if (!__dryRun) {
+          sendBrevoEmail({ email: c.email, name: c.company || 'Customer' }, 'Your daily leads are guaranteed. Let\u2019s top up your areas', buildAdminStyleEmail(emailHtml));
+          // mark so we don't nag weekly
+          if (!ahDb.__area_health_notified) ahDb.__area_health_notified = {};
+          ahDb.__area_health_notified[c.id] = new Date().toISOString();
+          saveDb();
+          sent++;
+        }
       } catch(ae) { console.log('[AREA-HEALTH] error for', c.email, ae.message); }
     }
-    console.log('[AREA-HEALTH] Sent ' + sent + ' area-top-up suggestions');
+    console.log('[AREA-HEALTH] ' + (__dryRun ? ('DRY-RUN - would email ' + __report.length) : ('Sent ' + sent)) + ' area-top-up suggestions');
   } catch(e) { console.log('[AREA-HEALTH] error:', e.message); }
-}, { timezone: 'Europe/London' });
+  return { dryRun: __dryRun, sent: sent, recipients: __report };
+}
+cron.schedule('0 10 * * 2', async () => { try { await runAreaHealthSuggestions({}); } catch(e) { console.log('[AREA-HEALTH] cron error:', e.message); } }, { timezone: 'Europe/London' });
+
+// Admin: run the area-health check on demand. DRY-RUN by default (shows who WOULD be
+// emailed without sending); add ?send=1 to actually send. Admin-authenticated.
+app.post('/api/admin/area-health/run', adminAuth, async (req, res) => {
+  try {
+    var send = String((req.query && req.query.send) || '') === '1';
+    var out = await runAreaHealthSuggestions({ dryRun: !send });
+    res.json({ ok: true, dryRun: out.dryRun, sent: out.sent, count: out.recipients.length, recipients: out.recipients });
+  } catch (e) {
+    res.status(500).json({ error: e && e.message ? e.message : 'error' });
+  }
+});
 
 // Wrap admin-style emails (reuse for the area-health note).
 function buildAdminStyleEmail(bodyHtml) {
